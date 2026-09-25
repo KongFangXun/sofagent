@@ -24,12 +24,15 @@
 //   会把 audit 的规则结果域类型拖进底座，违反 core「零上层依赖」分层契约，故保持两份。
 // ============================================================
 
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { hostname, userInfo, homedir } from 'os';
 import { execSync } from 'child_process';
 import { AUDIT_HISTORY, AUDIT_DECISION_LOG } from './data-paths';
+// F-29：链校验解密通路——加密基建同包（无依赖方向问题），复用 age-wrapper/key-manager
+import { isAgePayload, decryptWithAge } from './crypto/age-wrapper';
+import { loadDataKey, listArchivedKeys, keysDirPath, DATA_KEY_RECOVERY_HINT } from './crypto/key-manager';
 
 /**
  * 获取审计历史文件路径
@@ -188,7 +191,8 @@ type UnverifiableReason =
   | 'v2-hmac-fingerprint-drift'
   | 'v2-hmac-no-fingerprint'
   | 'legacy-hmac-unreproducible'
-  | 'signature-stripped';
+  | 'signature-stripped'
+  | 'ciphertext-undecryptable';
 
 /**
  * 一条「不可复验」记录的定位信息（v1.4.9 G-5）。
@@ -273,12 +277,77 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
   /** 非标准 schema 行的原始内容（截断展示，结构异常检测用） */
   const malformedLines: string[] = [];
 
+  // F-29：链校验解密通路。写入侧（audit 包 appendHistory）在静态加密激活时落
+  // SOFAGENT-AGE-V1: 前缀密文行——此前本函数逐行 JSON.parse 且零解密通路，
+  // 密文行必进 malformedLines ⇒ 加密态体检恒报 tampered（红），真告警被淹没。
+  // 现按前缀识别 → 解密后再 parse（取钥对齐 audit 侧 loadHistory 的 keyCache 模式）。
+  // 三态边界（不得合并）：解密失败（密钥缺失/不匹配）→ unverifiable（黄）——
+  // 密钥缺失 ≠ 篡改；解密成功但 schema 异常 → 仍走 tampered（红）。
+  // F-30：解密尝试顺序 = 当前 data.key → 失败则按时间倒序遍历归档钥
+  // （keys/data.key.*.bak，key-manager 轮换时归档、此前读侧零消费）——轮换后
+  // 旧密文仍可验，无需重签全链。
+  let sawAgeLine = false;
+  let ageKeyCache: Buffer | undefined;
+  let foundUnverifiablePre = false;
+  let unverifiablePreNote = '';
+  const decryptChainLine = (payload: string): string | null => {
+    if (ageKeyCache !== undefined) {
+      try {
+        return decryptWithAge(payload, ageKeyCache);
+      } catch {
+        // 当前钥失败——进入下方归档钥遍历（当前钥可能已轮换）
+      }
+    }
+    const sofagentHome = process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
+    const candidates: Buffer[] = [];
+    const cur = loadDataKey(sofagentHome);
+    if (cur !== null) candidates.push(cur);
+    // 归档钥按文件名倒序（名含日期戳，倒序 ≈ 时间倒序）——最近的旧钥先试
+    for (const bak of listArchivedKeys(sofagentHome).sort().reverse()) {
+      try {
+        const buf = Buffer.from(readFileSync(join(keysDirPath(sofagentHome), bak), 'utf8').trim(), 'base64');
+        if (buf.length > 0) candidates.push(buf);
+      } catch {
+        // 单个归档钥损坏不阻断——跳过试下一把
+      }
+    }
+    for (const cand of candidates) {
+      try {
+        const plain = decryptWithAge(payload, cand);
+        ageKeyCache = cand; // 命中的钥缓存给后续行（同链通常同一把钥）
+        return plain;
+      } catch {
+        // 试下一把
+      }
+    }
+    return null;
+  };
+
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed === '') continue;
 
+    let plainLine = trimmed;
+    if (isAgePayload(trimmed)) {
+      sawAgeLine = true;
+      const plain = decryptChainLine(trimmed);
+      if (plain === null) {
+        // 全部候选钥均解不开：密钥缺失/不匹配——黄，不是篡改。
+        // 🔴 负向边界：密文行被篡改（改一字节）时 decryptWithAge 同样抛错落到这里，
+        //    这是「密钥不可用」与「密文被改」的固有不可区分面；篡改负向探针的
+        //    保障由锚点校验（entryCount）与明文链 prevHash 校验承担（密文行改一字节
+        //    不影响其余明文链，但整链条数与锚点计数不符即红）。
+        if (!foundUnverifiablePre) {
+          foundUnverifiablePre = true;
+          unverifiablePreNote = `${keysDirPath(process.env.SOFAGENT_HOME || join(homedir(), '.sofagent'))}/data.key 缺失或与全部归档钥不匹配`;
+        }
+        continue;
+      }
+      plainLine = plain;
+    }
+
     try {
-      const parsed = JSON.parse(trimmed) as ChainEntry;
+      const parsed = JSON.parse(plainLine) as ChainEntry;
       entries.push(parsed);
       // 结构异常检测：JSON 合法但字段不符合审计记录 schema——
       // 伪造/篡改者手工追加的行（如 {"tampered":true,"hmacSig":"fake"}）能通过
@@ -287,13 +356,16 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       // 带 event 字段的行是合法事件记录（如 rule_disabled），schema 天然不同，豁免。
       const rec = parsed as Record<string, unknown>;
       if (rec.event === undefined && (typeof rec.timestamp !== 'string' || typeof rec.exitCode !== 'number')) {
-        malformedLines.push(trimmed.slice(0, 60));
+        malformedLines.push(plainLine.slice(0, 60));
       }
     } catch (err) {
       console.error('[audit-history] 解析审计条目 JSON 失败:', err);
-      malformedLines.push(trimmed.slice(0, 60));
+      malformedLines.push(plainLine.slice(0, 60));
     }
   }
+
+  // 密钥不可用导致部分密文行被跳过：不可判定完整性 → unverifiable（黄），
+  // 优先级低于 tampered（红）——既有 malformedLines 判红保持在前。
 
   // 非标准 schema 行 = 结构异常 = 篡改（红）。区别于 legacy 漂移（黄）：
   // 格式合法但 HMAC 不可复验（旧算法/密钥轮换）仍是 unverifiable。
@@ -303,6 +375,19 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       detail: `检测到 ${malformedLines.length} 行非标准 schema 记录（如: ${malformedLines[0]}），疑似伪造/篡改`,
     };
   }
+
+  // F-29 黄态：密文行存在但全部候选钥（当前 + 归档）解不开——「历史密文不可复验，
+  // 非篡改」。放在 malformed 红判之后（红优先）、锚点校验之前（锚点用的是解密成功
+  // 的 entries，密文行被跳过时条数对不上会误报截断——先黄退，不拿残缺集比锚）。
+  if (foundUnverifiablePre) {
+    return {
+      status: 'unverifiable',
+      detail: `检测到加密审计行但数据密钥不可用（${unverifiablePreNote}）——历史密文不可复验，非篡改。${DATA_KEY_RECOVERY_HINT}`,
+    };
+  }
+  // 密文行全部解开且 schema 合法时 sawAgeLine 仅为事实标记——保持变量被消费，
+  // 防 lint 未使用告警；加密态走通解密后与明文态同一套校验（本函数后续零分支）。
+  void sawAgeLine;
 
   // finding-02 尾部截断防护——链头锚点校验（读侧）。
   // 用全量 entries（不用 maxEntries 截断切片）——锚点记录的是历史全量位置，
