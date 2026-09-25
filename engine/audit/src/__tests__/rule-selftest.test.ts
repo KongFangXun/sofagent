@@ -9,6 +9,7 @@
 //   ④ 静态定义类豁免：examplesExempt 显式标记 → 跳过样例强制，归 experimental
 //   ⑤ 多规则命中取最严（FAIL > WARN > PASS）+ 全部命中明细 + 乱序稳定
 //   ⑥ --ruleset-path 加载入口：JSON 规则集样例断言（含锚串被删/矛盾拒载）
+//   ⑦ 注册表不变式：critical 层不得为能力拐杖 → 拒载（堵 fast-fail 静默分叉）
 // 注：secret-like / injection-like 串一律运行时拼接构造（铁律 #3）——避免本测试
 //   文件自身被 A2 / A9 命中（同 rules-unified.test.ts 的数组 join 手法）。
 // ============================================================
@@ -24,6 +25,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 import { rules, RULE_LOAD_REPORT } from '../rules';
 import type { Rule, RuleCheck } from '../rules/types';
 import {
+  checkCriticalLayerInvariant,
   checkExamplesBehavior,
   checkExamplesSchema,
   loadAuditRules,
@@ -169,6 +171,36 @@ describe('D2 · schema 强制——缺失 / 空 / 矛盾即拒载', () => {
     expect(stabilityOf(ruleById('A1'))).toBe('stable');
     expect(stabilityOf(withExamples(ruleById('A3'), { match: ['x'], notMatch: [] }))).toBe('experimental');
     expect(stabilityOf(withExamples(ruleById('A3'), undefined))).toBe('experimental');
+  });
+});
+
+// ────────────────────────────────────────────────────────────
+// 注册表不变式：critical 层不得为「能力拐杖」——堵 fast-fail 静默分叉
+// （runner.runRules 的 critical fast-fail 直接判定拦截 exit 2；而 aggregateExitCode
+//  会把能力拐杖 FAIL 降权 WARN。若 critical 规则被标拐杖，非 strict 下 2→1 静默分叉。）
+// ────────────────────────────────────────────────────────────
+describe('D2 · 注册表不变式——critical 层不得为能力拐杖（消灭 fast-fail 静默分叉）', () => {
+  it('真实注册表满足不变式：零条 critical 规则被标为能力拐杖', () => {
+    const offenders = rules.filter((r) => r.priority === 'critical' && r.ruleClass === '能力拐杖');
+    expect(offenders.map((r) => r.id)).toEqual([]);
+  });
+
+  it('注入「critical + 能力拐杖」组合 → loadAuditRules 拒载（fail-loud，捕获未来分叉）', () => {
+    // 取真实 critical 规则 A1，篡改 ruleClass 为 能力拐杖——模拟未来误标（其余字段合法）
+    const bad: Rule = { ...ruleById('A1'), ruleClass: '能力拐杖' };
+    const err = captureLoadError([bad]);
+    // 定点：不变式被触发（违规条目指名规则 id 与「能力拐杖」）
+    expect(err.violations.some((v) => v.includes('A1') && v.includes('能力拐杖'))).toBe(true);
+    // 且仅该不变式命中（A1 样例合法，不产生样例类违规——隔离证明）
+    expect(checkCriticalLayerInvariant(bad).length).toBe(1);
+    expect(captureLoadError([bad]).violations).toHaveLength(1);
+  });
+
+  it('非 critical 层的拐杖规则不受该不变式约束（A6/crutch 合法）', () => {
+    const a6 = ruleById('A6');
+    expect(a6.ruleClass).toBe('能力拐杖');
+    expect(a6.priority).toBe('crutch');
+    expect(checkCriticalLayerInvariant(a6)).toEqual([]);
   });
 });
 

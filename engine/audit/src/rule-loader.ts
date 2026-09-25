@@ -187,10 +187,42 @@ export function stabilityOf(rule: Rule): Stability {
   return 'stable';
 }
 
+// ============================================================
+// 注册表不变式（加载期 fail-closed）——消灭 fast-fail 静默分叉
+// ============================================================
+
+/**
+ * 注册表不变式：`priority === 'critical'` 的规则**不得**是 `ruleClass === '能力拐杖'`。
+ *
+ * 🔴 为何禁止该组合（否则即静默分叉）：`runner.runRules` 的 critical fast-fail 分支
+ *   对「critical 层命中 FAIL」**直接判定拦截**（exit 2）。而聚合器
+ *   `runner.aggregateExitCode` 会把「能力拐杖」规则的 FAIL **降权为 WARN**（advisory，
+ *   不阻断提交）。若某条 critical 规则被标 `能力拐杖`，则**非 strict** 下：
+ *     - fast-fail 硬拦语义（改写前）= exit 2；
+ *     - 新聚合语义（降权）= exit 1；
+ *   ⇒ **静默行为分叉**。当前两语义恰好等价，仅因「8 条 critical 规则当前全是
+ *   `业务底线`」这一**偶然事实**——不可依赖（本仓「算不出来 ≠ 成立」纪律）。
+ *
+ * 故在**加载期**把该组合钉死为非法：越界即**整集拒载**（fail-loud），
+ * 使未来任何把 critical 规则降权为拐杖的尝试在装载时爆，而非在审计判定上悄悄变色。
+ *
+ * @param rule 待校验规则
+ * @returns 违规描述数组（空 = 通过）
+ */
+export function checkCriticalLayerInvariant(rule: Rule): string[] {
+  if (rule.priority === 'critical' && rule.ruleClass === '能力拐杖') {
+    return [
+      `${rule.id}: critical 层规则不得标为「能力拐杖」——critical FAIL 经 aggregateExitCode 会被降权为 WARN，与 fast-fail 硬拦语义静默分叉（见 runner.aggregateExitCode）`,
+    ];
+  }
+  return [];
+}
+
 /**
  * 引擎默认装载点：加载审计规则定义集（fail-closed）。
  *
- * 逐条做 schema + 矛盾断言（全量）；对 examplesExecutable 的规则加做执行断言。
+ * 逐条做 schema + 矛盾断言（全量）；对 examplesExecutable 的规则加做执行断言；
+ * 并校验注册表不变式（critical 层不得为能力拐杖，见 checkCriticalLayerInvariant）。
  * 任一违规 ⇒ 抛 RuleLoadError（**整集拒载**，不降级为「跳过该条」）。
  *
  * @param rules 规则定义集（registr：defaultRules + extendedRules）
@@ -205,6 +237,8 @@ export function loadAuditRules(rules: Rule[]): RuleLoadReport {
   for (const rule of rules) {
     if (rule.examplesExempt) exempted.push(rule.id);
     violations.push(...checkExamplesSchema(rule.id, rule.examples, Boolean(rule.examplesExempt)));
+    // 注册表不变式（与 examples 无关，恒校验）：critical 层不得为能力拐杖
+    violations.push(...checkCriticalLayerInvariant(rule));
     if (rule.examplesExecutable) {
       const behaviorErrors = checkExamplesBehavior(rule);
       violations.push(...behaviorErrors);

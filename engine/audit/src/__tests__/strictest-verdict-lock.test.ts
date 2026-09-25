@@ -136,4 +136,18 @@ describe('D2 · 多规则裁决「取最严」接线回归锁', () => {
     const sens = runRules([makeDiffFile('.env', ['+MODE=prod'])], [], undefined, false, true, undefined, undefined, []);
     expect(sens.exitCode).toBe(2);
   });
+
+  it('critical fast-fail 三态：非strict / strict / +GB48000 opt-in 均拦截（exit 2，与旧硬编码逻辑一致）', () => {
+    // critical 层 A1 命中 .env → fast-fail 后续层（warning/crutch/extended 全 SKIPPED）。
+    // 旧逻辑：该分支**硬编码 exit 2**；接线后：走 aggregateExitCode——critical 层 FAIL
+    // 均为非「能力拐杖」，取最严 ⇒ FAIL ⇒ 2。三态须**恒等 2**（补 QA 报的覆盖缺口：
+    // 原 e2e 仅 1 例非 strict，无 strict / GB48000 opt-in 变体）。
+    const env = () => [makeDiffFile('.env', ['+MODE=prod'])];
+    // ① 非 strict
+    expect(runRules(env(), [], undefined, false, true, undefined, undefined, []).exitCode).toBe(2);
+    // ② strict
+    expect(runRules(env(), [], undefined, true, true, undefined, undefined, []).exitCode).toBe(2);
+    // ③ +GB48000 opt-in（信息维度不改变判定——第 9 参 gb48000=true）
+    expect(runRules(env(), [], undefined, false, true, undefined, undefined, [], true).exitCode).toBe(2);
+  });
 });
