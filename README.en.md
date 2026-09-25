@@ -146,7 +146,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
 
 - **Never assume capability parity — tiers differ in injection strength, not in "supported or not"** — DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text the Agent reads on its own (advisory). "Supports platform X" means the constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls into — full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
-- **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit is audited automatically (audits with the 17 default rules out of the box; the full 24 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations hard-blocked. Constraints are advisory; auditing is mandatory
+- **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit is audited automatically (audits with the 17 default rules out of the box; the full 25 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations hard-blocked. Constraints are advisory; auditing is mandatory
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
@@ -157,7 +157,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 | Capability | In one line |
 |------|--------|
 | **Audit data outside** | Read-only MCP `audit_query` (filter by time / rule / exitCode, byte-level read-only invariant) + audit event subscription push |
-| **Ruleset export + standalone verification** | `ruleset_export` machine-readable JSON, round-trip reversible (24-rule metadata + version fingerprint); `verify-chain` zero-dependency verifier — third parties can validate HMAC chains without installing sofagent. Where to get it: `verify/verify-chain.mjs` inside the `@sofagent/audit` npm package (single zero-dependency file, safe to hand to third parties); installed copies live at `~/.sofagent/verify/verify-chain.mjs`; self-check via `node verify-chain.mjs --selftest` |
+| **Ruleset export + standalone verification** | `ruleset_export` machine-readable JSON, round-trip reversible (25-rule metadata + version fingerprint); `verify-chain` zero-dependency verifier — third parties can validate HMAC chains without installing sofagent. Where to get it: `verify/verify-chain.mjs` inside the `@sofagent/audit` npm package (single zero-dependency file, safe to hand to third parties); installed copies live at `~/.sofagent/verify/verify-chain.mjs`; self-check via `node verify-chain.mjs --selftest` |
 | **Decision semantics on both ends** | A five-question should-run gate before work starts (health / human-gate / evidence / focus / quota — suspend-not-fail with auto-resume) + conclusion invalidation semantics (three triggers mark stale conclusions so they stop feeding downstream) |
 
 Also in this release: egress governance (default-deny host allowlist + outbound adjudication HMAC-chained) · pre-authorization mandate loop (scope/expiry/approver, rejected before execution) · identity three-layer narrative injection (bilingual README) · DSH plugin npm debut surface (kit + seven `cordis-plugin-sofagent-*`) · v1.5.2 post-release review fix batch (35 items incl. six fail-open closures). **Tests 5083 → 5309 · acceptance 367 → 373 · 85 regression dimensions · MCP 105→107** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.2.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
@@ -202,7 +202,7 @@ The matching npm release-channel policy: **no dist-tag split — `latest` is the
 npx -y -p @sofagent/audit sofagent-audit
 ```
 
-> 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active — quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). `--init` installs the hook (still the same 17 default rules); the full 24 additionally require `extendedRulesEnabled: true` in `.sofagent/config.yml` — see [LIMITATIONS §3](./docs/LIMITATIONS.md).
+> 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active — quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). `--init` installs the hook (still the same 17 default rules); the full 25 additionally require `extendedRulesEnabled: true` in `.sofagent/config.yml` — see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
 > ⚠️ This step is a **one-off audit** (inside a single process) — it does not install a git hook, so later commits will not be auto-blocked. For continuous protection run `sofagent-audit --init` (see Full install below).
 

@@ -984,23 +984,31 @@ if $DOC_DRIFT_OK; then
 fi
 echo ""
 
-# ── WIKI/README 表格数字漂移扫描（v1.2.6 新增）──────────────
-# 维度 13 只扫描 engine/audit/src 中的「N 条规则」文案，不覆盖 WIKI.md / README.md
-# 表格行中的数字（如 "21 rules"、"13 个发布到 npm" 等）。本维度补上表格行扫描。
-echo "=== 13b. WIKI/README 表格数字漂移扫描 ==="
+# ── 对外面规则计数漂移扫描（v1.2.6 新增 · v1.5.3 D3 补漏批补强形态）──────────────
+# 维度 13 只扫描 engine/audit/src 中的「N 条规则」文案，不覆盖对外面文档 / 发布描述。
+# 本维度补上「文档 SSOT + npm 发布描述」的计数对账。
+# 🔴 v1.5.3 D3 补漏批：原 pattern `[0-9]+ (rules|条规则)` 只抓「N 条规则」「N rules」，
+#   实测三种同族写法**全部逃逸**——README.en 的「the full N」/「N-rule metadata」、
+#   WIKI 与 umbrella package.json 的「N git-diff rules」。本批把 pattern 扩到覆盖这三形态。
+#   失效模式复核（补漏批全仓实跑）：`N-rule`/`N git-diff`/`N audit rule` 三形态自带 rule
+#   语义、无假红反例；「the full N」在本扫描面（WIKI/README/umbrella）恒指规则数，无假红命中。
+echo "=== 13b. 对外面规则计数漂移扫描（WIKI/README/umbrella）==="
 TABLE_DRIFT_OK=true
-# 扫描 WIKI.md 和 README*.md 中的「N rules」「N 条规则」「N 个发布到 npm」
-# 与 SSOT（TOTAL_RULES_COUNT / NPM_PKG_COUNT）对账
-WIKI_DRIFT_FILES="docs/WIKI.md README.md README.en.md"
+# 扫描面：文档 SSOT（WIKI + README 双语）+ npm 发布描述（`engine/umbrella/package.json`
+#   ——对外面，npm 上用户可见的 description）；与 SSOT（TOTAL_RULES_COUNT / NPM_PKG_COUNT）对账。
+# 待对账的计数形态（单一事实源 `RULE_COUNT_RE`，extraction 与 scan 共用）：
+#   「N 条规则」「N rules」「N audit rule」「N-rule」「N git-diff rules」「the full **N**」
+RULE_COUNT_RE="[0-9]+ (rules|条规则)|[0-9]+ audit rule|[0-9]+-rule|[0-9]+ git-diff|the full [*]{0,2}[0-9]+"
+WIKI_DRIFT_FILES="docs/WIKI.md README.md README.en.md engine/umbrella/package.json"
 while IFS= read -r line; do
-  # 提取行中的数字 + 单位模式
-  num_rules=$(echo "$line" | grep -oE "[0-9]+ (rules|条规则)" | grep -oE "^[0-9]+" | head -1)
+  # 提取行内首个命中形态的数值（「the full **N**」数值在形态尾部，故不锚行首）
+  num_rules=$(echo "$line" | grep -oE "$RULE_COUNT_RE" | grep -oE "[0-9]+" | head -1)
   if [ -n "$num_rules" ] && [ "$num_rules" != "$TOTAL_RULES_COUNT" ]; then
     echo "  ❌ ${line} （规则数 ${num_rules} ≠ SSOT ${TOTAL_RULES_COUNT}）"
     TABLE_DRIFT_OK=false
     ERRORS=$((ERRORS + 1))
   fi
-done < <(grep -rnE "[0-9]+ (rules|条规则)" $WIKI_DRIFT_FILES 2>/dev/null | grep -v "node_modules" | grep -v "changelog")
+done < <(grep -rnE "$RULE_COUNT_RE" $WIKI_DRIFT_FILES 2>/dev/null | grep -v "node_modules" | grep -v "changelog")
 # 检查「N 个发布到 npm」——SSOT 从 package.json workspaces 动态提取
 NPM_PKG_COUNT=$(node -e "const p=require('./package.json'); console.log(p.workspaces.length)" 2>/dev/null || echo 13)
 while IFS= read -r line; do

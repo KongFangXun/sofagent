@@ -2794,7 +2794,7 @@ var MCP_TOOLS=[
 function renderMcpList(){
   var box=document.getElementById('mcpList');
   if(!box)return;
-  // 全部平铺（与 24 审计规则同风格），分组仅作为数组组织结构
+  // 全部平铺（与 25 审计规则同风格），分组仅作为数组组织结构
   var all=[];
   MCP_TOOLS.forEach(function(g){(g.items||[]).forEach(function(t){all.push(t)})});
   // 计数动态渲染（单源：本清单实数）——标题栏不再硬编码，加 tool 不改标题

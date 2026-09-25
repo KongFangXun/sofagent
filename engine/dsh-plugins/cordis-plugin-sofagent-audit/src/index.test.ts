@@ -59,7 +59,7 @@ describe('cordis-plugin-sofagent-audit（F3 验收吸收）', () => {
 
   it('settings 验收门禁独立开关：register 收到 acceptanceGate 字段且 base 默认 true', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const register = vi.fn(() => ({ get: () => ({ enabled: true, rules: '24', acceptanceGate: 'true' }), watch: () => () => undefined }));
+    const register = vi.fn(() => ({ get: () => ({ enabled: true, rules: '25', acceptanceGate: 'true' }), watch: () => () => undefined }));
     const ctx = {
       provide: vi.fn(() => () => undefined),
       settings: { register },
@@ -68,7 +68,7 @@ describe('cordis-plugin-sofagent-audit（F3 验收吸收）', () => {
     expect(register).toHaveBeenCalledTimes(1);
     const [ns, , opts] = register.mock.calls[0] as [string, unknown, { base: Record<string, string> }];
     expect(ns).toBe('sofagent-audit');
-    expect(opts.base.rules).toBe('24'); // 既有字段不回归
+    expect(opts.base.rules).toBe('25'); // 既有字段不回归
     expect(opts.base.acceptanceGate).toBe('true'); // F3 新开关，默认开
     errSpy.mockRestore();
   });

@@ -351,7 +351,7 @@ const kit = createSofagentPlugin(
     // 有副作用的写操作，默认关=不乱动工作区）方向不同但同属「默认值即最安全态」原则。
     // 旧注释：acceptanceGate = 验收门禁独立开关（默认 'true' 开）——
     // 关档即本插件的 agent/turn-stopping 面不参与 Turn 停止判定（审计三 seam 不受影响）
-    settingsExtra: { rules: '24', acceptanceGate: 'true' },
+    settingsExtra: { rules: '25', acceptanceGate: 'true' },
     seamHandlers,
   },
   require('../package.json') as { version?: string },

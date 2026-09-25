@@ -181,7 +181,7 @@ export interface SofagentPluginOptions extends SofagentPluginEntry {
   purpose?: string;
   /** 动态插件 host main() 返回的 message，默认 = description */
   readyMessage?: string;
-  /** settings 面板的额外字段（值即默认值），如 audit 的 { rules: '24' } */
+  /** settings 面板的额外字段（值即默认值），如 audit 的 { rules: '25' } */
   settingsExtra?: Record<string, string>;
 }
 
