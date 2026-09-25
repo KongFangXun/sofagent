@@ -245,6 +245,87 @@ if [ "$SELF_ASSERT_FAIL" -eq 0 ]; then
 fi
 
 # ============================================================
+# ④c 豁免台账自证（F-26 · 防「门禁形同虚设」）：各门禁的豁免台账就是它的判定面。
+#     豁免若把判定面吞干净，门禁的绿就是假的。两类假绿，各一条机械断言：
+#       ① 非孤儿——台账必须被 ≥1 个 tools/check/ 脚本消费（零引用 = 判定面从未通电）
+#       ② 非全覆盖——台账条目数 < 对应门禁扫描面（≥ = 判定面被豁免干净，100% 豁免）
+#     每条台账逐行打印「条目数 / 扫描面 / 比值」，让豁免可见、不静默。
+#     扫描面动态取自各门禁自身输出（防陈旧，不硬编码数字）；网络门禁 check-npm-claims
+#     不在 meta-guard 内触发——其台账为空（0 条），空台账无 100% 豁免风险。
+#     假绿探针：把任一台账条目数临时灌到 ≥ 扫描面 → 本段必红（验证记录见回报）。
+# ============================================================
+echo ""
+echo "── ④c 豁免台账自证（非孤儿 + 非全覆盖）──"
+LEDGER_FAIL=0
+# 条目计数：各台账结构不同，逐条显式（禁通用猜测——结构一变就在此暴露，不静默归零）
+_ledger_count() {
+  case "$1" in
+    tools/check/silent-catch-baseline.json)
+      node -e "process.stdout.write(String(require('./tools/check/silent-catch-baseline.json').length))" 2>/dev/null ;;
+    tools/check/silent-catch-prefilter-exempt.json)
+      node -e "process.stdout.write(String(require('./tools/check/silent-catch-prefilter-exempt.json').length))" 2>/dev/null ;;
+    tools/check/archaeology-exempt.json)
+      node -e "const j=require('./tools/check/archaeology-exempt.json');process.stdout.write(String((j.exemptAnchors||[]).length+Object.keys(j.exemptPaths||{}).length))" 2>/dev/null ;;
+    tools/check/cross-package-relative-exempt.json)
+      node -e "process.stdout.write(String(require('./tools/check/cross-package-relative-exempt.json').length))" 2>/dev/null ;;
+    tools/check/knowledge-legacy-path-exempt.json)
+      node -e "process.stdout.write(String(Object.keys(require('./tools/check/knowledge-legacy-path-exempt.json')).length))" 2>/dev/null ;;
+    tools/check/npm-claims-exempt.json)
+      node -e "const j=require('./tools/check/npm-claims-exempt.json');process.stdout.write(String((j.exemptAnchors||[]).length))" 2>/dev/null ;;
+  esac
+}
+# 扫描面：动态取自各门禁自身输出 token（子门禁跑得很快；meta-guard 重跑子门禁有 ④b 先例）
+_SF_SILENT=$(node tools/check/check-silent-catch.mjs 2>/dev/null | grep -oE '扫描面 [0-9]+ 个源文件' | grep -oE '[0-9]+' | head -1 || true)
+_SF_ARCH=$(bash tools/check/check-archaeology.sh 2>/dev/null | grep -oE '实际扫描 [0-9]+ 个' | grep -oE '[0-9]+' | head -1 || true)
+_SF_XPKG=$(node tools/check/check-cross-package-relative.mjs 2>/dev/null | grep -oE '扫描 [0-9]+ 个 src' | grep -oE '[0-9]+' | head -1 || true)
+_SF_LEGACY=$(node tools/check/check-legacy-knowledge-path.mjs 2>/dev/null | grep -oE 'covered=[0-9]+' | grep -oE '[0-9]+' | head -1 || true)
+_ledger_scanface() {
+  case "$1" in
+    tools/check/silent-catch-baseline.json|tools/check/silent-catch-prefilter-exempt.json) printf '%s' "${_SF_SILENT}" ;;
+    tools/check/archaeology-exempt.json) printf '%s' "${_SF_ARCH}" ;;
+    tools/check/cross-package-relative-exempt.json) printf '%s' "${_SF_XPKG}" ;;
+    tools/check/knowledge-legacy-path-exempt.json) printf '%s' "${_SF_LEGACY}" ;;
+    tools/check/npm-claims-exempt.json) printf '%s' "" ;;
+  esac
+}
+_ledger_assert() {
+  local _L="$1" _name _cnt _sf _refs _ratio _sfdisp _bad
+  _name=$(basename "${_L}")
+  _cnt=$(_ledger_count "${_L}"); [ -z "${_cnt}" ] && _cnt="?"
+  _sf=$(_ledger_scanface "${_L}")
+  # 非孤儿：至少一个 tools/check/ 脚本（.sh/.mjs）引用台账文件名。
+  # 排除本脚本自身——④c 段逐条列出全部台账文件名，若纳入会让断言恒真（自证循环）。
+  _refs=$(grep -lF "${_name}" tools/check/*.sh tools/check/*.mjs 2>/dev/null | grep -vxF "${SELF}" | tr '\n' ',' | sed 's/,$//' || true)
+  _bad=""
+  [ -z "${_refs}" ] && _bad="${_bad}孤儿 "
+  if [ -n "${_sf}" ] && [ "${_sf}" -gt 0 ] 2>/dev/null && [ "${_cnt}" != "?" ]; then
+    _ratio=$(awk "BEGIN{printf \"%.2f\", ${_cnt}/${_sf}}")
+    _sfdisp="${_sf}"
+    [ "${_cnt}" -ge "${_sf}" ] && _bad="${_bad}全覆盖 "
+  else
+    _ratio="n/a"; _sfdisp="n/a"
+  fi
+  if [ -n "${_bad}" ]; then
+    echo "  ✗ ${_name}：${_cnt} 条 / 扫描面 ${_sfdisp}（比值 ${_ratio}）——${_bad}⇒ 门禁形同虚设"
+    VIOL=$((VIOL + 1)); LEDGER_FAIL=1
+  else
+    echo "  ✓ ${_name}：${_cnt} 条 / 扫描面 ${_sfdisp}（比值 ${_ratio}）· 引用 ${_refs}"
+  fi
+}
+for _L in \
+  tools/check/silent-catch-baseline.json \
+  tools/check/silent-catch-prefilter-exempt.json \
+  tools/check/archaeology-exempt.json \
+  tools/check/cross-package-relative-exempt.json \
+  tools/check/knowledge-legacy-path-exempt.json \
+  tools/check/npm-claims-exempt.json ; do
+  _ledger_assert "${_L}"
+done
+if [ "$LEDGER_FAIL" -eq 0 ]; then
+  echo "  ✓ ④c 豁免台账自证全部在岗（非孤儿 + 非全覆盖两条断言均已生效）"
+fi
+
+# ============================================================
 # ⑤ echo|grep -q SIGPIPE 毒方：`echo "$VAR" | grep -q PAT` 在 set -o pipefail 下，
 #    变量大输出 + grep -q 提前退出 → echo 收 SIGPIPE exit 141 → pipefail 判失败。
 #    实案：acceptance-test.sh S378 bump dry-run（71462 字节）在 bash 下确定性假红。
