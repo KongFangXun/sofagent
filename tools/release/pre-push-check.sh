@@ -370,7 +370,7 @@ fi
 # 显式登记理由+触发条件。新增判决类 kind 必须同批登记配对侧，否则此处红。
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
-  echo -e "\n${BOLD}── 3d. 判决类记录成对门禁 ──${NC}"
+  echo -e "\n${BOLD}── 3j. 判决类记录成对门禁 ──${NC}"
   if node tools/check/check-paired-records.mjs >/dev/null 2>&1; then
     check_pass "check-paired-records.mjs 通过（N 态全实落 · 零未登记判决写入点 · 盲区显式登记）"
   else
