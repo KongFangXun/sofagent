@@ -391,6 +391,71 @@ describe('P2 多角色并集 + featureGates 分档', () => {
     expect(registered).toContain('commons_search');
     errSpy.mockRestore();
   });
+
+  // ── F-50：settingsScope 三态补测（空对象 / 抛错）——原有测试覆盖「有值覆盖」与
+  //    「服务缺席」两态，空对象与 get() 抛错两态此前零覆盖（门禁空转盲区） ──
+  it('F-50 空对象态：scope.get() 返回 {} → 逐键走声明默认值（不误判关档）', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const registered: string[] = [];
+    const register = vi.fn((def: { name: string }) => {
+      registered.push(def.name);
+      return () => undefined;
+    });
+    const ctx = makeCtx({
+      get: vi.fn(() => ({ register })),
+      settings: { register: vi.fn(() => ({ get: () => ({}), watch: () => () => undefined })) },
+    });
+    const kit = createSofagentPlugin(
+      makeEntry({
+        toolsRoles: ['commons'],
+        featureGates: { commons: ['commons_publish', 'commons_search'] },
+      }),
+    );
+    (kit.plugin.apply as (c: unknown) => unknown)(ctx);
+    await new Promise((r) => setTimeout(r, 200));
+    // 空对象 = 无用户覆盖 → 默认全开（与缺席态同行为）
+    expect(registered).toContain('commons_publish');
+    expect(registered).toContain('commons_search');
+    errSpy.mockRestore();
+  });
+
+  it('F-50 抛错态：scope.get() 抛异常 → 降级默认值 + console.error 可见（不静默）', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let captured: Record<string, boolean> | null = null;
+    const kit = createSofagentPlugin(
+      makeEntry({
+        settingsExtra: { acceptanceGate: 'true', rollbackOnError: 'false' },
+        seamHandlers: {
+          'agent/error': (...args: unknown[]) => {
+            captured = seamHelpers(args).flags();
+          },
+        },
+      }),
+    );
+    const ctx = makeCtx({
+      settings: {
+        register: vi.fn(() => ({
+          get: () => {
+            throw new Error('settings 服务读失败（F-50 测试桩）');
+          },
+          watch: () => () => undefined,
+        })),
+      },
+    });
+    const on = vi.fn((event: string, handler: (...a: unknown[]) => unknown) => {
+      handler();
+      return () => undefined;
+    });
+    (kit.plugin.apply as (c: unknown) => unknown)(ctx);
+    await new Promise((r) => setTimeout(r, 200));
+    (kit.plugin.apply as (c: unknown) => unknown)(makeCtx({ on }));
+    // 抛错 → 按声明默认值（acceptanceGate 开 / rollbackOnError 关）
+    expect(captured).toEqual({ acceptanceGate: true, rollbackOnError: false });
+    // 降级可见：console.error 记录了读失败（不静默吞错）
+    const errText = errSpy.mock.calls.map((c) => c.join(' ')).join('\n');
+    expect(errText).toContain('settings 档位读取失败');
+    errSpy.mockRestore();
+  });
 });
 
 describe('apply 三段式回归锁（P1 不破坏既有面）', () => {

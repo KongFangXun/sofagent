@@ -229,6 +229,8 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 > - `fs/write-intent` 目前是**放行接线**——引擎包没有「按目标路径判定写意图」的
 >   @public 判定源，按马鞍铁律不新造判定，故只接线不拦截；
 > - `agent/error` 的自动回滚**默认关档**（settings `rollbackOnError`），开档才撤销工作区。
+>
+> **F-50 settings 声明实态（防误补/防误删）**：七款插件的 flags 声明面分两类——**显式声明**：`audit`（`settingsExtra: {rules, acceptanceGate}`，门禁类默认开）、`rollback`（`settingsExtra: {rollbackOnError}`，副作用类默认关）、`fde`（`featureGates` 三档分域 ontology/fde/commons）；**零声明**：伞插件 / `daemon` / `evolve` / `inject`——它们无分档需求，档位注册与读取由 plugin-kit 中央处理（featureGates 键自动并入 settings 注册面，兜底默认按声明值）。默认值方向原则：**门禁类默认开（未配置=默认有防线）、副作用类默认关（未配置=不乱动用户环境）**。后人勿对零声明插件"补齐"，也勿删显式声明。
 > 另：判定源不可达时一律 fail-open（放行 + 可见日志）——接线故障不会升级成任务故障。
 
 ## 7. P0 动态探针实测记录（2026-09-15 · DSH 0.1.2-alpha.1 · Node 24.19.0）

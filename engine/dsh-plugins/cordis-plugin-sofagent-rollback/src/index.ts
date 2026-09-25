@@ -75,6 +75,8 @@ const kit = createSofagentPlugin(
     bridgeApi: 'restoreSnapshot',
     description: '出错逆序撤销——git snapshot → effect disposer',
     // 默认关：自动撤销工作区是破坏性动作，接线不改变既有行为
+        // F-50 方向说明：默认 'false'（关）——自动回滚有副作用（撤销工作区改动），
+    // 默认关 = 不乱动用户工作区（同「默认值即最安全态」原则）
     settingsExtra: { rollbackOnError: 'false' },
     seamHandlers,
   },

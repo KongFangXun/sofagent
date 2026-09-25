@@ -344,7 +344,12 @@ const kit = createSofagentPlugin(
     // audit 专属 envelope（其余插件走 kit 默认值）
     purpose: 'sofagent 审计插件——24 规则 + git diff 硬证据 + 验收门禁',
     readyMessage: '审计与验收服务就绪（24 规则 + Turn 停止验收）',
-    // v1.4.9 P2（F3）：rules 为既有字段；acceptanceGate = 验收门禁独立开关（默认 'true' 开）——
+    // v1.4.9 P2（F3）：rules 为既有字段（数量不是开关，不参与 fail-open/closed 判定）；
+    // acceptanceGate = 验收门禁独立开关。**F-50 方向说明**：默认 'true'（开）——门禁类开关默认开
+    // 意味着「未配置 = 默认有验收门」= 默认更安全（fail-closed 的语义反面对门禁不成立：默认关
+    // 会让不读文档的用户失去验收门）。与 rollback 的 rollbackOnError 默认 'false'（自动回滚是
+    // 有副作用的写操作，默认关=不乱动工作区）方向不同但同属「默认值即最安全态」原则。
+    // 旧注释：acceptanceGate = 验收门禁独立开关（默认 'true' 开）——
     // 关档即本插件的 agent/turn-stopping 面不参与 Turn 停止判定（审计三 seam 不受影响）
     settingsExtra: { rules: '24', acceptanceGate: 'true' },
     seamHandlers,
