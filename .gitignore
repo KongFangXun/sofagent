@@ -6,6 +6,9 @@
 
 # 编译产物
 dist/
+# F-44：独立验签器分发面（copy-assets 从 tools/verify 复制生成，构建产物不跟踪）
+engine/audit/verify/
+
 
 # v1.3.1 防御：tsc 若从根目录误跑（根 tsconfig 无 outDir），产物会输出到 src 旁
 # 此规则防止误提交 src 下的 .js/.d.ts/.map（编译产物应在 dist/，不在 src/）
