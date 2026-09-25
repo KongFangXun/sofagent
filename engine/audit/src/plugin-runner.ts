@@ -75,12 +75,7 @@ export interface PluginRuleConfig {
 // 模块加载器——可注入，便于测试
 // ============================================================
 
-/** 默认模块加载函数（Node.js require） */
-let _moduleLoader: (name: string) => unknown = (name: string) => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  return require(name);
-};
-
+let _moduleLoader: (name: string) => unknown = _defaultModuleLoader();
 /**
  * 注入自定义模块加载器（测试用）
  * @param fn 自定义加载函数
@@ -89,9 +84,29 @@ export function _setModuleLoader(fn: (name: string) => unknown): void {
   _moduleLoader = fn;
 }
 
-/** 恢复默认模块加载器（测试用） */
+/** 恢复默认模块加载器（测试用——恢复到带 F-9 门卫的默认实现） */
 export function _resetModuleLoader(): void {
-  _moduleLoader = (name: string) => {
+  // 与默认 _moduleLoader 同一实现（含 F-9 门卫）。为避免两份拷贝漂移，
+  // 抽为具名工厂：默认值与 reset 共用同一构造。
+  _moduleLoader = _defaultModuleLoader();
+}
+
+/** F-9 默认加载器工厂：门卫（opt-in + 来源白名单）+ require */
+function _defaultModuleLoader(): (name: string) => unknown {
+  return (name: string) => {
+    if (process.env.SOFAGENT_ALLOW_PLUGIN_RULES !== '1') {
+      throw new Error(
+        `[plugin-runner] 拒绝加载 plugin 类规则 "${name}"：plugin 规则默认关闭（任意 require = 任意代码执行面）。` +
+        `如确需加载，设 SOFAGENT_ALLOW_PLUGIN_RULES=1 显式 opt-in（供应链风险自担，见 SECURITY.md 规则集节）。`,
+      );
+    }
+    const isScoped = name.startsWith('@sofagent/');
+    const isAbsPath = name.startsWith('/');
+    if (!isScoped && !isAbsPath) {
+      throw new Error(
+        `[plugin-runner] 拒绝加载非白名单来源的 plugin 规则 "${name}"：opt-in 态仅允许 @sofagent/ scope 包或 / 开头的本地绝对路径（裸名第三方包禁入）。`,
+      );
+    }
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require(name);
   };

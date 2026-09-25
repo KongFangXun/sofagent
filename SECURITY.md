@@ -308,6 +308,8 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统的主力路径是 `execFileSync('git', ...)`（数组传参、不走 shell）。不使用 eval、不执行外部脚本；git 命令参数以数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。
 
+**规则集 plugin 类规则的供应链边界（F-9 收口）**：`--ruleset-path` 加载的 JSON 规则集中 `type: "plugin"` 的条目会触发模块加载——**默认拒绝**（plugin 规则关闭）；仅在显式设置 `SOFAGENT_ALLOW_PLUGIN_RULES=1` 时放行，且来源限定为 `@sofagent/` scope 包或本地绝对路径（裸名第三方包禁入）。**opt-in 即自担供应链风险**——加载的代码在审计进程内以当前用户权限运行。
+
 **精确边界（v1.4.5 核实）**：包内存在 7 处 `execSync`（shell 形态）调用，均为静态可信命令串——命令体零外部输入插值，插值面仅限「取回输出后 trim」：
 
 - audit 侧 6 处：`webhook.ts`（`git rev-parse --show-toplevel` / `--short HEAD` / `git config user.name`）· `init.ts`（`which/where sofagent-daemon` / `sofagent-audit`）· `agent-shield.ts`（`ps aux`）

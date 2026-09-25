@@ -69,7 +69,7 @@ describe('validateRuleset', () => {
       version: '1.0.0',
       rules: [
         { id: 'r1', name: '规则1', severity: 'FAIL', type: 'pattern', pattern: 'secret' },
-        { id: 'r2', name: '规则2', severity: 'WARN', type: 'plugin', plugin: '@scope/pkg' },
+        { id: 'r2', name: '规则2', severity: 'WARN', type: 'plugin', plugin: '@sofagent/pkg' },
       ],
     };
     expect(() => validateRuleset(valid)).not.toThrow();

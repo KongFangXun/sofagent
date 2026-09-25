@@ -183,10 +183,15 @@ export function validateRuleset(raw: unknown): asserts raw is Ruleset {
           errors.push(`${prefix}.pattern: type=pattern 时必须提供非空正则字符串`);
         }
       }
-      // plugin 类型必须有 plugin 包名
+      // plugin 类型必须有 plugin 包名（F-9 加固：加载期即拒非法形态——运行期
+      // 门卫在 plugin-runner，此处是 schema 侧的第一道）
       if (r.type === 'plugin') {
         if (typeof r.plugin !== 'string' || !r.plugin) {
           errors.push(`${prefix}.plugin: type=plugin 时必须提供 npm 包名`);
+        } else if (r.plugin.includes('..')) {
+          errors.push(`${prefix}.plugin: 含路径穿越（..）——plugin 来源禁相对穿越（允许形态：@sofagent/ scope 包名或 / 开头绝对路径）`);
+        } else if (!r.plugin.startsWith('@sofagent/') && !r.plugin.startsWith('/')) {
+          errors.push(`${prefix}.plugin: "${r.plugin}" 非白名单来源（仅允许 @sofagent/ scope 或本地绝对路径；且需 SOFAGENT_ALLOW_PLUGIN_RULES=1 显式 opt-in）`);
         }
       }
     });
