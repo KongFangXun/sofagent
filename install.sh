@@ -297,9 +297,16 @@ if [ "${REMOTE_MODE}" = "1" ]; then
       err "git clone 失败（tag v${VERSION}），请检查网络或手动 git clone"; exit 1
     fi
     ok "仓库已克隆到: ${REMOTE_TMP}（钉定 v${VERSION}）"; cd "$REMOTE_TMP"
-    REMAINING_ARGS=""
-    for _arg in "${ORIGINAL_ARGS[@]}"; do [ "$_arg" = "--remote" ] && continue; REMAINING_ARGS="$REMAINING_ARGS $_arg"; done
-    exec bash install.sh "${REMAINING_ARGS# }"
+    # F-43：参数透传必须数组形态（对照 :201 rescue 路径既有先例）——字符串拼接
+    # 会在 exec 展平成单 argv，多 flag 组合（--base-only --platform workbuddy）
+    # 被合并为一个参数静默吞掉。bash 3.2 兼容：空数组先判长度再展开。
+    pass_args=()
+    for _arg in "${ORIGINAL_ARGS[@]}"; do [ "$_arg" = "--remote" ] && continue; pass_args+=("$_arg"); done
+    if [ ${#pass_args[@]} -gt 0 ]; then
+      exec bash install.sh "${pass_args[@]}"
+    else
+      exec bash install.sh
+    fi
   else
     err "git 不可用——远程安装需要 git。请先安装 git 或使用完整安装方式："
     err "  git clone https://github.com/KongFangXun/sofagent.git && cd sofagent && bash install.sh"

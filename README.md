@@ -152,7 +152,7 @@
 | 能力 | 一句话 |
 |------|--------|
 | **审计数据对外** | MCP `audit_query` 只读查询（时间/规则/exitCode 过滤，字节级只读不变量）+ 审计事件订阅推送 |
-| **规则导出 + 独立验签** | `ruleset_export` 机器可读 JSON 双向可逆（24 条规则元数据 + 版本指纹）；`verify-chain` 零依赖验签器——第三方无需安装 sofagent 即可举证 HMAC 链 |
+| **规则导出 + 独立验签** | `ruleset_export` 机器可读 JSON 双向可逆（24 条规则元数据 + 版本指纹）；`verify-chain` 零依赖验签器——第三方无需安装 sofagent 即可举证 HMAC 链。获取：npm 包 `@sofagent/audit` 内 `verify/verify-chain.mjs`（单文件零依赖，可直接拷给第三方）；安装态在 `~/.sofagent/verify/verify-chain.mjs`；自检 `node verify-chain.mjs --selftest` |
 | **判定语义补两头** | 开工前五问判定链（健康/人审/证据/专注/配额——挂起非失败自动恢复）+ 结论失效语义（三触发标记失效，失效结论不当新证据） |
 
 同版另有：出口治理面（host 白名单默认全拒 + 出站裁决挂链）· 事前授权补环（mandate 三元素执行前拦截）· 身份三层叙事注入（README 双语三因子）· DSH 插件 npm 首发面（kit + 七款 `cordis-plugin-sofagent-*`）· v1.5.2 审查修复批（35 条目收编，含 6 条安全 fail-open 收口）。**测试 5083→5296 · acceptance 367→373 · 回归 85 维 · MCP 105→107**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。

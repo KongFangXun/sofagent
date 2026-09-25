@@ -242,6 +242,23 @@ deploy_scripts() {
   src="${SCRIPT_DIR}/engine/scripts/lib/config.sh"; dst="${SCRIPTS_DST}/lib/config.sh"  # 部署共享配置加载器
   if [ -f "$src" ]; then mkdir -p "$(dirname "$dst")"; cp "$src" "$dst"; ok "配置加载器已部署: $dst"
   else warn "找不到 lib/config.sh，跳过"; fi
+  # F-44：独立验签器进安装态——README 头条声称「第三方无需安装 sofagent 即可举证」，
+  # 此前 verify-chain.mjs 只在 clone 态 tools/verify/ 可达（npm 包 files 与安装态双缺）。
+  # 安装态落位 ~/.sofagent/verify/verify-chain.mjs（单文件零依赖，--selftest 自证）。
+  if [ -f "${SCRIPT_DIR}/tools/verify/verify-chain.mjs" ]; then
+    mkdir -p "${TARGET}/verify"; cp "${SCRIPT_DIR}/tools/verify/verify-chain.mjs" "${TARGET}/verify/verify-chain.mjs"
+    cp "${SCRIPT_DIR}/tools/verify/README.md" "${TARGET}/verify/README.md" 2>/dev/null || true
+    ok "独立验签器已部署: ${TARGET}/verify/verify-chain.mjs（第三方举证用，零依赖单文件）"
+  else
+    warn "找不到 tools/verify/verify-chain.mjs，跳过（独立验签器不进安装态）"
+  fi
+  # F-18：卸载脚本进安装态——EN README 的卸载命令此前只在 clone 态可用。
+  if [ -f "${SCRIPT_DIR}/engine/scripts/uninstall.sh" ]; then
+    cp "${SCRIPT_DIR}/engine/scripts/uninstall.sh" "${SCRIPTS_DST}/uninstall.sh"; chmod +x "${SCRIPTS_DST}/uninstall.sh"
+    ok "卸载脚本已部署: ${SCRIPTS_DST}/uninstall.sh"
+  else
+    warn "找不到 engine/scripts/uninstall.sh，跳过"
+  fi
   if [ ! -d "$SOFAGENT_DATA" ]; then  # 创建 .sofagent/ 数据目录
     mkdir -p "$SOFAGENT_DATA/task/logs" "$SOFAGENT_DATA/orchestrator/workflows"
     chmod 700 "$SOFAGENT_DATA" 2>/dev/null || true; ok "数据目录已创建: $SOFAGENT_DATA"
