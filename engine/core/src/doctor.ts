@@ -1102,10 +1102,21 @@ export function runDoctorRefresh(
 
   // ── ① 备份段 ──
   let backupPath: string | null = null;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const backupName = `config-${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}${pad(stamp.getSeconds())}.yml`;
+  const pad = (n: number, w = 2) => String(n).padStart(w, '0');
+  // 时间戳含**毫秒**（+ 同毫秒碰撞追加 _NN 序号）：避免同秒双跑互相覆盖——
+  // 秒级命名下第二轮会覆写第一轮备份。固定宽度 ⇒ 字典序仍 = 时间序
+  // （保留策略「删最旧」按字典序，依赖此性质；`_`(0x5F) > `.`(0x2E) ⇒ 序号名
+  // 排在基名之后，分钟/毫秒进位亦不乱序）。
+  const backupBase = `config-${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}${pad(stamp.getSeconds())}${pad(stamp.getMilliseconds(), 3)}`;
   if (existsSync(configPath)) {
     mkdirSync(backupDir, { recursive: true });
+    // 同名（同毫秒碰撞）→ 追加 _NN；`_` > `.` 保证时间序不乱
+    let backupName = `${backupBase}.yml`;
+    let seq = 1;
+    while (existsSync(join(backupDir, backupName))) {
+      seq += 1;
+      backupName = `${backupBase}_${pad(seq)}.yml`;
+    }
     backupPath = join(backupDir, backupName);
     const existing = readFileSync(configPath, 'utf-8');
     writeFileSync(backupPath, existing, 'utf-8');

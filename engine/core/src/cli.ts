@@ -5,9 +5,14 @@
 // 已路由到 runDoctor）——core 此前只认裸词子命令，手滑写 --doctor 会得到
 // Unknown subcommand，验收场景 28 即因此 WARN（输出无 post-commit 字样，
 // 被误判为 doctor 检测缺失，实则检测一直在）。flag → 子命令归一，两种写法都可用。
+// v1.5.3 章四：同款把裸 --refresh 归一为 doctor refresh（写操作，兑现 audit CLI
+// `index.ts` 的「--refresh 自动路由」承诺——core 侧亦不报未知参数）。
 const rawArgs = process.argv.slice(2);
-const subcommand = rawArgs[0] === '--doctor' ? 'doctor' : rawArgs[0];
-const args = rawArgs[0] === '--doctor' ? ['doctor', ...rawArgs.slice(1)] : rawArgs;
+const isFlagRouter = rawArgs[0] === '--doctor' || rawArgs[0] === '--refresh';
+const subcommand = isFlagRouter ? 'doctor' : rawArgs[0];
+// 保留原 flag（不清 slice）——裸 `--refresh` 时 rawArgs.slice(1) 会把 flag 本身丢掉，
+// 致 args=['doctor'] 不含 refresh ⇒ 误跑只读 doctor。
+const args = isFlagRouter ? ['doctor', ...rawArgs] : rawArgs;
 
 async function main() {
   if (!subcommand || subcommand === '--help') {
@@ -17,6 +22,7 @@ async function main() {
     console.log('Subcommands:');
     console.log('  doctor        运行健康检查（环境 / 配置 / 数据目录 / Hook / 依赖）');
     console.log('  doctor --repair  自动修复可修复的问题（创建目录 / 安装依赖等）');
+    console.log('  doctor --refresh 备份当前配置 → 重置默认 → 前后 diff 报告（写操作，留痕）');
     console.log('  verify        装后验证（9 个检查类别）');
     console.log('');
     console.log('Verify options:');
@@ -29,8 +35,14 @@ async function main() {
 
   switch (subcommand) {
     case 'doctor': {
-      const { runDoctor, runDoctorWithRepair } = await import('./doctor');
+      const { runDoctor, runDoctorWithRepair, runDoctorRefresh } = await import('./doctor');
       const projectDir = process.cwd();
+      // v1.5.3 章四：--refresh 是**写操作**（覆写 config.yml）——与只读 doctor 分流，
+      // 三段执行（备份 → 默认重置 → diff 报告）后以结果码退出。
+      if (args.includes('--refresh')) {
+        const result = runDoctorRefresh(projectDir);
+        process.exit(result.ok ? 0 : 1);
+      }
       const isRepair = args.includes('--repair');
       const report = isRepair
         ? runDoctorWithRepair(projectDir, true)
@@ -81,7 +93,7 @@ async function main() {
     }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-core <doctor|verify>');
+      console.error('Usage: sofagent-core <doctor|verify>   (flags: --doctor, --refresh)');
       process.exit(1);
   }
 }

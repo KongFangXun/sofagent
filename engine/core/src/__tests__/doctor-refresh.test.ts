@@ -90,11 +90,11 @@ describe('doctor --refresh（v1.5.3 章四 · 三段闭环）', () => {
     const backupDir = join(dir, '.sofagent', 'backups', 'config');
     const backups = readdirSync(backupDir).filter((f) => f.startsWith('config-'));
     expect(backups.length).toBe(3);
-    // 字典序 = 时间序：留的是最晚 3 份（tick 从分钟 1 起，第 5 轮 = 08:05；文件名 HHMMSS）
+    // 字典序 = 时间序：留的是最晚 3 份（tick 从分钟 1 起，第 5 轮 = 08:05；文件名 YYYYMMDD-HHMMSSmmm）
     expect(backups).toEqual([
-      'config-20260926-080300.yml',
-      'config-20260926-080400.yml',
-      'config-20260926-080500.yml',
+      'config-20260926-080300000.yml',
+      'config-20260926-080400000.yml',
+      'config-20260926-080500000.yml',
     ]);
   });
 
@@ -119,11 +119,32 @@ describe('doctor --refresh（v1.5.3 章四 · 三段闭环）', () => {
         runDoctorRefresh(dir, { now: tick, writeDecision: collectDecisions().write });
       }
       const backups = readdirSync(join(dir, '.sofagent', 'backups', 'config')).filter((f) => f.startsWith('config-'));
-      expect(backups).toEqual(['config-20260926-090500.yml']);
+      expect(backups).toEqual(['config-20260926-090500000.yml']);
     } finally {
       if (savedKeep === undefined) delete process.env.SOFAGENT_REFRESH_KEEP;
       else process.env.SOFAGENT_REFRESH_KEEP = savedKeep;
     }
+  });
+
+  it('同秒双跑（同毫秒碰撞）：两次 refresh 不互相覆盖——毫秒 + _NN 序号去碰撞', () => {
+    const dir = sandbox(true, '# 第一轮前的旧配置\n');
+    // 同一时刻（同秒同毫秒）连跑两次——秒级命名下第二轮会覆写第一轮
+    const sameInstant = () => new Date(2026, 8, 26, 10, 0, 0, 500);
+    const r1 = runDoctorRefresh(dir, { now: sameInstant, writeDecision: collectDecisions().write });
+    const r2 = runDoctorRefresh(dir, { now: sameInstant, writeDecision: collectDecisions().write });
+    // 两轮备份路径不同、均落盘（不覆盖）
+    expect(r1.backupPath).not.toBe(r2.backupPath);
+    expect(existsSync(r1.backupPath!)).toBe(true);
+    expect(existsSync(r2.backupPath!)).toBe(true);
+    // 命名：基名含毫秒 500；同毫秒碰撞的第二份带 _02 序号
+    expect(r1.backupPath!.endsWith('config-20260926-100000500.yml')).toBe(true);
+    expect(r2.backupPath!.endsWith('config-20260926-100000500_02.yml')).toBe(true);
+    // 两文件都在备份目录（keep 默认 3 ≥ 2），且字典序 = 时间序（基名在前、序号在后）
+    const backups = readdirSync(join(dir, '.sofagent', 'backups', 'config')).filter((f) => f.startsWith('config-'));
+    expect(backups.sort()).toEqual([
+      'config-20260926-100000500.yml',
+      'config-20260926-100000500_02.yml',
+    ]);
   });
 
   it('留痕失败不阻断 refresh（注入面抛错 → decisionTs=null 但 ok=true）', () => {

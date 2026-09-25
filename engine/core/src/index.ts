@@ -385,6 +385,11 @@
 // ── 健康检查（doctor） ──
 /* @public */ export { runDoctor } from './doctor';
 /* @public */ export type { DoctorReport } from './doctor';
+// v1.5.3 章四：refresh（备份→重置默认→diff 报告）——audit CLI 的 `--refresh` /
+// `--doctor --refresh` 经 `import('@sofagent/core')` 动态调此导出（此前未导出 ⇒
+// Route A 恒落「不支持 --refresh」分支）。
+/* @public */ export { runDoctorRefresh } from './doctor';
+/* @public */ export type { DoctorRefreshResult } from './doctor';
 
 // ── 审计历史链校验（v1.2.0 从 @sofagent/audit 下沉，消除 core 反向依赖） ──
 /* @public */ export { getHistoryFilePath, getHistoryAnchorFilePath, getDecisionLogPath, getEnvFingerprint, getHmacKey, checkHistoryChainDetailed, stableStringify, validateHmacKey } from './audit-history';
