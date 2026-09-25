@@ -163,8 +163,11 @@ if (re.source.indexOf("(") < 0) {
 let content;
 try { content = fs.readFileSync(file, "utf8"); } catch (e) { process.exit(2); }
 const m = content.match(re);
-if (!m || m[1] === undefined) process.exit(3);
-process.stdout.write(String(m[1]));
+// F-13：多形态 extract 允许多捕获组（交替分支各带一组）——取第一个非 undefined 组
+if (!m) process.exit(3);
+const g = m.slice(1).find(x => x !== undefined);
+if (g === undefined) process.exit(3);
+process.stdout.write(String(g));
 ' "$1" "$2" 2>/dev/null
 }
 
@@ -232,6 +235,16 @@ while IFS="$SEP" read -r id file extract derive level slow note; do
   claimed=$(extract_literal "$fpath" "$extract")
   rc=$?
   if [ $rc -ne 0 ] || [ -z "$claimed" ]; then
+    # F-13（B4 收口）：error 级断言失配 = FAIL（不再静默跳过）——「检测面缩小
+    # 无人知」正是装了没通电的形态；warn 级维持跳过（文档措辞漂移属观察项）。
+    if [ "$level" = "error" ]; then
+      BAD_ERROR=$((BAD_ERROR + 1))
+      BAD_IDS+=("$id")
+      printf '  ❌ %s — 断言过期：extract 正则在文件里无匹配（error 级不得静默跳过）\n' "$id"
+      printf '       → 文档措辞已改：更新 %s 里该条 extract，或显式降级该条用途\n' "$REGISTRY"
+      printf '       → 文件: %s\n' "$file"
+      continue
+    fi
     SKIP_COUNT=$((SKIP_COUNT + 1))
     if [ "$QUIET" = false ]; then
       printf '  ⏭ %s — 跳过（extract 正则在文件里无匹配）\n' "$id"

@@ -41,7 +41,7 @@
     {
       "id": "readme-default-rule-count",
       "file": "README.md",
-      "extract": "默认 ([0-9]+) 条",
+      "extract": "([0-9]+) 条默认规则|默认启用 ([0-9]+) 条",
       "derive": "awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\\{.*name:/{c++} f && /^[[:space:]]*\\];/{exit} END{print c+0}' engine/audit/src/rules/index.ts | tr -d '[:space:]'",
       "level": "error",
       "slow": false,

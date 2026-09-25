@@ -85,6 +85,14 @@ const PKG_BARE_RE = /(?<![\w/@.-])sofagent(?![-\w./])/;
 const LATEST_RE = /(?<![/\w-])["']?\blatest\b["']?\s*(?:[:：]|为)[\s`"'={]*v?([0-9][0-9A-Za-z+_-]*\.[0-9][0-9A-Za-z.+_-]*)/;
 
 function detectClaim(line) {
+  // F-13（B1 收口）：钉扎版本声称形态——`@sofagent/xxx@1.2.3`（npm 装机语义的
+  // 版本钉扎是可对账值声称；撤策后 dist-tags 值形态被有意从文档摘除，本形态
+  // 保证门禁 asserts 恒 ≥ 文档真实钉扎数——防「修文档顺带摘钩子」再空转）。
+  const mpv = line.match(/@(sofagent(?:\/[a-z0-9-]+)?)@v?([0-9]+\.[0-9]+\.[0-9]+)/);
+  if (mpv) {
+    const pkg = mpv[1] === 'sofagent' ? 'sofagent' : '@' + mpv[1];
+    return { pkg, claimed: mpv[2], pkgFrom: 'pinned' };
+  }
   if (!line.includes('dist-tags')) return null;
   const ml = line.match(LATEST_RE);
   if (!ml) {
@@ -122,6 +130,7 @@ function collectLiveDocs() {
       const rel = path.relative(ROOT, p);
       if (e.isDirectory()) {
         if (rel === 'docs/changelog') continue; // 历史区（历史记述原样保留）
+        if (rel === 'docs/archive') continue; // 历史冻结区（pinned 旧版是当时真值——F-13 扫描面修正）
         if (['node_modules', '.git'].includes(e.name)) continue;
         walk(p);
       } else if (e.name.endsWith('.md')) {

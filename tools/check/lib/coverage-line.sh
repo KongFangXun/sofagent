@@ -44,6 +44,12 @@
 # ============================================================
 
 # emit_coverage_line <script名> <断言数> <覆盖数> <跳过数>
+# F-13 空转检测（通电性硬项）：asserts=0 且 covered>0 ⇒ 门禁「装了没通电」——
+#   扫了面但零判定，全绿输出与「没跑」无差别。此态 exit 2（独立于调用方自有
+#   退出码语义：调用方 exit 0/1 前先被本函数前置拦截——通过写「 coaster 旗标
+#   文件」由调用方在最终 exit 前检查的方式会改 45 个调用方，故取 bash 内建
+#   return-code 透传：本函数 exit 2 即整个脚本 exit 2。CI 语境 exit 2 = 红）。
+#   豁免面：covered 为 `-`（脚本声明无法廉价统计）不触发；asserts>0 不触发。
 emit_coverage_line() {
   local _cov_script="${1:-unknown}"
   local _cov_asserts="${2:-0}"
@@ -51,4 +57,8 @@ emit_coverage_line() {
   local _cov_skipped="${4:-0}"
   printf '[check:coverage] script=%s asserts=%s covered=%s skipped=%s\n' \
     "${_cov_script}" "${_cov_asserts}" "${_cov_covered}" "${_cov_skipped}"
+  if [ "${_cov_asserts}" = "0" ] && [ "${_cov_covered}" != "-" ] && [ "${_cov_covered}" != "0" ] && [ "${_cov_covered}" != "" ]; then
+    printf '❌ [check:coverage] 门禁空转：covered=%s 但零断言（asserts=0）——判定面存在而无一执行，装了没通电\n' "${_cov_covered}" >&2
+    exit 2
+  fi
 }
