@@ -252,11 +252,33 @@ export interface Rule {
    * v1.4.0 交付四①（规则即测试 · execpolicy 启发）：
    * 命中/放行示例——进 acceptance 自动回归，规则对不对可自动化验证。
    * match = 该拦的样本（含文件名/内容片段），notMatch = 该放行的样本。
+   *
+   * v1.5.3 第二章（自测 schema）：加载时断言消费本字段（rule-loader.ts）。
+   * 字段名与数组形状为 v1.6.0 判据集消费口径（`match[]` / `notMatch[]`）——**钉死，不得改名**。
    */
   examples?: {
     match: string[];
     notMatch: string[];
   };
+  /**
+   * v1.5.3 第二章：样例豁免标记（字段名与取值钉死，供 v1.6.0 lint 区分 stable/experimental）。
+   *
+   * - 缺省（`undefined`）= 无豁免：加载时强制 `examples{match,notMatch}` 均为**非空数组**。
+   * - `'static-definition'`：静态定义类规则——无「输入样例」概念，显式豁免样例强制。
+   *   豁免标记的规则视同缺负侧夹具，`stabilityOf` 归 **experimental**，不得进稳定规则集。
+   */
+  examplesExempt?: 'static-definition';
+  /**
+   * v1.5.3 第二章：样例**可执行**标记——该规则的 match/notMatch 是**可执行的触发样例**，
+   * 加载时逐条执行断言（match 必命中 / notMatch 必不命中），任一失败 ⇒ 拒载整集（fail-closed）。
+   *
+   * 缺省 `undefined`（= false）：样例为**描述性训练样本**（如「删除 .sofagent/config.yml」），
+   * 非可执行夹具——加载时只做 schema + 矛盾断言，不做执行断言。
+   * 现状（v1.5.3 实测）：24 条中 5 条（A1/A2/A9/A20/A23）为**纯函数** scan、样例可执行，故标
+   * examplesExecutable；其余为描述性样本。⚠️ 纯度纪律：scan 读 cwd/fs/git（如 A18 调
+   * `git ls-tree HEAD`）则**不得**标可执行——加载期断言须确定性，不得随运行目录抖动。
+   */
+  examplesExecutable?: boolean;
   /** v1.4.0 交付四①：人类可读拦截理由（reporter 输出层渲染，替代笼统「违规」） */
   justification?: string;
   /**

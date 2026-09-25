@@ -73,7 +73,8 @@ import { loadHistory, appendHistory, sanitizeFreeText, type AuditHistoryEntry } 
 import { resolveHooksDir, installHooks } from './hook-install';
 // v1.5.2 T8: sanitizePatterns 编译复用 ReDoS 双层防护（静态检测 + 运行时对抗测试）
 import { compileSanitizePattern } from './ruleset-loader';
-
+// v1.5.3 第二章：--ruleset-path / --ruleset 加载入口的样例断言（fail-closed 拒载）
+import { validateRulesetExamples } from './rule-loader';
 // Re-export for external consumers —— doctor 等外部调用方需要通过
 // v1.5.2: checkHistoryChainIntegrity 已移除（退役公告见 CHANGELOG 索引）——
 // require('@sofagent/audit') 请改用 checkHistoryChainDetailed（audit-history re-export）。
@@ -1314,6 +1315,9 @@ async function main(): Promise<void> {
       } else {
         ruleset = loadRuleset(args.ruleset);
       }
+      // v1.5.3 第二章（本章核心验收）：样例断言 fail-closed——ruleset 声明 examples 时逐条校验
+      // （schema + 矛盾 + pattern 执行断言）；「锚串被删」的规则集在此拒载，非 0 退出。
+      validateRulesetExamples(ruleset);
       const rulesetResults = runRulesetRules(diffFiles, ruleset);
       results.rules.push(...rulesetResults);
       // 重新计算 exitCode（取内置审计和规则集审计中的最高严重级别）

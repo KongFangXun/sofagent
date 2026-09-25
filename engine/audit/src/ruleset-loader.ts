@@ -76,6 +76,22 @@ export interface RulesetRule {
   plugin?: string;
   /** 传给插件的可选参数 */
   options?: Record<string, unknown>;
+  // --- v1.5.3 第二章：规则自测样例（开放格式扩展面，可选） ---
+  /**
+   * 正负样例（可选）——声明后加载期强制断言（rule-loader.validateRulesetExamples）：
+   * `match` 必须被 pattern 命中 / `notMatch` 必须不被命中，任一失败即拒载整集（fail-closed）。
+   * 字段名与数组形状钉死为 v1.6.0 判据集消费口径（见 rule-loader.EXAMPLES_FIELD_SHAPE）。
+   * 缺省（未声明）= 跳过断言（向后兼容历史 pattern 规则集）。
+   */
+  examples?: {
+    match: string[];
+    notMatch: string[];
+  };
+  /**
+   * 样例豁免标记（可选）——静态定义类规则无「输入样例」概念时显式豁免；
+   * 取值 `'static-definition'`（v1.6.0 lint 据此区分 stable/experimental，同 Rule.examplesExempt）。
+   */
+  examplesExempt?: 'static-definition';
 }
 
 /** JSON 规则集 schema */
@@ -439,7 +455,7 @@ function formatMessage(
  * @returns 编译后的 RegExp
  * @throws Error 当 pattern 检测到 ReDoS 风险时
  */
-function compilePattern(pattern: string, baseFlags: string): RegExp {
+export function compilePattern(pattern: string, baseFlags: string): RegExp {
   // v1.3.4 P1-10: ReDoS 静态检测——编译前拦截邪恶 pattern
   const redosWarning = detectReDoSPattern(pattern);
   if (redosWarning) {

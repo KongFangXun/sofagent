@@ -38,6 +38,7 @@ import { getHmacKey, stableStringify } from '@sofagent/core';
 import { defaultRules, extendedRules } from '../rules/index';
 import type { Rule } from '../rules/types';
 import { buildExportMetadata, type RuleExportMetadata } from '../rules/export-metadata';
+import { stabilityOf, type Stability } from '../rule-loader';
 import { appendHistory } from '../audit-history';
 import { signBody } from './exporter';
 
@@ -84,6 +85,20 @@ export interface ExportedRulesetRule {
   sampleViolation: string;
   /** 违规样例来源 */
   sampleViolationSource: 'examples.match' | 'synthesized';
+  // ── v1.5.3 第二章：正负样例对（导出即自测夹具，训练管线零转换）──
+  /**
+   * 正负样例对（= Rule.examples 原样搬运）——`match` 正侧 / `notMatch` 负侧，
+   * 字段名与数组形状钉死为 v1.6.0 判据集消费口径（见 rule-loader.EXAMPLES_FIELD_SHAPE）。
+   * 24 条规则现存 examples 全覆盖，导出物恒含此字段；未来规则缺失时**省略本字段**
+   * （而非落空数组）——保证与 `--ruleset-path` 回读格式双向可逆（可选字段缺省跳过断言）。
+   */
+  examples?: { match: string[]; notMatch: string[] };
+  /** 样例豁免标记（'static-definition'；缺省表示无豁免）——v1.6.0 lint 消费 */
+  examplesExempt?: 'static-definition';
+  /** 样例可执行标记（true = 样例为可执行夹具，加载期过执行断言） */
+  examplesExecutable?: boolean;
+  /** 规则稳定性（stable/experimental）——v1.6.0 lint 区分口径（见 rule-loader.stabilityOf） */
+  stability: Stability;
 }
 
 /** 导出的规则集（Ruleset 的超集——可直接 loadRulesetFile 回读） */
@@ -176,7 +191,7 @@ function escapeRegexLiteral(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** 单条元数据 → 导出规则（RulesetRule 必需面 + 训练元数据扩展面） */
+/** 单条元数据 → 导出规则（RulesetRule 必需面 + 训练元数据扩展面 + 正负样例对） */
 function toExportedRule(meta: RuleExportMetadata, rule: Rule): ExportedRulesetRule {
   return {
     id: meta.ruleId,
@@ -191,6 +206,14 @@ function toExportedRule(meta: RuleExportMetadata, rule: Rule): ExportedRulesetRu
     intent: meta.intent,
     sampleViolation: meta.sampleViolation,
     sampleViolationSource: meta.sampleViolationSource,
+    // v1.5.3 第二章：正负样例对随导出物走（缺省则省略，保双向可逆）
+    ...(rule.examples
+      ? { examples: { match: [...rule.examples.match], notMatch: [...rule.examples.notMatch] } }
+      : {}),
+    // v1.5.3 第二章（v1.6.0 (b)）：样例豁免/可执行标记 + 稳定性随导出物走
+    ...(rule.examplesExempt ? { examplesExempt: rule.examplesExempt } : {}),
+    ...(rule.examplesExecutable ? { examplesExecutable: rule.examplesExecutable } : {}),
+    stability: stabilityOf(rule),
   };
 }
 
