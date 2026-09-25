@@ -457,7 +457,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
         console.log('  --doctor           环境健康检查（内置完整诊断）');
-        console.log('  --refresh          doctor 修复闭环：备份 config.yml → 重置默认 → 前后 diff 报告（v1.5.3）');
+        console.log('  --refresh          doctor 修复闭环：备份 config.yml → 重置默认 → 前后 diff 报告');
         console.log('  --baseline         建立 dist 基准哈希（影子审计器防线信任锚，等价 --reset-baseline）');
         console.log('  --reset-baseline   重置 dist 基准哈希（rebuild 后一键重置，自动路由 doctor）');
         console.log('  --sign-config      对 config.yml 签名（消除防篡改警告）');
@@ -812,7 +812,7 @@ async function main(): Promise<void> {
         // 时直接执行 refresh 并以结果退出（refresh 内部已输出三段报告）
         const refresh = (core as { runDoctorRefresh?: (dir: string) => { ok: boolean } }).runDoctorRefresh;
         if (typeof refresh !== 'function') {
-          console.error('❌ 当前 @sofagent/core 不支持 --refresh（需 ≥v1.5.3）');
+          console.error('❌ 当前 @sofagent/core 不支持 --refresh（需升级到本版及以上）');
           exit(1);
         }
         const result = refresh(process.cwd());
