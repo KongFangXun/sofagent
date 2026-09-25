@@ -36,8 +36,15 @@ import { execFileSync } from 'child_process';
  * - `explicit`：调用方显式注入 args.actor（优先于 git 解析）
  * - `ident`：`git var GIT_AUTHOR_IDENT` 解析出作者名（配置链完整时的正常路径）
  * - `config`：`git var` 未取到名 → `git config user.name` 兜底命中
- * - `unset`：git **可用**但**未配置身份**（`config user.name` 命令成功却空值）——正常态，非异常
- * - `unavailable`：git 调用**失败**（非 git 环境 / 无 git 可执行文件 / unborn 等）——异常态
+ * - `unset`：git **可用**但**未配置身份**——**键缺失的正常态**，非异常。实测判据：
+ *   `git config user.name` 以 **rc=1 且 stderr 为空**退出（键不存在；实测于
+ *   `user.useConfigOnly=true` + 无任何 user.name 来源的环境，2026-09-26）。
+ *   ⚠️ 注意 `git var GIT_AUTHOR_IDENT` 在配置缺失时会**自动捏造** OS 用户名（rc=0），
+ *   真正的 unset 环境须 `user.useConfigOnly=true` 才会令 `git var` 失败——故 unset
+ *   判定以 **config 步的 rc=1+空 stderr** 为准，不依赖 var 步的成败。
+ * - `unavailable`：git 调用**失败**（非 git 环境 / 无 git 可执行文件 / unborn 等）——异常态。
+ *   实测判据：config 步 **rc≠1 或 stderr 非空**（真异常：如 `fatal: not in a git directory`
+ *   之类 stderr 非空，或 rc=128 等非「键缺失」码）。
  */
 export type ActorSource = 'explicit' | 'ident' | 'config' | 'unset' | 'unavailable';
 
@@ -122,6 +129,38 @@ function gitOut(args: string[]): string {
   });
 }
 
+/**
+ * git 执行的失败详情（v1.5.3 波 3 顺带修：unset/unavailable 两态分界判据的载体）。
+ *
+ * execFileSync 抛出的错误体上：`status` = 退出码（键缺失 = 1；真异常 = 128 等）、
+ * `stderr` = 错误输出（键缺失时 git **不写 stderr**，真异常时非空，如 fatal: …）。
+ * 二者组合即两态的实测判据（见 {@link ActorSource} 的 unset/unavailable 注释）。
+ */
+interface GitFailDetail {
+  /** git 退出码；进程启动失败（无 git 可执行）等 Node 侧错误时为 undefined */
+  status?: number;
+  /** stderr 输出（utf-8 解码后 trim；无则空串） */
+  stderr: string;
+}
+
+/** 带「失败详情」语义的 git 执行——失败不抛，把退出码 + stderr 显式返回（失败事实进返回值） */
+function gitOutDetailed(args: string[]): { ok: true; out: string } | { ok: false; fail: GitFailDetail } {
+  GIT_CALL_COUNT += 1;
+  try {
+    const out = execFileSync('git', args, {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      maxBuffer: 64 * 1024 * 1024, // 百万级文件仓库兜底（与旧 A18 一致）
+    });
+    return { ok: true, out };
+  } catch (err) {
+    const e = err as { status?: number; stderr?: string | Buffer };
+    const stderrText =
+      typeof e.stderr === 'string' ? e.stderr : e.stderr instanceof Buffer ? e.stderr.toString('utf-8') : '';
+    return { ok: false, fail: { status: e.status, stderr: stderrText.trim() } };
+  }
+}
+
 /** HEAD 提交树文件集（非 git / unborn HEAD → null，不抛） */
 function readHeadTreeFiles(): Set<string> | null {
   try {
@@ -132,29 +171,39 @@ function readHeadTreeFiles(): Set<string> | null {
   }
 }
 
-/** git 作者名解析（ident 优先 → user.name 兜底 → 'unknown'）——与 index.ts 既有口径一致 */
+/**
+ * git 作者名解析（ident 优先 → user.name 兜底 → 'unknown'）——与 index.ts 既有口径一致。
+ *
+ * 两态分界（v1.5.3 波 3 顺带修，与 ActorSource 注释对齐）：
+ *   - `git config user.name` 失败时：**rc=1 且 stderr 空 = 键缺失**（git 可用、未配置身份）
+ *     ⇒ `unset`（正常态）；**rc≠1 或 stderr 非空 = 真异常**（无 git 可执行 / 进程级失败等）
+ *     ⇒ `unavailable`（异常态）。实测依据：useConfigOnly=true + 无 user.name 来源的环境
+ *     中 config 步 rc=1/stderr 空；PATH 清空环境（无 git 可执行）为 Node 侧 spawn 失败。
+ */
 function resolveActorFromGit(): { name: string; source: ActorSource } {
   // 尝试 1：git var GIT_AUTHOR_IDENT（配置链完整时的正常路径）——失败不静默吞：
-  //   记录为空名并继续兜底；「为何失败」由下方 config 步的来源判定显式承载。
+  //   记为空名并继续兜底；「为何失败」由下方 config 步的两态判定显式承载。
+  //   ⚠️ var 步失败**不判 unavailable**：useConfigOnly 环境下 var 失败（rc=128）恰是
+  //   「未配置身份」的正常表现，此时 git 本身可用。
   let identName = '';
-  try {
-    const ident = gitOut(['var', 'GIT_AUTHOR_IDENT']).trim();
-    identName = ident.split('<')[0]?.trim() ?? '';
-  } catch {
-    identName = '';
+  const varResult = gitOutDetailed(['var', 'GIT_AUTHOR_IDENT']);
+  if (varResult.ok) {
+    identName = varResult.out.trim().split('<')[0]?.trim() ?? '';
   }
   if (identName) return { name: identName, source: 'ident' };
-  // 尝试 2：git config user.name（兜底）——用 configThrew 记录本步成败作为来源判据
-  let configThrew = false;
-  try {
-    const name = gitOut(['config', 'user.name']).trim();
+
+  // 尝试 2：git config user.name（兜底）——成败与失败形态一并显式化（不再空 catch）。
+  const configResult = gitOutDetailed(['config', 'user.name']);
+  if (configResult.ok) {
+    const name = configResult.out.trim();
     if (name) return { name, source: 'config' };
-  } catch {
-    configThrew = true;
+    // rc=0 却空值：视为键缺失（git 可用、未配置身份）——与键缺失同归 unset
+    return { name: 'unknown', source: 'unset' };
   }
-  // 两次都取不到名：config 成功却空 ⇒ git 可用但未配置身份（unset，正常态）；
-  //   config 抛错 ⇒ git 调用失败（unavailable，异常态）——失败事实进返回值，不再被空 catch 吞掉。
-  return { name: 'unknown', source: configThrew ? 'unavailable' : 'unset' };
+  const { status, stderr } = configResult.fail;
+  // 两态分界：rc=1 且 stderr 空 ⇒ 键缺失（unset，正常态）；否则 ⇒ 真异常（unavailable）
+  const keyMissing = status === 1 && stderr === '';
+  return { name: 'unknown', source: keyMissing ? 'unset' : 'unavailable' };
 }
 
 /**

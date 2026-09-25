@@ -20,7 +20,9 @@
 //   常规运行：读快照并断言逐字节相等（diff 必须为 0）
 // ============================================================
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { readdirSync, readFileSync, writeFileSync } from 'fs';
+import { execFileSync } from 'child_process';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import type { AuditConfig } from '@sofagent/core';
@@ -181,6 +183,42 @@ describe('D7 · 审计范围语义一等公民化（AuditScope）', () => {
       } finally {
         if (savedPath === undefined) delete process.env.PATH;
         else process.env.PATH = savedPath;
+      }
+    });
+
+    // ── 波 3 顺带修：unset（键缺失）与 unavailable（真异常）两态分界回归锁 ──
+    //   实测依据（2026-09-26，git 2.x）：git config user.name 键缺失 ⇒ rc=1 且 stderr 空；
+    //   真异常（无 git 可执行 / 进程级失败）⇒ Node spawn 失败（status=undefined）或 rc≠1。
+    //   ⚠️ 须隔离宿主 git 配置（GIT_CONFIG_GLOBAL/SYSTEM/NOSYSTEM + 空 HOME）：本仓 .git/config
+    //      自带 user.name，且 macOS git var 在无配置时会自动捏造 OS 用户名（rc=0）——
+    //      useConfigOnly=true 才能令 var 失败、进入 config 步的键缺失路径。
+    it('键缺失（隔离配置的临时仓 + useConfigOnly）→ actorSource=unset（git 可用、未配置身份）', () => {
+      const savedCwd = process.cwd();
+      const savedEnv = { ...process.env };
+      const tmp = mkdtempSync(join(tmpdir(), 'sofagent-scope-unset-'));
+      try {
+        // 隔离一切 user.name 来源：空 global config + NOSYSTEM + 空 HOME/XDG + 仓内 useConfigOnly
+        const emptyCfg = join(tmp, 'empty.gitconfig');
+        writeFileSync(emptyCfg, '', 'utf-8');
+        mkdirSync(join(tmp, 'home'), { recursive: true });
+        execFileSync('git', ['init', '-q', tmp]);
+        execFileSync('git', ['-C', tmp, 'config', 'user.useConfigOnly', 'true']);
+        process.env = {
+          ...process.env,
+          HOME: join(tmp, 'home'),
+          XDG_CONFIG_HOME: join(tmp, 'home', '.xdg'),
+          GIT_CONFIG_GLOBAL: emptyCfg,
+          GIT_CONFIG_SYSTEM: emptyCfg,
+          GIT_CONFIG_NOSYSTEM: '1',
+        };
+        process.chdir(tmp); // scope 在 cwd 上执行 git（非 git cwd 才是 unavailable 面）
+        const scope = createAuditScope({});
+        expect(scope.actor).toBe('unknown');
+        expect(scope.actorSource).toBe('unset');
+      } finally {
+        process.chdir(savedCwd);
+        process.env = savedEnv;
+        rmSync(tmp, { recursive: true, force: true });
       }
     });
 
