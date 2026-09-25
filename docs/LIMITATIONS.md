@@ -649,6 +649,10 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 **历史记录**：此局限在 v1.1.3 引入（audit 需调用 daemon 的 snapshot 能力），v1.2.0 物理重构时已规划迁移，v1.2.3 随编排隔离底座一并完成。
 
+### daily-health 为同步执行（阻塞巡检调度至脚本完成）
+
+`daily-health` 巡检器以 `execFileSync` 拉起 `engine/scripts/daily-health.sh`——**同步阻塞** daemon 的巡检调度直到脚本完成（空数据目录实测 1.6 秒；数据量大或磁盘慢时更长，硬上限 120 秒 timeout）。选择同步的理由是「产物落盘完成后才返回」的确定性；`@daily` 级别不在热路径，故当前不构成问题——但若客户环境出现巡检整体变慢，此处是第一嫌疑点（改 detached spawn + 下轮对账即可解）。
+
 ### daemon 通知机制为轻量版
 
 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口。**本地三态推送（PASS/WARN/FAIL）已接通**（`webhook.ts` + `push-target.ts`，agent 自测可用）。**企业平台完整推送（飞书/钉钉/企微）亦已落地**——但当前 daemon 的 cron 巡检和文件监听结果在企业场景仍依赖 stdout + `daemon-health.json`，企业 IT 需自行轮询 `history.jsonl` 或使用 Webhook 推送。
