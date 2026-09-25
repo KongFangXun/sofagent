@@ -12,6 +12,11 @@ import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
 import { ruleCode, assembleCheck } from './assemble';
+// v1.5.3 第二章：多规则裁决「取最严」的单一事实源（rule-loader.strictestVerdict）。
+// 本章新增交付物此前零生产消费方（只活在被单测里 = 「已实现未接线」），
+// 本处把真实审计聚合路径（exitCode 归约）统一为对该函数的单点调用——
+// 归约语义（拐杖降级 / strict 升档 / 信息维度排除）仍在本文件归一化后委托。
+import { strictestVerdict } from '../rule-loader';
 // v1.4.5 T5: 分级降级接线——主执行路径消费 degradation 梯队
 import { DegradationManager, getCapability, isAuditTimeout, type DegradationLevel } from '../degradation';
 // v1.3.2 交付 2：国标对齐 GB/T 48000.3-2026 审计维度（opt-in 默认 false）
@@ -127,6 +132,42 @@ export const AUDIT_PRIORITY: Record<Priority, string[]> = (() => {
 })();
 
 /**
+ * v1.5.3 第二章：多规则裁决「取最严」的单一事实源（真实审计路径的唯一聚合点）。
+ *
+ * 把 runRules 的最终判定收敛为一条调用链：
+ *   `归一化（本函数） → rule-loader.strictestVerdict（取最严） → 档位映射 exitCode`。
+ *
+ * ⚠️ 此前「取最严」是 runRules 内的**内联 max 归约**（未显式化、非单源）；
+ * 本版把它替换为对 `strictestVerdict` 的委托——**行为逐字节等价**（见回归锁
+ * `__tests__/strictest-verdict-lock.test.ts` 的接线前后 diff=0），只把语义显式化。
+ *
+ * 归一化三律（= 接线前内联循环的分支语义，逐条对齐）：
+ *   ① GB48000 条目为信息维度（合规参考基线）——排除出裁决面（opt-in 也不影响判定）；
+ *   ② 能力拐杖规则 FAIL 降级为 WARN（advisory，从不阻断提交）；
+ *   ③ strict 模式下 WARN 升档为 FAIL（严格模式 WARN 亦 exit 2）。
+ *
+ * @param results 本跑规则检查结果（可含 SKIPPED / GB48000 条目）
+ * @param strict 严格模式
+ * @returns exitCode：FAIL→2 / WARN→1 / PASS·SKIPPED→0
+ *   （空集 / 全 SKIPPED ⇒ strictestVerdict 返回 SKIPPED ⇒ 映射为 0，与内联归约一致）
+ */
+export function aggregateExitCode(results: RuleCheck[], strict?: boolean): number {
+  // 归一化：把「拐杖降级 / strict 升档 / 信息维度排除」先行施加，
+  // 使 strictestVerdict 只需处理纯 FAIL>WARN>PASS 的严重度序（职责单一）。
+  const normalized: RuleCheck[] = [];
+  for (const rule of results) {
+    if (rule.name === GB48000_RULE_NAME) continue; // ① 信息维度排除出裁决面
+    let status = rule.status;
+    if (status === 'FAIL' && rule.ruleClass === '能力拐杖') status = 'WARN'; // ② 拐杖降级
+    if (strict && status === 'WARN') status = 'FAIL'; // ③ strict 升档
+    normalized.push({ ...rule, status });
+  }
+  // 单一事实源：多规则命中取最严（FAIL > WARN > PASS；空集 / 全 SKIPPED ⇒ SKIPPED）
+  const { status } = strictestVerdict(normalized);
+  return status === 'FAIL' ? 2 : status === 'WARN' ? 1 : 0;
+}
+
+/**
  * 运行全部审计规则（fast-fail 模式）
  *
  * 按 AUDIT_PRIORITY 定义的顺序分组执行：
@@ -234,11 +275,11 @@ export function runRules(
             details: [`基线规则 ${suppressedBaselineRules.join('、')} 为安全底线，config.yml 关闭指令已忽略——这些规则始终生效`],
           });
         }
-        // 汇总判定（有 FAIL 直接 exit 2）
+        // 汇总判定（critical 层已有非拐杖 FAIL ⇒ 取最严即 FAIL=2；仍走同一聚合器，保持单源）
         if (gb48000 === true) {
           results.push(buildGb48000RuleCheck(assessGb48000Coverage(ctx)));
         }
-        return { rules: results, exitCode: 2 };
+        return { rules: results, exitCode: aggregateExitCode(results, strict) };
       }
       // critical 全部 PASS → 进入下一层
       continue;
@@ -251,29 +292,13 @@ export function runRules(
     }
   }
 
-  // 汇总判定
-  // strict 模式下 WARN 升级为 exit 2
-  // v1.1.0 P0 fix: '能力拐杖' rules (E1-E4, A4, A6-A8, A14, A15) should never
-  // produce FAIL exit code. Even if a crutch rule returns FAIL, we demote it
-  // to WARN level — extended/crutch rules are advisory, not blocking.
-  // v1.3.1 交付 2: GB48000 条目是信息维度（合规参考基线），排除出 exitCode——
-  // opt-in 也不影响默认审计判定。
-  let exitCode = 0;
-  for (const rule of results) {
-    if (rule.name === GB48000_RULE_NAME) continue;
-    if (rule.status === 'FAIL') {
-      if (rule.ruleClass === '能力拐杖') {
-        // Crutch rules: FAIL → WARN (advisory only, never block commit)
-        if (strict) exitCode = 2;
-        else if (exitCode === 0) exitCode = 1;
-      } else {
-        exitCode = 2;
-      }
-    } else if (rule.status === 'WARN') {
-      if (strict) exitCode = 2;
-      else if (exitCode === 0) exitCode = 1;
-    }
-  }
+  // 汇总判定（取最严）——单一事实源 = aggregateExitCode → strictestVerdict。
+  // v1.5.3 第二章：此前为内联 max 归约，现委托 strictestVerdict（行为等价，语义显式化）：
+  //   - strict 模式下 WARN 升级为 exit 2；
+  //   - v1.1.0 P0 fix: '能力拐杖' rules (E1-E4, A4, A6-A8, A14, A15) 的 FAIL 降级为
+  //     WARN（advisory，从不阻断提交）；
+  //   - v1.3.1 交付 2: GB48000 条目是信息维度，排除出 exitCode（opt-in 也不影响判定）。
+  const exitCode = aggregateExitCode(results, strict);
 
   // 基线规则不可关闭检查：config 里关闭了 A1/A2/A9 时记录警告
   if (suppressedBaselineRules.length > 0) {

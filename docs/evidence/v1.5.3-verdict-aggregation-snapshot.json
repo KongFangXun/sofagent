@@ -1,0 +1,101 @@
+{
+  "generatedFor": "v1.5.3 第二章·多规则裁决取最严——接线前后判定一致性回归锁",
+  "note": "多规则「取最严」聚合的接线前后一致性快照。本文件由接线前逻辑（runRules 内联 max 归约的冻结副本 legacyExitCode）固化；接线后聚合（aggregateExitCode → rule-loader.strictestVerdict）必须逐条 diff=0——证明「用 strictestVerdict 统一聚合」零行为漂移。生成/刷新：cd engine/audit && SOFAGENT_SNAPSHOT_OUT=<path> npx vitest run src/__tests__/strictest-verdict-lock.test.ts",
+  "cases": [
+    {
+      "id": "空集·非strict",
+      "strict": false,
+      "exitCode": 0
+    },
+    {
+      "id": "空集·strict",
+      "strict": true,
+      "exitCode": 0
+    },
+    {
+      "id": "全 PASS",
+      "strict": false,
+      "exitCode": 0
+    },
+    {
+      "id": "单 WARN·非strict",
+      "strict": false,
+      "exitCode": 1
+    },
+    {
+      "id": "单 WARN·strict",
+      "strict": true,
+      "exitCode": 2
+    },
+    {
+      "id": "单 FAIL 非拐杖·非strict",
+      "strict": false,
+      "exitCode": 2
+    },
+    {
+      "id": "单 FAIL 非拐杖·strict",
+      "strict": true,
+      "exitCode": 2
+    },
+    {
+      "id": "单 FAIL 拐杖·非strict",
+      "strict": false,
+      "exitCode": 1
+    },
+    {
+      "id": "单 FAIL 拐杖·strict",
+      "strict": true,
+      "exitCode": 2
+    },
+    {
+      "id": "WARN + FAIL 非拐杖·非strict",
+      "strict": false,
+      "exitCode": 2
+    },
+    {
+      "id": "FAIL 拐杖 + WARN 非拐杖·非strict",
+      "strict": false,
+      "exitCode": 1
+    },
+    {
+      "id": "FAIL 拐杖 + WARN 非拐杖·strict",
+      "strict": true,
+      "exitCode": 2
+    },
+    {
+      "id": "全 SKIPPED",
+      "strict": false,
+      "exitCode": 0
+    },
+    {
+      "id": "SKIPPED + PASS",
+      "strict": false,
+      "exitCode": 0
+    },
+    {
+      "id": "仅 GB48000（FAIL 但为信息维度）·非strict",
+      "strict": false,
+      "exitCode": 0
+    },
+    {
+      "id": "GB48000 + PASS",
+      "strict": false,
+      "exitCode": 0
+    },
+    {
+      "id": "GB48000 + FAIL 非拐杖",
+      "strict": false,
+      "exitCode": 2
+    },
+    {
+      "id": "多 FAIL 混合（拐杖+底线+WARN）",
+      "strict": false,
+      "exitCode": 2
+    },
+    {
+      "id": "无 ruleClass 的 FAIL（默认非拐杖=硬拦）",
+      "strict": false,
+      "exitCode": 2
+    }
+  ]
+}
