@@ -11,6 +11,7 @@
 #   cleanup.sh --force           跳过确认直接删除
 #   cleanup.sh --purge           等同 --force（合规术语：purge = 强制清理）
 #   cleanup.sh --before DATE     只清理 DATE 之前的日志（DATE 格式 YYYY-MM-DD）
+#   cleanup.sh --report          只读体检：盘点数据目录占用与疑似可回收项（绝不删除）
 #   cleanup.sh --help            显示帮助
 #   cleanup.sh --version         显示版本
 #
@@ -45,12 +46,14 @@ DRY_RUN=false
 FORCE=false
 BEFORE_DATE=""
 SHOW_HELP=false
+REPORT=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=true; shift ;;
     --force)   FORCE=true; shift ;;
     --purge)   FORCE=true; shift ;;  # --purge 等同 --force（合规术语别名）
+    --report)  REPORT=true; shift ;;  # 只读体检（F-25）：绝不写盘/删除
     --before)
       BEFORE_DATE="$2"
       # 校验日期格式 YYYY-MM-DD
@@ -84,6 +87,7 @@ if [ "$SHOW_HELP" = true ]; then
   echo "    cleanup.sh --force      跳过确认直接删除"
   echo "    cleanup.sh --purge      等同 --force（合规术语）"
   echo "    cleanup.sh --before DATE  只清理 DATE（YYYY-MM-DD）之前的日志"
+  echo "    cleanup.sh --report     只读体检（盘点占用与疑似可回收项，绝不删除）"
   echo "    cleanup.sh --help       显示此帮助"
   echo "    cleanup.sh --version    显示版本"
   echo ""
@@ -95,6 +99,96 @@ if [ "$SHOW_HELP" = true ]; then
   echo "    data_retention_days         日志保留天数（默认 90）"
   echo "    data_retention_max_entries   日志最大条数（默认 500）"
   echo "    audit_enabled                审计开关"
+  exit 0
+fi
+
+# ════════════════════════════════════════
+# --report：只读体检（F-25 · 绝不写盘 / 删除）
+# ════════════════════════════════════════
+# 盘点 sofagent 数据目录的占用分类与「疑似可回收项」。本模式**只读**——
+# 不建目录、不归档、不 rm、不 touch（零写入，可安全反复运行）；回收仍需人工
+# 走正常清理模式（--dry-run 预览 / --force 带归档执行）。
+if [ "$REPORT" = true ]; then
+  # 体检根：优先安装主目录（含 data/ 与 internal/，即 F-25 实测面），逐级回退
+  DATA_ROOT=""
+  if [ -n "${SOFAGENT_HOME:-}" ] && [ -d "${SOFAGENT_HOME}" ]; then
+    DATA_ROOT="${SOFAGENT_HOME}"
+  elif [ -d "${HOME}/.sofagent" ]; then
+    DATA_ROOT="${HOME}/.sofagent"
+  elif [ -n "${SOFAGENT_DATA:-}" ] && [ -d "${SOFAGENT_DATA}" ]; then
+    DATA_ROOT="${SOFAGENT_DATA}"
+  elif [ -d "${PWD}/.sofagent" ]; then
+    DATA_ROOT="${PWD}/.sofagent"
+  else
+    DATA_ROOT="${SOFAGENT_DATA:-${PWD}/.sofagent}"
+  fi
+
+  echo "sofagent cleanup v${VERSION} · --report（只读体检）"
+  echo "[cleanup] 本模式绝不删除任何文件，仅盘点占用与疑似可回收项。"
+  echo "[cleanup] 体检根: ${DATA_ROOT}"
+  if [ ! -d "$DATA_ROOT" ]; then
+    echo "[cleanup] 数据目录不存在，无可体检内容。"
+    exit 0
+  fi
+
+  total_kb=$(du -sk "$DATA_ROOT" 2>/dev/null | awk '{print $1+0}') || true
+  total_kb="${total_kb:-0}"
+  total_files=$(find "$DATA_ROOT" -type f 2>/dev/null | wc -l | tr -d ' ') || true
+  total_files="${total_files:-0}"
+
+  echo ""
+  echo "[cleanup] === 分类占用（一级子目录 · 降序）==="
+  shopt -s nullglob 2>/dev/null || true
+  _subdirs=("$DATA_ROOT"/*/)
+  shopt -u nullglob 2>/dev/null || true
+  if [ ${#_subdirs[@]} -gt 0 ]; then
+    for _d in "${_subdirs[@]}"; do
+      [ -d "$_d" ] || continue
+      _sz=$(du -sk "$_d" 2>/dev/null | awk '{print $1+0}') || true
+      printf '%s\t%s\n' "${_sz:-0}" "$(basename "$_d")"
+    done | sort -rn | awk -F'\t' '{printf "  %8.1f MB  %s\n", $1/1024, $2}'
+  else
+    echo "  （根下无一级子目录）"
+  fi
+
+  echo ""
+  echo "[cleanup] === 疑似可回收项（仅盘点 · 不自动删除）==="
+  echo "  命中规则：备份/临时/损坏残留（*.bak · *.bak-* · *~ · *.orig · *.tmp · *.swp · *.broken · *.broken-*）+ 影子快照（.git-shadow）+ 归档（*.tar.gz）"
+  _reclaim_kb=0
+  _reclaim_n=0
+  while IFS= read -r _f; do
+    [ -n "$_f" ] || continue
+    _k=$(du -sk "$_f" 2>/dev/null | awk '{print $1+0}') || true
+    _k="${_k:-0}"
+    _reclaim_kb=$((_reclaim_kb + _k))
+    _reclaim_n=$((_reclaim_n + 1))
+    printf '  %8.1f MB  %s\n' "$(awk "BEGIN{print ${_k}/1024}")" "${_f#"${DATA_ROOT}"/}"
+  done < <(find "$DATA_ROOT" \
+      \( -name '*.bak' -o -name '*.bak-*' -o -name '*~' -o -name '*.orig' \
+         -o -name '*.tmp' -o -name '*.swp' -o -name '*.broken' -o -name '*.broken-*' \
+         -o -name '.git-shadow' -o -name '*.tar.gz' \) 2>/dev/null | sort)
+  if [ "$_reclaim_n" -eq 0 ]; then
+    echo "  ✓ 未发现疑似可回收项"
+  else
+    awk -v n="$_reclaim_n" -v k="$_reclaim_kb" 'BEGIN{printf "  ── 合计: %s 项 / %.1f MB（本模式未删除任何一项）\n", n, k/1024}'
+  fi
+
+  echo ""
+  echo "[cleanup] === 活链提示（近期写入 · 勿动）==="
+  _live_n=0
+  while IFS= read -r _f; do
+    [ -n "$_f" ] || continue
+    _live_n=$((_live_n + 1))
+  done < <(find "$DATA_ROOT" -type f -mtime -1 2>/dev/null)
+  echo "  近 24h 内被写入的文件: ${_live_n} 个（活跃追加面）"
+  echo "  ⚠️ 审计 / 决策链（如 data/audit/history.jsonl · data/audit/decision-log.jsonl）为只追加活链——"
+  echo "     即使体积大也勿直接删；需缩减请改保留策略后走 --force 正常清理（带归档）。"
+
+  echo ""
+  echo "[cleanup] === 体检总计 ==="
+  awk -v k="$total_kb" -v f="$total_files" -v rk="$_reclaim_kb" -v rn="$_reclaim_n" \
+    'BEGIN{printf "  根总占用: %.1f MB · 文件数: %s\n  疑似可回收: %s 项 / %.1f MB（本模式未删除任何一项）\n", k/1024, f, rn, rk/1024}'
+  echo "  下一步：确认清单后，用 cleanup.sh --dry-run（预览）或 --force（带归档执行）回收；活链勿动。"
   exit 0
 fi
 
