@@ -124,7 +124,13 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   echo '    for f in pre-commit commit-msg post-commit; do [ -f "$(git rev-parse --git-path hooks)/$f.pre-sofagent" ] && mv "$(git rev-parse --git-path hooks)/$f.pre-sofagent" "$(git rev-parse --git-path hooks)/$f"; done'
   echo "  历史拦截：全新安装，审计历史将从第一次提交开始记录。"
   echo ""
-  echo "  ✅ sofagent 已就绪，下次 git commit 自动生效"
+  # F-16：按 hook 实态三分支（INSTALL_HOOK_STATUS 由 install.sh Step 6.5 导出）——
+  # 原无条件「已就绪，下次 commit 自动生效」在 hook 未装成时是假承诺。
+  case "${INSTALL_HOOK_STATUS:-skipped}" in
+    ok)      echo "  ✅ sofagent 已就绪，下次 git commit 自动生效" ;;
+    failed)  echo "  ⚠️  git hook 安装失败——下次 git commit 不会自动审计，请手动运行: sofagent-audit --init" ;;
+    *)       echo "  ℹ️  当前目录非 git 仓库或引擎未就绪——hook 未安装；进入 git 项目后运行: sofagent-audit --init" ;;
+  esac
   [ "$PLATFORM" = "openclaw" ] || return 0
   # API Key 提醒 + Hook 状态提示（仅 OpenClaw）
   [ "${NO_CONFIG_INJECT:-0}" = "1" ] && echo "  ⚠️  --no-config-inject 已启用：未注入断路器配置，需手动配置 tools.loopDetection"

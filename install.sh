@@ -132,6 +132,7 @@ sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
   bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
   bash install.sh --merge               升级时三路合并 custom/ 用户层
   bash install.sh --yes, -y             配合 --force 跳过交互确认（CI 场景）
+  bash install.sh --policy <file>       企业策略校验（插件来源白名单 + 托管 hook）——校验失败拒绝安装（fail-closed）
   bash install.sh --help, -h            显示此帮助
 
 平台: 默认平台无关安装（不探测、不修改任何第三方平台配置，只写 ~/.sofagent/）；
@@ -672,12 +673,18 @@ deploy_hook            # Step 6: 部署加载链 Hook（仅 OpenClaw）
 # Step 6.5: 安装 git commit-msg + post-commit hook（让 git commit 触发审计）
 # v1.2.2 F-28 修复：install.sh 只装 OpenClaw 平台 hook，不装 git commit-msg + post-commit hook，
 # 导致 README 演示中的 commit 拦截跑不通。此处补装 git hook。
+# F-16：hook 安装状态三分支记录（ok/failed/skipped）——供完成摘要按实态输出，
+# 防「hook 没装成但摘要说已就绪，下次 commit 自动生效」的假承诺。
+INSTALL_HOOK_STATUS="skipped"
+export INSTALL_HOOK_STATUS
 if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
   info "Step 6.5 · 安装 git commit-msg + post-commit hook..."
   if sofagent-audit --install-hook 2>/dev/null; then
     ok "  git commit-msg + post-commit hook 已安装"
+    INSTALL_HOOK_STATUS="ok"; export INSTALL_HOOK_STATUS
   else
     warn "  git hook 安装失败，请手动运行 sofagent-audit --init"
+    INSTALL_HOOK_STATUS="failed"; export INSTALL_HOOK_STATUS
   fi
   # hook 版本对账提示（只提示不阻断——升级感知，防「引擎已升级、仓库跑旧 hook」）
   # 设计理由：hook 是**拷贝**而非软链（core.hooksPath 未设置），引擎仓库的
@@ -1139,7 +1146,14 @@ HOOKJSONEOF
         local codex_dir="${HOME}/.codex"
         mkdir -p "$codex_dir" 2>/dev/null || true
         if [ -f "${SCRIPT_DIR}/AGENTS.md" ]; then
-          cp "${SCRIPT_DIR}/AGENTS.md" "${codex_dir}/AGENTS.md"
+          # F-17 幂等保护：write_seed_instructions（Step 8，先跑）写的就是本文件——
+          # 无条件 cp 会把它覆盖掉（「已自动写入」提示成假绿）。目标已存在且内容
+          # 与源不同时跳过 cp（保留已写入内容），一致时重新写入（无害）。
+          if [ -f "${codex_dir}/AGENTS.md" ] && ! cmp -s "${SCRIPT_DIR}/AGENTS.md" "${codex_dir}/AGENTS.md"; then
+            ok "  保留已写入的 ~/.codex/AGENTS.md（种子指令，未被薄挂载覆盖）"
+          else
+            cp "${SCRIPT_DIR}/AGENTS.md" "${codex_dir}/AGENTS.md"
+          fi
         fi
         ok "  Codex 薄挂载：~/.codex/AGENTS.md（四层加载链挂载点）+ fde.md（FDE 步骤写入）"
         ;;
@@ -1202,18 +1216,21 @@ write_mcp_toml() {
 install_mcp_config() {
   # MCP server 入口走全局安装态（@sofagent/mcp）——clone 态仓库无 engine/mcp/dist/
   # （.gitignore 排除 dist/ 且 install.sh 不 build 仓库），旧路径「装完即连」恒失效。
-  # 与 Step 3 @sofagent/audit 同款安装语义：钉 ${VERSION}，registry 滞后时降级 @latest。
+  # F-12：安装语义对齐 Step 3 @sofagent/audit（v1.5.2 已收紧）——钉 ${VERSION}，
+  # 目标版本失败**不自动降级 @latest**（原 elif 分支 = 未审版本静默进全局的
+  # fail-open 孪生；audit 侧同版已改 fail-closed）。差异说明：audit 是核心依赖
+  # 故 exit 1 中止安装；MCP 是可选面故跳过配置但显式告警（失败可见，不静默）。
   local mcp_server_js="${SCRIPT_DIR}/engine/mcp/dist/mcp-server.js"
   if command -v npm &>/dev/null; then
     if [ ! -f "$mcp_server_js" ]; then
       info "  执行: npm install -g @sofagent/mcp@${VERSION}"
       if npm install -g "@sofagent/mcp@${VERSION}" 2>&1 | tail -1; then
         ok "  @sofagent/mcp 已全局安装（v${VERSION}）"
-      elif npm install -g "@sofagent/mcp@latest" 2>&1 | tail -1; then
-        warn "  v${VERSION} 尚未发布到 npm registry——已降级安装 @latest（发布后重装即对齐）"
       else
-        warn "  npm install -g @sofagent/mcp 失败——跳过 MCP 自动配置（可手动安装: npm install -g @sofagent/mcp@${VERSION}）"
-        return
+        MCP_REGISTRY_LATEST="$(npm view "@sofagent/mcp" version 2>/dev/null || echo "未知（npm view 查询失败）")"
+        warn "  v${VERSION} 的 @sofagent/mcp 安装失败（registry latest: ${MCP_REGISTRY_LATEST}）——跳过 MCP 自动配置"
+        warn "  不自动降级 @latest（供应链纪律）。如接受未审版本请显式执行: npm i -g @sofagent/mcp@latest 后重跑安装"
+        return 1
       fi
       mcp_server_js="$(npm root -g 2>/dev/null)/@sofagent/mcp/dist/mcp-server.js"
     fi
@@ -1237,7 +1254,24 @@ install_mcp_config() {
 
 install_cli
 install_skill_unified
-install_mcp_config
+# F-12：install_mcp_config 改平台门控——原顶层无条件调用违反 :47 冻结契约
+# 「默认只写 ~/.sofagent/；显式 --platform 时额外写该平台目录」（其全局 npm
+# 安装在 case "$PLATFORM" 之前执行，平台无关安装也装）。MCP 消费方 =
+# workbuddy/codex/claude/cursor 四平台 + 显式 --with-mcp；默认路径跳过并提示。
+case "$PLATFORM" in
+  workbuddy|codex|claude|cursor)
+    install_mcp_config
+    ;;
+  *)
+    WITH_MCP=0
+    for _arg in "${ORIGINAL_ARGS[@]:-}"; do [ "$_arg" = "--with-mcp" ] && WITH_MCP=1; done
+    if [ "$WITH_MCP" = "1" ]; then
+      install_mcp_config
+    else
+      info "未配置 MCP（消费方为 workbuddy/codex/claude/cursor 平台；--platform <宿主> 或 --with-mcp 启用）"
+    fi
+    ;;
+esac
 
 # 安装完整性自检——必须在 install_cli 之后（bin/sofagent 由 install_cli 创建）
 verify_component_integrity
