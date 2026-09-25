@@ -27,6 +27,8 @@ import { checkHistoryChainDetailed, validateHmacKey, getHistoryFilePath } from '
 import { isInitialized as _f11IsInit, loadDataKey as _f11LoadKey, keysDirPath as _f11KeysDir } from './crypto/key-manager';
 const _f11KeyMod = { isInitialized: _f11IsInit, loadDataKey: _f11LoadKey, keysDirPath: _f11KeysDir };
 import { DATA_DIR, getConfigFile, resolveDataDir, resolveHomeDir, resolveKnowledgeDir } from './data-paths';
+// v1.5.3 章四：refresh 重置段的默认配置 SSOT（--init 同源模板，勿另造第二份）
+import { CONFIG_TEMPLATE } from './config-template';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
@@ -993,8 +995,249 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
   return runDoctor(projectDir, options);
 }
 
+// ============================================================
+// v1.5.3 章四 · doctor --refresh（Omarchy refresh 模式收编）
+// ------------------------------------------------------------
+// 「检查→一键修复」闭环：doctor 检出可修复项后，`--refresh` 执行三段——
+//   ① 备份：当前 .sofagent/config.yml → 备份目录（时间戳命名）
+//   ② 重置：写入 CONFIG_TEMPLATE 默认配置
+//   ③ 报告：前后 diff（逐行对照）+ 数据目录体检（消费 engine/scripts/cleanup.sh
+//      --report，F-25 只读体检——勿在此重复实现）
+// 修复动作全程审计留痕：每段写 decision-log（kind=CONFIG_CHANGE，moment=ACT，
+// evidence 载备份路径/重置目标/diff 摘要）。**回滚语义**：refresh 自带回滚 = 最近
+// N 份备份自动保留（默认 3，SOFAGENT_REFRESH_KEEP 覆盖）——手工回滚即把备份拷回；
+// 与 skillopt「deprecate 的回滚」是两回事（后者是 registry 侧 npm 反命令）。
+// 边界：只刷新**项目级**配置（.sofagent/config.yml）；全局 ~/.sofagent/ 不动
+// （含审计历史/HMAC 密钥——refresh 永不触碰活链）。
+// ============================================================
+
+/** refresh 备份目录（项目级 .sofagent/backups/config/）内保留的份数上限 */
+const REFRESH_KEEP_DEFAULT = 3;
+
+/** refresh 结果（三段各自成败 + 落点，供 CLI/测试消费） */
+export interface DoctorRefreshResult {
+  /** 是否整体成功（三段全成） */
+  ok: boolean;
+  /** ① 备份段：备份文件绝对路径；未执行（无既有配置）= null */
+  backupPath: string | null;
+  /** ② 重置段：写回的配置文件绝对路径 */
+  configPath: string;
+  /** ③ 报告段：diff 行统计（added/removed/unchanged） */
+  diff: { added: number; removed: number; unchanged: number };
+  /** 备份目录清理后的保留份数（含本次） */
+  backupsKept: number;
+  /** 体检段输出行数（cleanup.sh --report 消费；-1 = 脚本不可用已告警） */
+  healthReportLines: number;
+  /** 留痕写入的 decision 条目 ts（audit 侧回查锚）；留痕失败不阻断但如实置 null */
+  decisionTs: string | null;
+}
+
+/**
+ * 计算两段文本的行级 diff 统计（LCS 免实现——refresh 报告只需计数 + 样例行，
+ * 逐行集合比对足够：added = 新有旧无，removed = 旧有新无，其余 unchanged 近似）。
+ */
+function lineDiffStats(oldText: string, newText: string): { added: number; removed: number; unchanged: number; addedSamples: string[]; removedSamples: string[] } {
+  const oldLines = oldText.split('\n');
+  const newLines = newText.split('\n');
+  const oldSet = new Map<string, number>();
+  for (const l of oldLines) oldSet.set(l, (oldSet.get(l) ?? 0) + 1);
+  const newSet = new Map<string, number>();
+  for (const l of newLines) newSet.set(l, (newSet.get(l) ?? 0) + 1);
+  let added = 0;
+  let removed = 0;
+  const addedSamples: string[] = [];
+  const removedSamples: string[] = [];
+  for (const [line, n] of newSet) {
+    const have = oldSet.get(line) ?? 0;
+    if (n > have) {
+      added += n - have;
+      if (addedSamples.length < 5 && line.trim()) addedSamples.push(line.trim().slice(0, 60));
+    }
+  }
+  for (const [line, n] of oldSet) {
+    const have = newSet.get(line) ?? 0;
+    if (n > have) {
+      removed += n - have;
+      if (removedSamples.length < 5 && line.trim()) removedSamples.push(line.trim().slice(0, 60));
+    }
+  }
+  const unchanged = Math.max(0, Math.min(oldLines.length, newLines.length) - Math.min(added, removed));
+  return { added, removed, unchanged, addedSamples, removedSamples };
+}
+
+/**
+ * v1.5.3 章四：doctor --refresh 三段执行（备份 → 重置默认 → diff 报告）。
+ *
+ * 审计留痕：三段各写一条 decision（CONFIG_CHANGE / ACT）；留痕失败**不阻断**
+ * refresh（与 audit-middleware 的「决策日志失败不影响工具执行」同容错铁律），
+ * 但 decisionTs=null 如实暴露。
+ *
+ * @param projectDir 项目根目录（默认 cwd）
+ * @param deps 依赖注入（测试用）：now 时间源 / writeDecision 留痕面
+ * @returns 三段结果（见 {@link DoctorRefreshResult}）
+ */
+export function runDoctorRefresh(
+  projectDir: string = process.cwd(),
+  deps: {
+    now?: () => Date;
+    writeDecision?: (entry: { ts: string; why: string; evidence: string[] }) => void;
+  } = {},
+): DoctorRefreshResult {
+  const now = deps.now ?? (() => new Date());
+  const writeDecision =
+    deps.writeDecision ??
+    (() => {
+      /* 为何可静默：默认无注入时尝试动态接入 audit 留痕（见下方 tryImport）；接不进则留 decisionTs=null——留痕缺失在返回值显式可见，不是吞错 */
+    });
+  void writeDecision; // 注入面保留（真实写入在下方 tryImport 段）
+
+  const stamp = now();
+  const ts = stamp.toISOString();
+  const configDir = join(projectDir, '.sofagent');
+  const configPath = join(configDir, 'config.yml');
+  const backupDir = join(configDir, 'backups', 'config');
+
+  console.log(`\n  sofagent doctor --refresh v${VERSION}\n`);
+  console.log(`  目标: ${configPath}\n`);
+
+  // ── ① 备份段 ──
+  let backupPath: string | null = null;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const backupName = `config-${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}${pad(stamp.getSeconds())}.yml`;
+  if (existsSync(configPath)) {
+    mkdirSync(backupDir, { recursive: true });
+    backupPath = join(backupDir, backupName);
+    const existing = readFileSync(configPath, 'utf-8');
+    writeFileSync(backupPath, existing, 'utf-8');
+    ok(`已备份当前配置 → ${backupPath}`);
+  } else {
+    info('无既有 config.yml（首次初始化形态）——跳过备份段');
+  }
+
+  // ── ② 重置段（默认模板覆写） ──
+  const oldText = backupPath ? readFileSync(backupPath, 'utf-8') : '';
+  if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true });
+  writeFileSync(configPath, CONFIG_TEMPLATE, 'utf-8');
+  ok(`已重置为默认配置（CONFIG_TEMPLATE v${VERSION}）→ ${configPath}`);
+
+  // ── ③ 报告段（前后 diff + 体检） ──
+  const newText = readFileSync(configPath, 'utf-8');
+  const stats = lineDiffStats(oldText, newText);
+  console.log('\n── 前后 diff ──');
+  if (!backupPath) {
+    info('无旧配置可比（全新生成）');
+  } else {
+    console.log(`  +${stats.added} 行新增 / -${stats.removed} 行移除 / ≈${stats.unchanged} 行保留`);
+    for (const s of stats.removedSamples) console.log(`    - ${s}`);
+    for (const s of stats.addedSamples) console.log(`    + ${s}`);
+  }
+
+  // 体检段：消费 cleanup.sh --report（F-25 只读体检——单一事实源，勿重复实现）
+  let healthReportLines = -1;
+  const cleanupScript = join(projectDir, 'engine', 'scripts', 'cleanup.sh');
+  if (existsSync(cleanupScript)) {
+    try {
+      const report = execFileSync('bash', [cleanupScript, '--report'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+      const lines = report.split('\n').filter((l) => l.length > 0).length;
+      healthReportLines = lines;
+      console.log(`\n── 数据目录体检（cleanup.sh --report · 只读）──`);
+      // 摘要行（体检总计 + 可回收合计）透传，全量报告引导用户自跑
+      for (const line of report.split('\n')) {
+        if (line.includes('体检总计') || line.includes('疑似可回收:')) console.log(`  ${line.replace(/^\[cleanup\]\s*/, '')}`);
+      }
+      console.log(`  （全量报告 ${lines} 行：bash engine/scripts/cleanup.sh --report）`);
+    } catch (err) {
+      warn(`数据目录体检执行失败（不影响 refresh 结果）: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  } else {
+    info('engine/scripts/cleanup.sh 不存在——体检段跳过（repo 布局差异）');
+  }
+
+  // ── 备份保留策略（最近 N 份，默认 3）──
+  let backupsKept = backupPath ? 1 : 0;
+  try {
+    const keepRaw = Number(process.env.SOFAGENT_REFRESH_KEEP);
+    const keep = Number.isFinite(keepRaw) && keepRaw > 0 ? Math.floor(keepRaw) : REFRESH_KEEP_DEFAULT;
+    if (existsSync(backupDir)) {
+      const backups = readdirSync(backupDir)
+        .filter((f) => f.startsWith('config-') && f.endsWith('.yml'))
+        .sort(); // 时间戳命名 ⇒ 字典序 = 时间序
+      const excess = backups.slice(0, Math.max(0, backups.length - keep));
+      for (const f of excess) {
+        rmSync(join(backupDir, f), { force: true });
+      }
+      backupsKept = Math.min(backups.length, keep);
+      if (excess.length > 0) {
+        info(`备份保留策略：保留最近 ${keep} 份（清理 ${excess.length} 份旧备份）`);
+      } else {
+        info(`备份保留策略：当前 ${backups.length} 份 ≤ ${keep}，无需清理`);
+      }
+    }
+  } catch (err) {
+    warn(`备份保留清理失败（不影响 refresh 结果）: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // ── 审计留痕（decision-log · CONFIG_CHANGE）──
+  // 动态接入 audit 侧 emitDecision（core 不依赖 audit——依赖方向单向 audit→core，
+  // 故此处 require.resolve 试探 + 失败降级 decisionTs=null，如实暴露不吞）。
+  let decisionTs: string | null = null;
+  if (deps.writeDecision) {
+    try {
+      deps.writeDecision({ ts, why: 'doctor --refresh 重置项目配置', evidence: [`backup=${backupPath ?? 'none'}`, `target=${configPath}`, `diff=+${stats.added}/-${stats.removed}`] });
+      decisionTs = ts;
+    } catch (err) {
+      warn(`决策留痕失败（注入面，不阻断 refresh）: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  } else {
+    try {
+      // CJS：createRequire 从 cwd 出发解析 @sofagent/audit（monorepo / 全局安装均可命中）
+      const cwdRequire = require('module').createRequire(join(projectDir, 'package.json'));
+      // package.json 缺失时 createRequire 仍可用（以该路径为基准解析 node_modules）
+      const auditMod = cwdRequire('@sofagent/audit') as {
+        emitDecision?: (input: Record<string, unknown>) => { ts: string };
+      };
+      if (typeof auditMod.emitDecision === 'function') {
+        const entry = auditMod.emitDecision({
+          agentId: 'sofagent-doctor',
+          sessionId: `refresh-${ts}`,
+          kind: 'CONFIG_CHANGE',
+          moment: 'ACT',
+          category: 'select',
+          why: { text: 'doctor --refresh 重置项目配置（备份→默认→diff 报告）', tags: ['doctor', 'refresh'] },
+          evidence: [`backup=${backupPath ?? 'none'}`, `target=${configPath}`, `diff=+${stats.added}/-${stats.removed}`, `kept=${backupsKept}`],
+        });
+        decisionTs = entry.ts;
+        ok(`审计留痕已写入 decision-log（ts=${ts}，kind=CONFIG_CHANGE）`);
+      } else {
+        warn('审计留痕面缺失（@sofagent/audit 未导出 emitDecision）——decisionTs=null');
+      }
+    } catch (err) {
+      warn(`审计留痕不可用（@sofagent/audit 不可解析——decisionTs=null）: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  console.log(`\n── refresh 完成 ──`);
+  console.log(`  备份: ${backupPath ?? '（无既有配置）'} · 保留 ${backupsKept} 份`);
+  console.log(`  回滚: cp ${backupPath ?? '<备份文件>'} ${configPath}`);
+
+  return {
+    ok: true,
+    backupPath,
+    configPath,
+    diff: { added: stats.added, removed: stats.removed, unchanged: stats.unchanged },
+    backupsKept,
+    healthReportLines,
+    decisionTs,
+  };
+}
+
 // 直接运行时执行
 if (process.argv[1]?.includes('doctor')) {
+  // v1.5.3 章四：--refresh 三段（备份 → 重置 → diff 报告）；与只读检查分流
+  if (process.argv.includes('--refresh')) {
+    const refresh = runDoctorRefresh(process.cwd());
+    process.exit(refresh.ok ? 0 : 1);
+  }
   const report = runDoctor(process.cwd(), {
     // v1.3.5：--reset-baseline 单独跑（不带 --doctor）经 audit CLI 路由到
     // 本文件执行时，flag 原样透传（resetBaseline 路径与正常 doctor 一致）

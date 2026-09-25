@@ -457,6 +457,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
         console.log('  --doctor           环境健康检查（内置完整诊断）');
+        console.log('  --refresh          doctor 修复闭环：备份 config.yml → 重置默认 → 前后 diff 报告（v1.5.3）');
         console.log('  --baseline         建立 dist 基准哈希（影子审计器防线信任锚，等价 --reset-baseline）');
         console.log('  --reset-baseline   重置 dist 基准哈希（rebuild 后一键重置，自动路由 doctor）');
         console.log('  --sign-config      对 config.yml 签名（消除防篡改警告）');
@@ -800,10 +801,24 @@ async function main(): Promise<void> {
   // v1.5.2 G-01：--baseline 作为 --reset-baseline 的显式别名——语义都是「计算当前
   // dist SHA-256 写入 audit-hash.txt 建立基线」（信任锚 = 首次人工执行时刻）
   const wantsBaseline = rawArgs.includes('--reset-baseline') || rawArgs.includes('--baseline');
-  if (rawArgs.includes('--doctor') || wantsBaseline) {
+  // v1.5.3 章四：--refresh 自动路由到 doctor（不带 --doctor 也不报未知参数）——
+  // 三段执行（备份 → 默认重置 → diff 报告），留痕入 decision-log（kind=CONFIG_CHANGE）
+  const wantsRefresh = rawArgs.includes('--refresh');
+  if (rawArgs.includes('--doctor') || wantsBaseline || wantsRefresh) {
     try {
-      const { runDoctor } = await import('@sofagent/core');
-      const report = runDoctor(process.cwd(), {
+      const core = await import('@sofagent/core');
+      if (wantsRefresh) {
+        // refresh 是**写操作**（覆写 config.yml）——与只读 doctor 分流；不带 --doctor
+        // 时直接执行 refresh 并以结果退出（refresh 内部已输出三段报告）
+        const refresh = (core as { runDoctorRefresh?: (dir: string) => { ok: boolean } }).runDoctorRefresh;
+        if (typeof refresh !== 'function') {
+          console.error('❌ 当前 @sofagent/core 不支持 --refresh（需 ≥v1.5.3）');
+          exit(1);
+        }
+        const result = refresh(process.cwd());
+        exit(result.ok ? 0 : 1);
+      }
+      const report = core.runDoctor(process.cwd(), {
         resetBaseline: wantsBaseline,
       });
       // v1.5.2 (F-23): doctor 仅在 error 时返回非零，warning 时返回 0——
