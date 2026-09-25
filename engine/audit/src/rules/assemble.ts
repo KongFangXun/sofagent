@@ -7,7 +7,7 @@
 //      重写同一套 number 区间分支；本模块收口为单源，其余调用方一律引用本函数。
 //   2. assembleCheck——前置块（PREAMBLE）装配：注册表 meta + 规则 scan 产出 → RuleCheck。
 //      规则文件不再自建前置块，只保留 scanXxx（业务判定本体）。
-//       v1.5.3 第七章：规则执行签名收口——执行前确保 ctx 附带 AuditScope（唯一构造器
+//       v1.5.3 第七章：规则执行签名收口——执行前确保 ctx 附带 AuditScope（唯一构造**工厂**
 //       `scope.ts#createAuditScope` 产出），规则输入面恒经 scope，规则侧零 git。
 //
 // 边界：本模块是叶子——只依赖 ./types 与 ../scope，不 import 注册表（rules/index.ts），无循环。
@@ -39,7 +39,7 @@ export function ruleCode(number: number, name: string): string {
  *    由规则自身的 scan 判定；各规则的 WARN / FAIL 分支属业务本体，本函数不介入。
  *
  * v1.5.3 第七章：执行前确保 ctx 附 `AuditScope`——规则输入面收口为 scope（规则侧零 git）。
- * 未附 scope 的旧调用路径（直调 assembleCheck 的历史代码/测试）在此由唯一构造器补齐；
+ * 未附 scope 的旧调用路径（直调 assembleCheck 的历史代码/测试）在此由唯一构造工厂补齐；
  * 惰性求值（未消费的字段不触 git），故补齐对既有 A18/A5 判定行为零变化——读到的值
  * 与旧规则内 `git ls-tree HEAD` / `git log -1` 完全一致。
  */

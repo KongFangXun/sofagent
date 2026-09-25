@@ -4,7 +4,7 @@
 // ============================================================
 // 目的：把「审计范围 + 上下文输入」从「规则各自调 git」（A18 `git ls-tree HEAD` /
 //   A5 `git log -1`）收口为一个**显式对象** `AuditScope`：
-//   唯一构造器 = scope.ts#createAuditScope（全工程唯一 git 触达点），规则侧零 git。
+//   唯一构造**工厂** = scope.ts#createAuditScope（**规则侧**唯一 git 触达点），规则侧零 git。
 //
 // 本锁四条断言面（对 devlog §七 验收逐条对位）：
 //   ① 构造唯一 + 懒解析：未消费的字段不触 git（注入面零 git；未注入面触 git 计数非空转）；
@@ -12,6 +12,8 @@
 //      scopeGitCallCount 恒为 0；
 //   ③ 规则实现面零直接 git 调用原语（**静态证据**：rule-*.ts 无 execFileSync/child_process）；
 //   ④ 重构前后判定逐字节一致（**回归锁**：整份 audit 输出 JSON diff=0，覆盖 A24）。
+//   ⑤ 收口断言（D7 复核返工）：`actorSource` 观测面（explicit / unavailable，不空 catch）
+//      + A5 无 scope 且无 commitMsg ⇒ 显式 SKIPPED（不静默 PASS）。
 //
 // 快照口径：
 //   生成/刷新：cd engine/audit && SOFAGENT_SNAPSHOT_OUT=<path> npx vitest run audit-scope
@@ -25,7 +27,7 @@ import type { AuditConfig } from '@sofagent/core';
 import { createAuditScope, resetScopeGitCallCount, scopeGitCallCount } from '../scope';
 import type { AuditScope } from '../scope';
 import { runRules } from '../reporter';
-import type { RuleCheck } from '../rules/types';
+import type { AuditContext, RuleCheck } from '../rules/types';
 import { scanA5 } from '../rules/rule-a5-honest-report';
 import { scanA18 } from '../rules/rule-a18-junk-file';
 import { makeCtx, makeDiffFile } from '../test-utils';
@@ -160,6 +162,35 @@ describe('D7 · 审计范围语义一等公民化（AuditScope）', () => {
       void scope.commitMsg;
       expect(scopeGitCallCount()).toBeGreaterThanOrEqual(1);
     });
+
+    it('显式注入 actor → actorSource=explicit 且零 git（来源可观测）', () => {
+      resetScopeGitCallCount();
+      const scope = createAuditScope({ actor: 'FixtureBot' });
+      expect(scope.actorSource).toBe('explicit');
+      expect(scope.actor).toBe('FixtureBot');
+      expect(scopeGitCallCount()).toBe(0);
+    });
+
+    it('未注入 actor 且 git 不可用（PATH 清空）→ actor=unknown 且 actorSource=unavailable（不再空 catch 吞错）', () => {
+      const savedPath = process.env.PATH;
+      try {
+        process.env.PATH = '/nonexistent-sofagent-audit-test';
+        const scope = createAuditScope({});
+        expect(scope.actor).toBe('unknown');
+        expect(scope.actorSource).toBe('unavailable');
+      } finally {
+        if (savedPath === undefined) delete process.env.PATH;
+        else process.env.PATH = savedPath;
+      }
+    });
+
+    it('未注入 actor 且 git 可用 → actorSource ∈ {ident,config,unset}（来源判定不静默）', () => {
+      resetScopeGitCallCount();
+      const scope = createAuditScope({});
+      void scope.actor;
+      expect(['ident', 'config', 'unset']).toContain(scope.actorSource);
+      expect(scopeGitCallCount()).toBeGreaterThanOrEqual(1);
+    });
   });
 
   describe('② 规则侧零 git（行为证据）', () => {
@@ -169,6 +200,14 @@ describe('D7 · 审计范围语义一等公民化（AuditScope）', () => {
       const r = scanA5(ctx);
       expect(r.status).toBe('PASS');
       expect(scopeGitCallCount()).toBe(0);
+    });
+
+    it('scanA5 无 scope 且无 commitMsg → SKIPPED（显式未知，不静默 PASS——防 fail-open 退化）', () => {
+      // 旧行为：此路静默返回 PASS（拿不到输入被当成通过）。收口后必须显式 SKIPPED + 原因。
+      const ctx = { diffFiles: [], logEntries: [] } as unknown as AuditContext;
+      const r = scanA5(ctx);
+      expect(r.status).toBe('SKIPPED');
+      expect(r.details.join('')).toContain('无法判定');
     });
 
     it('scanA18（基线已注入）→ WARN 且零 git（b.js 不在基线告警，行为与旧一致）', () => {

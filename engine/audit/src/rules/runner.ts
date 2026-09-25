@@ -13,8 +13,10 @@ import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
 import { ruleCode, assembleCheck } from './assemble';
 // v1.5.3 第七章：审计范围语义一等公民化——本文件是执行漏斗（位置/对象签名 +
-// runRulesMonitored 两条入口均汇入），故为 **AuditScope 的唯一构造点**：由
-// createAuditScope 构造一次并挂到 ctx，规则自 scope 取输入（不再各自调 git）。
+// runRulesMonitored 两条入口均汇入），故为 **AuditScope 的主构造点**（唯一构造**工厂**
+// 是 scope.ts#createAuditScope；调用点尚含 assemble.ts 兜底 / test-utils.ts 测试，均走
+// 同一工厂、语义无分叉）：由 createAuditScope 构造一次并挂到 ctx，规则自 scope 取输入
+//（不再各自调 git）。
 import { createAuditScope, type AuditScope } from '../scope';
 // v1.5.3 第二章：多规则裁决「取最严」的单一事实源（rule-loader.strictestVerdict）。
 // 本章新增交付物此前零生产消费方（只活在被单测里 = 「已实现未接线」），
@@ -208,7 +210,7 @@ export function runRules(
   // v1.1.0 修复(F2)：ctx.history 此前从未赋值，导致 A17 跨审计聚合（基于窗口内历史累计文件数）
   // 成为死代码。调用方显式传入 history 则优先；否则自动从审计历史加载。
   const auditHistory = history ?? loadHistory();
-  // v1.5.3 第七章：AuditScope 唯一构造点——注入优先，否则本处构造一次（惰性，未读取不触 git）。
+  // v1.5.3 第七章：AuditScope 主构造点——注入优先，否则本处构造一次（惰性，未读取不触 git）。
   const auditScope = scope ?? createAuditScope({ diffRange, commitMsg, task });
   const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, scope: auditScope, config, history: auditHistory, quickMode, ciMode };
   const results: RuleCheck[] = [];

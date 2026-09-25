@@ -23,7 +23,7 @@ export function makeDiffFile(path: string, lines?: string[], status?: DiffFile['
  * 自动识别第二个参数：数组→logEntries，对象→overrides
  *
  * v1.5.3 第七章：规则输入面恒经 `AuditScope`——测试边界同样附 scope（未显式提供时
- * 由唯一构造器 `createAuditScope` 补齐，与生产路径 `runner`/`assembleCheck` 一致）。
+ * 由唯一构造工厂 `createAuditScope` 补齐，与生产路径 `runner`/`assembleCheck` 一致）。
  * 惰性求值：只有真正的输入消费者（A18 的 HEAD 基线 / A5 的 commitMsg）才触达 git。
  */
 export function makeCtx(

@@ -6,10 +6,23 @@
 //   范围散落在规则内部，任一处写错范围即静默取错输入，且无法在一处审计「本次范围」。
 //
 // 解法：把「审计范围 + 上下文输入」收口为一个**显式对象** `AuditScope`——
-//   ① 唯一构造器 `createAuditScope` 是全工程**唯一的 git 触达点**（规则侧零 git）；
+//   ① 唯一构造器 `createAuditScope` 是**规则侧 / 规则执行路径内唯一**的 git 触达点
+//      （规则零 git；非规则面——CLI / commands / hook-install / webhook 等——另有
+//      自身 git 调用，**不在**本章收口范围，勿把本句读成「全仓唯一 git 调用」）；
 //   ② 规则从 `ctx.scope` 取输入，不再自己调 git（机械扫描实证：rules/ 下除检测
 //      正则外零 `child_process` 调用）；
 //   ③ 构造点进审计留痕（本次范围 = `scope.diffRange`，随历史条目落盘）。
+//
+// 🔴 未接线字段显式登记（本版主题：消灭「已声明却零接线」——不留不说的悬空字段）：
+//   · `diffRange`——当前**仅结构化承载（构造 + 留痕）**，**尚无任何规则消费**。不接线
+//     的理由：现有两条依赖 git 的规则语义都不需要「范围」——A18 的豁免基线**按设计**取
+//     `HEAD` 树（v1.5.2 P0-02：故意从索引收窄到 HEAD 树，见 rule-a18 头注释），A5 的输入
+//     **按设计**取 HEAD 终点 commit message；为它们硬塞 range 取值 = 制造假消费。
+//     消费触发条件【可判定】：当出现**第一条**需要「本次 range 内文件集 / range 级越界」
+//     的规则时（如把「只审增量、豁免历史」升级为 by-range 判定），由 scope 增开
+//     `rangeFiles()` 并在该规则内消费 `scope.diffRange`——**届时应删除本登记**。
+//   · `actor`——**已接线**（不再是悬空字段）：CLI 审计留痕（index.ts）消费
+//     `scope.actor` / `scope.actorSource`，并删除了自身重复的 git 作者解析链。
 //
 // 边界：本模块只依赖 Node 内置模块（child_process），不 import 规则/注册表——无循环。
 // ============================================================
@@ -17,14 +30,27 @@
 import { execFileSync } from 'child_process';
 
 /**
+ * `actor` 解析来源——把「为何取不到作者名」显式化为一个枚举，从而**不需要空 catch**
+ * （本版主题：消灭静默降级——失败事实进返回值而非被吞）。
+ *
+ * - `explicit`：调用方显式注入 args.actor（优先于 git 解析）
+ * - `ident`：`git var GIT_AUTHOR_IDENT` 解析出作者名（配置链完整时的正常路径）
+ * - `config`：`git var` 未取到名 → `git config user.name` 兜底命中
+ * - `unset`：git **可用**但**未配置身份**（`config user.name` 命令成功却空值）——正常态，非异常
+ * - `unavailable`：git 调用**失败**（非 git 环境 / 无 git 可执行文件 / unborn 等）——异常态
+ */
+export type ActorSource = 'explicit' | 'ident' | 'config' | 'unset' | 'unavailable';
+
+/**
  * 审计范围（AuditScope）——规则输入面的显式声明对象。
  *
  * 声明核 4 字段（devlog §七）：`diffRange` / `commitMsg` / `task` / `actor`——
  *   所有规则输入面显式声明「取 HEAD 还是 range」，输入来源在对象上一处可见。
  *
- * 另含**构造器解析的输入面**（非声明核，供规则消费，均由构造器从 git 解析）：
+ * 另含**构造器解析的输入面**（非声明核，供规则/留痕消费，均由构造器从 git 解析）：
  *   - `headTreeFiles()`：HEAD 提交树文件集（A18「垃圾文件」豁免基线）；
- *   - `commitMsgError`：`commitMsg` 解析失败原因（供 A5 FAIL 报文，保持既有措辞）。
+ *   - `commitMsgError`：`commitMsg` 解析失败原因（供 A5 FAIL 报文，保持既有措辞）；
+ *   - `actorSource`：`actor` 的来源枚举（把「为何取不到作者名」显式化——见 {@link ActorSource}）。
  *
  * 🔴 构造纪律：`AuditScope` **只**由 {@link createAuditScope} 产出——规则侧不得
  *    自行构造（否则即「第二处构造面」，本章要消灭的正是这个）。所有 git 解析
@@ -44,6 +70,11 @@ export interface AuditScope {
   readonly task: string | undefined;
   /** 发起方（git 作者名；非 git 环境 / 未配置身份 → 'unknown'，不伪造） */
   readonly actor: string;
+  /**
+   * {@link actor} 的来源枚举（把「为何取不到作者名」显式化——{@link ActorSource}）。
+   * 与 `actor` 同步解析（同一惰性点）：读 `actorSource` 亦触发一次解析、不重复触 git。
+   */
+  readonly actorSource: ActorSource;
   /**
    * HEAD 提交树文件集（A18 豁免基线的**唯一取数口**）。
    * 惰性 + 记忆化：首次调用才触达 git。`null` = 非 git 环境 / unborn HEAD
@@ -102,29 +133,41 @@ function readHeadTreeFiles(): Set<string> | null {
 }
 
 /** git 作者名解析（ident 优先 → user.name 兜底 → 'unknown'）——与 index.ts 既有口径一致 */
-function resolveActorFromGit(): string {
+function resolveActorFromGit(): { name: string; source: ActorSource } {
+  // 尝试 1：git var GIT_AUTHOR_IDENT（配置链完整时的正常路径）——失败不静默吞：
+  //   记录为空名并继续兜底；「为何失败」由下方 config 步的来源判定显式承载。
+  let identName = '';
   try {
     const ident = gitOut(['var', 'GIT_AUTHOR_IDENT']).trim();
-    const name = ident.split('<')[0]?.trim();
-    if (name) return name;
+    identName = ident.split('<')[0]?.trim() ?? '';
   } catch {
-    /* 落到 user.name 兜底 */
+    identName = '';
   }
+  if (identName) return { name: identName, source: 'ident' };
+  // 尝试 2：git config user.name（兜底）——用 configThrew 记录本步成败作为来源判据
+  let configThrew = false;
   try {
     const name = gitOut(['config', 'user.name']).trim();
-    if (name) return name;
+    if (name) return { name, source: 'config' };
   } catch {
-    /* 落到 unknown */
+    configThrew = true;
   }
-  return 'unknown';
+  // 两次都取不到名：config 成功却空 ⇒ git 可用但未配置身份（unset，正常态）；
+  //   config 抛错 ⇒ git 调用失败（unavailable，异常态）——失败事实进返回值，不再被空 catch 吞掉。
+  return { name: 'unknown', source: configThrew ? 'unavailable' : 'unset' };
 }
 
 /**
- * 构造 `AuditScope`——全工程**唯一**的 scope 构造器（也是唯一 git 触达点）。
+ * 构造 `AuditScope`——全工程唯一的 scope **构造工厂**（也是**规则侧**唯一 git 触达点）。
+ *
+ * ⚠️ 措辞口径（避免「全工程唯一构造点」这类过宽断言）：本函数是**唯一工厂**，但生产
+ *   路径有**三处调用**同一工厂产出实例——`runner.ts`（**主构造点**，执行漏斗）、
+ *   `assemble.ts`（缺 scope 兜底）、`test-utils.ts`（测试）——三者语义无分叉（同工厂、
+ *   同入参口径），故应表述为「主构造点 / 唯一工厂」，而非「全工程唯一构造点」。
  *
  * 解析全部惰性（getter / 方法内首次触达才执行 git）：
  *   - `commitMsg`：显式注入优先，否则 `git log -1 --pretty=%B`；
- *   - `actor`：显式注入优先，否则 git ident 链解析；
+ *   - `actor` / `actorSource`：显式注入优先，否则 git ident 链解析（同一惰性点）；
  *   - `headTreeFiles()`：注入提供者优先，否则 `git ls-tree -r HEAD`。
  * 这样「未消费的字段」不产生任何 git 调用——A18 无候选垃圾文件时依旧零 git。
  */
@@ -141,6 +184,7 @@ export function createAuditScope(input: AuditScopeInput = {}): AuditScope {
 
   let actorResolved = false;
   let actorValue = 'unknown';
+  let actorSourceValue: ActorSource = 'unset';
 
   let baselineResolved = false;
   let baselineValue: Set<string> | null = null;
@@ -160,6 +204,20 @@ export function createAuditScope(input: AuditScopeInput = {}): AuditScope {
     }
   };
 
+  // actor 与 actorSource 同一惰性点解析：读任一 getter 均触发一次（记忆化）
+  const ensureActor = (): void => {
+    if (actorResolved) return;
+    actorResolved = true;
+    if (explicitActor !== undefined) {
+      actorValue = explicitActor;
+      actorSourceValue = 'explicit';
+      return;
+    }
+    const resolved = resolveActorFromGit();
+    actorValue = resolved.name;
+    actorSourceValue = resolved.source;
+  };
+
   return {
     diffRange,
     task: task,
@@ -172,11 +230,12 @@ export function createAuditScope(input: AuditScopeInput = {}): AuditScope {
       return commitMsgErr;
     },
     get actor(): string {
-      if (!actorResolved) {
-        actorResolved = true;
-        actorValue = explicitActor ?? resolveActorFromGit();
-      }
+      ensureActor();
       return actorValue;
+    },
+    get actorSource(): ActorSource {
+      ensureActor();
+      return actorSourceValue;
     },
     headTreeFiles(): Set<string> | null {
       if (!baselineResolved) {

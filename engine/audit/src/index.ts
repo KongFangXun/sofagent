@@ -131,6 +131,9 @@ import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
 import { defaultRules, extendedRules } from './rules';
 import { ruleCode, assembleCheck } from './rules/assemble';
+// v1.5.3 第七章收口：CLI 侧构造审计范围对象（唯一工厂），注入 runRulesMonitored 并供留痕消费——
+//   actor 不再由本文件重复解析 git（第二处 actor 取数口收口到 scope）。
+import { createAuditScope } from './scope';
 // 空提交 message 类审计：A5/A9/A19 只消费 commit message、不依赖 diff 内容
 // ——空 diff 短路前仍须执行（详见 runEmptyDiffMessageAudit）。
 // v1.4.8 条目 7：改走注册表装配（assembleCheck + defaultRules 查 id），不再直连规则文件
@@ -1300,8 +1303,12 @@ async function main(): Promise<void> {
   // v1.5.2 T5: 改经 runRulesMonitored——审计模块超时自动降级（full→rules-only→minimal），
   // 降级事实写审计日志（FALLBACK_DEGRADE）并在规则列表注入 DEGRADATION_NOTICE WARN
   const { runRulesMonitored } = await import('./rules/runner');
+  // v1.5.3 第七章收口：本次审计范围语义（AuditScope）在 CLI 侧经唯一工厂构造一次并注入——
+  //   既供规则取输入（替换 runner 内的隐式构造），又供下方审计留痕消费 `actor` / `actorSource`
+  //   （消除本文件此前**重复的** git 作者解析链——第二处 actor 取数口）。
+  const auditScope = createAuditScope({ diffRange: args.diffRange, commitMsg: commitMsg || undefined, task: args.task });
   // v1.5.2 A-8：args.ci 传入规则上下文——二进制夹带类「请人工确认」发现在 CI 场景升 FAIL
-  const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000, undefined, args.ci, args.diffRange);
+  const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000, undefined, args.ci, args.diffRange, auditScope);
 
   // v1.2.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
   if (args.ruleset || args.rulesetPath) {
@@ -1522,20 +1529,14 @@ async function main(): Promise<void> {
     // 时失败 → 配置齐全也报「作者获取失败」。改用配置来源（不依赖 commit 历史）：
     //   1. git var GIT_AUTHOR_IDENT（配置链解析出的完整身份，含 name + email）
     //   2. git config user.name（兜底）
-    let actor = 'unknown';
-    try {
-      const ident = execFileSync('git', ['var', 'GIT_AUTHOR_IDENT'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-      // 格式："Name <email> timestamp tz"——取 < 之前的 name 部分
-      const name = ident.split('<')[0]?.trim();
-      if (name) actor = name;
-    } catch {
-      try {
-        const name = execFileSync('git', ['config', 'user.name'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-        if (name) actor = name;
-      } catch {
-        // git 不可用 / 未配置身份：审计正常运行，仅 actor 退化为 unknown
-        console.warn('[sofagent] 警告：git 作者获取失败，actor 标记为 unknown');
-      }
+    // v1.5.3 第七章收口：actor 不再由本文件重复解析 git（此前 ident→user.name 链在此为
+    //   **第二处** actor 取数）——收口到 AuditScope（规则侧唯一 git 触达点）；本次审计的
+    //   范围对象已在 CLI 侧构造一次并注入 runRulesMonitored。此处只**消费** scope：
+    //   · actorSource='unavailable'（git 调用失败）→ 保留既有可见告警（不静默）；
+    //   · 'unset'（git 可用但未配置身份）属正常态，不告警（避免 CI 未设 user.name 时刷屏）。
+    const actor = auditScope.actor;
+    if (auditScope.actorSource === 'unavailable') {
+      console.warn('[sofagent] 警告：git 不可用，actor 标记为 unknown');
     }
     const govTimestamp = new Date().toISOString();
     // 目标实体 = 本次变更涉及的文件路径（最多取前 20 个，避免记录超长）

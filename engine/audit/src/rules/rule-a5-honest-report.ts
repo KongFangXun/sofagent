@@ -4,8 +4,9 @@
 // commit message 是否为空 / 是否纯占位符（"fix"/"update"/"wip"）
 // v0.94：优先使用 ctx.commitMsg，为空时 fallback 到 git 读取（向后兼容）
 // v1.5.3 第七章（AuditScope）：git 读取不再由本规则发起——commit message 输入面
-// 收口到 `ctx.scope.commitMsg`（唯一 git 触达点 = scope.ts 的 createAuditScope），
-// 本规则零 git。无 scope 时退化为读 ctx.commitMsg（向后兼容直调 scanA5 的旧路径）。
+// 收口到 `ctx.scope.commitMsg`（**规则侧**唯一 git 触达点 = scope.ts 的 createAuditScope），
+// 本规则零 git。无 scope 时读 ctx.commitMsg；**无 scope 且无 commitMsg ⇒ 显式 SKIPPED**
+// （收敛批：拿不到输入 ≠ 通过——不静默 PASS；对齐 A18 无 scope 分支的 fail-closed 取向）。
 // ============================================================
 
 import type { AuditContext, RuleScan, RuleStatus } from './types';
@@ -36,8 +37,14 @@ export function scanA5(ctx: AuditContext): RuleScan {
   } else {
     message = ctx.commitMsg;
     if (message === undefined) {
-      // 无 scope 且未显式提供 commit message —— 无可用输入面（旧代码此处 fallback 到 git，
-      // 现已收口到 scope）：不判定，保持 PASS，不触 git。
+      // v1.5.3 第七章收口：无 scope 且未显式提供 commit message ⇒ **无法判定**。
+      //   旧代码此处 fallback 到 git（git 可用→读真实 msg、不可用→FAIL）；D7 把 git
+      //   收口到 scope 后此路不触 git，若静默返回 PASS 即 **fail-open 退化**
+      //   （实测：非 git cwd 下 PRE=FAIL → POST=PASS）。
+      //   现改为**显式 SKIPPED + 原因**——把「拿不到输入」与「通过」分开，不冒充 PASS
+      //   （与 A18 无 scope 分支的 fail-closed 取向对称：宁显式未知，不静默放行）。
+      status = 'SKIPPED';
+      details.push('无 scope 且无 commitMsg——无法判定 commit message 是否如实（不冒充 PASS）');
       return { status, details };
     }
   }

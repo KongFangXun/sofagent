@@ -183,7 +183,8 @@ export interface AuditContext {
    * 规则需要「范围 / 作者 / HEAD 基线 / commit message」等需触达 git 的输入时，
    * 一律从本对象取（{@link AuditScope.commitMsg} / {@link AuditScope.actor} /
    * {@link AuditScope.headTreeFiles}），**不得**自行 `execFileSync('git', …)`。
-   * 唯一构造器 = `scope.ts` 的 `createAuditScope`（构造点进审计留痕）。
+   * 唯一构造**工厂** = `scope.ts` 的 `createAuditScope`（**主构造点**在 runner.ts；
+   * 构造点进审计留痕）。
    *
    * 缺省 `undefined`：向后兼容直调 `scanXxx(ctx)` 的旧路径——规则退化为纯 diff 判定
    * （不触 git）。生产路径（runner / assembleCheck）恒附 scope。

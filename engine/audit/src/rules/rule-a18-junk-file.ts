@@ -9,7 +9,7 @@
 // WARN；本次新 `git add` 混入、尚未进入 HEAD 的垃圾文件必须告警，避免索引
 // 命中吞掉本应告警的场景（正是 S51 漏报根因）。
 // v1.5.3 第七章（AuditScope）：HEAD 基线不再由本规则自调 git 读取——改从
-// `ctx.scope.headTreeFiles()` 取（唯一 git 触达点收口到 scope.ts），本规则零 git。
+// `ctx.scope.headTreeFiles()` 取（**规则侧**唯一 git 触达点收口到 scope.ts），本规则零 git。
 // ============================================================
 import { basename } from 'path';
 import type { AuditContext, RuleScan } from './types';
@@ -43,7 +43,7 @@ function isExempt(filePath: string): boolean {
  * v1.5.3（第七章）：HEAD 豁免基线的**唯一取数口**——从 `ctx.scope` 取，规则侧零 git。
  *
  * 语义与旧 `getTrackedFiles()`（本文件内 `git ls-tree -r HEAD`）逐字一致，只是触达点
- * 上移到 scope（由唯一构造器 `createAuditScope` 惰性 + 记忆化解析）。无 scope（向后
+ * 上移到 scope（由唯一构造工厂 `createAuditScope` 惰性 + 记忆化解析）。无 scope（向后
  * 兼容直调 scanA18 的旧路径）时返回 null —— 不豁免，保持既有「垃圾候选一律告警」的
  * fail-closed 行为（与旧代码「git 不可用 → 豁免降级关闭」同语义）。
  */
