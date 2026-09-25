@@ -8,6 +8,9 @@
   "bin": {
     "sofagent": "bin/sofagent.js"
   },
+  "scripts": {
+    "build": "node -e \"console.log('[umbrella] 转发层无自有构建产物——子包各自构建')\""
+  },
   "keywords": [
     "sofagent",
     "audit",
