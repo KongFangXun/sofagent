@@ -164,6 +164,20 @@ export function runVerifyCommit(commitHash: string): void {
     process.exit(1);
   }
 
+  // F-32：退出码按命中最严状态（判据照抄路径② F-15 先例，三路径统一）——
+  // 含 FAIL(exit≥2) 记录 → exit 2；仅 WARN → exit 1；全 PASS → exit 0。
+  // 此前路径 0/① 无条件 exit(0)：CI 写 `verify-commit <sha> && echo pass` 即把
+  // 被拦密钥的提交洗白。
+  const worstStatusOf = (entries: { exitCode?: number }[]): 0 | 1 | 2 => {
+    let worst: 0 | 1 | 2 = 0;
+    for (const e of entries) {
+      const c = e.exitCode ?? 0;
+      if (c >= 2) return 2;
+      if (c === 1) worst = 1;
+    }
+    return worst;
+  };
+
   // 搜索匹配的 commit hash（支持短 hash 前缀匹配）
   const normalizedHash = commitHash.toLowerCase();
   const matched = history.filter((entry) => {
@@ -172,12 +186,12 @@ export function runVerifyCommit(commitHash: string): void {
   });
 
   if (matched.length > 0) {
-    console.log(`  ✅ commit ${commitHash} 有 ${matched.length} 条审计记录:`);
+    console.log(`  ${worstStatusOf(matched) === 0 ? '✅' : worstStatusOf(matched) === 1 ? '⚠️' : '❌'} commit ${commitHash} 有 ${matched.length} 条审计记录:`);
     for (const entry of matched) {
       const status = entry.exitCode === 0 ? 'PASS' : entry.exitCode === 1 ? 'WARN' : 'FAIL';
       console.log(`    ${entry.timestamp} · ${status} · ${entry.ruleResults?.length ?? 0} 条规则检查`);
     }
-    process.exit(0);
+    process.exit(worstStatusOf(matched));
   }
 
   // v1.2.9 parentSha fallback——commit-msg hook 在 commit 对象生成前运行，
@@ -217,14 +231,23 @@ export function runVerifyCommit(commitHash: string): void {
   });
 
   if (parentMatched.length > 0) {
-    console.log(`  ✅ commit ${commitHash} 有 ${parentMatched.length} 条审计记录（pre-commit 阶段记录，按父提交 SHA 匹配）:`);
+    // F-32 归因精度：命中的是 parentOf(X)=记录 parentSha 的 pre-commit 审计——
+    // 「X 本身的内容确实被审计过」的正向证据成立，但记录本身可能是「上一次被拦
+    // 失败尝试」（exit≥2）。归因语句与退出码解耦：退出码按最严状态，措辞按
+    // 最严状态提示「该 commit 的提交尝试曾 FAIL——若当前 HEAD 已含此 SHA，
+    // 说明拦截后重试提交成功或曾绕过」。
+    const worst = worstStatusOf(parentMatched);
+    console.log(`  ${worst === 0 ? '✅' : worst === 1 ? '⚠️' : '❌'} commit ${commitHash} 有 ${parentMatched.length} 条审计记录（pre-commit 阶段记录，按父提交 SHA 匹配）:`);
     for (const entry of parentMatched) {
       const status = entry.exitCode === 0 ? 'PASS' : entry.exitCode === 1 ? 'WARN' : 'FAIL';
       console.log(`    ${entry.timestamp} · ${status} · ${entry.ruleResults?.length ?? 0} 条规则检查`);
     }
     console.log('  说明: 该记录由 commit-msg hook 在提交对象生成前写入，');
     console.log('        parentSha = 审计运行时的 HEAD（即本 commit 的父提交）。');
-    process.exit(0);
+    if (worst >= 2) {
+      console.log(`  ⚠️ 提交尝试的审计结论为 FAIL——若 ${commitHash} 已存在于当前分支，说明拦截后重试成功或曾以 --no-verify 绕过。`);
+    }
+    process.exit(worst);
   }
 
   // 路径②：parentSha === X（用户传的 SHA 恰好等于某记录的 parentSha）。

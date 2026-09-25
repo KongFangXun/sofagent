@@ -165,3 +165,99 @@ describe('--verify-commit 归因歧义收紧（F-15）', () => {
     expect(r.out).toContain('未找到审计记录');
   });
 });
+
+
+describe('--verify-commit 退出码按最严状态（F-32）', () => {
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+  let logSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.resetModules();
+    repoDir = join(tmpdir(), `sofagent-vc-f32-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    dataDir = join(tmpdir(), `sofagent-vc-f32d-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    mkdirSync(repoDir, { recursive: true });
+    mkdirSync(join(dataDir, 'audit'), { recursive: true });
+    process.env.SOFAGENT_DATA = dataDir;
+    git(['init', '-q']);
+    git(['config', 'user.email', 't@t.com']);
+    git(['config', 'user.name', 'tester']);
+    writeFileSync(join(repoDir, 'base.txt'), 'base');
+    git(['add', '.']);
+    git(['commit', '-m', 'base commit']);
+  });
+
+  afterEach(() => {
+    process.env.SOFAGENT_DATA = savedData;
+    try { rmSync(repoDir, { recursive: true, force: true }); } catch { /* */ }
+    try { rmSync(dataDir, { recursive: true, force: true }); } catch { /* */ }
+    vi.restoreAllMocks();
+  });
+
+  async function run(hash: string): Promise<{ code: number | undefined; out: string }> {
+    const prevCwd = process.cwd();
+    process.chdir(repoDir);
+    const captured: string[] = [];
+    logSpy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+      captured.push(args.map(String).join(' '));
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`__EXIT__${code ?? 0}`);
+    }) as never);
+    const { runVerifyCommit: fn } = await import('../verify');
+    let code: number | undefined;
+    try { fn(hash); } catch (e) {
+      const m = String((e as Error).message).match(/^__EXIT__(\d+)$/);
+      if (m) code = parseInt(m[1]!, 10); else throw e;
+    } finally { process.chdir(prevCwd); }
+    return { code, out: captured.join('\n') };
+  }
+
+  function exactEntry(commitSha: string, exitCode: number): string {
+    return JSON.stringify({
+      timestamp: new Date().toISOString(),
+      diffRange: '--cached',
+      task: 'f32 matrix',
+      exitCode,
+      ruleResults: [],
+      diffFileCount: 1,
+      commitPhase: 'post-commit',
+      parentSha: '',
+      commitSha,
+    });
+  }
+
+  it('路径 0：含 FAIL 记录 → EXIT=2（不再洗白 exit 0）', async () => {
+    const sha = commitFile('a.txt', 'x', 'feat: f32 matrix test');
+    writeFileSync(join(dataDir, 'audit/history.jsonl'), exactEntry(sha, 2) + '\n');
+    const r = await run(sha);
+    expect(r.code).toBe(2);
+    expect(r.out).toContain('FAIL');
+  });
+
+  it('路径 0：仅 WARN → EXIT=1', async () => {
+    const sha = commitFile('b.txt', 'x', 'feat: f32 matrix warn');
+    writeFileSync(join(dataDir, 'audit/history.jsonl'), exactEntry(sha, 1) + '\n');
+    const r = await run(sha);
+    expect(r.code).toBe(1);
+  });
+
+  it('路径 0：全 PASS → EXIT=0（放行不变）', async () => {
+    const sha = commitFile('c.txt', 'x', 'feat: f32 matrix pass');
+    writeFileSync(join(dataDir, 'audit/history.jsonl'), exactEntry(sha, 0) + '\n');
+    const r = await run(sha);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('✅');
+  });
+
+  it('路径 ①：FAIL 记录按父提交匹配 → EXIT=2 + 绕过归因措辞', async () => {
+    const parent = commitFile('p.txt', 'x', 'feat: f32 parent');
+    const child = commitFile('q.txt', 'x', 'feat: f32 child');
+    void child;
+    // 审计记录 parentSha = parent（child 的 pre-commit 审计），结论 FAIL
+    writeFileSync(join(dataDir, 'audit/history.jsonl'), preCommitEntry(parent, 'feat: f32 child', 2) + '\n');
+    const r = await run(git(['rev-parse', 'HEAD']));
+    expect(r.code).toBe(2);
+    expect(r.out).toContain('拦截后重试成功');
+  });
+});
