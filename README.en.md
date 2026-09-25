@@ -57,6 +57,8 @@
 
 </details>
 
+> **Version note**: v1.5.2 has been released (2026-09-24); the latest npm version is `@sofagent/audit@1.5.2` (all 23 packages aligned on the `latest` channel).
+
 ## Should you install it?
 
 | If you are... | Recommendation |
@@ -185,7 +187,7 @@ Also in this release: egress governance (default-deny host allowlist + outbound 
 
 **Release stage (read before installing)**: sofagent is in its **Alpha construction period** (**v1.x**) — the feature surface moves fast and **no interface stability is promised**; read the [CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
 
-The matching npm release-channel policy: **construction-period versions are published under the `alpha` dist-tag, keeping `latest` as the stable channel** — `npx @sofagent/audit` pulls the most recent `latest` version by default; construction-period builds need an explicit `npx -p @sofagent/audit@<version>` or `@alpha` (alpha split since v1.5.2; current `latest`/`alpha` pointers per `npm view @sofagent/audit dist-tags`); **the default channel resumes from the v2.0.0 beta**.
+The matching npm release-channel policy: **no dist-tag split — `latest` is the newest version** — `npx @sofagent/audit` pulls the current latest by default, no tag needed (version numbers carry the stage semantics: v1.x alpha construction period / beta from v2.0.0). A construction-period alpha split was trialed in v1.5.2 and reverted by author decision the same day (complexity outweighed the benefit); the `alpha` tag remains as a historical release trace and is not maintained.
 
 > ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the data/<tenant>/ path foundation — see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 400 .sofagent/config.yml` — an auxiliary layer, ineffective against same-user processes; see [LIMITATIONS §3](./docs/LIMITATIONS.md)); do not put the single-machine default config directly into production.
 >

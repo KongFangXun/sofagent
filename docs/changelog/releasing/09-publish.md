@@ -379,6 +379,8 @@ fi
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 `@sofagent/*` 与裸名总包在步骤八手动 publish（13 个手动 `@sofagent/*` = 11 个引擎模块包 + `load-chain` + `dsh-plugin-kit`，加裸名总包 `sofagent` 共 **14 包**——包数口径以步骤八头部为准）；**另有七款 DSH 插件**（`cordis-plugin-sofagent-*`，裸名、目录在 `engine/dsh-plugins/`）同样在步骤八手动 publish——见「步骤八·补」。
 
+> **触点纪律（撤策执行不完整教训 · F-8）**：策略类翻牌必须全站 grep `alpha|分道|channel|dist-tag` 后双语双段逐一翻牌（README 双语 62 区块与 188 段、LIMITATIONS、本文件）——commit message 的触点声称以 grep 结果为准，不以记忆为准。
+
 ### dist-tag 分道（🔴 **已撤策**——试行一轮后撤策：版本号已承载阶段语义（一系版本=施工期、次版本位归零起=贝塔），dist-tag 分道复杂度大于收益。以下保留为历史档案，下版发布不再执行；恢复正常发布（默认 latest，无先行舞步））
 
 > ~~**判据是版本期，不是日期**：本版低于 `v2.0.0` = 施工期~~（撤策后不再适用） → 本版**全部 23 包**（15 个 `@sofagent/*` scope 包（13 模块包 + `load-chain` + `dsh-plugin-kit`）+ 1 个裸名总包 + 七款 DSH 插件）以 `--tag alpha` 发布，**`latest` 不动**；本版达到 `v2.0.0` = 贝塔，不加 tag（默认写 `latest`），恢复正常发布。
