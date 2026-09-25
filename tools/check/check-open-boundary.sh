@@ -144,6 +144,9 @@ for f in $TRACKED; do
   HOME_PATH_TOTAL=$((HOME_PATH_TOTAL + 1))
   # 占位用户名白名单（与 A2 规则「占位符豁免」同款思路）：断言抓的是**真实**机器
   # 路径外溢；`/Users/xxx/`、`/home/user/` 这类形状说明/测试 fixture 属正当用法。
+  # ⚠️ 已知权衡（显式登记）：白名单里的通用词（dev/test/name/me 等）若恰是真实
+  # 用户名则漏检——判断是「通用词做占位」远多于「真名恰为通用词」，故取此权衡；
+  # 若日后确证某白名单词出现真实外溢，从本表移除该词即可（豁免表可审可改）。
   HIT=$(grep -nE "(^|[^[:alnum:]_])/(Users|home)/[A-Za-z0-9._-]+/" "$f" 2>/dev/null \
     | grep -vE "/(Users|home)/(user|users|xxx|yyy|johndoe|jane|alice|bob|admin|example|youruser|your-user|username|me|someone|foo|bar|test|tester|dev|developer|name|someoneelse|runner)/" \
     || true)
