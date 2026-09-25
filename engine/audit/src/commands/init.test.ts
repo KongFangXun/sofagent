@@ -194,6 +194,10 @@ describe('pre-commit 主防线（H-01 三层防线第一层）', () => {
     // 迷你 dist + 哈希基准预写：让 commit-msg 的 AUDIT_CMD 探测与完整性校验走通
     mkdirSync(join(repoDir, 'engine/audit/dist'), { recursive: true });
     writeFileSync(join(repoDir, 'engine/audit/dist/index.js'), 'process.exit(0);\n');
+    // F-28 指纹：repo-local 分支前置本仓指纹校验（顶层 name=sofagent-monorepo +
+    // engine/audit name=@sofagent/audit）——测试装置造齐双 package.json 让分支照常命中
+    writeFileSync(join(repoDir, 'package.json'), JSON.stringify({ name: 'sofagent-monorepo', version: '0.0.0' }));
+    writeFileSync(join(repoDir, 'engine/audit/package.json'), JSON.stringify({ name: '@sofagent/audit', version: '0.0.0' }));
     const home = join(tmpdir(), `sofagent-h01-e2e-home-${Date.now()}`);
     mkdirSync(join(home, 'internal'), { recursive: true });
     const hash = execFileSync('shasum', ['-a', '256', join(repoDir, 'engine/audit/dist/index.js')], { encoding: 'utf-8' }).split(' ')[0];
@@ -261,6 +265,10 @@ describe('post-commit 对账 exitCode 三档分流 (B8)', () => {
     // 无此 fixture 时 hook 静默 exit 0，对账回声不输出——与 H-01 describe 同款先例）
     mkdirSync(join(repoDir, 'engine/audit/dist'), { recursive: true });
     writeFileSync(join(repoDir, 'engine/audit/dist/index.js'), 'process.exit(0);\n');
+    // F-28 指纹：repo-local 分支前置本仓指纹校验（顶层 name=sofagent-monorepo +
+    // engine/audit name=@sofagent/audit）——测试装置造齐双 package.json 让分支照常命中
+    writeFileSync(join(repoDir, 'package.json'), JSON.stringify({ name: 'sofagent-monorepo', version: '0.0.0' }));
+    writeFileSync(join(repoDir, 'engine/audit/package.json'), JSON.stringify({ name: '@sofagent/audit', version: '0.0.0' }));
     // 真实 git 仓库 + 一个初始 commit（post-commit 依赖 git rev-parse HEAD / HEAD^）
     execFileSync('git', ['init', '-q'], { cwd: repoDir });
     execFileSync('git', ['config', 'user.email', 't@t.com'], { cwd: repoDir });
@@ -335,6 +343,10 @@ describe('commit-msg reset fail-loud（H-01 index.lock 竞态）', () => {
     // 迷你 dist：让 hook 的 AUDIT_CMD 探测与哈希基准生成（SOFAGENT_HOME 隔离）走通
     mkdirSync(join(repoDir, 'engine/audit/dist'), { recursive: true });
     writeFileSync(join(repoDir, 'engine/audit/dist/index.js'), 'process.exit(0);\n');
+    // F-28 指纹：repo-local 分支前置本仓指纹校验（顶层 name=sofagent-monorepo +
+    // engine/audit name=@sofagent/audit）——测试装置造齐双 package.json 让分支照常命中
+    writeFileSync(join(repoDir, 'package.json'), JSON.stringify({ name: 'sofagent-monorepo', version: '0.0.0' }));
+    writeFileSync(join(repoDir, 'engine/audit/package.json'), JSON.stringify({ name: '@sofagent/audit', version: '0.0.0' }));
     // 暂存普通文件（hook 开头空 diff 直接放行，必须先有暂存内容）
     writeFileSync(join(repoDir, 'a.txt'), 'a');
     execFileSync('git', ['add', '.'], { cwd: repoDir });
@@ -414,6 +426,10 @@ describe('post-commit HEAD tree 对账兜底（H-01）', () => {
     // 迷你 dist——满足 hook 顶部 AUDIT_CMD 探测
     mkdirSync(join(repoDir, 'engine/audit/dist'), { recursive: true });
     writeFileSync(join(repoDir, 'engine/audit/dist/index.js'), 'process.exit(0);\n');
+    // F-28 指纹：repo-local 分支前置本仓指纹校验（顶层 name=sofagent-monorepo +
+    // engine/audit name=@sofagent/audit）——测试装置造齐双 package.json 让分支照常命中
+    writeFileSync(join(repoDir, 'package.json'), JSON.stringify({ name: 'sofagent-monorepo', version: '0.0.0' }));
+    writeFileSync(join(repoDir, 'engine/audit/package.json'), JSON.stringify({ name: '@sofagent/audit', version: '0.0.0' }));
     writeFileSync(join(repoDir, 'a.txt'), 'a');
     execFileSync('git', ['add', '.'], { cwd: repoDir });
     execFileSync('git', ['commit', '-qm', 'init'], { cwd: repoDir });

@@ -4,7 +4,7 @@
 // （loadRuleset('ast') → runRulesetRules → plugin 真实加载执行）
 // ============================================================
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { loadRuleset, runRulesetRules } from '../ruleset-loader';
 import type { DiffFile } from '@sofagent/core';
 
@@ -17,6 +17,11 @@ function makeDiff(path: string, addedLines: string[]): DiffFile[] {
 }
 
 describe('官方 AST 规则集（sofagent-ruleset-ast）· 审计管线集成', () => {
+  // F-9 联动：plugin 类规则默认拒绝（供应链门卫）——本集成测试真实加载官方
+  // @sofagent/rules plugin，属白名单 scope，测试态显式 opt-in。
+  let _savedAllow: string | undefined;
+  beforeAll(() => { _savedAllow = process.env.SOFAGENT_ALLOW_PLUGIN_RULES; process.env.SOFAGENT_ALLOW_PLUGIN_RULES = '1'; });
+  afterAll(() => { if (_savedAllow === undefined) delete process.env.SOFAGENT_ALLOW_PLUGIN_RULES; else process.env.SOFAGENT_ALLOW_PLUGIN_RULES = _savedAllow; });
   it('规则集可加载：10 条规则全部为 plugin 类型', () => {
     const rs = loadRuleset('ast');
     expect(rs.name).toBe('ast');

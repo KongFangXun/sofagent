@@ -23,6 +23,9 @@ import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
 import { checkHistoryChainDetailed, validateHmacKey, getHistoryFilePath } from './audit-history';
+// F-11：静态 import（vitest ESM 下 require 相对路径不可用）
+import { isInitialized as _f11IsInit, loadDataKey as _f11LoadKey, keysDirPath as _f11KeysDir } from './crypto/key-manager';
+const _f11KeyMod = { isInitialized: _f11IsInit, loadDataKey: _f11LoadKey, keysDirPath: _f11KeysDir };
 import { DATA_DIR, getConfigFile, resolveDataDir, resolveHomeDir, resolveKnowledgeDir } from './data-paths';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
@@ -626,7 +629,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   // F-11：静态加密一致性检查——「曾初始化但密钥缺失」的降级态（新记录回明文）
   // 此前零检测：权限巡检只查「文件在时的 mode」，不查「标记在而文件缺」。
   {
-    const { isInitialized, loadDataKey, keysDirPath } = require('./crypto/key-manager') as typeof import('./crypto/key-manager');
+    const { isInitialized, loadDataKey, keysDirPath } = _f11KeyMod;
     const home = resolveHomeDir();
     const initialized = isInitialized(home);
     const keyOk = loadDataKey(home) !== null;
