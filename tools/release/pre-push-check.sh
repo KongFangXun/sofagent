@@ -364,6 +364,23 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 3j. 判决类记录成对门禁（check-paired-records.mjs · v1.5.3 第六章新增）
+# 凡判决必成对（N 态判据：声明 N 态即须落 N 态）。登记表 = 脚本内 REGISTRY
+# （家族 × N 态 × 生产写入点）；三类盲区（RULE_TOGGLE/ESCALATE_REPORT/COST）
+# 显式登记理由+触发条件。新增判决类 kind 必须同批登记配对侧，否则此处红。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3d. 判决类记录成对门禁 ──${NC}"
+  if node tools/check/check-paired-records.mjs >/dev/null 2>&1; then
+    check_pass "check-paired-records.mjs 通过（N 态全实落 · 零未登记判决写入点 · 盲区显式登记）"
+  else
+    check_fail "check-paired-records.mjs 发现缺侧/未登记判决类写入点"
+    node tools/check/check-paired-records.mjs 2>&1 | grep "❌" | head -10
+    echo "  提示：node tools/check/check-paired-records.mjs --self-test 可验证门禁自检"
+  fi
+fi
+
+# ════════════════════════════════════════
 # 3b. 跨文档锚点校验（check-anchors.mjs · v1.3.1 新增）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
