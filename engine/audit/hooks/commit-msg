@@ -181,7 +181,7 @@ if [ -f "$_DIST_ROOT_FOR_HASH/engine/audit/dist/index.js" ]; then
   fi
   if [ -z "$CURRENT_HASH" ]; then
     # 算不出来 ≠ 一致。静默放行会让「完整性校验」变成摆设，必须让人看见没跑。
-    echo "⚠️ [sofagent] dist 聚合哈希计算失败（$DIST_HASH_SCRIPT 缺失或 dist 为空）——本次完整性校验未执行"
+    echo "⚠️ [sofagent] dist 聚合哈希计算失败（engine/audit/dist 为空或不可读）——本次完整性校验未执行"
   elif [ ! -f "$HASH_RECORD" ]; then
     # F-28：基准禁止自动落锚。原实现用「当前算出的哈希」自动写基准并放行——首提交
     # 即把（可能已被污染的）dist 固化为合法基线，且与 SECURITY.md「基线缺失显性报错，
