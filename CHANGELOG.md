@@ -14,6 +14,8 @@
 > 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/` 下对应版本目录中（如 `v1.5/`、`v1.6/`–`v1.9/`、`v2.0/`），**不纳入本索引**；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。规划版本的完整排期见 [ROADMAP](./docs/ROADMAP.md)。
 
 - **v1.5.2** — 🔍 审计模块 · 对外开放面与判定语义：MCP audit 数据对外（`audit_query` 只读 + 事件订阅推送）· 约束导出与证据链外部可验（`ruleset_export` 机器可读 JSON 双向可逆 + 独立验签工具零依赖三态校验）· should-run 判定链 · 审计结论失效语义 · 网络出口治理面 · 事前授权补环 · DSH 插件 npm 首发面 · 测试 5083→**5296**（+213，13 包 workspace（模块包）口径，包数统计标准见 [WIKI §六](./docs/WIKI.md#六当前状态)）· acceptance 367→**373** · 2026-09-24 已发版 · MCP 新增 `audit_query`、`ruleset_export` 两个 tool（总数 107） · [开发日志](./docs/changelog/v1.5/v1.5.2.md)
+
+> 📌 **当前口径**：MCP tool 总数 **103**（2026-09-26 浏览器四件套（`playwright_*`）退役，[v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md)；上方 107 为 v1.5.2 发版时点读数）
 - **v1.5.1** — 编排模块 · 事件驱动：业务事件触发 · 理解债务应对 · 设备 OTA 远程升级 · 审计输入双通道 · `sofagent demo` · 测试 4903→**5083**（+180，13 包 workspace（模块包）口径 5083（发版时点），包数统计标准见 [WIKI §六](./docs/WIKI.md#六当前状态)）· acceptance 357→**367** · 回归 87 维 · 2026-09-22 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.1.md)
 - **v1.5.0** — 治理模块 · 可见性与本体成熟：治理 KPI 面板（Dashboard 治理 tab 六卡 + 数据集审阅 + lineage 合规报告 + 周报）· 本体数据双时态（stateAt 时点快照 + 三层渐进加载）· Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· 跨层证据对账 trace_reconcile（三源四态）· FDE 陪跑期 · 存量清扫 + @sofagent/inject 更名 · DSH 插件事件接线 · MCP 104→**105** tools · 测试 4805→**4903**（+98，13 包 workspace 口径，包数统计标准见 [WIKI §六](./docs/WIKI.md#六当前状态)）· acceptance 352→**357** · 2026-09-19 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
 
