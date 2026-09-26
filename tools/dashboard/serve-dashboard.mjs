@@ -742,7 +742,7 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // /api/forge-latest → 最近一次真实 FORGE 运行（latest.json 被 dry-run 覆盖时兜底）
+  // /api/forge-latest → 最近一次真实 FORGE 运行（latest.json 已随编排循环退役，本端点自足倒序扫 status.json）
   // 倒序扫 fresh-eyes-loop 日期目录，找 stopReason != 'dry-run' 的最新运行
   if (urlPath === '/api/forge-latest') {
     const base = join(SOFAGENT_DATA, 'forge-runs', 'fresh-eyes-loop');

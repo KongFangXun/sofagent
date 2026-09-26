@@ -847,3 +847,21 @@ rc.2 的实际 API 与 `runCordisAgent` 的 `resolveAgentDriver` 契约不一致
 1. **「资产的载体无关性」要在第一次出现第二载体时检验**——协议（角色/schema/停止条件）与载体（driver 进程）解耦设计让这次删除只动了编排层，执行链路与产物契约零改动；若当初角色逻辑长在编排进程里，这次就是重写
 2. **编排逻辑文档化 = 最好的编排退役方式**——先把编排决策写成自包含协议（注入即跑），进程才删得掉；反过来先删进程再补协议会出现能力真空
 3. **删大文件的切割纪律**——内容锚定位（非纯行号）+ 锚顺序断言 + 切点语法检查 + 无参/缺参双冒烟，四步缺一不可（v1 切割因 slice 终点含函数体中间行产出非法 return，v2 修正）；共享函数（splitFindings/isPlaceholderOutput/writeFallbackFindings）必须先 grep 全部调用点确认归属再定切割线
+
+### 冻结窗口锁与死检查收口（hook 侧收尾 + dashboard 消费面）
+
+**决策**：整合归一时 driver 侧锁函数（acquireRunLock/releaseRunLock）随编排删除，hook 侧 §2.6 消费段当时保留并登记裁定；本轮裁定提前收口——writer 已删、consumer 恒空过属**无害死检查**，按「该退的删掉」收口：hook §2.6 整段删除，S382 三态行为锁改写为**静态退役哨点**（hook 锁段与措辞零残留 + driver 锁函数零残留，对齐 S433 先例），「审查中途不碰审查标准面」的保护完全由 fresh-eyes-loop 主任务协议承担。
+
+**连带修订面**（删完 grep 消费面反查出来的，单删主体必漏）：hook 头部变更注记、03-quality-loop 铁律一机制括注（改协议自声明）、05-release-gate 机制锁段（改退役声明）、install.sh hook 对账举例、tools/README 指纹脚本死关联、dashboard latest.json 死 fallback + 双盲 A/B 文案四处（对齐单盲四角色现实）。
+
+**行为锁降级哨点的两个实锤信号**（本次双命中）：
+1. **行为实测与产品 fail-closed 互斥**——原 S382 依赖 HOME 隔离 + 临时仓实测锁三态，但 v1.5.0 TASK-10 全局基准校验 fail-closed（HOME 隔离下基准文件永远缺失 → hook 对空提交也 exit 1）；HEAD 版 hook 同环境复测同样红 = 存量环境态，测试永远红不可稳定运行
+2. **断言目标机制已删 → 测试恒绿假覆盖**——三态断言测的拦截行为不复存在，跑过也只是假绿
+
+⇒ 任一信号命中即改**静态零残留哨点**（grep 断言机制字符串零残留），行为面交还既有行为锁（S381 空 diff 审计）与 hook 自身测试面。
+
+**可复用判据**：
+1. **死检查三态处置**：writer 已删 → consumer 恒空过。① 删 + 哨点（默认——恒空过的检查比没有检查更糟，它假装在守门）② 保留 + 现态标注（仅当描述有档案价值且零误导）③ 复活 writer（仅当存在真实保护需求且 writer 归属清晰）
+2. **删机制必扫消费面五件套**：机制主体 / 头部变更注记 / 活文档机制描述（releasing SOP）/ 测试场景 / 工具 README 关联描述——本次联动四处全靠删完 grep 反查出来
+3. **场景数对账撞行时的保计数策略**——删场景要动头部总数声明 + 三处文档声称值；若声明行正被并行 session 编辑（本次 373→372 归并对账进行中），**改写为哨点（编号保留、计数不变）优于删除**，零对账面波及
+4. **多 session 并发提交三条**（同窗实战）：① 同主题撞车用**临时 index 分离**——`git show HEAD:<file>` 构造只含自己改动的 blob + `git update-index --cacheinfo` 提交，并行改动留工作区由对方提交；② **partial commit 副作用**——`git commit <pathspec>` 会把真 index 写回「上一提交树 + pathspec」状态，与 HEAD 出现表观 staged 差异，`git reset`（mixed）对齐即净，非数据丢失；③ **hash-object 构造 blob 必先 `git ls-tree HEAD <path>` 读原 mode 位**——硬编码 100644 让两个 100755 脚本掉可执行位，amend 修复

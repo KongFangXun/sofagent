@@ -27,7 +27,7 @@
 | 一·架构设计 | [./architecture.md](./architecture.md) | **执行后端三层（DSH CLI 桥接 → createReactAgent fallback → 禁 createDeepAgent）** · Driver-Worker 编排 · 步骤定义 · 目录架构 |
 | 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · **六角色（A/B/C/D/V/F）统一走 glm-5.3-flash** · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
-| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **守卫 fail-loud（PASS 更不可信）** · **冻结窗口锁（防并行会话误改）** · **fresh-eyes 四连事故（窗口冲突/修复静默丢失/降级滚雪球/API 漂移全灭）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step · **编排循环退役与单步执行器（整合归一·能力交接清单）** |
+| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **守卫 fail-loud（PASS 更不可信）** · **冻结窗口锁（防并行会话误改）→ 已退役（死检查收口·哨点化判据）** · **fresh-eyes 四连事故（窗口冲突/修复静默丢失/降级滚雪球/API 漂移全灭）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step · **编排循环退役与单步执行器（整合归一·能力交接清单）** |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 
 ---
@@ -99,7 +99,7 @@
 - [ ] **spawn 外部脚本时流式写入日志**（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
 - [ ] **FAIL 判定必须零信任复核**（亲手实跑检查命令，FAIL≠真实 bug；命令缺陷修 checklist 不修产品代码）（[四·零信任复核](./driver.md#-零信任复核worker-的-fail-判定不可全信)）
 - [ ] **守卫脚本 fail-loud**（任何执行路径的失败必须非 0 退出；上线配故障注入自检——PATH 前置假 perl 验证 crash/silent 双路都能抓住）（[四·守卫 fail-loud](./driver.md#-守卫-fail-loud静默失败是最危险的失败模式)）
-- [ ] **长循环 driver 加冻结窗口锁**（pidfile 双信号：活锁+命中 driver 源码→阻断 commit；PID 死=锁滞留→WARN 放行）（[四·冻结窗口锁](./driver.md#-冻结窗口锁driver-跑循环期间防并行会话误改)）
+- [ ] **长循环 driver 加冻结窗口锁**（pidfile 双信号：活锁+命中 driver 源码→阻断 commit；PID 死=锁滞留→WARN 放行）（[四·冻结窗口锁](./driver.md#-冻结窗口锁driver-跑循环期间防并行会话误改)）——**现态：fresh-eyes 系已退役此机制**（hook 段与 driver 锁函数均删，改主任务协议承担；新长循环若需同款机械保护，参照档案实现 + 死检查收口节的哨点化判据）
 - [ ] **环境级故障熔断不要逐个降级**（worker 失败率 ≥2/3 且绝对数 ≥5 = 环境级故障中止 run；降级占位是环境故障的损失放大器）（[四·四连事故](./driver.md#fresh-eyes-循环四连事故运行窗口冲突--修复静默丢失--降级滚雪球--依赖-api-漂移全灭实录)）
 - [ ] **rc 依赖兼容层 fail-fast**（双形态兼容 + 能力缺失显式抛错带修复指引；禁把 undefined 传进事件遍历）（[四·四连事故](./driver.md#fresh-eyes-循环四连事故运行窗口冲突--修复静默丢失--降级滚雪球--依赖-api-漂移全灭实录)）
 - [ ] **降级/兜底路径过主路径质量清单**（主路径有的归并/去重/校验，降级路径逐项补齐——降级是换方式交付不是降标准）（[四·四连事故](./driver.md#fresh-eyes-循环四连事故运行窗口冲突--修复静默丢失--降级滚雪球--依赖-api-漂移全灭实录)）
