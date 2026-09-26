@@ -34,7 +34,7 @@ const GROUP_NAMES = {
   ops: '运维与可见性（成本 · 工作明细 · 健康 · 规则 · 能力发现）',
 };
 
-/** tool → 能力域显式映射（107 个 · 新增工具必须在此拍板归组，否则生成器 fail） */
+/** tool → 能力域显式映射（新增工具必须在此拍板归组，否则生成器 fail） */
 const NAME_TO_MODULE = {
   // FDE 六引擎
   fde_interview: 'fde', fde_classify: 'fde', fde_quantify: 'fde',
@@ -47,8 +47,6 @@ const NAME_TO_MODULE = {
   // v1.5.2 章一/章二：审计对外两面（audit——数据面只读查询 + 规则面标准 JSON 导出，双向可逆）
   audit_query: 'audit',
   ruleset_export: 'audit',
-  playwright_navigate: 'audit', playwright_click: 'audit',
-  playwright_screenshot: 'audit', playwright_assert: 'audit',
   // 工作流编排
   activate_workflow: 'workflow', workflow_submit: 'workflow', route_workflow: 'workflow',
   compose: 'workflow', fde_compose: 'workflow', loop_debug: 'workflow',
@@ -173,7 +171,7 @@ if (i === -1 || j === -1) {
 }
 const updated =
   doc.slice(0, i) +
-  `${START}（${tools.length} · 按产品能力域分组）\n\n> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——\`SOFAGENT_MCP_ROLES=audit,ops\` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）4 tool 已于 2026-09-26 注销（v2.0.0 §七 B 表裁定退役，UI 审计实做窗口已关）。\n` +
+  `${START}（${tools.length} · 按产品能力域分组）\n\n> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——\`SOFAGENT_MCP_ROLES=audit,ops\` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）已于 2026-09-26 注销（v2.0.0 §七 B 表裁定退役，UI 审计实做窗口已关）。\n` +
   section +
   doc.slice(j);
 writeFileSync(API_DOC, updated);

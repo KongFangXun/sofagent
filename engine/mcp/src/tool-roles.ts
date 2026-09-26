@@ -1,7 +1,7 @@
 // ============================================================
 // tool-roles.ts · MCP 工具角色分层（v1.5.2）
 //
-// 83 个工具按角色打标签，默认全量暴露（通用对话助手形态，
+// 全部工具按角色打标签，默认全量暴露（通用对话助手形态，
 // 对话可跨场景，硬砍会挡模型）。专职 Agent 部署时显式设
 // SOFAGENT_MCP_ROLES=fde,audit,agent 等收窄到专用工具箱。
 // 未打 roles 的工具（动态工具 memory_backends）始终暴露。
@@ -40,7 +40,7 @@ export function getActiveRoles(env: NodeJS.ProcessEnv = process.env): Role[] | n
         `[sofagent] SOFAGENT_MCP_ROLES="${raw}" 未匹配任何已知角色（${ROLES_STRICT_ENV}=1 fail-closed，拒绝启动）。合法角色: ${ROLES.join(', ')}`,
       );
     }
-    console.error(`[sofagent] WARNING: SOFAGENT_MCP_ROLES="${raw}" 未匹配任何已知角色，已回退为全量暴露（107 tools）。如需收窄请修正角色名。`);
+    console.error(`[sofagent] WARNING: SOFAGENT_MCP_ROLES="${raw}" 未匹配任何已知角色，已回退为全量暴露。如需收窄请修正角色名。`);
     return null; // 全非法 → 全量兜底（带警告）
   }
   return [...new Set(valid)];
