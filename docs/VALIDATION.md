@@ -777,6 +777,8 @@ AI 从「程序」（单一模型）走向「协议」（多模型组合）是 S
 
 **可借鉴两处**：① **判定原语是一等输入参数而非 prompt 措辞**——判定读 `items[r]["markers"]` / `QTYPES[q["t"]]` 这类结构体字段（`agent.py:292-320`），与 [v1.6.0 第一章](./changelog/v1.6/v1.6.0.md)「问题集限定」同源。② **分流前置在模型加载之前**——其 router 在任何 checkpoint 加载之前完成分流判定（`router.py:135-136`「a cold load costs seconds, while detection costs microseconds」），并自述 `typed-decisions`「**should not be a silent default**」（`router.py:26-28`）；「一开始就选错路径」是事后探针抓不到的失效面，见 [v1.9.0 第六章](./changelog/v1.9/v1.9.0.md)。
 
+**可借鉴增补（2026-09-26 第三方拆解笔记，工程形态三点）**：③ **延迟随批量摊薄的公开分档读数**——官方 T4 档自报：1 问约 39.5 ms / 10 问约 158.6 ms / 50 问约 771 ms（**每问均摊从 39.5 ms 降到 15.4 ms**，固定前向成本被批量分摊）——补齐本节延迟读数谱系的中间档（既有：本地 M5 8–9 ms / 单机 9B 444 ms / 云端 Jev 400+ ms），「打包问句的成本杠杆」（[v1.9.0 §四](./changelog/v1.9/v1.9.0.md)）第一次有了**同件同口径的批量-延迟曲线**；口径为厂商自报（特定硬件特定 checkpoint）、本仓未复算。④ **Lazy Load vs Preload 双加载策略**——router 默认懒加载（偶尔用省资源），生产常驻热点 checkpoint 用 preload（语言频繁切换时反复冷加载极慢）——对应本仓 [v1.8.0](./changelog/v1.8/v1.8.0.md) 判定件常驻/加载面的**现成策略词汇**（低频场景懒加载、一体机生产档常驻）。⑤ **「Benchmark 高分 = 特化 checkpoint」的对照纪律素材**——Typed-Decisions 0.766 系专门特化 checkpoint 的成绩而非默认通用档（项目自述非默认静默选中），加上 Jev 数字来自第三方公开结果**非同场 head-to-head**——两条件叠加正是 [v1.9.0 §五](./changelog/v1.9/v1.9.0.md)「引用自报须标注口径差异 / 对照数字须带版本锚」的又一实证；任何「X 全面吊打 Y」的横比在本仓语境下都要先答「同 checkpoint 吗、同场测的吗」。
+
 **零承诺佐证**：全仓 `abstain` / `refuse` / `defer` **0 命中**——它把「势均力敌」与「没把握」压进同一个 confidence 数，「判不了」没有一等出口。这从反面佐证本仓 [ARCHITECTURE](./ARCHITECTURE.md)「`ABSTAIN` 必须与 `ASK` 分开」的判据：两者混装则下游无法区分「该调阈值」与「该补判据」。
 
 **Jev 生态（印证级）——三原语上线三天长出三种完全不同用法**
