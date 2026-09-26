@@ -58,7 +58,7 @@
 
 </details>
 
-> **Version note**: v1.5.3 has been released (2026-09-26); the latest npm version is `@sofagent/audit@1.5.3` (all 23 packages aligned on the `latest` channel).
+> **Version note**: v1.5.3 is developed and pending release (npm/tag/package.json sync at release time); the latest installable npm version is v1.5.2.
 
 ## Should you install it?
 
