@@ -30,7 +30,7 @@ WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/ac
 ```
 ## 你的身份
 
-你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
+你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段五（发版闸门）跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
 ## 审查维度（85 维 · 编号规则见头部）
 
@@ -328,7 +328,7 @@ done
 
 # 子项 b: npm registry vs git tag vs 工作树三方一致
 # 防御：npm view 必须带完整 @sofagent scope（裸 /audit 非有效包名恒空值——探针自身缺陷非 registry 无数据）
-# 发版时序：闸门在 SOP 阶段六、npm publish 在阶段十——候选版此刻未上 registry，npm 停在上一正式版属正常态（与 tag 滞后同源）
+# 发版时序：闸门在 SOP 阶段五、npm publish 在阶段九——候选版此刻未上 registry，npm 停在上一正式版属正常态（与 tag 滞后同源）
 NPM_VER=$(npm view @sofagent/audit version 2>/dev/null)
 TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
 echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER" # 期望：发版完成后三者一致（闸门期允许滞后一步）

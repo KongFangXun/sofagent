@@ -80,7 +80,7 @@ grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
 | 文件 | 为什么脚本不碰 | 什么时候改 |
 |------|------|------|
 | `CHANGELOG.md` 条目 | 内容性更新，不是纯版本号替换 | 每次发版手动写摘要 + 版本说明 |
-| `ROADMAP.md` 五步更新 | 结构性改动（删节/迁移），不是纯替换 | 每次发版手动做五步（详见 releasing.md 阶段八） |
+| `ROADMAP.md` 五步更新 | 结构性改动（删节/迁移），不是纯替换 | 每次发版手动做五步（手册见 [06-doc-finalize.md「ROADMAP 同步手册」](../docs/changelog/releasing/06-doc-finalize.md)） |
 | `ARCHITECTURE.md` 正文"当前 vX.Y" | 正文引用，不是版本头格式 | bump 后 grep `当前 v` 检查并手动更新 |
 | `package-lock.json` | bump-version.sh 不覆盖 | 「同步 package-lock.json」小节用 `npm install --package-lock-only` 同步 |
 | 正文中的历史引用 | "v1.0 新增"是溯源标记，不改 | 永远不改（bump 语境） |

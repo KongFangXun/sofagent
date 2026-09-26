@@ -37,7 +37,7 @@ npm install
 # lock file 与 package.json 一致性验证（CI 用 npm ci 严格模式）
 npm ci --dry-run 2>&1 | grep -q "missing\|error" && echo "❌ lock 不一致" || echo "✅ lock 一致"
 
-# 内部 @sofagent/* 依赖版本同步检查（bump 后所有内部依赖必须是同一版本）
+# 内部 @sofagent/* 依赖版本同步检查（所有内部依赖必须与本版同号；bump 落在步骤五，届时须重跑本段）
 # ⚠️ 必须扫全部 4 个 section（dependencies/devDependencies/peerDependencies/optionalDependencies）
 #    + action.yml 的 npm 包@版本格式（@sofagent/audit@X.Y.Z）——曾出现 optionalDependencies
 #    和 action.yml 各漏 1 处，靠 check-version 抓出才补上
@@ -295,7 +295,33 @@ done
 
 > ⚠️ **bump 批 commit 前必跑 `git status --porcelain` 检视暂存面**：bump 涉数百文件，惯用 `git add -A` 会把**旁生目录**（实测：audit-baseline-sync 在无 SOFAGENT_HOME 时把锚文件写进 `./undefined/`）一并收入。检视发现非 bump 目标路径即先清（`git rm -r --cached <dir>` + 删目录 + 产品侧登记修复）。
 
-## 步骤五：安装入口随版同步 ☐
+## 步骤五：版本 bump + 安装入口随版同步 ☐
+
+> 🔴 **本步骤是全流程唯一的 bump 时点**——阶段二~八全程 `package.json` 保持上一版号（SOP 设计的待发版中间态，见 [02 步骤一](./02-dev.md)）。SSOT 升级落在本步骤，且必须与安装入口 URL、bootstrap 哈希、状态翻牌**同一个 commit** 收口，才能「tag 前自洽」（tag 指向的必须是已 bump 的 commit）。
+
+### 第一拍：SSOT 版本号 bump（必做）
+
+```bash
+# ① 影响面预检（历史档案应零命中：脚本按设计排除 docs/changelog/）
+bash tools/release/bump-version.sh <上一版> <目标版> --dry-run
+#    <上一版> = bump 前 SSOT：node -p "require('./package.json').version"
+
+# ② 实际替换
+bash tools/release/bump-version.sh <上一版> <目标版>
+
+# ③ 生成式产物重生成——唯一生产方不是 bump 脚本，不跑 = check-template-drift 断言五/六 报漂移
+node tools/gen/gen-plugin-manifests.mjs
+
+# ④ 抓残留（bump 可能 EXIT 137 中断，核心号已改、边缘位置残留）
+bash tools/check/check-version.sh
+```
+
+> **残留补漏清单**（`optionalDependencies` / `action.yml` / 文档头日期 / WIKI 状态表 / package-lock / 发版状态标记，共六类）见
+> [06 步骤六](./06-doc-finalize.md)「bump 中断恢复清单」——**清单正文只此一份，本处不复制**（防双事实源）。
+> **版本位置清单 SSOT** = `tools/release/bump-version.sh` 头部「替换范围」注释；详细操作手册见 [playbook/version-bump.md](../../../playbook/version-bump.md)。
+> **bump 涉数百文件** ⇒ commit 前必跑 `git status --porcelain` 检视暂存面（见本阶段末「多 session 并发」段），禁 `git add -A`。
+
+### 第二拍：安装入口随版同步
 
 > 🔴 tag 打了、npm 发了，安装入口没人管就会断链——曾出现 README/bootstrap 安装 URL 仍指上一版，用户按 README 完整安装装到旧版。**每版必做，curl 验证后才能进步骤七。**
 
@@ -342,6 +368,21 @@ done
 ```
 
 > 🔴 **时序陷阱：回填哈希后必须重打 tag**——「先改 URL 提交 → 打 tag → 算哈希 → 回填提交」会让 tag 内 bootstrap.sh 仍持旧哈希（tag 内不自洽）。正确收口 = 回填哈希的 commit 落盘后**重打 tag**：`git tag -d vX.Y.Z && git tag -a vX.Y.Z -m ... && env -u http_proxy ... push origin :refs/tags/vX.Y.Z && push origin vX.Y.Z`（tag force 覆盖远端）。验收：`git show vX.Y.Z:bootstrap.sh | grep INSTALL_SHA256` 的哈希 == `git show vX.Y.Z:install.sh | shasum -a 256`。install.sh 本体无改动时 6 lib 哈希不变，只重算 install.sh 一项。
+
+### 第三拍：阶段六挂账翻牌（版本介绍触点清单）
+
+> 阶段六（[06 步骤十一](./06-doc-finalize.md)）把**版本号相关触点**挂账到本拍——这些格在阶段六勾不了（bump 未发生），必须在此一次性翻牌，否则「版本发完了、文档还挂着上一版介绍」。
+> 🔴 **清单正文只此一份**：逐格目标见 [06 触点清单](./06-doc-finalize.md) 及其「挂账去向台账」，**本处不复述**（防双事实源）。本拍归口的格 = WIKI 状态表 / ROADMAP 规划表状态 / ROADMAP「现在在哪」+ 顶栏 / 各深读文档版本头 / SKILL·AGENTS·GEMINI 头部 / SKILL/harness·rules 文件头 / dashboard 版本角标。
+
+```bash
+# 翻牌结果反查（<上一版> = bump 前的 SSOT）——命中即该格漏翻
+git grep -n "<上一版>" -- README.md README.en.md CHANGELOG.md SECURITY.md \
+  docs/ROADMAP.md docs/HANDBOOK.md docs/ARCHITECTURE.md docs/API.md docs/WIKI.md \
+  SKILL/ tools/dashboard/dashboard.html engine/umbrella/package.json
+# 期望：介绍面/状态面零命中（历史区沿革表历史值、changelog、archive 命中属正常）
+```
+
+> 验收：反查零「介绍面/状态面」命中 + 06 触点清单挂账格全部改 `[x]`；本拍与 bump 同 commit 收口。
 
 ---
 
