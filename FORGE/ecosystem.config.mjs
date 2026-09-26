@@ -2,15 +2,17 @@
 // FORGE/ecosystem.config.mjs · PM2 进程守护配置
 // v1.2.9 功能③：PM2 守护进程
 //
-// 管理 FORGE 的两个 driver：
-//   - fresh-eyes：fresh-eyes-driver.mjs（A/B 双盲独立审查循环）
+// 管理 FORGE 的 driver（长驻编排进程）：
 //   - release-gate：release-gate-driver.mjs（发版闸门验证循环）
+//   - fresh-eyes 条目已移除：其多轮编排循环退役（整合归一），执行载体 =
+//     harness 注入主任务协议（SKILL/fresh-eyes-loop/loop.md「执行形态」节），
+//     fresh-eyes-driver.mjs 现为单步角色执行器（--worker --step），无长驻进程
+//     可守护——编排 session 由注入方管理，不进 pm2
 //
 // 用法（通过 tools/forge/forge-pm2-start.sh 调用）：
-//   pm2 start FORGE/ecosystem.config.mjs --only fresh-eyes -- --target v1.2.9
 //   pm2 start FORGE/ecosystem.config.mjs --only release-gate -- --target v1.2.9
-//   pm2 stop fresh-eyes
-//   pm2 logs fresh-eyes
+//   pm2 stop release-gate
+//   pm2 logs release-gate
 //   pm2 status
 //
 // 守护参数说明：
@@ -23,7 +25,6 @@
 //
 // 环境变量：
 //   FORGE_TARGET：验证目标版本号（必填）
-//   FORGE_MAX_ROUNDS：fresh-eyes 最大轮数（默认 10）
 //   FORGE_SKIP_ACCEPTANCE：release-gate 是否跳过 acceptance 预跑（1/0）
 //   FORGE_HOME：SOFAGENT_HOME 路径（默认 ~/.sofagent）
 // ============================================================
@@ -58,15 +59,6 @@ const COMMON_CONFIG = {
 
 export default {
   apps: [
-    {
-      name: 'fresh-eyes',
-      script: join(REPO_ROOT, 'FORGE/src/fresh-eyes-driver.mjs'),
-      // 传给 driver 的参数通过 args 传递（PM2 的 -- 分隔符后内容）
-      // 实际参数在启动时通过 -- --target vX.Y.Z 注入
-      args: process.env.FORGE_TARGET ? `--target ${process.env.FORGE_TARGET} --max-rounds ${process.env.FORGE_MAX_ROUNDS || 10}` : '',
-      cwd: REPO_ROOT,
-      ...COMMON_CONFIG,
-    },
     {
       name: 'release-gate',
       script: join(REPO_ROOT, 'FORGE/src/release-gate-driver.mjs'),

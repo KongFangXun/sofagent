@@ -94,37 +94,34 @@ FORGE 有两个内环，共用第二步配置的环境变量，各自有独立�
 
 ### fresh-eyes-loop（质量循环 · 阶段三）
 
-driver（`FORGE/src/fresh-eyes-driver.mjs`）会自动 spawn 独立子进程跑每个 step——每个 step 都是全新的 Node 进程，**真零上下文**（不是同一 session 内换 prompt，而是彻底重启进程）。
+**执行载体 = harness 注入**（整合归一）：把主任务协议（`SKILL/fresh-eyes-loop/loop.md`「执行形态」节，占位符替换为实际值）注入一次 harness 运行（DSH 无头 = 主载体 / Codex headless / 有头 AI session）——它就是编排者，逐角色调执行器。每个角色 step 都是独立子进程，**真零上下文**（不是同一 session 内换 prompt，而是彻底重启进程）。
+
+**单步执行器**（编排方调用的角色执行通道②）：
 
 ```bash
-# 一键启动（driver 自动起 A/B 子进程）——target 传当前开发版本号
-node FORGE/src/fresh-eyes-driver.mjs --target v1.3.7 --max-rounds 10
-
-# 先 dry-run 看流程（不实际调用 LLM，只打印 step 序列）
-node FORGE/src/fresh-eyes-driver.mjs --target v1.3.7 --dry-run
+node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <runDir绝对路径> --target <版本号>
 ```
 
-**driver 参数**：
+| 参数 | 说明 |
+|------|------|
+| `--worker` | 单步执行模式（唯一入口；无参调用打印退役提示） |
+| `--step` | 角色步骤名（a-check / a-consolidate / b-fix / b-audit / c-verify / d-review） |
+| `--round-dir` | 本轮产物目录绝对路径 |
+| `--target` | 目标版本号（run 目录命名） |
 
-| 参数 | 说明 | 默认值 |
-|------|------|------|
-| `--target` | 目标版本号（当前开发版本，如 `v1.3.7`），用于 run 目录命名 | 必填 |
-| `--max-rounds` | 最大循环轮次 | `10` |
-| `--dry-run` | 只打印 step 序列，不调用 LLM | `false` |
-
-**单轮协议**（driver 自动编排，无需手动 relay）：
+**单轮协议**（编排者按协议 relay，role 顺序对应 status.md 的 phase）：
 
 ```
 a-check       → A（审查角色）独立跑 12 视角审查，输出 check-a.md
-b-check       → B（工程师角色）独立跑 12 视角审查，输出 check-b.md
-a-consolidate → A 合并 A+B findings，去重排序，输出 findings.md + result.md
+                （legacy 双盲 b-check 并行审查走 FORGE_ENABLE_B_CHECK=1 逃生门）
+a-consolidate → A 合并 findings，去重排序，输出 findings.md + result.md
 b-fix         → B 按 result.md 修复，输出 summary.md
 c-verify      → C 独立验收修复结果（逐条实测）
 d-review      → D 对抗复核 P0/P1，REOPEN 打回重修
               → 连续 2 轮无 P0/P1 → 停止
 ```
 
-产物写到 `~/.sofagent/data/forge-runs/fresh-eyes-loop/YYYY-MM-DD/run-NN/` 目录下。
+每轮另维护 `status.md` 单行现态锚（断点续跑与外部监督唯一依据）；产物契约用 `node tools/check/check-fresh-eyes-artifacts.mjs --runDir <abs>` 守闸。产物写到 `~/.sofagent/data/forge-runs/fresh-eyes-loop/YYYY-MM-DD/run-NN/` 目录下。
 
 ### release-gate-loop（发版闸门 · 阶段六）
 

@@ -39,7 +39,7 @@ deepagents 早期启发了编排模块设计，后因三个**不可逆硬伤**�
 
 ## 三、核心 Driver 脚本结构
 
-参考实现：`FORGE/src/fresh-eyes-driver.mjs`。以下是新 loop driver 的关键结构。
+单步执行链参考实现：`FORGE/src/fresh-eyes-driver.mjs`（~1980 行 @2026-09-26，整合归一后仅含 worker 执行链路）；编排循环参考实现：`FORGE/src/release-gate-driver.mjs`（长驻编排 driver 现存唯一实例）。以下是 loop 关键结构：
 
 ### 3.1 整体架构：Driver + Worker
 
@@ -349,20 +349,19 @@ FORGE/SKILL/fresh-eyes-loop/
 
 ### driver 源码
 
-完整 driver 实现：`FORGE/src/fresh-eyes-driver.mjs`（~1150 行）。关键函数：
+单步执行器实现：`FORGE/src/fresh-eyes-driver.mjs`（~1980 行；多轮编排循环已退役，编排逻辑归 harness 注入的主任务协议——见 `FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节）。关键函数：
 
 | 函数 | 职责 |
 |------|------|
-| `main()` | CLI 入口：解析参数 → 编排循环 → 判停止 → 写 LEDGER |
-| `runRound()` | 执行一轮（5 步：并行 ①② → 串行 ③④⑤） |
-| `spawnWorker()` | 起独立子进程执行单个步骤 |
-| `runWorker()` | Worker 主逻辑：读 prompt → 建 model+tools → createReactAgent → invoke → 写产物 |
+| `main()` | CLI 入口：仅分发 `--worker` 单步执行（编排循环已退役，无参调用打印退役提示） |
+| `runWorker()` | Worker 主逻辑：读 prompt → 建 model+tools → 执行 → 写产物（零上下文独立子进程） |
 | `buildSystemPrompt()` | 从 SKILL.md 构建 systemPrompt + macOS BSD 约束 |
 | `createModel()` | 异构模型实例化（GLM vs DeepSeek 参数差异） |
 | `loadTools()` | 工具集加载 + ExecutableTool → DynamicStructuredTool 转换 |
 | `writeFallbackFindings()` | 降级兜底：a-consolidate 失败时拼接两份 check 报告 |
-| `parseStopCondition()` | 读 findings.md 数 P0/P1 标记，判定是否"干净轮" |
 | `recordUsage()` | 从 invoke 结果提取 usage，算成本，追加到 usage.jsonl |
+
+编排侧函数（轮次循环 / spawn 编排 / 停止条件判定 / LEDGER 写入等）如需实现，参考 `FORGE/src/release-gate-driver.mjs`（现存唯一编排 driver）——但新 loop 优先考虑「协议注入 + 单步执行器」形态（免长驻进程，状态全在 runs/ 文件）。
 
 ---
 

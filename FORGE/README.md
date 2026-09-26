@@ -80,10 +80,10 @@ FORGE 有两个内环，共用同一套模型配置（详见 [`quick-start.md`](
 
 | 内环 | 阶段 | 命令 |
 |------|------|------|
-| **fresh-eyes-loop**（质量循环） | 阶段三（开发后） | `node FORGE/src/fresh-eyes-driver.mjs --target v1.2.4 --max-rounds 10` |
+| **fresh-eyes-loop**（质量循环） | 阶段三（开发后） | 对 harness 注入主任务协议（`SKILL/fresh-eyes-loop/loop.md`「执行形态」节）——编排者即 harness session，逐角色调执行器 `node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>` |
 | **release-gate-loop**（发版闸门） | 阶段五（发版前） | `node FORGE/src/release-gate-driver.mjs --target v1.2.4` |
 
-两个 driver 都支持 `--dry-run`（只打印 step 序列不调 LLM）。release-gate-loop 在 sandbox/OOM 环境下有 `--skip-acceptance` 和 `--step` 单步模式（详见 [`quick-start.md`](quick-start.md)）。
+release-gate-loop 支持 `--dry-run`（只打印 step 序列不调 LLM）与 `--skip-acceptance`（sandbox/OOM 环境）；fresh-eyes-loop 的多轮编排已退役（整合归一），执行载体 = harness 注入（详见 [`quick-start.md`](quick-start.md)）。
 
 ## 密钥注入纪律
 
@@ -128,7 +128,7 @@ FORGE/
     release-gate-loop/           ← 内环 2：发版闸门
       SKILL.md / loop.md / prompts/ / evolution.md / runs/
   src/
-    fresh-eyes-driver.mjs        ← fresh-eyes-loop 编排 driver
+    fresh-eyes-driver.mjs        ← fresh-eyes 单步角色执行器（编排归 harness 注入协议）
     release-gate-driver.mjs      ← release-gate-loop 编排 driver
     progress-middleware.mjs      ← 进度上报中间件
     visibility.mjs / disk-backend.mjs / reporters/
@@ -152,6 +152,6 @@ playbook/                       ← 顶层工具面（与 docs/ tools/ 同级）
 
 ### 技术债登记 · 拆分排期
 
-- **`FORGE/src/fresh-eyes-driver.mjs`（4800 行，仓内最大脚本）**：`driver-base.mjs` 已抽 1940 行公共层（preflight / 信号清理 / 镜像漂移防御），但单文件体量仍是贡献者认知税。**拆分排期：下次新增 driver 能力时按模块拆分**——触发条件 = 新增 driver 能力或触及 fresh-eyes-driver 长文件维护；本轮不拆代码（无近期触发因素，强行拆属高风险重构）。行数以 `wc -l FORGE/src/fresh-eyes-driver.mjs FORGE/src/driver-base.mjs` 实测为准，本登记数字须随 driver 提交同步复核（防再次静默漂移）。
+- **`FORGE/src/fresh-eyes-driver.mjs`（1980 行实测 @2026-09-26）**：整合归一后仅剩 worker 单步执行链路（多轮编排循环已删除，编排职责归 harness 注入协议——见 `SKILL/fresh-eyes-loop/loop.md`「执行形态」节）；`driver-base.mjs` 已抽 1940 行公共层。原「仓内最大脚本拆分排期」登记随编排删除大幅缓解，保留观察：**触发条件 = 单步执行链路再增长超 2500 行或新增执行器能力**；行数以 `wc -l FORGE/src/fresh-eyes-driver.mjs FORGE/src/driver-base.mjs` 实测为准，本登记数字须随 driver 提交同步复核（防再次静默漂移）。
 
 > **演进历程**：FORGE 从硬编码串行工具包（engineer→audit→reviewer 单循环 + loop-install.sh 独立安装）→ workflow 驱动（`FORGE/SKILL/<loop>/` + driver 自动编排）→ 双层循环架构（外环 releasing.md loop body + 内环 fresh-eyes/release-gate）。旧 `loop-workflow.sh`、`FORGE/SKILL.md`、`FORGE/loop-install.sh`、`FORGE/releaser/` 已删除。当前两个内环已可 driver 自转；外环的关键节点正逐步从"手动审批"升级为"证据闸门"——最近一轮补上的是 A0 的 `check-dev-prompt.sh`。

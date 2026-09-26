@@ -14,18 +14,18 @@
 #   ./tools/forge-pm2-start.sh alive <driver> [runDir]
 #
 # 参数:
-#   <driver>   fresh-eyes | release-gate | all
+#   <driver>   release-gate（fresh-eyes 已退役——编排归 harness 注入协议）
 #   <target>   目标版本号（如 v1.2.9），start/restart 必填
 #   [options]  额外参数透传给 driver（如 --max-rounds 5）
 #   [runDir]   alive 命令的 run 目录（缺省自动发现最新 run）
 #
 # 示例:
-#   ./tools/forge-pm2-start.sh start fresh-eyes v1.2.9 --max-rounds 5
+#   ./tools/forge-pm2-start.sh start release-gate v1.2.9
 #   ./tools/forge-pm2-start.sh start release-gate v1.2.9 --skip-acceptance
 #   ./tools/forge-pm2-start.sh stop all
-#   ./tools/forge-pm2-start.sh logs fresh-eyes
+#   ./tools/forge-pm2-start.sh logs release-gate
 #   ./tools/forge-pm2-start.sh status
-#   ./tools/forge-pm2-start.sh alive fresh-eyes          # liveness 探针（只认心跳）
+#   ./tools/forge-pm2-start.sh alive release-gate        # liveness 探针（只认心跳）
 #   ./tools/forge-pm2-start.sh alive release-gate <runDir>
 #
 # 退出码:
@@ -67,9 +67,10 @@ FORGE PM2 守护进程管理
   forge-pm2-start.sh alive <driver> [runDir]
 
 driver:
-  fresh-eyes    fresh-eyes-driver（A/B 双盲独立审查循环）
   release-gate  release-gate-driver（发版闸门验证循环）
-  all           所有 driver
+  all           等价 release-gate
+  （fresh-eyes 已退役：编排归 harness 注入主任务协议，执行器 --worker
+    不经 pm2——见 FORGE/SKILL/fresh-eyes-loop/loop.md「执行形态」节）
 
 target:
   目标版本号（如 v1.2.9），start/restart 时必填
@@ -83,11 +84,10 @@ alive（v1.3.8 交付五 · liveness 探针）:
   runDir 缺省时自动发现最新 run 目录（SOFAGENT_HOME/data/forge-runs/<loop>/）。
 
 示例:
-  forge-pm2-start.sh start fresh-eyes v1.2.9 --max-rounds 5
   forge-pm2-start.sh start release-gate v1.2.9 --skip-acceptance
   forge-pm2-start.sh stop all
-  forge-pm2-start.sh logs fresh-eyes
-  forge-pm2-start.sh alive fresh-eyes
+  forge-pm2-start.sh logs release-gate
+  forge-pm2-start.sh alive release-gate
 EOF
 }
 
@@ -95,10 +95,15 @@ EOF
 validate_driver() {
   local drv="$1"
   case "$drv" in
-    fresh-eyes|release-gate|all) return 0 ;;
+    fresh-eyes)
+      echo -e "${RED}✗ fresh-eyes 已退役（整合归一）：编排归 harness 注入主任务协议${NC}"
+      echo -e "  协议 SSOT: FORGE/SKILL/fresh-eyes-loop/loop.md「执行形态」节"
+      echo -e "  单步执行器不经 pm2: node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>"
+      exit 1 ;;
+    release-gate|all) return 0 ;;
     *)
       echo -e "${RED}✗ 未知 driver: ${drv}${NC}"
-      echo -e "  可选: fresh-eyes | release-gate | all"
+      echo -e "  可选: release-gate | all（fresh-eyes 已退役）"
       exit 1
       ;;
   esac
@@ -123,7 +128,6 @@ do_start() {
 
   if [ "$drv" = "all" ]; then
     echo -e "${CYAN}启动所有 FORGE driver（target=${target}）...${NC}"
-    FORGE_TARGET="$target" pm2 start "$ECOSYSTEM_FILE" --only fresh-eyes -- $driver_args
     FORGE_TARGET="$target" pm2 start "$ECOSYSTEM_FILE" --only release-gate -- $driver_args
   else
     echo -e "${CYAN}启动 FORGE ${drv}（target=${target}）...${NC}"
@@ -189,7 +193,7 @@ do_alive() {
   local drv="$1"
   validate_driver "$drv"
   [ "$drv" = "all" ] && {
-    echo -e "${RED}✗ alive 需要单个 driver（fresh-eyes | release-gate），不支持 all${NC}"
+    echo -e "${RED}✗ alive 需要单个 driver（release-gate），不支持 all${NC}"
     exit 1
   }
 
@@ -229,6 +233,11 @@ if [ "${1:-}" = "alive" ]; then
   shift || true
   do_alive "$@"
   exit $?
+fi
+
+# 退役拦截先于环境检查——fresh-eyes 请求无论环境如何都得到正确指引
+if [ "${2:-}" = "fresh-eyes" ] || [ "${1:-}" = "fresh-eyes" ]; then
+  validate_driver "fresh-eyes"
 fi
 
 check_pm2
