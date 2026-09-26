@@ -16,33 +16,39 @@
 //      静默放行即缺陷（对齐「静默即缺陷」纪律）。
 //
 // 扫描面与判定（避免假红的设计）：
-//   - 只扫 engine/**/*.ts + FORGE/src/**.mjs 的**非测试**文件；
+//   - 全仓源面：自 ROOT 递归收 .ts/.mjs/.js/.sh（排除 dist/node_modules/.git/
+//     .sofagent/docs/__tests__ + *.d.ts + *.test.*/*.spec.* + 本脚本自身）；
 //   - 「生产写入点」判据 = 文件内出现 `kind: '<KIND>'`（对象字面量写入模板）；
-//     测试文件（*.test.* / __tests__/）不计；
 //   - 态级判据 = 写入点邻近 ±6 行内出现该态的模板字面量（如 '拦截'/'放行'/'Allow'/'Deny'）。
 //     判决文案多为模板拼接（`tool-gate ${...拦截/放行/告警}` / `出站裁决 Allow|Deny`），
 //     邻域匹配能捕获模板内全部声明态。
 //
-// ── 已知盲区登记（2026-09-26 复核 · 「静默即缺陷」纪律：扫不到却可能报绿的路径显式登记）──
-//   扫不到却可能报绿（静默放行的形态）：
-//     (S1) 扫描面只收 engine/**/*.ts（非测试/非 dist）+ FORGE/src/**.mjs（非测试）——
-//          engine/**/*.mjs 与 FORGE 根目录 / playbook/ / tools/ 均不在面内。实测
-//          engine/audit/verify/verify-chain.mjs 含 3 处 kind 字面量（当前 kind=TOOL_GATE
-//          已在登记表覆盖故无影响）；**新判决类若落在这些面会被静默漏检**。
+// ── 已知盲区登记（2026-09-26 复核 + S1/S4 收口 · 「静默即缺陷」纪律）──
+//   扫不到却可能报绿（仍存的残余盲区）：
 //     (S2) 写入形态仅匹配单行 kind 字面量（`kind:` + 单引号大写字面量）——变量 kind /
-//          DecisionKind 成员访问（kind: DecisionKind.X）/ 跨行写法 / 非大写 kind 均不命中。
-//          当前实测全仓写入均为字面量形态，故判据有效；口径收窄即缺陷面。
+//          DecisionKind 成员访问（kind: DecisionKind.X）/ 跨行写法 / 非大写 kind /
+//          JSON 双引号形态（"kind":"X"）均不命中。当前实测全仓写入均为字面量形态，
+//          故判据有效；口径收窄即缺陷面。
 //     (S3) 缺侧判据 stateLandsIn 为**子串存在**判定——态词出现于注释/无关串即算「落」
 //          （如 rule-a5 注释含 PASS/FAIL/SKIPPED）。现有五家族均有真实写入行佐证，但
 //          仅靠注释亦可「假绿」——态级「实落」是弱证据，非「确有该态判决被发出」。
-//     (S4) 豁免集腐化：判定③仅对非判决豁免集做**拼写**对账（kind 不在枚举即红），
-//          **不判语义误分类**——把真判决类 kind 误并入 NON_VERDICT_KINDS 会被静默放行
-//          （该 kind 确在枚举内 ⇒ ③ 过、② 跳过）。REGISTRY 的 kind 字段亦无枚举对账。
 //   何时假红（越界红 / 设计内的红须区分）：
 //     (F1) 新建真判决类 kind 未同批登记 ⇒ ② 红（**设计如此，非假红**）；
 //     (F2) 登记的 writer 文件被改名/移动 ⇒ ① 文件在位核验红（登记表腐化检出）；
-//     (F3) 非判决豁免集 kind 拼错 ⇒ ③ 红（**设计如此**）；
-//     (F4) 生产 .ts 内出现**非写入**的同形字面量（注释/示例文本含该字面量）⇒ ② 假红。
+//     (F3) 非判决豁免集 kind 拼错 / 缺 reason+trigger ⇒ ③ 红（**设计如此**）；
+//     (F4) 源文件内出现**非写入**的同形字面量（注释/示例文本含该字面量）⇒ ② 假红。
+//
+// ── S1/S4 收口记录（2026-09-26 · 属第六章「全仓普查 / 豁免不静默」规格内，非蔓延）──
+//   S1（扫描面扩到全仓源面）：原只收 engine/**/*.ts + FORGE/src/**.mjs。现扩到自 ROOT
+//     递归并排除运行时数据/叙事/测试面。**实测零新增红**——新增面命中只有 TOOL_GATE
+//     （engine/audit/verify/verify-chain.mjs · tools/verify/verify-chain.mjs）与既有登记/
+//     非判决 kind（playbook/acceptance-*.{sh,js}），均在登记或豁免内。自排除本脚本
+//     （--self-test 夹具内嵌未登记 kind 字符串，扫自身会自红）。.sofagent/ 为 gitignored
+//     运行时数据（.git-shadow/snapshots.json），**非写入面**故排除。
+//   S4（豁免显式登记 reason+trigger）：非判决豁免集由裸 Set 改为 {kind, reason, trigger}；
+//     判定③ 增断言「缺 reason/trigger ⇒ 红」——「误并入豁免集」从「无兜底」改为
+//     「须带正当事由 + 改判触发条件」。**不做『是否真判决类』的语义推断**（那会引入
+//     不可靠启发式——本门禁只做机械判据）。
 //
 // --self-test：注入「单边缺侧」的临时源文件样例 → 断言门禁判红（故障注入实证，
 //   供验收与 paired-records.test.ts 复用同一机制）。
@@ -157,29 +163,51 @@ const REGISTRY = [
   },
 ];
 
-// 非判决类 kind（观测/过程记录——天然无「两侧」语义，整类豁免并说明）
-const NON_VERDICT_KINDS = new Set([
-  'SPEC_CHANGE', 'ARTIFACT_EDIT', 'CONFIG_CHANGE', 'KNOWLEDGE_DISTILL',
-  'ORCHESTRATION', 'EVOLUTION', 'TEAM', 'COMMONS', 'COVERAGE', 'FALLBACK_DEGRADE',
-]);
+// 非判决类 kind（观测/过程记录——天然无「两侧」语义）整类豁免。
+// S4 收口（2026-09-26）：豁免**必须显式登记** {kind, reason, trigger}——
+//   reason=正当事由（为何天然单边/无判决语义）· trigger=改判触发条件（何时应移出豁免、改判为判决类）。
+//   「静默豁免即缺陷」：缺任一字段 ⇒ 判定③ 判红。**不做「是否真判决类」的语义推断**
+//   （那会引入不可靠启发式——本门禁只做「拼写×枚举对账 + 事由/触发完备」的机械判据）。
+const NON_VERDICT_KINDS = [
+  { kind: 'SPEC_CHANGE', reason: '记录「需求/规格被改动」这一事实（范围变更留痕），动作本身无通过/拒绝两侧语义。', trigger: '若出现规格变更的裁决面（批准/驳回一次规格变更）→ 立新判决 kind 并声明配对侧，本条移出豁免。' },
+  { kind: 'ARTIFACT_EDIT', reason: '记录产物文件（代码/文档/配置）被编辑，编辑动作无裁决态。', trigger: '若出现「产物变更的放行/拦截」硬闸 → 立新判决 kind 并声明配对侧。' },
+  { kind: 'CONFIG_CHANGE', reason: '记录运行时配置被修改（如 doctor --refresh 重置），无裁决两侧。', trigger: '若配置变更引入审批闸（改前须批准/否决）→ 立新判决 kind。' },
+  { kind: 'KNOWLEDGE_DISTILL', reason: '知识蒸馏/沉淀的过程记录，无裁决态。', trigger: '若蒸馏引入接纳/拒绝判定（蒸馏质量闸）→ 立新判决 kind。' },
+  { kind: 'ORCHESTRATION', reason: '编排委派/图路由的「决策」留痕（category=route）——决策≠判决，无通过/拒绝两侧。', trigger: '若编排引入硬性准入裁决 → 立新判决 kind。' },
+  { kind: 'EVOLUTION', reason: '进化动作留痕（优化器改经验层/回滚）；Benchmark accept-reject 记在 evidence 内，本 kind 是动作记录非判决边。', trigger: '若把 Benchmark accept/reject 提升为一等判决 kind → 移出豁免并声明配对侧。' },
+  { kind: 'TEAM', reason: '团队协作动作（冲突消解/广播/反馈放大/入队）记录，无裁决成对语义。', trigger: '若冲突消解产生「裁决/上诉」成对语义 → 立新判决 kind。' },
+  { kind: 'COMMONS', reason: '公地能力动作（能力发布/调用/评分/退役/SkillScan）过程记录。', trigger: '若公地引入放行/拒绝安装的成对判决 → 立新判决 kind。' },
+  { kind: 'COVERAGE', reason: 'trace 三源对账结果入 log（说的和干的差在哪）——度量记录非判决。', trigger: '若覆盖率出现通过/未通过闸 → 立新判决 kind。' },
+  { kind: 'FALLBACK_DEGRADE', reason: '降级执行（LLM 不可用等）过程记录，无裁决两侧。', trigger: '若降级引入「允许降级/拒绝降级」判决 → 立新判决 kind。' },
+];
+const NON_VERDICT_KIND_SET = new Set(NON_VERDICT_KINDS.map((e) => e.kind));
 
-// ── 收集源文件（engine/**/*.ts 非 d.ts 非测试 + FORGE/src/**.mjs 非 test）────
+// ── 收集源文件（全仓源面 · S1 扩面 2026-09-26）────────────────────────
+// 口径：自 ROOT 递归，收 .ts/.mjs/.js/.sh 源文件；排除 dist/node_modules/.git/
+//   .sofagent（运行时数据，非写入面）/docs（叙事，非写入面）/__tests__；
+//   跳过 *.d.ts / *.test.* / *.spec.*。**自排除本门禁脚本自身**——其 --self-test
+//   夹具刻意内嵌「未登记 kind」字符串（见 self-test 段），扫描自身会自红。
+// 实测依据：全仓 kind 字面量普查（2026-09-26）落在 engine/(157) · tools/(12) ·
+//   playbook/(8) · FORGE/(1) · .sofagent/(109，gitignored 运行时数据)；本口径
+//   覆盖前四者，排除 .sofagent。
+const SELF_FILE = path.resolve(import.meta.dirname, 'check-paired-records.mjs');
+const EXCLUDE_DIRS = new Set(['dist', 'node_modules', '.git', '.sofagent', 'docs', '__tests__', 'coverage', '.turbo']);
+const EXTS = ['.ts', '.mjs', '.js', '.sh'];
 function collectFiles() {
   const out = [];
-  const walk = (dir, exts) => {
+  const walk = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const p = path.join(dir, e.name);
       if (e.isDirectory()) {
-        if (['dist', 'node_modules', '__tests__'].includes(e.name)) continue;
-        walk(p, exts);
-      } else if (exts.some((x) => e.name.endsWith(x)) && !e.name.endsWith('.d.ts')) {
-        if (e.name.includes('.test.') || e.name.endsWith('.spec.mjs')) continue;
+        if (EXCLUDE_DIRS.has(e.name)) continue;
+        walk(p);
+      } else if (path.resolve(p) !== SELF_FILE && EXTS.some((x) => e.name.endsWith(x)) && !e.name.endsWith('.d.ts')) {
+        if (e.name.includes('.test.') || e.name.includes('.spec.')) continue;
         out.push(p);
       }
     }
   };
-  walk(path.join(ROOT, 'engine'), ['.ts']);
-  walk(path.join(ROOT, 'FORGE', 'src'), ['.mjs']);
+  walk(ROOT);
   return out;
 }
 
@@ -237,7 +265,7 @@ for (const [file, content] of CONTENT) {
     const m = KIND_WRITE_RE.exec(lines[i]);
     if (!m) continue;
     const kind = m[1];
-    if (NON_VERDICT_KINDS.has(kind)) continue;         // 观测/过程类——整类豁免
+    if (NON_VERDICT_KIND_SET.has(kind)) continue;      // 观测/过程类——整类豁免（须带 reason/trigger）
     if (registeredKinds.has(kind)) continue;           // 已登记
     if (kind === 'TOOL_GATE' || kind === 'INVALIDATION') continue; // 已由家族覆盖
     const rel = path.relative(ROOT, file);
@@ -253,13 +281,17 @@ if (unregistered.size === 0) {
   }
 }
 
-// ── 判定 ③：非判决豁免集的 kind 必须真实存在于 DecisionKind 枚举（防拼错静默豁免）──
-console.log('── ③ 豁免集自检（非判决 kind 拼写与枚举对账）──');
+// ── 判定 ③：非判决豁免集自检——① kind 真实存在于 DecisionKind 枚举（防拼错静默豁免）
+//            ② 每条豁免齐备 reason（正当事由）+ trigger（改判触发条件）（S4 收口 · 不静默放行）──
+console.log('── ③ 豁免集自检（拼写×枚举对账 + reason/trigger 完备）──');
 const schemaPath = path.join(ROOT, 'engine/audit/src/decision-schema.ts');
 const schema = fs.readFileSync(schemaPath, 'utf8');
-for (const kind of NON_VERDICT_KINDS) {
-  if (!schema.includes(`'${kind}'`)) fail(`非判决豁免集含「${kind}」但 DecisionKind 枚举无此值（拼错=静默豁免真判决类）`);
-  else okOut(`豁免「${kind}」与 DecisionKind 枚举对账一致`);
+for (const e of NON_VERDICT_KINDS) {
+  const inEnum = schema.includes(`'${e.kind}'`);
+  if (!inEnum) fail(`非判决豁免集含「${e.kind}」但 DecisionKind 枚举无此值（拼错=静默豁免真判决类）`);
+  if (!e.reason || e.reason.trim() === '') fail(`非判决豁免「${e.kind}」缺 reason（正当事由）——静默豁免即缺陷（S4）`);
+  if (!e.trigger || e.trigger.trim() === '') fail(`非判决豁免「${e.kind}」缺 trigger（改判触发条件）——静默豁免即缺陷（S4）`);
+  if (inEnum && e.reason && e.trigger) okOut(`豁免「${e.kind}」：枚举对账一致 · reason+trigger 齐备`);
 }
 
 // ── --self-test：故障注入实证（单边缺侧样例 → 必红）────────────────────
@@ -273,7 +305,7 @@ if (SELF_TEST) {
   for (const [file, content] of CONTENT) {
     for (const m of content.matchAll(/kind:\s*'([A-Z_]+)'/g)) {
       const kind = m[1];
-      if (NON_VERDICT_KINDS.has(kind) || registeredKinds.has(kind) || kind === 'TOOL_GATE' || kind === 'INVALIDATION') continue;
+      if (NON_VERDICT_KIND_SET.has(kind) || registeredKinds.has(kind) || kind === 'TOOL_GATE' || kind === 'INVALIDATION') continue;
       hits.push(`${file}（kind=${kind}）`);
     }
   }
