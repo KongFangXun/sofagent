@@ -1,7 +1,7 @@
 {
   "name": "sofagent",
   "version": "1.5.2",
-  "description": "FDE Harness — on entry, write your business judgment into files (workflows, ontology, AI nodes); after departure, audit every change against them. 25 git-diff rules, tamper-evident chain, snapshots (107 tools, 11 plugins). Full CLI: npx -y -p @sofagent/audit sofagent-audit",
+  "description": "FDE Harness — on entry, write your business judgment into files (workflows, ontology, AI nodes); after departure, audit every change against them. 25 git-diff rules, tamper-evident chain, snapshots (103 tools, 11 plugins). Full CLI: npx -y -p @sofagent/audit sofagent-audit",
   "license": "MIT",
   "author": "KongFangXun",
   "type": "module",
