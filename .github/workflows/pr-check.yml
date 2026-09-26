@@ -207,8 +207,13 @@ jobs:
           # ~/.sofagent-key，密钥缺位时链降级 SHA-256、hmacSig 缺省 → 「typeof string」断言红）。
           # verify.yml 经 install.sh --quick 生成密钥后同面全绿即先例——本地绿 CI 红的根因
           # 是本 job 缺等价配置。注入测试密钥（非生产密钥，仅供链字段签名路径可达）。
+          # 🔴 v1.5.3：appendHistory 对「已配置但强度不足」的密钥 fail-closed 抛错
+          # （validateHmacKey 判据：≥16 字节 + Shannon 熵 ≥3.0 bit/char + 不含弱模式词）。
+          # 故此处必须是**强**密钥——旧值 `ci-test-key-not-a-secret` 命中弱模式词 "secret"
+          # 且属低熵短语，实测会在 7 个文件 / 35 个用例上抛错。现值为 64 位随机 hex
+          # （熵 ≈3.97 bit/char，无弱模式词，与 install.sh 生成规格同类：openssl rand -hex 32）。
           SOFAGENT_KEY_PATH: /home/runner/.sofagent-key-test
-          SOFAGENT_TEST_KEY_CONTENT: ci-test-key-not-a-secret
+          SOFAGENT_TEST_KEY_CONTENT: 7f3a9c1e5b8d2046af6c9e2d7b41f8a0c3e5d9b2a7f46c1e8d0b3a5f7c2e9d41
       - name: Check test count drift
         run: npm run test:count
 
