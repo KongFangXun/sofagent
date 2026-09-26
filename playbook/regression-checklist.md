@@ -1899,7 +1899,7 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 ```bash
 (
 FAIL=0
-# a: S433–S444 引用闭环（场景调用位须全数在位，缺一即红——S440 章十五族锚 G-1 闭环 / S441 章十一发布链锚 G-10 闭环【本版审查面登记时归并入 S440 共壳，断言零删减】/ S442-S444 本版审查增量闭环 / S446 于 v1.5.3 阶段四归并入 S442 共壳，断言零删减）
+# a: S433–S444 引用闭环（场景调用位须全数在位，缺一即红——S440 章十五族锚 G-1 闭环 / S441 章十一发布链锚 G-10 闭环【本版审查面登记时归并入 S440 共壳，断言零删减】/ S442-S444 本版审查增量闭环 / S446 于本版阶段四归并入 S442 共壳，断言零删减）
 grep -cE "scenario 43[3-9]|scenario 44[0-8]" playbook/acceptance-test.sh | grep -q "^14$" && echo "✅ S433–S448 十四场景调用位在位（S441 归并入 S440 · S446 归并入 S442 · S445–S448 本版审查增补）" || { echo "❌ S433–S448 场景号缺失"; FAIL=1; }
 grep -rq "replayDeadLetter" engine/orchestrator/src/__tests__/events-bus.test.ts && grep -q "event-queue.jsonl" engine/orchestrator/src/events/bus.ts && grep -q "timer.tick" engine/orchestrator/src/events/adapters.ts && echo "✅ 事件总线三面在位" || { echo "❌ 事件总线面缺口"; FAIL=1; } # b: 章一·事件总线三面（重放/落盘/tick 源）
 grep -q "平台公钥" engine/daemon/src/ota/upgrade-executor.ts && grep -q "设备注册表" engine/daemon/src/device-registry.ts && echo "✅ 验签三要素披露在位" || { echo "❌ 验签三要素披露缺失"; FAIL=1; } # c: 章四·OTA 验签对称/逐条披露（B1/B2 防复发）
