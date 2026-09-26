@@ -1809,6 +1809,22 @@ if $F6_RELEASED; then
       "${PROJECT_ROOT}/docs" "${PROJECT_ROOT}/README.md" \
       "${PROJECT_ROOT}/README.en.md" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null \
     | grep -vE '^[^:]*/(changelog|archive)/' || true)  # F-31：只滤文件路径前缀，不滤行内容（行内 ./changelog/ 链接曾使整行被误滤）
+  # 🔴 v1.5.3 阶段六修正 · F-14 行级排除（与 §27 同口径，补 §26 当年的漏改）：
+  #   本项当初（v1.5.1 I2）只删了「整段窗口白名单」（因其使 §26 从未执行），但**没补 §27
+  #   后来加的 F-14 行级排除** ⇒ 在待发版窗口内，合法的「下一版」标注被 §26 误判为残留。
+  #   结构性矛盾实证（两步皆可复现）：
+  #     ① §25a 强制 CHANGELOG 顶版行携带「待发版」，而该行按索引规范必带开发日志链接
+  #        `./docs/changelog/vX.Y/vX.Y.Z.md` —— 链接路径产出 token「X.Y」恰等于 SSOT_2SEG
+  #        ⇒ ③ 的豁免（不含 SSOT 版本号）永不成立，§25a 与 §26 在 1.5.x 系列窗口内互斥。
+  #        （实测：不加本排除时 CHANGELOG 顶版行必被 §26 判红。）
+  #     ② ROADMAP 规划表本版行状态列按 SOP 步骤十一 #15 写「✅ 开发完成（⏳ 待发版）」，其
+  #        沿革链/形态归属段天然引用 SSOT 版本号，③ 同理不豁免——而 §27 的维护者自述注释
+  #        （见下方 §27「ROADMAP 如实标『开发完成（待发版）』」）明文承认该写法为合法窗口态。
+  #   排除口径 = §27 F-14：行内出现**下一版**（F6_NEXT_PATCH，即窗口对象版本）号即视为合法
+  #   窗口标注。F6_NEXT_PATCH 为空（无下一版 devlog）时不适用本排除 ⇒ §26 照常全判。
+  #   F-31 收紧保留：不含下一版号的「SSOT 版本 + 待发版」行仍照判（残留检测能力不减）。
+  _I2_NEXT_EXCL=""
+  [ -n "${F6_NEXT_PATCH}" ] && _I2_NEXT_EXCL="${F6_NEXT_PATCH//./\\.}"
   _I2_HITS=""
   while IFS= read -r _ln; do
     [[ -z "${_ln}" ]] && continue
@@ -1835,6 +1851,11 @@ if $F6_RELEASED; then
     # F-31 修正：纯「规划中/排期中」行（无待发版词）描述未来版本——一律豁免
     # （原判据④「须与本版绑定」方向写反，纯未来行反被误判残留）
     if ! printf '%s' "${_bare}" | grep -qE '待发版|待发布'; then
+      continue
+    fi
+    # ⑤（v1.5.3 阶段六 · F-14 同族）：行内提及**下一版**（窗口对象）⇒ 合法窗口标注，
+    #    不计残留。与 §27 的行级排除同口径——两守卫对同一内容不得两套判据。
+    if [ -n "${_I2_NEXT_EXCL}" ] && printf '%s' "${_body}" | grep -qE "${_I2_NEXT_EXCL}"; then
       continue
     fi
     _I2_HITS="${_I2_HITS}${_ln}"$'\n'
