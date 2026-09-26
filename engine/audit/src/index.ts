@@ -1431,6 +1431,29 @@ async function main(): Promise<void> {
         for (const f of costFindings) {
           console.log(`⚠️ [sofagent] 成本告警 [${f.dimension}]: ${f.message}`);
         }
+        // 成本告警写面（v1.5.3 收口）：COST 决策记录此前读面在、写面永空——
+        // should-run quota 五问按「存在 COST 记录即挂起」判定，写面缺失 ⇒ quota 闸恒空过。
+        // 在此接 emitDecision（同包直调；每条 finding 一条 kind=COST 记录，WARN 语义）。
+        // 失败不阻断主审计（告警已打印），但必须让人看见——与 ENCRYPTION_DEGRADED 同纪律。
+        if (costFindings.length > 0) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { emitDecision } = require('./decision-log');
+            for (const f of costFindings) {
+              emitDecision({
+                agentId: f.target,
+                sessionId: `cost-audit-${f.dimension}`,
+                kind: 'COST',
+                moment: 'ACT',
+                category: 'escalate',
+                why: { text: f.message, tags: ['cost', f.dimension, 'overrun'] },
+                evidence: [`dimension=${f.dimension}`, `limit=${f.limit}`, `actual=${f.actual}`, `rule=${f.rule}`],
+              });
+            }
+          } catch (emitErr) {
+            console.warn(`⚠️ [sofagent] COST 决策留痕失败（告警已打印，quota 闸将看不到本次超支）: ${emitErr instanceof Error ? emitErr.message : String(emitErr)}`);
+          }
+        }
       } catch {
         // 成本审计是附带维度，异常静默降级（不阻断主审计）
       }

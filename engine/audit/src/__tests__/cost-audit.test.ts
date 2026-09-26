@@ -10,6 +10,10 @@
 
 import { describe, it, expect } from 'vitest';
 import { runCostAudit, loadWorklogSlice, type WorklogSlice, type CostBudget } from '../cost-audit';
+import { emitDecision } from '../decision-log';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const worklog: WorklogSlice = {
   agents: [
@@ -70,5 +74,30 @@ describe('runCostAudit · 成本超支判定', () => {
 
   it('case7: worklog 文件缺失 → loadWorklogSlice 返回 null（不抛）', () => {
     expect(loadWorklogSlice('/nonexistent-dir')).toBeNull();
+  });
+});
+
+describe('COST 写面接线（v1.5.3 收口：读面在、写面永空 → quota 闸恒空过）', () => {
+  it('写面：emitDecision 接受 kind=COST 且落盘带 HMAC（should-run quota 五问的消费前提）', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'cost-write-'));
+    try {
+      const entry = emitDecision({
+        agentId: 'agent-cost-write-test',
+        sessionId: 'cost-audit-tokens',
+        kind: 'COST',
+        moment: 'ACT',
+        category: 'escalate',
+        why: { text: 'Agent agent-cost-write-test token 用量 200000 超预算 100000', tags: ['cost', 'tokens', 'overrun'] },
+        evidence: ['dimension=tokens', 'limit=100000', 'actual=200000', 'rule=COST-OVERRUN'],
+      }, tmp);
+      expect(entry.kind).toBe('COST');
+      expect(entry.hmacSig).toBeTruthy();
+      // 落盘可查（queryByKind('COST') 消费面能读到）
+      const lines = readFileSync(join(tmp, 'audit', 'decision-log.jsonl'), 'utf-8').trim().split('\n');
+      const kinds = lines.map((l) => JSON.parse(l).kind);
+      expect(kinds).toContain('COST');
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });
