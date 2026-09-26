@@ -553,4 +553,13 @@ describe('D3 · A24 scanA24 行为实证（四态：全不检 / 越界 FAIL / �
     ];
     expect(scanA24(ctx(files, { A24: { enabled: true, allowed_dirs: ['outputs/'] } })).status).toBe('PASS');
   });
+
+  it('段边界：白名单目录的前缀同名兄弟目录不放行（docs-evil ≠ docs）', () => {
+    const evil = [{ path: 'docs-evil/report.md', status: 'added' as const }];
+    expect(scanA24(ctx(evil, { A24: { enabled: true, allowed_dirs: ['docs'] } })).status).toBe('FAIL');
+    // 白名单目录自身内不受归一化影响：带斜杠/不带斜杠声明等价，均不误报
+    const legit = [{ path: 'docs/report.md', status: 'added' as const }];
+    expect(scanA24(ctx(legit, { A24: { enabled: true, allowed_dirs: ['docs'] } })).status).toBe('PASS');
+    expect(scanA24(ctx(legit, { A24: { enabled: true, allowed_dirs: ['docs/'] } })).status).toBe('PASS');
+  });
 });

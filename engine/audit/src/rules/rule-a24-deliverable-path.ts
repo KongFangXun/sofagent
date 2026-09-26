@@ -40,7 +40,8 @@ function extOf(path: string): string {
  *   1. `config.A24.enabled !== true` ⇒ 跳过（未启用）。
  *   2. 白名单 `allowed_dirs` 为空 ⇒ **全不检**（默认空 = 不约束落点，声明才启用）。
  *   3. 否则：diff 中**新增**（status='added'）且扩展名属交付物类的文件，
- *      其路径须以白名单中任一目录为前缀；否则判违规（FAIL）并附替代路径建议。
+ *      其路径须落在白名单中任一目录内（段边界安全的前缀匹配，前缀同名兄弟目录
+ *      不放行）；越界判违规（FAIL）并附替代路径建议。
  *
  * 落点白名单即「约定交付目录」（如 `~/Desktop` 交付面或 workflow 声明的 outputs 目录），
  * 对齐 G10 授权白名单模式（默认空 fail-closed）。
@@ -68,8 +69,12 @@ export function scanA24(ctx: AuditContext): RuleScan {
     if (file.status !== 'added') continue;
     const ext = extOf(file.path);
     if (!deliverableExts.includes(ext)) continue;
-    // 落点须在白名单目录前缀内
-    const inWhitelist = allowedDirs.some((dir) => file.path.startsWith(dir));
+    // 落点须在白名单目录内——**段边界安全**：目录归一化后按路径段比较，
+    // 防前缀同名兄弟目录绕过（经典前缀匹配失效形态：白名单 docs 放行 docs-evil/x.md）。
+    const inWhitelist = allowedDirs.some((dir) => {
+      const d = dir.endsWith('/') ? dir.slice(0, -1) : dir;
+      return file.path === d || file.path.startsWith(`${d}/`);
+    });
     if (!inWhitelist) {
       violations.push(`交付物落点越界: ${file.path}`);
     }

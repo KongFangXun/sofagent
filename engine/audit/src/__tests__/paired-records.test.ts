@@ -79,12 +79,16 @@ describe('D6 · 判决类记录成对门禁（check-paired-records.mjs）', () =
     }
   });
 
-  it('登记表自身进版本库且含三处盲区登记（RULE_TOGGLE / ESCALATE_REPORT / COST 各带理由+触发条件）', () => {
+  it('登记表自身进版本库：两处盲区登记（RULE_TOGGLE / ESCALATE_REPORT 各带理由+触发条件）+ COST 已退役为正常家族', () => {
     const src = readFileSync(GATE, 'utf-8');
-    for (const kind of ['RULE_TOGGLE', 'ESCALATE_REPORT', 'COST']) {
+    for (const kind of ['RULE_TOGGLE', 'ESCALATE_REPORT']) {
       expect(src).toContain(`kind: '${kind}'`);
     }
-    expect(src.match(/blindSpot:\s*\{/g)?.length).toBe(3);
+    expect(src.match(/blindSpot:\s*\{/g)?.length).toBe(2);
+    // COST 盲区按其 trigger 退役（写面已落地 = engine/audit/src/index.ts 主审计成本段）——
+    // 锁退役形态：COST 转正常家族且 writers 指向真实写面文件（防盲区登记回潮）。
+    expect(src).toContain("kind: 'COST'");
+    expect(src).toContain("writers: [{ file: 'engine/audit/src/index.ts' }]");
     expect(src.match(/trigger:/g)?.length).toBeGreaterThanOrEqual(3);
   });
 });

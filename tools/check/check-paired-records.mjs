@@ -158,14 +158,12 @@ const REGISTRY = [
   {
     family: '成本告警（COST）',
     kind: 'COST',
-    states: ['超支告警'],
-    writers: [],
-    // 🔴 盲区登记：should-run gate 的 quota 五问**读** queryByKind('COST')，
-    //   但全仓无人**写**——读面依赖一个永空的 kind = 五问之一恒过（可判定性存疑）。
-    blindSpot: {
-      reason: '读面在（orchestrator/events/should-run.ts quota 五问 + cli.ts queryCostDecisions），写面零（全仓无 kind=COST 的 emitDecision）——quota 闸门实际恒空过。这是「声明态有读无写」的成对缺陷实例，如实登记待补写面。',
-      trigger: 'budget 超支告警的写入面落地时（train-budget.ts 已有预算读取面，补 emitDecision kind=COST 即闭环）删除本登记；v1.6.0 判据侧消费 COST 前必须先解决本盲区（判据不得建立在永空记录上）。',
-    },
+    states: ['成本告警'],
+    writers: [{ file: 'engine/audit/src/index.ts' }],
+    // 盲区退役（按原登记 trigger「写入面落地时删除本登记」执行）：写面已落地——
+    //   engine/audit/src/index.ts 主审计成本段 emitDecision kind='COST'（每条 finding
+    //   一条·失败不阻断主审计）。态标签取写面输出路径的真实字面量「成本告警」。
+    exempt: undefined,
   },
 ];
 
@@ -239,7 +237,26 @@ const okOut = (msg) => console.log(`  ✓ ${msg}`);
 console.log('── ① 声明态 × 实落态矩阵（N 态缺侧检查）──');
 for (const fam of REGISTRY) {
   if (fam.blindSpot) {
-    okOut(`${fam.family}——盲区登记在位（理由+触发条件），跳过态级检查`);
+    // 盲区腐化检测（staleness）：盲区的退役条件（trigger）是自然语言自声明，无人机器化
+    //   执行——实测 COST 写面落地与盲区登记同版并存，门禁对已闭合家族继续按盲区放行
+    //   （声明前提已失效而门禁不知情 = 静默失效）。此处把触发条件机器化：盲区 kind 一旦
+    //   在生产源出现写入字面量 ⇒ 盲区登记已过时 ⇒ 判红（必须退役并补 writers，非「可以」退役）。
+    //   排除 playbook/ 夹具面（acceptance-* 内嵌 emitDecision 夹具调用，非生产写入——
+    //   与判定② S1 扩面注记同口径）。
+    const stale = [];
+    for (const [file, content] of CONTENT) {
+      const rel = path.relative(ROOT, file);
+      if (rel.startsWith('playbook/')) continue;
+      const lines = content.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        if (new RegExp(`kind:\\s*'${fam.kind}'`).test(lines[i])) stale.push(`${rel}:${i + 1}`);
+      }
+    }
+    if (stale.length > 0) {
+      fail(`${fam.family}：盲区登记已过时——kind「${fam.kind}」已存在生产写入点（${stale.slice(0, 3).join(', ')}${stale.length > 3 ? ` …共${stale.length}处` : ''}）——触发条件已达成，必须删除盲区登记并补 writers 态级登记`);
+    } else {
+      okOut(`${fam.family}——盲区登记在位（理由+触发条件 · 零生产写入点复验一致），跳过态级检查`);
+    }
     continue;
   }
   // writer 文件在位核验（登记表腐化检测）

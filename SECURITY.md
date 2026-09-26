@@ -357,7 +357,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 | A15 | 不盲动 | workflow 节点未声明 actions | FAIL |
 | A16 | 非授权文件变更 | 非声明范围文件被修改（行为级） | FAIL |
 | A17 | 异常批量变更 | 单次提交变更文件数超阈值（filesystem 模式） | WARN |
-| A24 | 交付物落点 | 新增交付物类文件落点须在声明目录白名单内（默认空=全不检，opt-in；越界 FAIL） | WARN |
+| A24 | 交付物落点 | 新增交付物类文件落点须在声明目录白名单内（默认空=全不检，opt-in；越界 FAIL） | FAIL |
 | E1 | 不落测试 | 测试文件被提交到生产目录 | WARN |
 | E2 | TODO 未声明 | 新增 TODO 未在任务中声明 | WARN |
 | E4 | 低注释率 | 新增 >200 行且注释率 <5% | WARN |

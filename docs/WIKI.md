@@ -276,7 +276,7 @@ graph TB
 |----|-----|
 | 当前版本 | **v1.5.2**（2026-09-24，✅ 已发版 · 审计模块对外面与判定语义）· 上一版 v1.5.1（2026-09-22，✅ 已发版） |
 | 下一版 | **v1.5.3**（📋 规划中——双规则引擎统一等，以 [ROADMAP](./ROADMAP.md) 规划表为准） |
-| 测试覆盖 | 5407 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
+| 测试覆盖 | 5408 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
 | 审计规则 | 25 条（17 默认 + 8 扩展），活跃编号 A1-A11 + A14-A24 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |

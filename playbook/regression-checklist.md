@@ -276,7 +276,7 @@ echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS" # 期望：两集合相�
 # 文档侧：声称型数字（教训—6 文档漏改）
 grep -rnE "A1-A11、A14-A2[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/" # 人工核对：与 SSOT 一致（docs/ 已含 ROADMAP.md）
 
-# 字段完整性（name+ruleClass 全口径 25 条=48 行，与 SSOT_TOTAL 同口径）+ evidenceMode 计数（期望 25）
+# 字段完整性（name+ruleClass 全口径 25 条=50 行，与 SSOT_TOTAL 同口径）+ evidenceMode 计数（期望 25）
 grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l # 期望 50
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 25
 ```
