@@ -3,7 +3,7 @@
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 # 变更：空提交同样发起引擎调用（message 类规则 A5/A9/A19 照常执行）；
-#             新增 fresh-eyes run 冻结窗口锁检查（run 进行中阻断 driver 源码提交）
+#             fresh-eyes run 冻结期检查已随多轮编排退役（S382 哨点——审查标准面保护改由 loop.md 主任务协议承担）
 
 # 0. 读取 commit message（commit-msg hook 独有优势）
 #    - subject（第一行）：A3 越界检查依赖此参数

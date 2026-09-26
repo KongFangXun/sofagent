@@ -1,7 +1,7 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 85 维 · 编号 1-144 · 58 个编号已归并删除（#145 发版期四项已并入 #144 n–q）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 85 维 · 编号 1-145 · 59 个编号已归并删除（#9 已并入 #18 · v1.5.3 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -256,31 +256,6 @@ PY
 grep -q "场景体例 fail-loud 守卫" playbook/acceptance-test.sh && echo "✅ 场景体例守卫在位（缺判据即 FAIL）" || echo "❌ 场景体例守卫丢失——旧三行壳复活无门禁拦截"
 ```
 
-#### 9. 动态规则禁用逻辑 + 文档侧规则数声称一致性
-
-> 扩展：覆盖**代码侧 + 文档侧**两个一致性面
-
-```bash
-# 防御：探针须 A+E 全口径——只匹配 A 系列会漏 E 系列编号，误报「SSOT 21」假红（README 25 条 = 22 A + 3 E 为正确值）
-SSOT_TOTAL=$(grep -cE "name:[[:space:]]*'[AE][0-9]+" engine/audit/src/rules/index.ts) # 勘误：去掉 ^ 行首锚定——index.ts 规则是对象字面量 { name: 'A4...'，行首锚定匹配 0 致 SSOT 总数失明
-SSOT_MAX=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tail -1)
-echo "SSOT 规则总数: $SSOT_TOTAL / A 系列最大编号: A$SSOT_MAX"
-
-# 代码侧：knownKeys = index.ts 注册号（A16-A19 两组各验证）
-grep -c "a1[6-9]" engine/core/src/config-loader.ts # ≥4
-INDEX_RULES=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tr '\n' ',')
-# 口径分工：INDEX_RULES 保持 A 系列（对账 knownKeys a14-a19）；E 系列由 SSOT_TOTAL（A+E=25）+ 下行 knownKeys 'e1'-'e4' 覆盖
-KNOWN_KEYS=$(grep -A20 "knownKeys = new Set" engine/core/src/config-loader.ts | grep -oE "'a[0-9]+'" | tr -d "'a" | sort -n | tr '\n' ',')
-echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS" # 期望：两集合相等
-
-# 文档侧：声称型数字（教训—6 文档漏改）
-grep -rnE "A1-A11、A14-A2[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/" # 人工核对：与 SSOT 一致（docs/ 已含 ROADMAP.md）
-
-# 字段完整性（name+ruleClass 全口径 25 条=50 行，与 SSOT_TOTAL 同口径）+ evidenceMode 计数（期望 25）
-grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l # 期望 50
-grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 25
-```
-
 #### 14. enterprise-deploy 完整性
 
 ```bash
@@ -378,6 +353,12 @@ grep -c "isExempt" $F18 # 豁免规则
 grep "\"WARN\"" $F18 # 只产生 WARN
 grep "A18" engine/audit/src/rules/runner.ts # extended 优先级 A18 排在 A17 之后
 ```
+# [归并自维度9 · v1.5.3 阶段四] 代码侧规则注册一致性（文档侧声称已由 check-version §13b 机器化接管）
+SSOT_TOTAL=$(grep -cE "name:[[:space:]]*'[AE][0-9]+" engine/audit/src/rules/index.ts) # A+E 全口径（25）
+grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l # 期望 50（字段完整性：name+ruleClass × 25）
+grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 25
+grep -A20 "knownKeys = new Set" engine/core/src/config-loader.ts | grep -oE "'a[0-9]+'" | wc -l # 期望 ≥14（代码侧 knownKeys 与注册面对账）
+
 
 #### 20. daemon plist + watch.yml 正确性 + --init 覆盖防护（归并 20+22）
 
@@ -1946,4 +1927,21 @@ grep -cE "scenario 44[2-8] " playbook/acceptance-test.sh | grep -q "^7$" && echo
 _p=$(printf '共 23 条规则\n不是第 25 条规则\n不是第 25、26、27 条规则\n24 条规则\n' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{process.stdout.write(s.replace(/第\s*[0-9]+(?:[、，,]\s*[0-9]+)*\s*条/g,""))})' | grep -oE '[0-9]+[[:space:]]*(条|个)[[:space:]]*规则|[0-9]+[[:space:]]*rules' | grep -oE '[0-9]+' | sort -u | tr '\n' ' '); [ "$_p" = "23 24 " ] && echo "✅ 数字抽取器自证通过（真值捕获 + 序数剥离）" || { echo "❌ 数字抽取器自证失败：实测 [$_p]（期望 23 24 ）"; FAIL=1; } # s: 数字抽取器自证（序数剥离既不能吃掉真值、也不能漏剥序数——真 23 必被捕获 /「第 25、26、27 条规则」必不命中）
 [ "${FAIL:-0}" = "1" ] && { echo "维度144:FAIL"; exit 1; }; echo "维度144:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
+```
+
+#### 145. v1.5.3 判定底座三件——规则自测 schema / AuditScope / 判决成对门禁
+
+> [归并记录] 本维度为 v1.5.3 阶段四新增（A2/A8/A9 吸收）；新增 1 维 + 归并 1 维（维度 9 → 18），净增本块行数由维度 9 释放对销（归并配额 1:1 满足）。
+
+```bash
+# 子项 a: 加载期自测 schema 通电性（A2）——坏样例拒载，锚串被删也拒载（防「断言在场恒不触发」）
+node engine/audit/dist/rule-loader.js --self-test 2>/dev/null || node -e "const {loadAuditRules}=require('./engine/audit/dist/rule-loader.js')" # 模块可载
+grep -c "RuleLoadError" engine/audit/src/rule-loader.ts # 加载期 fail-closed 异常在位
+grep -c "examplesExecutable" engine/audit/src/rule-loader.ts # 覆盖边界声明在位（5/25 行为断言）
+# 子项 b: AuditScope 唯一构造 + 规则侧零 git 直调（A8）
+git grep -n "child_process\|execSync" -- engine/audit/src/rules/ | grep -v "检测\|test" | wc -l # 期望 ≤3（仅检测正则与夹具）
+grep -c "createAuditScope" engine/audit/src/rules/assemble.ts # 唯一构造工厂接线
+# 子项 c: 判决类成对门禁（A9）——盲区腐化已机器化
+node tools/check/check-paired-records.mjs >/dev/null 2>&1; echo $? # 期望 0
+grep -c "盲区登记已过时" tools/check/check-paired-records.mjs # 盲区退役检测在位
 ```

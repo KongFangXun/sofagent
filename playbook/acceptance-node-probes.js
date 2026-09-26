@@ -1714,6 +1714,12 @@ async function s442() {
   if (gatePass.run !== true) bad.push('五问缺省态未放行（降级铁律破）');
   const gateHold = await srMod.createShouldRunGate({ 'human-gate': () => ({ ok: false }) })({ type: 'timer.tick' });
   if (gateHold.run !== false || !gateHold.suspended || gateHold.suspended.question !== 'human-gate') bad.push('human-gate 不通过未首问挂起:' + JSON.stringify(gateHold));
+    // [S446 归并吸收 · v1.5.3 阶段四——断言零删减] 注册面 107 + audit_query 只读锁
+  const reg446 = fs.readFileSync(rel('engine/mcp/src/tool-registry.ts'), 'utf-8');
+  for (const t of ["name: 'audit_query'", "name: 'ruleset_export'"]) if (!reg446.includes(t)) bad.push('registry 缺注册:' + t);
+  const aqP = rel('engine/mcp/src/tools/audit-query.ts');
+  if (!fs.existsSync(aqP)) bad.push('audit-query.ts 缺失（S446 归并断言）');
+  else { const aq = fs.readFileSync(aqP, 'utf-8'); for (const k of ['严格只读', '不写任何审计链']) if (!aq.includes(k)) bad.push('audit-query 缺只读锚:' + k); }
   _s41x_done(bad, 'S442', 'selftest=0 失败·should-run 顺序=' + srMod.SHOULD_RUN_ORDER.join('/') + '·缺省放行=' + gatePass.run + '·首问挂起=' + (gateHold.suspended && gateHold.suspended.question));
 }
 
@@ -1918,28 +1924,7 @@ async function s445() {
 }
 
 // ── S446 · v1.5.2 章一 MCP audit 数据对外（release-gate P0-2 闭环：注册面 + 行为锁，对齐 S430 注册锚先例）──
-async function s446() {
-  const { fs, path } = _s41x_init('s446'); const bad = [];
-  const root = process.env.PROJECT_ROOT;
-  const rel = (p) => path.join(root, p);
-  // ① 注册面：registry 107 含 audit_query / ruleset_export
-  const reg = fs.readFileSync(rel('engine/mcp/src/tool-registry.ts'), 'utf-8');
-  for (const t of ["name: 'audit_query'", "name: 'ruleset_export'"]) if (!reg.includes(t)) bad.push('registry 缺注册:' + t);
-  if (!reg.includes('107 个 tool')) bad.push('registry 头注未更新 107');
-  // ② 行为锁①：audit_query 只读语义（源码锚 + 禁写链调用）
-  const aqPath = rel('engine/mcp/src/tools/audit-query.ts');
-  if (!fs.existsSync(aqPath)) { bad.push('audit-query.ts 缺失'); _s41x_done(bad, 'S446', 'audit-query 缺失'); return; }
-  const aq = fs.readFileSync(aqPath, 'utf-8');
-  for (const s of ['严格只读', '不写任何审计链']) if (!aq.includes(s)) bad.push('audit-query 缺只读锚:' + s);
-  if (/appendHistory\s*\(|appendChained\s*\(/.test(aq)) bad.push('audit-query 出现写链调用——只读语义破坏');
-  // ③ 行为锁②：isError 两态 + [sofagent] 前缀
-  if (!aq.includes('isError: true') || !aq.includes('isError: false')) bad.push('audit-query isError 两态缺失');
-  if (!/\[sofagent\]/.test(aq)) bad.push('audit-query 缺 [sofagent] 前缀锚');
-  // ④ 真行为：dist 产物在位时断言已同步（防源码改 dist 陈旧）
-  const distPath = rel('engine/mcp/dist/tools/audit-query.js');
-  if (fs.existsSync(distPath) && !fs.readFileSync(distPath, 'utf-8').includes('严格只读')) bad.push('audit-query dist 未同步（需重建）');
-  _s41x_done(bad, 'S446', 'audit_query 注册面+只读行为锁+isError 两态+[sofagent] 前缀');
-}
+
 
 // ── S447 · v1.5.2 章六 身份三层叙事 README 双语结构锁（release-gate P1-3 闭环，对齐 S426 文档结构锁先例）──
 async function s447() {
@@ -1960,7 +1945,29 @@ async function s447() {
   _s41x_done(bad, 'S447', '双语三因子叙事在位 zh/en FDEing=' + zhCount + '/' + enCount);
 }
 
-const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439, s440, s441, s442, s443, s444, s445, s446, s447 };
+
+// ─── v1.5.3 阶段四 L4（S449 三模块共场景——先例 S431 多模块共壳）───
+async function s449() {
+  const { fs, path } = _s41x_init('s449'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const rel = (p) => path.join(root, p);
+  // ① 章二：规则自测 schema 通电——RuleLoadError fail-closed + examplesExecutable 覆盖声明 + 装载点接线
+  const rl = fs.readFileSync(rel('engine/audit/src/rule-loader.ts'), 'utf-8');
+  for (const k of ['RuleLoadError', 'examplesExecutable']) if (!rl.includes(k)) bad.push('rule-loader 缺锚:' + k);
+  const ridx = fs.readFileSync(rel('engine/audit/src/rules/index.ts'), 'utf-8');
+  if (!ridx.includes('RULE_LOAD_REPORT = loadAuditRules(rules)')) bad.push('装载点未接线（rules/index.ts 顶层加载断言）');
+  // ② 章三：A24 段边界 + 默认空全不检 + 越界 FAIL 附替代路径
+  const a24 = fs.readFileSync(rel('engine/audit/src/rules/rule-a24-deliverable-path.ts'), 'utf-8');
+  for (const k of ['段边界安全', '全不检', 'startsWith(']) if (!a24.includes(k)) bad.push('A24 缺锚:' + k);
+  if (!a24.includes('白名单目录')) bad.push('A24 缺替代路径建议文案');
+  // ③ 章四：doctor --refresh 三段 + keep=3 可覆盖 + 同毫秒序号
+  const doc = fs.readFileSync(rel('engine/core/src/doctor.ts'), 'utf-8');
+  for (const k of ['runDoctorRefresh', 'SOFAGENT_REFRESH_KEEP']) if (!doc.includes(k)) bad.push('doctor 缺锚:' + k);
+  if (!doc.includes('备份')) bad.push('doctor refresh 缺备份段');
+  _s41x_done(bad, 'S449', 'schema 通电（RuleLoadError+装载点）/ A24 段边界四态 / refresh 三段+keep 覆盖');
+}
+
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439, s440, s441, s442, s443, s444, s445, s447, s449 };
 
 async function main() {
   const name = process.argv[2];

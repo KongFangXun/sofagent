@@ -1109,7 +1109,7 @@ export function runDoctorRefresh(
   // 排在基名之后，分钟/毫秒进位亦不乱序）。
   const backupBase = `config-${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}-${pad(stamp.getHours())}${pad(stamp.getMinutes())}${pad(stamp.getSeconds())}${pad(stamp.getMilliseconds(), 3)}`;
   if (existsSync(configPath)) {
-    mkdirSync(backupDir, { recursive: true });
+    mkdirSync(backupDir, { recursive: true, mode: 0o700 });
     // 同名（同毫秒碰撞）→ 追加 _NN；`_` > `.` 保证时间序不乱
     let backupName = `${backupBase}.yml`;
     let seq = 1;
@@ -1127,7 +1127,7 @@ export function runDoctorRefresh(
 
   // ── ② 重置段（默认模板覆写） ──
   const oldText = backupPath ? readFileSync(backupPath, 'utf-8') : '';
-  if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true });
+  if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true, mode: 0o700 });
   writeFileSync(configPath, CONFIG_TEMPLATE, 'utf-8');
   ok(`已重置为默认配置（CONFIG_TEMPLATE v${VERSION}）→ ${configPath}`);
 
