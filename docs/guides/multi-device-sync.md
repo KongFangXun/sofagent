@@ -75,7 +75,7 @@ ln -s /mnt/sofagent-team/knowledge ~/.sofagent/data/knowledge
 
 3. 把挂载命令写入 `/etc/fstab`（Linux）或「登录项」（macOS 设置 → 通用 → 登录项），开机自动挂载。
 
-**⚠️ 离线场景**：设备离开局域网后 `~/.sofagent/data/knowledge` 会变空（NAS 断连）。daemon 的 `weekly-report` / `lessons-extract` 会跳过（检测目录为空不运行），不会写脏数据。
+**⚠️ 离线场景**：设备离开局域网后 `~/.sofagent/data/knowledge` 会变空（NAS 断连）。知识提炼侧自 v1.1.7 起由 Dream Cycle 承接（原 `weekly-report` / `lessons-extract` 脚本已退役）——目录为空时 Dream Cycle 不产出脏数据。
 
 ## 方案三：Dropbox / Google Drive（跨平台）
 
@@ -97,7 +97,7 @@ ln -s ~/Dropbox/sofagent/think.md ~/.sofagent/data/think.md
 
 3. 其他设备同样操作。云盘客户端自动同步。
 
-**⚠️ 延迟**：云盘同步有几秒到几分钟延迟，不是实时的。如果设备 A 刚写完 think.md，设备 B 立刻跑 daemon——可能读到旧版本。这是轻量多设备的设计取舍，v1.2.x 再做实时同步。
+**⚠️ 延迟**：云盘同步有几秒到几分钟延迟，不是实时的。如果设备 A 刚写完 think.md，设备 B 立刻跑 daemon——可能读到旧版本。这是轻量多设备的设计取舍；实时同步属完整协同版范围（见 [FAQ](#常见问题)），当前轻量方案维持。
 
 ## 方案四：git submodule（开发者）
 
@@ -168,7 +168,7 @@ A：v1.1.x 轻量版 = 文件级别的异步同步（你负责传输，sofagent 
 
 ---
 
-> 📖 相关文档：[ROADMAP](../ROADMAP.md)（多设备完整协同拆分至 v1.3.1-v1.3.9）· [v1.1.0 开发日志](../changelog/v1.1/v1.1.0.md)
+> 📖 相关文档：多设备协同 v1.3.1-v1.3.9 已交付（见 [changelog/v1.3](../changelog/v1.3/)）· [v1.1.0 开发日志](../changelog/v1.1/v1.1.0.md)
 
 ---
 

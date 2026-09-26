@@ -53,22 +53,7 @@ Node 发 SIGINT → Python 捕获后存 checkpoint 优雅退出（退出码 0）
 
 **定位**：在 Mac 开发机（Apple Silicon Metal）上，用 `@mlx-node/trl`（npm 0.0.10 实验版）的 Rust native 计算核心（`@mlx-node/core` 的 `MxArray`——底层即 MLX → Metal GPU）验证「reward 规则 → 参数学习 → reward 收敛」这条最小回路。**它不替代生产训练**——它是降级路径上的概念验证：证明双栈里 Node 这一侧对 reward 语义的理解是可实测的，而不是纸面推理。
 
-**实测记录（2026-08-25 · A18 Pro · macOS darwin arm64 · Node v24.19.0）**：
-
-| 验证项 | 方法 | 结果 |
-|---|---|---|
-| Metal GPU 实算 | `MxArray.randomNormal` + `matmul`（1024×1024）×10 | 通过，~7ms/次 |
-| reward 收敛（确定版） | toy reward `r(w)=1-\|w-target\|²/D` + 解析梯度上升 40 步 | 通过：reward -0.25 → 1.000000，末段增益 2.12e-9 |
-| reward 收敛（GRPO 风格） | 组采样（groupSize=8）+ 相对优势 `(r-mean)/(std+ε)` + 组内竞争权重 | 通过：meanReward -0.263 → 0.9882（含噪上限 ≈0.994），末段抖动 0.003 |
-| trainer API 契约 | `GRPOTrainer.create` / `SFTTrainer.create` fail-fast 校验 | 完好：缺 modelPath / 路径不存在均正确拒绝 |
-
-**实测结论**：`@mlx-node/trl` 的 **trainer 完整能力（SFT/GRPO 真跑）需要本地模型权重目录**（`config.json` + `tokenizer.json` + safetensors，如 Qwen3-0.6B）；API 契约层完好、native 计算核心可用。阶段 0 采用**降级概念验证**路径：不下载模型权重，直接用其 native 计算核心验证 reward 收敛——已通过（上表）。
-
-**已探明的坑（后来者必读）**：
-
-- 该包依赖 `@std/toml: npm:@jsr/std__toml@^1.0.11`，该别名在 npm registry 上 **404**——直接 `npm install @mlx-node/trl` 会失败。绕过：本地 shim + `overrides`（阶段 0 实测目录内有完整示例）。
-- `MxArray` 的 shape 参数是 `BigInt64Array`（不是 number[]）；`randomNormal(shape, mean, std)` 的 mean/std 必填；标量读取用 `toFloat32()[0]`（`.d.cts` 声明的 `item_float32` 在运行时不存在——声明与实现有出入）。
-- 隔离纪律：实测在 `/tmp` 独立目录（`mktemp -d`）进行，`npm install` 用 `--prefix` 或在该目录内执行——**绝不碰仓库 package.json / node_modules**。
+**实测结论（2026-08-25 概念验证，过程记录归档见 [v1.4.1 开发日志](../changelog/v1.4/v1.4.1.md)）**：`@mlx-node/trl` 的 trainer 完整能力（SFT/GRPO 真跑）需要本地模型权重目录，reward 收敛回路已在 Mac Metal 实算验证通过；「npm 404」「BigInt64Array shape」等坑的精炼版见 [train-quickstart 当前限制](./train-quickstart.md)。隔离纪律（/tmp 独立目录实测、绝不碰仓库 package.json/node_modules）延续为后训实测的通行纪律。
 
 ### 生产 · Python 框架 spawn（verl / TRL / DeepSpeed）
 

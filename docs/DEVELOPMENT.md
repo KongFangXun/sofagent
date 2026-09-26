@@ -80,7 +80,7 @@
 
 ### Skill 文件结构
 
-**1 主 Skill（`SKILL.md`）+ 10 子 Skill = 11 个 .md（均在 `SKILL/harness/`；其中 `fde-template.md` 部署时改名 `fde.md`，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤100 行（v1.0.8 起，由 v0.99.5 的 ≤90 行上调）。
+**1 主 Skill（`SKILL.md`）+ 11 子 Skill = 12 个 .md（均在 `SKILL/harness/`；其中 `fde-template.md` 部署时改名 `fde.md`，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤100 行（v1.0.8 起，由 v0.99.5 的 ≤90 行上调）。
 
 > 💡 **措辞心理学**：铁律不只是「写对规则」，更是「写到 AI 真的听」。Superpowers（GitHub Skill 项目，星数 23.9 万为早期快照；@2026-09-25 复测 29.1 万——**星数是时序量，引用必须带时点**）2.8 万次对话实测——强措辞（必须/绝无例外）让 AI 服从率从 33% 提升到 72%。LLM 对强语气的注意力权重高于弱语气。写 Skill 时，关键铁律用最强可用措辞。
 
@@ -398,7 +398,7 @@ LangGraph createReactAgent 拆完任务
 
 > A/B 结果异常时的用户侧处理方法见 [HANDBOOK §排查](./HANDBOOK.md#排查问题)。
 
-`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排模块定期重出 candidate 方案后与 current 对比——v1.0.7 实现连续胜出自动计数器（连续 2 次胜出 → auto promote + 原子写入），旧方案归档到 history/。
+`sofagent-orchestrator-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排模块定期重出 candidate 方案后与 current 对比——v1.0.7 实现连续胜出自动计数器（连续 2 次胜出 → auto promote + 原子写入），旧方案归档到 history/。
 
 规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
@@ -631,7 +631,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
 
-- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（85 维）+ `acceptance-test.sh`（373 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
+- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（85 维）+ `acceptance-test.sh`（372 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束层零 token 运行（25 条规则 20 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 - **保存 ≠ 生效 ≠ 变好**：三个状态分记，谁也不许冒充谁——**已保存**（配置/产物写入了）／**已生效**（接线在真实路径上，不是只存在于测试或声明里）／**已验证变好**（行为级验证通过，且对照了改前基线）。交付声明只能落在实际达到的那一档，未做行为验证的显式记「未验证」，不并进「已完成」。
 
@@ -721,7 +721,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 373（最大场景号 S448；v1.5.2 release-gate 20260924-01 判断层 P0×2 闭环 +3：S445 章八 BugFix 批五族代表锚点 / S446 章一 MCP audit 数据对外注册面+只读行为锁 / S447 章六 README 双语身份三层结构锁。原：最大场景号 S444，S1-S444 间 78 个历史空洞号；v1.5.2 审查面登记净 +2：新增 S442-S444 三场景 + S440/S441 锚点批归并入 S440 共壳（−1；断言整体移入 acceptance-node-probes.js，零删减）——章二/三 约束导出外部可验 + 运行时 should-run 判定链 / 章四/五 结论失效语义 + 网络出口治理面 / 章七/九 事前授权补环 + DSH 插件 npm 首发面；v1.5.1 验收增量 +1：S441 发布链加固代表锚——门禁清单覆盖对账三态 + 长跑凭据四道防线 + 随动面三锚，对齐 S440/S343 先例；v1.5.0 验收增量 +5：S427-S431 治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 372（最大场景号 S449；v1.5.3 阶段四：S446→S442 / S316→S298 两处共壳归并 −2 + S449 三模块共壳 +1；v1.5.2 release-gate 20260924-01 判断层 P0×2 闭环 +3：S445 章八 BugFix 批五族代表锚点 / S446 章一 MCP audit 数据对外注册面+只读行为锁 / S447 章六 README 双语身份三层结构锁。原：最大场景号 S444，S1-S444 间 78 个历史空洞号；v1.5.2 审查面登记净 +2：新增 S442-S444 三场景 + S440/S441 锚点批归并入 S440 共壳（−1；断言整体移入 acceptance-node-probes.js，零删减）——章二/三 约束导出外部可验 + 运行时 should-run 判定链 / 章四/五 结论失效语义 + 网络出口治理面 / 章七/九 事前授权补环 + DSH 插件 npm 首发面；v1.5.1 验收增量 +1：S441 发布链加固代表锚——门禁清单覆盖对账三态 + 长跑凭据四道防线 + 随动面三锚，对齐 S440/S343 先例；v1.5.0 验收增量 +5：S427-S431 治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
 >
 > 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账见 [v1.5.0 开发日志 · 附录](./changelog/v1.5/v1.5.0.md)。
 

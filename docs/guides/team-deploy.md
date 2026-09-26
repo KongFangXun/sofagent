@@ -52,10 +52,9 @@ sofagent 是单用户设计。如果团队多人用：
 1. [ ] **安装 sofagent**：`bash install.sh --platform 你的平台`
 2. [ ] **跑 verify.sh**：`bash engine/scripts/verify.sh --quick` 确认 4/4 通过
 3. [ ] **先跑一个简单任务**：不做大改动，用现有 prompt 跑一次，观察 Agent 回复是否正常
-4. [ ] **跑 verify.sh 环境验证**：`bash engine/scripts/verify.sh --quiet` 确认全绿
-5. [ ] **部署后验证**：`bash engine/scripts/verify.sh --quiet` 确认部署生效（全绿）
-6. [ ] **翻 think.md**：接入后第 3 天翻一次反思，看 Agent 记了什么
-7. [ ] **决定是否继续**：如果有改善 → 继续用；如果没感觉 → 卸载，记得告诉我们为什么
+4. [ ] **部署前后各跑一次 verify.sh**：`bash engine/scripts/verify.sh --quiet`——部署前确认环境全绿，部署后确认配置生效（同一命令，区别在时机）
+5. [ ] **翻 think.md**：接入后第 3 天翻一次反思，看 Agent 记了什么
+6. [ ] **决定是否继续**：如果有改善 → 继续用；如果没感觉 → 卸载，记得告诉我们为什么
 
 > ⚠️ **实际集成周期**：企业场景下从安装到团队稳定使用，实际落地 2-4 周——跑通 CI、教会团队、理顺流程、排掉冲突，没那么快。
 

@@ -96,7 +96,7 @@ done < repo-list.txt
 ```bash
 # 创建标准模板
 cat > /etc/sofagent/template-config.yml << 'EOF'
-extendedRules: true
+extendedRulesEnabled: true
 carefulModifyThreshold: 0.2
 rules:
   a1: true
@@ -275,7 +275,7 @@ sofagent 对 Windows 的支持是**实验性**的：
 | daemon 常驻进程 | ✅ | ❌ 不支持（v1.2.9 PM2 守护面向 macOS/Linux，Windows 待排期） |
 | orchestrator 编排 | ✅ | ⚠️ 部分功能依赖 Unix signal |
 | install.sh 安装脚本 | ✅ | ❌ 需 WSL 或 Git Bash 运行 |
-| `tools/windows/*.ps1` PowerShell 脚本 | N/A | ⚠️ 覆盖核心功能（约 25%），非完整替代 |
+| `engine/scripts/windows/*.ps1` PowerShell 脚本 | N/A | ⚠️ 覆盖核心功能（v1.2.8 时点评估约 25%；现脚本 10+ 个，以目录实态为准），非完整替代 |
 
 > Windows 用户建议使用 WSL2 或 Git Bash 环境。原生 PowerShell 支持待排期。
 

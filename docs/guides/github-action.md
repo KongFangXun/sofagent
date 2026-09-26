@@ -95,7 +95,7 @@ audit:
 
 | 问题 | 解决 |
 |------|------|
-| 跳过某 PR | commit message 加 `[skip audit]` |
+| 跳过某 PR | **无跳过机制**（commit message 标记不生效——引擎无此逻辑）；可用 workflow `paths` 过滤降低触发面 |
 | "not found" | 本地构建方式：确认 `engine/audit/` 子目录存在 + `package-lock.json` 已提交；npx 方式无需本地目录 |
 | GitHub Enterprise | 支持，零外部 API 依赖 |
 | 审计太慢 | `npm ci`+build ~20 秒，审计 ~2 秒 |
