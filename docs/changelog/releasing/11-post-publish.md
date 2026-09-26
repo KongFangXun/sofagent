@@ -83,6 +83,16 @@ sofagent-core --doctor             # 期望全部通过
 # 三字拦截（措辞变体不可穷举，曾两版各漏 13 份与 8+2 份后收口），
 # 此翻转必须在下方 check-version 全绿验收之前做，否则 F6 报文档头残留红灯。
 # 只翻转活文档头，历史 changelog/archive 的「待发版」是当时正确状态不动。
+# 🔴 翻牌面三分（实测口径，勿混）：
+#   ① **本步骤翻**：活文档头语义族——README 双语「版本说明 / Version note」行 + 版本章标题 +
+#      目录锚点（标题括注变则锚点必变，照既有形态 `-已发版--日期` 写）、docs/ROADMAP.md
+#      「现在在哪」节本版叙事行、当前版本 devlog 头、各文档头状态行。
+#   ② **bump 时已翻**（本步骤只复核不重做）：文档头 `> vX.Y.Z · 日期 · ✅ 已发版`（20+ 个 .md）、
+#      CHANGELOG 索引行、WIKI 状态表、ROADMAP 顶栏第一二行与目录锚点。
+#   ③ **本步骤不翻**（属步骤十五「发版即移出」面）：ROADMAP「规划版本」表的本版行状态列——
+#      该行整行要移入「迭代历程」表，翻牌是多余动作（06-doc-finalize 定谳：bump 时保持
+#      「✅ 开发完成（⏳ 待发版）」）。该列**不计入** check-version 第 26/27 项 ⇒
+#      「§26 全绿但规划表仍写待发版」是正常窗口态，不是漏翻。
 # 🔴 翻牌批裹挟防御：多 session 并发时 `git add <翻牌文件>` 会把并行 session
 #    在该文件工作区的未提交 hunk（如测试数预改 4805→4807）一并裹挟进翻牌 commit → 远端 CI
 #    报测试数漂移红（本地因含对方改动看不到）。防御：翻牌 commit 前 `git diff --cached` 逐 hunk
@@ -100,8 +110,11 @@ sed -i '' 's/⏳ 待发版（tag\/npm 发版时同步）/✅ 已发版（YYYY-MM
 _REMAIN=$(grep -rlE '待发版' --include="*.md" docs/ | grep -v "docs/changelog/" | grep -v "docs/archive/" || true)
 if [ -n "$_REMAIN" ]; then echo "❌ 翻转后仍残留待发版："; echo "$_REMAIN"; exit 1; fi
 _SSOT=$(node -p "require('./package.json').version")
+# 🔴 版本头正则写成 `v1.4.x` 会在 v1.5+ 全仓静默漏扫（零命中被误读成"无滞后"）——用
+#    通配 minor 形态。扫描面 = docs/ 非 changelog/archive；根目录 README 双语与 CHANGELOG
+#    的状态词由 check-version 第 26/27 项承担（本段只管 docs/）。
 for _f in $(find docs -name '*.md' -not -path '*/changelog/*' -not -path '*/archive/*'); do
-  _v=$(head -8 "$_f" | grep -E '^> *v1\.4\.[0-9]+ *·|^> *版本[：:] *v1\.4\.[0-9]+' | grep -oE 'v1\.4\.[0-9]+' | head -1)
+  _v=$(head -8 "$_f" | grep -E '^> *v1\.[0-9]+\.[0-9]+ *·|^> *版本[：:] *v1\.[0-9]+\.[0-9]+' | grep -oE 'v1\.[0-9]+\.[0-9]+' | head -1)
   if [ -n "$_v" ] && [ "$_v" != "v${_SSOT}" ]; then echo "❌ 版本头滞后：$_f: $_v ≠ v${_SSOT}"; exit 1; fi
 done
 echo "✅ 双零复核通过（待发版零残留 + 版本头全对齐）"

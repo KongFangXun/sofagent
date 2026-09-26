@@ -424,31 +424,20 @@ fi
 
 ### dist-tag 分道（🔴 **已撤策**——试行一轮后撤策：版本号已承载阶段语义（一系版本=施工期、次版本位归零起=贝塔），dist-tag 分道复杂度大于收益。以下保留为历史档案，下版发布不再执行；恢复正常发布（默认 latest，无先行舞步））
 
-> ~~**判据是版本期，不是日期**：本版低于 `v2.0.0` = 施工期~~（撤策后不再适用） → 本版**全部 23 包**（15 个 `@sofagent/*` scope 包（13 模块包 + `load-chain` + `dsh-plugin-kit`）+ 1 个裸名总包 + 七款 DSH 插件）以 `--tag alpha` 发布，**`latest` 不动**；本版达到 `v2.0.0` = 贝塔，不加 tag（默认写 `latest`），恢复正常发布。
-> **为什么有这条**：施工期功能面快速变动、不承诺接口稳定，`latest` 是留给「装了就不想被施工期改动打扰」的稳定通道——施工期把 `latest` 一路顶到最后一个施工版，等于把所有用户强推上施工节奏。
->
-> 🔴 **自动通道也要管**：`.github/workflows/release.yml` 的 `npm publish --access public` **不带 tag**——本步骤若不先行，audit + mcp 会被 CI 以默认 tag 发布、`latest` 当场被改写。故施工期必须在 `gh release create` **之前**先手动以 `alpha` 发布这两包：release.yml 的 `Check if version already published` 步查到版本已在即置 `skip=true`、自动跳过 publish（该跳过通道 release.yml 内既有，非本步骤新增机制）。
+> 🔴 **撤策后的现行口径（生效中）**：本步骤与步骤八**全程不加 `--tag`**——全部 23 包以默认 tag（`latest`）发布；release.yml 的自动 publish（audit + mcp）与步骤八的手动 publish 同口径，**无需任何先行舞步**（release.yml 遇「版本已存在」自行 `skip=true`，该通道本就不依赖 tag）。**首发包**（首次上 npm 的包）直接落 `latest`，`npm i <pkg>` 立即可用——「验证通过后才 `dist-tag add` 顶 latest」的二段起舞随之取消（四段实装验证仍是发布前置门，只是不再有 dist-tag 动作）。
+> **为什么撤策**：版本号已承载阶段语义（一系版本 = 施工期、次版本位归零起 = 贝塔），再用 dist-tag 承载一遍是同一问题的第二种解法，复杂度大于收益——且分道会给首发包制造「`npm i` 装不上」的起舞窗口，与本仓「装上就能用」的取向相悖。
 
-```bash
-# 施工期（本版低于 v2.0.0）：先手动以 alpha 发布自动通道那两包，再 gh release create
-( cd engine/audit && npm publish --access public --tag alpha ) > /tmp/publish-audit.log 2>&1 \
-  || { echo "🔴 audit publish 失败："; cat /tmp/publish-audit.log; exit 1; }
-( cd engine/mcp && npm publish --access public --tag alpha ) > /tmp/publish-mcp.log 2>&1 \
-  || { echo "🔴 mcp publish 失败："; cat /tmp/publish-mcp.log; exit 1; }
-# 达到 v2.0.0 起：删掉上方两行（恢复由 release.yml 自动发布 = latest）
-```
+<details>
+<summary>历史存档：dist-tag 分道（试行一轮后撤策 · 以下任何一版都不再执行）</summary>
 
-**逐格打勾**（施工期四格全做；达到 `v2.0.0` 起只做第 4 格）：
+> 保留原因：① 理解本仓早期版本的 registry 状态（当时 `latest` 停在更前一版，施工版只在 `alpha` 通道）；② 教训本身有价值——「用 dist-tag 承载阶段语义」与「用版本号承载阶段语义」是同一问题的两种解法，后者胜在用户无需学新命令、不存在装上装不上的窗口。
 
-- [ ] 判版本期：本版低于 `v2.0.0` → 本步骤与步骤八全程 `--tag alpha`；达到 `v2.0.0` → 全程默认 tag
-- [ ] 施工期：`gh release create` 之前先行发布 audit + mcp（上方命令），并确认 release.yml 走到「已发布即跳过」
-- [ ] 施工期：步骤八每处 `npm publish --access public` 追加 `--tag alpha`
-- [ ] 发布后对账：逐包 `npm view @sofagent/<pkg> dist-tags --prefer-online`——期望 `alpha` = 本版、**`latest` 不动**。施工期任何包出现在 `latest` = 策略被破坏：处置是查发布命令漏了 tag，**不是改本文件**
+- ~~判据是版本期，不是日期：施工期（本版低于贝塔线）→ 全部 23 包以 `--tag alpha` 发布、`latest` 不动；贝塔期起 → 默认 tag~~。
+- 自动通道也要管：release.yml 的 `npm publish --access public` 不带 tag ⇒ 施工期须在 `gh release create` **之前**先手动以 `alpha` 发布 audit + mcp（否则 CI 以默认 tag 发布、`latest` 当场被改写）；命令形态为 `( cd engine/<pkg> && npm publish --access public --tag alpha )` 两行。
+- 施工期逐格：判版本期 / 先行发 audit+mcp 并确认 release.yml 走「已发布即跳过」/ 步骤八每处 publish 追加 `--tag alpha` / 发布后逐包 `npm view <pkg> dist-tags` 对账（期望 `alpha` = 本版且 `latest` 不动）。
+- 首发包额外一拍：`--tag alpha` 下 `npm i <pkg>` 报 `No matching version found`，二选一——① 保持分道，对外改说 `npm i <pkg>@alpha`；② 四段实装验证通过后 `npm dist-tag add <pkg>@<版本> latest` 逐款顶 `latest`（⚠️ 顺序不可颠倒：未验证就顶 `latest` = 把未验证的空壳推给默认通道）。
 
-> 🔴 **首发包（本版首次上 npm 的包）额外一拍**：`--tag alpha` 意味着该包在 `@latest` 上**根本不存在**——`npm i <pkg>`（默认取 `latest`）会报 `No matching version found`。本版首发的七款 DSH 插件 + `@sofagent/dsh-plugin-kit` 全属此类。二选一，**发布前想清楚选哪条**：
-> ① **保持施工期分道**：对外说明用 `npm i <pkg>@alpha`（或 `npm dist-tag add` 前先不装）；`latest` 留到**贝塔期**再由一次正式发布顶上（判据 = 本版低于 `v2.0.0`，见上）。
-> ② **验证通过后提升 `latest`**：**先**在干净 DSH 环境跑完「步骤八·补」的四段实装验证（挂载 → seam 订阅 → `helpers.call` 引擎包解析 → 事件触发产出），**再**执行 `npm dist-tag add <pkg>@<版本> latest` 逐款顶 `latest`。
-> ⚠️ **顺序不可颠倒**：未验证就顶 `latest` = 把未验证的空壳推给 `npm i` 的默认通道（本仓最痛恨的假绿形态）。逐款 `dist-tag add` 后仍按上一格复查 `dist-tags`。
+</details>
 
 ### 🔴 发版 artifact 四件对账（release create 后立即做，不等收尾）
 
@@ -460,6 +449,8 @@ fi
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
 | 3 | npm 23 包（audit + mcp 自动，其余 14 手动 + 七款 DSH 插件手动后） | `for p in audit mcp core daemon eval inject ontology orchestrator train rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view @sofagent/dsh-plugin-kit version --prefer-online` + `npm view sofagent version --prefer-online` + `for p in $(node -p "require('./engine/dsh-plugins/plugins.json').plugins.map(p=>p.id).join(' ')"); do npm view "$p" version --prefer-online; done` | 23 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
 | 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
+
+> 🔴 **对账通道的终局口径 = registry HTTP 直查**（实测补充）：`npm view --prefer-online` 在传播延迟期**仍可能长时间返回旧值**——本版 rollback 款按 `--prefer-online` 轮询 6×30s 全是旧值（被判 pending 假报），改 `curl -s https://registry.npmjs.org/<pkg>` + node 解 `dist-tags.latest` **立即见新版**。判定序：① 先查 publish 日志有无 `+ <pkg>@<ver>` 入队行（**有 = 已入发布队列，只是传播慢，不是失败**）→ ② 再用 curl 直查确认 `latest` 与版本键 → ③ CLI 查询只作辅助、不作终判。**发布终局对账一律以 ② 为准**。
 
 > 任何一件不满足 = 发版未完成，当场补（重推 tag / 补 publish / 修 URL），不带病进入收尾。
 
@@ -577,7 +568,7 @@ EOF
 
 ## 步骤八：npm 手动 publish 其余 14 包（含裸名总包）+ 七款 DSH 插件 ☐
 
-> 🔴 **dist-tag 分道（与步骤七同款）**：施工期（本版低于 `v2.0.0`）下方每处 `npm publish --access public`（含「步骤八·补」的七款插件）一律追加 `--tag alpha`、`latest` 不动；达到 `v2.0.0` 起去掉该 tag。判据与发布后对账命令见步骤七「dist-tag 分道」节（本节不复述）。
+> 🔴 **dist-tag 口径（撤策后 · 现行）**：下方每处 `npm publish --access public`（含「步骤八·补」的七款插件）**一律不加 `--tag`**——落默认 `latest`。历史分道说明见步骤七「dist-tag 分道」节（已撤策存档，不再执行）。
 
 > 🔴 **包列表 SSOT = 根 `package.json` 的 workspaces（可发布子集）——禁止把包名硬编码当事实源**。
 > 硬编码列表在包更名后必然漂移，照抄 = 静默漏发（漏发的包 npm 上停在上一版，无任何门禁会报）。
@@ -702,13 +693,26 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 > 六款原子插件以包名依赖 `@sofagent/dsh-plugin-kit`，该包未先发则逐款实装的第三步「`helpers.call` 引擎包
 > 解析」必挂 `MODULE_NOT_FOUND: Cannot find module '@sofagent/dsh-plugin-kit'`。**kit 未发，本段不可开跑。**
 >
-> 🔴 **发布前置（章九硬门禁）**：七款必须先在**干净 DSH 环境逐款实装四段验证**（挂载 → seam 订阅 →
+> 🔴 **发布前置（硬门禁）**：七款必须先在**干净 DSH 环境逐款实装四段验证**（挂载 → seam 订阅 →
 > `helpers.call` 引擎包解析 → 事件触发产出）——**不满足「单独可用」的不得发布**（空壳不发布）。
 >
+> **实作路径（不依赖 registry：先 `npm pack` 再隔离安装，等价于 registry 单装路径）**：
+> ```bash
+> V=/tmp/dsh-verify; rm -rf "$V"; mkdir -p "$V/tarballs"
+> for d in engine/dsh-plugins/cordis-plugin-sofagent* engine/dsh-plugins/plugin-kit; do
+>   ( cd "$d" && npm pack --pack-destination "$V/tarballs" >/dev/null ) || exit 1
+> done
+> cd "$V" && npm init -y && npm install ./tarballs/*.tgz   # 774 包依赖树（含 optional 的 @sofagent/*）
+> ```
+> 验证脚本放 `$V`（node ESM），**必须 `SOFAGENT_DATA=<临时目录>`** 隔离数据落盘，别写真实 `~/.sofagent/`。
+> 四段判据与观察点（fakeCtx 用鸭子类型提供 `provide / on / get('tools') / settings / dynamicCordisRunner`）：
+> - ① **挂载**：`(mod.default).default.apply(fakeCtx)`（CJS 互操作要逐层解 `default`）返回复合 disposer 且幂等；`provide` 收到 `sofagent.<short>`，`meta.id` == 包名、`version` == 本版；宿主 API 缺席时**不得**留假 disposer。
+> - ② **seam 订阅**：订阅事件集**逐字等于** `plugins.json` 的 `seamHandlers`（多一个=幽灵订阅，少一个=假接线）；非 seam 款（daemon / fde / suite）期望 0，suite 期望转发 7 个（六原子之和）。
+> - ③ **引擎包解析**：触发 handler 观察有无 `MODULE_NOT_FOUND`——**这是 kit 依赖桥的本命测试**（kit 未先发则此处必挂）；fde 另验 `resolveBridges()` 的 `resolved` 非空、`failed` 为空。
+> - ④ **事件触发产出**：真造输入看真产出——audit 危险命令返回 `{kind:'deny'}`、`tools/result` 失败结果落 `<dataDir>/audit/`（decision-log.jsonl + intent.jsonl）、inject 的 `agent/pre-step` 返回 messages 多一条、evolve 的 `session/event`+`turn/end` 落 `think.md`、fde 角色工具注册数 > 0、suite 的 `SuiteReport.loaded == 6` 且 `failed` 为空。
+>
 > 🔴 **`--access public` 写法与裸名总包同款**（见上方 umbrella 段）——七款同为非 scoped 裸名，照抄该写法。
-> 施工期同样追加 `--tag alpha`（见步骤七「dist-tag 分道」）。七款均为**首发包**，`--tag alpha` 后默认
-> `latest` 上不存在 ⇒ 「`@alpha` 装不上 / 验证后 `npm dist-tag add` 顶 `latest`」二选一，见步骤七「首发包
-> 额外一拍」。
+> 🔴 **不加 `--tag`**（撤策后口径，见步骤七）。七款均为**首发包**，直接落默认 `latest` ⇒ 装完 `npm i <pkg>` 立即可用，无需 `@alpha` 后缀、也无需事后 `dist-tag add`。四段实装验证仍是**发布前置门**（验证不过不发布），但不再有 dist-tag 二段动作。
 
 ```bash
 # 七款 DSH 插件：清单取自 plugins.json（原子款在前、suite 末尾），逐款 publish + 即时对账
@@ -737,7 +741,7 @@ done
 > suite 在后」顺序、目录缺失即置失败标记、版本验证循环涵盖七款）。该脚本的 `@sofagent/*` 段**已改为由根
 > `package.json` 的 workspaces 构建「包名→目录」查表**（章九二轮）——`@sofagent/dsh-plugin-kit`
 > 因此被自动纳入并落第一层，无需像本 SOP 那样单独开段；施工期执行脚本时用
-> `SOFAGENT_PUBLISH_TAG=alpha bash tools/release/publish-packages.sh <版本>` 让全量 publish 追加 `--tag alpha`。
+> `SOFAGENT_PUBLISH_TAG` 开关**常规发版一律不设**（撤策后口径：不设即落默认 `latest`）——仅在需要临时指定 tag 的高级场景（如回填历史通道）才显式赋值。
 
 ---
 
