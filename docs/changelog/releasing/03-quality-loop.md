@@ -58,6 +58,11 @@
 
 ## 路径 B：盲审路径（复制一次 prompt · 执行 session 自动跑完全程）
 
+> **执行载体二选一（协议与产物同 schema，状态在 `runs/` 文件里可互相接续）**：
+> ① **driver 形态**——Node 编排进程跑多轮循环（下方模板即此形态，确定性收敛、无人值守）；
+> ② **harness 注入形态**——对一次 harness 运行（DSH 无头 / Codex headless / 有头 AI session）注入主任务协议，由它编排轮次并逐角色注入执行（无 driver 依赖，用户侧 harness 同样可跑本循环）。
+> harness 形态的主任务协议全文、角色三通道、注入包安全纪律与产物契约守闸脚本见 `FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节——本 SOP 不复述（单一维护源）。
+
 > **防止 lost-in-the-middle**：执行 session 先读模板骨架确认要做什么，再按序执行。
 > **主 session 并行面**：driver 后台跑时并行步骤三/四（代码审核 + 验收增量），不空等；运行窗口遵守冻结纪律（铁律一）。
 > **循环语义**：driver 内建多轮「审查→修复→验证」与「连续 2 轮无 P0/P1」停止条件；执行 session 的增量职责 = driver 跑完仍有 P0/P1 残留时按「修复批协议」接手修复并重跑 driver（外层上限 2 次修复批）。
@@ -82,10 +87,10 @@
 >
 > 🔴 **轮询前台铁律**：`run_in_background:true` 只用于启动 driver 那一条命令——**每一轮轮询（sleep + cat status.json）必须在 session 前台执行**，禁止把轮询循环挂到后台（run_in_background / nohup 均禁）。挂后台 = session 空闲 = 用户界面看不到任何进展反馈。正确姿势：前台 `sleep 90~115` → 立即 `cat status.json` → 输出一行状态 → 下一轮。
 
-### 执行 session Prompt 模板（自动收敛版 · 复制即跑）
+### 执行 session Prompt 模板（自动收敛版 · 复制即跑 · driver 形态专用）
 
 > AI 输出 prompt 时必须把所有占位符替换为实际值（项目路径、版本号、runDir），不得残留花括号。
-> 模板含 daemon+watch 守护优先 + resume 中断恢复两个分支——按上方「driver 启动姿势 9 条」执行。
+> 模板含 daemon+watch 守护优先 + resume 中断恢复两个分支——按上方「driver 启动姿势 9 条」执行。harness 注入形态不使用本模板——其主任务协议在 `FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节。
 > **交付形式铁律**：交接 prompt 直接在对话中输出可复制的文本块，禁止落盘成文件——用户复制粘贴到新窗口执行，**全程只此一次复制**（执行 session 内部的修复批/重跑/豁免降级全部自动，不再产生第二次复制）。
 
 ```
@@ -151,7 +156,7 @@
 - 各轮明细：driver 每轮 P0/P1/P2 计数、修复批清单（finding+定性+文件+commit hash）
 - 最终 runDir 路径 + findings 关键行原文
 
-铁律（五条，违反即 run 报废级别事故）：
+铁律（五条，违反即 run 报废级别事故；**适用范围 = driver 形态**——其机器约束依赖 driver 进程与 run 状态存在；harness 注入形态的等价纪律：冻结窗口 = 审查/修复期间不 commit（注入协议自声明 + 审计钩子兜底），exit 86 / 收编标记 / run 收口核对不适用（无 driver 源码指纹与 forge 分支面），lessons 回写与 LEDGER 留痕照常）：
 
 一、**冻结窗口对所有 session 生效**——driver 运行窗口内不 commit / 不改文件（仓库冻结：worker 与主仓共享工作目录，HEAD 变动杀进程树）。**任何** session 都受约束，不止执行 session 自己——主 session「顺手收编」同样炸 run；收编与 run 窗口必须错峰（等 run 收口，或先停 run 再收编再 `--resume` 续跑）。机制兜底已上（对最高危形态）：commit-msg hook 冻结窗口锁在「run 进行中 + 提交命中 driver 源码」时阻断提交——机制拦最高危（步骤表错位全灭），纪律管其余（HEAD 变动杀进程树）。
 

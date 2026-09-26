@@ -18,12 +18,12 @@ version: 1.5.2
 
 - **A** = 审查者（单盲）：独立跑 12 视角审查；发现的质量由下游 C 验收 / D 复核把关（legacy 双盲 B 并行审查走 `FORGE_ENABLE_B_CHECK=1` 逃生门）。
 - **B/C/D** = 工程师执行修复（现行 B 侧为复核模式——独立复核 A 的 P0/P1，可推翻可补充）/ 验收者逐条实测验收（不采信修复自报）/ 复核者对 P0/P1 裁决 CONFIRM / DOWNGRADE / REOPEN。
-- **driver（编排进程，非 agent）**：在角色间中转、维护 `runs/` 文件、判定停止条件。由**用户手动新开的执行 session** 启动（见下「执行载体铁律」）。
+- **编排者（非 agent）**：在角色间中转、维护 `runs/` 文件、判定停止条件。两种执行形态二选一（见 `loop.md`「执行形态」节）：**driver**（Node 编排进程，由用户手动新开的执行 session 启动——见下「执行载体铁律」）或 **harness 注入**（一次 harness 运行注入主任务协议，无 driver 依赖）。
 
 ## 怎么用
 
 1. 读 `loop.md` 拿到完整 SOP（角色 / 轮次协议 / 产物 schema / 停止条件）。
-2. 12 视角的定义见 `playbook/fresh-eyes-review.md`（A 按它跑）。playbook 共 **22 视角六层**：1-12 常规发版（driver 循环标准配置）、13-14 文档治理（手动）、15-16 全文档通读（手动/草稿工具）、**17-19 动态面**（跨组件契约/构建产物/执行证据——需跨包追踪或 build/实跑取证，DSH worker 无工具面暂不纳入 driver，发版审查建议手动追加）、20-21 深度专项（季度全仓体检）、22 发现面（门面改动时）。**loop 与工具的视角边界以 playbook 分层表为准——playbook 演进（如新增视角/调整分层）时，本文件与下游工具同步对齐**。
+2. 12 视角的定义见 `playbook/fresh-eyes-review.md`（A 按它跑）。playbook 共 **22 视角六层**：1-12 常规发版（driver 循环标准配置）、13-14 文档治理（手动）、15-16 全文档通读（手动/草稿工具）、**17-19 动态面**（跨组件契约/构建产物/执行证据——需跨包追踪或 build/实跑取证，worker 工具面实测仅 `sf_read` / `sf_write` / `run_bash` 三件，跨包构建取证超其超时预算，发版审查建议手动追加）、20-21 深度专项（季度全仓体检）、22 发现面（门面改动时）。**loop 与工具的视角边界以 playbook 分层表为准——playbook 演进（如新增视角/调整分层）时，本文件与下游工具同步对齐**。
 3. 四角色的行为指令在 `prompts/`（a-check / a-consolidate / b-fix / b-audit / c-verify / d-review；b-check 为 legacy 双盲逃生门 `FORGE_ENABLE_B_CHECK=1` 时启用）。
 4. **b-audit** 步骤：b-fix 改完代码后 driver 自动跑 `sofagent-audit --diff`——审计每次变更，dogfooding 铁律。audit FAIL（exit 2）打回 b-fix 重修，不进 c-verify。
 5. 跨 run 的永久索引在 `FORGE/LEDGER.md`（被 git 跟踪）；每轮正文在 `runs/`（不进 git）。
@@ -32,9 +32,11 @@ version: 1.5.2
 
 A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个 step 独立子进程（真零上下文），LangGraph `createReactAgent` 编排。driver 由用户手动新开的执行 session 启动并监控（见下「执行载体铁律」）。
 
-## 🔴 执行载体铁律：driver 必须由「独立 session」直跑，禁止主 session 内开子代理代跑
+**harness 注入形态**（与 driver 并列的执行载体，协议与产物同 schema）：对一次 harness 运行注入主任务协议（无头 harness / 有人值守 AI session 均可），由它编排轮次并逐角色注入执行——主任务协议全文与角色三通道见 `loop.md`「执行形态」节。适用于无 driver 运行环境（用户侧 harness、无头自动化）或需要编排判断力的场景；机器守闸用 `tools/check/check-fresh-eyes-artifacts.mjs`（产物契约校验，等价 driver 的停止条件判定）。
 
-**fresh-eyes driver 的执行 session 必须是用户手动新开的独立 session**（与主 session 平行、互不嵌套），不是主 session 里 spawn 的 subagent。
+## 🔴 执行载体铁律：driver 必须由「独立 session」直跑，禁止主 session 内开子代理代跑（driver 形态适用）
+
+**fresh-eyes driver 的执行 session 必须是用户手动新开的独立 session**（与主 session 平行、互不嵌套），不是主 session 里 spawn 的 subagent。**适用边界：driver 形态**——禁的是「主 session 内三层嵌套拉起长生命周期 driver 进程树」；harness 注入形态无此问题（执行体就是 harness 运行本身，无长驻进程树可级联，产物断点在文件里，中断即续跑）。
 
 原因（与 release-gate-loop 实证同机理）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——fresh-eyes 一轮多轮循环跑 1-2 小时，中途被级联中止的代价更大。此外子代理自带 token 开销与误诊风险。
 

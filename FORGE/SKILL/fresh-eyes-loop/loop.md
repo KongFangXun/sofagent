@@ -59,6 +59,8 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 
 **优先级**：`P0` 严重/阻塞 · `P1` 应该修 · `P2` 观察项。
 
+> 另有两份**跨形态状态产物** `status.md` / `verdict.md`（runDir 根、不入 round 目录）：定义见「执行形态」节主任务协议第 3 条，机器校验面 = `tools/check/check-fresh-eyes-artifacts.mjs`。本表仅列 per-round 产物。
+
 ## 停止条件
 
 - **主停止**：连续 **2 轮** `findings.md` 中 **无 P0 且无 P1** → 停止，本轮循环结束。
@@ -78,6 +80,34 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 > 来源：Loop Engineering 反模式「Token Burn」修复方案（工程实践消化，2026-07）
 
 停止后 driver 向 `FORGE/LEDGER.md` 追加一行（见 `LEDGER.md` 列定义）。
+
+## 执行形态（协议与载体解耦 · 产物同 schema）
+
+循环协议（角色 / 轮次 / 产物 schema / 停止条件）与执行载体**解耦**：同一份 `runs/` 产物契约，两种形态产出与消费完全同构，状态全在文件里——中途换形态接续跑，无需重开。
+
+| 形态 | 编排者 | 角色执行 | 适用 |
+|------|--------|---------|------|
+| **driver 形态** | Node 编排进程（`FORGE/src/fresh-eyes-driver.mjs`） | worker 子进程（`createReactAgent` 编排；工具面实测 = `sf_read` / `sf_write` / `run_bash` 三件） | 无人值守多轮、确定性收敛、回归对照 |
+| **harness 注入形态** | 一次 harness 运行（无头注入或有人值守 session），注入主任务协议 | 逐角色注入（见下方角色三通道） | 无 driver 依赖；任何具备「读文件 / 写文件 / 跑命令」工具面的 harness 可跑（DSH 无头 / Codex headless / 有头 AI session） |
+
+> 角色以现行**单盲四角色**（A 审 → B 修 → C 验 → D 复核，SSOT = `docs/changelog/releasing/auto-converge-protocol.md`）为准；下方「单轮协议」示例为 legacy 双盲形态（`FORGE_ENABLE_B_CHECK=1` 逃生门），两形角色映射见 auto-converge。
+
+### harness 注入形态 · 主任务协议（注入即跑）
+
+对 harness 注入以下主任务（替换花括号占位符）。执行体无对话上下文——本协议自包含：
+
+1. **状态接续先行**：runDir = `FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/`。已存在产物 → 读最高 `round-NN` 与 `status.md` 按断点续跑，**已完成轮禁止重开**；不存在 → 建目录开工。
+2. **角色零上下文纪律（防「发现者 = 修复者」）**：编排者不得在同一上下文里既发现又修复。角色执行三通道任选（每角色独立上下文）：① 本运行自身的注入即零上下文——仅首个角色可用（通常是 A 审查）；② driver 单步 worker：`node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>`（复用 worktree 隔离与 stall 守卫）；③ 有头 session 的 subagent。
+3. **每轮落盘（文件即状态）**：按「产物 Schema」节写 round-NN/ 文件；另维护两份状态产物——**`status.md`** 单行现态（格式：`round-NN · <phase> · P0=<n>/P1=<n>`，phase ∈ {reviewing / fixing / verifying / done}，对应四角色 A 审 → B 修 → C 验 → D 复核），它是断点续跑与外部监督的唯一现态锚；**`verdict.md`**（终态判定，D 复核收口时写：停止原因 + 最终 P0/P1 定性结论 + 判定关键行原文，对齐 auto-converge 最终汇报的「判定关键行原文」要求）。
+4. **收敛与红线**：停止条件按上方「停止条件」节执行；分诊三定性 / 修复红线 / 停手条件以 `docs/changelog/releasing/auto-converge-protocol.md` 为单一维护源，本文件不复述。
+5. **机器守闸**：`node tools/check/check-fresh-eyes-artifacts.mjs --runDir <abs>` 校验产物契约（存在性 + schema + 计数一致性）——harness 形态下「driver 判定停止条件」的等价机械面；`--self-test` 自检。
+6. **收尾两动作**：`FORGE/LEDGER.md` 追加一行；最终汇报按 `docs/changelog/releasing/03-quality-loop.md` 汇报模板（含「未跑步骤声明」）。
+
+### 注入包安全纪律
+
+- **注入包本体 = 交付物**：落 runDir 存档（`injection-prompt.md`），不得只存在于对话——审计链要求每次注入可追溯。
+- **注入即授权改仓 + 跑测试**：主任务必须显式携带**越界清单**（不做 push / tag / publish、不动 FORGE 源码与审查视角定义、不改 devlog 勾选、不自称收编——复验收编是主 session 职责）。
+- **执行产生的 commit 过审计钩子**（25 条规则 + HMAC 链，机制强制非纪律约束）。
 
 ## createReactAgent 实现提示
 
