@@ -14,3 +14,4 @@
 #
 check-interface-roadmap.mjs:须带 `--spec <商业机制文档>` 才实跑，spec 属商业侧文档、不进开源仓（CI 与本地均无处传参）。无参时打印 SKIP 并 exit 0，而该脚本自陈「SKIP 不算通过」——接进自动链路等于制造一条**免费绿灯**（看着跑了、实则什么都没判）。商业侧对账时人工带 spec 实跑。
 check-seam-drift.mjs:宿主 seam 词表漂移巡检（登记本 vs 宿主实测差集），cadence = 宿主升级后 / 定期，非推前链路；且**默认只提示不阻断**——漂移是**宿主侧**信息，不是本仓的错。接进 pre-push 只会在每次推送时产出恒定提示噪声而无任何阻断价值。`--strict` 供巡检时收紧。
+check-fresh-eyes-artifacts.mjs:fresh-eyes-loop harness 注入形态的产物契约守闸——调用方是 harness 执行形态的会话内人工/主任务协议步骤（使用说明在 FORGE/SKILL 与 loop.md 的 .md 面，天然不进脚本调用面）；driver 形态的等价判定在 driver 进程内。--self-test 可自证。
