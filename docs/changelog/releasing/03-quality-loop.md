@@ -108,7 +108,7 @@
 
 铁律（五条，违反即 run 报废级别事故）：
 
-一、**冻结窗口对所有 session 生效**——run 窗口内（审查/修复/验证进行中）不 commit / 不改文件（注入协议自声明 + commit 审计钩子兜底）。**任何** session 都受约束，不止执行 session 自己——主 session「顺手收编」同样炸 run；收编与 run 窗口必须错峰（等 run 收口，或先停 run 再收编再续跑）。
+一、**冻结窗口对所有 session 生效**——run 窗口内（审查/修复/验证进行中）不 commit / 不改文件（注入协议自声明；原 commit 审计钩子机制锁已随编排循环退役，协议自声明为唯一约束面）。**任何** session 都受约束，不止执行 session 自己——主 session「顺手收编」同样炸 run；收编与 run 窗口必须错峰（等 run 收口，或先停 run 再收编再续跑）。
 
 二、**修复不碰审查标准面**——修复批不得改执行器源码（`FORGE/src/fresh-eyes-driver.mjs`）、审查视角定义（`playbook/fresh-eyes-review.md`）与校准档案（`playbook/fresh-eyes-calibration.md`）——改之即「审查标准被被审者污染」，run 作废。
 

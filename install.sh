@@ -690,7 +690,7 @@ if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/nu
   # 设计理由：hook 是**拷贝**而非软链（core.hooksPath 未设置），引擎仓库的
   # engine/audit/hooks/ 更新不随 git pull 同步到各仓库的 .git/hooks/——协作者
   # 拉新代码后，本地仓库与所有装过本 hook 的项目仓库仍跑旧行为（如空提交
-  # 审计、冻结窗口锁缺失）而无人知晓。
+  # 审计行为演进）而无人知晓。
   # 版本标记方式：hook 源头部注释行「# sofagent commit-msg hook vX.Y.Z」
   # （随引擎版本演进，维护在 engine/audit/hooks/commit-msg 首行）。
   _hook_src="${SCRIPT_DIR}/engine/audit/hooks/commit-msg"

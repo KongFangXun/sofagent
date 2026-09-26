@@ -2,7 +2,7 @@
 
 > 🔴 **历史档案导航（2026-09-26 整合归一）**：本章所述多轮编排循环（preflight / 分片执行 / 停止条件判定 / spawn 编排 / daemon+watch 守护 / --resume 断点续跑 / LEDGER 与 latest.json 自动维护）**已从 `fresh-eyes-driver.mjs` 删除**——该文件现为纯单步角色执行器（`--worker --step`），编排职责上收给 harness session 注入的主任务协议（SSOT：`FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节）。本章保留为机制档案与经验源；整合决策与能力交接清单见本章末「编排循环退役与单步执行器」节。
 
-> 冻结窗口：driver 跑循环期间主仓目录处于「冻结」状态（commit-msg hook 2.6 段读 `~/.sofagent/internal/fresh-eyes-run.lock` 判 PID 存活 + 命中 driver 源码路径 → exit 1 阻断）。锁文件含 runId+指纹+PID；PID 已死=锁滞留 → WARN 放行。开发新循环时如需同款保护，参照 fresh-eyes-driver 的 acquireRunLock/releaseRunLock 挂点。
+> 冻结窗口：driver 跑循环期间主仓目录处于「冻结」状态（commit-msg hook 2.6 段读 `~/.sofagent/internal/fresh-eyes-run.lock` 判 PID 存活 + 命中 driver 源码路径 → exit 1 阻断）。锁文件含 runId+指纹+PID；PID 已死=锁滞留 → WARN 放行。开发新循环时如需同款保护，参照 fresh-eyes-driver 的 acquireRunLock/releaseRunLock 挂点。（现态：hook 2.6 段与 driver 锁函数均已随编排循环退役删除，验收面以 S382 退役哨点承接；「审查中途不碰审查标准面」改由 fresh-eyes-loop 主任务协议承担）
 
 > [← 返回索引](./index.md)
 

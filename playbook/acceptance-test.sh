@@ -4102,39 +4102,11 @@ S381_NE_RC=$(echo "$S381_NONEMPTY" | grep -oE 'EXIT=[0-9]+' | cut -d= -f2)
 [ "$S381_NE_RC" = "2" ] || { echo "  ✗ S381: 非空 diff 注入 exit=${S381_NE_RC}（应 2）"; S381_OK=false; }
 rm -rf "$S381_TMP"
 $S381_OK && pass "引擎空 diff 审计行为锁（注入空提交 A9+exit2 阻断 / 普通空提交 exit0 不误报 / 非空 diff 行为不变）" || fail "空 diff message 类审计回退——见上方 ✗ 行"
-scenario 382 "流程加固批 driver 冻结窗口锁行为锁：临时仓装 hook 实测三态——活锁+改 driver 源码提交被拦（exit 1 且提示冻结窗口）/ 锁滞留（假 PID）WARN 放行 / 无锁正常放行；锁路径 HOME 隔离不影响真机环境"; S382_OK=true
-S382_TMP=$(mktemp -d /tmp/sofagent-s382-XXXX)
-S382_HOME=$(mktemp -d /tmp/sofagent-s382home-XXXX)
-mkdir -p "$S382_HOME/.sofagent/internal"
-# 临时仓 + 仓库目录结构（hook 用相对路径 engine/audit/dist/index.js 与 tools/*.mjs，须仿真仓结构）
-( cd "$S382_TMP" && git init -q . && git config user.email t@t.co && git config user.name t \
-  && echo base > base.txt && git add base.txt && git commit -qm init \
-  && mkdir -p engine/audit tools FORGE/src \
-  && echo "// stub" > tools/audit-dist-hash.mjs \
-  && echo "{}" > engine/audit/placeholder.json \
-  && printf 'const FP={};module.exports=FP;\n' > tools/audit-src-fingerprint.mjs \
-  && echo "// driver stub" > FORGE/src/fresh-eyes-driver.mjs && git add . && git commit -qm stubs ) || { echo "  ✗ S382: 临时仓准备失败"; S382_OK=false; }
-cp "$PROJECT_ROOT/engine/audit/hooks/commit-msg" "$S382_TMP/.git/hooks/commit-msg" && chmod +x "$S382_TMP/.git/hooks/commit-msg"
-echo "// driver stub v2" >> "$S382_TMP/FORGE/src/fresh-eyes-driver.mjs"
-# 一、活锁 + 改 driver：锁写当前 shell PID（必活）→ hook 须 exit 1 拦截且提示冻结窗口     （hook 必然非 0——if 守卫承接退出码，防 set -e 杀死整个 acceptance）
-printf '{"runId":"s382-test","pid":%s,"fingerprint":"fp","startedAt":"2026-09-08T00:00:00Z"}' "$$" > "$S382_HOME/.sofagent/internal/fresh-eyes-run.lock"
-if ( cd "$S382_TMP" && git add FORGE/src/fresh-eyes-driver.mjs && HOME="$S382_HOME" bash .git/hooks/commit-msg "$(mktemp "$S382_TMP/msg-XXXX")" ) > "$S382_TMP/case1.out" 2>&1; then S382_C1=0; else S382_C1=$?; fi
-grep -q "冻结窗口内不得修改 driver 源码" "$S382_TMP/case1.out" || { echo "  ✗ S382: 活锁+改 driver 未提示冻结窗口（输出：$(head -3 "$S382_TMP/case1.out")）"; S382_OK=false; }
-[ "$S382_C1" -ne 0 ] || { echo "  ✗ S382: 活锁+改 driver 提交未被拦截（exit=0）"; S382_OK=false; }
-# 二、锁滞留（假 PID 999999）：WARN 放行（commit 正常完成，历史可见）
-printf '{"runId":"s382-stale","pid":999999,"fingerprint":"fp","startedAt":"2026-09-08T00:00:00Z"}' > "$S382_HOME/.sofagent/internal/fresh-eyes-run.lock"
-( cd "$S382_TMP" && HOME="$S382_HOME" git commit --allow-empty -qm "stale lock warn pass" )
-S382_C2=$?
-[ "$S382_C2" -eq 0 ] || { echo "  ✗ S382: 锁滞留（假 PID）未放行（exit=${S382_C2}，应 0）"; S382_OK=false; }
-( cd "$S382_TMP" && git log --oneline -1 ) | grep -q "stale lock warn pass" || { echo "  ✗ S382: 锁滞留场景 commit 未进历史"; S382_OK=false; }
-# 三、无锁：正常放行（空提交 + 正常 message）
-rm -f "$S382_HOME/.sofagent/internal/fresh-eyes-run.lock"
-( cd "$S382_TMP" && HOME="$S382_HOME" git commit --allow-empty -qm "no lock normal pass" )
-S382_C3=$?
-[ "$S382_C3" -eq 0 ] || { echo "  ✗ S382: 无锁场景未正常放行（exit=${S382_C3}）"; S382_OK=false; }
-( cd "$S382_TMP" && git log --oneline -1 ) | grep -q "no lock normal pass" || { echo "  ✗ S382: 无锁场景 commit 未进历史"; S382_OK=false; }
-rm -rf "$S382_TMP" "$S382_HOME"
-$S382_OK && pass "driver 冻结窗口锁行为锁（活锁改 driver 拦截 + 锁滞留 WARN 放行 + 无锁正常）" || fail "driver 冻结窗口锁回退——见上方 ✗ 行"
+scenario 382 "编排循环退役哨点：driver 冻结窗口锁退役清零——commit-msg hook 无锁段且无冻结窗口措辞残留 + driver 无锁函数残留（静态零残留扫描，对齐 S433 退役哨点先例；「审查中途不碰审查标准面」改由 fresh-eyes-loop 主任务协议承担）"; S382_OK=true
+# 注：不做临时仓行为实测——HOME 隔离环境下 hook 全局基准校验（v1.5.0 TASK-10 fail-closed）独立阻断提交，与锁段行为断言互斥；行为面由 S381（空 diff 审计行为锁）与 hook 自身测试面承担
+grep -q "fresh-eyes-run.lock\|冻结窗口" "$PROJECT_ROOT/engine/audit/hooks/commit-msg" && { echo "  ✗ S382: commit-msg 仍有冻结窗口锁段残留"; S382_OK=false; }
+grep -q "acquireRunLock\|releaseRunLock" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" && { echo "  ✗ S382: driver 仍有锁函数残留"; S382_OK=false; }
+$S382_OK && pass "冻结窗口锁退役哨点（hook 锁段与措辞零残留 + driver 锁函数零残留）" || fail "冻结窗口锁退役哨点回退——见上方 ✗ 行"
 
 # ── S383：v1.4.6 边界收缩批行为锁（四批减法/重构改动的防回潮锚 · coverage 缺口闭环）──
 scenario 383 "v1.4.6 边界收缩批行为锁——C/B 批删除符号不复活（downloadModel/trainEnvInit 导出面零残留）+ D 批 TrainExecutor 隔离（scheduler 源码零 child_process + createLocalSpawnExecutor 在位）+ A 批四场景判定语义 SCENARIO_MATCH_HINTS 与参考模板在位 + 外部装载面可用"; S383_OK=true

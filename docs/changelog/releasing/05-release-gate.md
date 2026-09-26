@@ -123,7 +123,7 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 - **机制**：driver 的 worker 在运行中读工作区文件 + 可能做 git 操作，工作树/HEAD 变化会撞上文件读写竞态；多 worker 并发 + 系统内存压力叠加 → OOM
 - **执行方式**：启动判断层前，执行 session 向所有并发 session 声明「仓库冻结 N 分钟」；运行期间只允许读（grep/读文件/gh api），不允许写；verdict 出来后解除冻结（修复批窗口不在冻结内）
 - **判 FAIL 分诊**：driver 崩了先查「运行窗口内 HEAD 是否被动过」——`git log --since="<启动时间>" --until="<结束时间>"`，改动 >0 即环境问题优先（重跑），0 才排查代码
-- **机制锁已上（对最高危形态）**：fresh-eyes driver 的 commit-msg hook 冻结窗口锁（run 进行中 + 提交命中 driver 源码 → exit 1 阻断；PID 死 = 锁滞留 WARN 放行）+ 源码指纹门禁（spawn 前比对启动指纹，错位 exit 86 fail-closed）。release-gate driver 同款指纹门禁在路径上（详见 [FORGE/lessons/driver.md 四章](../../../FORGE/lessons/driver.md)）——**纪律声明冻结、机制兜底最高危**，两者不可互替
+- **机制锁已随编排循环退役**：原 commit-msg hook 冻结窗口锁（run 进行中 + 提交命中 driver 源码 → exit 1 阻断）与源码指纹门禁（spawn 前比对启动指纹，错位 exit 86）均已随多轮编排删除，「纪律声明冻结」为唯一约束面（机制演进与能力交接见 [FORGE/lessons/driver.md 四章](../../../FORGE/lessons/driver.md)）
 
 ---
 
