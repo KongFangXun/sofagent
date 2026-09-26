@@ -764,7 +764,7 @@ function buildPrecheckEvidence(runDir, stepDef, target = '') {
         // P0。口径警示必须放在证据块头部——worker 读证据第一眼即见，权重
         // 对等才压得住实证倾向。
         if (target) {
-          lines.push(`  ⚠️ 版本口径（先读此行再判定）：下列维度输出中的 npm/tag/ssot/包版本号（如上一版号）是仓库 SSOT 实测值，属发版时序正常态（SSOT bump 在 SOP 阶段六，闸门跑在阶段五）；审查对象与报告版本锚点一律 = ${target}。禁止把 SSOT 实测值当作目标版本的「佐证」——引用它们填写目标版本即违反口径。`);
+          lines.push(`  ⚠️ 版本口径（先读此行再判定）：下列维度输出中的 npm/tag/ssot/包版本号（如上一版号）是仓库 SSOT 实测值，属发版时序正常态（SSOT bump 在 SOP 阶段九步骤五，闸门跑在阶段五）；审查对象与报告版本锚点一律 = ${target}。禁止把 SSOT 实测值当作目标版本的「佐证」——引用它们填写目标版本即违反口径。`);
         }
         let failCount = 0;
         for (const d of dims) {
@@ -1045,13 +1045,13 @@ async function runWorker(step, runDir, target) {
     '',
     '--- driver 注入 ---',
     `本次验证对象 = sofagent ${target} 完整交付物`,
-    // 版本锚点声明（run-05 P0-2 根因）：发版时序上 SSOT bump 在阶段六（文档收尾），
+    // 版本锚点声明（run-05 P0-2 根因）：发版时序上 SSOT bump 在阶段九步骤五（发布流水线），
     // 闸门跑在阶段五——仓库 package.json/tag 仍指上一版属 SOP 正常状态，不是
     // 「身份断裂」。但 worker 会在 precheck/日志里看到旧 SSOT，各报告自行引用
     // 旧号 → verdict 误判「三份输入版本互相矛盾」。显式声明口径：报告版本锚点
     // 统一写候选版本（${target}）；仓库 SSOT 滞后是预期，发现时如实记录「SSOT
-    // 仍指 vX.Y.Z（待阶段六 bump）」即可，不得当作阻塞项。
-    `版本口径 = 候选版本 ${target}；仓库 package.json/tag 的 SSOT 此刻仍指上一版属发版时序正常状态（bump 在阶段六），报告中的版本锚点一律写 ${target}，SSOT 滞后不构成阻塞项`,
+    // 仍指 vX.Y.Z（待阶段九步骤五 bump）」即可，不得当作阻塞项。
+    `版本口径 = 候选版本 ${target}；仓库 package.json/tag 的 SSOT 此刻仍指上一版属发版时序正常状态（bump 在阶段九步骤五），报告中的版本锚点一律写 ${target}，SSOT 滞后不构成阻塞项`,
     `项目根目录 = ${workerProjectRoot}`,
     // v1.3.0 修复：acceptance shard 动态注入实际场景范围（覆盖模板写死的旧范围文字）
     stepDef.shard ? `你负责的实际场景范围 = S${stepDef.shard.start} 到 S${stepDef.shard.end}（以本注入为准，忽略 prompt 模板中写死的范围数字）` : '',
