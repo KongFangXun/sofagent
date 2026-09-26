@@ -221,7 +221,7 @@ sofagent-audit --init    # 数据写入 /data/sofagent-hr/data/
 
 > `SOFAGENT_HOME` 影响全部数据路径：审计历史、知识库、HMAC 密钥、引擎内部状态。每个 `SOFAGENT_HOME` 实例的 HMAC 密钥互相独立，审计链条互不交叉。
 >
-> ⚠️ **这是当前唯一的隔离手段（环境变量级，非自动）**——不设置则全部项目共享 `~/.sofagent/data/`，多 Agent 数据混合（已知边界见 [LIMITATIONS §三](../LIMITATIONS.md#三安全与信任模型局限)）。引擎级自动隔离（knowledge/history 按项目/Agent 命名空间）排期 v1.4.x（G7 多租户抽象层），v1.3.x 内请用本节环境变量方案。
+> ⚠️ **隔离现状分两层（2026-09-26 对齐）**：**查询侧隔离已交付**——[v1.4.7](../changelog/v1.4/v1.4.7.md) G7 多租户 v0（查询按 orgId 过滤 + `data/<tenant>/` 身份归属隔离地基）；**写入侧隔离仍是环境变量级手动方案**——不设 `SOFAGENT_HOME` 则全部项目共享 `~/.sofagent/data/`；租户级鉴权 / 配额 / 跨租户策略与写入侧自动隔离尚未落地（诚实边界见 [LIMITATIONS §三](../LIMITATIONS.md#三安全与信任模型局限)）——多租户硬隔离需求当前仍建议按本节每实例独立 `SOFAGENT_HOME` 部署。
 
 ### 多机状态汇聚（v1.2.8）
 
