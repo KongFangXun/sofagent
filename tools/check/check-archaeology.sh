@@ -374,7 +374,7 @@ if [ "$MODE" = "selftest" ]; then
   {
     echo '# good.md · 合法样本 · v1.5.0'
     echo ''
-    echo '门槛形态（判据，非出身）：Loop Check 轮次上限见（v1.0.1+）；自 v1.3.9 起 bump 延后到阶段六。'
+    echo '门槛形态（判据，非出身）：Loop Check 轮次上限见（v1.0.1+）；自 v1.3.9 起 bump 不进开发阶段。'
     echo '门槛形态·前置比较（判据，非出身）：本版低于 `v2.0.0` → 全程加 `--tag alpha`；达到 `v2.0.0` → 默认 tag。'
     echo ''
     echo '<!-- 机器锚 v1.5.0 -->'
