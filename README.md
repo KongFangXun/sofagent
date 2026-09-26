@@ -22,7 +22,7 @@
 - [核心特性](#核心特性)
 - [什么是 FDE Harness](#什么是-fde-harness)
 - [多平台挂载](#多平台挂载)
-- [v1.5.2：审计模块 · 对外面与判定语义](#v152审计模块--对外面与判定语义-已发版--2026-09-24)
+- [v1.5.3：审计模块 · 规则引擎统一与自测](#v153审计模块--规则引擎统一与自测-待发版)
 - [FDE Harness 两阶段](#fde-harness-两阶段)
 - [安装](#安装)
 - [使用](#使用)
@@ -148,17 +148,17 @@
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.5.2：审计模块 · 对外面与判定语义（✅ 已发版 · 2026-09-24）
+## v1.5.3：审计模块 · 规则引擎统一与自测（⏳ 待发版）
 
-🔍 审计模块「从内部审计走向对外可举证」——三件事一次到位：
+🔍 **规则引擎先收敛、再给规则装上自测**——三件事一次到位：
 
 | 能力 | 一句话 |
 |------|--------|
-| **审计数据对外** | MCP `audit_query` 只读查询（时间/规则/exitCode 过滤，字节级只读不变量）+ 审计事件订阅推送 |
-| **规则导出 + 独立验签** | `ruleset_export` 机器可读 JSON 双向可逆（25 条规则元数据 + 版本指纹）；`verify-chain` 零依赖验签器——第三方无需安装 sofagent 即可举证 HMAC 链。获取：npm 包 `@sofagent/audit` 内 `verify/verify-chain.mjs`（单文件零依赖，可直接拷给第三方）；安装态在 `~/.sofagent/verify/verify-chain.mjs`；自检 `node verify-chain.mjs --selftest` |
-| **判定语义补两头** | 开工前五问判定链（健康/人审/证据/专注/配额——挂起非失败自动恢复）+ 结论失效语义（三触发标记失效，失效结论不当新证据） |
+| **双规则引擎统一** | 两处规则引擎（tool-level 与 git-diff）合并为单一引擎——一套定义、两种触发时机（调用前拦截 / commit 后审计），消除并行维护的行为不一致风险 |
+| **规则自测 schema** | 每条规则强制携带 `match` / `notMatch` 正负样例，加载时断言 fail-closed——规则写错立刻爆，不靠人记；FAIL 报文强制附替代建议、多规则命中取最严 |
+| **A24 交付物落点规则** | 白名单 opt-in 事前拦截，**出生即带正负样例**（规则 24→25 条），不留旧账 |
 
-同版另有：出口治理面（host 白名单默认全拒 + 出站裁决挂链）· 事前授权补环（mandate 三元素执行前拦截）· 身份三层叙事注入（README 双语三因子）· DSH 插件 npm 首发面（kit + 七款 `cordis-plugin-sofagent-*`）· v1.5.2 审查修复批（35 条目收编，含 6 条安全 fail-open 收口）。**测试 5083→5309 · acceptance 367→373 · 回归 85 维 · MCP 105→107**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+同版另有：doctor 修复闭环（`--refresh` 备份 + 一键重置到默认 + 前后 diff 报告）· `@sofagent/skillopt` 旧包退役收尾 · ARCHITECTURE 三域重构（FDE 场景层 → S1M 判定层 → harness 治理层 + 五域三域映射表）· 判决类记录成对完整（只记单边即报红，补「无记录」盲区）· 审计范围语义一等公民化（`AuditScope` 显式对象，规则不再各调各的 git）。**测试 5296→5408 · acceptance 373→377 · 回归 85 维 · 规则 24→25**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.3.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE Harness 两阶段
 

@@ -72,6 +72,7 @@
 **离场——按文件执行与审计：**
 
 - **每次变更都被管住**：25 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
+- **规则自测、写错即曝**（v1.5.3）：审计规则统一为一套引擎（tool-level 与 git-diff 共用同一份定义、两种触发时机），**每条规则强制携带正负样例**（必须命中 / 必须不命中），加载时断言 fail-closed——规则写错当场拒载，不靠人记；多规则命中取最严，FAIL 报文附替代建议。运维侧同版补 **doctor 修复闭环**：`sofagent-audit doctor --refresh` 先备份、再一键重置到默认、出前后 diff 报告。
 - **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN 四阶段完整交付）。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
@@ -495,8 +496,8 @@ jobs:
 
 | 能力 | 版本 | 一句话 | 明细 |
 |------|------|--------|------|
+| 审计模块·规则引擎统一与自测 | v1.5.3 | 双规则引擎统一（一套定义、两种触发时机）· 规则自测 schema（每条规则强制 match/notMatch 正负样例，加载 fail-closed + FAIL 报文附替代建议 + 多规则取最严）· A24 交付物落点规则（24→25）· doctor 修复闭环（`--refresh` 备份 + 一键重置 + 前后 diff）· ARCHITECTURE 三域重构 · 判决类记录成对完整 · AuditScope 一等公民化 | [v1.5.3 开发日志](./changelog/v1.5/v1.5.3.md) |
 | 审计模块·对外面与判定语义 | v1.5.2 | MCP audit 数据对外（audit_query 只读查询 + 事件订阅推送）· 约束导出与证据链外部可验（ruleset_export 双向可逆 + verify-chain 独立验签器——获取路径：npm 包内 verify/verify-chain.mjs 或安装态 ~/.sofagent/verify/）· should-run 五问判定链 · 结论失效语义 · 出口治理（host 白名单 + 出站裁决挂链）· 事前授权 mandate | [v1.5.2 开发日志](./changelog/v1.5/v1.5.2.md) |
-| 编排模块·事件驱动 | v1.5.1 | 业务事件触发（四类事件源 + `on:` 订阅 + 死信重放）· 理解债务应对（auto-PR 决策解释 + daemon 周报四段）· 设备 OTA 远程升级（事件总线 + 验签 + 灰度批次）· 异常处理总线（三分类路由）· `sofagent demo` 五分钟戏剧弧 | [v1.5.1 开发日志](./changelog/v1.5/v1.5.1.md) |
 
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）

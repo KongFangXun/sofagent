@@ -24,7 +24,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.2: Audit · External Provability & Decision Semantics](#v152-audit--external-provability--decision-semantics--released--2026-09-24)
+- [v1.5.3: Audit · Unified Rule Engine & Self-Test](#v153-audit--unified-rule-engine--self-test--pending-release)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -150,17 +150,17 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.2: Audit · External Provability & Decision Semantics (✅ Released · 2026-09-24)
+## v1.5.3: Audit · Unified Rule Engine & Self-Test (⏳ Pending release)
 
-🔍 **The audit module goes externally provable** — three things at once:
+🔍 **Converge the rule engine first, then give the rules a self-test** — three things at once:
 
 | Capability | In one line |
 |------|--------|
-| **Audit data outside** | Read-only MCP `audit_query` (filter by time / rule / exitCode, byte-level read-only invariant) + audit event subscription push |
-| **Ruleset export + standalone verification** | `ruleset_export` machine-readable JSON, round-trip reversible (25-rule metadata + version fingerprint); `verify-chain` zero-dependency verifier — third parties can validate HMAC chains without installing sofagent. Where to get it: `verify/verify-chain.mjs` inside the `@sofagent/audit` npm package (single zero-dependency file, safe to hand to third parties); installed copies live at `~/.sofagent/verify/verify-chain.mjs`; self-check via `node verify-chain.mjs --selftest` |
-| **Decision semantics on both ends** | A five-question should-run gate before work starts (health / human-gate / evidence / focus / quota — suspend-not-fail with auto-resume) + conclusion invalidation semantics (three triggers mark stale conclusions so they stop feeding downstream) |
+| **Unified rule engine** | The two rule engines (tool-level and git-diff) merge into a single engine — one definition, two trigger points (pre-call interception / post-commit audit), removing the risk of divergent behaviour from parallel maintenance |
+| **Rule self-test schema** | Every rule must carry `match` / `notMatch` positive/negative examples, asserted fail-closed at load time — a mis-written rule fails loudly instead of relying on memory; FAIL messages attach a suggested fix, and multi-rule hits take the strictest |
+| **A24 deliverable-location rule** | Allowlist opt-in, intercepted before the act, **born with positive/negative examples** (rules 24 → 25) — no legacy debt |
 
-Also in this release: egress governance (default-deny host allowlist + outbound adjudication HMAC-chained) · pre-authorization mandate loop (scope/expiry/approver, rejected before execution) · identity three-layer narrative injection (bilingual README) · DSH plugin npm debut surface (kit + seven `cordis-plugin-sofagent-*`) · v1.5.2 post-release review fix batch (35 items incl. six fail-open closures). **Tests 5083 → 5309 · acceptance 367 → 373 · 85 regression dimensions · MCP 105→107** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.2.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+Also in this release: doctor repair loop (`--refresh` backup + one-click reset to defaults + before/after diff) · `@sofagent/skillopt` legacy package retirement · ARCHITECTURE three-domain rewrite (FDE scenario layer → S1M decision layer → harness governance layer + five-domain/three-domain mapping) · paired completeness for verdict records (a one-sided record alone now raises red, closing the "no record" blind spot) · audit-scope semantics as a first-class citizen (`AuditScope` explicit object; rules no longer each call git). **Tests 5296 → 5408 · acceptance 373 → 377 · 85 regression dimensions · rules 24 → 25** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.3.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
