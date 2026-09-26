@@ -28,6 +28,7 @@
 | `check/dependency-direction.sh` | 依赖方向架构测试（build 序列 13 包边界：核心层←约束层←适配层←展示层；读同目录 `dependency-direction.yml` SSOT——含 `rhythm` 版本节奏段） | CI / 改包依赖后 |
 | `check/check-silent-catch.mjs` | 静默吞错扫描（关键路径空 catch 只拦新增，存量见 `silent-catch-baseline.json` 基线） | CI / 改错误处理时 |
 | `check/check-paired-records.mjs` | 判决类记录成对门禁（N 态判据：声明 N 态即须落 N 态。登记表 = 脚本内 REGISTRY（判决家族 × N 态 × 生产写入点）；三判定：①缺侧 ②未登记判决写入点（新增判决 kind 必须同批登记配对侧）③非判决豁免集与 DecisionKind 枚举对账；盲区显式登记（RULE_TOGGLE/ESCALATE_REPORT/COST 各带理由+触发条件）；`--self-test` 脚本内双探针故障注入） | pre-push 第 3j 步 / 新增判决类 kind 后 |
+| `check/check-fresh-eyes-artifacts.mjs` | fresh-eyes-loop 产物契约守闸（harness 注入形态的机械停止条件等价面：校验 runDir 产物存在性 + schema + 计数一致性；`--self-test` 自检） | harness 执行形态跑完轮后（会话内人工/主任务协议步骤） |
 | `check/check-home-resolution-parity.mjs` | 家目录解析口径对照共享守卫（harness 因 layer 0 · `allow: []` **不能** import core，只能本地重实现 `resolveEngineHome()`——本守卫断言两侧**同输入同输出**；core 侧真实 `require` dist 调用、harness 侧用 `skill/custom` 哨兵经 `buildConstrainedSystemPrompt` 反推，子进程受控 `$HOME`/`cwd` 不碰真实 `~/.sofagent`；**已登记差异（空串口径）差异消失也判红**；提取不到实现 / 观测不到哨兵 ⇒ FAIL） | 改 harness 或 core 的家目录解析后 · pre-push |
 | `check/silent-catch-baseline.json` | 静默吞错存量基线（`check-silent-catch.mjs` 消费，新增即红） | 被 check-silent-catch.mjs 消费 |
 | `check/check-archaeology.sh` | 规则文档禁考古守卫（`releasing.md` + `releasing/*.md` + `SKILL/**` + `playbook/**` 正文禁带出身：版本号 / 日期 / 跑批编号（run-N·第N轮·Round N）/ 出身标签；豁免 = 能力/阶段版本门槛（`vX.Y.Z+`·`vX.Y.Z 起`·`低于`·`达到`）/ 文件头版本标识 / 机器注释 / 机器字面量（引号或命令内的版本号，逐处摘除）/ 台账锚串；带 `--selftest` 正反例夹具 + `--list-exempt` 列豁免行） | pre-push / 改规则文档后 |
