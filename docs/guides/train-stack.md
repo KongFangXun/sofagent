@@ -23,7 +23,7 @@
 - 流程：**检测 GPU → 安装/配置框架 → 验证可用 → 输出就绪报告**（结构化 JSON）。
 - 分支判定：检测到可用 CUDA（`nvidia-smi` 存在且输出可解析）→ `cuda-ready`；否则 → `metal-degraded`（macOS 上用 `system_profiler SPDisplaysDataType` 探测 Metal 支持，给出明确降级提示）。
 - 就绪报告字段：`branch`（分支）、`gpu`（GPU 信息：CUDA 版本 / 驱动 / Metal 等级）、`framework`（框架名 + 版本）、`freeVramMiB`（显存余量，经 `nvidia-smi --query-gpu=memory.free --format=csv`）、`degradationHint`（降级提示）、`ready`、`steps`（审计留痕）。
-- GPU 检测经依赖注入（exec 探测函数可 mock）——Linux GPU 分支以单测 mock 验收，真机验收留 v1.4.3（GPU 队列版）。
+- GPU 检测经依赖注入（exec 探测函数可 mock）——Linux GPU 分支以单测 mock 验收，GPU 队列已随 v1.4.3 交付（train_status 长任务可用性）；真机验收以交付后实测为准。
 
 ---
 
