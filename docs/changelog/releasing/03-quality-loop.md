@@ -30,12 +30,27 @@
 
 ---
 
-## 路径 A：快速路径（当前 session 直接收口 · 零复制）
+## 路径 A：快速路径（零复制直跑，或主 session 出交接 prompt · 二形态）
+
+> **交接形态二选一（均合法）**：① **自跑**（原设计：当前 session 直接执行下方步骤，零复制）；② **交接**（主 session 出一次性交接 prompt 交执行 session——适用于需要审查者与主 session 物理隔离的场景）。交接形态时主 session 出题义务：把「执行方无对话上下文」当作前提，prompt 内必须自带下方**交接五件套**；执行 prompt 直接在对话输出（禁落盘），全程只此一次复制。
+
+**交接五件套**（主 session 出题 checklist——缺任何一件，执行 session 大概率产出误报或越界）：
+
+| # | 件 | 内容 | 缺失后果（实证） |
+|---|---|---|---|
+| 1 | **背景速览** | 本版交付一段话 + **「已知事实表」**（有意为之的非 finding：退役包 E404 / 物理重排文件清单 / 刚落盘的新口径数字） | 执行方把有意变更当缺陷刷屏（D5 章节重排报成「内容大量删除」、退役包报成 broken） |
+| 2 | **基线与 diff 锚** | 审查区间 `<base>..<head>` + commit 数 + patch 生成命令 | 执行方自选基线审错对象 |
+| 3 | **预算与卡线实况** | A 层当刻读数（`bash tools/check/check-docs.sh`）+ 双卡线余量；文档类修复红线 | 修复批写文档直接爆 A 层预算 |
+| 4 | **坑位清单** | 本仓高频坑（判退出码禁管道 / 改 src 先 build / U+FFFD node 扫 / zsh 不分词）至少四条 | 执行方踩已知坑浪费时间且产出假数据 |
+| 5 | **越界清单** | 明确「不做」面（不 push/tag/publish / 不动 FORGE / 不改 devlog 勾选 / 不自称收编——收编是主 session 职责） | 执行方顺手越权（对外动作 / 越权翻勾） |
+
+**执行步骤（两形态同构）**：
 
 1. **审查**：单次草稿优先——`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`（16 视角草稿一次成型，「待取证」项少且变更小 → 草稿 + 人工复核即收口）。API 失败 → 降级路径：`.prompt.md` 落盘交 subagent 执行出**正式草稿**（降级≠豁免，`.prompt.md` 本身不算完成）。对话式多轮审查（主会话按 playbook 视角人肉多轮）与草稿产出等价可互换（见 [01-review.md](./01-review.md) 审查分层第三层）。
-2. **修复**：草稿 P0/P1 项由主 session 零信任复验定性（逐项 grep 实证，不采信草稿结论——草稿 finding 是线索不是事实）→ 修复批交 subagent 执行（修复者≠复验者）→ 主 session 复验收编。修复批协议同引 [`auto-converge-protocol.md`](./auto-converge-protocol.md)。
-3. **升级检查**：复验后 P0≥2 或待取证>5 → 触发升级预授权，转路径 B（生成 prompt 交用户复制）。
-4. 步骤三/四（下方共用节）与审查并行推进。
+2. **定性（草稿后、动手修前）**：先读 `playbook/fresh-eyes-calibration.md`（判读者法定义务；**时序在草稿生成之后**——提前读会把审查锚定掉）。草稿 finding 是线索不是事实：逐项三定性（实锤/误报/存疑）附 grep 实证；版本中间态按下方 SKIP 口径；`file:line` 引用先跑 `bash tools/check/resolve-section.sh <file> <line>` 解析归属。
+3. **修复**：草稿 P0/P1 项由主 session 零信任复验定性（逐项 grep 实证，不采信草稿结论）→ 修复批交 subagent 或执行 session 执行（修复者≠复验者）→ 主 session 复验收编。修复批协议同引 [`auto-converge-protocol.md`](./auto-converge-protocol.md)。
+4. **升级检查**：复验后 P0≥2 或待取证>5 → 触发升级预授权，转路径 B（生成 prompt 交用户复制）。
+5. 步骤三/四（下方共用节）与审查并行推进。
 
 > 取用配置参照 playbook 分层表（对话式形态）：常规发版 1-12 必跑，动态面 17-19（工具/门禁/hook/引擎改动版建议追加）、文档治理 13-14（文档大改版建议追加）、通读 15-16、发现面 22（门面改动）按版型选层；深度专项 20-21 留季度体检。
 
