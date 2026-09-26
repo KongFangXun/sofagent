@@ -1440,8 +1440,8 @@ diff <(grep -c "exitCode" engine/audit/hooks/post-commit) <(grep -c "exitCode" "
 # ⑦ archive 断链模式（防 #34）：压平迁移后引用路径必须跟着改
 node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.readdirSync('docs/archive/changelog-experimental')){if(!f.endsWith('.md'))continue;const c=fs.readFileSync(p.join('docs/archive/changelog-experimental',f),'utf8');for(const m of c.matchAll(/\]\((\.[^)]+)\)/g)){const t=p.resolve('docs/archive/changelog-experimental',m[1]);if(!fs.existsSync(t))bad++}}if(bad)console.log('⚠️ archive 断链 '+bad+' 处（迁移没跟引用）')"
 # 原 #116 并入的 12 项 P0-P1 锚点（12 行 anchor grep → 单次批量断言，等价）
-node -e "const fs=require('fs');const T=[['engine/audit/src/commands/verify.ts',['selfMatched','process.exit(1)','tampered']],['tools/check/test-count.sh',['FLAKY_PKGS=\"\"','漏收集']],['engine/audit/hooks/post-commit',['审计通过','含警告']],['engine/audit/src/rules/rule-a2-secret-leak.ts',['.bin','Binary files']],['engine/audit/src/rules/skill-safety-rules.ts',['(?!tmp|home']],['FORGE/src/driver-base.mjs',['timeout: 600_000']],['FORGE/src/fresh-eyes-driver.mjs',['timeout: 600_000','round === resumeState?.round']],['playbook/acceptance-test.sh',['--max-old-space-size=2048']],['tools/check/check-version.sh',['ver == SSOT']]];const bad=[];for(const [f,pats] of T){let c='';try{c=fs.readFileSync(f,'utf8')}catch{bad.push(f+' 缺失');continue}for(const p of pats)if(!c.includes(p))bad.push(f+' 缺锚点: '+p)}if(bad.length){console.error('  \u274c 回植/漂移: '+bad.join(' | '));process.exit(1)}console.log('  \u2705 anchor 批全在位')" # ⑧ 门禁失败路径注入自测（归并原维度 100——set -u 下 $? 赋值曾判 unbound 崩溃，CI 常绿无感）
-# 锚点勘误（阶段五复验）：①「审计通过」锚自 HOOK_TEMPLATE 删除后应指 hooks/ 唯一源（post-commit 成功回声双形态）②acceptance 锚改锚 NODE_OPTIONS 字面量——旧写法在双引号 node -e 里被 shell 展开成绝对路径再去匹配文件内字面 $PROJECT_ROOT，必假红（P1-1#2/P1-4 根因）
+node -e "const fs=require('fs');const T=[['engine/audit/src/commands/verify.ts',['selfMatched','process.exit(1)','tampered']],['tools/check/test-count.sh',['FLAKY_PKGS=\"\"','漏收集']],['engine/audit/hooks/post-commit',['审计通过','含警告']],['engine/audit/src/rules/rule-a2-secret-leak.ts',['.bin','Binary files']],['engine/audit/src/rules/skill-safety-rules.ts',['(?!tmp|home']],['FORGE/src/driver-base.mjs',['timeout: 600_000']],['FORGE/src/fresh-eyes-driver.mjs',['timeout: 600_000']],['FORGE/src/release-gate-driver.mjs',['timeout: 600_000','loadResumePoint']],['playbook/acceptance-test.sh',['--max-old-space-size=2048']],['tools/check/check-version.sh',['ver == SSOT']]];const bad=[];for(const [f,pats] of T){let c='';try{c=fs.readFileSync(f,'utf8')}catch{bad.push(f+' 缺失');continue}for(const p of pats)if(!c.includes(p))bad.push(f+' 缺锚点: '+p)}if(bad.length){console.error('  \u274c 回植/漂移: '+bad.join(' | '));process.exit(1)}console.log('  \u2705 anchor 批全在位')" # ⑧ 门禁失败路径注入自测（归并原维度 100——set -u 下 $? 赋值曾判 unbound 崩溃，CI 常绿无感）
+# 锚点勘误（阶段五复验）：①「审计通过」锚自 HOOK_TEMPLATE 删除后应指 hooks/ 唯一源（post-commit 成功回声双形态）②acceptance 锚改锚 NODE_OPTIONS 字面量——旧写法在双引号 node -e 里被 shell 展开成绝对路径再去匹配文件内字面 $PROJECT_ROOT，必假红（P1-1#2/P1-4 根因）③resume 锚自 fresh-eyes-driver 迁 release-gate-driver——多轮编排入口已归一退役（fresh-eyes-driver.mjs 文件头自述），resume 语义唯一活体=release-gate-driver loadResumePoint 断点续跑
 sed 's|bash tools/check/test-count.sh|bash /nonexistent/test-count.sh|' tools/check/check-test-count.sh > /tmp/cct-t.sh; bash /tmp/cct-t.sh >/dev/null 2>&1; [ $? -eq 1 ] && echo "✅ 失败路径正确报红" || echo "⚠️ 失败路径崩溃或假绿"; rm -f /tmp/cct-t.sh
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 tmp_all=$( { grep -cF "[0-9;]*m//g" tools/check/test-count.sh 2>/dev/null || true; } | head -1 | tr -cd "0-9"); tmp_safe=$( { grep -cF "LC_ALL=C sed" tools/check/test-count.sh 2>/dev/null || true; } | head -1 | tr -cd "0-9"); [ "${tmp_all:-0}" = "${tmp_safe:-1}" ] && grep -q "解析失败，计数不可信" tools/check/test-count.sh && echo "✅ 计数解析 fail-loud 在位" || { echo "❌ 门禁吞数面回退（原 #143c · LC_ALL=C 覆盖 ${tmp_safe}/${tmp_all}）"; exit 1; }
@@ -1503,7 +1503,7 @@ grep -q "DecisionCategory" engine/audit/src/decision-schema.ts && echo "✅ ⑮d
 # 原 #114 并入：修复防复发三锚点（脱敏两层同源 + 安全渠道 + worktree 信号清理）
 grep -q "SHARED_REDACTION_SAMPLES" engine/core/src/security/prompt-sanitizer.ts && echo "✅ 脱敏两层漂移断言在位" || echo "❌ 防漂移断言丢失"
 grep -q "Security Advisory" SECURITY.md && ! grep -q "noreply.*备选" SECURITY.md && echo "✅ 漏洞渠道单通道" || echo "❌ 摆设渠道回潮"
-grep -q "registerSignalCleanup" FORGE/src/driver-base.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/fresh-eyes-driver.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/release-gate-driver.mjs && echo "✅ 信号清理双 driver" || echo "❌ 镜像漂移回退"
+grep -q "registerSignalCleanup" FORGE/src/driver-base.mjs && grep -q "createForgeDriverBase" FORGE/src/fresh-eyes-driver.mjs && grep -q "createForgeDriverBase" FORGE/src/release-gate-driver.mjs && echo "✅ 信号清理接线（driver-base 定义·双 driver 组合继承）" || echo "❌ 信号清理接线断裂"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
@@ -1636,7 +1636,8 @@ grep -qE "levenberg|阻尼" engine/train/src/scale-curve.ts && ! grep -qE "from 
 # e: IM 桥安全边界文档（凭据本机/命令白名单/可信用户）
 grep -qE "白名单|凭据" docs/guides/im-bridge.md && echo "✅ 安全边界在档" || echo "❌ im-bridge.md 缺安全边界"
 # f: FORGE 步零——worktree re-sync 三级降级 + 重复率熔断 + A 侧骨架先行
-grep -q "syncWorktreeToMain" FORGE/src/fresh-eyes-driver.mjs && grep -qE "repeat-convergence|REPEAT_BREAK_THRESHOLD" FORGE/src/fresh-eyes-driver.mjs && echo "✅ re-sync+熔断在位" || echo "❌ FORGE 步零缺失"
+# f: FORGE 步零——重复率熔断阈值解析在位（re-sync 三级降级机制已退役：多轮编排入口归一，worktree 编排统一于 driver-base/release-gate；熔断逻辑内联保留于 driver 测试）
+if grep -q "syncWorktreeToMain" FORGE/src/fresh-eyes-driver.mjs; then echo "❌ re-sync 退役机制回潮（编排已归一 driver-base/release-gate）"; elif grep -q "repeat-convergence" FORGE/src/fresh-eyes-driver.test.mjs; then echo "✅ 步零熔断阈值测试在位（re-sync 已退役·多轮编排入口归一）"; else echo "❌ FORGE 步零缺失"; fi
 grep -q "先写报告骨架" FORGE/src/fresh-eyes-driver.mjs && echo "✅ A 侧收敛指令" || echo "❌ 缺骨架先行"
 # g: dataDir SSOT 传承（原 #59 命令体迁入 + N-1 收编面）——禁止 process.cwd() 误传 overrideHome；MCP 工具禁本地 getSofagentDataDir（存量已清零，机械闸见 check-version 9d 零容忍）
 _HITS=$(grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(process\|writeSessionReport.*process" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__ || true)
@@ -1898,8 +1899,8 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 ```bash
 (
 FAIL=0
-# a: S433–S444 引用闭环（十一场景号须全数在位，缺一即红——S440 章十五族锚 G-1 闭环 / S441 章十一发布链锚 G-10 闭环【本版审查面登记时归并入 S440 共壳，断言零删减】/ S442-S444 本版审查增量闭环）
-grep -cE "scenario 43[3-9]|scenario 44[0-8]" playbook/acceptance-test.sh | grep -q "^15$" && echo "✅ S433–S448 十五场景位在位（S441 归并入 S440 · S445–S448 本版审查增补）" || { echo "❌ S433–S448 场景号缺失"; FAIL=1; }
+# a: S433–S444 引用闭环（场景调用位须全数在位，缺一即红——S440 章十五族锚 G-1 闭环 / S441 章十一发布链锚 G-10 闭环【本版审查面登记时归并入 S440 共壳，断言零删减】/ S442-S444 本版审查增量闭环 / S446 于 v1.5.3 阶段四归并入 S442 共壳，断言零删减）
+grep -cE "scenario 43[3-9]|scenario 44[0-8]" playbook/acceptance-test.sh | grep -q "^14$" && echo "✅ S433–S448 十四场景调用位在位（S441 归并入 S440 · S446 归并入 S442 · S445–S448 本版审查增补）" || { echo "❌ S433–S448 场景号缺失"; FAIL=1; }
 grep -rq "replayDeadLetter" engine/orchestrator/src/__tests__/events-bus.test.ts && grep -q "event-queue.jsonl" engine/orchestrator/src/events/bus.ts && grep -q "timer.tick" engine/orchestrator/src/events/adapters.ts && echo "✅ 事件总线三面在位" || { echo "❌ 事件总线面缺口"; FAIL=1; } # b: 章一·事件总线三面（重放/落盘/tick 源）
 grep -q "平台公钥" engine/daemon/src/ota/upgrade-executor.ts && grep -q "设备注册表" engine/daemon/src/device-registry.ts && echo "✅ 验签三要素披露在位" || { echo "❌ 验签三要素披露缺失"; FAIL=1; } # c: 章四·OTA 验签对称/逐条披露（B1/B2 防复发）
 grep -q "holdTaskDispatch" engine/daemon/src/ota/upgrade-policy.ts && grep -q "takeHeldTaskDispatches" engine/daemon/src/ota/upgrade-policy.ts && echo "✅ 双通道在位" || { echo "❌ 任务下发双通道缺口"; FAIL=1; } # d: 章五·任务下发双通道（在线推送 + 离线持有点 + 心跳捎带补收）
@@ -1923,7 +1924,7 @@ grep -q "pluginCfg?.projectRoot" engine/openclaw-plugins/sofagent-rollback/src/i
 grep -rq -- "--version 1\." engine/openclaw-plugins/*/README.md && { echo "❌ README 发布命令写死版本号"; FAIL=1; } || echo "✅ 发布命令零硬编码版本" # p: ClawHub 版本不可变
 grep -q '"@deepseek-ai/dsh-web-app": "0.1.5-rc.2"' engine/orchestrator/package.json && echo "✅ dsh-web-app 钉在位" || { echo "❌ 上游钉缺失"; FAIL=1; } # q: 缺失则全新安装 ETARGET 回潮
 # r: 本版审查面登记（章二~章九——约束导出与证据链外部可验 + 运行时 should-run 判定链 + 审计结论失效语义 + 网络出口治理面 + 事前授权补环 + DSH 插件 npm 首发面；行为面由 S442–S448 锁——S445–S448 为 coverage FAIL 补锚：BugFix 五族 / MCP audit 对外面 / README 结构锁 / 发布面 dry-run 对账，断言本体在 acceptance-node-probes.js）
-grep -cE "scenario 44[2-8] " playbook/acceptance-test.sh | grep -q "^7$" && echo "✅ 本版审查面（S442–S448）在位（S445 BugFix 五族 / S446 MCP audit 对外面 / S447 README 结构锁 / S448 发布面 dry-run 对账）" || { echo "❌ 本版审查面场景缺失"; FAIL=1; }
+grep -cE "scenario 44[2-8] " playbook/acceptance-test.sh | grep -q "^6$" && echo "✅ 本版审查面（S442–S448）在位（S445 BugFix 五族 / S446 MCP audit 对外面已归并入 S442 共壳 · S447 README 结构锁 / S448 发布面 dry-run 对账）" || { echo "❌ 本版审查面场景缺失"; FAIL=1; }
 _p=$(printf '共 23 条规则\n不是第 25 条规则\n不是第 25、26、27 条规则\n24 条规则\n' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{process.stdout.write(s.replace(/第\s*[0-9]+(?:[、，,]\s*[0-9]+)*\s*条/g,""))})' | grep -oE '[0-9]+[[:space:]]*(条|个)[[:space:]]*规则|[0-9]+[[:space:]]*rules' | grep -oE '[0-9]+' | sort -u | tr '\n' ' '); [ "$_p" = "23 24 " ] && echo "✅ 数字抽取器自证通过（真值捕获 + 序数剥离）" || { echo "❌ 数字抽取器自证失败：实测 [$_p]（期望 23 24 ）"; FAIL=1; } # s: 数字抽取器自证（序数剥离既不能吃掉真值、也不能漏剥序数——真 23 必被捕获 /「第 25、26、27 条规则」必不命中）
 [ "${FAIL:-0}" = "1" ] && { echo "维度144:FAIL"; exit 1; }; echo "维度144:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true

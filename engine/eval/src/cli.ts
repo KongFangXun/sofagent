@@ -116,6 +116,12 @@ export function convertAuditResult(auditResult: {
  * 3. 把 AuditResult 转换为 eval 期望的输出格式
  */
 export function createAuditRunner(): (input: Record<string, unknown>) => Promise<Record<string, unknown>> {
+  // eval 是纯 mock 确定性环境：golden 全部用例的 diff/log 均为内联构造，
+  // 判定不依赖真实 DSH 会话。显式关闭 A7 trace 证据面——否则规则会扫描
+  // 真实 ~/.dsh/sessions/（千文件级 zstd 解压，10 分钟级 CPU-bound），
+  // 单个非 silent 用例即可挂死全量 eval，且真实 trace 数据混入会使
+  // 判定结果随宿主机状态漂移（不可复现）。
+  process.env.SOFAGENT_TRACE_EVIDENCE = 'off';
   return async (input: Record<string, unknown>): Promise<Record<string, unknown>> => {
     // 1. 从 input 提取结构化 DiffFile[]
     const diffFiles = (input['diffFiles'] as DiffFile[]) ?? [];
