@@ -89,7 +89,10 @@ for drv in "${DRIVER_MODULES[@]}"; do
   # 会在到达 dry-run 逻辑之前就 SyntaxError 崩溃
   DRY_OUT=$(node "$drv" --target v0.0.0 --dry-run 2>&1)
   DRY_RC=$?
-  if [ "$DRY_RC" -eq 0 ] || grep -q "dry-run\|启动\|target\|步骤" <<< "$DRY_OUT"; then
+  # v1.5.3 阶段三：driver 已重构为单步角色执行器（多轮编排退役归 harness session）——
+  # 退役说明文案（「已退役/用法/编排职责归 harness」）本身就是「模块加载成功且逻辑可达」
+  # 的证据（SyntaxError 会先崩）。故退役形态与旧 dry-run 形态都算接线通过。
+  if [ "$DRY_RC" -eq 0 ] || grep -q "dry-run\|启动\|target\|步骤\|已退役\|编排职责" <<< "$DRY_OUT"; then
     PASS=$((PASS + 1))
   else
     echo -e "  ${RED}✗ dry-run 启动失败: ${drv}${NC}"

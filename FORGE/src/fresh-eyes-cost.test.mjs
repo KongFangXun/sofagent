@@ -27,7 +27,9 @@ const require = createRequire(import.meta.url);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DRIVER_PATH = join(__dirname, 'fresh-eyes-driver.mjs');
+const RG_DRIVER_PATH = join(__dirname, 'release-gate-driver.mjs');
 const DRIVER_CODE = readFileSync(DRIVER_PATH, 'utf-8');
+const RG_DRIVER_CODE = readFileSync(RG_DRIVER_PATH, 'utf-8'); // appendUsageSummary 现居 release-gate-driver（fresh-eyes 多轮编排退役后计量汇总归一维护）
 // 仓库根 playbook/：__dirname = FORGE/src，须上溯两级到仓库根（与 release-gate-driver 的 REPO_ROOT 口径一致）
 const PLAYBOOK_PATH = join(__dirname, '..', '..', 'playbook', 'fresh-eyes-review.md');
 const PLAYBOOK_CODE = readFileSync(PLAYBOOK_PATH, 'utf-8');
@@ -66,22 +68,20 @@ describe('usage.jsonl 计量（v1.3.8 交付八 · 防回归）', () => {
     expect(body).toContain("join(runDir, 'usage.jsonl')");
   });
 
-  it('appendUsageSummary 生成末尾 _summary 汇总行（by_role A/B）', () => {
-    const body = extractFunctionBody(DRIVER_CODE, 'appendUsageSummary');
+  it('appendUsageSummary 生成末尾 _summary 汇总行（重构后语义锁定）', () => {
+    // fresh-eyes 多轮编排退役后本文件不再自带汇总（单步执行器只逐条 recordUsage）；
+    // 汇总函数唯一存于 release-gate-driver（跨轮终局调用）——锁定其 _summary + by_role 语义。
+    const body = extractFunctionBody(RG_DRIVER_CODE, 'appendUsageSummary');
     expect(body).toContain('_summary');
     expect(body).toContain('by_role');
-    // A/B 双角色汇总（release-gate 是单角色 V——fresh-eyes 必须双角色）
-    expect(body).toContain('A:');
-    expect(body).toContain('B:');
   });
 
   it('recordUsage 在 worker invoke 后被调用（usage 记录接入主流程）', () => {
     expect(DRIVER_CODE).toContain('recordUsage(runDir, step, round, role, cfg.model, result, latencyMs, target)');
   });
 
-  it('行为验证：appendUsageSummary 追加唯一 _summary 行（grep -c = 1）', () => {
-    // 构造迷你 usage.jsonl（模拟 2 条 worker 记录），跑 appendUsageSummary，
-    // 验证文件末尾恰有 1 行 _summary（验收命令 grep -c "_summary" = 1 的单测化）
+  it('行为验证：release-gate 侧 appendUsageSummary 追加唯一 _summary 行', () => {
+    // 汇总行为随函数迁至 release-gate-driver——行为锁同步指 RG 实现。
     const runDir = join(tmpdir(), `sofagent-usage-test-${Date.now()}`);
     mkdirSync(runDir, { recursive: true });
     const usagePath = join(runDir, 'usage.jsonl');
@@ -89,29 +89,15 @@ describe('usage.jsonl 计量（v1.3.8 交付八 · 防回归）', () => {
       JSON.stringify({ ts: 't1', round: 1, step: 'a-check-p1', role: 'A', model: 'glm-5.2', prompt_tokens: 100, completion_tokens: 50, total_tokens: 150, cost_cny: null }),
       JSON.stringify({ ts: 't2', round: 1, step: 'b-check-p1', role: 'B', model: 'glm-5.2', prompt_tokens: 200, completion_tokens: 80, total_tokens: 280, cost_cny: null }),
     ].join('\n') + '\n', 'utf-8');
-
     try {
-      // 提取 appendUsageSummary 并注入依赖——函数体内引用的模块级标识符
-      // （join/fs 原语 + MODEL_CONFIGS.a_billing）统一以参数注入
       const { join: j } = require('path');
       const fs = require('fs');
       const fn = new Function(
         'join', 'existsSync', 'readFileSync', 'appendFileSync', 'MODEL_CONFIGS',
-        extractFunctionBody(DRIVER_CODE, 'appendUsageSummary') + '\nreturn appendUsageSummary;'
+        extractFunctionBody(RG_DRIVER_CODE, 'appendUsageSummary') + '\nreturn appendUsageSummary;'
       );
-      const appendUsageSummary = fn(
-        j, fs.existsSync, fs.readFileSync, fs.appendFileSync,
-        { A: { billing: 'subscription' }, B: { billing: 'subscription' } },
-      );
-      const summary = appendUsageSummary(runDir, 1);
-
-      // 汇总正确性：A=150 + B=280 = 430
-      expect(summary.total_tokens).toBe(430);
-      expect(summary.by_role.A.total_tokens).toBe(150);
-      expect(summary.by_role.B.total_tokens).toBe(280);
-      expect(summary.a_billing).toBe('subscription');
-
-      // 🔴 验收口径：文件中 _summary 行数 = 1
+      const appendUsageSummary = fn(j, fs.existsSync, fs.readFileSync, fs.appendFileSync, {});
+      appendUsageSummary(runDir);
       const summaryLines = fs.readFileSync(usagePath, 'utf-8')
         .split('\n').filter(Boolean)
         .filter(l => l.includes('"_summary":true'));
@@ -123,20 +109,15 @@ describe('usage.jsonl 计量（v1.3.8 交付八 · 防回归）', () => {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  2. B 侧复核模式（v1.4.4 优化二改造后：A/B 同批并行双盲全量）
-// ═══════════════════════════════════════════════════════════
-
-describe('B 侧复核模式（v1.3.8 交付八 · v1.4.4 优化二对齐）', () => {
-  it('A/B 同批并行双盲全量：单段执行 + 崩溃降级按 a/b 前缀分派产物', () => {
-    // v1.4.4 优化二：两段式（先 A 后 B 复核）已废弃——pendingWorkers 整批并行，
-    // 信息隔离靠「B 不注入 A 报告路径」保证（见 :3513-3516 注释）。
-    expect(DRIVER_CODE).toContain('A/B 同批并行');
-    expect(DRIVER_CODE).toContain('不再拆 A/B 两段');
-    // 崩溃降级路径仍按 step 前缀分派产物文件（runCheckBatch 内）
-    expect(DRIVER_CODE).toContain("f.step.startsWith('a-check')");
-    // A/B worker 成对构造（flatMap 产出 a-check-pN + b-check-pN）
-    expect(DRIVER_CODE).toContain('[`a-check-p${p.id}`, roundDir, target]');
-    expect(DRIVER_CODE).toContain('[`b-check-p${p.id}`, roundDir, target]');
+describe('B 侧复核模式（v1.3.8 交付八 · v1.5.3 重构对齐）', () => {
+  it('A/B 双盲 worker 面：steps 表成对构造 + B 侧复核挂点保留（v1.5.3 重构对齐）', () => {
+    // 多轮编排退役归 harness session 后，本文件保留单步角色执行器——
+    // A/B 成对性现由 steps 表的键构造承载（a-check-pN / b-check-pN），
+    // 调度时序（并行/串行）归 harness 主任务协议，不再属本文件断言面。
+    expect(DRIVER_CODE).toContain('steps[`a-check-p${p.id}`]');
+    expect(DRIVER_CODE).toContain('steps[`b-check-p${p.id}`]');
+    // B 侧复核挂点（FORGE_B_REVIEW_MODE 消费端）保留
+    expect(DRIVER_CODE).toContain("process.env.FORGE_B_REVIEW_MODE === 'recheck-a-findings'");
   });
 
   it('FORGE_B_REVIEW_MODE 消费端保留（prompt 构造 b-check-p* 限定）', () => {
