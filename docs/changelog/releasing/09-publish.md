@@ -102,8 +102,10 @@ bash tools/check/check-storefront.sh
 # ── 步骤二·补：SKIP / 降级跳过 数逐条裁决（**必做**）──
 # 为什么要有这一步（实测根因，不是形式主义）：「门禁绿 = 增量为零 ≠ 债清零」——
 #   ① 锚定串不命中即「天然通过」（已修）
-#   ② 文件级前置过滤静默跳过（check-silent-catch：617 个 .ts 跳过 167 个，其中 83 个含 177 处 catch 零覆盖）
-#   ③ 存量基线豁免（silent-catch-baseline.json 304 条）
+#   ② 文件级前置过滤静默跳过（check-silent-catch 的「前置过滤豁免」覆盖度行：
+#      跳过 N 个 / 实际判定 M 个，其中 X 个文件含 Y 处 catch **零覆盖**——数字随版本变，
+#      **以当轮实测输出为准，勿写死**；台账 SSOT = tools/check/silent-catch-prefilter-exempt.json）
+#   ③ 存量基线豁免（silent-catch-baseline.json——条数见该文件头部／门禁「存量 N 条」行，勿写死）
 #   ④ 已知告警只计 WARNING 即放行——check-version §15 已精确抓到 ROADMAP 版本头
 #      描述错版，却因「非 --strict」随发版出门（= P1-7 根因）。
 # 共性：跳过是看不见的。故每个门禁结尾强制打印机器可读覆盖度行，本步逐条裁定并留档。
