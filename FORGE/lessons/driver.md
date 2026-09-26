@@ -1,5 +1,7 @@
 # 四、Driver 编排规范
 
+> 🔴 **历史档案导航（2026-09-26 整合归一）**：本章所述多轮编排循环（preflight / 分片执行 / 停止条件判定 / spawn 编排 / daemon+watch 守护 / --resume 断点续跑 / LEDGER 与 latest.json 自动维护）**已从 `fresh-eyes-driver.mjs` 删除**——该文件现为纯单步角色执行器（`--worker --step`），编排职责上收给 harness session 注入的主任务协议（SSOT：`FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节）。本章保留为机制档案与经验源；整合决策与能力交接清单见本章末「编排循环退役与单步执行器」节。
+
 > 冻结窗口：driver 跑循环期间主仓目录处于「冻结」状态（commit-msg hook 2.6 段读 `~/.sofagent/internal/fresh-eyes-run.lock` 判 PID 存活 + 命中 driver 源码路径 → exit 1 阻断）。锁文件含 runId+指纹+PID；PID 已死=锁滞留 → WARN 放行。开发新循环时如需同款保护，参照 fresh-eyes-driver 的 acquireRunLock/releaseRunLock 挂点。
 
 > [← 返回索引](./index.md)
@@ -826,3 +828,22 @@ rc.2 的实际 API 与 `runCordisAgent` 的 `resolveAgentDriver` 契约不一致
 2. **层 2 守卫探测失败 ≠ 功能不存在**——可能是服务名/驱动方法契约随版本变了，先查实际 API（`Object.getOwnPropertyNames(Object.getPrototypeOf(svc))`）再定
 3. **「等正式版」是最后手段**——先验证 rc 期是否可通过适配打通；rc 期插件 API 已安装可探测，别默认「做不到」
 4. **实现时机修正**：Cordis 内嵌非「等 DSH 正式版」——rc.2 现在就能做，需 ① boot()+loadProfile() 替换裸 new Context() ② 注入 cmdlineArgs/appExit ③ 驱动契约适配 agentLoop.createAgent。ROADMAP 决策已同步修正
+
+### 编排循环退役与单步执行器（整合归一）
+
+**决策**：fresh-eyes-loop 的资产是**协议**（角色/轮次/产物 schema/停止条件），不是某个编排进程。快速模式（有人值守 session 编排）实测能力不低于 driver 编排循环后，两条路径整合归一：删 driver 多轮编排循环（4801→约 2000 行），保留 `--worker --step` 单步执行链路；编排逻辑文档化为主任务协议六条（状态接续先行 / 角色零上下文三通道 / status.md+verdict.md 落盘 / 收敛红线引 auto-converge SSOT / 机器守闸 check-fresh-eyes-artifacts / 收尾两动作），任何具备「读文件/写文件/跑命令」工具面的 harness（WorkBuddy 有人值守 / DSH 无头 / Codex headless）注入即跑。协议与产物契约跨形态同构，中途换载体按文件断点续跑。
+
+**删了什么**（连同机制）：preflight / 逐轮 worktree re-sync / 版本指纹门禁与冻结窗口锁（exit 86 防线）/ 编排参数与断点续跑 / 增量视角裁剪调度 / b-fix·c-verify 分片编排与 d-review 回注 / spawnWorker·spawnParallel（含 empty-response 自动重启重试）/ 停止条件判定与加权收敛 / LEDGER·成本汇总·latest.json 指针自动维护 / runRound·runRoundTail / watcher 与 liveness 探针。
+
+**能力交接清单（编排方必须自己接管的四件事）**：
+1. **worktree 隔离从「driver 自动」变「编排方职责」**——执行器只经 `FORGE_WORKTREE_ROOT` 环境变量继承隔离副本；要隔离就先建 worktree 再设变量调执行器，不设则直接跑主仓
+2. **empty-response 重试从「自动重启」变「编排方重跑本角色」**——worker 抛 `[empty-response]` 后无父进程兜底，编排方看到非零退出即重跑该角色
+3. **熔断从「机制」变「协议红线」**——三层工具熔断（软/硬/零窗口）保留在执行器内，但系统性失败熔断（≥2/3 且绝对数 ≥5 判环境级故障）与重复率收敛判定随编排删除——编排方按协议红线自查
+4. **LEDGER 行与产物守闸从「自动」变「收尾动作」**——协议第 6 条收尾两动作 + 守闸脚本 `--runDir` 校验（fail-closed，self-test 7 探针）
+
+**性能事实**（实测与机制推导，不虚报）：角色执行层速度与退役前**完全相同**——执行器后端本就是 DSH CLI 桥接（worker 冷启动开销不变）；差异全在编排层——driver 原生 Node 循环零 LLM 开销但已退役，DSH 自编排每轮多耗编排 token（读协议/判收敛/调 CLI），换的是零依赖与可移植。整体吞吐能否达到有人值守快速模式水平**未实测**（DSH 自编排注探待首个真实发版阶段三验证后才有资格声称）。
+
+**可复用判据**：
+1. **「资产的载体无关性」要在第一次出现第二载体时检验**——协议（角色/schema/停止条件）与载体（driver 进程）解耦设计让这次删除只动了编排层，执行链路与产物契约零改动；若当初角色逻辑长在编排进程里，这次就是重写
+2. **编排逻辑文档化 = 最好的编排退役方式**——先把编排决策写成自包含协议（注入即跑），进程才删得掉；反过来先删进程再补协议会出现能力真空
+3. **删大文件的切割纪律**——内容锚定位（非纯行号）+ 锚顺序断言 + 切点语法检查 + 无参/缺参双冒烟，四步缺一不可（v1 切割因 slice 终点含函数体中间行产出非法 return，v2 修正）；共享函数（splitFindings/isPlaceholderOutput/writeFallbackFindings）必须先 grep 全部调用点确认归属再定切割线

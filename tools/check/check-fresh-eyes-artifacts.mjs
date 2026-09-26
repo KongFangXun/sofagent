@@ -3,7 +3,7 @@
 // check-fresh-eyes-artifacts.mjs · fresh-eyes 产物契约守闸
 // 对应协议：FORGE/SKILL/fresh-eyes-loop/loop.md「执行形态」节（harness 注入形态）
 //
-// 定位：harness 注入形态下「driver 判定停止条件」的等价机械面——
+// 定位：编排者「判定停止条件」的等价机械面——
 //   循环状态全在 runs/ 文件里（文件即状态），本脚本对给定 runDir 校验
 //   产物契约（存在性 + schema + 计数一致性）。排障工具，非 CI 门禁。
 //

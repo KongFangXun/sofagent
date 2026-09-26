@@ -18,114 +18,32 @@ version: 1.5.2
 
 - **A** = 审查者（单盲）：独立跑 12 视角审查；发现的质量由下游 C 验收 / D 复核把关（legacy 双盲 B 并行审查走 `FORGE_ENABLE_B_CHECK=1` 逃生门）。
 - **B/C/D** = 工程师执行修复（现行 B 侧为复核模式——独立复核 A 的 P0/P1，可推翻可补充）/ 验收者逐条实测验收（不采信修复自报）/ 复核者对 P0/P1 裁决 CONFIRM / DOWNGRADE / REOPEN。
-- **编排者（非 agent）**：在角色间中转、维护 `runs/` 文件、判定停止条件。两种执行形态二选一（见 `loop.md`「执行形态」节）：**driver**（Node 编排进程，由用户手动新开的执行 session 启动——见下「执行载体铁律」）或 **harness 注入**（一次 harness 运行注入主任务协议，无 driver 依赖）。
+- **编排者（非 agent）**：在角色间中转、维护 `runs/` 文件、判定停止条件。编排者 = **一次 harness session 本身**（WorkBuddy 有人值守 / DSH 无头 / Codex headless），注入 `loop.md`「执行形态」节的主任务协议即跑——不存在第二种编排形态（driver 多轮编排循环已随整合归一删除，经验沉淀于 `FORGE/lessons/driver.md`）。
 
 ## 怎么用
 
 1. 读 `loop.md` 拿到完整 SOP（角色 / 轮次协议 / 产物 schema / 停止条件）。
 2. 12 视角的定义见 `playbook/fresh-eyes-review.md`（A 按它跑）。playbook 共 **22 视角六层**：1-12 常规发版（driver 循环标准配置）、13-14 文档治理（手动）、15-16 全文档通读（手动/草稿工具）、**17-19 动态面**（跨组件契约/构建产物/执行证据——需跨包追踪或 build/实跑取证，worker 工具面实测仅 `sf_read` / `sf_write` / `run_bash` 三件，跨包构建取证超其超时预算，发版审查建议手动追加）、20-21 深度专项（季度全仓体检）、22 发现面（门面改动时）。**loop 与工具的视角边界以 playbook 分层表为准——playbook 演进（如新增视角/调整分层）时，本文件与下游工具同步对齐**。
 3. 四角色的行为指令在 `prompts/`（a-check / a-consolidate / b-fix / b-audit / c-verify / d-review；b-check 为 legacy 双盲逃生门 `FORGE_ENABLE_B_CHECK=1` 时启用）。
-4. **b-audit** 步骤：b-fix 改完代码后 driver 自动跑 `sofagent-audit --diff`——审计每次变更，dogfooding 铁律。audit FAIL（exit 2）打回 b-fix 重修，不进 c-verify。
+4. **b-audit** 步骤：b-fix 改完代码后执行器自动跑 `sofagent-audit --diff`——审计每次变更，自用先行铁律。audit FAIL（exit 2）打回 b-fix 重修，不进 c-verify。
 5. 跨 run 的永久索引在 `FORGE/LEDGER.md`（被 git 跟踪）；每轮正文在 `runs/`（不进 git）。
 
 ## 实现载体
 
-A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个 step 独立子进程（真零上下文），LangGraph `createReactAgent` 编排。driver 由用户手动新开的执行 session 启动并监控（见下「执行载体铁律」）。
+**编排者** = harness session 本身（注入主任务协议即跑，协议 SSOT 见 `loop.md`「执行形态」节）。**角色执行**三通道任选：① 编排 session 自身（仅首个角色）② 执行器单步 `node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>`（DSH 后端；worktree 隔离经 `FORGE_WORKTREE_ROOT` 环境变量由编排方建立并注入；内置 stall 守卫、工具软硬熔断、报告质量门控、零发现假绿检测）③ 有头 session 的 subagent。
 
-**harness 注入形态**（与 driver 并列的执行载体，协议与产物同 schema）：对一次 harness 运行注入主任务协议（无头 harness / 有人值守 AI session 均可），由它编排轮次并逐角色注入执行——主任务协议全文与角色三通道见 `loop.md`「执行形态」节。适用于无 driver 运行环境（用户侧 harness、无头自动化）或需要编排判断力的场景；机器守闸用 `tools/check/check-fresh-eyes-artifacts.mjs`（产物契约校验，等价 driver 的停止条件判定）。
+**工具面机制事实**（`FORGE/lessons/architecture.md`）：执行器走 DSH CLI 桥接时，sofagent 自定义工具（`sf_read` / `sf_write` / `run_bash`）在子进程边界不生效——角色实际使用 DSH 自带 bash/fs 工具链，能力等价（读文件/写文件/跑命令）。审查所需证据由 prompt 注入或角色自行 bash 取证。
 
-## 🔴 执行载体铁律：driver 必须由「独立 session」直跑，禁止主 session 内开子代理代跑（driver 形态适用）
+机器守闸：`tools/check/check-fresh-eyes-artifacts.mjs`（产物契约校验 = 编排者停止条件判定的机械面）。
 
-**fresh-eyes driver 的执行 session 必须是用户手动新开的独立 session**（与主 session 平行、互不嵌套），不是主 session 里 spawn 的 subagent。**适用边界：driver 形态**——禁的是「主 session 内三层嵌套拉起长生命周期 driver 进程树」；harness 注入形态无此问题（执行体就是 harness 运行本身，无长驻进程树可级联，产物断点在文件里，中断即续跑）。
+## 🔴 编排权归属铁律
 
-原因（与 release-gate-loop 实证同机理）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——fresh-eyes 一轮多轮循环跑 1-2 小时，中途被级联中止的代价更大。此外子代理自带 token 开销与误诊风险。
+**编排 = harness session 本身**（注入主任务协议、逐角色调执行器、落盘、判收敛）——**不得把编排委托给任何长驻编排进程**。历史上的 driver 多轮编排循环因此退役：主 session 内嵌套拉起长生命周期进程树，用户打断 session 时级联 SIGTERM 会杀掉整棵树，run 产物丢失（与 release-gate-loop 实证同机理）。编排 session 自身被中断无需恢复进程——状态全在 `runs/` 文件里（文件即状态），新 session 注入同一协议即断点续跑。
 
-**正确分工**：
-- 主 session（审查/决策 session）：三查 → 修复环境问题 → 产出「交接 prompt」交给用户（**直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件**——2026-08-30 用户拍板） → 用户在新 session 粘贴执行 → 等回报 → 零信任复验。主 session 全程不 spawn driver。
-- 执行 session（用户新开）：粘贴交接 prompt → 按下方「Session 监控协议」启动 driver 并轮询到终态 → 回报结果（轮数 / 停止原因 / 最终 P0/P1/P2 计数 / runDir）。
-
-## Session 监控协议（CRITICAL · 适用于执行 session）
-
-**启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"（每 120 秒一轮，读 status.json 输出一行状态——session 一直活跃 = 用户界面持续可见「在跑」，硬要求非可选）。
-
-> 🔴 **前台/后台分界铁律**：`run_in_background: true` **只属于启动 driver 的那一条 Bash 命令**——启动之后的每一轮轮询（sleep + cat status.json）都是**前台短命令**，直接在 session 正常工作流里执行。**严禁把轮询循环本身挂到后台**（run_in_background / nohup 均禁）——挂后台 = session 空闲等通知 = 用户界面看不到任何进展反馈，轮询的全部意义（session 可见性）即被摧毁。
-
-### 🔴 启动前独占窗口检查
-
-**启动 driver 前，必须确认本仓库当前没有其他写操作会话在跑**——审查 worker 与主仓共享工作目录，git 基线被并发改写（restore 重建 / 回补 / 大批量 commit）会直接杀死进程树，且无终态事件可查。
-
-检查项（30 秒）：
-1. 问用户：「现在有没有别的会话在这个仓库做 restore / 回补 / 批量提交？」
-2. `git status --porcelain | head -5`——大量未预期改动 = 有并发写，暂停启动
-3. 确认无人动 git 后再启动 driver
-
-> git worktree 隔离落地后本检查降级为提醒项——worker 届时跑在隔离副本上，主仓并发写不再致命。
-
-### 执行方式
-
-```
-1. Bash（⚠️ 必须加 run_in_background: true + dangerouslyDisableSandbox: true，否则三层进程嵌套会被 sandbox SIGKILL）:
-   node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10
-
-   并发自适应：未显式设置 FORGE_MAX_CONCURRENCY 时 driver 自动
-   探测物理内存取并发（<12GB→1 / 12-23GB→2 / 24-47GB→4 / ≥48GB→6）——
-   8GB 机器自动取 1（防 OOM），无需手动设。运行中 worker OOM（SIGKILL）
-   自动熔断降级（本批剩余串行，连续 2 批回退 1，不中止 run）。
-
-   🔴 铁律一：必须 dangerouslyDisableSandbox。
-   原因：driver(spawn) → worker(spawn) → run_bash(execSync) = 三层子进程嵌套。
-   sandbox 对进程嵌套层数有限制，第 4 层进程返回时整棵进程树被 SIGKILL。
-
-   🔴 铁律二：禁止用 nohup+disown 启动——WorkBuddy 会清理脱离 session 的后台进程。
-   必须用 Bash 工具的 run_in_background: true（安全替代方案）。
-
-2. 记住 runDir（driver 启动日志第一行会打印）
-
-3. 循环（最多 60 次，防 turn 超限——fresh-eyes 一轮可跑 1-2 小时，20 次×5 分钟容量不足。
-   🔴 本循环是前台操作：session 直接依次执行 sleep/cat——不包 run_in_background、不包任何后台化包装）:
-   sleep 300                                          # 等 5 分钟（前台）
-   cat <runDir>/status.json                           # 读进度（前台）
-   判断:
-     - phase === "completed" 或 "error"  → 汇报最终结果，退出循环
-     - heartbeat 超 90s 未更新            → ⚠️ 疑似 driver 死亡，检查进程存活（见下）
-     - phase 跟上次相同（无变化）        → 静默，继续下一轮 sleep
-     - phase 有变化                      → 一句话汇报，继续 sleep
-```
-
-### 🔴 Heartbeat 死亡检测
-
-driver 被 SIGKILL（sandbox 回收 / OOM / 环境冲突）时，所有 Node handler 都来不及执行，status.json 停在上一次状态，监控端无法区分"在跑"和"已死"。
-
-**解法**：driver 每 15s 更新 status.json 的 `heartbeat` 字段。监控端发现 heartbeat 超过 90s 未更新 → 大概率 driver 已死，用 `pgrep` 确认：
-
-```
-pgrep -f "fresh-eyes-driver"  # 有输出=活着，无输出=已死
-```
-
-如果确认已死：读 `latest.json` 的 stopReason（若有）+ roundDir 内 `worker-alive.json` 的停更时间（区分 driver 死 / 整树死），汇报后退出监控。
-
-### 🔴 产物真实性抽验（防占位报告冒充进度）
-
-报告数量增长 ≠ 有效产出。占位报告（崩溃降级占位、骨架未回填）历史上出现过，监控时用一条命令抽验：`find <roundDir> -name 'check-*.md' -size -1k`（1KB 以下 = 疑似占位），命中即 `cat` 验内容。若收口时骨架仍未回填，该视角发现已丢失——按修复批协议补跑对应视角的 check worker（不必全量重跑）。
-
-### 🔴 中止 run 的 LEDGER 归档铁律
-
-**任何原因中止的 run（进程死亡 / 人工 kill / 环境冲突）也必须在 LEDGER 留一行**——「没有终态记录」的 run 是审计黑洞，事后只能靠时间线推理死因。监控端在确认 driver 死亡后人工补行（driver 侧 SIGTERM handler 兜底归档属 FORGE 隔离加固范围；落地前靠监控端人工补行，本节即 SOP）：
-
-```
-日期 | <runId> | fresh-eyes | <实际轮数>* | <P0> | <P1> | <P2> | aborted-<死因简述>（有效产出说明） | <runDir 绝对路径>
-```
-
-### 汇报规则
-
-- **只在 phase 变化时说话**——同一状态不重复汇报
-- **一句话**——不展开 details，用户想看细节自己读 status.json
-- 格式示例：`📊 Round 2 完成 — ❌ P0=1 P1=3，进入下一轮`
-- 最终结果用 2-3 行收尾：轮数 + 停止原因 + 最终 P0/P1/P2 计数
-
-### 为什么不用 CLI 推送
-
-driver 写 status.json 就够了——session 自己来读。推变拉，`codebuddy-reporter` 适配器已废弃。driver 不需要知道 session 的存在。
+**长跑监督**（无人值守 DSH 场景，编排方自查三条）：
+1. **轮询现态锚**：读 runDir 的 `status.md`（每轮一行，含 phase 与 P0/P1 计数）——phase 变化才汇报，同一状态不重复说话。
+2. **产物真实性抽验**：报告数量增长 ≠ 有效产出。 `find <roundDir> -name 'check-*.md' -size -1k`（1KB 以下 = 疑似占位骨架），命中即 cat 验内容；收口仍未回填的视角按修复批协议补跑该视角（不必全量重跑）。
+3. **中止必归档**：任何原因中止的 run（进程死亡 / 人工停止 / 环境冲突）也必须在 `FORGE/LEDGER.md` 补一行（`aborted-<死因简述>`）——没有终态记录的 run 是审计黑洞。
 
 ## 循环级演化
 

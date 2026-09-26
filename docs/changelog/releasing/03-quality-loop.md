@@ -16,17 +16,17 @@
 
 | | A · 快速路径 | B · 盲审路径 |
 |---|---|---|
-| 形态 | 单次草稿（或对话式多轮等价）+ 修复批 + 主 session 零信任复验 | 新 session 跑 fresh-eyes driver（单盲四角色，DSH worker）自动收敛循环 |
+| 形态 | 单次草稿（或对话式多轮等价）+ 修复批 + 主 session 零信任复验 | 新 session / DSH 无头注入主任务协议（单盲四角色）自动收敛循环 |
 | 适用 | 小版本 / 变更面窄 / 待取证预期 ≤3 | 大版本 / 多模块交付 / P0 需独立复验 |
 | 执行载体 | 当前 session + subagent（草稿降级与修复批） | 执行 session（用户**复制一次** prompt）+ 主 session 并行步骤三四 |
 | 用户交互 | **零次复制**（草稿降级与修复批走 subagent 内部位移） | **恰好一次复制** |
-| 审查独立性 | 草稿降级路径本身保证审查者≠收编者（subagent 审、主 session 复验） | driver 四角色流水线（A 审 12 视角 → B 修 → C 验 → D 复核，REOPEN 打回消耗修复批额度）+ 主 session 复验收编 |
+| 审查独立性 | 草稿降级路径本身保证审查者≠收编者（subagent 审、主 session 复验） | 协议四角色流水线（A 审 12 视角 → B 修 → C 验 → D 复核，REOPEN 打回消耗修复批额度）+ 主 session 复验收编 |
 
 **升级预授权（并入首次确认，不构成二次确认）**：
 
 - A 复验后 **P0≥2 或待取证>5** → 主 session 直接生成 B 的 prompt 交用户复制（升级授权随首次确认生效，不再询问「要不要升级」）
 - B 执行中环境故障（LLM 端点大输入超时 / DSH 依赖漂移 / 系统性 worker 全灭）→ 走模板内「环境异常豁免协议」（草稿升格 + 复验补偿 + 阶段五兜底，已预授权）
-- 反向降级（B→A）**不预授权**——driver 已启动后撤跑属停手条件范畴，须请示
+- 反向降级（B→A）**不预授权**——run 已启动后撤跑属停手条件范畴，须请示
 
 ---
 
@@ -56,122 +56,67 @@
 
 ---
 
-## 路径 B：盲审路径（复制一次 prompt · 执行 session 自动跑完全程）
+## 路径 B：盲审路径（注入主任务协议 · harness 自动跑完全程）
 
-> **执行载体二选一（协议与产物同 schema，状态在 `runs/` 文件里可互相接续）**：
-> ① **driver 形态**——Node 编排进程跑多轮循环（下方模板即此形态，确定性收敛、无人值守）；
-> ② **harness 注入形态**——对一次 harness 运行（DSH 无头 / Codex headless / 有头 AI session）注入主任务协议，由它编排轮次并逐角色注入执行（无 driver 依赖，用户侧 harness 同样可跑本循环）。
-> harness 形态的主任务协议全文、角色三通道、注入包安全纪律与产物契约守闸脚本见 `FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节——本 SOP 不复述（单一维护源）。
+> **执行载体（整合归一后仅此一形）**：对一次 harness 运行（**DSH 无头 = 主载体**，无人值守多轮；Codex headless / 有头 AI session 同样可跑）注入主任务协议，由它编排轮次并逐角色调执行器（`FORGE/src/fresh-eyes-driver.mjs --worker --step`，DSH 后端）。主任务协议全文、角色三通道、注入包安全纪律、产物契约守闸（`tools/check/check-fresh-eyes-artifacts.mjs`）与编排权归属铁律见 `FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节与 `SKILL.md`——本 SOP 不复述（单一维护源）。
 
-> **防止 lost-in-the-middle**：执行 session 先读模板骨架确认要做什么，再按序执行。
-> **主 session 并行面**：driver 后台跑时并行步骤三/四（代码审核 + 验收增量），不空等；运行窗口遵守冻结纪律（铁律一）。
-> **循环语义**：driver 内建多轮「审查→修复→验证」与「连续 2 轮无 P0/P1」停止条件；执行 session 的增量职责 = driver 跑完仍有 P0/P1 残留时按「修复批协议」接手修复并重跑 driver（外层上限 2 次修复批）。
+> **防止 lost-in-the-middle**：执行 session 先读注入包骨架确认要做什么，再按序执行。
+> **主 session 并行面**：run 窗口内并行步骤三/四（代码审核 + 验收增量），不空等；窗口纪律见铁律一。
+> **循环语义**：协议内建「A 审 → B 修 → C 验 → D 复核」多轮与「连续 2 轮无 P0/P1」停止条件；执行 session 的增量职责 = run 收口仍有 P0/P1 残留时按「修复批协议」接手修复并重跑（外层上限 2 次修复批）。
 
-### driver 启动姿势（九条 · 执行 session 启动前必读）
+### 注入包构造（主 session 义务 · 五件套自查）
 
-> 每条规则都有实证来源，防再发。
+| # | 件 | 内容 | 缺失后果 |
+|---|---|---|---|
+| 1 | **主任务协议** | `loop.md`「执行形态」节六条全文，占位符替换为实际值（runDir 绝对路径 / 目标版本 / 审查区间 `<base>..<head>`） | 执行方无协议可跑或跑错对象 |
+| 2 | **背景速览** | 本版交付一段话 + 「已知事实表」（有意为之的非 finding：退役包 E404 / 物理重排文件清单 / 刚落盘的新口径数字） | 执行方把有意变更当缺陷刷屏 |
+| 3 | **预算与卡线实况** | A 层当刻读数（`bash tools/check/check-docs.sh`）+ 双卡线余量；文档类修复红线 | 修复批写文档直接爆 A 层预算 |
+| 4 | **越界清单** | 不 push/tag/publish / 不动 FORGE 源码与审查视角定义 / 不改 devlog 勾选 / 不自称收编——收编是主 session 职责 | 执行方顺手越权 |
+| 5 | **收尾两动作** | `FORGE/LEDGER.md` 追加一行 + 按下方「最终汇报格式」回报（含未跑步骤声明） | run 无终态记录，主 session 无法收编 |
 
-| # | 姿势 | 说明与实证 |
-|:--:|------|------|
-| ① | **后台启动（仅限 driver 启动这一条命令）** | Bash 工具 `run_in_background:true` + `dangerouslyDisableSandbox:true`——三层进程嵌套会被 sandbox SIGKILL。🔴 后台参数**只属于 driver 启动命令本身**，启动之后的轮询等一切操作全部回到**前台**执行（见「监控协议」前台铁律） |
-| ② | **输出重定向到文件** | `node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10 > /tmp/fresh-eyes-<ver>-driver.log 2>&1`——**禁止管道包装**（`\| head` 触发 SIGPIPE 杀 driver） |
-| ③ | **先验证 round-start 再轮询** | 启动后等 8 秒读 `status.json`：event=round-start / phase=round-1-running 才算真跑起来，否则需重启 |
-| ④ | **不传 timeout 参数** | 后台任务传 `timeout:600000` = 10 分钟上限杀 driver；后台无需 timeout，传了反而被杀 |
-| ⑤ | **中断恢复用 `--resume` 续跑** | 异常死亡 → liveness 探针确认 → 命令加 `--resume`——driver 按产物完整性跳过已完成 worker，**保留已有产物续跑，绝不重开浪费** |
-| ⑥ | **daemon + watch 守护优先** | `--daemon` spawn detached 自脱离进程树（会话结束不影响存活，日志 → runDir/driver.log）；`--watch <runDir>` 主管模式——每 30s 读心跳，心跳停 → 审计死因（death-audit.jsonl）→ **自动 `--resume` 拉起新 driver**（守护 v2 三闸：拉起封顶 RESUME_MAX=5 / 同 phase 快速死亡环检测（5min 窗口）判根因性退出 / watcher 自身每轮写 watcher-status.json 心跳），verdict.md 产出后 watcher 退出（`--watch-interval` 默认 30s / `--watch-threshold` 默认 90s）。watcher 退出留痕 runDir/watcher-exit.json（reason=verdict-done ✅ / resume-max・quick-death-loop・spawn-fail ❌ 需人工读 death-audit.jsonl）。**daemon+watch 就绪优先用**，裸后台（①~⑤）为 fallback |
-| ⑦ | **独占窗口检查（三查）** | 启动前确认无其他 session 在写本仓库——一查 `git status --short \| wc -l` 改动文件数（预期 0 或个位数，几十个 = 有其他 session 在写）；二查近 5 分钟 mtime（`find . -path ./node_modules -prune -o -mmin -5 -type f -print`）；三查 `.workbuddy/memory/$(date +%Y-%m-%d).md` 今日日志有无他人活跃记录。**任一命中即停手问用户** |
-| ⑧ | **driver 运行期并行步骤三/四** | driver 后台跑时当前 session 并行执行代码审核 + 验收增量，不空等 |
-| ⑨ | **启动时段选择** | 重型 LLM loop 避开 GLM 3 倍价时段（工作日 14:00-18:00——高峰限流易触发 LLM 流 stall 熔断）；轮询用短命令快查，不挂超长 sleep（会被系统杀 exit 137） |
+> **交付形式铁律**：注入包直接在对话中输出可复制文本块，禁止落盘成文件（协议要求的 `injection-prompt.md` 存档由执行方落 runDir，不算落盘交付）——用户复制粘贴到 DSH 无头 harness 或新 session 执行，**全程只此一次复制**。
+> **升级预授权（并入首次确认）**：A 复验后 P0≥2 或待取证>5 → 主 session 直接生成注入包交用户复制（不再询问「要不要升级」）；反向降级（B→A）不预授权——run 已启动后撤跑属停手条件范畴，须请示。
 
-> **监控协议**：按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`——每 120 秒一轮读 `status.json`（短命令快查），session 保持活跃可见；心跳 >90 秒未更新用 `--check-alive <runDir>` liveness 探针（只认心跳不认日志——长 LLM 窗口日志冻结是正常，心跳停才是死）。
->
-> 🔴 **轮询前台铁律**：`run_in_background:true` 只用于启动 driver 那一条命令——**每一轮轮询（sleep + cat status.json）必须在 session 前台执行**，禁止把轮询循环挂到后台（run_in_background / nohup 均禁）。挂后台 = session 空闲 = 用户界面看不到任何进展反馈。正确姿势：前台 `sleep 90~115` → 立即 `cat status.json` → 输出一行状态 → 下一轮。
-
-### 执行 session Prompt 模板（自动收敛版 · 复制即跑 · driver 形态专用）
-
-> AI 输出 prompt 时必须把所有占位符替换为实际值（项目路径、版本号、runDir），不得残留花括号。
-> 模板含 daemon+watch 守护优先 + resume 中断恢复两个分支——按上方「driver 启动姿势 9 条」执行。harness 注入形态不使用本模板——其主任务协议在 `FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节。
-> **交付形式铁律**：交接 prompt 直接在对话中输出可复制的文本块，禁止落盘成文件——用户复制粘贴到新窗口执行，**全程只此一次复制**（执行 session 内部的修复批/重跑/豁免降级全部自动，不再产生第二次复制）。
-
-```
-在 sofagent 项目（{项目实际路径}）中，执行 {实际版本号} 的 fresh-eyes-loop 自动收敛模式：跑 driver 多轮审查修复循环；driver 结束后仍有 P0/P1 残留则按「修复批协议」自行修复并重跑 driver；直到「连续 2 轮无 P0/P1」（driver 内建停止条件）或命中停手条件。用户已在阶段三入口裁定中一次性授权自动修复循环与环境降级链；修复时严格遵守下方红线与停手条件。
-
-先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按序执行：
-
-0. 独占窗口检查（三查）：① `git status --short | wc -l` 改动文件数（预期 0/个位数，几十个 = 有其他 session 在写）② `find . -path ./node_modules -prune -o -mmin -5 -type f -print` 近 5 分钟活跃文件 ③ `tail .workbuddy/memory/$(date +%Y-%m-%d).md` 今日日志他人活跃记录——任一命中先停手问用户「是否还有其他 session 在写本仓库」。
-0b. 先查 driver 是否已在跑：读 {runDir}/status.json（或 pgrep -f fresh-eyes-driver），若 running / 进程存活 → 跳过步骤 1 直接轮询；若已死/无产物 → 正常走步骤 1。
-0c. 启动时段检查：工作日 14:00-18:00（GLM 3 倍价时段）不启动新 driver——等待并每 10 分钟报时，窗口过了再启动（周末全天平价）。
-
-## 外层循环（修复批 N=0..2；N=0 即首轮 driver）
-
-1. 启动 driver——优先 daemon+watch 守护模式（自动恢复，免疫会话回收）：
-   FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs \
-     --target {实际版本号} --max-rounds 10 --daemon --watch {runDir}
-   ⚠️ 8GB 机器必须 FORGE_MAX_CONCURRENCY=1（并发 worker 各占 2GB heap，3+ 并发即 OOM）
-   ⚠️ 输出一律重定向文件（禁止任何管道包装，| head 触发 SIGPIPE 杀 driver）；不传 timeout 参数；启动后等 8 秒验证 status.json 出现 round-start 再进入轮询
-   若为 resume 续跑（上次异常死亡）：命令加 --resume（保留已有产物，不重开）
-   fallback（无 daemon 支持）：Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true
-2. 记住 runDir（启动日志第一行打印的路径）
-3. **持续轮询（必做，非可选；🔴 前台执行，严禁挂后台）**：每 120 秒一轮读 <runDir>/status.json，
-   输出一行状态（round 变化时一句话汇报）。前台「短 sleep + 快查」（sleep 90~115 后立即 cat 返回），
-   不挂超长 sleep（会被系统杀 exit 137）；监控中断不影响 driver，续上后直接查 status.json。
-   心跳冻结 >90 秒：daemon+watch 模式看 watcher 是否自动 resume（观察 death-audit.jsonl + 新 driver 拉起）；
-   watcher 自身观测（守护 v2）：轮询时顺手读 runDir/watcher-status.json——其 ts 超 3×interval 未更新 = watcher 也死了，
-   人工重启 watch（`node FORGE/src/fresh-eyes-driver.mjs --watch <runDir>`）；发现 watcher-exit.json 且 reason ≠ verdict-done
-   = watcher 有意退出（拉起耗尽/快速死亡环/spawn 失败）——读 death-audit.jsonl 定位根因，不要盲目重启；
-   fallback 模式用 pgrep 确认进程存活，无输出 = 已死 → 主 session 决定 --resume 续跑。
-4. driver 终态（verdict 产出或 max-rounds 到顶）→ 读报告（findings/verdict 产物文件，非仅 status.json），
-   统计未解决 P0/P1 计数，分支：
-   - **无 P0/P1 残留**（连续 2 轮干净）→ 输出最终汇报，结束。不再做任何仓库写入。
-   - **有 P0/P1 残留且修复批 <2 次** → 按「修复批协议」接手修复，修完回到步骤 1 重跑 driver
-     （新 driver = 新视角独立验证 session 的修复，这不是重复劳动，是角色分离的复验环）。
-   - **有 P0/P1 残留但修复批已 2 次** → 停手汇报（见停手条件）。
-
-## 修复批协议（driver 残留 P0/P1 时执行——SSOT 先读）
+### 修复批协议（run 残留 P0/P1 时执行——SSOT 先读）
 
 **先读 [`auto-converge-protocol.md`](./auto-converge-protocol.md)**（修复批协议单一维护源：分诊三定性/红线/复绿/commit 收编/停手条件/汇报格式），按其执行。阶段三特化条目：
 
 - 分诊第③类免修白名单：**版本中间态 finding**——npm registry 落后 / git tag 缺当前版本 / URL 指向未发布 tag / workspace 锁旧版；判别口径：该不一致会在「git push + tag + npm publish」三动作后自动消失 = SKIP
 - 红线追加：禁止删 `fresh-eyes-review.md` 的审查视角或改视角定义来消音；禁止改 `fresh-eyes-calibration.md` 校准结论迁就当轮发现
 - 收口方加载义务：主 session 复验、定级、落桶前**必读** `playbook/fresh-eyes-calibration.md`（其头部定义的法定读者=「报告判读者」）——「worker 不加载」是防锚定设计，成立前提恰是收口方必须加载；双方都不读 = 校准规则整体失明（同族去重/消费出口落桶/防误报隐性代价等判别规则将不生效）
-- 外层硬上限 = **修复批 2 次**（driver 内建多轮循环是主通道，session 修复批是兜底不是主通道）
+- 外层硬上限 = **修复批 2 次**（协议多轮循环是主通道，session 修复批是兜底不是主通道）
 - 误报 SKIP 与存疑 DEFER 的留痕格式同 b-fix「分诊前置」节（`FORGE/SKILL/fresh-eyes-loop/prompts/b-fix.md`），分诊统计进汇报
 
 🔴 **红线摘要（动手前必记）**：不改断言迁就 / 不删检查消音 / 不绕审计钩子 / 只动 finding 涉及文件。
 
-## 环境异常豁免协议（driver 无法启动/无法收敛时——已随入口裁定预授权，无需二次请示）
+### 环境异常豁免协议（执行链无法启动/无法收敛时——已随入口裁定预授权，无需二次请示）
 
-环境故障（LLM 端点 300s 大输入超时 / DSH 依赖漂移 / 系统性 worker 全灭）使 driver 无法执行时，按降级执行链补偿，禁止裸跳过：
+环境故障（LLM 端点 300s 大输入超时 / DSH 依赖漂移 / 系统性角色全灭）使 run 无法执行时，按降级执行链补偿，禁止裸跳过：
 
-1. **豁免资格前置**：driver 至少真实启动尝试 2 次（含 `--resume` 续跑与平价时段重试各一），全部失败才具备豁免资格——启动尝试与失败形态记入汇报
+1. **豁免资格前置**：至少真实启动尝试 2 次（含 DSH 端点重试与平价时段重试各一），全部失败才具备豁免资格——启动尝试与失败形态记入汇报
 2. **补偿措施（按优先级）**：
    - a. **草稿升格**：`node tools/gen/gen-fresh-eyes-draft.mjs` 产出草稿（工具失败则 `.prompt.md` 降级路径）；执行 session 对草稿 P0/P1 项逐项 grep 实证（不采信草稿结论）后按修复批协议处理——审查者≠修复者角色分离保持
    - b. **修复批照常走修复批协议**：分诊/红线/复绿/收编不变
-   - c. **阶段五闸门兜底**：release-gate driver 的 regression/coverage worker 会重扫全维度，driver 缺位的盲区由闸门兜底——豁免汇报须注明「依赖阶段五兜底」
-3. **留痕铁律**：最终汇报写「driver 环境豁免：<故障形态> + 补偿措施 a/b/c」；LEDGER 无需补行（run 未启动不产生 run 记录），但汇报须注明豁免形态——主 session 会把豁免落进 changelog devlog，未来读者必须能看出这版没跑 driver 盲审轮及原因
-4. **豁免不豁免独立性**：补偿措施只是替代盲审的载体，不是降低质量标准——复验抽查比例不低于 driver 轮次的 c-verify 口径
+   - c. **阶段五闸门兜底**：release-gate 的 regression/coverage worker 会重扫全维度，盲审缺位的盲区由闸门兜底——豁免汇报须注明「依赖阶段五兜底」
+3. **留痕铁律**：最终汇报写「环境豁免：<故障形态> + 补偿措施 a/b/c」；LEDGER 无需补行（run 未启动不产生 run 记录），但汇报须注明豁免形态——主 session 会把豁免落进 changelog devlog，未来读者必须能看出这版没跑盲审轮及原因
+4. **豁免不豁免独立性**：补偿措施只是替代盲审的载体，不是降低质量标准——复验抽查比例不低于 run 轮次的 c-verify 口径
 
-## 最终汇报格式（循环结束后无论收敛/停手/豁免）
+### 最终汇报格式（run 收口后无论收敛/停手/豁免）
 - 终态：收敛 ✅（连续 2 轮无 P0/P1）/ 停手原因 / 环境豁免+补偿形态
-- 各轮明细：driver 每轮 P0/P1/P2 计数、修复批清单（finding+定性+文件+commit hash）
-- 最终 runDir 路径 + findings 关键行原文
+- 各轮明细：每轮 P0/P1/P2 计数（status.md 现态锚）、修复批清单（finding+定性+文件+commit hash）
+- 最终 runDir 路径 + findings 关键行原文（守闸脚本 EXIT=0 截图或粘贴）
 
-铁律（五条，违反即 run 报废级别事故；**适用范围 = driver 形态**——其机器约束依赖 driver 进程与 run 状态存在；harness 注入形态的等价纪律：冻结窗口 = 审查/修复期间不 commit（注入协议自声明 + 审计钩子兜底），exit 86 / 收编标记 / run 收口核对不适用（无 driver 源码指纹与 forge 分支面），lessons 回写与 LEDGER 留痕照常）：
+铁律（五条，违反即 run 报废级别事故）：
 
-一、**冻结窗口对所有 session 生效**——driver 运行窗口内不 commit / 不改文件（仓库冻结：worker 与主仓共享工作目录，HEAD 变动杀进程树）。**任何** session 都受约束，不止执行 session 自己——主 session「顺手收编」同样炸 run；收编与 run 窗口必须错峰（等 run 收口，或先停 run 再收编再 `--resume` 续跑）。机制兜底已上（对最高危形态）：commit-msg hook 冻结窗口锁在「run 进行中 + 提交命中 driver 源码」时阻断提交——机制拦最高危（步骤表错位全灭），纪律管其余（HEAD 变动杀进程树）。
+一、**冻结窗口对所有 session 生效**——run 窗口内（审查/修复/验证进行中）不 commit / 不改文件（注入协议自声明 + commit 审计钩子兜底）。**任何** session 都受约束，不止执行 session 自己——主 session「顺手收编」同样炸 run；收编与 run 窗口必须错峰（等 run 收口，或先停 run 再收编再续跑）。
 
-二、**exit 86 = 运行中换码**——看到 86（driver 源码指纹错位）处置口诀：停止本 run（已跑轮次产物在 runDir 不丢）→ 用新代码重启 driver（`--resume` 可续跑断点）→ 需要改 driver 行为时，先停 run 再改再重启。不要带病续跑。
+二、**修复不碰审查标准面**——修复批不得改执行器源码（`FORGE/src/fresh-eyes-driver.mjs`）、审查视角定义（`playbook/fresh-eyes-review.md`）与校准档案（`playbook/fresh-eyes-calibration.md`）——改之即「审查标准被被审者污染」，run 作废。
 
-三、**收编即标记**——把 FORGE 工作分支（forge/*）的内容收编进 main 后，必须当场打标记（`git tag forge-merged-<分支名 / 换 ->`）；未标记分支由 `tools/check/check-forge-branches.sh` 对账列出（INFO 不阻断）。禁止用 `git log main..<分支>` 或 `git cherry` 判「已收编」——逐文件 apply 收编下前者恒非空、后者假阳性（均实测）。收编方法红线：禁整包 cherry-pick、禁 `git checkout <分支> -- <文件>`，必须逐文件 diff apply 并验证零丢失。
+三、**收编即标记**（仅启用 worktree 隔离时适用）——forge/* 工作分支内容收编进 main 后，必须当场打标记（`git tag forge-merged-<分支名>`）；未标记分支由 `tools/check/check-forge-branches.sh` 对账列出（INFO 不阻断）。禁止用 `git log main..<分支>` 或 `git cherry` 判「已收编」（均实测假阳/恒非空）。收编方法红线：禁整包 cherry-pick、禁 `git checkout <分支> -- <文件>`，必须逐文件 diff apply 并验证零丢失。
 
-四、**环境级故障熔断不要逐个降级**——worker 失败呈系统性比例（≥2/3 且绝对数 ≥5，双门阈值）时是**环境级故障**（依赖 API 漂移 / DSH rc 包形态变化 / 内存不足 OOM），driver 系统性失败熔断会中止 run。执行 session 看到全片同款死法（统一 TypeError / 全部降级占位）不要判「N 个单点失败逐个修」——先停手读 death-audit.jsonl / sub-progress-*.jsonl 定根因，修好依赖再 `--resume` 续跑。「逐个降级占位继续跑」是环境故障的损失放大器（曾整轮白烧两小时才发现 24 worker 全灭）。
+四、**环境级故障熔断不要逐个降级**——角色失败呈系统性比例（≥2/3 且绝对数 ≥5，双门阈值）时是**环境级故障**（API 漂移 / 依赖形态变化 / 内存不足 OOM）。看到全片同款死法（统一 TypeError / 全部降级占位）不要判「N 个单点失败逐个修」——先停手定根因，修好依赖再续跑。「逐个降级占位继续跑」是环境故障的损失放大器（曾整轮白烧两小时才发现 24 worker 全灭）。
 
-五、**run 收口后两动作**——① **worktree 收编核对**：`git log main..forge/fresh-eyes/<run>` 及各轮 bfix 快照分支，非空即逐 commit 核对是否已收编（分支头被 re-sync/reset 回退时修复会**静默丢失**，无任何告警，对账脚本是唯一防线）；② **lessons 回写**：run 终态非 PASS / 复验推翻 / 收口核对发现资产异常，任一命中即按 [05 的 lessons 回写节](./05-release-gate.md) 执行（问题+解决方案零考古，事故叙事进 driver.md 对应章节）——事故教训不当天回写，换个 session 还会踩同款。
-
-修复批窗口不在冻结内（修复批由执行 session 在轮间窗口执行，run 侧 driver 已进入下一轮前空闲；但修复批同样不得触碰 driver 源码）。
-```
-
----
+五、**run 收口后两动作**——① **worktree 收编核对**（若启用隔离）：`git log main..forge/fresh-eyes/<run>` 及各轮 bfix 快照分支，非空即逐 commit 核对是否已收编（分支头被回退时修复会**静默丢失**，无任何告警，对账是唯一防线）；② **lessons 回写**：run 终态非 PASS / 复验推翻 / 收口核对发现资产异常，任一命中即按 [05 的 lessons 回写节](./05-release-gate.md) 执行（问题+解决方案零考古）——事故教训不当天回写，换个 session 还会踩同款。
 
 ## 步骤三 · 代码审核 + 步骤四 · 验收增量（两路径共用） ☐
 
@@ -184,14 +129,14 @@
 
 ### 步骤完成判据（主 session 打勾前置）
 
-> **为什么**：曾出现执行 session 只做了步骤四就汇报，步骤一二静默跳过（草稿 API 失败后未走降级、driver 只 dry-run），主 session 验了汇报内声称（全真实）却没验产物存在，打勾后发现缺位被迫中途补跑。
+> **为什么**：曾出现执行 session 只做了步骤四就汇报，步骤一二静默跳过（草稿 API 失败后未走降级、盲审 run 只空转），主 session 验了汇报内声称（全真实）却没验产物存在，打勾后发现缺位被迫中途补跑。
 
 **主 session 打勾前，逐项核对产物存在性（ls/grep 实物，不信汇报文本）**：
 
 | 项 | 完成判据（全满足才可打勾） |
 |---|---|
-| 审查产物（A） | `~/Desktop/fresh-eyes-draft-vX.Y.Z.md` 存在 **且** 含全部 16 个视角节（`grep -c "^## 视角" = 16`——草稿工具静态子集 1-16；动态面 17-19 由 driver/人工兜底取证）。若走了降级：产物为 `.prompt.md` 时 = **未完成**，必须粘贴执行出正式草稿后才算。若走对话式多轮形态（01-review.md 第三层）：产物为桌面 `vX.Y.Z-bugfix-prompt.md`（含问题总表 + 逐项修复方案 + 验证命令）**且**修复批已收编 commit——两者满足其一即可 |
-| 审查产物（B） | runDir 内有 `verdict`/`findings` 产物**文件**——仅 status.json 不算（dry-run 空转也是 completed 状态）。环境豁免时：汇报须含「豁免：<故障形态> + 补偿措施 a/b/c」且豁免资格前置（2 次启动尝试）可查——两种形态都须留痕，禁止静默跳过 |
+| 审查产物（A） | `~/Desktop/fresh-eyes-draft-vX.Y.Z.md` 存在 **且** 含全部 16 个视角节（`grep -c "^## 视角" = 16`——草稿工具静态子集 1-16；动态面 17-19 由盲审 run/人工兜底取证）。若走了降级：产物为 `.prompt.md` 时 = **未完成**，必须粘贴执行出正式草稿后才算。若走对话式多轮形态（01-review.md 第三层）：产物为桌面 `vX.Y.Z-bugfix-prompt.md`（含问题总表 + 逐项修复方案 + 验证命令）**且**修复批已收编 commit——两者满足其一即可 |
+| 审查产物（B） | runDir 内有 `verdict`/`findings` 产物**文件**——仅 status/汇报文本不算（状态行不能替代产物实物，守闸脚本 EXIT=0 才算契约满足）。环境豁免时：汇报须含「豁免：<故障形态> + 补偿措施 a/b/c」且豁免资格前置（2 次启动尝试）可查——两种形态都须留痕，禁止静默跳过 |
 | 代码审核 | 发布检查清单逐项打勾记录（在 changelog 开发日志或汇报中可见） |
 | 验收增量 | 新场景编号与汇报区间一致（判据命令按实际区间构造，如 `grep -c "^scenario 29[4-9]\|^scenario 30[0-9]"`——**编号每版不同，勿照抄本表示例**）；全量 acceptance EXIT=0 |
 
@@ -209,7 +154,7 @@
 
 一、步骤完成状态（先行声明——哪个步骤没做、为什么，写在这里）
 - 跑法：A 快速 / B 盲审（B 附 runDir；环境豁免在此声明）
-- 审查：草稿已产出 / driver verdict=X / 豁免+补偿形态
+- 审查：草稿已产出 / run verdict=X / 豁免+补偿形态
 - 代码审核：已完成
 - 验收增量：已完成
 
@@ -230,7 +175,7 @@
 
 | 角色 | 承担者 | 不变量 |
 |------|--------|--------|
-| 发现问题 | A worker（12 视角单盲，driver 子进程，零上下文；legacy 双盲时 A/B 并行） | 修复者永远不是发现者 |
+| 发现问题 | A 审（12 视角单盲，执行器子进程或独立注入上下文，零上下文；legacy 双盲时 A/B 并行） | 修复者永远不是发现者 |
 | 修复执行 | b-fix worker（loop 内）/ subagent 或执行 session（修复批） | 修复时只消费 findings，不参与发现 |
 | 独立验收 | c-verify（逐条实测不采信自报）+ d-review（P0/P1 裁决 CONFIRM/DOWNGRADE/REOPEN） | C/D 与 A/B 零信息通路——A 不再兼任验证（原告兼法官问题消除） |
 | 复验收编 | **主 session 零信任复验后收编** | 执行 session 修复批自跑的验证 ≠ 复验收编；主 session 打勾前逐项 grep 实证 |
@@ -240,7 +185,7 @@
 - 二、若极端情况主 session 确实代做了修复（如单行紧急止血），**必须事后补独立审查**（新 session 或单次草稿模式审该 diff），verdict 记「人工收口 PASS（有保留）+ 补审 PASS」
 - 三、复验与修复不得同人同轮完成——同一 session 先修后验等于没验
 
-**driver 天然进程独立**（daemon detached，不依赖任何 session 存活）——「独立载体」要求的本质不是进程隔离而是角色隔离：审查者 ≠ 修复者 ≠ 复验者。危险组合是「同一行为主体既发现又修复」或「既修复又复验收编」——模板的红线与停手条件就是防这两个组合的。
+**「独立载体」要求的本质不是进程隔离而是角色隔离**：审查者 ≠ 修复者 ≠ 复验者。执行器通道（`--worker` 子进程）天然进程独立；注入自身通道与 subagent 通道靠协议纪律保证零上下文。危险组合是「同一行为主体既发现又修复」或「既修复又复验收编」——注入包的红线与停手条件就是防这两个组合的。
 
 ### 版本类 finding 处理规则（版本中间态 SKIP 判别口径）
 
@@ -267,7 +212,7 @@ fresh-eyes 在**发版前**跑（阶段三时序先于打 tag/publish），此�
 
 ### 中止 run 的归档纪律
 
-driver 异常中止（进程死亡/环境冲突）的 run **也必须留 LEDGER 行**（状态 aborted-*，注明死因与已有产出）——**中止 = 当场补行，不等下轮**（曾出现归档行事后人工补）。
+run 异常中止（进程死亡/环境冲突）的 run **也必须留 LEDGER 行**（状态 aborted-*，注明死因与已有产出）——**中止 = 当场补行，不等下轮**（曾出现归档行事后人工补）。
 
 ### 快照对账 warn 级原则（跨阶段通用）
 

@@ -27,7 +27,7 @@
 | 一·架构设计 | [./architecture.md](./architecture.md) | **执行后端三层（DSH CLI 桥接 → createReactAgent fallback → 禁 createDeepAgent）** · Driver-Worker 编排 · 步骤定义 · 目录架构 |
 | 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · **六角色（A/B/C/D/V/F）统一走 glm-5.3-flash** · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
-| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **守卫 fail-loud（PASS 更不可信）** · **冻结窗口锁（防并行会话误改）** · **fresh-eyes 四连事故（窗口冲突/修复静默丢失/降级滚雪球/API 漂移全灭）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
+| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **守卫 fail-loud（PASS 更不可信）** · **冻结窗口锁（防并行会话误改）** · **fresh-eyes 四连事故（窗口冲突/修复静默丢失/降级滚雪球/API 漂移全灭）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step · **编排循环退役与单步执行器（整合归一·能力交接清单）** |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 
 ---

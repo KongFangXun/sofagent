@@ -1,12 +1,12 @@
 # fresh-eyes-loop · 循环 SOP
 
-> 本文件定义质量循环的**运行协议**。A/B 的具体行为指令在 `prompts/`，12 视角定义在 `playbook/fresh-eyes-review.md`（playbook 共 22 视角六层：1-12 driver 循环标准配置；13-16 文档治理/通读、17-19 动态面（需 build/实跑取证）、20-21 深度专项、22 发现面均不在本循环内——边界以 playbook 分层表为准）。
+> 本文件定义质量循环的**运行协议**。A/B 的具体行为指令在 `prompts/`，12 视角定义在 `playbook/fresh-eyes-review.md`（playbook 共 22 视角六层：1-12 循环标准配置；13-16 文档治理/通读、17-19 动态面（需 build/实跑取证）、20-21 深度专项、22 发现面均不在本循环内——边界以 playbook 分层表为准）。
 
 ## 核心原则
 
 1. **零上下文每轮**：A 和 B 每一轮都用**全新 session**（新建独立 session / 子进程，或刷新对话）。上一轮的记忆不在这一轮。这是 fresh-eyes 纪律的硬保障——作者在项目里待太久产生的"解释盲区"被结构性消解。
 2. **双盲独立**：A 和 B 跑的是**同一套 12 视角**，但互相不知道对方看到了什么。两人在不同 session 独立产出，合并时才对照。重叠 = 高置信问题；单方独特发现 = 也值得记。
-3. **driver 只 relay，不审查**：driver（Node 编排进程）负责在 A/B 之间传文件、维护 `runs/`、判定停止。**driver 不替 A/B 做判断**。
+3. **编排者只 relay，不审查**：编排者（一次 harness 运行，注入主任务协议）负责在角色间传文件、维护 `runs/`、判定停止。**编排者不替角色做判断**。
 4. **不修改审查对象以外东西**：B 只修合并后的 findings 指向的问题，不顺手重构。
 
 ## 角色
@@ -15,7 +15,7 @@
 |------|------|---------|------|
 | **A** | 审查者 / QA | ① 独立跑 12 视角审查 ② 合并 A/B 报告 ③ 验证 B 修复 | `check-a.md` → `findings.md` + `result.md` → 回填 verify |
 | **B** | 工程师 | ① 独立跑 12 视角审查 ② 执行合并后的修复 | `check-b.md` → `summary.md` |
-| **driver** | 用户手动新开的执行 session（见 SKILL.md「执行载体铁律」） | 中转文件、建 `runs/`、判定停止、写 `LEDGER.md` | `runs/` 目录 + LEDGER 行 |
+| **编排者** | 一次 harness 运行（WorkBuddy 有人值守 / DSH 无头 / Codex headless，注入主任务协议即跑） | 中转文件、建 `runs/`、判定停止、写 `LEDGER.md` | `runs/` 目录 + LEDGER 行 |
 
 A/B 基于 `SKILL/agents/` 的 `reviewer` + `engineer` 两个 SubAgent 能力构建（同底座，不同行为指令）。
 
@@ -41,7 +41,7 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 3. [A session]    合并 check-a + check-b → findings.md（去重 + P0/P1/P2）+ result.md（给 B 的修复指令）
 4. [B 新 session] 读 result.md 修复代码  → summary.md（改了什么文件 / 验证方式）
 5. [A 新 session] 按 findings.md 验证修复 → 回填 result.md 的 verify 列（PASS/FAIL/无法验证）
-6. driver 判定停止条件
+6. 编排者判定停止条件
 ```
 
 > 步骤 1–2 可并行（A/B 互不影响）。步骤 3–5 必须串行（有依赖）。
@@ -64,7 +64,7 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 ## 停止条件
 
 - **主停止**：连续 **2 轮** `findings.md` 中 **无 P0 且无 P1** → 停止，本轮循环结束。
-- **人工停止**：driver 在任意轮后判定 `human-stop`（如时间窗到了）。
+- **人工停止**：编排者在任意轮后判定 `human-stop`（如时间窗到了）。
 - **上限**：设 `max-rounds`（默认 10），触顶强制停止并标注 `max-rounds`，遗留 P0/P1 进 `LEDGER.md` 备注。
 - **v1.2.7 Session Goal**：设置 `completion_condition` 后，每轮结束后用轻量模型评估是否满足条件：
   - `PASS` → `stopReason='goal-met'`（目标达成停止）
@@ -79,16 +79,23 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 
 > 来源：Loop Engineering 反模式「Token Burn」修复方案（工程实践消化，2026-07）
 
-停止后 driver 向 `FORGE/LEDGER.md` 追加一行（见 `LEDGER.md` 列定义）。
+停止后编排者向 `FORGE/LEDGER.md` 追加一行（见 `LEDGER.md` 列定义）。
 
-## 执行形态（协议与载体解耦 · 产物同 schema）
+## 执行形态（单轨 · 编排权上收到协议层）
 
-循环协议（角色 / 轮次 / 产物 schema / 停止条件）与执行载体**解耦**：同一份 `runs/` 产物契约，两种形态产出与消费完全同构，状态全在文件里——中途换形态接续跑，无需重开。
+循环的编排逻辑 = 本文件「主任务协议」六条（SSOT）；**编排者就是一次 harness 运行本身**——注入协议即跑，不存在第二种编排形态。状态全在 `runs/` 文件里（文件即状态），中断任意载体接续跑，无需重开。
 
-| 形态 | 编排者 | 角色执行 | 适用 |
-|------|--------|---------|------|
-| **driver 形态** | Node 编排进程（`FORGE/src/fresh-eyes-driver.mjs`） | worker 子进程（`createReactAgent` 编排；工具面实测 = `sf_read` / `sf_write` / `run_bash` 三件） | 无人值守多轮、确定性收敛、回归对照 |
-| **harness 注入形态** | 一次 harness 运行（无头注入或有人值守 session），注入主任务协议 | 逐角色注入（见下方角色三通道） | 无 driver 依赖；任何具备「读文件 / 写文件 / 跑命令」工具面的 harness 可跑（DSH 无头 / Codex headless / 有头 AI session） |
+| 层 | 归属 |
+|----|------|
+| **编排逻辑** | 主任务协议六条（本文件，唯一 SSOT） |
+| **编排者** | 任意 harness session：WorkBuddy（有人值守，单轮 + 修复批）/ **DSH 无头（主载体，无人值守多轮）** / Codex headless |
+| **角色执行** | 三通道任选（见主任务协议第 2 条；每角色独立上下文） |
+| **执行器** | `node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>`（通道②专用；DSH 后端；worktree 隔离经 `FORGE_WORKTREE_ROOT` 环境变量继承——由编排方建立并注入；内置 stall 守卫与工具软硬熔断） |
+| **产物契约** | `runs/` 文件即状态 + `tools/check/check-fresh-eyes-artifacts.mjs` 守闸（存在性 + schema + 计数一致性，fail-closed） |
+
+**快速模式与无人值守是同一协议的预算参数差异**：有人值守 = 1 轮审查 + 修复批（阶段三常用形态）；无人值守 = max-rounds 多轮收敛。不是两套流程，SOP 只此一份。
+
+**driver 编排入口已删除（2026-09-26 整合归一）**：`fresh-eyes-driver.mjs` 现仅含 worker 单步执行链路（多轮编排循环及其专属机制——停止判定 / 分片编排 / spawn 编排 / LEDGER 写入 / latest.json 指针 / watcher——已随归一删除，经验沉淀于 `FORGE/lessons/driver.md`）。无参调用或编排参数会得到退役提示与 exit 2。
 
 > 角色以现行**单盲四角色**（A 审 → B 修 → C 验 → D 复核，SSOT = `docs/changelog/releasing/auto-converge-protocol.md`）为准；下方「单轮协议」示例为 legacy 双盲形态（`FORGE_ENABLE_B_CHECK=1` 逃生门），两形角色映射见 auto-converge。
 
@@ -97,10 +104,10 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 对 harness 注入以下主任务（替换花括号占位符）。执行体无对话上下文——本协议自包含：
 
 1. **状态接续先行**：runDir = `FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/`。已存在产物 → 读最高 `round-NN` 与 `status.md` 按断点续跑，**已完成轮禁止重开**；不存在 → 建目录开工。
-2. **角色零上下文纪律（防「发现者 = 修复者」）**：编排者不得在同一上下文里既发现又修复。角色执行三通道任选（每角色独立上下文）：① 本运行自身的注入即零上下文——仅首个角色可用（通常是 A 审查）；② driver 单步 worker：`node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>`（复用 worktree 隔离与 stall 守卫）；③ 有头 session 的 subagent。
+2. **角色零上下文纪律（防「发现者 = 修复者」）**：编排者不得在同一上下文里既发现又修复。角色执行三通道任选（每角色独立上下文）：① 本运行自身的注入即零上下文——仅首个角色可用（通常是 A 审查）；② 执行器单步：`node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>`（worktree 隔离经 `FORGE_WORKTREE_ROOT` 由编排方建立并注入；内置 stall 守卫与工具熔断）；③ 有头 session 的 subagent。
 3. **每轮落盘（文件即状态）**：按「产物 Schema」节写 round-NN/ 文件；另维护两份状态产物——**`status.md`** 单行现态（格式：`round-NN · <phase> · P0=<n>/P1=<n>`，phase ∈ {reviewing / fixing / verifying / done}，对应四角色 A 审 → B 修 → C 验 → D 复核），它是断点续跑与外部监督的唯一现态锚；**`verdict.md`**（终态判定，D 复核收口时写：停止原因 + 最终 P0/P1 定性结论 + 判定关键行原文，对齐 auto-converge 最终汇报的「判定关键行原文」要求）。
 4. **收敛与红线**：停止条件按上方「停止条件」节执行；分诊三定性 / 修复红线 / 停手条件以 `docs/changelog/releasing/auto-converge-protocol.md` 为单一维护源，本文件不复述。
-5. **机器守闸**：`node tools/check/check-fresh-eyes-artifacts.mjs --runDir <abs>` 校验产物契约（存在性 + schema + 计数一致性）——harness 形态下「driver 判定停止条件」的等价机械面；`--self-test` 自检。
+5. **机器守闸**：`node tools/check/check-fresh-eyes-artifacts.mjs --runDir <abs>` 校验产物契约（存在性 + schema + 计数一致性）——编排者停止条件判定的机械面；`--self-test` 自检。
 6. **收尾两动作**：`FORGE/LEDGER.md` 追加一行；最终汇报按 `docs/changelog/releasing/03-quality-loop.md` 汇报模板（含「未跑步骤声明」）。
 
 ### 注入包安全纪律
@@ -109,11 +116,11 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 - **注入即授权改仓 + 跑测试**：主任务必须显式携带**越界清单**（不做 push / tag / publish、不动 FORGE 源码与审查视角定义、不改 devlog 勾选、不自称收编——复验收编是主 session 职责）。
 - **执行产生的 commit 过审计钩子**（25 条规则 + HMAC 链，机制强制非纪律约束）。
 
-## createReactAgent 实现提示
+## 执行器实现提示（`--worker` 单步链路）
 
-- A/B 由 Node driver（`FORGE/src/fresh-eyes-driver.mjs`）spawn 独立子进程实现真零上下文。
-- driver 把对应 `prompts/*.md` 作为 SubAgent 的 system/behavior 指令注入。
-- 12 视角正文不必塞进 prompt（太长）——prompt 里写"按 `playbook/fresh-eyes-review.md` 的 12 视角跑"，让 SubAgent 自行读取。
+- 每个角色 step 由执行器在独立子进程内跑（真零上下文）：编排方按角色逐次调用 `--worker`，子进程读 `prompts/*.md` 作为行为指令。
+- 12 视角正文不塞 prompt（太长）——prompt 里写"按 `playbook/fresh-eyes-review.md` 的 12 视角跑"，让执行器自行读取。
+- 编排方职责（协议第 2-3 条）：逐角色调用执行器、在角色间传产物文件、维护 status.md、判定停止。
 
 ## 循环级演化（evolution.md）
 
