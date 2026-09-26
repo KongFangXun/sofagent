@@ -2666,6 +2666,11 @@ scenario 315 "v1.3.9 交付九：tools/ 物理分子目录——check/gen/dashbo
 for d in check gen dashboard release forge audit; do [ -d "$PROJECT_ROOT/tools/$d" ] || S315_OK=false; done
 [ -f "$PROJECT_ROOT/tools/check/check-version.sh" ] || S315_OK=false
 $S315_OK && pass "tools 6 子目录在位" || fail "tools 分子目录不完整"
+scenario 316 "v1.3.9 交付十三：FORGE driver 进程守护——daemon 自脱离 + watcher 自动 resume"; S316_OK=true
+grep -q -- "--daemon" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S316_OK=false
+grep -q -- "--watch" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S316_OK=false
+grep -q -- "--resume" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S316_OK=false
+$S316_OK && pass "driver 进程守护（daemon/watch/resume）在位" || fail "driver 进程守护缺失"
 scenario 317 "v1.3.9 交付十二：>5MB diff 缝隙修复——spill 落盘 + 64MB 读回 + 截断 locator"; S317_OK=true
 grep -q "spill\|oversized" "$PROJECT_ROOT/engine/core/src/diff-parser.ts" 2>/dev/null || S317_OK=false
 grep -rq "diff-parser-oversized\|oversized" "$PROJECT_ROOT/engine/core/src/__tests__/" 2>/dev/null || S317_OK=false
