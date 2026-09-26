@@ -8,12 +8,17 @@
 //   4. worklog 文件缺失降级（loadWorklogSlice → null）
 // ============================================================
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { runCostAudit, loadWorklogSlice, type WorklogSlice, type CostBudget } from '../cost-audit';
 import { emitDecision } from '../decision-log';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+// 测试用 HMAC 密钥内容——64 位 hex（Shannon 熵 ≈4.0 bit/char，不含弱模式词）。
+// 写面用例断言 hmacSig 在场，而签名依赖 HMAC 密钥（经 SOFAGENT_KEY_PATH 解析）；
+// 不就地隔离则结果随开发机是否有 ~/.sofagent-key 漂移（无密钥机器上 hmacSig 缺省）。
+const HMAC_TEST_KEY = 'c81f4a6e29b7d3508e6c1a4f7b2d9e58a3c6f1902b8e4d7a5f1c3e9b6d802a4f';
 
 const worklog: WorklogSlice = {
   agents: [
@@ -78,6 +83,23 @@ describe('runCostAudit · 成本超支判定', () => {
 });
 
 describe('COST 写面接线（v1.5.3 收口：读面在、写面永空 → quota 闸恒空过）', () => {
+  let keyDir: string;
+  let savedKeyPath: string | undefined;
+
+  beforeEach(() => {
+    // 密钥隔离（与同目录 mandate/egress-audit 测试同款惯例）——不碰真实 ~/.sofagent-key
+    keyDir = mkdtempSync(join(tmpdir(), 'cost-write-key-'));
+    savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+    writeFileSync(join(keyDir, 'hmac-key'), HMAC_TEST_KEY, { mode: 0o600 });
+    process.env.SOFAGENT_KEY_PATH = join(keyDir, 'hmac-key');
+  });
+
+  afterEach(() => {
+    if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+    else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
+    try { rmSync(keyDir, { recursive: true, force: true }); } catch { /* best-effort */ }
+  });
+
   it('写面：emitDecision 接受 kind=COST 且落盘带 HMAC（should-run quota 五问的消费前提）', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'cost-write-'));
     try {

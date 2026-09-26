@@ -32,6 +32,12 @@ import {
 } from '../crypto/key-manager';
 import { encryptWithAge as enc, isAgePayload as isAge } from '../crypto/age-wrapper';
 
+// 测试用 HMAC 密钥内容——64 位 hex（Shannon 熵 ≈4.0 bit/char，不含弱模式词）。
+// 链校验的「密钥在场但条目无签名 → unverifiable」分支靠 HMAC 密钥在场成立，
+// 密钥经 SOFAGENT_KEY_PATH 解析（不走 SOFAGENT_HOME）——必须就地隔离，
+// 否则用例结果随开发机是否有 ~/.sofagent-key 漂移（无密钥机器上恒取 ok 分支）。
+const HMAC_TEST_KEY = 'c81f4a6e29b7d3508e6c1a4f7b2d9e58a3c6f1902b8e4d7a5f1c3e9b6d802a4f';
+
 /** 生成密钥（测试环境，confirmBackup 直传 true——临时目录即丢弃，无备份语义） */
 function genKey(home: string): void {
   generateDataKey(home, { confirmBackup: true });
@@ -84,14 +90,21 @@ describe('F-29 · checkHistoryChainDetailed × 静态加密三态', () => {
   let keyHome: string;
   let savedData: string | undefined;
   let savedHome: string | undefined;
+  let savedKeyPath: string | undefined;
 
   beforeEach(() => {
     testDir = tmpDir('data');
     keyHome = tmpDir('home');
     savedData = process.env.SOFAGENT_DATA;
     savedHome = process.env.SOFAGENT_HOME;
+    savedKeyPath = process.env.SOFAGENT_KEY_PATH;
     process.env.SOFAGENT_DATA = testDir;
     process.env.SOFAGENT_HOME = keyHome;
+    // HMAC 密钥就地隔离（与同目录 audit 包测试同款惯例）——绝不触碰真实 ~/.sofagent-key。
+    // 密钥文件随 keyHome 一起在 afterEach 清理。
+    const keyFile = join(keyHome, 'hmac-key');
+    writeFileSync(keyFile, HMAC_TEST_KEY, { mode: 0o600 });
+    process.env.SOFAGENT_KEY_PATH = keyFile;
   });
 
   afterEach(() => {
@@ -99,6 +112,8 @@ describe('F-29 · checkHistoryChainDetailed × 静态加密三态', () => {
     else process.env.SOFAGENT_DATA = savedData;
     if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
     else process.env.SOFAGENT_HOME = savedHome;
+    if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+    else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
     for (const d of [testDir, keyHome]) {
       try { rmSync(d, { recursive: true, force: true }); } catch { /* */ }
     }
