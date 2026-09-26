@@ -24,7 +24,14 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #      机器校验见 tools/check/check-version.sh 第 20 项（lib 哈希逐一对账）。
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
-INSTALL_SHA256="7f75b6657f615f01f95260b5a61c004a8a8c18b273728a4b163c373fc30b052f"  # v1.5.2 tag:install.sh
+# K1-2（run-02 verdict 前置项 2）：三方映射登记（tag 前时点，钉值轮转前）
+#   fc9990a6（f-release 候选）↔ 6317823a（主仓 HEAD=v1.5.2 交付物）↔ tag v1.5.2（tag 前 SSOT，v1.5.3 尚未 bump）
+# K1-3：钉值轮转时序（阶段六 bump → tag v1.5.3 → 按下式重算重填 → 复跑维度 130/17）
+#   INSTALL_SHA256=sha256(v1.5.3 tag:install.sh)
+#   LIB_BASE_URL=.../tags/v1.5.3/engine/scripts/lib
+#   LIB_SHA256S=for f in $LIB_FILES; do git show v1.5.3:engine/scripts/lib/$f | shasum -a 256; done
+#   🔴 时序陷阱（v1.4.5 实锤）：回填哈希之后不得再改任一被钉文件——改了必须重算重填。
+INSTALL_SHA256="7f75b6657f615f01f95260b5a61c004a8a8c18b273728a4b163c373fc30b052f"  # v1.5.2 tag:install.sh（待 v1.5.3 tag 后轮转）
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。
