@@ -185,8 +185,14 @@ elif [ "$SKO_GATE" != "due" ]; then
 else
   SKO_PACK=$(npm view @sofagent/skillopt --json --prefer-online 2>/dev/null)
   if [ -z "$SKO_PACK" ]; then
-    echo "  ⏭️  [旧包弃用] registry 不可达（离线/限流）——npm 渠道本轮未对账，发布前补跑"
-    SKIPS=$((SKIPS + 1))
+    # 区分「registry 不可达」与「包已下架（E404 = 终态）」：下架即弃用承诺的最终形态
+    if npm view @sofagent/skillopt version 2>&1 | grep -q "E404"; then
+      ASSERTS=$((ASSERTS + 1))
+      echo "  ✓ [旧包弃用] @sofagent/skillopt 已从 registry 下架（E404 = 弃用+下架终态，v1.5.3 收口）"
+    else
+      echo "  ⏭️  [旧包弃用] registry 不可达（离线/限流）——npm 渠道本轮未对账，发布前补跑"
+      SKIPS=$((SKIPS + 1))
+    fi
   else
     SKO_RES=$(printf '%s' "$SKO_PACK" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const vs=Object.values(JSON.parse(d).versions||{});console.log(vs.filter(v=>v&&v.deprecated).length+'/'+vs.length)}catch{console.log('ERR')}})")
     if [ -z "$SKO_RES" ] || [ "$SKO_RES" = "ERR" ]; then
