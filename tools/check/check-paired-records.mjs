@@ -49,6 +49,12 @@
 //     判定③ 增断言「缺 reason/trigger ⇒ 红」——「误并入豁免集」从「无兜底」改为
 //     「须带正当事由 + 改判触发条件」。**不做『是否真判决类』的语义推断**（那会引入
 //     不可靠启发式——本门禁只做机械判据）。
+//   B1（硬编码 bypass 收口）：旧版 ② 对 TOOL_GATE / INVALIDATION 做硬编码跳过——删家族
+//     后仍跳过 ⇒ 静默放行（S4 同族，reason/trigger 断言覆盖不到）。改为 coveredKinds
+//     派生自 REGISTRY（kind ∪ covers）⇒ 删家族 ⇒ 失覆盖 ⇒ ② 红。
+//   B2（S2 约定显式化）：扫描面正则 `kind: '([A-Z_]+)'` 依赖「kind 不含数字」约定
+//     （含数字者静默漏检，实测）。**不放松正则**，改在判定④ 断言「DecisionKind 枚举值
+//     ⊆ [A-Z_]+」——加含数字 kind 时在枚举层当场红。
 //
 // --self-test：注入「单边缺侧」的临时源文件样例 → 断言门禁判红（故障注入实证，
 //   供验收与 paired-records.test.ts 复用同一机制）。
@@ -132,7 +138,7 @@ const REGISTRY = [
     //   INVALIDATION（authorization-changed）而非 RULE_TOGGLE；枚举自 v1.3.7 以来
     //   仅测试引用。**不造写入点**（任务书纪律：勿为凑样本造写入点）。
     blindSpot: {
-      reason: '全仓零生产写入（唯一命中 = decision-schema 枚举定义 + 测试 + acceptance 夹具）；运行时规则启停的留痕实际走 kind=INVALIDATION（authorization-changed，index.ts:1270），语义已被该 kind 覆盖。',
+      reason: '全仓零生产写入（唯一命中 = decision-schema 枚举定义 + 测试 + acceptance 夹具）；运行时规则启停的留痕实际走 kind=INVALIDATION（authorization-changed）——落点 = index.ts「v1.5.2 章四：授权/白名单配置变更 → 既有结论失效标记」段的 hooks.onAuthorizationChanged(...) 调用（config.yml 关闭规则触发），语义已被该 kind 覆盖。',
       trigger: '当出现真实「用户/Agent 显式启停单条规则」的功能面（如 ruleset 热开关）时，在该功能写入 kind=RULE_TOGGLE 记录（含 启用/停用 两态）并删除本盲区登记；或确认永不做该功能面时把枚举值移出 DecisionKind（schema 收缩走发版纪律）。',
     },
   },
@@ -255,7 +261,12 @@ for (const fam of REGISTRY) {
 
 // ── 判定 ②：盲区扫描——全仓 kind 写入模板 vs 登记表（未登记的判决写入点即红）──
 console.log('── ② 盲区扫描（未登记的判决类写入点）──');
-const registeredKinds = new Set(REGISTRY.map((f) => f.kind));
+// 家族覆盖的 kind 集合——**从 REGISTRY 派生**（① 硬编码 bypass 收口 2026-09-26）：
+//   旧版对 TOOL_GATE / INVALIDATION 做**硬编码跳过**（`kind === 'TOOL_GATE' || …`）。
+//   若有人删掉这两个家族，它们仍被硬编码跳过 ⇒ **既无家族覆盖、又无登记，却静默放行**
+//   ——与 S4 同族的台账腐化，且 S4 的 reason/trigger 断言覆盖不到。改为「仅当 kind
+//   落在某家族的 kind / covers 声明内才跳过」⇒ **删家族 ⇒ 失覆盖 ⇒ ② 判红**。
+const coveredKinds = new Set(REGISTRY.flatMap((f) => [f.kind, ...(f.covers ?? [])]));
 const KIND_WRITE_RE = /kind:\s*'([A-Z_]+)'/g;
 const unregistered = new Map(); // kind -> [file:line]
 for (const [file, content] of CONTENT) {
@@ -266,8 +277,7 @@ for (const [file, content] of CONTENT) {
     if (!m) continue;
     const kind = m[1];
     if (NON_VERDICT_KIND_SET.has(kind)) continue;      // 观测/过程类——整类豁免（须带 reason/trigger）
-    if (registeredKinds.has(kind)) continue;           // 已登记
-    if (kind === 'TOOL_GATE' || kind === 'INVALIDATION') continue; // 已由家族覆盖
+    if (coveredKinds.has(kind)) continue;              // 已由家族覆盖（派生自 REGISTRY，非硬编码）
     const rel = path.relative(ROOT, file);
     if (!unregistered.has(kind)) unregistered.set(kind, []);
     unregistered.get(kind).push(`${rel}:${i + 1}`);
@@ -294,6 +304,24 @@ for (const e of NON_VERDICT_KINDS) {
   if (inEnum && e.reason && e.trigger) okOut(`豁免「${e.kind}」：枚举对账一致 · reason+trigger 齐备`);
 }
 
+// ── 判定 ④：S2 约定显式化——DecisionKind 枚举值必须匹配 [A-Z_]+（2026-09-26）──
+// 扫描面正则 `kind:\s*'([A-Z_]+)'` **依赖一个未言明的约定**：kind 字面量只含大写字母与
+//   下划线（**不含数字**）。实测：含数字的 kind（如 'PROBE_S1_UNREG'）因 `1` 不入
+//   `[A-Z_]` 而**被静默漏检**（门禁 rc=0）。修法**不放松正则**（放宽会扩大匹配面、引入
+//   F4 类假红），改在**枚举层当场红**：谁往 DecisionKind 加含数字/小写的值 ⇒ 此处判红。
+console.log('── ④ 约定显式化（DecisionKind 枚举值 ⊆ [A-Z_]+ · 扫描面约定）──');
+const dkBlockRaw = (schema.match(/export type DecisionKind\s*=([\s\S]*?);/) ?? [])[1];
+if (!dkBlockRaw) {
+  fail('DecisionKind 枚举解析为空——解析器失效（约定断言不成立，门禁空转）');
+} else {
+  const dkBlock = dkBlockRaw.split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  const dkValues = [...dkBlock.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  const bad = dkValues.filter((v) => !/^[A-Z_]+$/.test(v));
+  if (dkValues.length === 0) fail('DecisionKind 枚举值解析为空——解析器失效（约定断言不成立）');
+  else if (bad.length > 0) fail(`DecisionKind 枚举值 ${bad.map((v) => `「${v}」`).join('、')} 不匹配 [A-Z_]+（含数字/小写）——扫描面正则依赖此约定，会静默漏检`);
+  else okOut(`DecisionKind 枚举 ${dkValues.length} 值全部匹配 [A-Z_]+（扫描面约定成立，无静默漏检）`);
+}
+
 // ── --self-test：故障注入实证（单边缺侧样例 → 必红）────────────────────
 if (SELF_TEST) {
   console.log('── self-test：注入「未登记判决类 kind」样例 → 门禁必须判红 ──');
@@ -305,7 +333,7 @@ if (SELF_TEST) {
   for (const [file, content] of CONTENT) {
     for (const m of content.matchAll(/kind:\s*'([A-Z_]+)'/g)) {
       const kind = m[1];
-      if (NON_VERDICT_KIND_SET.has(kind) || registeredKinds.has(kind) || kind === 'TOOL_GATE' || kind === 'INVALIDATION') continue;
+      if (NON_VERDICT_KIND_SET.has(kind) || coveredKinds.has(kind)) continue;
       hits.push(`${file}（kind=${kind}）`);
     }
   }
