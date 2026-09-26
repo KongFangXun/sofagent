@@ -994,23 +994,23 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <a href="https://github.com/KongFangXun/sofagent/blob/main/FORGE/README.md" target="_blank" class="btn btn-outline">FORGE README →</a>
     </div>
     <div class="section-body">
-      <p class="meta13" style="margin-bottom:16px">FORGE 是 sofagent <strong>项目内部的开发工具链</strong>（不是 FDE 方法论的一部分），用 sofagent 自己的审计能力审 sofagent 自己的代码——"用 AI 审 AI"。两条循环：<strong>fresh-eyes-loop</strong>（双盲质量审查）与 <strong>release-gate-loop</strong>（发版门禁，十二阶段 SOP）。</p>
+      <p class="meta13" style="margin-bottom:16px">FORGE 是 sofagent <strong>项目内部的开发工具链</strong>（不是 FDE 方法论的一部分），用 sofagent 自己的审计能力审 sofagent 自己的代码——"用 AI 审 AI"。两条循环：<strong>fresh-eyes-loop</strong>（单盲四角色质量审查）与 <strong>release-gate-loop</strong>（发版门禁，十二阶段 SOP）。</p>
 
       <div class="step-card" style="margin-bottom:12px">
-        <div class="step-title"><span class="step-num">1</span>fresh-eyes-loop · 双盲质量审查</div>
-        <div class="step-desc">两个 Agent 互不可见：A（审查模型）不带前置上下文独立找问题，B（工程模型）收到报告独立修复，多轮迭代直到收敛（默认 5 轮）。</div>
+        <div class="step-title"><span class="step-num">1</span>fresh-eyes-loop · 单盲四角色质量审查</div>
+        <div class="step-desc">四角色单盲流水线：A 审查（零上下文）→ B 修复 → C 验证 → D 复核收口，多轮迭代直到收敛；编排权归主任务协议，任意 harness session（WorkBuddy / DSH 无头）注入协议即跑，角色经单步执行器隔离上下文。</div>
       </div>
       <div class="chart-box" id="forgeBox">
         <div class="skeleton" style="height:60px"></div>
       </div>
       <div class="prompt-box" style="margin-top:12px">
         <div class="prompt-action"><span class="prompt-label">在你的项目中运行 fresh-eyes-loop</span>
-          <button class="copy-btn" onclick="copyPrompt(this, '用 sofagent FORGE fresh-eyes-loop 对当前项目做双盲质量审查。Agent A 找问题，Agent B 修复，多轮迭代直到收敛。')">复制 Prompt</button>
+          <button class="copy-btn" onclick="copyPrompt(this, '用 sofagent FORGE fresh-eyes-loop 对当前项目做单盲四角色质量审查。A 审查找问题，B 修复，C 验证，D 复核收口，多轮迭代直到收敛。')">复制 Prompt</button>
         </div>
         <code>用 sofagent FORGE fresh-eyes-loop
-对当前项目做双盲质量审查。
-Agent A 找问题，Agent B 修复，
-多轮迭代直到收敛。</code>
+对当前项目做单盲四角色质量审查。
+A 审查找问题，B 修复，C 验证，
+D 复核收口，多轮迭代直到收敛。</code>
       </div>
 
       <div class="step-card" style="margin:16px 0 12px">
@@ -2331,7 +2331,7 @@ function loadOntologyData(){
 function loadForgeData(){
   var box=document.getElementById('forgeBox');
   if(!box)return;
-  // 优先取最近一次真实运行（latest.json 可能被 dry-run 覆盖，/api/forge-latest 兜底扫历史目录）
+  // 最近一次真实运行由 /api/forge-latest 提供（服务端倒序扫安装态 runs 目录的 status.json）
   fetch('/api/forge-latest')
     .then(function(r){return r.json()})
     .then(function(f){
@@ -2351,20 +2351,8 @@ function loadForgeData(){
       box.innerHTML=html;
     })
     .catch(function(){
-      // 无真实运行 → 读 latest.json 判断 dry-run 给诚实提示
-      fetch('/data/forge-runs/fresh-eyes-loop/latest.json')
-        .then(function(r){return r.json()})
-        .then(function(f){
-          var isDry=f.stopReason==='dry-run'||(!(f.agentA&&f.agentA.findings)&&!(f.agentB&&f.agentB.findings));
-          if(isDry){
-            box.innerHTML=emptyState('<i class="bi bi-eyeglasses"></i>','最近 FORGE 运行是 dry-run','最近多次 fresh-eyes-loop 均退化为试运行（perspective worker 未产出 check 产物）——检查 FORGE 运行环境后重跑');
-          }else{
-            box.innerHTML=emptyState('<i class="bi bi-eyeglasses"></i>','还没有 FORGE 运行记录','跑过 fresh-eyes-loop / release-gate-loop 后生成');
-          }
-        })
-        .catch(function(){
-          box.innerHTML=emptyState('<i class="bi bi-eyeglasses"></i>','还没有 FORGE 运行记录','跑过 fresh-eyes-loop / release-gate-loop 后生成');
-        });
+      // 无真实运行（latest.json 已随编排循环退役删除，dry-run 状态不再可查）
+      box.innerHTML=emptyState('<i class="bi bi-eyeglasses"></i>','还没有 FORGE 运行记录','跑过 fresh-eyes-loop / release-gate-loop 后生成');
     });
 }
 
