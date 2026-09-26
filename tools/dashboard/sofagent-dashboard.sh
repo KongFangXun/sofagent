@@ -75,7 +75,8 @@ SOVEREIGNTY_DIR="$AUDIT_DIR/data-sovereignty"
 HISTORY_FILE="$AUDIT_DIR/history.jsonl"
 DAEMON_HEALTH="$DATA_ROOT/dashboard/daemon-health.json"
 GRAPH_STATE="$DATA_ROOT/dashboard/graph-state.json"
-# 交付三：FORGE latest.json 指针（driver 原子维护，Q4）
+# 交付三：FORGE latest.json 指针（writer 已随编排循环退役——本段渲染安装态历史 runs 仍有效，
+# 新运行数据断代，待 1.5.4 DSH 注探 status.md 形态定型后统一适配）
 FORGE_LATEST="$DATA_ROOT/forge-runs/fresh-eyes-loop/latest.json"
 # 交付五：workspace 变更摘要（daemon workspace-summary 写入）
 WORKSPACE_CHANGES="$DATA_ROOT/dashboard/workspace-changes.jsonl"

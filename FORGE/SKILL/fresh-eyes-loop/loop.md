@@ -106,7 +106,7 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 1. **状态接续先行**：runDir = `FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/`。已存在产物 → 读最高 `round-NN` 与 `status.md` 按断点续跑，**已完成轮禁止重开**；不存在 → 建目录开工。
 2. **角色零上下文纪律（防「发现者 = 修复者」）**：编排者不得在同一上下文里既发现又修复。角色执行三通道任选（每角色独立上下文）：① 本运行自身的注入即零上下文——仅首个角色可用（通常是 A 审查）；② 执行器单步：`node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>`（worktree 隔离经 `FORGE_WORKTREE_ROOT` 由编排方建立并注入；内置 stall 守卫与工具熔断）；③ 有头 session 的 subagent。
 3. **每轮落盘（文件即状态）**：按「产物 Schema」节写 round-NN/ 文件；另维护两份状态产物——**`status.md`** 单行现态（格式：`round-NN · <phase> · P0=<n>/P1=<n>`，phase ∈ {reviewing / fixing / verifying / done}，对应四角色 A 审 → B 修 → C 验 → D 复核），它是断点续跑与外部监督的唯一现态锚；**`verdict.md`**（终态判定，D 复核收口时写：停止原因 + 最终 P0/P1 定性结论 + 判定关键行原文，对齐 auto-converge 最终汇报的「判定关键行原文」要求）。
-4. **收敛与红线**：停止条件按上方「停止条件」节执行；分诊三定性 / 修复红线 / 停手条件以 `docs/changelog/releasing/auto-converge-protocol.md` 为单一维护源，本文件不复述。
+4. **收敛与红线**：停止条件按上方「停止条件」节执行；收敛语义（分诊三定性 / 停手条件）以 `docs/changelog/releasing/auto-converge-protocol.md` 为单一维护源。**run 纪律红线（自包含内联，违反即 run 报废级事故）**：① run 窗口内（审查/修复/验证进行中）任何 session 不 commit / 不改仓库文件；② 修复批不得改执行器源码（`FORGE/src/fresh-eyes-driver.mjs`）、审查视角定义（`playbook/fresh-eyes-review.md`）与校准档案（`playbook/fresh-eyes-calibration.md`）——原 commit-msg hook 冻结窗口机制锁已退役，本声明为唯一约束面，细则与后果见 `docs/changelog/releasing/03-quality-loop.md` 铁律五条。
 5. **机器守闸**：`node tools/check/check-fresh-eyes-artifacts.mjs --runDir <abs>` 校验产物契约（存在性 + schema + 计数一致性）——编排者停止条件判定的机械面；`--self-test` 自检。
 6. **收尾两动作**：`FORGE/LEDGER.md` 追加一行；最终汇报按 `docs/changelog/releasing/03-quality-loop.md` 汇报模板（含「未跑步骤声明」）。
 
