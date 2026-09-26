@@ -80,6 +80,11 @@
       "file": "docs/THANKS.md",
       "anchor": "v1.8.0 §三「实现路线不绑定」",
       "reason": "TensorFlow.js 研判行的跨文档跳转锚：v1.8.0 §三是「实现路线不绑定」章的唯一版本化指路（MARKDOWN 无稳定节号的替代寻址），删版本号即断链——版本号在此是指路信息非出身考古。"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "## v1.5.3 审查校准收编（阶段四 C 类）",
+      "reason": "同款先例（v1.5.0/v1.5.1 节）：本文件按版并列多节，节标题版本号是唯一区分键；删版本号即造出同名标题，且「已消化校准索引」按版本号回指本节，删后不可定位。"
     }
   ],
   "exemptAnchors_spec": {
