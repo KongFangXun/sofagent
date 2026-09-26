@@ -1,7 +1,7 @@
 // ============================================================
 // @sofagent/dsh-plugin-kit · DSH 适配层基座（v1.5.2 插件能力面 P1 · 扩容）
 // ============================================================
-// 9 个 cordis-plugin-sofagent-*> 的 src/index.ts 此前各 98 行、近乎逐字重复
+// 7 个 cordis-plugin-sofagent-*> 的 src/index.ts 此前各 98 行、近乎逐字重复
 // （pluginMeta 声明 / 懒加载 invoke / apply 三段式：provide + dynamicCordisRunner + settings）。
 // 本包把这段样板收成一次 createSofagentPlugin() 调用，插件侧只留
 // 「我是谁 / 我挂哪（seam）/ 我桥接谁」。

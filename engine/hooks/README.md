@@ -11,4 +11,4 @@ engine/hooks/
 
 `sofagent-load-chain` 是 Hook 子模块，嵌套在 `hooks/` 下（而非作为 workspace 顶层包平级），因为它是 hook 机制的具体实现，同样发布到 npm（`@sofagent/load-chain`）。
 
-其余 13 个顶层 workspace 包（`engine/audit`, `engine/core`, `engine/orchestrator` 等）为独立模块，与 `engine/hooks` 平级。
+其余 14 个 engine 顶层 workspace（`audit` / `core` / `orchestrator` / `daemon` / `mcp` / `train` / `inject` / `ontology` / `evolve` / `eval` / `ab-test` / `rules` / `think` / `umbrella`，实测口径 = 根 package.json 显式 engine 条目）为独立模块，与 `engine/hooks` 平级。

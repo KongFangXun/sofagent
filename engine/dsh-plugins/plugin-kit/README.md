@@ -1,6 +1,6 @@
 # @sofagent/dsh-plugin-kit
 
-DSH 适配层基座——把 9 个 `cordis-plugin-sofagent-*` 的样板（pluginMeta / 懒加载 invoke / apply 三段式）收成一次 `createSofagentPlugin()` 调用。适配层红线（不 import 宿主类型 / 缺席降级不抛 / 桥接懒加载）见 `src/index.ts` 头注，seam 契约见 `../SEAMS.md`。
+DSH 适配层基座——把 7 个 `cordis-plugin-sofagent-*` 的样板（pluginMeta / 懒加载 invoke / apply 三段式）收成一次 `createSofagentPlugin()` 调用。适配层红线（不 import 宿主类型 / 缺席降级不抛 / 桥接懒加载）见 `src/index.ts` 头注，seam 契约见 `../SEAMS.md`。
 
 ## invoke 签名：位置参数透传
 

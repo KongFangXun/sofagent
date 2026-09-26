@@ -27,6 +27,7 @@ fresh-eyes-loop 和 release-gate-loop **共用同一套模型配置**——只�
 | **C**（验收者） | 逐条实测验收 B 的修复 | glm-5.3-flash | `prompts/c-verify.md` | `REVIEWER_TOOLS`（只读） |
 | **D**（复核者） | 对抗裁决 P0/P1（CONFIRM/DOWNGRADE/REOPEN） | glm-5.3-flash | `prompts/d-review.md` | `REVIEWER_TOOLS`（只读） |
 | **V**（验证者） | release-gate 全流程 | glm-5.3-flash | `prompts/*.md` | `REVIEWER_TOOLS`（只读） |
+| **F**（修复者） | 补位修复 | glm-5.3-flash | `prompts/`（profile.mjs:56 实证） | `ENGINEER_TOOLS`（含写工具） |
 
 > 💡 **换模型只改一处**：编辑 `FORGE/models/profile.mjs`（改 import 和角色映射即可），driver 代码不需要动——key 也自动跟着模型文件走。
 

@@ -20,7 +20,7 @@ solves:
 
 ## 调用方式
 
-收到用户任务后，**不要自己执行**——用 Bash tool 把任务交给 DeepAgents 编排模块：
+收到用户任务后，**不要自己执行**——用 Bash tool 把任务交给 LangGraph `createReactAgent` 编排模块：
 
 ```bash
 sofagent-orchestrator subagent run audit --task "<用户的任务描述，原样传入>"
