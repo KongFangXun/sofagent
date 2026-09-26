@@ -238,7 +238,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + FDE 六引擎工作台 + workflow 模板血缘（lineage 事件流 + fork 谱系回溯）+ 执行时 Skill 快照（打包/清理/审计锚点） | ✅ 已实现（1474 测试） |
 | train | 后训模块：train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告 + 云端执行面（替换路径 `import { createTrainJob } from '@sofagent/train'`） | ✅ 已实现（717 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（589 测试） |
-| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（107 tools）——含 FDE 六引擎（fde_interview/classify/quantify/derive/distill/deploy）、训练系（train_status/train_list/train_diagnose/corpus_export/train_serve/train_compliance/train_deliverable）、连接器与模板面（connector_register/connector_list/workflow_export/workflow_import） | ✅ 已实现 |
+| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（103 tools）——含 FDE 六引擎（fde_interview/classify/quantify/derive/distill/deploy）、训练系（train_status/train_list/train_diagnose/corpus_export/train_serve/train_compliance/train_deliverable）、连接器与模板面（connector_register/connector_list/workflow_export/workflow_import） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt） | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
@@ -264,9 +264,9 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 > 累计能力表（按版本归组，全部 ✅ 已发布可用；规划中/排期项见下方「已排期」）：
 >
-> **控制的两层**（读能力表前的一个定位）：平台（Agents API / guardrail 类）治**动作**——Agent 能不能删库、能不能调这个工具，答案写在平台文档里，generic；sofagent 治**判据**——交期改得对不对、报价能不能发，答案在这家企业的本体数据里。两层互补不互替：平台拦得住越权动作，拦不住业务对错。107 个 tool、25 条审计规则裁的都是后者——这是「嵌在 Agent 与模型之间」的确切含义。
+> **控制的两层**（读能力表前的一个定位）：平台（Agents API / guardrail 类）治**动作**——Agent 能不能删库、能不能调这个工具，答案写在平台文档里，generic；sofagent 治**判据**——交期改得对不对、报价能不能发，答案在这家企业的本体数据里。两层互补不互替：平台拦得住越权动作，拦不住业务对错。103 个 tool、25 条审计规则裁的都是后者——这是「嵌在 Agent 与模型之间」的确切含义。
 
-> 🗺️ **MCP 工具五域一环（107 tools）**（工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95，v1.4.9 G9 增 device_register/device_list 至 97，G10/G11 增 device_data_query/device_data_push 至 99，G5b/G1 增连接器与模板 4 个至 103，批 5 增 router_session_push 至 104，v1.5.0 增 trace_reconcile 至 105，v1.5.2 章一/章二 增 audit_query/ruleset_export 至 107）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 25 条审计规则。
+> 🗺️ **MCP 工具五域一环（103 tools）**（工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95，v1.4.9 G9 增 device_register/device_list 至 97，G10/G11 增 device_data_query/device_data_push 至 99，G5b/G1 增连接器与模板 4 个至 103，批 5 增 router_session_push 至 104，v1.5.0 增 trace_reconcile 至 105，v1.5.2 章一/章二 增 audit_query/ruleset_export 至 107，2026-09-26 浏览器四件套退役至 103）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 25 条审计规则。
 >
 > ⚠️ **三套标签不要混用**：五域按**业务职能**划分（本图组织法，**三域视角下属映射源**——五域→三域映射表见 [v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）；`tool-registry` 的 `roles` 是**使用场景标签**（7 面：audit/fde/eval/agent/ops/commons/browser），服务于 `SOFAGENT_MCP_ROLES` 按角色收窄暴露面；`docs/API.md` 的**十能力域**是文档编制分组（一个组 = 一个可独立讲述的产品能力）。三者用途不同，条目数不相等属预期——**工具总数的唯一权威源始终是 `engine/mcp/src/tool-registry.ts` 的 TOOLS 数组**。
 
@@ -279,8 +279,7 @@ graph TB
         A4["协作与交付 ×8（create_agent / list_agents / team_create /<br/>team_broadcast / notify_session / pr_submit / pr_review / pr_merge）"]
         A5["FDE 交付件 ×2（fde_compose / onboard_prompt）"]
     end
-    subgraph D2["二 · 执行与模型（19）——Agent 干活的手臂与大脑"]
-        B1["浏览器自动化 ×4"]
+    subgraph D2["二 · 执行与模型（15）——Agent 干活的手臂与大脑"]
         B2["后训模块 ×12（train_budget / train_submit / train_doctor / train_dryrun /<br/>train_report / train_status / train_list / train_diagnose /<br/>train_deliverable / train_serve / train_cloud / train_compliance）"]
         B3["模型注册挂载 ×3"]
     end
@@ -313,7 +312,7 @@ graph TB
 
 > 闭环读法：实线 = 主循环（执行→审计→沉淀→晋升→更强的执行面）；虚线 = 晋升回写与语料飞轮。
 >
-> ⚠️ **数字口径（五域重算）**：五域条目数之和 **30 + 19 + 27 + 16 + 15 = 107**，与图题 107 及 registry 实数**三处自洽**——以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶（分桶依据是**业务职能**，不是 registry 的 `roles` 标签，见上方「三套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。
+> ⚠️ **数字口径（五域重算）**：五域条目数之和 **30 + 15 + 27 + 16 + 15 = 103**，与图题 103 及 registry 实数**三处自洽**（2026-09-26 浏览器四件套退役：D2 执行与模型 19→15）——以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶（分桶依据是**业务职能**，不是 registry 的 `roles` 标签，见上方「三套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。
 >
 > **增量化简记**（记号：域 +N = 该域条目数变化）：v1.4.9 分四批把 95 推到 104——G9 设备注册面 D3 +2、G10/G11 设备数据面 D3 +2、G5b/G1 连接器与模板面 D3 +2 与 D1 A3 +2、批 5 router 承接面 D3 +1（C8 新域）；同批回填 2 枚此前未归域的工具（`contribution_query` 治理 KPI 报表、`list_capabilities` 能力发现元工具，落 D3 C5）。v1.5.0 `trace_reconcile` 归 D3 C1 +1 至 105。v1.5.2 章一/章二 `audit_query`（审计数据只读查询）与 `ruleset_export`（规则集导出）归 D3 C1 +2 至 107——审计域新增「对外可消费」两面（数据面只读查询 + 规则面标准 JSON 导出），C1 审计子项 8→10。
 
@@ -517,7 +516,7 @@ graph LR
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ |
 | **审计层** | git 仓库 + 文件系统 | sofagent-audit——提交时审计 + 文件变更审计 | ✅ |
 | **MCP 推送层** | 设备 MCP server | @sofagent/mcp 独立包 | ✅ |
-| **协同层** | 多设备 + 云端 | Agent 独立身份、共享上下文、组织记忆 | v2.x |
+| **协同层** | 多设备 + 云端 | Agent 独立身份、共享上下文、组织记忆 | 待裁定（无排期） |
 
 ---
 
@@ -840,12 +839,12 @@ graph LR
 
 **审计报告「本体建模要求对齐」维度（opt-in）**：`runRules({ gb48000: true })`（编程接口选项，非 CLI flag）→ 结果追加 `GB48000` 信息条目（ruleClass='工程规范'，按 name 排除 exitCode 计算——默认行为零变化）。该维度对齐的是 **GB/T 48000.3-2026「标准数字化·本体建模要求」**（ontology schema/action-registry/contracts 合规映射，8 条 OBJ/LNK/ACT/STM/META/VAL/VER/ITF），**不是行为审计国标**，且为**非认证声明**。覆盖度：已对齐 5 / 部分对齐 2 / 不适用 1。
 
-### 已知技术债：双规则系统重叠（v1.3.0 部分收敛）
+### 双规则系统重叠（v1.5.3 施工收敛：正则与定义层同源）
 
 `engine/rules/`（tool-level 规则，3 条）和 `engine/audit/src/rules/`（git-diff 规则，25 条）
 均包含 secret-leak 检测功能。历史上两者并行维护，存在行为不一致风险。
 
-> ✅ **规则正则已收敛**——规则正则模式（如 secret-leak 检测 pattern）已共享至 `@sofagent/core`，避免两套各自维护同一正则；但**规则引擎仍是 `rules`/`audit` 两套**（触发时机不同：tool-level 在调用前拦截、audit 在 commit 后审计，统一 `ruleType` 字段后在两种触发模式下复用同一套规则定义）。**统一为单一规则引擎已排期 [v1.5.3 第一章](./changelog/v1.5/v1.5.3.md)**，详见 [ROADMAP](./ROADMAP.md)。
+> ✅ **规则正则已收敛**——规则正则模式（如 secret-leak 检测 pattern）已共享至 `@sofagent/core`，避免两套各自维护同一正则；但**规则引擎仍是 `rules`/`audit` 两套**（触发时机不同：tool-level 在调用前拦截、audit 在 commit 后审计，统一 `ruleType` 字段后在两种触发模式下复用同一套规则定义）。**已随 v1.5.3 施工收敛**（[v1.5.3 第一章](./changelog/v1.5/v1.5.3.md)：`ruleType` 联合类型 + 模式/类型/常量层同源 `@sofagent/core`——规则对象按触发时机分形，对象级合并属 V2.0 单一引擎域）。
 
 ### 🔄 回溯能力（自研同构 Git 引擎 · 一键回滚）
 
@@ -981,9 +980,9 @@ graph LR
 | **分支** = 小变更空间 | **单个 ontology 节点新增 / 扩展** | 每次给本体加节点、扩关系，是一次 branch，不直接动树干 |
 | **护栏** = 不变量守卫 | **审计**（A7 不盲改 + HMAC + reality anchor） | 错误不会悄悄混进主干；护栏不是树干，是围着树干的围栏 |
 | **根系** = 可复用前提 | **每个节点的强制 frontmatter** | 每个 ontology 节点 / Skill 必须声明：解决什么问题 / 输入 / 产出 / 怎么算通过 / 谁能使用 / 哪些数据不能用 |
-| **养护** = 审阅与回退 | **本体变更的 review + rollback** | 分支经审计闸门（人类按风险分级审阅）才合入主干；不合适就剪掉。对应 v2.x「ontology I/O schema 硬化」+ 运行时审计 |
+| **养护** = 审阅与回退 | **本体变更的 review + rollback** | 分支经审计闸门（人类按风险分级审阅）才合入主干；不合适就剪掉。对应「ontology I/O schema 硬化」（方向登记，无排期）+ 运行时审计 |
 
-**与路线图的契合**：v1.3.1「Ontology 本体数据」把这套隐喻落到产品（分布式 knowledge/ + 联邦查询 + git diff 硬证据）；v2.x「ontology I/O schema 硬化」把「根系」升级为 JSON Schema 校验的节点输入/输出形状约束——正是上表「根系」的工程化。5 阶段风险收敛（只读对象层→…→高风险 Action）则是「养护」的节奏参考：不要一上来就让 Agent 自动闭环。
+**与路线图的契合**：v1.3.1「Ontology 本体数据」把这套隐喻落到产品（分布式 knowledge/ + 联邦查询 + git diff 硬证据）；「ontology I/O schema 硬化」（方向登记，无排期）将把「根系」升级为 JSON Schema 校验的节点输入/输出形状约束——正是上表「根系」的工程化。5 阶段风险收敛（只读对象层→…→高风险 Action）则是「养护」的节奏参考：不要一上来就让 Agent 自动闭环。
 
 **养护的操作化身**：上表「养护」不是抽象姿态，而是由 fresh-eyes 独立审查机制兑现——`playbook/fresh-eyes-review.md`（23 视角独立审查——常规发版 driver 跑其中 1-12，13-23 为手动层：零上下文、相信直觉、只报告不修复）正是护栏的审阅范式；FORGE `fresh-eyes-loop` 把这套独立视角自动化，ROADMAP v2.x 借 MLflow agent 评估为其补量化评审标准。换言之，本体分支要合入主干前，先过 fresh-eyes 这一关。
 

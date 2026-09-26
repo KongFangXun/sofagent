@@ -11,7 +11,6 @@ import { getThink, writeThink, readThinkMd, readLessons } from './tools/think-to
 import { searchKnowledge, mergeFederationAsync, readEntity, readConcept, listEntities, stats } from './tools/knowledge-tools';
 import { compose } from './tools/orchestrator-tools';
 import { listCapabilities } from './tools/report-tools';
-import { browserNavigate, browserClick, browserScreenshot, browserAssert } from './tools/browser-tools';
 import { queryDataSovereigntyReport } from './tools/data-sovereignty-report';
 import { createEntity } from './tools/create-entity';
 import { createConcept } from './tools/create-concept';
@@ -188,59 +187,6 @@ export const TOOLS: ToolDef[] = [
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: (args) => costQuery({ ...(args.maxTokensPerRun !== undefined ? { budget: { maxTokensPerRun: args.maxTokensPerRun as number, ...(args.maxCostPerDay !== undefined ? { maxCostPerDay: args.maxCostPerDay as number } : {}) } } : {}) }),
-  },
-  {
-    // v1.4.0（十）：Agentic Browser——Playwright 驱动的浏览器 4 工具（v1.3.9 交付实现，本版注册 MCP 面）
-    name: 'playwright_navigate',
-    roles: ['browser'],
-    description: '浏览器导航——打开 URL 并返回页面标题/状态码。Playwright 不可用时降级。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        url: { type: 'string', description: '目标 URL' },
-      },
-    },
-    // v1.4.8 条目 5 首批迁移：查表分发
-    handler: (args, _ctx?) => browserNavigate(args.url as string),
-  },
-  {
-    name: 'playwright_click',
-    roles: ['browser'],
-    description: '浏览器点击——按 CSS 选择器点击元素。Playwright 不可用时降级。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        selector: { type: 'string', description: 'CSS 选择器' },
-      },
-    },
-    // v1.4.8 条目 5 首批迁移：查表分发
-    handler: (args, _ctx?) => browserClick(args.selector as string),
-  },
-  {
-    name: 'playwright_screenshot',
-    roles: ['browser'],
-    description: '浏览器截图——截取当前页面，返回图片路径与字节数。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', description: '截图文件名（可选）' },
-      },
-    },
-    // v1.4.8 条目 5 首批迁移：查表分发
-    handler: (args, _ctx?) => browserScreenshot(args.name as string | undefined),
-  },
-  {
-    name: 'playwright_assert',
-    roles: ['browser'],
-    description: '浏览器断言——对页面执行断言（文本/元素存在性），返回 passed 与详情。',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        condition: { type: 'string', description: '断言条件（如元素可见/文本存在）' },
-      },
-    },
-    // v1.4.8 条目 5 迁移：查表分发
-    handler: (args) => browserAssert(args.condition as string),
   },
   {
     name: 'run_audit',

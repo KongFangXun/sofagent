@@ -73,7 +73,7 @@ describe('filterToolsByRoles 清单过滤', () => {
   it('全量模式 → 返回原清单', () => {
     const filtered = filterToolsByRoles(TOOLS, null);
     // v1.4.7 G14+G2+章八+G13+G4+章十三：84→95；v1.4.9 G9：95→97（device_register/device_list 设备注册面落位）；v1.4.9 G10/G11：97→99（device_data_query/device_data_push 数据面落位）；v1.4.9 G5b/G1：99→103（connector_register/connector_list + workflow_export/workflow_import 注册与模板面落位）；v1.5.0 章八 trace_reconcile：103→105；v1.5.2 章一/章二：105→107（audit_query/ruleset_export 审计对外面落位）
-    expect(filtered).toHaveLength(107);
+    expect(filtered).toHaveLength(103);
   });
 
   it('显式 fde+audit+agent 三面 → 只暴露这三面（不含 browser/ops/commons 独占工具）', () => {
@@ -82,7 +82,6 @@ describe('filterToolsByRoles 清单过滤', () => {
     expect(filtered.length).toBeLessThan(82);
     const names = filtered.map((t) => t.name);
     // 独占面工具应被隐藏
-    expect(names).not.toContain('playwright_navigate');
     expect(names).not.toContain('model_register');
     expect(names).not.toContain('commons_publish');
     expect(names).not.toContain('run_ab_test');
@@ -98,7 +97,6 @@ describe('filterToolsByRoles 清单过滤', () => {
     expect(names).toContain('run_ab_test');
     expect(names).toContain('define_acceptance');
     expect(names).not.toContain('run_audit');
-    expect(names).not.toContain('playwright_navigate');
   });
 
   it('未打 roles 的工具（动态工具）在任意角色集下都保留', () => {

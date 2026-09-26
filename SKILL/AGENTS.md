@@ -32,13 +32,13 @@
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 | DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用；**一次装全套**用裸名 `skillhub install cordis-plugin-sofagent`） |
-| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 107 tools |
+| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 103 tools |
 
 ---
 
 ## DSH 插件家族（7 款 cordis-plugin）
 
-> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 107 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
+> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 103 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
 | 插件 | 职责（桥接实况） | seam |
 |------|----------------|------|
@@ -100,7 +100,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 ---
 
-## MCP 全量工具表（107 tools · 13 类）
+## MCP 全量工具表（103 tools · 12 类）
 
 > 与 `engine/mcp/src/tool-registry.ts` 一一对应（check-docs 第 12 节门禁校验双向差集为空）。主入口 `SKILL.md` 只列每类代表工具，本表为全量。🔴 = 破坏性操作（强制人审/confirmed）。
 
@@ -262,15 +262,6 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `workflow_import` | 模板导入（G1）：三闸校验 + 血缘回流 + 本体合并（本地优先） |
 | `router_session_push` | router 过站 session 承接（T7）：exporter schema 校验（fail-closed）→ 多轮展开切窗/角色映射 → 脱敏本地落盘（幂等）→ usage 入 cost 台账 → key 维度 HMAC 挂链 |
 | `trace_reconcile` | 跨层证据对账——DSH session trace（Agent 自述）vs git diff（独立事实）vs logs 声明集三源比对，产出漏报/幻觉动作/瞒报四态差异清单 + 一致率；可选模型层回溯链（推理 → 模型版本 → train_job → datasetHash）。结果入 decision-log（kind=COVERAGE） |
-
-### 浏览器（4）
-
-| 工具 | 说明 |
-|------|------|
-| `playwright_navigate` | 打开 URL 返回标题/状态码（不可用时降级） |
-| `playwright_click` | 按 CSS 选择器点击 |
-| `playwright_screenshot` | 截图返回图片路径与字节数 |
-| `playwright_assert` | 页面断言（文本/元素存在性） |
 
 ---
 

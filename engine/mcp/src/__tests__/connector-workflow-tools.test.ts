@@ -296,7 +296,7 @@ describe('registry 接线（铁律 9）', () => {
     expect(names).toContain('connector_list');
     expect(names).toContain('workflow_export');
     expect(names).toContain('workflow_import');
-    expect(TOOLS.length).toBe(107);
+    expect(TOOLS.length).toBe(103);
   });
 });
 

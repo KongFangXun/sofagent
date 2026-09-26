@@ -10,7 +10,7 @@
 // ============================================================
 
 /** 全部角色面（7 面） */
-export const ROLES = ['audit', 'fde', 'eval', 'agent', 'ops', 'commons', 'browser'] as const;
+export const ROLES = ['audit', 'fde', 'eval', 'agent', 'ops', 'commons'] as const;
 export type Role = (typeof ROLES)[number];
 
 /** 环境变量名——逗号分隔角色列表；未配置 / all / * / 空 = 全量暴露 */

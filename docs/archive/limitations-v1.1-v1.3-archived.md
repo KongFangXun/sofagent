@@ -1,6 +1,6 @@
 # LIMITATIONS §九§十 · 已退役归档（2026-09-26）
 
-> 来源：docs/LIMITATIONS.md §九「v1.1.7-v1.1.9 新功能局限」与 §十「FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）」，退役裁定见当期文档退役检查（考古/已消解内容退出活文档）。FDE 激活链现役指南：../guides/fde-activation-chain.md。
+> 来源：docs/LIMITATIONS.md §九「v1.1.7-v1.1.9 新功能局限」与 §十「FDE 交付物激活断裂带（v1.2.5-v1.3.0 已解决）」，退役裁定见当期文档退役检查（考古/已消解内容退出活文档）。FDE 激活链现役指南：[docs/guides/fde-activation-chain.md](../guides/fde-activation-chain.md)。
 
 ## 九、v1.1.7-v1.1.9 新功能局限
 
@@ -62,7 +62,7 @@ FDE §7 交付（静态文件就绪）
 | EXECUTE | v1.2.8-v1.2.9 | dag-runner 企业 Agent + HITL + 审计集成 |
 | SUSTAIN | v1.3.0 | 全闭环验证 + wrapToolCall 联动 |
 
-> 详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+> 详见 [激活链设计文档](../guides/fde-activation-chain.md)。
 
 ### 当前状态
 

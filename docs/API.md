@@ -2,16 +2,16 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 107 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面，批 5 新增 router_session_push 过站 session 承接面，v1.5.2 章一/章二 新增 audit_query/ruleset_export 审计对外两面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
+> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 103 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面，批 5 新增 router_session_push 过站 session 承接面，v1.5.2 章一/章二 新增 audit_query/ruleset_export 审计对外两面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
-> 版本：v1.5.2（✅ 已发版 · 2026-09-24）· 107 tools / 7 面（**107 = v1.4.9 的 104 + v1.5.0 新增 `trace_reconcile` + v1.5.2 新增 `audit_query`/`ruleset_export`**，状态见 [ROADMAP](./ROADMAP.md)；第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push，v1.5.2 章一/章二 新增 audit_query/ruleset_export）
+> 版本：v1.5.2（✅ 已发版 · 2026-09-24）· 103 tools / 7 面（**103 = v1.4.9 的 104 + v1.5.0 新增 `trace_reconcile` + v1.5.2 新增 `audit_query`/`ruleset_export`**，状态见 [ROADMAP](./ROADMAP.md)；第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push，v1.5.2 章一/章二 新增 audit_query/ruleset_export；2026-09-26 浏览器四件套退役 -4）
 
 ---
 
 ## 目录
 
 - [一、七大接口面](#一七大接口面)
-- [二、MCP 工具清单（107 · 按产品能力域分组）](#二mcp-工具清单107--按产品能力域分组)
+- [二、MCP 工具清单（103 · 按产品能力域分组）](#二mcp-工具清单103--按产品能力域分组)
 - [三、防漂移机制](#三防漂移机制)
 - [四、变更日志](#四变更日志)
 
@@ -33,9 +33,9 @@
 
 ---
 
-## 二、MCP 工具清单（107 · 按产品能力域分组）
+## 二、MCP 工具清单（103 · 按产品能力域分组）
 
-> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）归审计域——主叙事是 UI 层审计取证（v1.5.7 UI 审计的执行底座）。
+> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器取证四件套（playwright_*）已于 2026-09-26 注销（v2.0.0 §七 B 表裁定退役，UI 审计实做窗口已关）。
 
 ### FDE 进场 · 六引擎（访谈 → 分类 → 量化 → 推导 → 沉淀 → 部署）（7）
 
@@ -49,14 +49,10 @@
 | `fde_distill` | fde | FDE 三层交付物生成（引擎五）——跑通过程沉淀：文档层手册（人读：现状/六步/验收/回滚）+ Skill 层模板（Agent 可执行）+ 运行层 yaml 片段（引擎六组装用），归档 deliverables/ 带 README 索引。 |
 | `fde_deploy` | fde | FDE workflow 组装部署（引擎六）——三层交付物 → deployments/<name>.yml（与 fde_compose 同格式）；只产出工件不代激活——激活走 workflow_submit + activate_workflow（人审闸门保留）。 |
 
-### 审计与合规（代码 / 轨迹 / 数据审计 · 浏览器取证 · 语料导出）（14）
+### 审计与合规（代码 / 轨迹 / 数据审计 · 浏览器取证 · 语料导出）（10）
 
 | tool | roles | 说明 |
 |---|---|---|
-| `playwright_navigate` | browser | 浏览器导航——打开 URL 并返回页面标题/状态码。Playwright 不可用时降级。 |
-| `playwright_click` | browser | 浏览器点击——按 CSS 选择器点击元素。Playwright 不可用时降级。 |
-| `playwright_screenshot` | browser | 浏览器截图——截取当前页面，返回图片路径与字节数。 |
-| `playwright_assert` | browser | 浏览器断言——对页面执行断言（文本/元素存在性），返回 passed 与详情。 |
 | `run_audit` | audit | 对 git diff 运行全量审计（25 条规则），返回结构化审计报告。 |
 | `audit_file` | audit | 单文件变更即时审计——Agent 编辑文件时调用，跑单文件适用规则，返回结构化结果（不阻断）。 |
 | `audit_data_change` | audit | 对知识库结构化数据变更跑数据审计（D1-D5）。 |
@@ -172,7 +168,7 @@
 |---|---|---|
 | `commons_publish` | commons | 能力发布——将 Skill/Agent/流程发布到企业能力公地（SkillScan 安全门）。 |
 | `commons_search` | commons | 能力检索——按标签/关键词/类型检索能力公地。 |
-| `commons_invoke` | commons | 能力调用——发现能力后挂载调用（SkillScan 拦截 + HITL 确认）。 |
+| `commons_invoke` | commons | 能力调用（dry-run 预检）——返回能力元数据与调用计划，不真实执行（SkillScan 拦截 + HITL 确认；真实执行由 Agent runtime 注入 executor）。 |
 | `commons_rate` | commons | 能力评价——调用后累积评分（0.0~1.0），防刷。 |
 | `commons_retire` | commons | 能力退役/恢复——标记退役（不删除，可恢复），强制 owner 确认。 |
 | `commons_harvest_rule` | commons | 从公地调用日志 + Refine 循环提炼质量规则候选。 |

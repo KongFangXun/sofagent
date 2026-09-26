@@ -54,8 +54,8 @@ describe('G14 四 tool registry 登记四段（tools/ 实现 + mcp-server 派发
     expect(serverSource).not.toContain(`case '${name}'`);
   });
 
-  it('工具数锚（v1.5.2 后 107——章一/章二 audit_query/ruleset_export 落位）', () => {
-    expect(TOOLS.length).toBe(107);
+  it('工具数锚（浏览器四件套退役后 103）', () => {
+    expect(TOOLS.length).toBe(103);
   });
 });
 

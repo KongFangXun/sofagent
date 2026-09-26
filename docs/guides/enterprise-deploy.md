@@ -203,7 +203,7 @@ done < hosts.txt
 
 ### 当前局限
 
-- 没有 org-level 自动推送机制，每个 repo 需独立 `--init`。企业版集中管控规划在 v2.x
+- 没有 org-level 自动推送机制，每个 repo 需独立 `--init`。集中管控当前无排期；缓解：系统级 git hook 模板批量下发（见下）
 
 ### 多项目数据隔离（v1.2.8）
 
@@ -288,7 +288,7 @@ sofagent 对 Windows 的支持是**实验性**的：
 - **现状**：sofagent 的用户身份基于本地 OS 用户（`~/.sofagent/data/` 目录权限 700），没有集中用户目录概念
 - **替代方案**：通过系统级 git hook 模板部署实现组织范围策略下发——将 `sofagent-audit --install-hook` 嵌入 git 模板目录（`git config --global init.templateDir`），新 clone 的仓库自动带 hook
 - **权限映射**：可通过组织级脚本控制哪些用户组有权修改 `~/.sofagent/config.yml`（文件 ACL：`chmod 640` + `chown :engineering`）
-- **路线图**：企业级 SSO/LDAP 集成规划在 v2.x，当前建议结合 OS 级权限 + git hook 模板实现等效控制
+- **路线图**：企业级 SSO/LDAP 集成当前无排期，当前建议结合 OS 级权限 + git hook 模板实现等效控制
 
 ## 审计日志对接
 

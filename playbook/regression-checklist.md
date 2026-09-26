@@ -1474,7 +1474,7 @@ tmp_all=$( { grep -cF "[0-9;]*m//g" tools/check/test-count.sh 2>/dev/null || tru
 ```bash
 (
 # ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径随 SSOT 动态对账，勿写死
-grep -q "107 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径107）" # 历史演进链 git log -p 可溯；锚词与 SKILL.md §MCP 工具速查同步升级
+grep -q "103 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径103）" # 历史演进链 git log -p 可溯；锚词与 SKILL.md §MCP 工具速查同步升级
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon；校准：grep -h 去前缀保排除生效）
 grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^[[:space:]]*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"

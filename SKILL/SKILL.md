@@ -41,7 +41,7 @@ solves:
 |------|--------|--------|
 | FDE Skill | 本 skill（方法论 + 约束注入） | ClawHub / SkillHub 分发，`bash install.sh` 装到本地 |
 | 企业底座 | 约束层全套（hooks + 数据 + MCP） | `bash install.sh`（企业设备） |
-| MCP Server | 107 tools 能力面（审计/审计查询与规则导出/本体/进化/训练/工作明细/PR 协同/设备注册/设备数据面/连接器/模板/session 承接） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
+| MCP Server | 103 tools 能力面（审计/审计查询与规则导出/本体/进化/训练/工作明细/PR 协同/设备注册/设备数据面/连接器/模板/session 承接） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
 | DSH 插件家族 | 7 款 cordis-plugin（6 款原子 + 1 款聚合整装） | `skillhub install cordis-plugin-sofagent-<名>`（整套用裸名 `cordis-plugin-sofagent`），详见 `AGENTS.md` |
 | CLI | `sofagent` 命令（审计 / 快照 / 部署 / dashboard） | `bash install.sh` 装到 `~/.sofagent/bin/` |
 | Dashboard | Web 驾驶舱（工作明细 / 图谱 / 健康） | `sofagent web` 起本地服务，读 `data/` 运行时数据 |
@@ -177,7 +177,7 @@ solves:
 
 ---
 
-## MCP 工具速查（107 tools · 13 类）
+## MCP 工具速查（103 tools · 12 类）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**MCP 协议面暴露规则与 `SOFAGENT_MCP_ROLES` 收窄说明见 `AGENTS.md`**。
 
@@ -195,6 +195,5 @@ solves:
 | 后训流水线（16） | `model_register` `model_switch`（灰度）`model_unregister`（模型退役）`train_submit` `train_budget`（超预算等人审）`train_doctor`（环境体检）`train_dryrun`（提交前预检）`train_report`（训练报告）`train_status`（进度查询）`train_list`（任务列表）`train_diagnose`（失败诊断）`corpus_export`（训练语料导出三件套）`train_serve`（推理服务启停）`train_compliance`（合规扫描闸门）`train_deliverable`（FDE 交付包）`train_cloud`（云 VM 执行面） |
 | 验收（2） | `define_acceptance` `check_acceptance` |
 | 运维观测（17） | `health_check` `snapshot_list` `snapshot_restore`（强制人审）`worklog_query` `cost_query` `daemon_status` `contribution_query` `device_register` `device_list`（G9 设备注册面）`device_data_query` `device_data_push`（G10/G11 设备数据面）`connector_register` `connector_list`（G5b 连接器注册面）`workflow_export` `workflow_import`（G1 模板导出导入+血缘）`router_session_push`（T7 过站 session 承接面）`trace_reconcile`（跨层证据对账：trace / diff / logs 三源四态 + 一致率） |
-| 浏览器（4） | `playwright_navigate` `playwright_screenshot` |
 
 > 📌 **后训流水线的能力边界**：本仓负责**编排与治理**——任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务；**训练本身在外部执行环境进行，本仓不实现训练器**。

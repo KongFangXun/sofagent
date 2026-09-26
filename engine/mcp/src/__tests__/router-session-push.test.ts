@@ -162,7 +162,7 @@ describe('router_session_push MCP tool（v1.4.9 T7）', () => {
     expect(t!.roles).toContain('ops');
     expect(t!.description).toContain('session 承接');
     expect(t!.inputSchema.required).toContain('raw');
-    // 全量计数锁（107 = v1.5.2 终值——v1.5.0 trace_reconcile 105 + v1.5.2 audit_query/ruleset_export 107）
-    expect(TOOLS.length).toBe(107);
+    // 全量计数锁（103 = 2026-09-26 终值——v1.5.2 终值 107，浏览器四件套退役 -4）
+    expect(TOOLS.length).toBe(103);
   });
 });
