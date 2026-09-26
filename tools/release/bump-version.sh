@@ -461,11 +461,14 @@ if [[ -d "$SH_DIR" ]] || [[ -f "$FDE_SH" ]]; then
     # 额外：替换文件头注释中的版本号格式
     # 格式 1: （vX.Y.Z）全角括号
     # 格式 2: · vX.Y.Z 中圆点（daemon 脚本等用此格式）
+    # 🔴 锚定「行首 # 注释 + 版本号在行尾」——正文里的历史沿革引用（如
+    #    「易失源目录检测（v1.5.2）」「安装包边界（v1.5.2）：」）不得抬号：那描述的是
+    #    功能引入版本，非当前版本锚。此前无锚点全局替换会把它们改成当前版（历史误伤）。
     sh_new=$(echo "$sh_new" | sed \
-      -e "s/（v${OLD_3SEG}）/（v${NEW_3SEG}）/g" \
-      -e "s/（v${OLD_2SEG}）/（v${NEW_2SEG}）/g" \
-      -e "s/· v${OLD_3SEG}/· v${NEW_3SEG}/g" \
-      -e "s/· v${OLD_2SEG}\([^0-9.]\)/· v${NEW_2SEG}\1/g")
+      -e "s/^# \(.*\)（v${OLD_3SEG}）$/\1（v${NEW_3SEG}）/" \
+      -e "s/^# \(.*\)（v${OLD_2SEG}）$/\1（v${NEW_2SEG}）/" \
+      -e "s/^# \(.*\)· v${OLD_3SEG}$/\1· v${NEW_3SEG}/" \
+      -e "s/^# \(.*\)· v${OLD_2SEG}$/\1· v${NEW_2SEG}/")
     if [[ "$sh_new" != "$sh_content" ]]; then
       if [[ $sh_count -eq 0 ]]; then
         echo -e "  ${GREEN}✓${NC} VERSION=\"$OLD_2SEG\" → VERSION=\"$NEW_2SEG\""
@@ -521,6 +524,9 @@ while IFS= read -r md; do
   md_content=$(cat "$md")
   # 用 sed 管道一次处理，全部从文件读取，避免 heredoc 和 Unicode 编码问题
   # 先匹配 3 段格式（> v0.99.3 ·），再匹配 2 段格式（> v0.99 ·）
+  # 🔴 末尾四条锚定「行首 H1（# + 空格）或 HTML 注释」的标题行——MD 正文里的历史
+  #    沿革引用（如「verify/ 独立验签器（第三方举证面 · v1.5.2 章二）」）不得抬号，
+  #    那描述的是功能引入版本，非当前版本锚。此前无锚点全局替换会误伤正文（历史事故）。
   md_new=$(sed \
     -e "s/^> v${OLD_3SEG} · /> v${NEW_3SEG} · /g" \
     -e "s/^> v${OLD_2SEG} · /> v${NEW_2SEG} · /g" \
@@ -530,8 +536,10 @@ while IFS= read -r md; do
     -e "s/^> > v${OLD_2SEG} · /> > v${NEW_2SEG} · /g" \
     -e "s/^> > v${OLD_3SEG}·/> > v${NEW_3SEG}·/g" \
     -e "s/^> > v${OLD_2SEG}·/> > v${NEW_2SEG}·/g" \
-    -e "s/· v${OLD_3SEG}/· v${NEW_3SEG}/g" \
-    -e "s/· v${OLD_2SEG}/· v${NEW_2SEG}/g" \
+    -e "s/^# \(.*\)· v${OLD_3SEG}/\1· v${NEW_3SEG}/" \
+    -e "s/^# \(.*\)· v${OLD_2SEG}/\1· v${NEW_2SEG}/" \
+    -e "s/^<!-- \(.*\)· v${OLD_3SEG}/\1· v${NEW_3SEG}/" \
+    -e "s/^<!-- \(.*\)· v${OLD_2SEG}/\1· v${NEW_2SEG}/" \
     "$md")
   # ROADMAP「现在在哪」节标题单独处理
   md_new=$(echo "$md_new" | sed \
@@ -661,9 +669,9 @@ while IFS= read -r skill; do
   # frontmatter 3 段格式: version: 0.94.0（需正则锚点，无法用 bash 原生替换）
   # shellcheck disable=SC2001
   skill_new=$(sed "s/^version: $OLD_3SEG$/version: $NEW_3SEG/g" <<< "$skill_new")
-  # 正文标题: # SKILL.md · v0.94（需全局替换含 · 前缀）
+  # 正文标题: # SKILL.md · v0.94（锚定行首 H1，防正文历史引用误伤）
   # shellcheck disable=SC2001
-  skill_new=$(sed "s/· v$OLD_2SEG/· v$NEW_2SEG/g" <<< "$skill_new")
+  skill_new=$(sed "s/^# \(.*\)· v$OLD_2SEG/\1· v$NEW_2SEG/" <<< "$skill_new")
   if [[ "$skill_new" != "$skill_content" ]]; then
     echo -e "  ${GREEN}✓${NC} version/frontmatter: $OLD_2SEG → $NEW_2SEG"
     echo -e "    ${CYAN}$skill${NC}"
