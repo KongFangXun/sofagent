@@ -24,7 +24,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.3: Audit · Unified Rule Engine & Self-Test](#v153-audit--unified-rule-engine--self-test--pending-release)
+- [v1.5.3: Audit · Unified Rule Engine & Self-Test](#v153-audit--unified-rule-engine--self-test--released--2026-09-26)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -58,7 +58,7 @@
 
 </details>
 
-> **Version note**: v1.5.3 is developed and pending release (npm/tag/package.json sync at release time); the latest installable npm version is v1.5.2.
+> **Version note**: v1.5.3 has been released (2026-09-26); the latest installable npm version is `@sofagent/audit@1.5.3`.
 
 ## Should you install it?
 
@@ -150,7 +150,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.3: Audit · Unified Rule Engine & Self-Test (⏳ Pending release)
+## v1.5.3: Audit · Unified Rule Engine & Self-Test (✅ Released · 2026-09-26)
 
 🔍 **Converge the rule engine first, then give the rules a self-test** — three things at once:
 
