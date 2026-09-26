@@ -20,6 +20,8 @@
 #   ⑦ 旧包弃用承诺对账（registry 侧 · **只提示不阻断**）：版本达承诺到期门槛起，
 #      @sofagent/skillopt 须已在 registry 上带 deprecated（**逐版本**核查，不只 latest
 #      ——deprecate 可作用于区间）。门槛是**一次性常量**（承诺到期版本），不随版浮动。
+#      三种终态各自对账：已下架（`npm view version` 报 E404，或 `--json` 返 `{}` 空 packument）
+#      → ✓；版本在册但 deprecated 覆盖不全 → ⚠️ 欠账（只提示）。
 #      目的：把「跨版弃用承诺」变成可机械对账的一条，防「devlog 勾了 [x] 而 registry 从未执行」。
 #
 # 降级语义：gh / npm 不可达（离线/无凭证）→ SKIP 并显著提示，
@@ -184,15 +186,28 @@ elif [ "$SKO_GATE" != "due" ]; then
   SKIPS=$((SKIPS + 1))
 else
   SKO_PACK=$(npm view @sofagent/skillopt --json --prefer-online 2>/dev/null)
-  if [ -z "$SKO_PACK" ]; then
-    # 区分「registry 不可达」与「包已下架（E404 = 终态）」：下架即弃用承诺的最终形态
-    if npm view @sofagent/skillopt version 2>&1 | grep -q "E404"; then
-      ASSERTS=$((ASSERTS + 1))
-      echo "  ✓ [旧包弃用] @sofagent/skillopt 已从 registry 下架（E404 = 弃用+下架终态，v1.5.3 收口）"
-    else
+  # 🔴 下架终态的两种响应形态都要认（实锤修正）：包被 unpublish 后
+  #    ① `npm view <pkg> version` 报 E404（CLI 层）；② `npm view <pkg> --json` **返回 `{}`**
+  #    ——空对象**非空串**，`[ -z ]` 拦不住，旧逻辑会带着 versions=0 落到下方逐版本对账、
+  #    误报「0 个版本均未带 deprecated = 承诺欠账」（v1.5.3 收口后实跑命中）。
+  #    故先解 versions 键数：无 versions 键 / 键数 0 = packument 空壳 = 下架终态，
+  #    与 E404 同判（下架是弃用承诺的最终形态，不是欠账）。
+  SKO_VERN=""
+  if [ -n "$SKO_PACK" ]; then
+    SKO_VERN=$(printf '%s' "$SKO_PACK" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(Object.keys(JSON.parse(d).versions||{}).length)}catch{console.log('ERR')}})")
+  fi
+  if [ -z "$SKO_PACK" ] || [ "$SKO_VERN" = "0" ]; then
+    # 区分「registry 不可达」与「包已下架（E404 / 空 packument = 终态）」：下架即弃用承诺的最终形态
+    if [ -z "$SKO_PACK" ] && ! npm view @sofagent/skillopt version 2>&1 | grep -q "E404"; then
       echo "  ⏭️  [旧包弃用] registry 不可达（离线/限流）——npm 渠道本轮未对账，发布前补跑"
       SKIPS=$((SKIPS + 1))
+    else
+      ASSERTS=$((ASSERTS + 1))
+      echo "  ✓ [旧包弃用] @sofagent/skillopt 已从 registry 下架（E404 / 空 packument = 弃用+下架终态，v1.5.3 收口）"
     fi
+  elif [ "$SKO_VERN" = "ERR" ]; then
+    echo "  ⏭️  [旧包弃用] registry 响应解析失败——跳过本断言"
+    SKIPS=$((SKIPS + 1))
   else
     SKO_RES=$(printf '%s' "$SKO_PACK" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const vs=Object.values(JSON.parse(d).versions||{});console.log(vs.filter(v=>v&&v.deprecated).length+'/'+vs.length)}catch{console.log('ERR')}})")
     if [ -z "$SKO_RES" ] || [ "$SKO_RES" = "ERR" ]; then
