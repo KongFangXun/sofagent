@@ -33,15 +33,7 @@ const agent = createReactAgent({ llm: model, tools, prompt: systemPrompt });
 
 ## 二、为什么选 LangGraph（弃用 deepagents）
 
-deepagents 早期启发了编排模块设计，后因三个**不可逆硬伤**弃用，改用 LangGraph `createReactAgent`（同一套 React 模式，但节点/边全暴露，白盒可控）：
-
-| 硬伤 | 说明 |
-|------|------|
-| FilesystemMiddleware 硬编码注入 | 源码强制注入文件中间件，`middleware:[]` 语义是「追加到链尾」不是「替换」，无法禁用 |
-| wrapToolCall 并行调用崩溃 | 并行工具调用触发 `Cannot read properties of undefined`，偶发崩溃 = 根因未解 |
-| REQUIRED_MIDDLEWARE_NAMES 白名单 | 源码禁止排除内置中间件，想修也改不了 |
-
-**适用边界**：deepagents 适合快速原型 / 串行工具调用 / 标准文件操作；FORGE loop 需要进程隔离、并行双盲审查、自定义工具集、按步 recursionLimit、审计可追溯——这些需求下 deepagents 的黑盒成了枷锁。
+deepagents 早期启发了编排模块设计，后因三个**不可逆硬伤**弃用（强制中间件注入无法禁用 / 并行工具调用崩溃根因未解 / 内置中间件白名单不可排除）——逐条踩坑实录见 [FORGE/lessons/index.md](../../FORGE/lessons/index.md)，此处只留选型结论。**适用边界**：deepagents 适合快速原型 / 串行工具调用 / 标准文件操作；FORGE loop 需要进程隔离、并行双盲审查、自定义工具集、按步 recursionLimit、审计可追溯——这些需求下 deepagents 的黑盒成了枷锁。
 
 ---
 

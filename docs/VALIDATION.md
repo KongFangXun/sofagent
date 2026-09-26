@@ -259,7 +259,7 @@ codex-rs 深处有个此前未研究过的 [guardian/](https://github.com/openai
 
 它治理的是「数据流水线」（从噪声源生成 / 精炼 / 评估 / 过滤高质量 AI 数据），与 sofagent 治理「企业 AI 数字员工（装进 Agent 的 FDE Harness）工作流」对象不同，但**约束范式同源**：Agent 经 MCP server 作业而非自由写脚本、受控变异走 Request-Validate-Commit、用 DataFlow-Skills 结构化约束而非裸提示词——每一条都独立复现了 sofagent 的 scoped tool-gate / SKILL 约束层 / audit 判断。
 
-其**独特点**是可借鉴方向：① **可视化 DAG 画布 + 双模态共享状态**（会话 Agent 与 DAG 画布实时同步同一 pipeline 表示）——补 sofagent Dashboard 缺的「workflow 可视图」，建议 v2.x 引入；② **MCP server 集成**（暴露算子注册表 / serving / pipeline 状态给 Agent）——印证「对外 MCP 暴露 ontology/audit」是合理路线，建议 v2.x+；③ **Validation Engine（DAG 无环 + schema 兼容）**——印证 ontology 从目录级升级为带 JSON Schema 校验的约束图，建议 v2.x 硬化节点 I/O。以上可借鉴项已落入 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
+其**独特点**是可借鉴方向：① **可视化 DAG 画布 + 双模态共享状态**（会话 Agent 与 DAG 画布实时同步同一 pipeline 表示）——补 sofagent Dashboard 缺的「workflow 可视图」；② **MCP server 集成**（暴露算子注册表 / serving / pipeline 状态给 Agent）——印证「对外 MCP 暴露 ontology/audit」是合理路线；③ **Validation Engine（DAG 无环 + schema 兼容）**——印证 ontology 从目录级升级为带 JSON Schema 校验的约束图。以上可借鉴项已落入 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
 
 **给我们的背书**：① Harness 品类被顶尖高校用真金白银验证（同月三家，含高校）；② 「约束 Agent 经受控接口、不自由写脚本」是跨团队共识；③ 我们的差异化仍在——DataFlow 只校验 pipeline 结构与 schema，**不审计 Agent 行为问责（无 append-only A1-A24）**，也无 7×24 常驻 FDE Harness 层与「控制平面治理」定位。
 

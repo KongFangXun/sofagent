@@ -241,10 +241,9 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 #### 两条执行路径与降级链
 
-编排模块有两条执行路径，新代码应优先走 StateGraph：
+编排模块主执行路径是 LangGraph StateGraph（历史上的 deepagents 路径已随 v1.5.0 迁移退役，`composeWithDeepAgents()` 别名同期移除）：
 
-- **路径二（主推，v1.1.3+）**：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`——LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。源码 `engine/orchestrator/src/loop/`（state / nodes / graph）。
-- **路径一（兼容保留，v1.0.6+）**：`composeWithDeepAgents()`——v1.2.0 前基于 deepagents，现已迁移至 LangGraph `createReactAgent`，把任务拆为 YAML 工作流 DAG，**无 checkpoint、无 HITL**。源码 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`。
+- **主路径（v1.1.3+）**：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`——LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。源码 `engine/orchestrator/src/loop/`（state / nodes / graph）。
 
 StateGraph 的 engineer / reviewer 节点优先走「工具注入路径」（LangGraph `createReactAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。
 
