@@ -1,7 +1,7 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 85 维 · 编号 1-145 · 59 个编号已归并删除（#9 已并入 #18 · v1.5.3 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 85 维 · 编号 1-145 · 59 个编号已归并删除（#9 已并入 #18 · 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -353,7 +353,7 @@ grep -c "isExempt" $F18 # 豁免规则
 grep "\"WARN\"" $F18 # 只产生 WARN
 grep "A18" engine/audit/src/rules/runner.ts # extended 优先级 A18 排在 A17 之后
 ```
-# [归并自维度9 · v1.5.3 阶段四] 代码侧规则注册一致性（文档侧声称已由 check-version §13b 机器化接管）
+# [归并自维度9 · 阶段四] 代码侧规则注册一致性（文档侧声称已由 check-version §13b 机器化接管）
 SSOT_TOTAL=$(grep -cE "name:[[:space:]]*'[AE][0-9]+" engine/audit/src/rules/index.ts) # A+E 全口径（25）
 grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l # 期望 50（字段完整性：name+ruleClass × 25）
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 25
@@ -1929,9 +1929,9 @@ _p=$(printf '共 23 条规则\n不是第 25 条规则\n不是第 25、26、27 �
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 145. v1.5.3 判定底座三件——规则自测 schema / AuditScope / 判决成对门禁
+#### 145. 判定底座三件——规则自测 schema / AuditScope / 判决成对门禁
 
-> [归并记录] 本维度为 v1.5.3 阶段四新增（A2/A8/A9 吸收）；新增 1 维 + 归并 1 维（维度 9 → 18），净增本块行数由维度 9 释放对销（归并配额 1:1 满足）。
+> [归并记录] 本维度为阶段四新增（A2/A8/A9 吸收）；新增 1 维 + 归并 1 维（维度 9 → 18），净增本块行数由维度 9 释放对销（归并配额 1:1 满足）。
 
 ```bash
 # 子项 a: 加载期自测 schema 通电性（A2）——坏样例拒载，锚串被删也拒载（防「断言在场恒不触发」）
