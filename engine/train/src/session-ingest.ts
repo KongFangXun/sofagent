@@ -1,4 +1,4 @@
-// session-ingest.ts · v1.5.2 T7 第七章 · router 过站 session → IngestRecord（多轮展开）
+// session-ingest.ts · v1.5.3 T7 第七章 · router 过站 session → IngestRecord（多轮展开）
 //
 // 定位：router 伴生 exporter 推送的标准 schema session，引擎侧校验 +
 // 展开为 IngestRecord 中间格式（多轮 messages 一行一 turn 对——衔接

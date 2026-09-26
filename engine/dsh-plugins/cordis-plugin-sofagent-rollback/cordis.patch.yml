@@ -1,4 +1,4 @@
-# sofagent cordis-plugin-sofagent-rollback bundle patch v1.5.2——注册为 DSH profile layer
+# sofagent cordis-plugin-sofagent-rollback bundle patch v1.5.3——注册为 DSH profile layer
 - insert:
     - id: sofagent-rollback
       name: 'cordis-plugin-sofagent-rollback'

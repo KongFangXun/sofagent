@@ -1,6 +1,6 @@
-// rl-templates.ts · v1.5.2 边界收缩 · RL 配方装载面（参考配方 + 外部装载 + ScaleRL 对齐参数）
+// rl-templates.ts · v1.5.3 边界收缩 · RL 配方装载面（参考配方 + 外部装载 + ScaleRL 对齐参数）
 //
-// 定位：模板库的 RL 算法维度——阶段 2 主路线是 RL（v1.5.2 已提 GRPO 大
+// 定位：模板库的 RL 算法维度——阶段 2 主路线是 RL（v1.5.3 已提 GRPO 大
 // 采样组），模板库缺 RL 模板 = 主路线裸奔。三组配方：
 //   - grpo：组相对策略优化（Group Relative Policy Optimization）——
 //     无 value model，同 prompt 组内 reward 归一化做 advantage

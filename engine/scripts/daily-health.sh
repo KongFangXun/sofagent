@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# sofagent daily-health.sh · 每日健康巡检独立脚本 · v1.5.2
+# sofagent daily-health.sh · 每日健康巡检独立脚本 · v1.5.3
 # ============================================================
 # OS 原生 cron 承接的每日巡检（原 TS daemon scheduler 内 tick 的
 # daily-health 任务改为本脚本）——不依赖任何常驻进程，cron 直接拉起。
@@ -10,7 +10,7 @@
 
 set -euo pipefail
 # shellcheck disable=SC2034  # VERSION 供版本追踪用，不直接引用
-VERSION="1.5.2"
+VERSION="1.5.3"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

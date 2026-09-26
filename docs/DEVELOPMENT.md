@@ -4,7 +4,7 @@
 
 > 给开发者的内部机制文档——本文讲 sofagent 内部怎么跑：Skill 结构、编排模块、反思闭环、数据架构。普通用户看 [Handbook](./HANDBOOK.md)，设计决策看 [Architecture](./ARCHITECTURE.md)；sofagent 是一层 FDE Harness（嵌在成熟 Agent 与模型层之间），底层引擎的内部实现在这里展开。
 >
-> v1.5.2 · 2026-09-24（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
 
 > 💡 **行业背景**：sofagent 是一套 FDE 能力——装进成熟 Agent（DSH / OpenClaw / WorkBuddy）后，进场把业务判断写成文件（梳理工作流、构建本体数据、部署 AI 节点），离场后按文件 7×24 执行与审计。底层（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层五种能力（注入·审计·回溯·沉淀·进化），生命周期 = 五阶段（诊断→激活→编排→执行→进化；激活链四阶段 = 后四环 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 

@@ -1,6 +1,6 @@
 // quantify-core.ts · 量化四字段计算器（GUIDE §4.3）
 // ============================================================
-// v1.5.2 第 7 批（训练模块拆包）· 从 train/train-report.ts 原样搬出。
+// v1.5.3 第 7 批（训练模块拆包）· 从 train/train-report.ts 原样搬出。
 //
 // 搬出理由：该计算器是 **FDE 侧 ROI 公式**（消费方为 fde-quantify /
 // fde-workbench），与训练模块无任何逻辑耦合——它此前被放在 train/ 下，

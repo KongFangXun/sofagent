@@ -1,5 +1,5 @@
 // ============================================================
-// sensitivity-classifier.ts · v1.5.2 T8 · 敏感度实时分类器（三档 + routeReason）
+// sensitivity-classifier.ts · v1.5.3 T8 · 敏感度实时分类器（三档 + routeReason）
 // ============================================================
 //
 // 文本 → 档位（公开 public / 内部 internal / 敏感 sensitive）——

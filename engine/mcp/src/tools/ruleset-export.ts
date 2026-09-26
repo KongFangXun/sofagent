@@ -1,5 +1,5 @@
 // ============================================================
-// ruleset-export.ts · v1.5.2 章二 · MCP tool: ruleset_export
+// ruleset-export.ts · v1.5.3 章二 · MCP tool: ruleset_export
 //
 // 约束导出通道的 MCP 面（章二「规则面」——ruleset 可导出为标准 JSON）。
 // 与 v1.2.9 `--ruleset-path` 加载格式同构：导出格式即加载格式，双向可逆

@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/ontology",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "engines": {
     "node": ">=18"
   },
@@ -26,7 +26,7 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/core": "1.5.2",
+    "@sofagent/core": "1.5.3",
     "js-yaml": "^5.4.2"
   },
   "exports": {

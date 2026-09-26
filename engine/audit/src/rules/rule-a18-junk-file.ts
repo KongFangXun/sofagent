@@ -3,7 +3,7 @@
 // 检测临时文件名模式的垃圾文件——如 a.txt / test1.js / new-name.txt
 // evidenceMode: git-diff
 // v1.3.7 新增 · v1.2.0 审查修正（不区分 status，modified 也告警）
-// v1.5.2 修复（P0-02 · S51）: 豁免基线由「当前 git 索引（git ls-files）」收窄
+// v1.5.3 修复（P0-02 · S51）: 豁免基线由「当前 git 索引（git ls-files）」收窄
 // 为「HEAD 提交树（git ls-tree HEAD）」——正规仓库里 a.txt 可能是长期维护的
 // 真实文件（如依赖清单片段、约定俗成命名），仅当其已存在于 HEAD 基线时豁免
 // WARN；本次新 `git add` 混入、尚未进入 HEAD 的垃圾文件必须告警，避免索引

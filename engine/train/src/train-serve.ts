@@ -1,6 +1,6 @@
-// train-serve.ts · v1.5.2 第一章 · 训练推理服务生命周期（train serve）
+// train-serve.ts · v1.5.3 第一章 · 训练推理服务生命周期（train serve）
 //
-// 定位：v1.5.2 只到「部署（model_register / model_switch）」——权重注册了
+// 定位：v1.5.3 只到「部署（model_register / model_switch）」——权重注册了
 // 但没人拉起推理服务，是「注册了但没跑起来」的死文件。本模块补上部署后
 // 的最后一环：从权重目录拉起 vLLM / Ollama / OpenAI 兼容端点。
 //

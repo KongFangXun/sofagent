@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// v1.5.2 阶段七：运行期崩溃兜底——引擎异常时用专属退出码 4（区别于 0=全绿/1=警告/2=违规），
+// v1.5.3 阶段七：运行期崩溃兜底——引擎异常时用专属退出码 4（区别于 0=全绿/1=警告/2=违规），
 // 使 hook 的「非 0/1/2 ⇒ fail-loud 阻断」分支能识别崩溃，避免 fail-open 静默放行。
-// v1.5.2 P1-15：**3 → 4**。原用 3 与 cli-quick 的「非 git 仓库 ⇒ exit 3」撞码（实测两义并存），
+// v1.5.3 P1-15：**3 → 4**。原用 3 与 cli-quick 的「非 git 仓库 ⇒ exit 3」撞码（实测两义并存），
 // 独立为 4 后「引擎崩溃」与「用错目录」可由退出码单义区分。
 // ⚠️ 与 cli-quick.ts 顶部的同名处理块**手同步**——漂移由
 // `src/__tests__/cli-crash-exit-code.test.ts` 双侧行为锁兜住，不靠注释自律。
@@ -18,7 +18,7 @@ process.on('unhandledRejection', (reason) => {
 
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.5.2 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.5.3 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
 //          evolve-run→evolve, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
@@ -38,7 +38,7 @@ process.on('unhandledRejection', (reason) => {
 //   0 = 全通过
 //   1 = 有警告
 //   2 = 有违规（A1 不碰敏感 / A2 不泄密钥）
-//   4 = 引擎崩溃（v1.5.2 P1-15 起为专属码；完整引擎自身不使用 3）
+//   4 = 引擎崩溃（v1.5.3 P1-15 起为专属码；完整引擎自身不使用 3）
 //   （3 = 非 git 仓库，仅 cli-quick 口径；完整引擎在非 git 仓库下由各子命令自行处理）
 // ============================================================
 
@@ -55,7 +55,7 @@ import { VERSION } from '@sofagent/core';
 import { BASELINE_RULE_KEYS } from '@sofagent/core';
 import { checkConflict, mergeFederationResults } from '@sofagent/core';
 import { verifyEvidence } from '@sofagent/core';
-// v1.5.2 扩展三：并发 Git 纪律守卫（orchestrator/daemon 执行侧消费）
+// v1.5.3 扩展三：并发 Git 纪律守卫（orchestrator/daemon 执行侧消费）
 export { checkPathspecDiscipline, detectForeignStaged, snapshotForTurn, verifyNoConcurrentWrite } from './concurrent-git-discipline';
 import { generateOntologyView } from '@sofagent/ontology';
 import { resolveDiffEndpoint } from './diff-ref';
@@ -69,14 +69,14 @@ import { ensureGitignore } from './commands/init';
 export { GB48000_CLAUSE_MAP, assessGb48000Coverage, buildGb48000RuleCheck } from './gb48000';
 export type { Gb48000ClauseMapping, Gb48000Status, Gb48000Coverage } from './gb48000';
 import { loadHistory, appendHistory, sanitizeFreeText, type AuditHistoryEntry } from './audit-history';
-// v1.5.2 T1/T4: hook 安装核心抽取——core.hooksPath 尊重 + 用户 hook 链式保留
+// v1.5.3 T1/T4: hook 安装核心抽取——core.hooksPath 尊重 + 用户 hook 链式保留
 import { resolveHooksDir, installHooks } from './hook-install';
-// v1.5.2 T8: sanitizePatterns 编译复用 ReDoS 双层防护（静态检测 + 运行时对抗测试）
+// v1.5.3 T8: sanitizePatterns 编译复用 ReDoS 双层防护（静态检测 + 运行时对抗测试）
 import { compileSanitizePattern } from './ruleset-loader';
 // v1.5.3 第二章：--ruleset-path / --ruleset 加载入口的样例断言（fail-closed 拒载）
 import { validateRulesetExamples } from './rule-loader';
 // Re-export for external consumers —— doctor 等外部调用方需要通过
-// v1.5.2: checkHistoryChainIntegrity 已移除（退役公告见 CHANGELOG 索引）——
+// v1.5.3: checkHistoryChainIntegrity 已移除（退役公告见 CHANGELOG 索引）——
 // require('@sofagent/audit') 请改用 checkHistoryChainDetailed（audit-history re-export）。
 
 // Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.2.9）
@@ -175,7 +175,7 @@ function buildBeforeAfterSummary(diffFiles: DiffFile[]): { before?: string; afte
     if (before.length >= BEFORE_AFTER_MAX_ITEMS && after.length >= BEFORE_AFTER_MAX_ITEMS) break;
   }
   if (before.length === 0 && after.length === 0) return undefined;
-  // v1.5.2 T2: 落盘前过 sanitizeFreeText（REDACTION_PATTERNS 管道）——
+  // v1.5.3 T2: 落盘前过 sanitizeFreeText（REDACTION_PATTERNS 管道）——
   // beforeAfter 从 diff 行原文提取，密钥可混入；audit-history.ts 的
   // baseSanitized 只覆盖 ruleResults/commitMsg/task，actionGovernance.beforeAfter
   // 不在其内（嵌套对象未被展开脱敏）——必须在构建侧就打码，否则 diff 里的
@@ -227,15 +227,15 @@ interface Args {
   conflictCheckCommand?: boolean;
   /** v1.2.5 P2: federation-distill 子命令 */
   federationDistillCommand?: boolean;
-  /** v1.5.2: agent-shield 子命令（AgentShield 五类配置面扫描） */
+  /** v1.5.3: agent-shield 子命令（AgentShield 五类配置面扫描） */
   agentShieldCommand?: boolean;
   /** corpus 子命令：训练语料导出三件套 */
   corpusCommand?: boolean;
   /** v1.2.9: support-bundle 子命令 */
   supportBundle: boolean;
-  /** v1.5.2: 审计 session 产物（默认开启，--no-session 关闭） */
+  /** v1.5.3: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
-  /** v1.5.2: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
+  /** v1.5.3: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
   commitMsgArg?: string;
   /** v1.2.9 (⑧-3): --format github 输出为 GitHub Annotations 格式 */
   format?: string;
@@ -245,15 +245,15 @@ interface Args {
   rulesetPath?: string;
   /** v1.2.9 (⑧-2): --list-rulesets 列出可用规则集 */
   listRulesets?: boolean;
-  /** v1.5.2 #15: --warn-as-error 让 WARN 返回 exit 2（安全优先，CI 阻断） */
+  /** v1.5.3 #15: --warn-as-error 让 WARN 返回 exit 2（安全优先，CI 阻断） */
   warnAsError: boolean;
-  /** v1.5.2 #15: --warn-as-info 让 WARN 返回 exit 0（CI 不阻断，仅信息性） */
+  /** v1.5.3 #15: --warn-as-info 让 WARN 返回 exit 0（CI 不阻断，仅信息性） */
   warnAsInfo: boolean;
 }
 
 
 /**
- * 顶层子命令白名单（v1.5.2 补 agent-shield）。
+ * 顶层子命令白名单（v1.5.3 补 agent-shield）。
  * 位置参数必须是其中之一；否则按「未知子命令」报错。
  */
 // v1.4.9 深模块条目 8：子命令单源（cli/flag-table.ts）
@@ -288,10 +288,10 @@ function parseArgs(argv: string[]): Args {
       // v1.4.9 交付 2：国标对齐维度（opt-in——信息条目，不影响 exitCode）
       args.gb48000 = true;
     } else if (argv[i] === '--warn-as-error') {
-      // v1.5.2 #15: WARN 视为 error（exit 2），CI 阻断。安全优先。
+      // v1.5.3 #15: WARN 视为 error（exit 2），CI 阻断。安全优先。
       args.warnAsError = true;
     } else if (argv[i] === '--warn-as-info') {
-      // v1.5.2 #15: WARN 视为 info（exit 0），CI 不阻断。仅信息性输出。
+      // v1.5.3 #15: WARN 视为 info（exit 0），CI 不阻断。仅信息性输出。
       args.warnAsInfo = true;
     } else if (argv[i] === '--yes') {
       // F-48：--revoke-key 的确认跳过（CI / 脚本态）——不可逆操作默认交互确认
@@ -359,12 +359,12 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--no-session') {
       args.noSession = true;
     } else if (argv[i] === '--no-daemon') {
-      // v1.5.2 #48: --no-daemon flag——跳过 daemon 注册（init 流程使用）。
+      // v1.5.3 #48: --no-daemon flag——跳过 daemon 注册（init 流程使用）。
       // init.ts 通过 process.argv.includes('--no-daemon') 消费，
       // 此处仅注册为已知 flag，避免 parseArgs 误报「不支持的参数」。
       // 值由 init 流程直接从 process.argv 读取，不存入 args。
     } else if (argv[i] === '--verify-evidence') {
-      // v1.5.2 F2: 断链接线——daemon.sh:172 自 v0.82 起调用本参数，但 CLI 从未
+      // v1.5.3 F2: 断链接线——daemon.sh:172 自 v0.82 起调用本参数，但 CLI 从未
       // 注册（2>/dev/null 吞错 → last_evidence_score 恒 unverified）。
       // verifyEvidence 函数在 @sofagent/core 在册（@public），此处补 CLI 出口。
       // 可选跟随一个日志文件路径参数（缺省扫 data/task/logs/<月>/<日>.md）。
@@ -399,7 +399,7 @@ function parseArgs(argv: string[]): Args {
       args.federationDistillCommand = true;
       break;
     } else if (argv[i] === 'agent-shield') {
-      // v1.5.2: agent-shield 子命令
+      // v1.5.3: agent-shield 子命令
       args.agentShieldCommand = true;
       break;
     } else if (argv[i] === 'corpus') {
@@ -502,11 +502,11 @@ function parseArgs(argv: string[]): Args {
  *
  * v1.3.9 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
  * 老用户 `sofagent-audit --install-hook` 升级时不再 miss post-commit（--no-verify 绕过的唯一防线）。
- * v1.5.2 H-01: 补装 pre-commit（.sofagent/ 永不入库主防线——staged 清理在
+ * v1.5.3 H-01: 补装 pre-commit（.sofagent/ 永不入库主防线——staged 清理在
  * commit 对象生成前生效，规避 macOS git 内存 index 快照时序问题）。
  */
 function installHook(): void {
-  // v1.5.2 T1: hook 落点改经 resolveHooksDir（core.hooksPath 优先，缺省 .git/hooks）。
+  // v1.5.3 T1: hook 落点改经 resolveHooksDir（core.hooksPath 优先，缺省 .git/hooks）。
   // 此前硬编码 $gitDir/hooks——repo 配置 core.hooksPath=.githooks 时装到 .git/hooks，
   // git 根本不会执行（等于没装），且 --doctor 按 hooksPath 找不到还误报未安装。
   const resolution = resolveHooksDir(process.cwd());
@@ -673,7 +673,7 @@ function printTimeline(limit: number, json: boolean): void {
   }
 }
 
-// 同步加载 snapshot 模块（v1.5.2 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
+// 同步加载 snapshot 模块（v1.5.3 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
 function awaitLoadSnapshot(): typeof import('@sofagent/core') {
   try {
     return require('@sofagent/core');
@@ -798,7 +798,7 @@ async function main(): Promise<void> {
   // runDoctor，本就是完整诊断，无需再引导到别的命令）
   // v1.3.9：--reset-baseline 自动路由到 doctor（不带 --doctor 也不报未知参数——
   // rebuild dist 后一键重置基准哈希，bugfix #18 执行遗留）
-  // v1.5.2 G-01：--baseline 作为 --reset-baseline 的显式别名——语义都是「计算当前
+  // v1.5.3 G-01：--baseline 作为 --reset-baseline 的显式别名——语义都是「计算当前
   // dist SHA-256 写入 audit-hash.txt 建立基线」（信任锚 = 首次人工执行时刻）
   const wantsBaseline = rawArgs.includes('--reset-baseline') || rawArgs.includes('--baseline');
   // v1.5.3 章四：--refresh 自动路由到 doctor（不带 --doctor 也不报未知参数）——
@@ -821,7 +821,7 @@ async function main(): Promise<void> {
       const report = core.runDoctor(process.cwd(), {
         resetBaseline: wantsBaseline,
       });
-      // v1.5.2 (F-23): doctor 仅在 error 时返回非零，warning 时返回 0——
+      // v1.5.3 (F-23): doctor 仅在 error 时返回非零，warning 时返回 0——
       // 对 cron/CI 脚本友好（仅警告不应被解释为失败）。人类如需 warning 也失败，用 --doctor --strict。
       if (rawArgs.includes('--strict')) {
         exit(report.allOk ? 0 : report.failCount > 0 ? 2 : 1);
@@ -962,7 +962,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // v1.5.2：agent-shield 子命令（AgentShield 五类配置面扫描 CLI）
+  // v1.5.3：agent-shield 子命令（AgentShield 五类配置面扫描 CLI）
   if (args.agentShieldCommand) {
     const { runAgentShieldCli, parseAgentShieldArgs } = await import('./cli/agent-shield');
     const cliArgs = parseAgentShieldArgs(rawArgs);
@@ -1279,7 +1279,7 @@ async function main(): Promise<void> {
         // 记录失败不影响核心审计流程
       }
 
-      // v1.5.2 章四：授权/白名单配置变更 → 既有结论失效标记（append-only）。
+      // v1.5.3 章四：授权/白名单配置变更 → 既有结论失效标记（append-only）。
       //   规则被关闭 = 授权面变更——此前以被关规则为依据的审计结论不再可信，
       //   追加 kind=INVALIDATION 条目宣告其失效（原文不改写、HMAC 链不破坏）。
       //   fail-safe：标记失败绝不影响审计主流程；无可失效目标时不写（不产空标记）。
@@ -1315,14 +1315,14 @@ async function main(): Promise<void> {
   }
 
   // 5. 运行规则
-  // v1.5.2 T5: 改经 runRulesMonitored——审计模块超时自动降级（full→rules-only→minimal），
+  // v1.5.3 T5: 改经 runRulesMonitored——审计模块超时自动降级（full→rules-only→minimal），
   // 降级事实写审计日志（FALLBACK_DEGRADE）并在规则列表注入 DEGRADATION_NOTICE WARN
   const { runRulesMonitored } = await import('./rules/runner');
   // v1.5.3 第七章收口：本次审计范围语义（AuditScope）在 CLI 侧经唯一工厂构造一次并注入——
   //   既供规则取输入（替换 runner 内的隐式构造），又供下方审计留痕消费 `actor` / `actorSource`
   //   （消除本文件此前**重复的** git 作者解析链——第二处 actor 取数口）。
   const auditScope = createAuditScope({ diffRange: args.diffRange, commitMsg: commitMsg || undefined, task: args.task });
-  // v1.5.2 A-8：args.ci 传入规则上下文——二进制夹带类「请人工确认」发现在 CI 场景升 FAIL
+  // v1.5.3 A-8：args.ci 传入规则上下文——二进制夹带类「请人工确认」发现在 CI 场景升 FAIL
   const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000, undefined, args.ci, args.diffRange, auditScope);
 
   // v1.2.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
@@ -1418,7 +1418,7 @@ async function main(): Promise<void> {
     const costBudget = config.cost?.budget;
     if (costBudget && (costBudget.maxTokensPerRun || costBudget.maxCostPerDay)) {
       try {
-        // v1.5.2 G-05: 数据目录解析收编进 data-paths SSOT getDataDir()（与 getHistoryFilePath
+        // v1.5.3 G-05: 数据目录解析收编进 data-paths SSOT getDataDir()（与 getHistoryFilePath
         // 同链：SOFAGENT_DATA > SOFAGENT_HOME/data，消灭 homedir 硬编码回退）
         const { getDataDir } = require('@sofagent/core') as typeof import('@sofagent/core');
         const costDataDir = getDataDir();
@@ -1469,7 +1469,7 @@ async function main(): Promise<void> {
   }
 
   // 7. webhook 推送（fire-and-forget，配置了 webhook 时 PASS/WARN/FAIL 三态都推送）
-  // v1.5.2: 优先 CLI --webhook/--webhook-url，回退 config.yml audit.webhook.{platform,url}，
+  // v1.5.3: 优先 CLI --webhook/--webhook-url，回退 config.yml audit.webhook.{platform,url}，
   //         再回退环境变量 SOFAGENT_WEBHOOK_URL（已在 parseArgs 初始化 webhookUrl）。
   //         修复场景：commit-msg hook 不传 CLI webhook 参数，用户在 config.yml 配了 webhook 也不生效。
   const webhookPlatform = args.webhook || config.webhook?.platform;
@@ -1477,7 +1477,7 @@ async function main(): Promise<void> {
   if (webhookPlatform && webhookUrlFinal) {
     try {
       // v1.2.9 编译自定义脱敏正则
-      // v1.5.2 T8: 编译复用 ruleset-loader 的 compileSanitizePattern（含
+      // v1.5.3 T8: 编译复用 ruleset-loader 的 compileSanitizePattern（含
       // detectReDoSPattern 静态检测 + 100ms 运行时对抗测试）——此前直接
       // new RegExp(p.pattern)，config.yml 塞入 (a+)+ 类邪恶 pattern 可让
       // 每次 webhook 推送的正则替换挂死审计进程（审计工具被配置反杀）。
@@ -1539,12 +1539,12 @@ async function main(): Promise<void> {
       commitSha = undefined;
     }
 
-    // v1.5.2 F-16: 对账键加内容指纹——记**本次提交**的 tree SHA。
+    // v1.5.3 F-16: 对账键加内容指纹——记**本次提交**的 tree SHA。
     // post-commit 对账在 parentSha + subject 命中后叠加 HEAD^{tree} 比对：
     // soft-reset 换料（同 message 不同内容）后 treeSha 必变，假绿回声消失。
     // 非 hook 场景（手动 --diff）也记（对账侧按需消费，向后兼容旧记录）。
     //
-    // v1.5.2 P0-1（B 方案）：hook 场景（--commit-msg 由 hook 传入）下 commit 对象
+    // v1.5.3 P0-1（B 方案）：hook 场景（--commit-msg 由 hook 传入）下 commit 对象
     // **尚未生成**，此刻 HEAD 已是父提交 ⇒ `git rev-parse HEAD^{tree}` 记的是**父提交
     // 的 tree**；而读侧 post-commit:57 运行时 HEAD 已是新提交 ⇒ `HEAD^{tree}` = 新提交
     // tree ⇒ 三重键第三重恒不等 ⇒ 干净提交也永远落「未确认审计记录」分支（回声永不出现，
@@ -1594,7 +1594,7 @@ async function main(): Promise<void> {
       // v1.2.9 pre-commit 阶段记录父提交 SHA（= 审计时 HEAD），
       // --verify-commit / post-commit 对账按此 fallback 匹配。旧记录无此字段。
       parentSha,
-      // v1.5.2 F-16: 内容指纹（HEAD^{tree}）——post-commit 对账三重键之一
+      // v1.5.3 F-16: 内容指纹（HEAD^{tree}）——post-commit 对账三重键之一
       treeSha,
       commitPhase: isPreCommitPhase ? 'pre-commit' : undefined,
       engine: `sofagent-audit v${VERSION}`,
@@ -1638,7 +1638,7 @@ async function main(): Promise<void> {
 
   // 审计通过（PASS）后自动创建 shadow repo 快照，供 --timeline/--revert 使用
   // 设计原则：只有 PASS 才快照（WARN/FAIL 不快照，符合「审计通过后自动快照」契约）
-  // v1.5.2：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
+  // v1.5.3：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
   // 拦截后也存 snapshot——拦截记录比通过记录更有审计价值（--timeline 应可见被拦截的变更）
   if (isInGitRepo()) {
     try {
@@ -1656,7 +1656,7 @@ async function main(): Promise<void> {
   // 其内部经 @sofagent/core 的 appendThinkEntry 契约写入，保证 append-only 不变量。
   // audit 包不直接写 think.md（避免反向依赖 think 生成器）。
 
-  // v1.5.2 #15: WARN 退出码可配——默认 WARN→exit 1（安全优先）。
+  // v1.5.3 #15: WARN 退出码可配——默认 WARN→exit 1（安全优先）。
   // --warn-as-error: WARN→exit 2（CI 阻断，要求零警告）
   // --warn-as-info: WARN→exit 0（CI 不阻断，仅信息性）
   // 两者互斥时 --warn-as-error 优先（安全优先）。仅影响 WARN（exit 1）场景，不改 FAIL（exit 2）。
@@ -1756,7 +1756,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   if (ci || silent) {
     // 产品签名（text 人类可读输出头部；--json 已在上方提前 return，绝不加签名）
     console.log(productSignature(results.exitCode, results.rules.length, defaultRules.length + extendedRules.length));
-    // ★ v1.5.2: 无条件向 stdout 输出一行结论（session 可见性核心）
+    // ★ v1.5.3: 无条件向 stdout 输出一行结论（session 可见性核心）
     const c = results.exitCode;
     const failN = results.rules.filter((r) => r.status === 'FAIL').length;
     const warnN = results.rules.filter((r) => r.status === 'WARN').length;
@@ -1833,7 +1833,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log(bannerBottom());
 
   // 违规/警告详情
-  // v1.5.2 C8+L10：SKIPPED 从逐条详情面**移出**。
+  // v1.5.3 C8+L10：SKIPPED 从逐条详情面**移出**。
   //   改前 `status !== 'PASS'` 把 SKIPPED 一并纳入，9 条被跳过的规则各打一行
   //   「⚠️ ... critical 层 N 条规则命中 FAIL，跳过后续层规则」——把「一次 fail-fast
   //   决策」渲染成 9 条黄色告警（真实违规 3 条却看起来像 3 红 + 9 黄），且
@@ -1859,7 +1859,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
     }
   }
 
-  // fail-fast 汇总（v1.5.2 L10）：**只在这一次**说明被跳过的规则，逐条行不再重复。
+  // fail-fast 汇总（v1.5.3 L10）：**只在这一次**说明被跳过的规则，逐条行不再重复。
   // 规则清单直接取自 SKIPPED 结果的规则码（`id` 优先，插件/规则集条目回退 ruleCode）。
   if (skippedRules.length > 0) {
     const codes = skippedRules.map((r) => r.id ?? ruleCode(r.number, r.name));
@@ -1930,7 +1930,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log('');
 }
 
-// v1.5.2: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
+// v1.5.3: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
 if (require.main === module) {
   main().catch((err) => {
     console.error('sofagent-audit 内部错误:', err.message);

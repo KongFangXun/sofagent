@@ -1,5 +1,5 @@
 // ============================================================
-// invalidation.ts · 审计结论失效语义（v1.5.2 章四 · Codex Guardian 启发）
+// invalidation.ts · 审计结论失效语义（v1.5.3 章四 · Codex Guardian 启发）
 //
 // 问题：审计结论（decision-log 条目）一经产生即被当作永久有效——下游
 // 消费方（fresh-eyes 审查输入 / HITL 免检依据 / 治理 KPI 统计）无法判断

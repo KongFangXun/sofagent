@@ -2,7 +2,7 @@
   "id": "sofagent-rollback",
   "name": "sofagent 回溯",
   "description": "给 OpenClaw 加上快照回溯——出错时用 sofagent_rollback 按 git 快照一键回滚本次改动",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "seam": "non-seam:tool-set",
   "seamSemantics": "非宿主事件接入（tool 集 + CLI 命令）——快照 / 回滚按需调用",
   "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/docs/assets/sofagent.png",

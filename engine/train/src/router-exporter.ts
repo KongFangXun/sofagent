@@ -1,4 +1,4 @@
-// router-exporter.ts · v1.5.2 T7 第七章 · 伴生 exporter 参考实现（router 侧部署）
+// router-exporter.ts · v1.5.3 T7 第七章 · 伴生 exporter 参考实现（router 侧部署）
 //
 // 定位：router 基于开源项目自建（非第三方托管），引擎不自研 router 本体——
 // 本文件是引擎交付的**伴生 exporter 组件**（开源进仓，router 侧部署）：

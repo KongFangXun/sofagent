@@ -1,6 +1,6 @@
 // ============================================================
 // ontology/types.ts · Ontology 统一层类型定义
-// v1.5.2 从 sofagent/audit/src/ontology/types.ts 迁出
+// v1.5.3 从 sofagent/audit/src/ontology/types.ts 迁出
 // ============================================================
 
 /**

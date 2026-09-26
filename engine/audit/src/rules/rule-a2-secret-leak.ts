@@ -1,12 +1,12 @@
 // ============================================================
 // A2 不泄密钥（安全层 · 业务底线）
 // 检测 diff 新增行内容是否含密钥字符串 → 命中任意一条 → FAIL
-// v1.5.2：输出聚合——同文件同模式多次命中时限量显示，避免超大 diff 输出爆炸
+// v1.5.3：输出聚合——同文件同模式多次命中时限量显示，避免超大 diff 输出爆炸
 // v1.3.7 补编码绕过检测——新增行尝试 base64/hex 解码后再跑正则，
 //   命中则报警（此前 `printf 'AKIA...' | base64 > encoded.txt` 即可绕过）。
 //   另补 .gitattributes -diff 绕过检测——把文件标记为 -diff 会让 git diff
 //   不输出内容行，A2 扫不到任何新增行（静默全绿），检测到该模式时 FAIL（v1.3.8 P1-A2 升级）。
-// v1.5.2 fresh-eyes（finding-13）：内容扫描盲区处置可配置——config.A2.blindSpotAction:
+// v1.5.3 fresh-eyes（finding-13）：内容扫描盲区处置可配置——config.A2.blindSpotAction:
 //   "warn"（默认，保持兼容：-diff 恒 FAIL、二进制本地 WARN/CI FAIL）
 //   "fail"（本地模式的二进制盲区也按 FAIL 阻断）。
 //   默认 warn 的理由：含 NUL 字节的二进制文件（图片/资源产物）极常见，默认 FAIL

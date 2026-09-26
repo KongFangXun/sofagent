@@ -1,9 +1,9 @@
 // ============================================================
-// sample-aggregator.ts · v1.5.2 第一章 · 五源 + 轨迹聚合 + 脱敏 + 标签
-// v1.5.2 T7 · 五源 → 六源（workflow-artifact 工作产物采集）
+// sample-aggregator.ts · v1.5.3 第一章 · 五源 + 轨迹聚合 + 脱敏 + 标签
+// v1.5.3 T7 · 五源 → 六源（workflow-artifact 工作产物采集）
 //
 // 训练语料第三件（最值钱的部分）——带标签审计样本聚合导出。
-// 六源落点（changelog 表下注 B，2026-09-01 实测；v1.5.2 T7 增第六源）：
+// 六源落点（changelog 表下注 B，2026-09-01 实测；v1.5.3 T7 增第六源）：
 //   1. decision-log   data/audit/decision-log.jsonl（audit 包）
 //   2. llm-calls      data/audit/runtime/llm-calls.jsonl（core 包 llm-call-trace.ts 落盘，异名注意）
 //   3. evaluation-log data/<project>/benchmarks/<id>/evaluation-log.jsonl（orchestrator 包）

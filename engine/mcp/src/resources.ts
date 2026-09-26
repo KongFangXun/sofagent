@@ -1,6 +1,6 @@
 // ============================================================
 // resources.ts · MCP resources handlers (list + read)
-// v1.5.2: 从 mcp-server.ts 提取
+// v1.5.3: 从 mcp-server.ts 提取
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';

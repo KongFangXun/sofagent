@@ -1,6 +1,6 @@
 {
   "name": "sofagent-evolve",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "private": true,
   "description": "经验沉淀——think.md 反思条目生成 + 反思区注入（Dream Cycle + evolve 数据源）",
   "main": "dist/index.js",

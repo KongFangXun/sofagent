@@ -1,8 +1,8 @@
-// cordis-plugin-sofagent-audit · DSH 反向插件（v1.5.2 P2 合并批：吸收原 -gate 验收门禁面）
+// cordis-plugin-sofagent-audit · DSH 反向插件（v1.5.3 P2 合并批：吸收原 -gate 验收门禁面）
 // seam 挂载：tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping
 // # 语义：工具结果留证 + 工具执行前拦截 + 文件写入意图拦截（放行） + Turn 停止验收判定
 //   （判定源 = checkDangerousCommand / check_acceptance——引擎包既有 @public，零改动）
-// v1.5.2 第七章：`tools/pre-execute` / `tools/result` 两个 seamHandler 追加**调用意图留痕**
+// v1.5.3 第七章：`tools/pre-execute` / `tools/result` 两个 seamHandler 追加**调用意图留痕**
 //   （@sofagent/audit.createIntentChannel → <dataDir>/audit/intent.jsonl），审计输入面由此
 //   从 git diff 单通道扩为双通道。该面**零执行权限**：只读消费宿主事件 + 落盘，不参与判定、
 //   不碰 next、无 deny/allow 语义（拦截能力仍归上述判定源与宿主事件位，本插件未新增）。

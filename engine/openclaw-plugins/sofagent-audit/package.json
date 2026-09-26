@@ -1,6 +1,6 @@
 {
   "name": "sofagent-audit",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "private": true,
   "description": "给 OpenClaw 加上审计——工具调用前拦停危险操作（工具名黑名单 + 命令级检查），另提供 sofagent_audit 工具跑 25 条 git diff 硬证据规则",
   "main": "dist/index.js",
@@ -33,7 +33,7 @@
   ],
   "//optionalDependencies": "命令级拦截复用引擎判据 @sofagent/orchestrator.checkDangerousCommand（懒加载 require + 缺依赖降级为工具名黑名单，不阻断会话）。",
   "optionalDependencies": {
-    "@sofagent/orchestrator": "1.5.2"
+    "@sofagent/orchestrator": "1.5.3"
   },
   "license": "MIT",
   "author": "KongFangXun",

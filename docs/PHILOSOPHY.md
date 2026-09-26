@@ -3,7 +3,7 @@
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > **本文档是 sofagent 最核心的一份「为什么」。** 读完你能回答：sofagent 是什么、怎么用、怎么跑、怎么管、怎么记、怎么装、怎么进化、以及不做什么——对应下文各章。
-> v1.5.2 · 2026-09-24（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
 
 ## 目录
 

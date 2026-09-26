@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # bootstrap.sh · sofagent 一行安装入口（装在企业跑 AI 节点的设备上）
-# 窗口态纪律：钉值维持上一已发版 tag 值（与 INSTALL_URL 同 tag 自洽），CHANGELOG ⏳ 待发版标注 + checklist 维度 130 窗口态分支消红；哈希在阶段九打 tag 时回填。install.sh 行数随版本演进，此处不自述（行数数字永远会漂，删除优于维护）。
-# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.2/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
+# 钉值纪律：钉值始终指向已发布 tag（与 INSTALL_URL 同 tag 自洽）——发版窗口期维持上一已发版 tag 值 + 哈希待阶段九打 tag 回填，发版后即指向本版 tag。install.sh 行数随版本演进，此处不自述（行数数字永远会漂，删除优于维护）。
+# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.3/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
 # 离线：./bootstrap.sh --local /path/to/install.sh
 # 透传：curl ... | bash -s -- --base-only
 set -euo pipefail
 # ERR trap 品牌兜底：崩溃时用户看到产品信息而非裸 bash 报错（v1.3.2 P0-B1/P2-37）
 trap 'echo "❌ sofagent bootstrap 失败（exit $?）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"' ERR
-# v1.3.5 #31: 锁定已发布 tag（当前 refs/tags/v1.5.2）——main 浮动导致装到的版本不可复现；
+# v1.3.5 #31: 锁定已发布 tag（当前 refs/tags/v1.5.3）——main 浮动导致装到的版本不可复现；
 #   升级时改此 tag 与 README 安装段同步。
-INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.2/install.sh"
+INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.3/install.sh"
 # ════════════════════════════════════════════════════════════════════════
 # v1.4.3 P2-f（F-07）：下载完整性校验（curl | bash 信任模型加固）
 # install.sh 是将被 bash 直接执行的代码——下载通道（HTTPS 上的 raw.githubusercontent）
@@ -24,18 +24,19 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #      机器校验见 tools/check/check-version.sh 第 20 项（lib 哈希逐一对账）。
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
-INSTALL_SHA256="7f75b6657f615f01f95260b5a61c004a8a8c18b273728a4b163c373fc30b052f"  # v1.5.2 tag:install.sh
+INSTALL_SHA256="b3fc42c2e4c5c46eff490c0f6d8f1edae55b9b7bb900b386d38515d1eb3f0347"  # v1.5.3 tag:install.sh
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。
-LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.2/engine/scripts/lib"
+LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.3/engine/scripts/lib"
 LIB_FILES="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh daemon-lib.sh config.sh"
-# lib 文件 sha256（与 LIB_FILES 顺序一一对应；file-deploy.sh / daemon-register.sh
-# 为 v1.5.1 批次改动——b775e9dc 修复批后的版本头注释更新，其余 4 个沿用 v1.5.0 tag 起值）
+# lib 文件 sha256（与 LIB_FILES 顺序一一对应；file-deploy.sh / post-install.sh
+# 为 v1.5.3 批次改动——file-deploy.sh 交付物落点相关改动、post-install.sh 安装收尾改动，
+# 其余 4 个沿用既有 tag 起值）
 LIB_SHA256S="3e9e4c30c2c26b57601e3e39c003e722eb522fae690cdd74311e2ceff3740809
-5e3c370309c6831e1af0e4f3f38ff5ef3c2bfe84e786dfe3ad641b6499de361f
+d6560792bb88472e30ab12ed4d86614226c280501d7858b8683ebfc647919a42
 ac0e900fc904cec0b5530baf0ee64934591b7ff3b710b46a9f6f5d317b113461
-7bb42884f89bfd46b64567849088f096ba15299e8f585ee11d6aefb20aac24a1
+d41703698ef480d9166aee69a4fddd61338dd89e7956890dfd4d9d6c138bae3e
 bec93fd676d2524b11abfb44e1ffa4cb6dd536d13e3a05421aebee5c6bcf6fc2
 7d1744e7157d85ff492d1e53f41636f7f94e52f672193432a82af29f4250a29a"
 

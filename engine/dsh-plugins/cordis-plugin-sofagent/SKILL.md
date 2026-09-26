@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent
 slug: cordis-plugin-sofagent
-version: 1.5.2
+version: 1.5.3
 displayName: cordis-plugin-sofagent
 description: >
   一次挂载 sofagent 全套能力——6 项能力一次到位（注入 · 审计与验收 · 经验 · 回溯 · 巡检 · FDE 三域）（seam: non-seam:plugin-suite）——只编排不重实现——sofagent 约束层在 DSH（DeepSeek Harness）生态的插件形态。

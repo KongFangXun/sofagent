@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent-daemon
 slug: cordis-plugin-sofagent-daemon
-version: 1.5.2
+version: 1.5.3
 displayName: cordis-plugin-sofagent-daemon
 description: >
   7×24 巡检 + 健康监测 + webhook 推送（seam: non-seam:host-process）——桥接 @sofagent/daemon startCron——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。

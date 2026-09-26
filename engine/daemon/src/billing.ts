@@ -1,5 +1,5 @@
 // ============================================================
-// billing.ts · 账单周期聚合（G8 · v1.5.2）
+// billing.ts · 账单周期聚合（G8 · v1.5.3）
 //
 // 商业平台冷启动的数据源：每次 cron 执行进 worklog + cost——
 // 本模块把 data/dashboard/worklog.json（WorklogAggregator 落盘

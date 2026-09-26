@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/dsh-plugin-kit",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "engines": {
     "node": ">=18"
   },

@@ -1,13 +1,13 @@
 // ============================================================
 // audit-history.ts · audit history chain integrity (sunk to core)
 //
-// v1.5.2: Sunk from @sofagent/audit/audit-history.ts to eliminate
+// v1.5.3: Sunk from @sofagent/audit/audit-history.ts to eliminate
 // core's reverse dependency on audit (core → audit is forbidden;
 // core is the zero-upper-layer-dependency base package).
 //
 // Functions moved:
 //   getHistoryFilePath, getEnvFingerprint, getHmacKey,
-//   checkHistoryChainDetailed（布尔兼容版 checkHistoryChainIntegrity 已于 v1.5.2 退役）
+//   checkHistoryChainDetailed（布尔兼容版 checkHistoryChainIntegrity 已于 v1.5.3 退役）
 //
 // These functions depend only on node builtins + @sofagent/core,
 // so they live naturally in core.

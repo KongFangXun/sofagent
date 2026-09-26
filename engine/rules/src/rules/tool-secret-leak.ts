@@ -1,13 +1,12 @@
 // ============================================================
 // tool-secret-leak.ts · 移植 audit rule-a2（密钥泄漏检测）
-// v1.5.2：tool 视角——扫 args 字面量里的密钥模式
-// v1.5.2 SECRET_PATTERNS 抽到 @sofagent/core 共享——此前本文件用严格
+// v1.5.3：tool 视角——扫 args 字面量里的密钥模式
+// v1.5.3 SECRET_PATTERNS 抽到 @sofagent/core 共享——此前本文件用严格
 //   48 位 sk- 模式导致 32-47 位密钥被 ToolGate 放行（与 A2 漂移互补成洞）。
 // ============================================================
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';
 import { SECRET_PATTERNS, stripDataUris, ruleDefinition } from '@sofagent/core';
-
 /** 共用规则定义（@sofagent/core 单一事实源——与 audit A2 同一套定义） */
 const A2_DEF = ruleDefinition('A2')!;
 

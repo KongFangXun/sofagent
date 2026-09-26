@@ -1,6 +1,6 @@
 {
   "name": "sofagent-inject",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "private": true,
   "description": "给 OpenClaw 加上约束注入——每次构建提示词前带上企业铁律 / 反思 / 用户规则 / 知识库（四层加载链）",
   "main": "dist/index.js",

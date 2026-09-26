@@ -1,6 +1,6 @@
 {
   "name": "cordis-plugin-sofagent-inject",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "engines": {
     "node": ">=18"
   },
@@ -29,7 +29,7 @@
   },
   "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts 惰性 await import（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装；v1.4.9 P2 起厚插件多包 bridges 按序解析、部分可用即部分成功），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
   "optionalDependencies": {
-    "@sofagent/inject": "1.5.2"
+    "@sofagent/inject": "1.5.3"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
@@ -49,6 +49,6 @@
     "!dist/**/*.test.*"
   ],
   "dependencies": {
-    "@sofagent/dsh-plugin-kit": "1.5.2"
+    "@sofagent/dsh-plugin-kit": "1.5.3"
   }
 }

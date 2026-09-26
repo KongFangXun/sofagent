@@ -3,11 +3,10 @@
 // --verify-chain: 校验 HMAC hash chain 完整性 + 报告断链位置
 // --verify-commit <hash>: 检查某个 commit 是否有对应审计记录
 //
-// v1.5.2 章二扩展：--verify-chain 同批校验 decision 链（消费既有
+// v1.5.3 章二扩展：--verify-chain 同批校验 decision 链（消费既有
 // checkDecisionChainDetailed），消除「决策链 100% 带链字段写入但零消费校验」
 // 的通道缺口；双链退出码取最严（ok→0 / tampered→2 / unverifiable|insufficient→1）。
 // ============================================================
-
 import { existsSync } from 'fs';
 import { loadHistory, checkHistoryChainDetailed, getHistoryFilePath } from '../audit-history';
 import { checkDecisionChainDetailed } from '../decision-chain';

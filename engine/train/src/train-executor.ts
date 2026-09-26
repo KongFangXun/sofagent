@@ -1,9 +1,9 @@
-// train-executor.ts · v1.5.2 批次 D · 训练进程执行器（spawn / 事件流解析 / 信号控制的执行面收口）
+// train-executor.ts · v1.5.3 批次 D · 训练进程执行器（spawn / 事件流解析 / 信号控制的执行面收口）
 //
-// 定位：v1.5.2 边界收缩把「进程操作」从 scheduler（缰绳面）拆进 executor
+// 定位：v1.5.3 边界收缩把「进程操作」从 scheduler（缰绳面）拆进 executor
 // （执行面）。scheduler 只保留提交/事件归一/状态机/审计/GPU 回收——child_process
 // 的全部触碰（spawn 缺省实现、stdout 逐行解析、stderr 留痕、SignalController
-// 编排）收敛到本文件的 LocalSpawnExecutor。v1.5.2 章十一 TrainChannel 将实现
+// 编排）收敛到本文件的 LocalSpawnExecutor。v1.5.3 章十一 TrainChannel 将实现
 // TrainExecutor 接口的云端通道形态（ssh/托管 API），本实现保持默认本地执行器。
 //
 // 行为保真：搬迁自 train-scheduler.ts 原 launch/gracefulStopChild——逻辑原样

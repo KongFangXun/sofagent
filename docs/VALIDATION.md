@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.2 · 2026-09-24（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
 
 > **本文档从四个维度回答一个问题：行业有没有独立验证 sofagent 的直觉？**
 > - **§一 方法论**——行业研究怎么印证"约束层是刚需"（Harness 范式 / 确定性迁移 / Verifier 瓶颈 / 治理缺口代价）

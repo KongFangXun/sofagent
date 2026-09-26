@@ -1,5 +1,5 @@
 // ============================================================
-// proposer.ts · Skill Proposer 内化（v1.5.2 ⑩-2 · WikiSkill 四角色合拢）
+// proposer.ts · Skill Proposer 内化（v1.5.3 ⑩-2 · WikiSkill 四角色合拢）
 // ============================================================
 // DSH 执行提案 prompt：输入 = wiki 索引 + skill-impact 台账（含被拒提案
 // 与失败教训）+ failure-ledger 聚类，输出 = 原子化技能更新提案（带

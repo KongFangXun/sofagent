@@ -1,5 +1,5 @@
 // ============================================================
-// mandate-gate-mw.ts · v1.5.2 章七 · 事前授权补环（mandate）执行前拦截
+// mandate-gate-mw.ts · v1.5.3 章七 · 事前授权补环（mandate）执行前拦截
 // ============================================================
 //
 // 现有审计是**事后**环（变更 → git diff → 规则 → 留痕可举证）。本 middleware 补
@@ -7,7 +7,7 @@
 // 并挂链留痕（对齐本版第五章出口治理面的裁决留痕形态，不另立通道）。
 //
 // 与 should-run 判定链的衔接（复用章三骨架，不新建第二套）：
-//   本判定表达为 v1.5.2 第三章 should-run 骨架「人审 gate（human-gate）」一问的
+//   本判定表达为 v1.5.3 第三章 should-run 骨架「人审 gate（human-gate）」一问的
 //   自然扩展——授权是「谁批的 + 能碰什么 + 何时失效」的人审前置。判定直接跑
 //   `should-run.ts` 的 `shouldRun()`（固定顺序 SHOULD_RUN_ORDER、fail-fast），
 //   mandate 结论落在 `ShouldRunState.humanGate` 槽位；导出 `createMandateShouldRunGate`

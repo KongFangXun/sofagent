@@ -1,10 +1,10 @@
 // ============================================================
-// events/index.ts · 事件驱动执行触发 barrel export（v1.5.2 第一章）
+// events/index.ts · 事件驱动执行触发 barrel export（v1.5.3 第一章）
 // ============================================================
 
 export { EventBus } from './bus';
 export type { EventBusOptions, EventHandler, EventSubscriptionHandle, DeadLetterInput, PendingDispatch } from './bus';
-// v1.5.2 第三章：运行时 should-run 判定链（五问 + 派发前置挂起/自动恢复）
+// v1.5.3 第三章：运行时 should-run 判定链（五问 + 派发前置挂起/自动恢复）
 export { shouldRun, createShouldRunGate, createDefaultShouldRunGate, buildEnterpriseEventBusOptions, SHOULD_RUN_ORDER } from './should-run';
 export type {
   ShouldRunQuestion,
