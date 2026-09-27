@@ -107,8 +107,30 @@ grep -rlE '待发版' --include="*.md" docs/ \
   | grep -v "docs/changelog/" \
   | grep -v "docs/archive/" \
   | xargs sed -i '' 's/⏳ 定稿待发版——本批更新/✅ 已发版——本批更新/g; s/⏳ 定稿待发版（本批更新/✅ 已发版（本批更新/g; s/开发完成未发版/已发版/g; s/开发完成待发版/已发版/g' 2>/dev/null || true
-# 当前版本开发日志头「⏳ 待发版」→「✅ 已发版」（路径替换为当前版本 vX.Y/vX.Y.Z.md）
-sed -i '' 's/⏳ 待发版（tag\/npm 发版时同步）/✅ 已发版（YYYY-MM-DD）/g' "docs/changelog/vX.Y/vX.Y.Z.md"
+# 当前版本开发日志头状态翻转（路径替换为当前版本 vX.Y/vX.Y.Z.md）
+# 🔴 措辞变体必须逐个覆盖——死守单一形态会**静默漏翻**：sed 锚不匹配时不报错、直接无操作。
+#    实锤：某版 devlog 头写的是「✅ **已开发完成。**」与「> 状态：✅ 已开发完成 ·」，与下方
+#    旧的单一模式都不匹配 ⇒ sed 空转；而 check-version §26 的扫描面**明确排除
+#    docs/changelog/**（「活文档」定义不含 changelog）⇒ 没有机械兜底，漏翻一路留到下一轮
+#    巡检才被人工发现。故本段「多模式 sed + 翻转后断言」两件必须成对（少任一件即留缺口）。
+_DLOG="docs/changelog/vX.Y/vX.Y.Z.md"
+sed -i '' \
+  -e 's/⏳ 待发版（tag\/npm 发版时同步）/✅ 已发版（YYYY-MM-DD）/g' \
+  -e 's/✅ \*\*已开发完成。\*\*/✅ **已发版（YYYY-MM-DD）。**/g' \
+  -e 's/已开发完成待发版/已发版/g' \
+  -e 's/开发完成未发版/已发版/g' \
+  -e 's/✅ 已开发完成 ·/✅ 已发版（YYYY-MM-DD）·/g' \
+  "$_DLOG"
+# 翻转后断言（fail-closed，两道）：
+#   ① 头部区块必须出现带日期的「✅ **已发版（YYYY-MM-DD）」——零命中 = 该版措辞不在
+#      覆盖面内（漏翻），当场红并提示去补 sed 模式，而不是留到下一版巡检；
+#   ② 头部区块不得再出现「已开发完成」——命中 = 翻了一半或模式未覆盖全。
+if ! head -12 "$_DLOG" | grep -qE '✅ \*\*已发版（[0-9]{4}-[0-9]{2}-[0-9]{2}）'; then
+  echo "❌ devlog 头未翻转为『✅ **已发版（YYYY-MM-DD）』——检查该版措辞变体，补 sed 模式后重跑"; exit 1
+fi
+if head -12 "$_DLOG" | grep -q '已开发完成'; then
+  echo "❌ devlog 头仍含『已开发完成』（发版后应为『已发版』）"; exit 1
+fi
 # 翻转后双零残留复核：「待发版」字样与版本头≠SSOT 必须双零命中，
 # 非零即 fail——翻转脚本自身不再静默漏翻（F6 门禁是最后防线，此复核是第一防线）。
 _REMAIN=$(grep -rlE '待发版' --include="*.md" docs/ | grep -v "docs/changelog/" | grep -v "docs/archive/" || true)
@@ -326,6 +348,7 @@ sed -i '' 's/| \[x\] |/| [ ] |/g' docs/changelog/releasing/11-post-publish.md
 | 五（数字核对） | 三处陈旧计数改**活口径**：`check-version 131 项`→「全项」；silent-catch 前置过滤计数与存量基线指向台账；规则口径 `A1-A23 共 26 条`→`A1-A11 + A14-A24 + E1/E2/E4 共 25 条` | `06/09/11` |
 | 四 | 新增教训形态：「**不存在**」有三态——空输出 / E404 退出码 / **空对象 packument**（`{}`），只认前两者会把「已下架终态」读成「数据缺失」 | `playbook/fresh-eyes-review.md` |
 | 六（ROADMAP 体检） | 本版行移入迭代历程表 + `check-forms.mjs` 三处移出（见步骤十五） | 步骤十五 |
+| 四 | **devlog 头翻转的措辞变体漏翻**（本轮实锤）：步骤一原 sed 只匹配 `⏳ 待发版（tag/npm 发版时同步）` 单一形态，本版 devlog 头实写「✅ **已开发完成。**」⇒ sed 锚不匹配**静默空转**；而 `check-version` §26 扫描面明确排除 `docs/changelog/` ⇒ 无机械兜底，漏翻一路留到下一轮巡检才被人工发现。修法：改**多模式 sed + 翻转后双断言**（① 头部须现带日期「✅ **已发版（…）」否则 exit 1；② 头部不得再含「已开发完成」），触点清单 #17 补明 devlog 头形态与「此处无机械兜底」 | `11-post-publish.md` · `06-doc-finalize.md` |
 
 ---
 
