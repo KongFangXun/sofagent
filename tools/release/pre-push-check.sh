@@ -17,6 +17,7 @@
 #   + check-review-system.sh → 审查体系一致性（维度数/警戒线/S 编号对账 · v1.4.8 接入）
 #   + check-silent-catch.mjs → 静默吞错门禁（只拦新增 · v1.4.8 接入）
 #   + check-table-shape.mjs  → GFM 表格形状（超列 + 孤儿行 · 存量台账豁免只拦新增 · v1.5.4 复查批接入）
+#   + check-claims.mjs       → 声称↔实测三组（整文件零消费信息位 / SECURITY 测绘数字 / hook 信任根 · v1.5.4 #36 接入）
 #   + dependency-direction.sh → 依赖方向架构测试（13 包边界 · v1.4.8 第七章）
 #   + check-tool-health.sh  → 工具健康 9 项 ✅ = ① 审查文档路径活性 / ② 孤儿配置 / ③ bump↔check 结构对照 /
 #                             ④ hook 头版本标记 / ⑤ CI 引用活性 / ⑥ set -u 新变量初始化守卫（2 子项）/
@@ -454,6 +455,20 @@ if [ "$MINIMAL" = false ]; then
   else
     check_fail "check-table-shape.mjs 发现新增表格形状违规"
     node tools/check/check-table-shape.mjs 2>&1 | grep -E "✗|存量基线" | head -12
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3d3. 声称↔实测三组（check-claims.mjs · v1.5.4 #36 接入）
+#   A 整文件零生产消费者（信息位不阻断）· B SECURITY 测绘数字（图标 / uses 口径）· C hook 信任根
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3d3. 声称↔实测检查 ──${NC}"
+  if node tools/check/check-claims.mjs >/dev/null 2>&1; then
+    check_pass "check-claims.mjs 通过（SECURITY 测绘数字 + hook 信任根）"
+  else
+    check_fail "check-claims.mjs 未通过"
+    node tools/check/check-claims.mjs 2>&1 | grep -E "❌|✗" | head -10
   fi
 fi
 
