@@ -113,8 +113,8 @@
 
 ## 六、audit/ — FDE 进场审计
 
-| 内容 | 说明 |
-|------|------|
+| 内容 | 说明 | 备注 |
+|------|------|------|
 | `audit/client-audit.mjs` | FDE 进场审计问卷脚本（按行业输出 Markdown），问卷数据源同目录 |
 | `audit/audit-questionnaires/*.json` | 7 个行业审计问卷（finance/generic/government/healthcare/manufacturing/retail/supplychain），每行业 15-20 题，三段式（审计现状/痛点定位/合规要求），`client-audit.mjs` 数据源 |
 | `audit-baseline-sync.sh` | dist 聚合哈希基线同步（rebuild 后重置 `~/.sofagent/internal/audit-dist-hash.txt` 基线——不跑则 P1-A2 影子审计器拦 commit） | 发版 SOP 阶段七 |

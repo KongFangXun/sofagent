@@ -16,6 +16,7 @@
 #   + check-test-count.sh   → 文档声称测试数 vs 实际值一致性（P1-3 根治）
 #   + check-review-system.sh → 审查体系一致性（维度数/警戒线/S 编号对账 · v1.4.8 接入）
 #   + check-silent-catch.mjs → 静默吞错门禁（只拦新增 · v1.4.8 接入）
+#   + check-table-shape.mjs  → GFM 表格形状（超列 + 孤儿行 · 存量台账豁免只拦新增 · v1.5.4 复查批接入）
 #   + dependency-direction.sh → 依赖方向架构测试（13 包边界 · v1.4.8 第七章）
 #   + check-tool-health.sh  → 工具健康 9 项 ✅ = ① 审查文档路径活性 / ② 孤儿配置 / ③ bump↔check 结构对照 /
 #                             ④ hook 头版本标记 / ⑤ CI 引用活性 / ⑥ set -u 新变量初始化守卫（2 子项）/
@@ -438,6 +439,21 @@ if [ "$MINIMAL" = false ]; then
   else
     check_fail "check-silent-catch.mjs 发现新增静默吞错"
     node tools/check/check-silent-catch.mjs 2>&1 | grep -E "❌|^  " | head -10
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3d2. 表格形状（check-table-shape.mjs · v1.5.4 复查批接入）
+# GFM 表格两类「内容静默消失」缺陷：超列（多余单元格不渲染）+ 孤儿行（被空行/引用块
+# 切断后渲染为裸管道）。只拦新增（存量台账 tools/check/table-shape-baseline.json）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3d2. 表格形状检查 ──${NC}"
+  if node tools/check/check-table-shape.mjs >/dev/null 2>&1; then
+    check_pass "check-table-shape.mjs 通过（无新增超列 / 孤儿行）"
+  else
+    check_fail "check-table-shape.mjs 发现新增表格形状违规"
+    node tools/check/check-table-shape.mjs 2>&1 | grep -E "✗|存量基线" | head -12
   fi
 fi
 

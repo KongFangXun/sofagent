@@ -36,8 +36,8 @@
 
 完整版本历史见 [CHANGELOG](../CHANGELOG.md)。v0.x 为实验/测试版，v1.0.0 起为正式版。
 
-| 版本 | 核心交付 |
-|------|------|
+| 版本 | 核心交付 | 日志 |
+|------|------|:--:|
 | **v1.5.3** | **🔍 审计模块 · 规则引擎统一与自测**：双规则引擎统一（tool-level 3 条与 git-diff 24 条收敛为单一规则引擎 + 两种触发时机）· 审计规则自测 schema（25 条规则强制携带 `match`/`notMatch` 正负样例，加载时断言 fail-closed）· A24 交付物落点审计规则（24→**25**）· doctor 修复闭环（`--refresh` 备份 + 一键重置 + 前后 diff）· 判决类记录成对完整 · `AuditScope` 一等公民化 · ARCHITECTURE 三域重构 · `@sofagent/skillopt` 旧包退役收尾 · 测试 5296→**5408** · acceptance 373→**377** | [v1.5.3](./changelog/v1.5/v1.5.3.md) |
 | **v1.5.2** | **🔍 审计模块 · 对外面与判定语义**：MCP audit 数据对外（audit_query 只读 + 事件订阅推送）· 约束导出与证据链外部可验（ruleset_export 双向可逆 + verify-chain 独立验签）· should-run 五问判定链 · 结论失效语义 · 出口治理面 · 事前授权补环 · DSH 插件 npm 首发（kit + 七款）| [v1.5.2](./changelog/v1.5/v1.5.2.md) |
 | **v1.5.1** | **⚡ 编排模块 · 事件驱动**：业务事件触发（四源 + on: 订阅 + 死信重放）· 理解债务应对 · AI 异常总线 · 设备 OTA + 任务下发二期 · 审计输入双通道 · sofagent demo| [v1.5.1](./changelog/v1.5/v1.5.1.md) |
