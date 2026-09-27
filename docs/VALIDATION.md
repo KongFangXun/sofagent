@@ -932,6 +932,16 @@ SMB 断层解释了"为什么需要中间件"，产品化四条回答"中间件�
 - **中国资本市场视角**：中信证券研报《OpenAI 与 Anthropic 加速布局企业级 AI 市场》从券商研究视角研判 FDE 驱动的企业 AI 布局，是前文美国 VC 视角之外新增的「中国机构级分析」角度。印证方向：中国一/二级市场机构已开始用 FDEing 框架重估企业 AI 价值，与 sofagent「企业级 AI 治理控制平面」定位的本土资本共识正在形成。
 - **政策双信号：本体入国家级清单，FDE 入地方产业政策**：国家数据局《行业高质量数据集建设实施方案》（国数科基〔2026〕25 号）首次将知识库、知识图谱、本体三件套并列写入国家级行动清单——六专项行动中本体承担三重角色（基础设施点名、语义标注依据、AI-Ready 结构化支撑），行业高质量数据集的瓶颈被明确定位在「语义不可机读」而非数据量。同一时期，《上海市支持先进制造业转型升级三年行动方案》首次将「培育前沿部署工程师（FDE）队伍」写入地方产业政策——FDE 从企业岗位命名进入政府政策语汇；国务院发文首次明确「支持采购大模型、Agent 服务」，叠加工信部等八部门「AI+制造」专项，企业级 AI 在中国从试点期进入政府采购与规模放量阶段。对 sofagent 的意义有二：①「先约束后智能」路线获得政策层背书——政策承认没有语义地基（本体三件套）的模型应用是沙上建塔，与 sofagent 本体数据先行、先约束后执行的架构顺序同构；② 政府采购 Agent 服务必然要求合规与审计归属——「约束 Agent 行为」正从工程实践变成采购语境的隐含刚需，与「按结果付费」条目的两道硬门槛（可靠性 + 归因）在政府采购场景汇合。
 
+### 直接对位竞品实证：Octop——多用户多 Agent 自托管助手的治理空白（2026-09）
+
+腾讯云开源 Octop（MIT，源自内部 LightClaw ACE，2026-07-10 开源，5k+ Star）——自托管多用户多 Agent AI 助手：专家多 Agent 架构、Skills/SkillHub、MCP Server、知识库 RAG、定时任务、**IM 九通道**（微信/QQ/企微/飞书/钉钉/Telegram 等）、ACP 双向协议（inbound stdio + outbound 委派 Claude Code/Codex/OpenCode/CodeBuddy）、connectors（OAuth+MCP 双通道）、浏览器自动化与远程桌面、Roadmap 含 AgentTeams（协调者自动调度多专家）与「Self-evolution 自动从对话蒸馏 skill」。单进程 FastAPI（Python 3.12）无外部 broker、重启后状态全量从控制面 DB 重建、SQLite(WAL)/PostgreSQL 双后端、~/.octop/ 本地优先 + PII redaction + JWT 多用户隔离。**对本仓是三层信号**：
+
+1. **赛道验证（最强）**：腾讯云亲自下场做「多用户 + 多 Agent + 自托管 + 专家体系」同形态产品（第三方评述直接称「开源版 WorkBuddy」——官方未如此宣称），且两个月 5k Star——多用户多 Agent 自托管助手的市场真实性被大厂背书；MIT + 腾讯云 org 的组合被评述认为「license 是战略变更后存活的部分」。
+2. **治理空白实证（本仓差异化位的同类集体缺失）**：GitHub 实证 Octop **无 append-only 审计链、无决策留痕、无 HMAC/防篡改日志、无 RBAC 矩阵（仅 admin 两级）、无 SSRF 专项、无置信度/校准概念**——其唯一「决策治理」是 **tool approval（风险工具人工审批）**+ shell guardrail allow/deny 规则 + PII 出 workspace 前脱敏。即：形态同构度极高的直接对位产品，治理纵深停在「人工审批 + 确定性脱敏」——本仓「概率判定 + 审计链 + 自动化治理」的差异化位不是理论推演，是同类产品的集体空白。
+3. **功能对照与 Roadmap 警示**：Octop 的 IM 九通道、ACP 双向、远程桌面、NAS 桌面端是本仓可对照的功能面清单；其 Roadmap「Self-evolution（自动从日常对话蒸馏可复用 skill）」**无准入门**——对照本仓 [v1.5.8](./changelog/v1.5/v1.5.8.md) 来源真实性门与晋级判据，自动蒸馏无门控正是本仓治理面要防的形态。**互补可能弱于竞争性**：Octop 是「助手易用性」形态（IM 优先/家庭场景/对话驱动），与本仓「数字员工治理」形态（审计/判定/FDE 方法论）受众重叠但价值主张不同——对外叙事按「同类不同层」定位（助手层 vs 治理层），避免正面比功能清单。**架构可学习两处**：单进程重启安全设计（无外部 broker、状态全量 DB 重建——一体机单机形态的同款取舍）与 connectors OAuth+MCP 双通道（降级链路：无 OAuth 回调环境自动降级为授权页取 Key）。
+
+> 📖 来源：[TencentCloud/Octop（GitHub，MIT）](https://github.com/TencentCloud/Octop)（README + 提交记录 + Roadmap，2026-09-27 取证）；[第三方评测](https://clauday.com/zh/article/4148535f-8555-4e7f-a8b5-a1112a805c1f)（「multi-user plus self-hosted plus PII redaction means somebody thought about what happens when six people's messages land in one agent's memory」——转述）与公众号评测（「开源版 WorkBuddy」称呼为网友自发，官方未宣称）
+
 ### FDE 组织机制的四件事（OpenAI 实践，2026-09）
 
 OpenAI FDE 负责人 Colin Jarvis 总结过四件「反人性」的事，用来防止 FDE 滑向外包/咨询的「堕落惯性」——客户默认你是外包、业绩压力逼你靠方案文档拿单、规模扩大会稀释能力、没有产品牵引沉淀不下经验。这四件事对 FDE Harness 的组织机制有直接参照价值：
