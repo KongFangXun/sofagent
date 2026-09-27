@@ -49,6 +49,9 @@
 | `agent/turn-stopping` | `@deepseek-ai/dsh-agent` | `lib/` | Turn 结束前停止条件判定——可拦截不放行（宿主 serial 派发；续跑手段是向 agent 送消息，返回值不参与判定） | `audit` |
 | `agent/error` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 运行出错（逆序撤销的触发点） | `rollback` |
 | `agent/session-start` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 会话开始 | 暂无 |
+| `agent/created` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 注册时派发（生命周期起点，经 ctx.events 派发） | 暂无 |
+| `agent/disposed` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 注销/释放时派发（生命周期终点） | 暂无 |
+| `agent/status` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 生命周期状态每次迁移时派发（载荷镜像当前状态） | 暂无 |
 | `session/event` | `@deepseek-ai/dsh-session` | `lib/` | 会话事件流（`session.append` 追加即广播，listener 收 `(session, event)`；`turn/end` / `step/end` 等是 `event.type` 的取值，需自行过滤） | `evolve` |
 | `hook/invoked` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 外部 hook 调用**载荷类型**（经该协议发给仓外 hook 进程，非 ctx 订阅点） | 暂无 |
 | `hook/result` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 外部 hook 返回**载荷类型**（同上，非 ctx 订阅点） | 暂无 |
@@ -70,13 +73,13 @@ grep -rhoE "['\"][a-z]+/[a-z-]+['\"]" "$B/dsh-hook-protocol/lib/" | tr -d "\"'" 
 grep -rhoE "['\"]session/event['\"]" "$B/dsh-session/lib/"        | tr -d "\"'" | sort -u
 ```
 
-> 词汇表**只收宿主真实存在的生命周期事件名**（上表 21 条）。其中 5 条
+> 词汇表**只收宿主真实存在的生命周期事件名**（上表 24 条）。其中 5 条
 > `@deepseek-ai/dsh-hook-protocol` 的行是该协议的**事件载荷类型**——它们确实
 > 是宿主真实存在的字符串，但**交付对象是仓外 hook 进程**（子进程 / webhook），
 > **不是 `ctx.on` 能收到的 cordis 事件**。给插件写 seam 时只能用 ctx 事件名：
 > 把 `turn/end` 这类载荷类型当订阅点写，会得到一个**永不触发的订阅**（grep 能过、
 > 探针必挂）——turn 收尾的真实订阅点是 `session/event` + `event.type` 过滤。
-> 其余 16 条（`tools/*` · `fs/*` · `agent/*` · `session/event`）都是真实派发点。
+> 其余 19 条（`tools/*` · `fs/*` · `agent/*` · `session/event`）都是真实派发点。
 
 ## 2. DSH 侧 · 非 seam 的接入形态
 
@@ -142,6 +145,17 @@ OpenClaw 的探测事件名是**下划线风格**（`before_tool_call`），与 
 | `before_message_write` | `openclaw` | `dist/hook-types-*.d.ts` | 消息写入前 | 暂无 |
 | `session_start` | `openclaw` | `dist/hook-types-*.d.ts` | 会话开始 | 暂无 |
 | `session_end` | `openclaw` | `dist/hook-types-*.d.ts` | 会话结束 | 暂无 |
+| `subagent_delivery_target` | `openclaw` | `dist/hook-types-*.d.ts` | 决定子代理投递目标（可返回 Result 改路由） | 暂无 |
+| `subagent_spawned` | `openclaw` | `dist/hook-types-*.d.ts` | 子代理已启动（启动后观测；官方建议新插件用它取代废弃的 subagent_spawning） | 暂无 |
+| `subagent_ended` | `openclaw` | `dist/hook-types-*.d.ts` | 子代理已结束（观测） | 暂无 |
+| `gateway_start` | `openclaw` | `dist/hook-types-*.d.ts` | 网关启动（载荷含 port）——daemon 进程级挂载候选（暂未挂载） | 暂无 |
+| `gateway_stop` | `openclaw` | `dist/hook-types-*.d.ts` | 网关开始关闭（宿主把废弃别名 deactivate 的注册归一化到此处做清理）——daemon 挂载候选（暂未挂载） | 暂无 |
+| `heartbeat_prompt_contribution` | `openclaw` | `dist/hook-types-*.d.ts` | 心跳 prompt 贡献（可返回 prependContext / appendContext 前后缀注入心跳提示词）——巡检注入位候选（暂未挂载） | 暂无 |
+| `cron_changed` | `openclaw` | `dist/hook-types-*.d.ts` | 宿主 cron 任务变更（added / updated / removed / started / finished，载荷含 jobId 与运行状态） | 暂无 |
+| `before_dispatch` | `openclaw` | `dist/hook-types-*.d.ts` | 入站消息派发前（可返回 Result 干预路由） | 暂无 |
+| `reply_dispatch` | `openclaw` | `dist/hook-types-*.d.ts` | 回复派发（可返回 Result 干预） | 暂无 |
+| `before_install` | `openclaw` | `dist/hook-types-*.d.ts` | 插件安装前（可返回 Result 附 findings） | 暂无 |
+| `resolve_exec_env` | `openclaw` | `dist/hook-types-*.d.ts` | 解析工具执行环境变量（可返回键值表覆盖） | 暂无 |
 <!-- SEAM-VOCAB:OPENCLAW-HOST:END -->
 
 > 另有**已废弃**事件名 `subagent_spawning` / `deactivate`（宿主 `DeprecatedPluginHookName`），
