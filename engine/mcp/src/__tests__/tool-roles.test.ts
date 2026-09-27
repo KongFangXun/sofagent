@@ -72,8 +72,8 @@ describe('isToolExposed 单工具判定', () => {
 describe('filterToolsByRoles 清单过滤', () => {
   it('全量模式 → 返回原清单', () => {
     const filtered = filterToolsByRoles(TOOLS, null);
-    // v1.4.7 G14+G2+章八+G13+G4+章十三：84→95；v1.4.9 G9：95→97（device_register/device_list 设备注册面落位）；v1.4.9 G10/G11：97→99（device_data_query/device_data_push 数据面落位）；v1.4.9 G5b/G1：99→103（connector_register/connector_list + workflow_export/workflow_import 注册与模板面落位）；v1.5.0 章八 trace_reconcile：103→105；v1.5.2 章一/章二：105→107（audit_query/ruleset_export 审计对外面落位）
-    expect(filtered).toHaveLength(103);
+    // v1.4.7 G14+G2+章八+G13+G4+章十三：84→95；v1.4.9 G9：95→97（device_register/device_list 设备注册面落位）；v1.4.9 G10/G11：97→99（device_data_query/device_data_push 数据面落位）；v1.4.9 G5b/G1：99→103（connector_register/connector_list + workflow_export/workflow_import 注册与模板面落位）；v1.5.0 章八 trace_reconcile：103→105；v1.5.2 章一/章二：105→107（audit_query/ruleset_export 审计对外面落位）；2026-09-26 浏览器四件套退役 107→103；v1.5.4 章二 router_slots：103→104
+    expect(filtered).toHaveLength(104);
   });
 
   it('显式 fde+audit+agent 三面 → 只暴露这三面（不含 browser/ops/commons 独占工具）', () => {

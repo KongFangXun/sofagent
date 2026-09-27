@@ -296,7 +296,8 @@ describe('registry 接线（铁律 9）', () => {
     expect(names).toContain('connector_list');
     expect(names).toContain('workflow_export');
     expect(names).toContain('workflow_import');
-    expect(TOOLS.length).toBe(103);
+    // v1.5.4 章二 router_slots：103→104（注册面接线——当版终值）
+    expect(TOOLS.length).toBe(104);
   });
 });
 

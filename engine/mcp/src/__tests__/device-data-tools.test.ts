@@ -179,7 +179,8 @@ describe('device_data_query / device_data_push MCP tools（v1.4.9 G10/G11）', (
       const names = TOOLS.map((t) => t.name);
       expect(names).toContain('device_data_query');
       expect(names).toContain('device_data_push');
-      expect(TOOLS.length).toBe(103);
+      // v1.5.4 章二 router_slots：103→104（注册面接线——当版终值）
+      expect(TOOLS.length).toBe(104);
     });
   });
 });

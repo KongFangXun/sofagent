@@ -115,6 +115,11 @@
       "types": "./dist/sandbox/network-gateway.d.ts",
       "require": "./dist/sandbox/network-gateway.js",
       "default": "./dist/sandbox/network-gateway.js"
+    },
+    "./router/decision-dispatch": {
+      "types": "./dist/router/decision-dispatch.d.ts",
+      "require": "./dist/router/decision-dispatch.js",
+      "default": "./dist/router/decision-dispatch.js"
     }
   },
   "files": [

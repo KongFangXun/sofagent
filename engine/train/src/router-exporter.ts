@@ -15,6 +15,13 @@
 
 import { createHmac } from 'crypto';
 import { RouterSessionSchema, type RouterSessionPayload } from './session-ingest';
+// v1.5.4 第二章：决策下达面（引擎 → router）schema 家族——SSOT 在 orchestrator
+// （单向依赖：train → orchestrator 允许；orchestrator 不反向依赖 train）。
+import {
+  RouteDispositionSchema,
+  DISPOSITION_SCHEMA_FAMILY,
+  type RouteDisposition,
+} from '@sofagent/orchestrator/router/decision-dispatch';
 
 /** 推送传输面（注入式——HTTP 接线归 router 侧部署方） */
 export type ExporterTransport = (payload: RouterSessionPayload, signature: string) => Promise<{ ok: boolean; message: string }>;
@@ -122,4 +129,83 @@ export function exporterProtocolSpec(): string {
     '传输：POST JSON（注入式 transport——HTTP 接线归 router 侧部署方）。',
     'fail-closed：schema 不合两端同拒（exporter 侧前置 + 引擎侧兜底）。',
   ].join('\n');
+}
+
+// ══════════════════════════════════════
+// 决策下达面（引擎 → router）· 双向 schema 一致性校验（v1.5.4 第二章）
+// ══════════════════════════════════════
+//
+// v1.4.9 交付的是**数据承接面**（router → 引擎：session 过站）；本段补其**反向**
+// ——引擎判定出的去向决策按标准 schema 下达 router 执行（**决策下达面**）。
+// 两向合起才是完整回路。
+//
+// 同族纪律：下达 schema 与承接 schema **同族**——version / 字段集对齐，方向相反。
+// SSOT 在 orchestrator 的 `router/decision-dispatch.ts`（引擎定义方）；本文件是
+// router 侧**接收方**，以 `assertSchemaFamilyAlignment` 校验家族一致（双向一致，
+// 任一侧漂移即报缺口），并以 `validateDisposition` 做接收侧 fail-closed 前置校验。
+
+/** 接收侧 schema 家族描述（router 侧对其所实现的接收协议的自我声明） */
+export interface RouterSchemaFamily {
+  /** 家族版本（须与引擎下达面一致） */
+  version: number;
+  /** 本实现所处的方向（接收方为 'engine→router'） */
+  direction: string;
+  /** 本实现认得的字段集（顺序即契约） */
+  fields: readonly string[];
+}
+
+/** router 侧实现的接收家族（与引擎下达面同源——引擎侧为准） */
+export const ROUTER_RECEIVE_FAMILY: RouterSchemaFamily = {
+  version: DISPOSITION_SCHEMA_FAMILY.version,
+  direction: DISPOSITION_SCHEMA_FAMILY.direction,
+  fields: [...DISPOSITION_SCHEMA_FAMILY.fields],
+};
+
+/** 家族一致性校验结果 */
+export interface SchemaFamilyAlignment {
+  aligned: boolean;
+  issues: string[];
+}
+
+/**
+ * 双向 schema 一致性校验（引擎下达面 ↔ router 接收面）。
+ *
+ * 判据：version 相等、direction 指向一致、字段集**双向相等**（顺序敏感）。
+ * @param receiveFamily router 侧接收家族（缺省取本仓注册的 ROUTER_RECEIVE_FAMILY）
+ */
+export function assertSchemaFamilyAlignment(receiveFamily: RouterSchemaFamily = ROUTER_RECEIVE_FAMILY): SchemaFamilyAlignment {
+  const issues: string[] = [];
+  if (receiveFamily.version !== DISPOSITION_SCHEMA_FAMILY.version) {
+    issues.push(`家族 version 漂移：接收 ${receiveFamily.version} ≠ 下达 ${DISPOSITION_SCHEMA_FAMILY.version}`);
+  }
+  if (receiveFamily.direction !== DISPOSITION_SCHEMA_FAMILY.direction) {
+    issues.push(`家族 direction 漂移：接收 ${receiveFamily.direction} ≠ 下达 ${DISPOSITION_SCHEMA_FAMILY.direction}`);
+  }
+  const a = [...DISPOSITION_SCHEMA_FAMILY.fields];
+  const b = [...receiveFamily.fields];
+  if (a.length !== b.length || a.some((f, i) => f !== b[i])) {
+    issues.push(`字段集漂移：下达 [${a.join(',')}] ≠ 接收 [${b.join(',')}]`);
+  }
+  return { aligned: issues.length === 0, issues };
+}
+
+/** 去向决策接收校验结果 */
+export interface DispositionValidation {
+  valid: boolean;
+  payload?: RouteDisposition;
+  issues?: string[];
+}
+
+/**
+ * 校验引擎下达的去向决策（router 侧接收前置——fail-closed：格式不合法拒绝执行）。
+ */
+export function validateDisposition(raw: unknown): DispositionValidation {
+  const result = RouteDispositionSchema.safeParse(raw);
+  if (!result.success) {
+    return {
+      valid: false,
+      issues: result.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`),
+    };
+  }
+  return { valid: true, payload: result.data };
 }

@@ -685,3 +685,130 @@ export function readActiveEndpoints(dataDir: string): {
   };
   return { executor: pick('executor'), pipeline: pick('pipeline') };
 }
+
+// ============================================================
+// 本地端点注册（v1.5.4 第一章 · 云端/本地统一注册面）
+// ============================================================
+//
+// 第一章「本地端点注册」面：model-registry 注册**本地推理服务端点**
+// （Ollama 兼容协议），与云端 endpoint 共用同一注册表（云端/本地统一注册面）。
+//
+// 与 registerModel 的关系：registerLocalEndpoint 是 registerModel 的**本地推理
+// 服务**专用形态——缺省 clientType=ollama、缺省 endpoint=DEFAULT_OLLAMA_ENDPOINT，
+// 并在传入 lane 时按 switchModel 语义把该端点绑到执行档 / 管道档。
+// 🔴 绑档仍走 switchModel 的**人审门控**——全量绑档须 humanConfirmed=true，
+// 不因走本便捷入口而旁路。
+
+/** 缺省本地推理端点（Ollama 原生协议） */
+export const DEFAULT_OLLAMA_ENDPOINT = 'http://localhost:11434';
+
+/** 本地推理档（与 model-router 的本地两档对齐） */
+export type LocalLane = 'executor' | 'pipeline';
+
+/** registerLocalEndpoint 入参 */
+export interface RegisterLocalEndpointInput {
+  /** 注册名（唯一标识——model_switch 按此切换） */
+  name: string;
+  /** 本地推理服务地址（缺省 DEFAULT_OLLAMA_ENDPOINT） */
+  endpoint?: string;
+  /** 模型名（传给服务的 model 字段） */
+  model: string;
+  /** 客户端协议（缺省 ollama） */
+  clientType?: 'ollama' | 'openai-compatible';
+  /** 绑定的档位（执行档 / 管道档——可选；绑档须 humanConfirmed） */
+  lane?: LocalLane;
+  /** 端点能力画像（可选） */
+  profile?: EndpointProfile;
+  /** 元信息（评测分数 / 备注） */
+  meta?: { evalScore?: number; notes?: string };
+}
+
+/** 本地端点视图（readLocalEndpoints 返回——本地推理服务清单） */
+export interface LocalEndpointView {
+  /** 注册名 */
+  name: string;
+  /** 服务地址 */
+  endpoint: string;
+  /** 客户端协议 */
+  clientType: 'ollama' | 'openai-compatible';
+  /** 模型名 */
+  model: string;
+  /** 状态 */
+  status: ModelStatus;
+  /** 绑定的档位（活动模型指向本端点时有值） */
+  lane?: LocalLane;
+}
+
+/**
+ * 注册本地推理服务端点（Ollama 兼容协议）。
+ *
+ * - 缺省 clientType=ollama、endpoint=DEFAULT_OLLAMA_ENDPOINT
+ * - 传入 lane 时经 switchModel 绑档（🔴 守人审门控——不旁路）
+ */
+export function registerLocalEndpoint(
+  input: RegisterLocalEndpointInput,
+  options: ModelRegistryOpOptions,
+): ModelRegistryOpResult {
+  const base = registerModel(
+    {
+      name: input.name,
+      endpoint: input.endpoint ?? DEFAULT_OLLAMA_ENDPOINT,
+      model: input.model,
+      clientType: input.clientType ?? 'ollama',
+      ...(input.profile ? { profile: input.profile } : {}),
+      ...(input.meta ? { meta: input.meta } : {}),
+    },
+    options,
+  );
+  if (!base.ok) return base;
+  if (!input.lane) return base;
+
+  const bound = switchModel(input.name, input.lane, undefined, options);
+  if (!bound.ok) return bound;
+  if (bound.awaitingHuman) {
+    return {
+      ok: true,
+      awaitingHuman: true,
+      message: `本地端点「${input.name}」已注册（${input.clientType ?? 'ollama'}）——绑定 ${input.lane} 档需人工确认（human_confirmed=true 才执行）`,
+      issues: [],
+    };
+  }
+  return {
+    ok: true,
+    awaitingHuman: false,
+    message: `本地端点「${input.name}」已注册并绑定 ${input.lane} 档（${base.message}）`,
+    ...(bound.event ? { event: bound.event } : {}),
+    issues: [],
+  };
+}
+
+/**
+ * 本地推理服务清单——活动执行档 / 管道档指向的本地端点。
+ *
+ * 语义：本地端点的判据是**已绑到本地档**（executor / pipeline 的活动模型），
+ * 而非 clientType——同一注册表内云端 router 地址与本地推理服务共用 endpoint
+ * 形态（云端/本地统一注册面的既定设计），只有绑到本地档的才是「本地端点」。
+ */
+export function readLocalEndpoints(dataDir: string): LocalEndpointView[] {
+  const registry = loadRegistry(dataDir);
+  const views: LocalEndpointView[] = [];
+  const laneOf = (name: string): LocalLane | undefined => {
+    if (registry.active.executor === name) return 'executor';
+    if (registry.active.pipeline === name) return 'pipeline';
+    return undefined;
+  };
+  for (const entry of Object.values(registry.models)) {
+    if (entry.status === 'retired') continue;
+    const lane = laneOf(entry.name);
+    if (!lane) continue;
+    views.push({
+      name: entry.name,
+      endpoint: entry.endpoint,
+      clientType: entry.clientType,
+      model: entry.model,
+      status: entry.status,
+      lane,
+    });
+  }
+  return views;
+}

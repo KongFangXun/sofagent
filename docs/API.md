@@ -2,16 +2,16 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 103 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面，批 5 新增 router_session_push 过站 session 承接面，v1.5.2 章一/章二 新增 audit_query/ruleset_export 审计对外两面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
+> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 104 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面，批 5 新增 router_session_push 过站 session 承接面，v1.5.2 章一/章二 新增 audit_query/ruleset_export 审计对外两面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
-> 版本：v1.5.3（✅ 已发版 · 2026-09-26）· 103 tools / 7 面（**103 = v1.4.9 的 104 + v1.5.0 新增 `trace_reconcile` + v1.5.2 新增 `audit_query`/`ruleset_export`**，状态见 [ROADMAP](./ROADMAP.md)；第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push，v1.5.2 章一/章二 新增 audit_query/ruleset_export；2026-09-26 浏览器四件套退役 -4）
+> 版本：v1.5.3（✅ 已发版 · 2026-09-26）· 104 tools / 7 面（**104 = v1.5.2 的 107 − 2026-09-26 浏览器四件套退役 4 + v1.5.4 新增 `router_slots` 1**，状态见 [ROADMAP](./ROADMAP.md)；第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push，v1.5.2 章一/章二 新增 audit_query/ruleset_export；2026-09-26 浏览器四件套退役 -4）
 
 ---
 
 ## 目录
 
 - [一、七大接口面](#一七大接口面)
-- [二、MCP 工具清单（103 · 按产品能力域分组）](#二mcp-工具清单103--按产品能力域分组)
+- [二、MCP 工具清单（104 · 按产品能力域分组）](#二mcp-工具清单104--按产品能力域分组)
 - [三、防漂移机制](#三防漂移机制)
 - [四、变更日志](#四变更日志)
 
@@ -33,7 +33,7 @@
 
 ---
 
-## 二、MCP 工具清单（103 · 按产品能力域分组）
+## 二、MCP 工具清单（104 · 按产品能力域分组）
 
 > 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）已于 2026-09-26 注销（v2.0.0 §七 B 表裁定退役，UI 审计实做窗口已关）。
 
@@ -173,7 +173,7 @@
 | `commons_retire` | commons | 能力退役/恢复——标记退役（不删除，可恢复），强制 owner 确认。 |
 | `commons_harvest_rule` | commons | 从公地调用日志 + Refine 循环提炼质量规则候选。 |
 
-### 运维与可见性（成本 · 工作明细 · 健康 · 规则 · 能力发现）（14）
+### 运维与可见性（成本 · 工作明细 · 健康 · 规则 · 能力发现）（15）
 
 | tool | roles | 说明 |
 |---|---|---|
@@ -185,6 +185,7 @@
 | `health_check` | ops | 运行环境健康检查（环境/配置/数据目录/Hook/依赖）。 |
 | `daemon_status` | ops | 查询 daemon 运行状态（PID/启动时间/心跳）。只读。 |
 | `list_rules` | audit | 列出所有审计规则清单（只读，不暴露实现）。 |
+| `router_slots` | ops | 查询本地推理槽位态（占用 / 排队深度 / 各请求等待时长）+ 路由预览（任务×敏感度 → 去向决策 + routeReason）——运维可见，数据本地不出门。 |
 | `contribution_query` | ops | 贡献度报表——人/数字员工同标准聚合（PR 权重分 + 决策留痕 + 审计变更规模 → 综合贡献分），按人/按 workflow 两维度输出，org_id 跨租户过滤（G7 联动）。纯读零写入。 |
 | `device_register` | ops | 设备上线注册（G9）：Ed25519 身份码验签 fail-closed（伪造签名拒绝且留审计）+ 设备类型（pc/node/appliance）+ 能力声明（派单方按能力匹配设备）。 |
 | `device_list` | ops | 设备清单查询（G9 发现面）：按租户/类型/能力过滤，含最后心跳时间与在线状态；清单只含已验签设备（被拒/吊销设备不出现）。只读。 |

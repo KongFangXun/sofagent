@@ -109,6 +109,8 @@ const NAME_TO_MODULE = {
   workflow_import: 'workflow',
   // v1.4.9 批 5（T7）：router 会话承接面（train——session→语料管道+cost 台账+key 四件）
   router_session_push: 'train',
+  // v1.5.4 章二：本地槽位排队与判定分层——槽位态观测 + 路由预览（ops——运维可见性：本地槽位/排队态查询）
+  router_slots: 'ops',
 };
 
 const src = readFileSync(REGISTRY, 'utf8');

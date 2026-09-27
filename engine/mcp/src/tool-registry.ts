@@ -103,6 +103,8 @@ import { traceReconcileTool, type TraceReconcileArgs } from './tools/trace-recon
 // v1.5.2 章一/章二：审计对外两面——只读数据查询（audit_query）+ 规则集导出（ruleset_export）
 import { auditQuery } from './tools/audit-query';
 import { rulesetExport } from './tools/ruleset-export';
+// v1.5.4 第二章：本地槽位排队与判定分层——槽位/排队状态查询 + 路由预览
+import { routerSlots, type RouterSlotsArgs } from './tools/router-slots';
 
 /**
  * 工具定义（MCP tools/list 返回的 schema）
@@ -153,7 +155,7 @@ export type ToolHandler = (
 ) => ToolResult | ToolDispatchError | Promise<ToolResult | ToolDispatchError>;
 
 /**
- * 完整工具清单——103 个 tool（v2.0.0 §七 B 表裁定退役（registry 注销）：playwright_navigate/click/screenshot/assert 四件移出——107→103；v1.5.2 章一/章二：audit_query 新增——审计数据只读查询（history 三维过滤 + decision 因果链，严格只读不写链）；ruleset_export 新增——规则集导出（25 条默认规则 + 已加载扩展 → 标准 JSON，与 --ruleset-path 加载格式同构双向可逆 + 内容指纹 + 审计留痕）（105→107）；v1.5.0 章八：trace_reconcile 新增——跨层证据对账（104→105：DSH trace vs git diff vs logs 三源比对四态判定 + 模型层回溯链 + 对账结果入 decision-log kind=COVERAGE）；v1.4.9 T7：router_session_push 新增——session 承接面（103→104 终值：97→104 = 批 1 +2、批 2 +2、批 3 +4、批 5 +1；router 伴生 exporter 推送入口，schema 校验 + 本地落盘 + HMAC 挂链 + usage 入 cost 台账）；v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——104 个 tool（v1.5.4 章二：router_slots 新增——本地推理槽位态查询（占用/排队深度/等待时长）+ 路由预览（任务×敏感度 → 去向 + routeReason）（103→104）；v2.0.0 §七 B 表裁定退役（registry 注销）：playwright_navigate/click/screenshot/assert 四件移出——107→103；v1.5.2 章一/章二：audit_query 新增——审计数据只读查询（history 三维过滤 + decision 因果链，严格只读不写链）；ruleset_export 新增——规则集导出（25 条默认规则 + 已加载扩展 → 标准 JSON，与 --ruleset-path 加载格式同构双向可逆 + 内容指纹 + 审计留痕）（105→107）；v1.5.0 章八：trace_reconcile 新增——跨层证据对账（104→105：DSH trace vs git diff vs logs 三源比对四态判定 + 模型层回溯链 + 对账结果入 decision-log kind=COVERAGE）；v1.4.9 T7：router_session_push 新增——session 承接面（103→104 终值：97→104 = 批 1 +2、批 2 +2、批 3 +4、批 5 +1；router 伴生 exporter 推送入口，schema 校验 + 本地落盘 + HMAC 挂链 + usage 入 cost 台账）；v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -1081,6 +1083,25 @@ export const TOOLS: ToolDef[] = [
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: async (args) => { if (!args.name) { return { error: 'Missing required argument: name' }; } const mur = await modelUnregister({ name: args.name as string, action: args.action === 'restore' ? 'restore' : 'retire', ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); return { ...mur, isError: mur.data.isError }; },
+  },
+  {
+    // v1.5.4 章二：本地槽位排队与判定分层——槽位/排队可观测（本地槽位态查询 + 路由预览）
+    name: 'router_slots',
+    roles: ['ops'],
+    description: '查询本地推理槽位态（占用 / 排队深度 / 各请求等待时长）+ 路由预览（任务×敏感度 → 去向决策 + routeReason）——运维可见，数据本地不出门。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['snapshot', 'route-preview'], description: '动作：snapshot 查槽位态（缺省）/ route-preview 预览路由决策', default: 'snapshot' },
+        max_slots: { type: 'number', description: '槽位上限（snapshot 空态时用；缺省 5）' },
+        task_class: { type: 'string', enum: ['planning', 'execution', 'pipeline'], description: '任务类型（route-preview 用）' },
+        sensitivity: { type: 'string', enum: ['public', 'internal', 'restricted', 'confidential'], description: '数据敏感度（route-preview 用）' },
+        cloud_available: { type: 'boolean', description: '云端可用性（route-preview 用）' },
+        local_available: { type: 'boolean', description: '本地可用性（route-preview 用）' },
+      },
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { const rs = await routerSlots({ ...(typeof args.action === 'string' ? { action: args.action as 'snapshot' | 'route-preview' } : {}), ...(typeof args.max_slots === 'number' ? { max_slots: args.max_slots } : {}), ...(typeof args.task_class === 'string' ? { task_class: args.task_class as RouterSlotsArgs['task_class'] } : {}), ...(typeof args.sensitivity === 'string' ? { sensitivity: args.sensitivity as RouterSlotsArgs['sensitivity'] } : {}), ...(typeof args.cloud_available === 'boolean' ? { cloud_available: args.cloud_available } : {}), ...(typeof args.local_available === 'boolean' ? { local_available: args.local_available } : {}) }); return { ...rs, isError: rs.data.isError }; },
   },
   {
     // v1.3.6 (交付 ⑦)：训练预算控制——查预算 / 超预算人审续跑或终止

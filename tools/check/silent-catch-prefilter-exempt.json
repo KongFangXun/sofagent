@@ -108,6 +108,7 @@
   "engine/orchestrator/src/ontology/schema/index.ts",
   "engine/orchestrator/src/refine-agent/quality-rule-set.ts",
   "engine/orchestrator/src/route/route-request.ts",
+  "engine/orchestrator/src/router/slot-manager.ts",
   "engine/orchestrator/src/sandbox/async-subagent.ts",
   "engine/orchestrator/src/sandbox/circuit-breaker.ts",
   "engine/orchestrator/src/session-isolator.ts",

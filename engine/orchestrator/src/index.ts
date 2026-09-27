@@ -682,6 +682,9 @@
   saveRegistry,
   resolveModelRegistryPath,
   readActiveEndpoints,
+  registerLocalEndpoint,
+  readLocalEndpoints,
+  DEFAULT_OLLAMA_ENDPOINT,
   ModelRegistryError,
 } from './model-registry';
 /* @public */ export type {
@@ -694,7 +697,67 @@
   ModelSource,
   ModelStatus,
   EndpointProfile,
+  LocalLane,
+  RegisterLocalEndpointInput,
+  LocalEndpointView,
 } from './model-registry';
+
+// 路由决策链（v1.5.4 第一章路由层 + 第二章槽位/判定分层）
+/* @public */ export { PolicyEngine, slotLaneOf, resolveTargetModel } from './router/policy-engine';
+/* @public */ export type { TaskClass, PolicyRouteInput, PolicyDecision, PolicyEngineDeps, DispatchOutcome } from './router/policy-engine';
+/* @public */ export { SlotManager, DEFAULT_SLOT_CONFIG, SlotManagerConfigError } from './router/slot-manager';
+/* @public */ export type {
+  SlotLane,
+  QueuePriority,
+  AcquireKind,
+  SlotManagerConfig,
+  SlotAcquireRequest,
+  SlotLease,
+  QueueTicket,
+  AcquireOutcome,
+  WaitDecision,
+  SlotSnapshot,
+  SlotManagerState,
+} from './router/slot-manager';
+/* @public */ export { IntentTriage, DEFAULT_TRIAGE_CONFIG } from './router/intent-triage';
+/* @public */ export type {
+  TriageLayer,
+  L0MappingEntry,
+  EmbeddingClassifyResult,
+  IntentTriageConfig,
+  TriageOutcome,
+  IntentTriageDeps,
+} from './router/intent-triage';
+/* @public */ export {
+  MAX_OPTIONS,
+  validateQuestions,
+  tempBucketKey,
+  resultBucketKey,
+  computeEscalationThreshold,
+  gradeOf,
+  stateDigest,
+  toAuditRecord,
+  DEFAULT_GRADE_THRESHOLDS,
+  DecisionChannelUnavailableError,
+  UnconfiguredDecisionChannel,
+  createUnconfiguredDecisionChannel,
+} from './router/decision-channel';
+/* @public */ export type {
+  DecisionPrimitive,
+  EvidenceReadiness,
+  DecisionState,
+  DecisionQuestion,
+  DecisionStatus,
+  AbstainReason,
+  DecisionAnswer,
+  DecisionResult,
+  DecisionChannel,
+  DecisionGrade,
+  GradeThresholds,
+  DecisionAuditRecord,
+} from './router/decision-channel';
+/* @public */ export { DecisionDispatcher, RouteDispositionSchema, DISPOSITION_SCHEMA_FAMILY } from './router/decision-dispatch';
+/* @public */ export type { RouteDisposition, DispatchTransport, DispatchResult, DecisionDispatcherDeps } from './router/decision-dispatch';
 
 // Weights Manifest（本地权重目录规范——local-path 注册/校验/版本回滚的物理载体）
 /* @public */ export {

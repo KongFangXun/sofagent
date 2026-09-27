@@ -32,13 +32,13 @@
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 | DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用；**一次装全套**用裸名 `skillhub install cordis-plugin-sofagent`） |
-| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 103 tools |
+| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 104 tools |
 
 ---
 
 ## DSH 插件家族（7 款 cordis-plugin）
 
-> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 103 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
+> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 104 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
 | 插件 | 职责（桥接实况） | seam |
 |------|----------------|------|
@@ -100,7 +100,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 ---
 
-## MCP 全量工具表（103 tools · 12 类）
+## MCP 全量工具表（104 tools · 12 类）
 
 > 与 `engine/mcp/src/tool-registry.ts` 一一对应（check-docs 第 12 节门禁校验双向差集为空）。主入口 `SKILL.md` 只列每类代表工具，本表为全量。🔴 = 破坏性操作（强制人审/confirmed）。
 
@@ -212,7 +212,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `commons_retire` | 能力退役/恢复（强制 owner 确认） |
 | `commons_harvest_rule` | 从调用日志 + Refine 循环提炼质量规则候选 |
 
-### 后训流水线（16）
+### 后训流水线（17）
 
 > 📌 **能力边界**：本仓负责后训流水线的**编排与治理**（任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务）；**训练本身在外部执行环境进行，本仓不实现训练器**。
 
@@ -234,6 +234,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `train_compliance` | 训练数据合规扫描——PII（手机号/身份证）+ 敏感字段（健康/财务）+ 企业专有名词（复用 redactor 红名单）；报告写训练集版本；严重级阻断提交；来源标记三分类 |
 | `train_deliverable` | FDE 训练交付包——五件聚合（配置模板+管道配置+eval 基线+运维手册+权重清单）打 zip + manifest + HMAC 签名；verify 校验完整性 + 环境兼容 |
 | `train_cloud` | 云 VM 执行面——注册云 VM（endpoint + 凭据引用走虚拟 key 边界，真实凭据不落明文）/ 列出 / 查状态 / 注销；远程 spawn 训练走 ssh 通道 + 分拣闸（敏感档拦上云）+ 失联止损 + 成本入预算 |
+| `router_slots` | 本地推理槽位态查询（占用 / 排队深度 / 各请求等待时长）+ 路由预览（任务×敏感度 → 去向决策 + routeReason）——运维可见，数据本地不出门 |
 
 ### 验收（2）
 
