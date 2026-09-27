@@ -137,6 +137,26 @@ describe('runMultiInstanceVote · 平票与法定人数（fail-closed）', () =>
     expect(out.route).toBe('hitl');
   });
 
+  it('🔴 tied 隔离：平票是「分歧」的唯一触发（divergence 未超阈也判分歧 · 阈值 ≥0.5 构造）', async () => {
+    // N=4 两两平票（allow×2 / deny×2）⇒ tied=true · agreement=0.5 · divergence=0.5
+    // 阈值取 0.6（> divergence 0.5）⇒ 「divergence > 阈值」分支**不触发**；quorum=3 ≤ succeeded=4 满足。
+    // ⇒ 结论只能由 `tied` 子句给出：把 `decision` 表达式里的 `tied` 去掉，本用例必红（误判 consensus）。
+    // 既有平票用例阈值 0.34 时 divergence=0.5 先触发，把 tied 掩盖——本用例专为**隔离 tied**而设。
+    const out = await runMultiInstanceVote({
+      instances: 4,
+      task: 't',
+      divergenceThreshold: 0.6,
+      runner: fixedRunner(['allow', 'allow', 'deny', 'deny']),
+    });
+    expect(out.tied).toBe(true);
+    expect(out.divergence).toBeCloseTo(0.5);
+    expect(out.divergence).toBeLessThanOrEqual(0.6); // 排除「divergence > 阈值」触发路径
+    expect(out.succeeded).toBe(4);
+    expect(out.quorum).toBe(3);
+    expect(out.decision).toBe('divergence'); // 仅 tied 决定
+    expect(out.route).toBe('hitl');
+  });
+
   it('法定人数不足（N=3 仅 1 成功）⇒ 分歧 + 升级（即便 onDivergence=hitl）', async () => {
     const out = await runMultiInstanceVote({
       instances: 3,
