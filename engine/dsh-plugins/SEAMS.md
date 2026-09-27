@@ -148,9 +148,9 @@ OpenClaw 的探测事件名是**下划线风格**（`before_tool_call`），与 
 | `subagent_delivery_target` | `openclaw` | `dist/hook-types-*.d.ts` | 决定子代理投递目标（可返回 Result 改路由） | 暂无 |
 | `subagent_spawned` | `openclaw` | `dist/hook-types-*.d.ts` | 子代理已启动（启动后观测；官方建议新插件用它取代废弃的 subagent_spawning） | 暂无 |
 | `subagent_ended` | `openclaw` | `dist/hook-types-*.d.ts` | 子代理已结束（观测） | 暂无 |
-| `gateway_start` | `openclaw` | `dist/hook-types-*.d.ts` | 网关启动（载荷含 port）——daemon 进程级挂载候选（暂未挂载） | 暂无 |
-| `gateway_stop` | `openclaw` | `dist/hook-types-*.d.ts` | 网关开始关闭（宿主把废弃别名 deactivate 的注册归一化到此处做清理）——daemon 挂载候选（暂未挂载） | 暂无 |
-| `heartbeat_prompt_contribution` | `openclaw` | `dist/hook-types-*.d.ts` | 心跳 prompt 贡献（可返回 prependContext / appendContext 前后缀注入心跳提示词）——巡检注入位候选（暂未挂载） | 暂无 |
+| `gateway_start` | `openclaw` | `dist/hook-types-*.d.ts` | 网关启动（载荷含 port）——daemon 维持独立进程形态不挂载（7×24 不寄生网关生命周期），备查 | 暂无 |
+| `gateway_stop` | `openclaw` | `dist/hook-types-*.d.ts` | 网关开始关闭（宿主把废弃别名 deactivate 的注册归一化到此处做清理）——同 gateway_start，备查不挂载 | 暂无 |
+| `heartbeat_prompt_contribution` | `openclaw` | `dist/hook-types-*.d.ts` | 心跳 prompt 贡献（可返回 prependContext / appendContext 前后缀注入心跳提示词）——宿主源码实测心跳运行同样触发 before_prompt_build，既有注入面已覆盖，本 hook 仅余心跳差异化上下文价值，备查未挂载 | 暂无 |
 | `cron_changed` | `openclaw` | `dist/hook-types-*.d.ts` | 宿主 cron 任务变更（added / updated / removed / started / finished，载荷含 jobId 与运行状态） | 暂无 |
 | `before_dispatch` | `openclaw` | `dist/hook-types-*.d.ts` | 入站消息派发前（可返回 Result 干预路由） | 暂无 |
 | `reply_dispatch` | `openclaw` | `dist/hook-types-*.d.ts` | 回复派发（可返回 Result 干预） | 暂无 |
