@@ -592,16 +592,18 @@ if [ -z "$PLANNING_DEVLOGS" ]; then
     echo -e "  ${YELLOW}⏏️ 无规划中（未发版）devlog（boundary v${CUR_VERSION}）——规划 devlog 计数行校验本次跳过${NC}"
   fi
 else
+  # 聚合台账（v1.5.4 批）：无计数行的规划 devlog 不逐份打印，收成 1 行——
+  # 但**逐一列出文件名与理由**（仓内纪律：跳过须可见可解释），SKIPS 仍按**文件数**计。
+  PDL_SKIP_N=0
+  PDL_SKIP_LIST=""
   while IFS= read -r _pdl; do
     [ -n "$_pdl" ] || continue
     # 行选取：锚「计数：测试 N → **M**」（当前口径行）。head -1 取首个匹配（每份规划 devlog 该行唯一）。
     PDL_MATCH=$(grep -nE '计数：测试 [0-9]+ ?→ ?[*]{2}[0-9]+[*]{2}' "$_pdl" 2>/dev/null | head -1)
     if [ -z "$PDL_MATCH" ]; then
-      # 规划 devlog 尚未到计数阶段（占位/未施工）——无「旧→新」可替换，显式 SKIP（非静默）
-      SKIPS=$((SKIPS + 1))
-      if [ "$QUIET" = false ]; then
-        echo -e "  ${YELLOW}⏏️ ${_pdl}：无「计数：测试 X → **Y**」当前口径行（规划中占位/未到计数阶段）——跳过，非失败${NC}"
-      fi
+      # 规划 devlog 尚未到计数阶段（占位/未施工）——无「旧→新」可替换，计入聚合 SKIP（非静默）
+      PDL_SKIP_N=$((PDL_SKIP_N + 1))
+      if [ -z "$PDL_SKIP_LIST" ]; then PDL_SKIP_LIST="$_pdl"; else PDL_SKIP_LIST="${PDL_SKIP_LIST} · ${_pdl}"; fi
       continue
     fi
     PDL_LINENO=$(echo "$PDL_MATCH" | cut -d: -f1)
@@ -629,6 +631,13 @@ else
       ((FAIL++)) || true
     fi
   done <<< "$PLANNING_DEVLOGS"
+  # 聚合 1 行（文件名全列；SKIPS 按文件数计 ⇒ 与聚合行「共 N 份」一致）
+  if [ "$PDL_SKIP_N" -gt 0 ]; then
+    SKIPS=$((SKIPS + PDL_SKIP_N))
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${YELLOW}⏏️ 规划中（未发版）devlog 无「计数：测试 X → **Y**」当前口径行（共 ${PDL_SKIP_N} 份，未到计数阶段，跳过非失败）：${PDL_SKIP_LIST}${NC}"
+    fi
+  fi
 fi
 
 # ── ROADMAP.md 最新版「开发完成」行的测试数快照（v1.4.9 G-6 改锚）──
