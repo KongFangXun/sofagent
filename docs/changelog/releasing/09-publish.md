@@ -544,7 +544,7 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" --notes "$(ca
 | release-gate | verdict=PASS ✅ |
 | fresh-eyes | {N} 视角审查闭环 ✅ |
 
-📖 [详细开发日志](./docs/changelog/v{major}.{minor}/vX.Y.Z.md)  <!-- 链接相对仓库根（发布后 GitHub 页面上预期可达），在本文档内直接点击不可达；⚠️ Release 页相对链接可点性未实证（复检时网络受限）——若实证不可点，下版改绝对链接（https://github.com/{owner}/{repo}/blob/{tag}/docs/changelog/...） -->
+📖 [详细开发日志](./docs/changelog/v{major}.{minor}/vX.Y.Z.md)  <!-- 链接相对仓库根，在本文档内直接点击不可达；Release 页实证可点——GitHub 渲染时自动重写为 /{owner}/{repo}/blob/{tag}/... 路径（锚定发版 tag、不随 main 漂移），相对链接为推荐形态，无需改绝对链接 -->
 EOF
 )"
 ```
