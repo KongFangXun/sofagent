@@ -492,7 +492,7 @@ graph LR
 
 | 模块 | 职责一句话 | 主要载体 |
 |------|------|------|
-| **编排模块** | 工作流 DAG 拆解、循环执行、Agent 阵型调度 | orchestrator 包（LangGraph；事件驱动升级 v1.5.1 ✅ 已发版 2026-09-22） |
+| **编排模块** | 工作流 DAG 拆解、循环执行、Agent 阵型库（schema + 模板实例化；**调度接线未落地**，详见 [LIMITATIONS](./LIMITATIONS.md)） | orchestrator 包（LangGraph；事件驱动升级 v1.5.1 ✅ 已发版 2026-09-22） |
 | **审计模块** | 单一规则引擎（tool-level + git-diff 同一份定义、两种触发时机）跑 25 条规则做 git diff 硬证据判定——每条规则带正负样例自测（加载 fail-closed），每次变更必审 | audit 包 + git hook |
 | **后训模块** | post-training 流水线：审计轨迹→语料导出→训练（**外部执行**）→模型注册→晋升（模型进化闭环的中段） | orchestrator/train + eval 包 |
 | **治理模块** | 治理 KPI、跨层证据对账、可见性分级 | v1.5.0（✅ 已发版 · 2026-09-19） |
