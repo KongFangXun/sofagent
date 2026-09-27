@@ -319,6 +319,5 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 
 <p align="center">
   Issues and PRs welcome, especially the nitpicky kind · <a href="./CONTRIBUTING.md">Contributing</a> · <a href="./docs/THANKS.md">Thanks</a><br/>
-  <sub>Everything can be FDEing — turning FDE labor into FDEing capability · coined by sofagent</sub><br/>
   <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">Kong Fangxun</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ If sofagent helps you, star it and help more people find it</a></sub>
 </p>
