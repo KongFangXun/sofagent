@@ -16,6 +16,14 @@
 
 import type { WorkflowNode } from './workflow-parser';
 import type { NodeExecutionResult } from './node-executor';
+// v1.5.4 第四章：多实例交叉表决（表决编排 + 分歧路由复用本处理器的人工介入异常队列）
+import {
+  runMultiInstanceVote,
+  DEFAULT_VOTE_CONFIG,
+  MultiInstanceVoteError,
+  type MultiInstanceVoteConfig,
+  type VoteOutcome,
+} from './multi-instance-vote';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -55,7 +63,7 @@ export interface ExceptionRecord {
   /** Agent 名称 */
   agentName: string;
   /** 异常类型 */
-  type: 'hitl_rejected' | 'audit_failed' | 'execution_error' | 'timeout';
+  type: 'hitl_rejected' | 'audit_failed' | 'execution_error' | 'timeout' | 'vote_divergence';
   /** 异常描述 */
   message: string;
   /** 时间戳 */
@@ -247,6 +255,50 @@ export function createHITLHandler(options?: {
       }
 
       return auditResult;
+    },
+
+    /**
+     * 多实例交叉表决（v1.5.4 第四章 · 表决编排 + 分歧路由）。
+     *
+     * 同任务并发 N 实例（缺省复用 {@link DEFAULT_VOTE_CONFIG}）→ 结果交叉比对 →
+     * 多数表决。分歧超阈值 / 法定人数不足 ⇒ 按 outcome.route 路由：
+     *   · `hitl`：记入本处理器的人工介入异常队列（type='vote_divergence'）；
+     *   · `escalate`：交由调用方升级大模型重跑。
+     * 共识（route='accept'）直接返回，不产生异常。
+     *
+     * @param config 表决配置（缺省字段合并 DEFAULT_VOTE_CONFIG；runner 缺省 = 模型调用实现）
+     * @returns 结构化表决结果（decision / winner / tally / agreement / divergence / route）
+     * @throws {MultiInstanceVoteError} 实例数 < 2 或阈值越界（fail-closed；同时记异常）
+     */
+    async vote(config?: Partial<MultiInstanceVoteConfig>): Promise<VoteOutcome> {
+      const merged: MultiInstanceVoteConfig = { ...DEFAULT_VOTE_CONFIG, ...config };
+      let outcome: VoteOutcome;
+      try {
+        outcome = await runMultiInstanceVote(merged);
+      } catch (err) {
+        if (err instanceof MultiInstanceVoteError) {
+          recordException({
+            nodeId: 'multi-instance-vote',
+            agentName: 'vote',
+            type: 'vote_divergence',
+            message: `多实例表决配置错误：${err.message}`,
+            timestamp: new Date().toISOString(),
+          });
+        }
+        throw err;
+      }
+      if (outcome.decision === 'divergence') {
+        recordException({
+          nodeId: 'multi-instance-vote',
+          agentName: 'vote',
+          type: 'vote_divergence',
+          message:
+            `多实例表决分歧（agreement=${outcome.agreement.toFixed(2)}，N=${merged.instances}，` +
+            `tied=${outcome.tied}，quorum=${outcome.quorum}）→ 路由 ${outcome.route}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      return outcome;
     },
 
     /** 获取已记录的异常列表 */

@@ -789,6 +789,20 @@
 /* @public */ export { DecisionDispatcher, RouteDispositionSchema, DISPOSITION_SCHEMA_FAMILY } from './router/decision-dispatch';
 /* @public */ export type { RouteDisposition, DispatchTransport, DispatchResult, DecisionDispatcherDeps } from './router/decision-dispatch';
 
+// 多实例自验证（v1.5.4 第四章 · 并发小模型交叉表决 + 分歧路由 HITL/升级大模型）
+/* @public */ export { runMultiInstanceVote, DEFAULT_VOTE_CONFIG, MultiInstanceVoteError } from './multi-instance-vote';
+/* @public */ export type {
+  MultiInstanceVoteConfig,
+  VoteOutcome,
+  VoteTally,
+  VoteDecision,
+  VoteRoute,
+  InstanceRunner,
+  InstanceContext,
+  VoteInstanceTask,
+  VoteInstanceOutput,
+} from './multi-instance-vote';
+
 // Weights Manifest（本地权重目录规范——local-path 注册/校验/版本回滚的物理载体）
 /* @public */ export {
   checkWeightsDir,
