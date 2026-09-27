@@ -11,6 +11,7 @@ import type { AgentIdentity } from '@sofagent/core';
 import type { ToolGate, ToolId, ToolRisk } from '../sandbox/tool-gate';
 import type { FilesystemBackend } from '../sandbox/filesystem-backend';
 import type { NetworkGateway } from '../sandbox/network-gateway';
+import type { CredentialVault } from '../vault/credential-vault';
 
 /**
  * 审批模式——v1.3.1 审批语义的 SDK 暴露面。
@@ -56,6 +57,19 @@ export interface HarnessWrapOptions {
   sandboxAllowHosts?: string[];
   /** 沙箱工具门风险策略覆盖（risk → allow/deny/human-approval；缺省 high→human-approval） */
   sandboxRiskPolicy?: Partial<Record<ToolRisk, 'allow' | 'deny' | 'human-approval'>>;
+  /**
+   * 凭证隔离 Vault（v1.5.4 章三 · 可选）。
+   * 传入后沙箱 HTTP 出口（fetch/http/request/curl 类工具）在**出站前**经 Vault
+   * 动态注入凭证请求头——真实凭证只写入**出站副本**，Agent 原入参（含审计事件
+   * 载荷）/ 日志零明文。不传则行为与今日一致（不注入）。
+   */
+  credentialVault?: CredentialVault;
+  /**
+   * 本 Agent 沙箱会话持有的虚拟 key（`vk-` 前缀 · 可选）。
+   * 身份的**数据面事实**——仅作凭证查找键；控制面判定只认数据面（登记 / 吊销 /
+   * 范围），不读任何界面 / 配置开关（v1.5.4 章三设计约束：身份与能力两职拆开）。
+   */
+  credentialVirtualKey?: string;
   /**
    * LLM 调用级 Trace 开关（v1.3.1 trace 体系）。
    * 缺省 true——wrap 的默认价值主张就是全链可观测。

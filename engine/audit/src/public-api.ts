@@ -243,3 +243,12 @@
   readDatasetVersionsLite,
 } from './governance';
 /* @public */ export type { GovernanceKpiReport, GovernanceOptions, DatasetVersionLite, LineageReportOptions } from './governance';
+
+// ── v1.5.4 章七：授权面 × 凭证面对账（台账级）──
+// @internal：跨包内部接缝——**生产消费方**是 orchestrator 的凭证 Vault 范围声明产出
+// （engine/orchestrator/src/vault/scope-declaration.ts 在签发凭证后调用对账），
+// 故按 tools/check/public-api.mjs 的 @internal 语义不计入 public API 基线。
+/* @internal */ export { reconcileCredentialLedger, evaluateCredentialReconcile } from './mandate-credential-reconcile';
+/* @internal */ export type { ReconcileVerdict, ReconcileMismatchKind, ReconcileFinding, ReconcileOptions, ReconcileReport } from './mandate-credential-reconcile';
+// 授权台账 / 凭证面契约类型（章三 Vault 与章七对账共用的 type-only 跨包消费面）
+/* @internal */ export type { CredentialScopeDeclaration, MandateScope, MandateValidity } from './mandate-store';

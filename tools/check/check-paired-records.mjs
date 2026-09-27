@@ -165,6 +165,18 @@ const REGISTRY = [
     //   一条·失败不阻断主审计）。态标签取写面输出路径的真实字面量「成本告警」。
     exempt: undefined,
   },
+  {
+    family: '授权面 × 凭证面对账（CREDENTIAL_RECONCILE）',
+    kind: 'CREDENTIAL_RECONCILE',
+    // 二元对（N=2）：对账通过 / 对账错位。两态均在唯一 writer 内以 why.text 模板
+    //   落（一致 → 「凭证对账通过」；错位 → 「凭证对账错位（<三类之一>）」）。
+    states: ['对账通过', '对账错位'],
+    writers: [
+      // v1.5.4 章七：台账级对账（三类错位判定 + 一致结论均经 emitDecision 挂链）
+      { file: 'engine/audit/src/mandate-credential-reconcile.ts' },
+    ],
+    exempt: undefined,
+  },
 ];
 
 // 非判决类 kind（观测/过程记录——天然无「两侧」语义）整类豁免。

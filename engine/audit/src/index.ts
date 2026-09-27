@@ -68,6 +68,18 @@ import { ensureGitignore } from './commands/init';
 // v1.4.9 交付 2：国标对齐 GB/T 48000.3-2026（条款映射清单 + 覆盖度评估）
 export { GB48000_CLAUSE_MAP, assessGb48000Coverage, buildGb48000RuleCheck } from './gb48000';
 export type { Gb48000ClauseMapping, Gb48000Status, Gb48000Coverage } from './gb48000';
+// v1.5.4 章七：授权面 × 凭证面对账（台账级）——导出注册点。
+// 生产消费方 = orchestrator 的凭证 Vault 范围声明产出
+// （engine/orchestrator/src/vault/scope-declaration.ts 的 declareAndReconcile 经
+//  @sofagent/audit 调用 reconcileCredentialLedger）——签发凭证后即进入审计流水。
+export { reconcileCredentialLedger, evaluateCredentialReconcile } from './mandate-credential-reconcile';
+export type {
+  ReconcileVerdict,
+  ReconcileMismatchKind,
+  ReconcileFinding,
+  ReconcileOptions,
+  ReconcileReport,
+} from './mandate-credential-reconcile';
 import { loadHistory, appendHistory, sanitizeFreeText, type AuditHistoryEntry } from './audit-history';
 // v1.5.3 T1/T4: hook 安装核心抽取——core.hooksPath 尊重 + 用户 hook 链式保留
 import { resolveHooksDir, installHooks } from './hook-install';

@@ -137,6 +137,37 @@
   SandboxHandle,
 } from './harness-sdk';
 
+// 凭证隔离 Vault（执行层安全基础设施 · v1.5.4 章三 · OMA 启发）
+// 挂载点：本处导出 + 沙箱 HTTP 出口（harness-sdk/wrap.ts 的 injectCredentialArgs）实际调用
+/* @public */ export {
+  CredentialVault,
+  createCredentialVault,
+  CredentialVaultError,
+  CredentialRotator,
+  createCredentialRotator,
+  produceScopeDeclaration,
+  declareAndReconcile,
+  compareRequestedIssued,
+} from './vault';
+/* @public */ export type {
+  CredentialInjectSpec,
+  CredentialStoreInput,
+  CredentialView,
+  CredentialVaultDeps,
+  SandboxEgressRequest,
+  SandboxEgressInjection,
+  SandboxCredentialInjector,
+  RotationPolicy,
+  CredentialRotatorDeps,
+  RotationOutcome,
+  LeakResponseRecord,
+  ScopeDim,
+  ScopeComparison,
+  ScopeDeclarationInput,
+  ScopeDeclarationResult,
+  DeclareAndReconcileResult,
+} from './vault';
+
 // Route（入口路由 · v1.3.3 新增）
 /* @public */ export { routeRequest } from './route/route-request';
 /* @public */ export type {

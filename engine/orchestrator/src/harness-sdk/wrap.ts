@@ -199,6 +199,15 @@ function redirectFileWriteToVfs(
 }
 
 /**
+ * 网络类工具判定（fetch/http/request/curl 类——入参直带外域目标）。
+ * 沙箱出站白名单判定与凭证注入共用此判据（单一事实源，防两处口径漂移）。
+ */
+function isNetworkTool(toolName: string): boolean {
+  const lower = toolName.toLowerCase();
+  return lower.includes('fetch') || lower.includes('http') || lower.includes('request') || lower.includes('curl');
+}
+
+/**
  * 沙箱层③（工具级）：显式网络工具的出站白名单判定。
  * 只拦「入参直接带外域目标」的工具（fetch/http/curl 类）；进程级 net/dns
  * 守卫由 wrap() invoke 代理统一装卸（覆盖 LLM SDK 等隐式出站）。
@@ -209,10 +218,7 @@ function checkNetworkToolArgs(
   toolName: string,
   input: Record<string, unknown>,
 ): string | null {
-  const lower = toolName.toLowerCase();
-  const isNetTool =
-    lower.includes('fetch') || lower.includes('http') || lower.includes('request') || lower.includes('curl');
-  if (!isNetTool) return null;
+  if (!isNetworkTool(toolName)) return null;
   for (const key of NET_ARG_KEYS) {
     const v = input[key];
     if (typeof v !== 'string' || v.length === 0) continue;
@@ -230,6 +236,36 @@ function checkNetworkToolArgs(
     }
   }
   return null;
+}
+
+// ============================================================
+// 沙箱层④（工具级）：凭证动态注入（v1.5.4 章三 · 凭证隔离 Vault）
+// ============================================================
+
+/**
+ * 沙箱 HTTP 出口的凭证动态注入。
+ *
+ * 出站前经 Vault 注入器把真实凭证写入**出站请求副本**的请求头——Agent 原入参
+ * （即审计事件 args）**零明文**：注入只改副本，**不**改 Agent 传入的 input 对象。
+ * 无 Vault / 非网络工具 / 无虚拟 key / 凭证未登记或已吊销 ⇒ 原样返回入参
+ * （不注入，行为与今日一致）。
+ *
+ * @returns 出站入参（注入命中时为**新对象**；否则为原 input）
+ */
+function injectCredentialArgs(
+  options: HarnessWrapOptions,
+  toolName: string,
+  input: Record<string, unknown>,
+): Record<string, unknown> {
+  const vault = options.credentialVault;
+  if (!vault || !isNetworkTool(toolName)) return input;
+  const injector = vault.createInjector();
+  const result = injector({
+    toolName,
+    input,
+    ...(options.credentialVirtualKey !== undefined ? { virtualKey: options.credentialVirtualKey } : {}),
+  });
+  return result.injected ? result.input : input;
 }
 
 // ============================================================
@@ -284,6 +320,9 @@ export function wrapTools(
     ...tool,
     func: (input: Record<string, unknown>): string => {
       const ts = new Date().toISOString();
+      // 出站入参（v1.5.4 章三）：默认 = Agent 原入参；沙箱 HTTP 出口注入凭证时替换为
+      // **出站副本**（真实凭证只进副本——审计事件 args 仍用原始 input，零明文）。
+      let egressInput = input;
 
       // ── 沙箱层①：tool-gate 前置判定（先于审批分支——fail-closed 优先兜底）──
       if (sandbox) {
@@ -350,6 +389,10 @@ export function wrapTools(
           });
           return netDenied;
         }
+
+        // ── 沙箱层④（工具级）：凭证动态注入（v1.5.4 章三 Vault）──
+        // 真实凭证只写入**出站副本**；Agent 原入参 input（审计事件 args）零明文。
+        egressInput = injectCredentialArgs(options, tool.name, input);
       }
 
       // ── 审批判定（副作用类工具才受审批模式约束）──
@@ -395,7 +438,7 @@ export function wrapTools(
       let result: string;
       let errored = false;
       try {
-        result = tool.func(input);
+        result = tool.func(egressInput);
       } catch (err) {
         errored = true;
         result = `⚠️ 工具执行异常：${err instanceof Error ? err.message : String(err)}`;

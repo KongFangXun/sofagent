@@ -11,7 +11,7 @@
 
 import { REDACTION_PATTERNS } from '@sofagent/core';
 
-/** 决策种类（15 类）——覆盖 Agent 生命周期内所有可问责决策
+/** 决策种类（16 类）——覆盖 Agent 生命周期内所有可问责决策
  *
  * v1.3.3 新增 EVOLUTION（进化动作）+ TEAM（团队协作动作）：
  *   - EVOLUTION：优化器修改经验层（think.md / knowledge）、Benchmark 评估 accept/reject、
@@ -42,6 +42,19 @@ import { REDACTION_PATTERNS } from '@sofagent/core';
  *        （`COST` 与 `COVERAGE` 两次新增即同款先例）。
  *   注：标记是**元记录**，不是 Agent 决策——下游读数（治理 KPI / 决策查询
  *   聚合）须以 `isInvalidationMarker` 把标记条目排除在决策计数之外。
+ *
+ * v1.5.4 新增 CREDENTIAL_RECONCILE（授权面 × 凭证面对账结论）：
+ *   - CREDENTIAL_RECONCILE：授权台账（mandate）与凭证范围声明**交叉对账**的结论入链
+ *     （谁在何时用哪个授权发了哪个范围凭证）。三类错位（凭证范围 ⊄ 授权范围 /
+ *     凭证时效 > 授权时效 / 无对应授权记录）与一致结论均落本 kind，由
+ *     `engine/audit/src/mandate-credential-reconcile.ts` 写入（对账面默认关 L1）。
+ *   为何新增枚举值（沿用 COST / COVERAGE / INVALIDATION 三次成例）：新决策语义 →
+ *   新 kind。对账结论既非 COVERAGE（trace 三源对账，说的是「说的和干的差在哪」），
+ *   也非 TOOL_GATE（执行前放行/拦截裁决）——它是**两个独立落盘面之间的缝**的判定，
+ *   单列 kind 方能按需聚合与举证。
+ *   ⚠️ 本 kind 是**判决类记录**（成对 N 态：对账通过 / 对账错位），已在
+ *   `tools/check/check-paired-records.mjs` 的 REGISTRY 登记；下游读数**应计入**决策
+ *   统计（它是 Agent 治理决策，非 INVALIDATION 一类元记录——二者过滤边界要分清）。
  */
 export type DecisionKind =
   | 'SPEC_CHANGE'       // 改变需求/规格（范围变更）
@@ -58,7 +71,8 @@ export type DecisionKind =
   | 'COMMONS'            // 公地能力动作（能力发布 / 调用 / 评分 / 退役 / SkillScan）
   | 'COST'              // 成本告警（v1.4.0 交付三 · budget 超支 WARN，queryByKind('COST') 可追溯）
   | 'COVERAGE'          // 对账覆盖动作（v1.5.0 章八 · trace 三源对账结果入 decision-log——说的和干的差在哪）
-  | 'INVALIDATION';      // 结论失效标记（v1.5.2 章四 · append-only 追加的「失效是标记不是抹除」条目）
+  | 'INVALIDATION'      // 结论失效标记（v1.5.2 章四 · append-only 追加的「失效是标记不是抹除」条目）
+  | 'CREDENTIAL_RECONCILE'; // 授权面 × 凭证面对账结论（v1.5.4 章七 · 台账级三类错位判定入链）
 
 /**
  * 判断时刻分类（v1.3.6 交付⑮ · decisions.jsonl 完整版 · OpenFDE 启发）。

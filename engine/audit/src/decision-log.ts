@@ -93,6 +93,10 @@ const VALID_KINDS: readonly string[] = [
   // causedBy 指向被失效结论 ts + invalidationReason 记原因）。失效是标记
   // 不是抹除——原条目字节不变、HMAC 链完整。
   'INVALIDATION',
+  // CREDENTIAL_RECONCILE：v1.5.4 章七——授权面 × 凭证面对账结论（台账级三类
+  // 错位：范围超集 / 时效超期 / 无对应授权记录 + 一致结论）。判决类记录
+  // （成对 N 态），已在 check-paired-records.mjs REGISTRY 登记。
+  'CREDENTIAL_RECONCILE',
 ];
 
 /** 合法 LoopPhase 集合 */
