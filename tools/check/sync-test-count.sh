@@ -98,7 +98,13 @@ if [ "$DRY_RUN" = "1" ]; then
 fi
 echo "→ 复验 check-test-count.sh ..."
 if bash tools/check/check-test-count.sh > /tmp/sync-tc-verify.log 2>&1; then
-  echo "✅ 复验通过：15 处校验全绿"
+  # 校验处数取自 check-test-count 的覆盖度行（`[check:coverage] … asserts=N`，
+  # 覆盖度行是稳定契约、唯一事实源）——原为硬编码「15 处」，改前即已漂移
+  # （实测 16，v1.5.4 批新增规划 devlog 落点后为 17）。此处消灭硬编码根因，
+  # 不再随落点增减而漂；取不到时显式打印「?」（不静默、不编造数字）。
+  _TC_ASSERTS=$(grep -oE 'asserts=[0-9]+' /tmp/sync-tc-verify.log 2>/dev/null | head -1 | cut -d= -f2 || true)
+  _TC_ASSERTS=${_TC_ASSERTS:-?}
+  echo "✅ 复验通过：${_TC_ASSERTS} 处校验全绿"
   echo "═══ 完成：门禁绿 ═══"
   exit 0
 else
