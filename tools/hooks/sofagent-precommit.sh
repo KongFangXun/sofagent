@@ -142,15 +142,35 @@ if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
     # v1.4.6 双信号判定：dist 哈希变化有两种成因（改源码后重建 / 不动源码直接替换
     # dist），单看 dist 无法区分，只能一律拦截，结果是每次 rebuild 后全仓 commit
     # 被阻塞。追加「源码指纹」作第二信号即可分离——判定矩阵见
-    # tools/audit-src-fingerprint.mjs 头部注释。
+    # engine/audit/hooks/audit-src-fingerprint.mjs 头部注释。
     # 指纹必须由 dist 之外的代码计算：交给 dist/index.js 算则 dist 被篡改时指纹
     # 同样可伪造，防线 self-defeating。
     SRC_CHANGED=0
     CURRENT_SRC_FP=""
     RECORDED_SRC_FP=""
     SRC_RECORD="$SOFAGENT_HOME/internal/audit-src-fingerprint.txt"
-    FP_SCRIPT="$REPO_ROOT/tools/audit-src-fingerprint.mjs"
-    if [ -f "$FP_SCRIPT" ] && [ -f "$SRC_RECORD" ]; then
+    # 🔴 v1.5.4 #28 信任根修复（与 commit-msg 同款）：原 `FP_SCRIPT="$REPO_ROOT/tools/…"`
+    # 是**被审仓内**的绝对路径——恶意仓放同名脚本即每次 commit 执行任意代码。
+    # 改为只从可信源取：① 安装落地副本（首选）；② 本仓自审或显式注入时的仓内路径；
+    # 两者皆无则跳过指纹（走更严的 fail-closed 分支，不静默放行）。
+    FP_SCRIPT=""
+    _FP_LANDED="$SOFAGENT_HOME/internal/audit-src-fingerprint.mjs"
+    # 本仓判定（与 commit-msg 同款）：只有**确认是被审对象即本仓**时才允许读仓内脚本
+    _REPO_IS_SOFA=0
+    if [ -n "${REPO_ROOT:-}" ] && [ -f "$REPO_ROOT/package.json" ] && [ -f "$REPO_ROOT/engine/audit/package.json" ]; then
+      _TOP_NAME=$(node -e "try{process.stdout.write(require(process.argv[1]).name||'')}catch{}" "$REPO_ROOT/package.json" 2>/dev/null)
+      _AUD_NAME=$(node -e "try{process.stdout.write(require(process.argv[1]).name||'')}catch{}" "$REPO_ROOT/engine/audit/package.json" 2>/dev/null)
+      if [ "$_TOP_NAME" = "sofagent-monorepo" ] && [ "$_AUD_NAME" = "@sofagent/audit" ]; then
+        _REPO_IS_SOFA=1
+      fi
+    fi
+    if [ -f "$_FP_LANDED" ]; then
+      FP_SCRIPT="$_FP_LANDED"
+    elif { [ "${_REPO_IS_SOFA:-0}" -eq 1 ] || [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; } \
+      && [ -n "${REPO_ROOT:-}" ] && [ -f "$REPO_ROOT/engine/audit/hooks/audit-src-fingerprint.mjs" ]; then
+      FP_SCRIPT="$REPO_ROOT/engine/audit/hooks/audit-src-fingerprint.mjs"
+    fi
+    if [ -n "$FP_SCRIPT" ] && [ -f "$SRC_RECORD" ]; then
       CURRENT_SRC_FP=$(node "$FP_SCRIPT" "$REPO_ROOT" 2>/dev/null)
       RECORDED_SRC_FP=$(cat "$SRC_RECORD" 2>/dev/null | tr -d '[:space:]')
       if [ -n "$CURRENT_SRC_FP" ] && [ -n "$RECORDED_SRC_FP" ] && [ "$CURRENT_SRC_FP" != "$RECORDED_SRC_FP" ]; then

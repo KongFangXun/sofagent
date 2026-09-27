@@ -91,14 +91,16 @@ resolve_global_audit() {
     if [ -n "$_GLOBAL_HASH" ]; then
       if [ ! -f "$_GLOBAL_HASH_RECORD" ]; then
         echo "🔴 [sofagent] 全局审计引擎基准缺失——本地全局包的完整性无从比对"
-        echo "   生成基准: bash tools/audit-baseline-sync.sh --global"
+        echo "   建立基准（任一，均为显式确认时刻）："
+        echo "     · sofagent-audit --install-hook   # 重装 hook 时自动建立全局锚（v1.5.4 起）"
+        echo "     · sofagent-audit --doctor --baseline"
         exit 1
       fi
       _GLOBAL_RECORDED=$(tr -d '[:space:]' < "$_GLOBAL_HASH_RECORD" 2>/dev/null)
       if [ "$_GLOBAL_HASH" != "$_GLOBAL_RECORDED" ]; then
         echo "🔴 [sofagent] 全局审计引擎哈希不匹配（可能被投毒）: $RESOLVED_ENTRY"
         echo "   当前聚合哈希 ${_GLOBAL_HASH:0:12}... ≠ 基准 ${_GLOBAL_RECORDED:0:12}..."
-        echo "   恢复: npm install -g @sofagent/audit 后重跑 bash tools/audit-baseline-sync.sh --global"
+        echo "   恢复: npm install -g @sofagent/audit 后重跑 sofagent-audit --doctor --baseline"
         exit 1
       fi
     fi
@@ -203,9 +205,26 @@ if [ -f "$_DIST_ROOT_FOR_HASH/engine/audit/dist/index.js" ]; then
     CURRENT_SRC_FP=""
     RECORDED_SRC_FP=""
     SRC_RECORD="$SOFAGENT_HOME/internal/audit-src-fingerprint.txt"
-    FP_SCRIPT="tools/audit-src-fingerprint.mjs"
-    if [ -f "$FP_SCRIPT" ] && [ -f "$SRC_RECORD" ]; then
-      CURRENT_SRC_FP=$(node "$FP_SCRIPT" "$(pwd)" 2>/dev/null)
+    # 🔴 v1.5.4 #28 信任根修复：指纹脚本只允许从**可信源**执行——
+    #   ① 安装时落地的副本 `$SOFAGENT_HOME/internal/audit-src-fingerprint.mjs`（首选）；
+    #   ② 本仓自审（_REPO_IS_SOFA=1，本仓 `engine/audit/hooks/` 是发行源）或显式注入
+    #      （SOFAGENT_AUDIT_ENTRY，测试/CI 指定被测对象）时的仓内路径。
+    #   原实现 `FP_SCRIPT="tools/audit-src-fingerprint.mjs"`（cwd 相对）在**被审仓**里解析：
+    #   恶意仓放一个同名脚本即每次 commit 以受害者身份执行任意代码，且可令 SRC_CHANGED
+    #   恒 0 走「源码变更属预期」放行 ⇒ 校验面 fail-closed 被翻转成 fail-open。
+    #   两个候选路径都不存在时**跳过指纹**（SRC_CHANGED 保持 0）——此时走更严分支
+    #   （dist 变但源码信号不可用 ⇒ fail-closed 拦截），不静默放行。
+    FP_SCRIPT=""
+    _FP_LANDED="$SOFAGENT_HOME/internal/audit-src-fingerprint.mjs"
+    _FP_ROOT="${_REPO_TOP:-$(pwd)}"
+    if [ -f "$_FP_LANDED" ]; then
+      FP_SCRIPT="$_FP_LANDED"
+    elif { [ "${_REPO_IS_SOFA:-0}" -eq 1 ] || [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; } \
+      && [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/hooks/audit-src-fingerprint.mjs" ]; then
+      FP_SCRIPT="$_REPO_TOP/engine/audit/hooks/audit-src-fingerprint.mjs"
+    fi
+    if [ -n "$FP_SCRIPT" ] && [ -f "$SRC_RECORD" ]; then
+      CURRENT_SRC_FP=$(node "$FP_SCRIPT" "$_FP_ROOT" 2>/dev/null)
       RECORDED_SRC_FP=$(cat "$SRC_RECORD" 2>/dev/null | tr -d '[:space:]')
       if [ -n "$CURRENT_SRC_FP" ] && [ -n "$RECORDED_SRC_FP" ] && [ "$CURRENT_SRC_FP" != "$RECORDED_SRC_FP" ]; then
         SRC_CHANGED=1

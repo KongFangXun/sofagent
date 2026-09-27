@@ -119,7 +119,11 @@
 | `audit/audit-questionnaires/*.json` | 7 个行业审计问卷（finance/generic/government/healthcare/manufacturing/retail/supplychain），每行业 15-20 题，三段式（审计现状/痛点定位/合规要求），`client-audit.mjs` 数据源 |
 | `audit-baseline-sync.sh` | dist 聚合哈希基线同步（rebuild 后重置 `~/.sofagent/internal/audit-dist-hash.txt` 基线——不跑则 P1-A2 影子审计器拦 commit） | 发版 SOP 阶段七 |
 | `audit-dist-hash.mjs` | dist 多入口聚合哈希计算（排序逐文件哈希再聚合——P1-A2 判定的数据源） | 随 baseline-sync 调用 |
-| `audit-src-fingerprint.mjs` | 审计模块源码指纹 | FORGE 内部 |
+
+> 📌 源码指纹脚本 `audit-src-fingerprint.mjs` **已迁出 tools/**：它必须随包分发（hook 只能从
+> 可信源执行，禁执行被审仓 `tools/` 下的同名脚本——v1.5.4 #28），现位于
+> `engine/audit/hooks/audit-src-fingerprint.mjs`（`hooks/` 随 npm 包分发，安装时落地副本到
+> `$SOFAGENT_HOME/internal/`）。
 
 ## 七、hooks/ — 共享 hook 脚本
 

@@ -28,7 +28,7 @@
 #   结果是每次 rebuild 后全仓 commit 被阻塞。追加源码指纹后，hook 可判定：
 #     src 变 + dist 变 → 合法重建，放行
 #     src 不变 + dist 变 → 真劫持，fail-closed
-#   详见 tools/audit-src-fingerprint.mjs 头部注释。
+#   详见 engine/audit/hooks/audit-src-fingerprint.mjs 头部注释。
 #
 # 为什么分开两个文件而不是改 audit-hash.txt 格式：
 #   现有读取方（@sofagent/core 的 runDoctor）按「整文件内容 == 一个哈希」读取，
@@ -77,7 +77,7 @@ HASH_RECORD="$INTERNAL_DIR/audit-hash.txt"
 DIST_AGG_RECORD="$INTERNAL_DIR/audit-dist-hash.txt"
 GLOBAL_AGG_RECORD="$INTERNAL_DIR/audit-global-dist-hash.txt"
 SRC_RECORD="$INTERNAL_DIR/audit-src-fingerprint.txt"
-FP_SCRIPT="$REPO_ROOT/tools/audit-src-fingerprint.mjs"
+FP_SCRIPT="$REPO_ROOT/engine/audit/hooks/audit-src-fingerprint.mjs"
 DIST_AGG_SCRIPT="$REPO_ROOT/tools/audit-dist-hash.mjs"
 
 if [ ! -f "$FP_SCRIPT" ]; then

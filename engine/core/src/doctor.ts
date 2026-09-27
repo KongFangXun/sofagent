@@ -27,6 +27,7 @@ import { checkHistoryChainDetailed, validateHmacKey, getHistoryFilePath } from '
 import { isInitialized as _f11IsInit, loadDataKey as _f11LoadKey, keysDirPath as _f11KeysDir } from './crypto/key-manager';
 const _f11KeyMod = { isInitialized: _f11IsInit, loadDataKey: _f11LoadKey, keysDirPath: _f11KeysDir };
 import { DATA_DIR, getConfigFile, resolveDataDir, resolveHomeDir, resolveKnowledgeDir } from './data-paths';
+import { computeDistAggregateHash, resolveGlobalAuditDistRoot } from './dist-hash';
 // v1.5.3 章四：refresh 重置段的默认配置 SSOT（--init 同源模板，勿另造第二份）
 import { CONFIG_TEMPLATE } from './config-template';
 
@@ -536,7 +537,28 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
             for (const f of ['audit-dist-hash.txt', 'audit-hash.txt', 'audit-src-fingerprint.txt']) {
               try { rmSync(join(hashDir, f), { force: true }); } catch { /* 为何可静默：force:true 下文件不存在不抛错，此 catch 仅兜底权限异常，且清锚失败会让 hook 的「基准缺失」分支兜住，不影响语义 */ }
             }
-            ok(`✅ 三锚已清除（仓外无 tools/ 同步脚本）——下次 hook 运行会 fail-closed 重新记录基线`);
+            ok(`✅ 三锚已清除（仓外无 tools/ 同步脚本）——hook 遇「基准缺失」会 fail-closed 拦截并给出可达指引（不再声称「自动重新记录」）`);
+          }
+
+          // ── v1.5.4 #14 方向 B：全局引擎基准收口 ──────────────────────────
+          // 死锁根因 = 全局锚（audit-global-dist-hash.txt）的唯一生成器在仓库 tools/
+          // （**不在 npm 分发面**）⇒ 全局安装用户在自己机器上无路可建，首次 commit 被
+          // hook 的全局分支 exit 1 阻断。此处把「建立全局锚」收口进 doctor：
+          // `--doctor --baseline` = 用户显式确认此刻全局包可信的时刻，故**允许刷新**。
+          try {
+            const gDist = resolveGlobalAuditDistRoot();
+            if (gDist) {
+              const gRecord = join(hashDir, 'audit-global-dist-hash.txt');
+              const gh = computeDistAggregateHash(gDist);
+              if (gh) {
+                writeFileSync(gRecord, gh + '\n', { encoding: 'utf-8', mode: 0o600 });
+                ok(`✅ 全局引擎基准已建立/刷新（audit-global-dist-hash.txt · 聚合哈希 ${gh.slice(0, 12)}...）——全局安装用户的 commit 不再被「基准缺失」阻断`);
+              }
+            } else {
+              ok('ℹ️ 未检测到全局安装的 @sofagent/audit——全局引擎基准不适用（跳过）');
+            }
+          } catch {
+            /* 全局锚建立失败不阻断基线重置（hook 仍给出可达指引） */
           }
         } catch (err) {
           fail(`基准哈希重置失败: ${err instanceof Error ? err.message : String(err)}`);

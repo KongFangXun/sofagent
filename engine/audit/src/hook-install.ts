@@ -13,6 +13,35 @@ import { existsSync, readFileSync, writeFileSync, copyFileSync, chmodSync, mkdir
 import { join, dirname, resolve, isAbsolute } from 'path';
 import { execFileSync } from 'child_process';
 import { homedir } from 'os';
+import { computeDistAggregateHash } from '@sofagent/core';
+
+/**
+ * 解析**全局安装**的 `@sofagent/audit` 包根（v1.5.4 #14）。
+ * 与 `engine/audit/hooks/commit-msg` 的全局分支**同源解析**：只走显式全局根
+ * （execPath 推导 lib/node_modules + `npm root -g`），**不走 PATH**、不含被审仓
+ * node_modules（防投放冒牌包）。解析不到 → null。
+ */
+function resolveGlobalAuditPkg(): string | null {
+  try {
+    const out = execFileSync(
+      'node',
+      [
+        '-e',
+        [
+          "const p=require('path');let e=null;",
+          "const r=[p.resolve(p.dirname(process.execPath),'..','lib','node_modules')];",
+          "try{r.push(require('child_process').execSync('npm root -g',{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim())}catch(x){}",
+          "for(const q of r){try{e=require.resolve('@sofagent/audit',{paths:[q]});break}catch(x){}}",
+          "if(e)process.stdout.write(p.dirname(p.dirname(e)))",
+        ].join(''),
+      ],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    ).trim();
+    return out || null;
+  } catch {
+    return null;
+  }
+}
 
 /** hooks 目录解析结果 */
 export interface HooksDirResolution {
@@ -247,6 +276,52 @@ export function installHooks(opts: InstallHooksOptions): InstallHooksResult {
     chmodSync(destPath, 0o755);
     log(`✅ ${name} hook 已安装到 ${destPath}`);
     installed.push({ destName: name, destPath, chained: preName !== null });
+  }
+
+  // ── v1.5.4 #28：源码指纹脚本**落地副本** ──────────────────────────
+  // hook 只能从可信源执行指纹脚本（原实现按 cwd 相对路径读**被审仓** tools/ 下同名脚本
+  // ⇒ 恶意仓可投放 payload 实现任意代码执行 + fail-open 翻转）。故安装时把随包分发的
+  // `hooks/audit-src-fingerprint.mjs` 拷到 `$SOFAGENT_HOME/internal/`，hook 优先执行该副本。
+  const sofaHome = process.env.SOFAGENT_HOME ?? join(homedir(), '.sofagent');
+  const internalDir = join(sofaHome, 'internal');
+  try {
+    mkdirSync(internalDir, { recursive: true });
+    const fpSrc = join(opts.templateDir, 'audit-src-fingerprint.mjs');
+    if (existsSync(fpSrc)) {
+      const fpDest = join(internalDir, 'audit-src-fingerprint.mjs');
+      copyFileSync(fpSrc, fpDest);
+      chmodSync(fpDest, 0o755);
+      log(`✅ 源码指纹脚本已落地：${fpDest}（hook 只从此副本执行，不执行被审仓内同名脚本）`);
+    } else {
+      log(`⚠️ 指纹模板缺失（${fpSrc}）——hook 将跳过源码指纹信号（走更严的 fail-closed 分支）`);
+    }
+  } catch (err) {
+    log(`⚠️ 指纹脚本落地失败（${err instanceof Error ? err.message : String(err)}）——hook 将跳过源码指纹信号`);
+  }
+
+  // ── v1.5.4 #14 方向 A：安装时建立**全局引擎基准** ──────────────────
+  // 死锁根因：全局分支要求 `$SOFAGENT_HOME/internal/audit-global-dist-hash.txt`，而唯一
+  // 生成器在仓库 tools/（不在 npm 分发面）⇒ 全局用户无路可建。**安装 hook 这一刻本身就是
+  // 用户显式确认「此刻的包可信」的时刻**（与 `--doctor --baseline` 同构），故在此建立。
+  // 纪律两条：① 只对**可解析的全局包**建立（解析式与 hook 同源）；② 已有基准**不覆盖**
+  // （不重开「用当前哈希自动落锚」的口子——那会把已污染 dist 固化为合法基线）。
+  try {
+    const globalPkg = resolveGlobalAuditPkg();
+    if (globalPkg) {
+      const record = join(internalDir, 'audit-global-dist-hash.txt');
+      if (existsSync(record)) {
+        log('ℹ️ 全局引擎基准已存在——本次不覆盖（如需重置：sofagent-audit --doctor --baseline）');
+      } else {
+        const h = computeDistAggregateHash(join(globalPkg, 'dist'));
+        if (h) {
+          writeFileSync(record, h + '\n', 'utf-8');
+          chmodSync(record, 0o600);
+          log(`✅ 全局引擎基准已建立（${record}，聚合哈希 ${h.slice(0, 12)}…）——全局安装用户首次提交不再被「基准缺失」阻断`);
+        }
+      }
+    }
+  } catch {
+    /* 建立失败不阻塞安装：hook 会给出可达指引（--install-hook / --doctor --baseline） */
   }
 
   return { hooksDir, configured, configuredValue, installed };

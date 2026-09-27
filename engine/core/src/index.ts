@@ -221,6 +221,11 @@
 } from './config/watch-config';
 /* @public */ export type { WatchConfig, CronJob } from './config/watch-config';
 
+// ── dist 聚合哈希（信任锚计算 · v1.5.4 #14/#28） ──
+// @internal：仅供仓内消费者使用（engine/audit 的 hook 安装/doctor 建立全局锚）——
+// 不进 @public 基线（避免外部 API 面变更）；算法与 hook 内联版一致性由单测守护。
+/* @internal */ export { computeDistAggregateHash } from './dist-hash';
+
 // ── 模型客户端（v1.3.1：stop_reason 分类 + 退避重连 + 错误收敛） ──
 /* @public */ export { callModelAPI, convergeToolError, ModelCallError } from './model-client';
 /* @public */ export type { ModelCallOptions, ModelMessage, ConvergedToolError } from './model-client';
