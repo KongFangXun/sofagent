@@ -29,17 +29,25 @@ STATIC_BAD=0
 SCAN=$(node -e '
 const fs = require("fs");
 const path = require("path");
+// 扫描面 = .github/workflows/*.yml + 根 action.yml（v1.5.4 复查批纳入：复合 Action 的
+// uses: 同属供应链面，且根 action.yml 是唯一进入消费者 CI 的入口——原扫描面漏了它）
+const targets = [];
 const dir = ".github/workflows";
-if (!fs.existsSync(dir)) { console.log(JSON.stringify({refs: []})); process.exit(0); }
+if (fs.existsSync(dir)) {
+  for (const f of fs.readdirSync(dir)) {
+    if (!f.endsWith(".yml") && !f.endsWith(".yaml")) continue;
+    targets.push({ p: path.join(dir, f), label: f });
+  }
+}
+if (fs.existsSync("action.yml")) targets.push({ p: "action.yml", label: "action.yml" });
 const refs = [];
-for (const f of fs.readdirSync(dir)) {
-  if (!f.endsWith(".yml") && !f.endsWith(".yaml")) continue;
-  const lines = fs.readFileSync(path.join(dir, f), "utf8").split("\n");
+for (const t of targets) {
+  const lines = fs.readFileSync(t.p, "utf8").split("\n");
   for (let i = 0; i < lines.length; i++) {
     // 匹配两种形态：`- uses: xxx`（step 列表项）与缩进续行 `uses: xxx`（step 首键换行写法）
     const m = lines[i].match(/^\s*(?:-\s+)?uses:\s*(\S+)(?:\s+#\s*(\S+))?/);
     if (!m) continue;
-    refs.push({ file: f, line: i + 1, full: m[1], tag: m[2] || null });
+    refs.push({ file: t.label, line: i + 1, full: m[1], tag: m[2] || null });
   }
 }
 console.log(JSON.stringify({refs}));

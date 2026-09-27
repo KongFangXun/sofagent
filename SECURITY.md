@@ -602,12 +602,12 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 
 | 操作 | 路径 | 说明 |
 |------|------|------|
-| 创建目录 | `~/.openclaw/skills/sofagent/` 或 `~/.workbuddy/skills/sofagent/` | 按平台部署 Skill 文件 |
-| 创建目录 | `${项目目录}/data/task/logs/` | 数据目录，权限 700 |
+| 创建目录 | `~/.openclaw/skills/sofagent/` 或 `~/.workbuddy/skills/sofagent/` | 按平台部署 Skill 文件（**仅显式传 `--platform <平台>` 时**；默认安装不探测、零平台目录） |
+| 创建目录 | `~/.sofagent/data/task/logs/`（运行时产物按 `SOFAGENT_HOME` 解析，`install.sh:398 DATA_ROOT="$SOFAGENT_HOME/data"`） | 数据目录，权限 700 |
 | 复制文件 | 宪法(fde.md) + SKILL.md + 分层 rules/ + harness 约束骨架与 agents 子 Skill + 配套脚本 | 从仓库 `SKILL/` 和 `engine/scripts/` 复制到目标目录（以 `SKILL/` 目录实际清单为准） |
 | 写入配置 | `~/.openclaw/openclaw.json`（仅 OpenClaw） | 注册加载链 Hook |
 | 写入配置 | `~/.openclaw/config.json`（仅 OpenClaw） | 注入 loopDetection 断路器 |
-| npm install | `@langchain/langgraph`（编排模块依赖） | Sub Agent 编排模块 |
+| npm install | **不自动安装**；编排模块为独立可选包 `@sofagent/orchestrator`（需单独 `npm install -g @sofagent/orchestrator`） | Sub Agent 编排模块 |
 | 安装服务 | launchd(macOS) / systemd(Linux) | daemon 后台进程（交互确认后。daemon 当前为 bash 实现，正常运行中） |
 
 #### 脚本不会做的事
@@ -656,8 +656,8 @@ v1.3.5 交付 4b 起，CRDT 依赖已从旧包 `automerge@1.0.1-preview.7`（pre
 
 ### Dashboard 本地服务面（核验结论）
 
-> **有网络面，已核验**：`serve-dashboard.mjs` 是真实 HTTP 服务面（非纯静态），三项核验——① 默认绑定 `127.0.0.1`（`DASHBOARD_HOST || '127.0.0.1'`，局域网共享须显式 `DASHBOARD_HOST=0.0.0.0` opt-in）；② dashboard.html 零外链 CDN（36 图标 SVG 内嵌，断网可用——与 v2.0.0 离线 USB 节点叙事对齐）；③ 服务无密钥/凭据面（只读 `~/.sofagent/data/` 快照文件，无写操作、无鉴权需求）。
-> **GitHub Actions 供应链面**：8 个 workflow 23 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag，`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
+> **有网络面，已核验**：`serve-dashboard.mjs` 是真实 HTTP 服务面（非纯静态），三项核验——① 默认绑定 `127.0.0.1`（`DASHBOARD_HOST || '127.0.0.1'`，局域网共享须显式 `DASHBOARD_HOST=0.0.0.0` opt-in）；② dashboard.html 零外链 CDN（38 图标 SVG 内嵌 @2026-09-27 实测，数法：`grep -oE '\.bi-[^:]+::before' tools/dashboard/dashboard.html | sort -u`，断网可用——与 v2.0.0 离线 USB 节点叙事对齐）；③ 服务无密钥/凭据面（只读 `~/.sofagent/data/` 快照文件，无写操作、无鉴权需求）。
+> **GitHub Actions 供应链面**：8 个 workflow 26 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag（@2026-09-27 实测，**口径 = 脚本正则 `^\s*(?:-\s+)?uses:\s*(\S+)` 逐文件计数、排除注释行**；逐文件：daemon-linux 1 / daemon-macos 1 / pr-check 9 / release 4 / shellcheck 2 / sofagent-audit 2 / verify 5 / windows 2。⚠️ 直接 `grep "uses:"` 会多算 1 处——`pr-check.yml` 有一行含该词的注释），**另根 `action.yml` 1 处**同口径 pin（合计 27）；`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（**扫描面含根 `action.yml`**；离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
 
 ---
 
