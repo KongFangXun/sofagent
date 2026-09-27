@@ -166,7 +166,6 @@ const ROOT = path.resolve(import.meta.dirname, '..', '..');
 // 🔴 扫描窗口 = **未发版**版本（与下方 OPT_OUT_NOTE 同口径）：版本一旦发版即移出本清单——
 //    已发版版本的形态标注属历史档案，回填/对账均无意义（v1.5.0 发版后按此口径移出）。
 const VERSION_SOURCES = [
-  { version: 'v1.5.3', file: 'docs/changelog/v1.5/v1.5.3.md' },
   { version: 'v1.5.4', file: 'docs/changelog/v1.5/v1.5.4.md' },
   { version: 'v1.5.5', file: 'docs/changelog/v1.5/v1.5.5.md' },
   { version: 'v1.5.6', file: 'docs/changelog/v1.5/v1.5.6.md' },
@@ -184,10 +183,11 @@ const ROADMAP_FILE = 'docs/ROADMAP.md';
 const OPT_OUT_NOTE = 'docs/changelog/v1.4/ 及更早（已发版历史档案，不回填标注）';
 
 // A1 基线：路径写错时若直接输出「通过」就是假绿 ⇒ 先拒绝判定
-// 数值口径（删除 16 件后实测）：扫描面 15 文件 / 78 章。MIN_FILES 取 12 是主理人指示值
-// （余量 3）；MIN_CHAPTERS 取 60（余量 18）。两者都是**下界**，只防「路径漂移导致的假绿」。
-const MIN_FILES = 12;
-const MIN_CHAPTERS = 60; // 实测基线 15 文件 / 78 章（判定底座施工期四阶段四版纳入扫描面后；边界与治理缺口回灌五版 +5 章）
+// 数值口径（实测）：扫描面 11 文件 / 72 需标注章。**两个下界均取零余量**——
+// 任一文件路径断裂 / 任一需标注章消失即当场红（余量非零时「掉几个还算过」正是假绿温床）。
+// 维护纪律：发版时把该版移出 VERSION_SOURCES，**同批下调这两个下界**（与 EXPECTED_COUNTS 同款）。
+const MIN_FILES = 11;
+const MIN_CHAPTERS = 72;
 
 // A2 排除面（无交付面 ⇒ 不要求标注）：固定标题两个；**指针存根章由 isPointerStub
 // （章体判据）另行豁免**——这里刻意不按标题形态豁免，理由见 isPointerStub 处注释。
@@ -354,7 +354,6 @@ const DECLARED_COUNT_PATTERNS = [
 // 漏登记会被下面两条断言当场抓出，不会静默放行。
 const EXPECTED_LABELS = {
   'v1.5.0': ['主干', '插件', '非功能', '通道成分'],
-  'v1.5.3': ['主干', '非功能', '通道成分'],
   'v1.5.4': ['主干', '通道', '非功能'],
   'v1.5.5': ['主干', '非功能'],
   'v1.5.6': ['主干', '非功能', '通道成分'],
@@ -399,7 +398,6 @@ const EXPECTED_LABELS = {
 // 标签集无新增，故 EXPECTED_LABELS 本次不动。
 const EXPECTED_COUNTS = {
   'v1.5.0': { 主干: 5, 插件: 1, 非功能: 3, 通道成分: 1 },
-  'v1.5.3': { 主干: 4, 非功能: 4, 通道成分: 1 }, // 非功能 3→4：阶段三补发布门禁总表章（ROADMAP 同批声明，落桶登记随章）
   'v1.5.4': { 主干: 5, 通道: 1, 非功能: 2 }, // 非功能 1→2：首项硬交付章补形态标注（ROADMAP 同批声明）
   'v1.5.5': { 主干: 2, 非功能: 1 },
   'v1.5.6': { 主干: 1, 非功能: 2, 通道成分: 1 },

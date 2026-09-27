@@ -132,6 +132,14 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 
 平台安全扫描对 1.5.1 版 rollback 插件的启发式标记（源于一项配置读取缺陷，功能不受影响，不影响安装使用）。v1.5.2 重发后消除。
 
+### 📦 v1.5.3：ClawHub OpenClaw 插件带 `manifest-unknown-fields` 告警（下一版修复）
+
+平台对 `openclaw.plugin.json` 顶层若干字段（`seam` / `seamSemantics` / `uiHints` 等）给出「非受支持字段」告警——**安装与使用不受影响**，仅为平台校验提示。处置方向是把这些字段移入平台受支持的承载位；下一版随插件重发时同批处理。
+
+### 📦 v1.5.3：GitHub Release 工作流的自动发布密钥失效（手动发布兜底）
+
+`release.yml` 里用于 npm 自动发布的仓库 secret 已失效，导致该工作流的「自动 publish」步骤不可用。**本版已按手动发布补齐全部 23 包**，用户侧的 npm 安装不受影响；修复方向是更新该 secret（维护者操作），未修复前每次发版的 npm 发布走手动通道。
+
 ### 🐚 B1 数据初始化依赖 bash
 
 SKILL.md B1 步用 bash heredoc 创建 `~/.sofagent/data/` 数据目录。Windows 或受限沙盒环境可能没有 bash。降级路径已内置：bash 不可用时 Agent 降级为逐条 `mkdir` + Write 工具创建。
