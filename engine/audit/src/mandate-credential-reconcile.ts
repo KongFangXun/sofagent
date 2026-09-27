@@ -107,21 +107,36 @@ export interface ReconcileReport {
  *
  * 缺任一侧时效（声明可选字段缺省 / 授权无有效时间戳）⇒ 不判（返回 null，向后兼容
  * ——缺时效维度即不产生时效类错位）。
+ *
+ * 🔴 v1.5.4 P2 口径修正——**非法日期不得与「无值」同判**：
+ *   「无值」（`declared` / `mandated` 整体缺失，或 `validTo` 为 `undefined` = 永久）
+ *   与「有值但不可解析」（如 `validFrom: 'n/a'`）是**两回事**。原实现把二者的
+ *   `Date.parse` 结果一并当 `NaN` 后 `return null`，等于把「非法日期」静默按
+ *   「不判时效」放行——凭证可携一条坏日期绕过时效维度对账。现口径：
+ *   只要该侧**有值却不可解析** ⇒ 返回 mismatch 理由（判 `validity-outlives`），
+ *   不再静默放行。若调用方要「可见告警」，理由串即告警文本（结论进 decision-log）。
+ *
+ * @returns 超期/非法日期的 mismatch 理由；无时效维度或不超期返回 null
  */
 function validityOutlives(
   declared: MandateValidity | undefined,
   mandated: MandateValidity | undefined,
 ): string | null {
+  // 无值 = 缺时效维度（不判，向后兼容）；有值却不可解析 = 非法日期（判 mismatch）
   if (!declared || !mandated) return null;
   const credFrom = Date.parse(declared.validFrom);
   const mandFrom = Date.parse(mandated.validFrom);
-  if (Number.isNaN(credFrom) || Number.isNaN(mandFrom)) return null;
+  if (Number.isNaN(credFrom) || Number.isNaN(mandFrom)) {
+    return `时效字段含不可解析日期（凭证 validFrom=${String(declared.validFrom)} / 授权 validFrom=${String(mandated.validFrom)}）——非法日期不视为「无时效」，按错位判定`;
+  }
   if (credFrom < mandFrom) {
     return `凭证生效时刻（${declared.validFrom}）早于授权生效时刻（${mandated.validFrom}）`;
   }
   const credTo = declared.validTo !== undefined ? Date.parse(declared.validTo) : Number.POSITIVE_INFINITY;
   const mandTo = mandated.validTo !== undefined ? Date.parse(mandated.validTo) : Number.POSITIVE_INFINITY;
-  if (Number.isNaN(credTo)) return null;
+  if (Number.isNaN(credTo) || Number.isNaN(mandTo)) {
+    return `时效字段含不可解析日期（凭证 validTo=${String(declared.validTo)} / 授权 validTo=${String(mandated.validTo)}）——非法日期不视为「永久」，按错位判定`;
+  }
   if (credTo > mandTo) {
     return `凭证失效时刻（${declared.validTo ?? '永久'}）晚于授权失效时刻（${mandated.validTo ?? '永久'}）`;
   }

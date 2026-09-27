@@ -141,6 +141,67 @@ describe('mandate-credential-reconcile · 台账级三类错位（纯判定）',
     );
     expect(f.mismatch).toBe('no-mandate-record');
   });
+
+  it('🔴 P2：非法日期不得与「无值」同判 ⇒ mismatch(validity-outlives)，不静默放行', () => {
+    // 凭证 validFrom 不可解析（有值却非法）——原实现静默 return null 按「不判时效」放行
+    const badFrom = evaluateCredentialReconcile(
+      {
+        mandateId: 'mg-1',
+        scope: { tools: ['sf_write'] },
+        issuedBy: 'vault',
+        issuedAt: '2026-09-02T00:00:00.000Z',
+        validity: { validFrom: 'n/a', validTo: '2026-11-01T00:00:00.000Z' },
+      },
+      [mandate],
+    );
+    expect(badFrom.verdict).toBe('mismatch');
+    expect(badFrom.mismatch).toBe('validity-outlives');
+    expect(badFrom.reason).toContain('不可解析');
+
+    // 授权 validFrom 不可解析（另一侧）——同样判错位，不静默放行
+    const badMandate: MandateGrant = {
+      ...mandate,
+      validity: { validFrom: 'not-a-date', validTo: '2026-12-31T00:00:00.000Z' },
+    };
+    const badMandateHit = evaluateCredentialReconcile(
+      {
+        mandateId: 'mg-1',
+        scope: { tools: ['sf_write'] },
+        issuedBy: 'vault',
+        issuedAt: '2026-09-02T00:00:00.000Z',
+        validity: { validFrom: '2026-10-01T00:00:00.000Z', validTo: '2026-11-01T00:00:00.000Z' },
+      },
+      [badMandate],
+    );
+    expect(badMandateHit.mismatch).toBe('validity-outlives');
+  });
+
+  it('🔵 P2 反向：合法日期范围内仍 aligned；validTo 缺省（永久）= 有值语义仍为永久', () => {
+    // 合法且在范围内 ⇒ aligned（不回退既有语义）
+    const ok = evaluateCredentialReconcile(
+      {
+        mandateId: 'mg-1',
+        scope: { tools: ['sf_write'] },
+        issuedBy: 'vault',
+        issuedAt: '2026-09-02T00:00:00.000Z',
+        validity: { validFrom: '2026-10-01T00:00:00.000Z', validTo: '2026-11-01T00:00:00.000Z' },
+      },
+      [mandate],
+    );
+    expect(ok.verdict).toBe('aligned');
+    // validTo 缺省 = 永久（非非法日期）：不因「有值却不可解析」而误判
+    const forever = evaluateCredentialReconcile(
+      {
+        mandateId: 'mg-1',
+        scope: { tools: ['sf_write'] },
+        issuedBy: 'vault',
+        issuedAt: '2026-09-02T00:00:00.000Z',
+        validity: { validFrom: '2026-10-01T00:00:00.000Z' },
+      },
+      [{ ...mandate, validity: { validFrom: '2026-09-01T00:00:00.000Z' } }],
+    );
+    expect(forever.verdict).toBe('aligned');
+  });
 });
 
 describe('mandate-credential-reconcile · 台账级对账 + 挂链 + 开关', () => {

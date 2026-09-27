@@ -102,6 +102,7 @@
   "engine/orchestrator/src/loop/middleware-registry.ts",
   "engine/orchestrator/src/loop/parallel-scheduler.ts",
   "engine/orchestrator/src/model-resolver.ts",
+  "engine/orchestrator/src/multi-instance-vote.ts",
   "engine/orchestrator/src/onboard/creation-validator.ts",
   "engine/orchestrator/src/ontology/contracts.ts",
   "engine/orchestrator/src/ontology/index.ts",
