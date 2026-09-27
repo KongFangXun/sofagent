@@ -70,6 +70,31 @@ for (const pj of tracked.filter((f) => /^engine\/[^/]+\/package\.json$/.test(f))
     for (const v of Object.values(p.bin ?? {})) binBases.add(String(v).replace(/^dist\//, "").replace(/\.js$/, ".ts"));
   } catch { /* 为何可静默：坏 package.json 只影响 A 组（信息位）的 bin 排除精度，不影响 B/C 阻断面 */ }
 }
+// 包 tsconfig 显式 exclude 的文件 = 该包已声明「非发布物」（例：engine/audit/src/test-utils.ts
+// 被 tsconfig exclude —— 刻意置于 src 供测试相对导入、不进 dist）⇒ 不计入候选。
+// 口径裁定 2026-09-27：此类文件是「已声明非生产」而非「断链」，避免把声明的测试辅助当尸骸。
+const excludedByPkg = new Map(); // pkgDir → 相对路径集合
+for (const tj of tracked.filter((f) => /^engine\/[^/]+\/tsconfig\.json$/.test(f))) {
+  const pkgDir = tj.replace(/\/tsconfig\.json$/, "");
+  try {
+    const raw = readFileSync(join(root, tj), "utf8").replace(/^\s*\/\/.*$/gm, "");
+    const cfg = JSON.parse(raw);
+    const set = new Set();
+    for (const e of cfg.exclude ?? []) if (/\.ts$/.test(String(e))) set.add(String(e));
+    excludedByPkg.set(pkgDir, set);
+  } catch { /* 为何可静默：tsconfig 解析失败只少一层「已声明非发布物」排除（多报候选），不影响 B/C 阻断面 */ }
+}
+const isPkgExcluded = (f) => {
+  for (const [pkgDir, set] of excludedByPkg) {
+    if (!f.startsWith(pkgDir + "/")) continue;
+    const rel = f.slice(pkgDir.length + 1);
+    for (const pat of set) {
+      const re = new RegExp("^" + pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "§§").replace(/\*/g, "[^/]*").replace(/§§/g, ".*") + "$");
+      if (re.test(rel)) return true;
+    }
+  }
+  return false;
+};
 const zeroConsumerFiles = [];
 const playbookOnlyFiles = [];
 const refFilter = (f) => (h) =>
@@ -80,6 +105,7 @@ for (const f of srcFiles) {
   if (names.length === 0) continue;
   const base = f.split("/").pop();
   if (binBases.has(base)) continue; // bin 入口：由 CLI 直接执行，非「被 import 消费」
+  if (isPkgExcluded(f)) continue; // 包 tsconfig 显式 exclude = 已声明非发布物（如测试辅助）
   const hitIn = (scope) =>
     names.some((n) =>
       sh('git', ['grep', '-l', '-w', n, '--', ...scope])
