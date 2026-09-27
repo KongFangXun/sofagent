@@ -102,7 +102,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 | 层 | 做什么 | 谁负责 | 被攻破的后果 | 攻击者需要 |
 |:--:|------|:--:|------|------|
-| 1 | MCP server 只绑 localhost | sofagent | 无法从网络直接访问 MCP | 先攻破本机 |
+| 1 | MCP 走 stdio 本地进程通信（无网络监听面） | sofagent | 无法从网络直接访问 MCP | 先攻破本机 |
 | 2 | OpenClaw channel 路由 | OpenClaw | 无法接入联邦 channel | OpenClaw device token |
 | 3 | AES-256-GCM 加密 payload（`core/src/crypto/aes-gcm.ts`） | sofagent | channel 被窃听但内容不可读 | 256-bit 密钥（2^256 暴力不可行） |
 | 4 | sensitivity frontmatter 过滤（**联邦链路**：peer 端 + 本地端双重校验） | sofagent | 联邦查询中 `restricted` entity 不可读 | 伪造设备 identity + 突破加密 |
