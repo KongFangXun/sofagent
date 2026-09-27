@@ -32,7 +32,9 @@ export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 #  14. 文档示例版本号占位符（docs/ 下 @sofagent/*@<真实版本> = bug，应用 <LATEST>）
 #  15-24. ROADMAP/WIKI/MCP 工具数/安装入口 tag/构建产物/lock 同步/CHANGELOG 顶版漂移等
 #  25. 待发版窗口三态一致性（B1：CHANGELOG 收录 × 双语 README 状态行 × 安装 URL 配套齐）
-#  26. 工具数全仓口径（B8：11 处活文档工具数叙事必含当前实数，防口径漏改）
+#  26. 活文档「待发版」残留（已发版态扫描；扫描面排除 docs/changelog/ ⇒ changelog 域无机械兜底）
+#  26a. 工具数全仓口径（B8：11 处活文档工具数叙事必含当前实数，防口径漏改）
+#  26b. 规划中 devlog 工具数逐处对账（boundary > 当前版本）
 #
 # 排除目录: docs/changelog/, node_modules/, .git/, dist/
 #
@@ -1929,7 +1931,7 @@ else
 fi
 echo ""
 
-echo "=== 26. 工具数口径：全仓文档声称 vs registry SSOT（B8 漏改防复发） ==="
+echo "=== 26a. 工具数口径：全仓文档声称 vs registry SSOT（B8 漏改防复发） ==="
 # v1.4.1 fresh-eyes F08/B8：HANDBOOK 写「v1.4.0 现 66」与 ARCHITECTURE/SKILL/AGENTS 的 67 漂移。
 # 口径：工具数变更时全仓一次全量清点——白名单内每个声称过工具数的文档，当前口径数字
 # （registry 实数）必须至少出现一次；历史双态表述（66/67 并列）不豁免「缺当前数」。
@@ -1967,7 +1969,7 @@ else
 fi
 
 # ── 26b. 规划中 devlog 工具数逐处对账（工具数覆盖洞 2 · v1.5.2 批）──────────────
-# 门禁目的：§26 B8 是「至少出现一次」语义，管不到 changelog 域；§15 又整域排除 docs/changelog。
+# 门禁目的：§26a B8 是「至少出现一次」语义，管不到 changelog 域；§15 又整域排除 docs/changelog。
 # 两道门禁之间，规划中（未发版）devlog 是当前口径的**承诺面**（发版时会成为事实），却无人逐处
 # 对账——v2.0.0.md「其余 103 tools」与 v1.5.5.md「TOOLS=104」两处漂移正是漏在此缝里。
 # 设计（主理人批准 · 方案 C）：两级分闸 + 行级判定。
