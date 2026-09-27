@@ -1088,20 +1088,27 @@ export const TOOLS: ToolDef[] = [
     // v1.5.4 章二：本地槽位排队与判定分层——槽位/排队可观测（本地槽位态查询 + 路由预览）
     name: 'router_slots',
     roles: ['ops'],
-    description: '查询本地推理槽位态（占用 / 排队深度 / 各请求等待时长）+ 路由预览（任务×敏感度 → 去向决策 + routeReason）——运维可见，数据本地不出门。',
+    description: '查询本地推理槽位态（占用 / 排队深度 / 各请求等待时长）+ 路由预览（任务×敏感度 → 去向决策 + routeReason）+ 判定链接入去向下达（adjudicate：IntentTriage L0/L1/L2 判定 → 映射分级 → decideAndDispatch）。运维可见，数据本地不出门。',
     inputSchema: {
       type: 'object',
       properties: {
-        action: { type: 'string', enum: ['snapshot', 'route-preview'], description: '动作：snapshot 查槽位态（缺省）/ route-preview 预览路由决策', default: 'snapshot' },
+        action: { type: 'string', enum: ['snapshot', 'route-preview', 'adjudicate'], description: '动作：snapshot 查槽位态（缺省）/ route-preview 预览路由决策 / adjudicate 判定链接入去向下达', default: 'snapshot' },
         max_slots: { type: 'number', description: '槽位上限（snapshot 空态时用；缺省 5）' },
         task_class: { type: 'string', enum: ['planning', 'execution', 'pipeline'], description: '任务类型（route-preview 用）' },
-        sensitivity: { type: 'string', enum: ['public', 'internal', 'restricted', 'confidential'], description: '数据敏感度（route-preview 用）' },
-        cloud_available: { type: 'boolean', description: '云端可用性（route-preview 用）' },
-        local_available: { type: 'boolean', description: '本地可用性（route-preview 用）' },
+        sensitivity: { type: 'string', enum: ['public', 'internal', 'restricted', 'confidential'], description: '数据敏感度（route-preview / adjudicate 用）' },
+        cloud_available: { type: 'boolean', description: '云端可用性（route-preview / adjudicate 用）' },
+        local_available: { type: 'boolean', description: '本地可用性（route-preview / adjudicate 用）' },
+        text: { type: 'string', description: '判定链语义输入文本（adjudicate 用）' },
+        refs: { type: 'array', items: { type: 'string' }, description: '判定链结构化解引用（adjudicate 用——供 L0 先判）' },
+        questions: { type: 'array', items: { type: 'object' }, description: '判定链问句集（adjudicate 用——缺省单问句 choice[allow,deny]）' },
+        evidence_readiness: { type: 'string', enum: ['structural', 'trace', 'none'], description: '证据就绪度（adjudicate 用——缺省 none）' },
+        in_domain: { type: 'boolean', description: '是否在判定域内（adjudicate 用；false → SKIP 走 L0 兜底）' },
+        critical_node: { type: 'boolean', description: '⚡ 节点（adjudicate 用——强制 ASK）' },
+        priority: { type: 'string', enum: ['high', 'normal', 'low'], description: '排队优先级（adjudicate 用）' },
       },
     },
     // v1.4.8 条目 5 迁移：查表分发
-    handler: async (args) => { const rs = await routerSlots({ ...(typeof args.action === 'string' ? { action: args.action as 'snapshot' | 'route-preview' } : {}), ...(typeof args.max_slots === 'number' ? { max_slots: args.max_slots } : {}), ...(typeof args.task_class === 'string' ? { task_class: args.task_class as RouterSlotsArgs['task_class'] } : {}), ...(typeof args.sensitivity === 'string' ? { sensitivity: args.sensitivity as RouterSlotsArgs['sensitivity'] } : {}), ...(typeof args.cloud_available === 'boolean' ? { cloud_available: args.cloud_available } : {}), ...(typeof args.local_available === 'boolean' ? { local_available: args.local_available } : {}) }); return { ...rs, isError: rs.data.isError }; },
+    handler: async (args) => { const rs = await routerSlots({ ...(typeof args.action === 'string' ? { action: args.action as 'snapshot' | 'route-preview' | 'adjudicate' } : {}), ...(typeof args.max_slots === 'number' ? { max_slots: args.max_slots } : {}), ...(typeof args.task_class === 'string' ? { task_class: args.task_class as RouterSlotsArgs['task_class'] } : {}), ...(typeof args.sensitivity === 'string' ? { sensitivity: args.sensitivity as RouterSlotsArgs['sensitivity'] } : {}), ...(typeof args.cloud_available === 'boolean' ? { cloud_available: args.cloud_available } : {}), ...(typeof args.local_available === 'boolean' ? { local_available: args.local_available } : {}), ...(typeof args.text === 'string' ? { text: args.text } : {}), ...(Array.isArray(args.refs) ? { refs: args.refs as string[] } : {}), ...(Array.isArray(args.questions) ? { questions: args.questions as RouterSlotsArgs['questions'] } : {}), ...(typeof args.evidence_readiness === 'string' ? { evidence_readiness: args.evidence_readiness as RouterSlotsArgs['evidence_readiness'] } : {}), ...(typeof args.in_domain === 'boolean' ? { in_domain: args.in_domain } : {}), ...(typeof args.critical_node === 'boolean' ? { critical_node: args.critical_node } : {}), ...(typeof args.priority === 'string' ? { priority: args.priority as RouterSlotsArgs['priority'] } : {}) }); return { ...rs, isError: rs.data.isError }; },
   },
   {
     // v1.3.6 (交付 ⑦)：训练预算控制——查预算 / 超预算人审续跑或终止
