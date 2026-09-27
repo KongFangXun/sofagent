@@ -676,7 +676,7 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 
 ### 联邦查询
 
-两台配对设备经 Agent 平台 channel（如 OpenClaw）互相查 knowledge/。纵深防御四层：MCP localhost 绑定 → 平台 channel 路由 → **AES-256-GCM 应用加密**（审计结论：本地回环 ws:// 明文无 TLS，第 3 层是唯一保密防线）→ sensitivity frontmatter 过滤。
+两台配对设备经 Agent 平台 channel（如 OpenClaw）互相查 knowledge/。纵深防御四层：MCP 走 stdio 本地进程通信（无网络监听面） → 平台 channel 路由 → **AES-256-GCM 应用加密**（审计结论：本地回环 ws:// 明文无 TLS，第 3 层是唯一保密防线）→ sensitivity frontmatter 过滤。
 
 | 模块 | 落点 | 职责 |
 |------|------|------|
