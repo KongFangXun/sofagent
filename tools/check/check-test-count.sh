@@ -82,10 +82,12 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 # SKIPS（v1.4.9 G-2②）：显式跳过项计数——「未找到声称即跳过」正是本批要消灭的静默形态。
-# 本脚本五类 skip：① 占位 devlog（**head-10 状态区**含「尚未实现」）
+# 本脚本七类 skip：① 占位 devlog（**head-10 状态区**含「尚未实现」）
 # ② 已发布 devlog（历史冻结，发版快照不回头改；v1.4.9 G-3 补记账——此前该分支不计 SKIPS）
 # ③ ROADMAP/evidence 引用的同版本开发日志快照取不到 ④ CHANGELOG 行开发日志快照提取失败
-# ⑤ CHANGELOG 索引行缺 workspace 口径标注。
+# ⑤ CHANGELOG 索引行缺 workspace 口径标注
+# ⑥ 规划中 devlog 尚无「计数：测试 X → **Y**」当前口径行（未到计数阶段，如占位；v1.5.4 批补）
+# ⑦ 无规划中（未发版）devlog（boundary 即最新版；v1.5.4 批补）。
 # K>0 不阻断（跳过合法性由发版 SOP「SKIP 数逐条裁决」裁定），但必须打印。
 SKIPS=0
 
@@ -533,6 +535,100 @@ else
   echo -e "  ${RED}✗ 当前版本开发日志 ${DEVLOG_FILE} 不存在（无法校验 → FAIL，禁止静默跳过）${NC}"
   record_manual "$DEVLOG_FILE" "-" "开发日志文件不存在"
   ((FAIL++)) || true
+fi
+
+# ════════════════════════════════════════════════════════════════
+# 规划中（未发版）devlog 当前口径计数行校验（P1 防复发 · v1.5.4 批）
+# ════════════════════════════════════════════════════════════════
+# 病（本批要消灭的机制债）：规划中 devlog 的「计数：测试 X → **Y**（新增 …）」
+#   一行是**当前口径承诺面**（发版时即成事实），却无任何门禁逐处对账——
+#   实测 v1.5.4.md 施工中段写下的 **5414**，末段又加 watch-config 5 + dist-hash 4
+#   + okf 1 共 10 例后未同步（实测 / 六落点 / 汇总报告全为 5418），漂移无人拦。
+#   缝的来历：§26a「至少出现一次」管不到 changelog 域，§15 又整域排除 docs/changelog；
+#   本文件上方「当前版本开发日志」段只认 package.json 版本的 DEVLOG_FILE（= boundary
+#   版本），而漂移发生在**大于 boundary** 的规划 devlog —— 属 check-version.sh §26b 同族缝。
+#
+# 口径复用（🔴 硬要求，不自创第二套判定）：**边界定义与扫描面完全同源
+#   `tools/check/check-version.sh` §26b**——
+#     · boundary = 根 package.json version（SSOT；🔴 禁由 ROADMAP 反推）；
+#     · planning = devlog 版本 > boundary；
+#     · 扫描面 = docs/changelog/**/vX.Y.Z.md。
+#   判据逐字移植 §26b 的 isPlanning（三段字典序比较，缺位补 0）。改本判定须同步 §26b
+#   （一处口径两处引用；与 README_MULTIVALUE_MARKERS「一处措辞两处引用」同纪律）。
+#
+# 🔴 冻结排除（本段最容易做错处）：已发版 devlog（版本 <= boundary）**整文件排除**——
+#   历史计数行是**发版快照**（如 v1.5.3.md「测试 5296→5408」是历史增量读数），
+#   不追当前 SSOT；冻结区读数不回改是仓内铁律，纳入即制造假红（同 ROADMAP / evidence
+#   段「快照只做自洽、不追当值」的既有裁定）。
+#
+# 跳过合法形态（计入 SKIPS，非静默）：规划 devlog 尚未到计数阶段（无该行，如占位
+#   「尚未实现」的 v1.5.5-v1.5.9）——没有「旧→新」可替换，故 SKIP 可见但不判红。
+PLANNING_DEVLOGS=$(node -e '
+const fs = require("fs");
+const path = require("path");
+// 闸 1：boundary = 根 package.json version（SSOT；🔴 禁由 ROADMAP 反推）——同 check-version.sh §26b
+const boundary = JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+const bp = boundary.split(".").map(Number);
+// 判据逐字移植 §26b：三段字典序比较（缺位补 0）
+const isPlanning = v => { const p = v.split(".").map(Number); for (let i = 0; i < 3; i++) { const a = p[i] || 0, b = bp[i] || 0; if (a !== b) return a > b; } return false; };
+const out = [];
+(function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) { walk(p); continue; }
+    if (!p.endsWith(".md")) continue;
+    const vm = p.match(/v(\d+\.\d+(?:\.\d+)?)\.md$/);
+    if (!vm || !isPlanning(vm[1])) continue; // 闸 1：已发版（<= boundary）整文件排除（冻结）
+    out.push(p);
+  }
+})("docs/changelog");
+out.sort();
+process.stdout.write(out.join("\n"));
+' 2>/dev/null || true)
+
+if [ -z "$PLANNING_DEVLOGS" ]; then
+  SKIPS=$((SKIPS + 1))
+  if [ "$QUIET" = false ]; then
+    echo -e "  ${YELLOW}⏏️ 无规划中（未发版）devlog（boundary v${CUR_VERSION}）——规划 devlog 计数行校验本次跳过${NC}"
+  fi
+else
+  while IFS= read -r _pdl; do
+    [ -n "$_pdl" ] || continue
+    # 行选取：锚「计数：测试 N → **M**」（当前口径行）。head -1 取首个匹配（每份规划 devlog 该行唯一）。
+    PDL_MATCH=$(grep -nE '计数：测试 [0-9]+ ?→ ?[*]{2}[0-9]+[*]{2}' "$_pdl" 2>/dev/null | head -1)
+    if [ -z "$PDL_MATCH" ]; then
+      # 规划 devlog 尚未到计数阶段（占位/未施工）——无「旧→新」可替换，显式 SKIP（非静默）
+      SKIPS=$((SKIPS + 1))
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${YELLOW}⏏️ ${_pdl}：无「计数：测试 X → **Y**」当前口径行（规划中占位/未到计数阶段）——跳过，非失败${NC}"
+      fi
+      continue
+    fi
+    PDL_LINENO=$(echo "$PDL_MATCH" | cut -d: -f1)
+    # 提取：箭头后的粗体数——与该行提取正则同源（数字为该 grep -oE 结果唯一数）
+    PDL_CLAIMED=$(echo "$PDL_MATCH" | grep -oE '→ ?[*]{2}[0-9]+[*]{2}' | head -1 | grep -oE '[0-9]+' | head -1 || true)
+    if [ -z "$PDL_CLAIMED" ]; then
+      echo -e "  ${RED}✗ ${_pdl}（行 ${PDL_LINENO}）：当前口径计数提取为空（正则失配）——守卫不空转，判 FAIL${NC}"
+      record_manual "${_pdl}" "$PDL_LINENO" "当前口径计数提取为空（正则失配/声明被改写）"
+      ((FAIL++)) || true
+      continue
+    fi
+    if [ "$QUIET" = false ]; then
+      echo -e "  校验规划中 devlog ${_pdl}（行 ${PDL_LINENO}）..."
+    fi
+    if [ "$PDL_CLAIMED" = "$TOTAL_TESTS" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ ${_pdl}：${PDL_CLAIMED}（当前口径，与 SSOT 一致）${NC}"
+      fi
+      ((PASS++)) || true
+    else
+      echo -e "  ${RED}✗ ${_pdl}（行 ${PDL_LINENO}）：声称 ${PDL_CLAIMED}，实际 ${TOTAL_TESTS}（当前口径）${NC}"
+      # 修复锚与上方提取同源：数字为捕获组 1，定锚到「计数：测试 N → **M**」的箭头后粗体数。
+      # 用 [*]{2} 而非 \*\*（锚不得含反斜杠转义——清单要内联进可粘贴命令，见头部 anchor 铁律）。
+      record_fix "${_pdl}" "$PDL_LINENO" "$PDL_CLAIMED" "$TOTAL_TESTS" '计数：测试 [0-9]+ ?→ ?[*]{2}([0-9]+)[*]{2}'
+      ((FAIL++)) || true
+    fi
+  done <<< "$PLANNING_DEVLOGS"
 fi
 
 # ── ROADMAP.md 最新版「开发完成」行的测试数快照（v1.4.9 G-6 改锚）──
