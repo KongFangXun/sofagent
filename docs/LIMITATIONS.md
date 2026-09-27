@@ -1,5 +1,4 @@
 # sofagent Limitations
-- **commons_invoke 为 dry-run 预检语义**：返回能力元数据与调用计划，不真实执行（真实执行由 Agent runtime 注入 executor）——MCP 层默认占位是有意设计（防未审计代码执行），非缺陷。
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
@@ -34,7 +33,7 @@
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
-| 4 | **静态加密只覆盖 `history.jsonl`**——`decision-log.jsonl` / `intent.jsonl` / `intent-skips.jsonl` 及附链目录（forge-runs / checkpoint / model-registry / task/logs / think.md / knowledge/）仍明文。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |（边界：密钥删除/损坏后新记录回明文——doctor 可检出、ENCRYPTION_DEGRADED 事件留痕）
+| 4 | **静态加密只覆盖 `history.jsonl`**——`decision-log.jsonl` / `intent.jsonl` / `intent-skips.jsonl` 及附链目录（forge-runs / checkpoint / model-registry / task/logs / think.md / knowledge/）仍明文。<br>（边界：密钥删除/损坏后新记录回明文——doctor 可检出、ENCRYPTION_DEGRADED 事件留痕） | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#-单平台用户建议) |
 
 > ✅ **已解决的历史问题**（v1.3.2 移出 Key Limitations，不再计入当前边界）：
@@ -71,6 +70,12 @@
 ---
 
 ## 一、架构设计局限
+
+---
+
+### 🧩 commons_invoke 为 dry-run 预检语义（有意设计，非缺陷）
+
+返回能力元数据与调用计划，不真实执行（真实执行由 Agent runtime 注入 executor）——MCP 层默认占位是有意设计（防未审计代码执行），非缺陷。
 
 ---
 
@@ -239,7 +244,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 `install.sh` 不安装 `FDE/templates/`（`grep -n "templates" install.sh` 零命中），而 `fde-quantify` 的模板查找三级路径（`REPO_ROOT` / cwd / 上溯四级）在安装态下全部 miss → 返回 `null` → **交付模板恒走内置默认**。
 
-判定：这是 **fail-closed 且有文档说明**的降级，不是缺陷本身——真问题是**用户无从知晓**（当前无日志、无 warn，静默 `return null`）。缓解：安装后如需交付模板，从仓库 `FDE/templates/` 显式提供；运行时留痕（查找全 miss 时打印一次 warn / status）属代码侧整改项。
+判定：这是 **fail-closed 且有文档说明**的降级，不是缺陷本身。运行时留痕**已实装**——`warnTemplateFallback()`（`engine/orchestrator/src/fde/fde-quantify.ts`，模块级一次性打印）在「三级查找全 miss」与「模板读失败」两条路径上均已调用，用户可见「本次交付物使用内置默认骨架」及其三条查找路径。缓解：安装后如需定制交付模板，从仓库 `FDE/templates/` 显式提供，或设 `SOFAGENT_REPO_ROOT` 指向仓库根。
 
 ## 三、安全与信任模型局限
 
