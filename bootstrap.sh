@@ -79,6 +79,11 @@ TMP_FILE=""
 if [[ -n "$LOCAL_PATH" ]]; then
   [[ -f "$LOCAL_PATH" ]] || { echo "❌ 本地 install.sh 不存在: $LOCAL_PATH"; exit 1; }
   SCRIPT="$LOCAL_PATH"
+  # 🔴 v1.5.4 复查批：离线通道明示降级——--local 跳过全部 sha256 校验（下载分支有
+  # _verify_or_die，本地分支天然无哈希源可校）。不提示时用户拿到「零校验执行」，
+  # 与 README 供应链 fail-closed 叙事相悖（U 盘/隔离网恰是高价值目标面）。
+  echo "⚠️  [bootstrap] 离线通道（--local）：本地文件**未做 sha256 完整性校验**（仅校验存在性）——请自行确认文件来源可信"
+  echo "    如需完整性校验，请走默认下载通道（对 install.sh + engine/scripts/lib/ 逐个 sha256 fail-closed）"
 else
   # 下载到临时目录而非单文件——保持 engine/scripts/lib/ 相对路径结构
   TMP_DIR=$(mktemp -d /tmp/sofagent-bootstrap.XXXXXX)

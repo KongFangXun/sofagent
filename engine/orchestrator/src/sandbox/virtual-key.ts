@@ -11,6 +11,8 @@
 //   数据域——数据流契约从隐式约定变显式约束。
 // ============================================================
 
+import { randomBytes } from 'crypto';
+
 /** 虚拟 key scope（能调哪些类别的 API） */
 export type KeyScope = 'llm-chat' | 'llm-embedding' | 'knowledge-read' | 'knowledge-write' | 'tool-invoke';
 
@@ -95,8 +97,10 @@ export function createVirtualKeyManager(options: VirtualKeyOptions = {}): Virtua
   return {
     issue(agentId, scopes, overrides) {
       // vk- 前缀 + 32 hex 随机——格式与常见真实 key（sk-/AKIA/ghp_）区分
-      const virtualKey = 'vk-' + Array.from({ length: 32 }, () =>
-        Math.floor(Math.random() * 16).toString(16)).join('');
+      // 🔴 必须 CSPRNG：`Math.random` 是 V8 的 XorShift128+ PRNG，128bit 输出恰等于其全状态
+      // ——持一把虚拟 key 即可反推 PRNG 状态、预测同进程内其他 SubAgent 的 key（同仓
+      // aes-gcm 亦用 `randomBytes` 先例）。
+      const virtualKey = 'vk-' + randomBytes(16).toString('hex');
       const record: VirtualKeyRecord = {
         virtualKey,
         agentId,

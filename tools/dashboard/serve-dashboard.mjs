@@ -777,7 +777,7 @@ const server = createServer(async (req, res) => {
     const raw = await tryRead(HISTORY_FILE);
     if (raw === null) {
       res.writeHead(404);
-      res.end('Not found: ' + HISTORY_FILE);
+      res.end('Not found: audit-history.jsonl');
       return;
     }
     res.writeHead(200, {

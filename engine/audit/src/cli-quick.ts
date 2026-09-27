@@ -479,19 +479,21 @@ export function runCliQuick(argv: string[]): number {
     // 聚合报告落盘 data/dashboard/audit-stats.json（对齐 train-status.json
     // 落盘模式——2026-08-29 拍板：只落盘，Dashboard 消费移 v1.5.0）
     try {
-      const { existsSync: fsExists, mkdirSync, writeFileSync } = require('fs');
+      const { mkdirSync, writeFileSync } = require('fs');
       const { join: pathJoin } = require('path');
       const { statsHistoryFilePath } = require('./stats');
       const historyFile = statsHistoryFilePath();
       const dashboardDir = pathJoin(historyFile, '..', '..', 'dashboard');
-      if (fsExists(dashboardDir) || true) {
-        mkdirSync(dashboardDir, { recursive: true });
-        writeFileSync(
-          pathJoin(dashboardDir, 'audit-stats.json'),
-          JSON.stringify(report, null, 2),
-          'utf-8',
-        );
-      }
+      // 🔴 直接落盘（`mkdirSync` recursive 幂等，自动建缺失目录）。
+      // 原为 `if (fsExists(dashboardDir) || true) {` —— `|| true` 使条件永真，是恒真哑守卫
+      // （写法等价于「守卫不存在」）。且「只删 `|| true`、保留 `if (fsExists(...))`」会变成
+      // 「目录不存在时跳过落盘」⇒ stats 永不产出（引入真 bug），故按本意去掉整个条件。
+      mkdirSync(dashboardDir, { recursive: true });
+      writeFileSync(
+        pathJoin(dashboardDir, 'audit-stats.json'),
+        JSON.stringify(report, null, 2),
+        'utf-8',
+      );
     } catch {
       /* 落盘失败不阻断输出（聚合报告已打印——落盘是观测增强） */
     }

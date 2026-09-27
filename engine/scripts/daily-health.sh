@@ -41,10 +41,13 @@ REPORT="${REPORT_DIR}/daily-health-$(date +%Y-%m-%d).md"
   AUDIT_LOG="${SOFAGENT_DATA}/audit/history.jsonl"
   if [ -f "$AUDIT_LOG" ]; then
     TOTAL=$(wc -l < "$AUDIT_LOG" | tr -d ' ')
-    TODAY=$(date +%Y-%m-%d)
+    # 🔴 UTC 对 UTC：history.jsonl 条目时间戳由 audit-history.ts 以
+    # `new Date().toISOString()` 写入（ISO 带 Z = UTC），而 cron 在本地 00:00 拉起
+    # ⇒ 用本地日期 grep 会落到「昨天」（两日期体系几乎永不相交、指标恒零）。
+    TODAY=$(date -u +%Y-%m-%d)
     INCR=$(grep -c "$TODAY" "$AUDIT_LOG" 2>/dev/null || true)
     echo "- 审计历史总条数：${TOTAL}"
-    echo "- 今日新增（按日期串匹配）：${INCR:-0}"
+    echo "- 今日新增（UTC 日期串匹配）：${INCR:-0}"
   else
     echo "- 审计历史不存在（${AUDIT_LOG}）"
   fi

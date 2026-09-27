@@ -715,12 +715,20 @@ if command -v node >/dev/null 2>&1; then
   if [ -f "${SCRIPT_DIR}/engine/audit/dist/index.js" ]; then
     HASH_SOURCE="${SCRIPT_DIR}/engine/audit/dist/index.js"
   elif command -v sofagent-audit >/dev/null 2>&1; then
-    # 全局安装场景：解析 sofagent-audit wrapper 指向的真实 dist
-    HASH_SOURCE=$(node -e "try{const p=require('path');const idx=require.resolve('sofagent-audit');const d=p.dirname(p.dirname(idx));process.stdout.write(p.join(d,'dist','index.js'))}catch{process.stdout.write('')}" 2>/dev/null || echo "")
-    # v1.4.7 批次 M P1-3：解析结果大小防线——require.resolve('sofagent-audit') 可能
-    # 命中 OpenClaw 插件同名包（~5KB，engine/openclaw-plugins/sofagent-audit）而非
-    # 真实审计模块（~98KB）。把 5KB 插件哈希写成基准 = 后续真实引擎每次校验都报
-    # 「被替换」假警报（基准错锚）。<30KB 视为插件误命中：warn 且不写基准（fail-closed）。
+    # 全局安装场景：解析 @sofagent/audit 的包根 → dist/index.js。
+    # 🔴 v1.5.4 复查批修正：① 用 **scoped 包名** 解析——`sofagent-audit` 是 bin 名不是包名，
+    # 裸名 require.resolve 必然 MODULE_NOT_FOUND（同仓 commit-msg:72-74 已有同款结论）；
+    # ② 必须**追加全局包根回退**——require.resolve 默认只走 cwd 向上的本地解析链，`npm install -g`
+    # 装的包不在该链上（对齐 commit-msg:80-84 的实现式）。
+    HASH_SOURCE=$(node -e "try{const p=require('path');let e=null;const r=[p.resolve(p.dirname(process.execPath),'..','lib','node_modules')];try{r.push(require('child_process').execSync('npm root -g',{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim())}catch(x){};for(const q of r){try{e=require.resolve('@sofagent/audit',{paths:[q]});break}catch(x){}};if(e)process.stdout.write(p.join(p.dirname(p.dirname(e)),'dist','index.js'))}catch(x){}" 2>/dev/null || echo "")
+    # v1.4.7 批次 M P1-3：解析结果大小防线——解析出的 dist 可能命中 OpenClaw 插件
+    # 同名包（~5KB，engine/openclaw-plugins/sofagent-audit）而非真实审计模块（~98KB）。
+    # 把 5KB 插件哈希写成基准 = 后续真实引擎每次校验都报「被替换」假警报（基准错锚）。
+    # <30KB 视为插件误命中：warn 且不写基准（fail-closed）。
+    if [ -z "$HASH_SOURCE" ] || [ ! -f "$HASH_SOURCE" ]; then
+      warn "  全局包解析失败（@sofagent/audit 未在本地链与全局包根命中）——本次不写哈希基准"
+      warn "  影响：该机首次 commit 会被 hook 基准校验拦截，请装好后跑 sofagent-audit --doctor --baseline 建立基准"
+    fi
     if [ -n "$HASH_SOURCE" ] && [ -f "$HASH_SOURCE" ] \
       && [ "$(wc -c < "$HASH_SOURCE" | tr -d ' ')" -lt 30720 ]; then
       warn "  解析到的 sofagent-audit dist 异常偏小（$(wc -c < "$HASH_SOURCE" | tr -d ' ') 字节 < 30KB）——疑似 OpenClaw 插件同名包误命中，不写哈希基准（fail-closed）"
