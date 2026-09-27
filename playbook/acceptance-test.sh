@@ -2652,17 +2652,9 @@ scenario 312 "v1.3.9 交付六：MLflow agent 评估集成——13 指标映射 
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" ] || S312_OK=false
 grep -q "SCORE\|RATIONALE\|0..100\|clamp" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" 2>/dev/null || S312_OK=false
 $S312_OK && pass "MLflow 导出器在位" || fail "MLflow 集成缺失"
-scenario 313 "v1.3.9 交付七：Agentic Browser / Playwright——实现底座在位 × MCP 面已退役（v2.0.0 §七 裁定中间态）"; S313_OK=true
-# 🔴 v1.5.4 复查批（#15）：v2.0.0 §七 B 表裁定「四工具 + 叙事面移出主线」，registry 注销已于
-# 2026-09-26（5158c869）执行；orchestrator 侧实现底座 + @public 导出按该表「随 v1.5.7 报告统一
-# 处置」⇒ 本场景改锁**中间态**（原断言只锁「在位」，与 v2.0.0 §七「S313 随 registry 注销同批清」
-# 的裁定互斥）。注：与 S396 不互斥——S396 锁 `engine/mcp/src/tools/browser-tools.ts`（MCP 侧
-# 实现，已删、锁不回潮），本场景锁 `engine/orchestrator/src/refine-agent/browser-tools.ts`
-# （实现底座，留待 v1.5.7）。两个**同名不同物**的文件，勿混。
-[ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts" ] || S313_OK=false
-grep -qE "navigate|click|screenshot|evaluate" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts" 2>/dev/null || S313_OK=false
-S313_PW=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const {TOOLS}=require(process.env.PROJECT_ROOT+'/engine/mcp/dist/tool-registry.js');process.stdout.write(TOOLS.some(t=>/^playwright_/.test(t.name))?'1':'0')" 2>/dev/null || echo "1")
-[ "$S313_PW" = "0" ] || S313_OK=false
+scenario 313 "v1.3.9 交付七：Agentic Browser / Playwright——实现底座在位 × MCP 面已退役（对齐 v2.0.0 §七 裁定中间态 · 与 S396 不互斥：两个同名不同物文件 · 见 devlog 审查修复批 #15）"; S313_OK=true
+S313_F="$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts"; S313_PW=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const {TOOLS}=require(process.env.PROJECT_ROOT+'/engine/mcp/dist/tool-registry.js');process.stdout.write(TOOLS.some(t=>/^playwright_/.test(t.name))?'1':'0')" 2>/dev/null)
+[ -f "$S313_F" ] && grep -qE "navigate|click|screenshot|evaluate" "$S313_F" 2>/dev/null && [ "$S313_PW" = "0" ] || S313_OK=false
 $S313_OK && pass "Browser 实现底座在位且 MCP 面已退役（中间态与 v2.0.0 §七 一致）" || fail "Agentic Browser 中间态偏离裁定（实现底座丢失 或 MCP 面回潮）"
 scenario 314 "v1.3.9 交付八：跨平台适配器（Cursor/Codex/Gemini CLI）——3 薄挂载"; S314_OK=true
 [ -f "$PROJECT_ROOT/.cursor/rules/sofagent.mdc" ] || S314_OK=false
