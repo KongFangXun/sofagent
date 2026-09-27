@@ -501,9 +501,11 @@ done
 # ④ 尾链存在且为 markdown 链接语法
 echo "$BODY" | grep -qE '\[详细开发日志\]\(\./docs/changelog/' && echo "✅ 尾链" || echo "🔴 缺尾链"
 
-# ⑤ 定位句长度 ≤ 220 字符（N9 铁律）
+# ⑤ 开头段长度双实测（N9：定位句 ≤220 · TL;DR(EN) ≤650）——两条都必须跑，禁只测其一
 POS_LEN=$(node -e "console.log(require('fs').readFileSync(0,'utf8').split('\n')[0].length)")  # 🔴 禁用 awk length——macOS awk 按字节计，中文行会 3 倍误报超限
 [ "$POS_LEN" -le 220 ] && echo "✅ 定位句 $POS_LEN 字符" || echo "🔴 定位句 $POS_LEN 字符超 220 上限——拆 H3 承载"
+TLDR_LEN=$(echo "$BODY" | awk '/^$/{if(f)exit} /TL;DR/{f=1} f' | wc -m | tr -d ' ')
+[ "$TLDR_LEN" -le 650 ] && echo "✅ TL;DR $TLDR_LEN 字符" || echo "🔴 TL;DR $TLDR_LEN 字符超 650 上限——EN 只留主线与关键数字，细节归 H3"
 
 # ⑥ BugFix 节标题逐字核对（N10——有 bugfix 节时必须带「（上版遗留）」补语）
 echo "$BODY" | grep -E "^### 🔒" | grep -q "BugFix（上版遗留）" && echo "✅ BugFix 标题合规" || echo "🔴 BugFix 标题漂移（缺「（上版遗留）」补语）"
