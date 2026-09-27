@@ -539,12 +539,12 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" --notes "$(ca
 | npm test | {N} tests 全绿 ✅ |
 | acceptance-test | {N}/{N} passed · SKIP: {N} · EXIT: {N} ✅ |
 | shellcheck | 零 error ✅ |
-| check-version | {N}/{N} 全绿 ✅ |
+| check-version | {N}/{N} 全绿（@发版时点）✅ |
 | 回归检查 | {N} 维度 ✅ |
 | release-gate | verdict=PASS ✅ |
 | fresh-eyes | {N} 视角审查闭环 ✅ |
 
-📖 [详细开发日志](./docs/changelog/v{major}.{minor}/vX.Y.Z.md)  <!-- 链接相对仓库根（发布后 GitHub 上可达），在本文档内直接点击不可达 -->
+📖 [详细开发日志](./docs/changelog/v{major}.{minor}/vX.Y.Z.md)  <!-- 链接相对仓库根（发布后 GitHub 页面上预期可达），在本文档内直接点击不可达；⚠️ Release 页相对链接可点性未实证（复检时网络受限）——若实证不可点，下版改绝对链接（https://github.com/{owner}/{repo}/blob/{tag}/docs/changelog/...） -->
 EOF
 )"
 ```
