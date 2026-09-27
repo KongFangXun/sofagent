@@ -89,7 +89,10 @@ export function parseOkfFields(content: string): { stale: boolean; staleAfter?: 
   try {
     fm = yamlLoad(fmMatch[1]!) as Record<string, unknown>;
   } catch {
-    return { stale: false };
+    // 🔴 v1.5.4 复查批：原为 `return { stale: false }` —— **读失败报「不陈旧」= fail-open**
+    // （坏数据被判新鲜、不打降权标注）。改保守向 `stale: true`（宁误报不漏报，对齐仓内
+    // fail-closed 纪律）。消费方只吃二态、返回三态会波及两处调用点签名，故取保守二态。
+    return { stale: true };
   }
   const staleAfter = typeof fm['stale_after'] === 'string' ? (fm['stale_after'] as string) : undefined;
   const stale = staleAfter ? new Date(staleAfter) <= new Date() : false;

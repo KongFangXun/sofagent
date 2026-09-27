@@ -202,6 +202,9 @@ function aggregateSummary() {
     top3: [],
     recent: [],
     readErrors,
+    // 🔴 v1.5.4 复查批：坏行计数透明化——原空 catch 静默丢行，聚合分母悄悄缩小且无痕迹。
+    // 数据面先落地（展示面本轮不动）：调用方可据 parseErrors 判断「分母是否可信」。
+    parseErrors: 0,
   };
 
   // ── 规则通过率（bash render_rules 同一 jq）──
@@ -219,7 +222,8 @@ function aggregateSummary() {
     // 过滤测试记录——驾驶舱反映真实开发质量，不掺故意违规的 fixture
     const allRecs = [];
     for (const line of historyRaw.trim().split('\n')) {
-      try { allRecs.push(JSON.parse(line)); } catch {}
+      // 坏行不再静默丢弃：计数进 out.parseErrors（分母透明，见上方 out 初始化注）
+      try { allRecs.push(JSON.parse(line)); } catch { out.parseErrors++; }
     }
     const cleanRecs = allRecs.filter((r) => !isTestRecord(r));
     out.totalRecords = allRecs.length;

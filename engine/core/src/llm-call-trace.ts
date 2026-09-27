@@ -257,8 +257,11 @@ export function appendLlmCallRecord(input: LlmCallTraceInput, overrideHome?: str
   atomicAppendSync(filePath, JSON.stringify(record));
   try {
     chmodSync(filePath, 0o600);
-  } catch {
-    // 权限收紧失败不阻断（与 audit-history 同容错语义）
+  } catch (err) {
+    // 🔴 v1.5.4 复查批：原为空 catch（注释自称「与 audit-history 同容错语义」，但 audit-history
+    // 的对应失败路径**会告警**，语义并不相同）。收紧失败意味着调用痕迹可能以更宽的权限落地
+    // ——至少留一行 warn，不静默。
+    console.warn(`⚠️ [sofagent] llm-call-trace 权限收紧失败（${filePath} 可能未落到 0600）: ${err instanceof Error ? err.message : String(err)}`);
   }
   return record;
 }

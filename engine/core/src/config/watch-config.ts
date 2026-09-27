@@ -120,6 +120,15 @@ function tryLoadWatchYml(filePath: string): Partial<WatchConfig> & { cron?: Cron
     }
     const result: Partial<WatchConfig> & { cron?: CronJob[] } = watch as Partial<WatchConfig>;
 
+    // 🔴 v1.5.4 复查批：模板写侧是 snake_case（`debounce_ms`），读侧类型/消费方是 camelCase
+    // （`debounceMs`，见 fs-watch.ts）——键名错配会让用户照模板调的防抖**静默落默认 5000**
+    // 且无任何提示。此处做**读侧归一**（snake → camel）：存量已生成的 yml 继续有效，零迁移成本。
+    // 类型放宽走 `Record<string, unknown>` 显式读取，不用 `as any`（禁类型擦除糊法）。
+    const rawWatch = watch as Record<string, unknown>;
+    if (result.debounceMs === undefined && typeof rawWatch['debounce_ms'] === 'number') {
+      result.debounceMs = rawWatch['debounce_ms'];
+    }
+
     // 解析顶层 cron 配置段
     const cronRaw = parsed['cron'];
     if (Array.isArray(cronRaw)) {
@@ -170,6 +179,7 @@ export function generateWatchTemplate(): string {
     '    - "*.d.ts"',
     '',
     '  # 防抖延迟（毫秒），文件变更后等待此时间再触发审计',
+    '  # 键名：`debounce_ms`（模板口径）与 `debounceMs`（内部口径）**两种写法都接受**',
     '  debounce_ms: 5000',
     '',
     '  # 监控模式：all（全部文件） / changed_only（仅变更文件）',

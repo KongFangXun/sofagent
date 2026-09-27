@@ -64,6 +64,16 @@ describe('OKF ①：type 必填校验（写入强制）', () => {
     expect(() => parseOkfFields('---\nname: legacy\n---\n老条目无 type')).not.toThrow();
     expect(parseOkfFields('---\nname: legacy\n---\n老').stale).toBe(false);
   });
+
+  // v1.5.4 复查批（#39①）：frontmatter YAML 解析失败曾 `return { stale: false }` = fail-open
+  // （坏数据被判「新鲜」、不打降权标注）。改为保守向 stale: true——本用例锁死该语义。
+  it('frontmatter YAML 解析失败 ⇒ stale=true（fail-closed 保守向，不再报「不陈旧」）', () => {
+    const broken = '---\nname: [unclosed\n stale_after: "2020-01-01"\n---\n正文';
+    const r = parseOkfFields(broken);
+    expect(r.stale).toBe(true);
+    // 解析失败不因坏字段臆造出 staleAfter/trustTier（只做保守标注）
+    expect(r.staleAfter).toBeUndefined();
+  });
 });
 
 describe('OKF ②：status/stale_after/verified 消费', () => {
