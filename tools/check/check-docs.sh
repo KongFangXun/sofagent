@@ -1177,6 +1177,27 @@ else
   ERRORS=$((ERRORS + 1))
 fi
 
+# ── 20b. 五域**逐位对位**（v1.5.4 #11b）──
+# 20 只验「和相等」——`30 + 15 + 27 + 16 + 15` 与 `27 + 15 + 30 + 16 + 15` 同和故判绿，
+# 而域序错位会把「域一=30 / 域三=27」读反（实测 v1.5.3 前正文即此病，§20 无感）。
+# 本段提取正文加式为**有序序列**，与图注 D1…D5 的有序序列逐位比对。
+_arch_seq_fig=$(printf '%s\n' "$_arch_domains" | tr '\n' ' ' | sed 's/ $//')
+_arch_seq_note=$(grep -oE '五域条目数之和 \*\*[0-9]+( \+ [0-9]+)+' "$_arch_file" 2>/dev/null \
+  | head -1 | grep -oE '[0-9]+' | tr '\n' ' ' | sed 's/ $//')
+_arch_note_n=$(printf '%s' "$_arch_seq_note" | wc -w | tr -d ' ')
+if [ "$_arch_note_n" -ne 5 ] || [ "$_arch_domain_n" -ne 5 ]; then
+  ASSERTS=$((ASSERTS + 1))
+  echo "  ❌ 五域对位提取残缺：正文加式 ${_arch_note_n} 项（应 5，取到「${_arch_seq_note:-空}」）/ 图注 ${_arch_domain_n} 项——拒绝把「读不到」当成「对位正确」"
+  ERRORS=$((ERRORS + 1))
+elif [ "$_arch_seq_fig" = "$_arch_seq_note" ]; then
+  ASSERTS=$((ASSERTS + 1))
+  echo "  ✓ 五域逐位对位：图注 D1→D5「${_arch_seq_fig}」== 正文加式"
+else
+  ASSERTS=$((ASSERTS + 1))
+  echo "  ❌ 五域域序错位：图注 D1→D5「${_arch_seq_fig}」≠ 正文加式「${_arch_seq_note}」——和相等但**域序读反**（域标签与数字对不上）"
+  ERRORS=$((ERRORS + 1))
+fi
+
 
 # ── 20b. 五域**域内子项**自洽（§20 只校验五域之和；域内子项失谐同样抓不住）──
 # 病根：曾出现「域题号之和 = registry = 95」通过，但某域的子项 ×N 之和 ≠ 该域题号

@@ -203,6 +203,39 @@ if [ "$MULTIVALUE_FAILS" -gt 0 ]; then
   FAILS=$((FAILS + MULTIVALUE_FAILS))
 fi
 
+# ── ⑤ 关键安全限定词中英计数对账（v1.5.4 #11）──────────────────────
+# 动机：②③④/④b 全是**结构**量，对「同一句限定在一侧整句消失」无感——#8 的病根正是
+#   EN 丢了「默认非 fail-closed / --no-verify 可跳前两层 / post-commit 只留痕」整句而
+#   结构（标题数/badge/数字集合）不变 ⇒ 逃逸。本组对「安全限定词出现次数」做代理断言：
+#   **EN 计数不得少于 CN**（英文是站外索引面，安全限定只可多不可少）。
+# 🔴 断言能力边界（防过度信任）：这是**计数代理**——只对「限定词数量漂移」敏感，对
+#   「同计数但丢语义」（改写导致整句丢失而词频不变）**无感**；语义对齐仍须人核一次。
+count_oc() { grep -ocE "$2" "$1" 2>/dev/null || echo 0; }
+CN_FC=$(grep -oiE 'non-fail-closed|not fail-closed|fail-closed' "$CN_README" 2>/dev/null | wc -l | tr -d ' ')
+EN_FC=$(grep -oiE 'non-fail-closed|not fail-closed|fail-closed' "$EN_README" 2>/dev/null | wc -l | tr -d ' ')
+CN_NV=$(grep -c -- '--no-verify' "$CN_README" 2>/dev/null || true); CN_NV=${CN_NV:-0}
+EN_NV=$(grep -c -- '--no-verify' "$EN_README" 2>/dev/null || true); EN_NV=${EN_NV:-0}
+SEC_WORD_FAILS=0
+for _pair in "fail-closed:${CN_FC}:${EN_FC}" "--no-verify:${CN_NV}:${EN_NV}"; do
+  _name=${_pair%%:*}; _rest=${_pair#*:}; _cn=${_rest%%:*}; _en=${_rest##*:}
+  if [ "${_cn}" -eq 0 ]; then
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ [⑤安全限定词·${_name}] 中文侧提取为 0——口径失效，宁可疑不假绿"
+    SEC_WORD_FAILS=$((SEC_WORD_FAILS + 1))
+  elif [ "${_en}" -lt "${_cn}" ]; then
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ [⑤安全限定词·${_name}] 英文侧少于中文侧（中 ${_cn} / 英 ${_en}）——英文读者拿到更弱的安全边界"
+    SEC_WORD_FAILS=$((SEC_WORD_FAILS + 1))
+  else
+    ASSERTS=$((ASSERTS + 1)); echo "  ✓ [⑤安全限定词·${_name}] 中 ${_cn} ≤ 英 ${_en}"
+  fi
+done
+# 档位限定族（信息位，不阻断——词形差异大，硬断言易假红）
+CN_TIER=$(grep -ciE '按宿主分档|宿主分档|注入强度' "$CN_README" 2>/dev/null || true); CN_TIER=${CN_TIER:-0}
+EN_TIER=$(grep -ciE 'injection strength|per-tier|by tier|tiers differ' "$EN_README" 2>/dev/null || true); EN_TIER=${EN_TIER:-0}
+echo "  ℹ️ [⑤档位限定族·信息位] 中 ${CN_TIER} / 英 ${EN_TIER}（词形差异大，仅观测不阻断）"
+if [ "$SEC_WORD_FAILS" -gt 0 ]; then
+  FAILS=$((FAILS + SEC_WORD_FAILS))
+fi
+
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$FAILS" -gt 0 ]; then
