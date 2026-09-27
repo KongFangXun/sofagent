@@ -14,6 +14,11 @@
 // 批量纪律：同一 state 下的全部问句**一次提交**，实现须单次前向内出全部答案
 //   （禁止逐问句多次调用——延迟与槽位占用翻倍，且破坏「不占本地主模型槽位」可测性）。
 // 校准契约：分桶温度按「（原语 × 选项数）」分桶拟合；选项数上限 5（超限拆问句）。
+//   **本版实装门控（fail-closed）**：未校准（无记录 / 未达阈）不得用于任何分流决策
+//   （`evaluateCalibration` / `CalibrationRegistry`）；**ECE 拟合与阈值标定留 v1.8.0**
+//   （与 DecisionChannel 默认实现同批）——门控在位、产出留待。
+// 判据门控：证据就绪度（`state.evidenceReadiness`）未就绪（none）不得启用需要证据的
+//   判据（`validateEvidenceReadiness`），拒绝启用不静默降级。
 // 档位语义（五态 → 执行面）：ALLOW / ASK / ABSTAIN / DENY / SKIP。
 // 边界（硬性）：决策模型**不进信任地基**——可被 state 内容操纵的失灵面已知，
 //   只坐确定性规则之后的语义兜底层；25 条审计规则判定面零改动。
@@ -34,6 +39,16 @@ export type DecisionPrimitive = 'choice' | 'score' | 'noul';
  *   - none：无证据（仅可走语义兜底）
  */
 export type EvidenceReadiness = 'structural' | 'trace' | 'none';
+
+/**
+ * 判据的证据需求层级（问句自述——「这个判据靠什么证据判」）。
+ * 只列**需要证据**的两档；不需要证据的语义兜底判据不声明（缺省即无需证据）。
+ * 与 EvidenceReadiness 同域可比较：就绪度 ≥ 需求层级 ⇒ 可启用，否则**拒绝启用**。
+ */
+export type EvidenceRequirement = 'structural' | 'trace';
+
+/** 就绪度 → 可比较秩（none < structural < trace） */
+const EVIDENCE_RANK: Record<EvidenceReadiness, number> = { none: 0, structural: 1, trace: 2 };
 
 /**
  * 判定输入 state（待判定语义输入）。
@@ -62,6 +77,8 @@ export interface DecisionQuestion {
   fallback?: string;
   /** score 量程 */
   range?: { min: number; max: number };
+  /** 判据的证据需求层级（缺省 = 无需证据的语义兜底判据；声明即受证据门控） */
+  evidence?: EvidenceRequirement;
 }
 
 /** 判定状态（answered / abstained） */
@@ -190,17 +207,159 @@ export function validateQuestions(questions: readonly DecisionQuestion[]): strin
   return issues;
 }
 
+/**
+ * 证据就绪度门控（fail-closed——未就绪不得启用需要证据的判据）。
+ *
+ * 读取 `state.evidenceReadiness` 与逐问句 `q.evidence` 声明，逐条比对：
+ *   - 无 `evidence` 声明 ⇒ 无需证据的语义兜底判据，恒可启用；
+ *   - 声明 `evidence` 层级 ⇒ 仅当就绪度秩 ≥ 需求层级才可启用，否则列入违规。
+ *
+ * 违规即 `triage` **拒绝启用该判据**（返回 rejected 结果，**不静默降级**为语义判）。
+ *
+ * @returns 违规项（空 = 全部判据在就绪度内，可启用）
+ */
+export function validateEvidenceReadiness(
+  state: DecisionState,
+  questions: readonly DecisionQuestion[],
+): string[] {
+  const issues: string[] = [];
+  const ready = EVIDENCE_RANK[state.evidenceReadiness] ?? 0;
+  questions.forEach((q, i) => {
+    if (!q.evidence) return;
+    const need = EVIDENCE_RANK[q.evidence];
+    if (ready < need) {
+      const tag = q.id ? `问句 ${q.id}` : `问句 #${i}`;
+      issues.push(`${tag} 需 ${q.evidence} 证据，当前就绪度 ${state.evidenceReadiness}——未就绪不得启用该判据`);
+    }
+  });
+  return issues;
+}
+
 /** 分桶键（原语 × 选项数——校准温度按此分桶拟合） */
 export function tempBucketKey(primitive: DecisionPrimitive, optionCount = 0): string {
   return `${primitive}×${optionCount}`;
 }
 
-/** 从「问句 + 答案」反推本次分桶键（choice 取分布项数；score/noul 选项数记 0） */
+/**
+ * 从「问句 + 答案」反推本次分桶键（choice 取分布项数；score/noul 选项数记 0）。
+ *
+ * @internal 校准面内部工具函数——**非 @public**：本版不实装 ECE 拟合
+ * （拟合与阈值计算留 v1.8.0，与 DecisionChannel 默认实现同批），故不对 SDK 面
+ * 暴露一个尚无生产拟合消费的符号（防「零接线导出」）。
+ */
 export function resultBucketKey(question: DecisionQuestion, answer: DecisionAnswer): string {
   const count = question.primitive === 'choice'
     ? Object.keys(answer.distribution ?? {}).length
     : 0;
   return tempBucketKey(question.primitive, count);
+}
+
+// ============================================================
+// 校准门控（fail-closed 硬线的门控面——ECE 拟合/阈值计算留 v1.8.0）
+// ============================================================
+// devlog〈校准契约〉：「ECE 达阈为发布硬线——未校准 + 未温度拟合前不得用于任何
+// 分流决策」。本版实装**门控**（读校准记录 + 与阈值比对 + 拒绝启用），
+// **拟合与阈值标定留 v1.8.0**（与 DecisionChannel 默认实现同批）。门控与拟合
+// 两事分开：门控在位于此，拟合产出记录是 v1.8.0 的活。
+
+/** 单分桶校准记录（拟合产出的**事实**——本版只读，产出留 v1.8.0） */
+export interface CalibrationRecord {
+  /** 分桶键（原语 × 选项数——同 tempBucketKey） */
+  bucketKey: string;
+  /** 期望校准误差 ECE（越低越好，[0,1]） */
+  ece: number;
+  /** 拟合样本量 */
+  sampleCount: number;
+  /** 判定件代次号（可追溯「哪档模型校准的」） */
+  modelVersion: string;
+  /** 拟合时刻（ISO——可追溯校准新鲜度） */
+  fittedAt: string;
+}
+
+/** 校准策略（发布硬线——由企业按代价/风险覆盖；本版给保守缺省） */
+export interface CalibrationPolicy {
+  /** ECE 达阈（≤ 此值才算校准到位） */
+  maxEce: number;
+  /** 最小拟合样本量（< 此值算未达阈） */
+  minSamples: number;
+}
+
+/** 缺省校准策略（保守——ECE 0.05、样本 100） */
+export const DEFAULT_CALIBRATION_POLICY: CalibrationPolicy = { maxEce: 0.05, minSamples: 100 };
+
+/** 校准门控拒绝（fail-closed——未校准不得用于任何分流决策） */
+export class CalibrationRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CalibrationRequiredError';
+  }
+}
+
+/** 校准判定结论（门控读出面） */
+export interface CalibrationVerdict {
+  /** 是否可用于分流决策 */
+  usable: boolean;
+  /** 判定依据（可追溯——拒绝时可举证「为何不可用」） */
+  reason: string;
+}
+
+/**
+ * 校准门控判定（**读**校准记录并与阈值比对——拟合留 v1.8.0）。
+ *
+ * fail-closed：无校准记录 / 样本未达阈 / ECE 超阈 ⇒ `usable=false`。
+ */
+export function evaluateCalibration(
+  bucketKey: string,
+  registry: CalibrationRegistry,
+  policy: CalibrationPolicy = DEFAULT_CALIBRATION_POLICY,
+): CalibrationVerdict {
+  const rec = registry.get(bucketKey);
+  if (!rec) {
+    return { usable: false, reason: `分桶 ${bucketKey} 无校准记录——未校准不得用于任何分流决策` };
+  }
+  if (!(rec.sampleCount >= policy.minSamples)) {
+    return { usable: false, reason: `分桶 ${bucketKey} 样本量 ${rec.sampleCount} < 阈值 ${policy.minSamples}——未达阈` };
+  }
+  if (!(rec.ece <= policy.maxEce)) {
+    return { usable: false, reason: `分桶 ${bucketKey} ECE ${rec.ece} > 阈值 ${policy.maxEce}——未达阈` };
+  }
+  return { usable: true, reason: `分桶 ${bucketKey} 已校准（ECE ${rec.ece} ≤ ${policy.maxEce}）` };
+}
+
+/**
+ * 校准记录注册表（门控读出面——记录由 v1.8.0 拟合面产出）。
+ *
+ * 职责仅「登记 + 读回 + 判定」：`isUsable` / `assertUsable` 是门控入口；
+ * 拟合与阈值计算**不在本类**（留 v1.8.0）。
+ */
+export class CalibrationRegistry {
+  private readonly records = new Map<string, CalibrationRecord>();
+
+  /** 登记（或覆盖）一条分桶校准记录 */
+  register(record: CalibrationRecord): void {
+    this.records.set(record.bucketKey, record);
+  }
+
+  /** 读回单条记录（无则 undefined） */
+  get(bucketKey: string): CalibrationRecord | undefined {
+    return this.records.get(bucketKey);
+  }
+
+  /** 是否已校准可用（门控入口——布尔形态） */
+  isUsable(bucketKey: string, policy: CalibrationPolicy = DEFAULT_CALIBRATION_POLICY): boolean {
+    return evaluateCalibration(bucketKey, this, policy).usable;
+  }
+
+  /** 断言已校准（fail-closed——不可用即抛 CalibrationRequiredError） */
+  assertUsable(bucketKey: string, policy: CalibrationPolicy = DEFAULT_CALIBRATION_POLICY): void {
+    const verdict = evaluateCalibration(bucketKey, this, policy);
+    if (!verdict.usable) throw new CalibrationRequiredError(verdict.reason);
+  }
+
+  /** 已登记的分桶键集（可观测） */
+  bucketKeys(): string[] {
+    return [...this.records.keys()];
+  }
 }
 
 /**

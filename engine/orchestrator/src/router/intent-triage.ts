@@ -18,17 +18,26 @@
 // 时一律 kind='decision'（不占主模型槽池）；判定期间主模型授予数恒为 0。
 //
 // fail-closed：L1 通道不可用 / 超时 ⇒ 降级 L0 规则面兜底，**不得静默放行**。
+// 判据门控（本版实装）：证据未就绪（`state.evidenceReadiness='none'` 而判据声明需证据）
+//   或未校准（无记录 / 未达阈）⇒ **拒绝启用该判据**（rejected，非静默降级）。
 // ============================================================
 
 import type { RouteTarget } from '../model-router';
 import {
+  DEFAULT_CALIBRATION_POLICY,
   DEFAULT_GRADE_THRESHOLDS,
   DecisionChannelUnavailableError,
   computeEscalationThreshold,
   createUnconfiguredDecisionChannel,
+  evaluateCalibration,
   gradeOf,
+  tempBucketKey,
   toAuditRecord,
+  validateEvidenceReadiness,
   validateQuestions,
+  type CalibrationPolicy,
+  type CalibrationRegistry,
+  type CalibrationVerdict,
   type DecisionAnswer,
   type DecisionAuditRecord,
   type DecisionChannel,
@@ -98,6 +107,16 @@ export interface TriageOutcome {
   fallback?: string;
   /** 审计挂链记录（L1/L2 带——留痕可查） */
   audit?: DecisionAuditRecord;
+  /** 判据拒绝启用标记（证据未就绪 / 未校准时——fail-closed，**非静默降级**） */
+  rejected?: { reason: string };
+}
+
+/** 校准门控装配（注入式——未注入即不开门控，刻度面留 v1.8.0 与默认实现同批） */
+export interface CalibrationGate {
+  /** 校准记录注册表（读出面） */
+  registry: CalibrationRegistry;
+  /** 校准策略覆盖（缺省 DEFAULT_CALIBRATION_POLICY） */
+  policy?: CalibrationPolicy;
 }
 
 /** 编排依赖（均可注入——测试零真实网络） */
@@ -106,6 +125,8 @@ export interface IntentTriageDeps {
   channel?: DecisionChannel;
   /** 槽位管理器（行为锁断言面——判定链取 kind='decision'） */
   slotManager?: SlotManager;
+  /** 校准门控（注入即启用 fail-closed 硬线；未注入 = 刻度面未接线，留 v1.8.0） */
+  calibration?: CalibrationGate;
   /** 配置覆盖 */
   config?: Partial<IntentTriageConfig>;
   /** 升档阈值参数（代价反推；缺省 escalateCost=1, mistakeCost=10 → 阈值 0.9） */
@@ -122,12 +143,14 @@ export class IntentTriage {
   private readonly config: IntentTriageConfig;
   private readonly channel: DecisionChannel;
   private readonly slotManager?: SlotManager;
+  private readonly calibration?: CalibrationGate;
   private readonly escalationThreshold: number;
 
   constructor(deps: IntentTriageDeps = {}) {
     this.config = { ...DEFAULT_TRIAGE_CONFIG, ...(deps.config ?? {}) };
     this.channel = deps.channel ?? createUnconfiguredDecisionChannel();
     if (deps.slotManager) this.slotManager = deps.slotManager;
+    if (deps.calibration) this.calibration = deps.calibration;
     const costs = deps.escalationCosts ?? { escalateCost: 1, mistakeCost: 10 };
     this.escalationThreshold = computeEscalationThreshold(costs.escalateCost, costs.mistakeCost);
   }
@@ -161,6 +184,20 @@ export class IntentTriage {
     const issues = validateQuestions(questions);
     if (issues.length > 0) {
       return this.l0Fallback(state, `问句集非法（${issues.join('；')}）→ L0 规则面兜底`);
+    }
+
+    // ── 判据启用门控（fail-closed）──
+    // 证据就绪度：未就绪（none）不得启用需要证据的判据——**拒绝启用，非静默降级**
+    const evidenceIssues = validateEvidenceReadiness(state, questions);
+    if (evidenceIssues.length > 0) {
+      return this.rejectUnready(state, `证据就绪度门控——${evidenceIssues.join('；')}`);
+    }
+    // 校准硬线：未校准（无记录 / 未达阈）不得用于任何分流决策——**拒绝启用**
+    if (this.calibration) {
+      const verdict = calibrationGateOf(questions, this.calibration);
+      if (!verdict.usable) {
+        return this.rejectUnready(state, `校准门控——${verdict.reason}`);
+      }
     }
 
     // ── L1：语义分类（判定链——不占本地主模型槽位）──
@@ -247,6 +284,38 @@ export class IntentTriage {
       routeReason: `L0 规则面兜底（${why}）`,
     };
   }
+
+  /**
+   * 判据拒绝启用（fail-closed——证据未就绪 / 未校准时）。
+   *
+   * **不静默降级**为语义判定：直接把该次判定标为 rejected、保守回本地执行档并转人审，
+   * 使「判据不可用」在返回值显式可见（调用方据此举证 / 报警，而非拿到一个悄悄降级的假判）。
+   */
+  private rejectUnready(state: DecisionState, why: string): TriageOutcome {
+    void state;
+    return {
+      layer: 'L0',
+      target: 'local-executor',
+      grade: 'ASK',
+      confidence: 0,
+      routeReason: `判据拒绝启用（fail-closed）：${why}`,
+      rejected: { reason: why },
+    };
+  }
+}
+
+/**
+ * 校准门控：逐问句按其分桶键（原语 × 选项数）判定可用性。
+ * 任一分桶未校准 ⇒ 整体拒绝（fail-closed——不得部分用未校准判据）。
+ */
+function calibrationGateOf(questions: readonly DecisionQuestion[], gate: CalibrationGate): CalibrationVerdict {
+  const policy = gate.policy ?? DEFAULT_CALIBRATION_POLICY;
+  for (const q of questions) {
+    const key = tempBucketKey(q.primitive, q.primitive === 'choice' ? (q.options?.length ?? 0) : 0);
+    const verdict = evaluateCalibration(key, gate.registry, policy);
+    if (!verdict.usable) return verdict;
+  }
+  return { usable: true, reason: '全部分桶已校准' };
 }
 
 /** state 摘要短键（判定链取用 requestId 用——非审计用途，审计走 stateDigest） */

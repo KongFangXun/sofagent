@@ -732,7 +732,6 @@
   MAX_OPTIONS,
   validateQuestions,
   tempBucketKey,
-  resultBucketKey,
   computeEscalationThreshold,
   gradeOf,
   stateDigest,

@@ -28,6 +28,7 @@ import {
   PolicyEngine,
   slotLaneOf,
   resolveTargetModel,
+  taskClassForTriageTarget,
   type PolicyDecision,
 } from '../router/policy-engine';
 import {
@@ -41,6 +42,10 @@ import {
   tempBucketKey,
   toAuditRecord,
   createUnconfiguredDecisionChannel,
+  validateEvidenceReadiness,
+  evaluateCalibration,
+  CalibrationRegistry,
+  DEFAULT_CALIBRATION_POLICY,
   type DecisionAnswer,
   type DecisionChannel,
   type DecisionQuestion,
@@ -402,5 +407,103 @@ describe('第一章 · 本地端点注册（执行档 / 管道档）', () => {
     expect(endpoints[0]!.name).toBe('ollama-exec');
     expect(endpoints[0]!.lane).toBe('executor');
     expect(endpoints[0]!.endpoint).toContain('11434'); // 缺省 Ollama 端点
+  });
+});
+
+// ────────────────────────────────────────────────
+// v1.5.4 第2批收口 · 判据启用门控（证据就绪度 + 校准硬线，fail-closed）
+// ────────────────────────────────────────────────
+
+describe('第二章 · 判据启用门控（证据就绪度 + 校准硬线）', () => {
+  const evidenceQ = (): DecisionQuestion[] => [
+    { id: 'trace-judge', primitive: 'choice', options: ['go', 'hold'], fallback: 'hold', evidence: 'trace' },
+  ];
+
+  it('证据未就绪（none）+ 需证据判据 ⇒ 拒绝启用（judge 零调用）', async () => {
+    const channel = new FakeChannel([{ id: 'trace-judge', value: 'go', probability: 0.99, distribution: { go: 0.99, hold: 0.01 }, status: 'answered' }]);
+    const triage = new IntentTriage({ channel });
+    const out = await triage.triage({ text: '需要轨迹证据的判定', evidenceReadiness: 'none' }, evidenceQ());
+    expect(out.rejected).toBeDefined();
+    expect(out.routeReason).toContain('拒绝启用');
+    expect(out.grade).toBe('ASK'); // fail-closed：保守转人审，不静默降级为语义判
+    expect(channel.calls).toBe(0); // 判据未启用——判定件零调用
+    expect(validateEvidenceReadiness({ text: 'x', evidenceReadiness: 'none' }, evidenceQ()).length).toBeGreaterThan(0);
+  });
+
+  it('证据就绪（trace）+ 需证据判据 ⇒ 放行进入判定', async () => {
+    const channel = new FakeChannel([{ id: 'trace-judge', value: 'go', probability: 0.9, distribution: { go: 0.9, hold: 0.1 }, status: 'answered' }]);
+    const triage = new IntentTriage({ channel });
+    const out = await triage.triage({ text: '有轨迹证据', evidenceReadiness: 'trace' }, evidenceQ());
+    expect(out.rejected).toBeUndefined();
+    expect(out.layer).toBe('L1');
+    expect(channel.calls).toBe(1);
+    expect(validateEvidenceReadiness({ text: 'x', evidenceReadiness: 'trace' }, evidenceQ())).toEqual([]);
+  });
+
+  it('校准硬线：未校准分桶 ⇒ 拒绝用于分流决策（fail-closed）', async () => {
+    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.99, distribution: { local: 0.99, cloud: 0.01 }, status: 'answered' }]);
+    const registry = new CalibrationRegistry(); // 空——无校准记录
+    const triage = new IntentTriage({ channel, calibration: { registry } });
+    const out = await triage.triage(state(), choiceQ()); // 分桶 choice×2
+    expect(out.rejected).toBeDefined();
+    expect(out.routeReason).toContain('校准门控');
+    expect(channel.calls).toBe(0); // 未校准——判据拒绝启用
+    expect(registry.isUsable('choice×2')).toBe(false);
+  });
+
+  it('校准硬线：已校准（达阈）分桶 ⇒ 放行判定', async () => {
+    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.9, distribution: { local: 0.9, cloud: 0.1 }, status: 'answered' }]);
+    const registry = new CalibrationRegistry();
+    registry.register({ bucketKey: 'choice×2', ece: 0.01, sampleCount: 200, modelVersion: 'test-v1', fittedAt: '2026-09-28T00:00:00.000Z' });
+    const triage = new IntentTriage({ channel, calibration: { registry } });
+    const out = await triage.triage(state(), choiceQ());
+    expect(out.rejected).toBeUndefined();
+    expect(out.layer).toBe('L1');
+    expect(registry.isUsable('choice×2')).toBe(true);
+  });
+
+  it('校准门控判定：无记录 / 样本不足 / ECE 超阈均不可用，达阈可用', () => {
+    const registry = new CalibrationRegistry();
+    expect(DEFAULT_CALIBRATION_POLICY.maxEce).toBeCloseTo(0.05);
+    expect(evaluateCalibration('choice×2', registry).usable).toBe(false); // 无记录
+    registry.register({ bucketKey: 'choice×2', ece: 0.01, sampleCount: 10, modelVersion: 'v', fittedAt: 't' });
+    expect(evaluateCalibration('choice×2', registry).usable).toBe(false); // 样本 10 < 100
+    registry.register({ bucketKey: 'choice×2', ece: 0.5, sampleCount: 500, modelVersion: 'v', fittedAt: 't' });
+    expect(evaluateCalibration('choice×2', registry).usable).toBe(false); // ECE 0.5 > 0.05
+    registry.register({ bucketKey: 'choice×2', ece: 0.02, sampleCount: 500, modelVersion: 'v', fittedAt: 't' });
+    expect(evaluateCalibration('choice×2', registry).usable).toBe(true); // 达阈
+  });
+});
+
+// ────────────────────────────────────────────────
+// v1.5.4 第2批收口 · 判定链接入去向下达（IntentTriage 实际调用点）
+// ────────────────────────────────────────────────
+
+describe('第二章 · 判定链接入去向下达（PolicyEngine.decideByAdjudication）', () => {
+  it('判定去向映射任务分级（cloud→planning / pipeline→pipeline / 其余→execution）', () => {
+    expect(taskClassForTriageTarget('cloud-strong')).toBe('planning');
+    expect(taskClassForTriageTarget('cloud-fast')).toBe('planning');
+    expect(taskClassForTriageTarget('local-pipeline')).toBe('pipeline');
+    expect(taskClassForTriageTarget('local-executor')).toBe('execution');
+    expect(taskClassForTriageTarget('block')).toBe('execution');
+  });
+
+  it('判定链产出 target → 映射分级 → decideAndDispatch 下达（IntentTriage 被实际调用）', async () => {
+    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.9, distribution: { local: 0.9, cloud: 0.1 }, status: 'answered' }]);
+    const triage = new IntentTriage({ channel });
+    const engine = new PolicyEngine({ triage });
+    const out = await engine.decideByAdjudication({ state: state(), questions: choiceQ(), sensitivity: 'internal' });
+    expect(channel.calls).toBe(1); // 判定链被真实调用
+    expect(out.triage.layer).toBe('L1');
+    expect(out.decision.taskClass).toBe('pipeline'); // L1 判定件→local-pipeline→pipeline 分级
+    expect(out.decision.target).toBe('local-pipeline');
+    expect(out.dispatch?.ok).toBe(true);
+  });
+
+  it('未注入判定链 ⇒ 拒绝执行（fail-closed，不静默跳过）', async () => {
+    const engine = new PolicyEngine();
+    await expect(
+      engine.decideByAdjudication({ state: state(), questions: choiceQ(), sensitivity: 'public' }),
+    ).rejects.toThrow(/IntentTriage/);
   });
 });

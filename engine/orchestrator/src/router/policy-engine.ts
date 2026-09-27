@@ -21,6 +21,9 @@
 //   - `decideAndDispatch`：决策产出**对接槽位管理与下达面**——本地档先经
 //     SlotManager 取用（超限排队 + 超时升级），再经 DecisionDispatcher 按标准
 //     schema 下达 router（schema 校验 fail-closed）。
+//   - `decideByAdjudication`：判定分层编排（IntentTriage L0/L1/L2）**实际接入**
+//     本引擎的去向下达路径——判定链产出 target → 映射任务分级 → decideAndDispatch
+//     （判定链与路由链在此合流，判定件不占本地主模型槽的语义由 SlotManager 承载）。
 // ============================================================
 
 import type {
@@ -41,6 +44,8 @@ import {
   type DispatchResult,
   type RouteDisposition,
 } from './decision-dispatch';
+import type { DecisionQuestion, DecisionState } from './decision-channel';
+import type { IntentTriage, TriageOutcome } from './intent-triage';
 
 /** 任务分级（任务类型维——与敏感度维正交） */
 export type TaskClass = 'planning' | 'execution' | 'pipeline';
@@ -79,6 +84,8 @@ export interface PolicyEngineDeps {
   slotManager?: SlotManager;
   /** 决策下达器（缺省 console 面） */
   dispatcher?: DecisionDispatcher;
+  /** 判定分层编排（第二章——缺省不接入判定链；`decideByAdjudication` 需要它） */
+  triage?: IntentTriage;
 }
 
 /** 端到端（取用 + 下达）结果 */
@@ -93,6 +100,36 @@ export interface DispatchOutcome {
   dispatch?: DispatchResult;
 }
 
+/** 判定分层接入输入（第二章判定链 → 第一章去向下达） */
+export interface AdjudicationInput {
+  /** 待判定语义输入（含证据就绪度——判据门控面） */
+  state: DecisionState;
+  /** 判定问句集（L1 一次提交全部——批量纪律） */
+  questions: DecisionQuestion[];
+  /** 数据敏感度（双维路由维二——判定去向映射回分级维后再按敏感度裁决） */
+  sensitivity: Sensitivity;
+  /** 任务复杂度（可选——写审计与留痕） */
+  complexity?: TaskComplexity;
+  /** 云端可用性 */
+  cloudAvailable?: boolean;
+  /** 本地可用性 */
+  localAvailable?: boolean;
+  /** 任务 ID（审计） */
+  taskId?: string;
+  /** 排队优先级 */
+  priority?: 'high' | 'normal' | 'low';
+  /** ⚡ 节点（强制 ASK） */
+  criticalNode?: boolean;
+  /** 是否在判定域内（false → SKIP，走 L0 兜底） */
+  inDomain?: boolean;
+}
+
+/** 判定分层接入结果（判定结果 + 去向下达结果） */
+export interface AdjudicationOutcome extends DispatchOutcome {
+  /** 判定分层结果（L0/L1/L2 或拒绝启用） */
+  triage: TriageOutcome;
+}
+
 /**
  * 任务×敏感度双维路由决策引擎。
  */
@@ -100,6 +137,7 @@ export class PolicyEngine {
   private readonly config: ModelRouterConfig;
   private readonly slotManager?: SlotManager;
   private readonly dispatcher: DecisionDispatcher;
+  private readonly triage?: IntentTriage;
   private seq = 0;
   private readonly now: () => number;
 
@@ -107,6 +145,7 @@ export class PolicyEngine {
     this.config = deps.config ?? DEFAULT_ROUTER_CONFIG;
     if (deps.slotManager) this.slotManager = deps.slotManager;
     this.dispatcher = deps.dispatcher ?? new DecisionDispatcher();
+    if (deps.triage) this.triage = deps.triage;
     this.now = () => Date.now();
   }
 
@@ -279,6 +318,45 @@ export class PolicyEngine {
       dispatch,
     };
   }
+
+  /**
+   * 判定分层 → 双维路由下达（第二章判定链**实际接入**第一章去向下达面）。
+   *
+   * 流程：`IntentTriage.triage`（L0 声明式映射 → L1 批量单次判 → L2 难例兜底，
+   * 含证据/校准门控）产出判定 `target` → 映射为任务分级 → `decideAndDispatch`
+   * （本地档经 SlotManager 取用 + 经 DecisionDispatcher 下达）。判定链全程经
+   * SlotManager `kind='decision'` 取用，不占本地主模型槽（行为锁）。
+   *
+   * fail-closed：未注入判定链（`PolicyEngineDeps.triage` 缺失）⇒ 拒绝执行，不静默跳过。
+   */
+  async decideByAdjudication(input: AdjudicationInput): Promise<AdjudicationOutcome> {
+    if (!this.triage) {
+      throw new Error(
+        'decideByAdjudication 需要注入 IntentTriage（PolicyEngineDeps.triage）——判定链缺失时拒绝执行（fail-closed）',
+      );
+    }
+    const triage = await this.triage.triage(input.state, input.questions, {
+      ...(input.criticalNode !== undefined ? { criticalNode: input.criticalNode } : {}),
+      ...(input.inDomain !== undefined ? { inDomain: input.inDomain } : {}),
+    });
+    const routeInput: PolicyRouteInput = {
+      taskClass: taskClassForTriageTarget(triage.target),
+      sensitivity: input.sensitivity,
+      ...(input.complexity ? { complexity: input.complexity } : {}),
+      ...(input.cloudAvailable !== undefined ? { cloudAvailable: input.cloudAvailable } : {}),
+      ...(input.localAvailable !== undefined ? { localAvailable: input.localAvailable } : {}),
+      ...(input.taskId ? { taskId: input.taskId } : {}),
+    };
+    const outcome = await this.decideAndDispatch(routeInput, input.priority ? { priority: input.priority } : {});
+    return { ...outcome, triage };
+  }
+}
+
+/** 判定去向 → 任务分级（判定链产出映射回第一章双维路由的分级维） */
+export function taskClassForTriageTarget(target: RouteTarget): TaskClass {
+  if (target === 'cloud-strong' || target === 'cloud-fast') return 'planning';
+  if (target === 'local-pipeline') return 'pipeline';
+  return 'execution';
 }
 
 /** 目标档位 → 槽位归属（本地档才有槽位归属；云端/block 无） */
