@@ -8,8 +8,16 @@
 //   A. **整文件零生产消费者**（#36A，信息位不阻断）
 //      check-unwired-exports.sh 的现有视锥 = @public 导出 + 桶文件；源文件级
 //      「整文件无人消费（测试是唯一观众）」在视锥之外。本组扫描 engine/*/src 下
-//      非 test / 非 index 的源文件，若其**全部**导出符号在全仓（排除自身/测试/dist）
-//      零消费 ⇒ 列 ◇ 候选供维护者裁定。**不阻断**（存量已知，#29 六文件待裁定）。
+//      非 test / 非 index 的源文件，分两档报（均**不阻断**，供维护者裁定）：
+//        ① **零生产消费**：全部导出符号在「生产面」零消费；
+//        ② **仅验证面引用**：只被 playbook/（acceptance-test.sh · regression-checklist.md
+//           等行为锁）引用——验证面**不是**生产消费（#29 口径裁定，2026-09-27）：
+//           行为锁等价于测试，「只被行为锁引用」恰是「测试是唯一观众」的同一类断链，
+//           若把 playbook 计入消费面，这一整类候选永久隐形。
+//      生产面口径 = `engine`（生产代码）+ `tools`（工具面：真实执行脚本）；
+//      排除面 = 自身 / __tests__ / *.test.ts / dist / *.map。⚠️ 桶文件 re-export 在本次
+//      扫描中**算消费**——「被导出但无人使用」不属于本组视锥，由 check-unwired-exports.sh
+//      的 ◇ SDK 面候选覆盖（两者互补，不重复）。
 //
 //   B. **SECURITY 测绘数字断言**（#36C，阻断）
 //      SECURITY.md 的「N 图标 / N 处 uses:」是测绘型计数（无 SSOT 反查）——
@@ -63,26 +71,35 @@ for (const pj of tracked.filter((f) => /^engine\/[^/]+\/package\.json$/.test(f))
   } catch { /* 为何可静默：坏 package.json 只影响 A 组（信息位）的 bin 排除精度，不影响 B/C 阻断面 */ }
 }
 const zeroConsumerFiles = [];
+const playbookOnlyFiles = [];
+const refFilter = (f) => (h) =>
+  h !== f && !h.includes('__tests__') && !h.endsWith('.test.ts') && !h.includes('/dist/') && !h.includes('.map');
 for (const f of srcFiles) {
   const src = readFileSync(join(root, f), 'utf8');
   const names = [...src.matchAll(/^export\s+(?:async\s+)?(?:const|function|class|interface|type|enum)\s+([A-Za-z0-9_]+)/gm)].map((m) => m[1]);
   if (names.length === 0) continue;
   const base = f.split("/").pop();
   if (binBases.has(base)) continue; // bin 入口：由 CLI 直接执行，非「被 import 消费」
-  const consumed = names.some((n) => {
-    const hits = sh('git', ['grep', '-l', '-w', n, '--', 'engine', 'tools', 'playbook']).split('\n').filter(Boolean);
-    return hits.some(
-      (h) => h !== f && !h.includes('__tests__') && !h.endsWith('.test.ts') && !h.includes('/dist/') && !h.includes('.map'),
+  const hitIn = (scope) =>
+    names.some((n) =>
+      sh('git', ['grep', '-l', '-w', n, '--', ...scope])
+        .split('\n')
+        .filter(Boolean)
+        .some(refFilter(f)),
     );
-  });
-  if (!consumed) zeroConsumerFiles.push(`${f}（导出 ${names.length} 个符号，全仓零生产消费）`);
+  const label = `${f}（导出 ${names.length} 个符号）`;
+  if (hitIn(['engine', 'tools'])) continue; // 生产面有消费 ⇒ 非本组候选
+  if (hitIn(['playbook'])) playbookOnlyFiles.push(label); // 仅验证面引用（行为锁/回归清单）
+  else zeroConsumerFiles.push(label);
 }
 console.log(`=== A. 整文件零生产消费者（信息位 · 不阻断）===`);
-if (zeroConsumerFiles.length === 0) ok('零命中');
+if (zeroConsumerFiles.length === 0 && playbookOnlyFiles.length === 0) ok('零命中');
 else {
-  console.log(`  ◇ 候选 ${zeroConsumerFiles.length} 个（**不阻断**——接线 / 登记 SDK 面 / 退役由维护者裁定）：`);
+  console.log(`  ◇ 零生产消费候选 ${zeroConsumerFiles.length} 个（**不阻断**——接线 / 登记 SDK 面 / 退役由维护者裁定）：`);
   for (const z of zeroConsumerFiles.slice(0, 20)) console.log(`      ${z}`);
-  if (zeroConsumerFiles.length > 20) console.log(`      …另有 ${zeroConsumerFiles.length - 20} 个`);
+  console.log(`  ◇ 仅验证面引用候选 ${playbookOnlyFiles.length} 个（只被 playbook 行为锁/回归清单引用——验证面≠生产消费，同列候选）：`);
+  for (const z of playbookOnlyFiles.slice(0, 20)) console.log(`      ${z}`);
+  if (zeroConsumerFiles.length + playbookOnlyFiles.length > 40) console.log('      …');
 }
 
 // ── B. SECURITY 测绘数字（阻断）────────────────────────────────
