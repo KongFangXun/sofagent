@@ -68,9 +68,35 @@
 
 import fs from 'fs';
 import path from 'path';
+import { execFileSync } from 'child_process';
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, '../..');
 const FIX_MODE = process.argv.includes('--fix');
+
+// ── v1.5.4 #36B：changelog 排除面改「按冻结时点」────────────────────
+// 原实现把 `docs/changelog/` **整目录**排除——规划中（未发版）的新文档（如 v1.5.7.md）
+// 一并被豁免，其锚点错误不受管辖（实测该文件有三处断链）。
+// 现改为只排除「**已进最近 release tag**」的文件：tag 内文档随版本冻结、tag 后新增的
+// 规划文档天然受管辖。
+// 🔴 实现取「最新 tag 的文件清单」而非文件时间戳：无 author/committer 歧义、可复算、
+//    可审计（同 check-archaeology 的「档案整目录豁免」先例，但粒度到文件）。
+const LATEST_RELEASE_TAG = (() => {
+  try {
+    const out = execFileSync('git', ['tag', '--list', 'v*.*.*', '--sort=-v:refname'], {
+      encoding: 'utf8',
+      cwd: PROJECT_ROOT,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return out.split('\n').map((s) => s.trim()).filter(Boolean)[0] ?? null;
+  } catch {
+    return null;
+  }
+})();
+const FROZEN_TAG_VERSION = (() => {
+  const t = (LATEST_RELEASE_TAG ?? '').replace(/^v/, '');
+  const p = t.split('.').map((x) => Number(x) || 0);
+  return p.length === 3 ? p : null;
+})();
 
 // 有意排除的目录（gitignored 本地内容 / 非文档产出 / 历史冻结）——**每条附排除理由**，
 // 输出行会逐条打印实际命中数（清单条数须等于实测命中数，不得留死条目）。
@@ -87,7 +113,6 @@ const EXCLUDE_PATTERNS = [
   // 仓内文档子集（非文档产出 / 历史冻结）——每条同样附排除理由。
   { re: /\/dist\//, reason: 'dist（构建产物，非源文档）' },
   { re: /\/archive\//, reason: 'archive（历史冻结文档）' },
-  { re: /\/changelog\//, reason: 'changelog（发版日志，锚点随版本冻结）' },
   { re: /\/cases\//, reason: 'cases（案例留痕数据）' },
   { re: /\/anti-cases\//, reason: 'anti-cases（反例留痕数据）' },
   { re: /\/benchmark\//, reason: 'benchmark（基准测试数据）' },
@@ -104,6 +129,20 @@ function normalizeRelForMatch(rel) {
 
 /** 命中则返回该条目的排除理由，未命中返回 null。 */
 function matchExclusion(rel) {
+  const relPosix = rel.split(path.sep).join('/');
+  // #36B：changelog **按冻结清单**排除（只豁免「版本号 ≤ 最新 release tag」的版本日志）——
+  //   ⚠️ 迭代中发现：**不能**用「文件是否在 tag 树内」判定——规划中的版本日志（v1.5.4…v2.0.0）
+  //   本就在 v1.5.3 tag 的树里（发版时把规划目录一并提交），会被误判为冻结。
+  //   正解 = 从**文件名**取版本号与 tag 版本比大小：≤ tag 的冻结、> tag 的（规划中）受管辖。
+  //   非版本日志（changelog/README.md、changelog/releasing*）不属版本档案，按原口径排除。
+  if (relPosix.startsWith('docs/changelog/')) {
+    const m = relPosix.match(/^docs\/changelog\/v\d+\.\d+\/v(\d+)\.(\d+)\.(\d+)\.md$/);
+    if (!m) return 'changelog（非版本日志：索引 / SOP 面）';
+    const fv = [Number(m[1]), Number(m[2]), Number(m[3])];
+    if (!FROZEN_TAG_VERSION) return null; // 无 tag 可锚 ⇒ 宁可受管辖（不静默豁免）
+    const cmp = fv[0] - FROZEN_TAG_VERSION[0] || fv[1] - FROZEN_TAG_VERSION[1] || fv[2] - FROZEN_TAG_VERSION[2];
+    return cmp <= 0 ? `changelog（版本号 ≤ ${LATEST_RELEASE_TAG}，锚点随版本冻结）` : null;
+  }
   const norm = normalizeRelForMatch(rel);
   for (const { re, reason } of EXCLUDE_PATTERNS) {
     if (re.test(norm)) return reason;
