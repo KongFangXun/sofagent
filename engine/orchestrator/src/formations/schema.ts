@@ -39,10 +39,10 @@ export interface FormationEdge {
 export interface FormationConfig {
   /** 阵型名（六选一） */
   formation: string;
-  /** 成员（角色 × SubAgent 类型） */
-  members: FormationMember[];
-  /** 交接边（跨成员信息流） */
-  edges: FormationEdge[];
+  /** 成员（角色 × SubAgent 类型）——**可缺省**：缺省时由内置模板兜底（见 registry.instantiateFormation） */
+  members?: FormationMember[];
+  /** 交接边（跨成员信息流）——可缺省；但**提供时必须同时提供 members**（边端点依赖成员表校验） */
+  edges?: FormationEdge[];
 }
 
 /** 校验结果 */
@@ -67,8 +67,15 @@ export function validateFormation(config: unknown): SchemaVerdict {
   } else if (!(FORMATION_NAMES as readonly string[]).includes(cfg.formation)) {
     errors.push(`未识别的阵型名「${cfg.formation}」——合法值：${FORMATION_NAMES.join(' / ')}`);
   }
-  if (!Array.isArray(cfg.members) || cfg.members.length === 0) {
-    errors.push('members 须为非空数组');
+  // members 缺省 = 最小形态（只声明阵型名）⇒ 由内置模板兜底，与 instantiateFormation 契约一致。
+  // 但**显式**给出坏 members（非数组 / 空数组 / 字段缺 / 角色重名）仍为错——fail-closed：
+  // 防「本想写成员却写错」被静默兜底成模板（那才是真正危险的方向）。
+  if (cfg.members === undefined) {
+    if (cfg.edges !== undefined) {
+      errors.push('edges 提供时 members 不可缺省（交接边端点依赖成员表）');
+    }
+  } else if (!Array.isArray(cfg.members) || cfg.members.length === 0) {
+    errors.push('members 若提供须为非空数组（缺省则走内置模板兜底；显式空数组视为写错）');
   } else {
     const roles = new Set<string>();
     for (const m of cfg.members) {

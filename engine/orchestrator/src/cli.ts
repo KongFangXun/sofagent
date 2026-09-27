@@ -80,6 +80,11 @@ async function main() {
   console.log('  train compare --data <dir> --bases <m1,m2> --algorithm sft|dpo|grpo');
   console.log('                                   v1.4.4 交付④: 多基座对比训练——同数据并行提交+ROI 排序');
   console.log('                                   --report-only 训练完成后生成对比报告');
+  console.log('  formation --list                  v1.5.4 接线批: 列出六种内置阵型（成员拓扑 + 交接边）');
+  console.log('  formation <config.yml> [--json] [--out <f>]');
+  console.log('                                   读 formation.yml → schema 校验（fail-closed）→ 实例化 → 打印拓扑');
+  console.log('  formation --name <formation> [--json] [--out <f>]');
+  console.log('                                   用内置模板实例化（formation.yml 最小形态：只有阵型名）');
     process.exit(0);
   }
 
@@ -1001,9 +1006,15 @@ async function main() {
       console.error(`❌ 不支持的 train 子动作 "${trainAction}"（可用: doctor | cleanup | reproduce | verify | analyze | compare | templates）`);
       process.exit(1);
     }
+    case 'formation': {
+      // v1.5.4 接线批：阵型库（v1.4.8 交付）的 CLI 入口——schema 校验 + 模板实例化 + 审计 JSON。
+      const { runFormationCommand } = await import('./formations/command');
+      process.exit(await runFormationCommand(args));
+      break;
+    }
     default:
       console.error(`❌ sofagent 提示：不支持的子命令 "${subcommand}"`);
-      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise | evolve | train');
+      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise | evolve | train | formation');
       process.exit(1);
   }
 }
