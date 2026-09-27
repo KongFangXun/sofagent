@@ -322,6 +322,7 @@ bash tools/check/check-version.sh
 > [06 步骤六](./06-doc-finalize.md)「bump 中断恢复清单」——**清单正文只此一份，本处不复制**（防双事实源）。
 > **版本位置清单 SSOT** = `tools/release/bump-version.sh` 头部「替换范围」注释；详细操作手册见 [playbook/version-bump.md](../../../playbook/version-bump.md)。
 > **bump 涉数百文件** ⇒ commit 前必跑 `git status --porcelain` 检视暂存面（见本阶段末「多 session 并发」段），禁 `git add -A`。
+> 🔴 **bump 历史引用防线（行首锚）**：bump 的替换规则必须带行首锚——裸 `· v旧版` / `（v旧版）` 形态的全局替换会把**正文历史叙述**当现态标记改掉（曾实锤；脚本侧已带锚）。bump 后仍须逐文件 `git diff` 复核「只动了该动的行」；发现历史叙述被改 = 回滚该 hunk 并修脚本锚，不得放行。
 
 ### 第二拍：安装入口随版同步
 
