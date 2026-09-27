@@ -213,7 +213,41 @@ export async function executeNode(
       cwd: ctx.projectRoot,
     });
     const gatedTools = wrapToolsWithGate(ENGINEER_TOOLS, gate);
-    tools = convertToLangGraphTools(gatedTools);
+    // ── v1.5.4 章三/章七：沙箱 HTTP 出口凭证注入接线（生产路径可达）──
+    // 🔴 缺省关（SOFAGENT_SANDBOX_EGRESS ≠ '1'）⇒ 不装配沙箱出口，tools 与接线前
+    //    逐字一致（零行为变化）。开启时：装配沙箱出口句柄（**构造 Vault 含轮换器**）
+    //    + 经 harness-sdk `wrapTools` 在出口路径注入凭证（层④）。凭证签发处
+    //    （issueCredential）产出范围声明并交章七对账——真实 secret 只进 Vault 出站副本。
+    let egressTools = gatedTools;
+    if (process.env.SOFAGENT_SANDBOX_EGRESS === '1') {
+      const { wrapTools, createSandboxHandle } = await import('./harness-sdk');
+      // 装配沙箱出口：Vault（含轮换器）在此构造（createSandboxHandle 内 createCredentialVault
+      // / createCredentialRotator）——沙箱 HTTP 出口凭证注入的基座。
+      const sandboxHandle = createSandboxHandle({ dataDir: ctx.dataDir, sandbox: true });
+      // 出口凭证来自环境变量（运行时读取——非硬编码；A2 env 引用豁免形态）。
+      if (process.env.SOFAGENT_EGRESS_SECRET) {
+        // 凭证签发处：登记节点作用域凭证 → 即产出范围声明并交章七台账级对账。
+        const virtualKey = `vk-${ctx.agentName}:${ctx.node.id}`;
+        sandboxHandle.issueCredential({
+          id: `sandbox-egress:${ctx.node.id}`,
+          virtualKey,
+          mandateId: ctx.agentName,
+          scope: { tools: [ctx.agentName] },
+          inject: { header: 'Authorization', scheme: 'Bearer' },
+          secret: process.env.SOFAGENT_EGRESS_SECRET ?? '',
+        });
+        egressTools = wrapTools(gatedTools, {
+          sandbox: true,
+          sandboxHandle,
+          credentialVault: sandboxHandle.credentialVault,
+          credentialVirtualKey: virtualKey,
+        });
+      } else {
+        // 未配置出口凭证——出口仍装配（白名单 / vfs 生效），凭证明文不入 Vault
+        egressTools = wrapTools(gatedTools, { sandbox: true, sandboxHandle });
+      }
+    }
+    tools = convertToLangGraphTools(egressTools);
   } catch {
     // 工具不可用——空数组
   }

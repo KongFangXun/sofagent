@@ -40,6 +40,14 @@ import {
 import { createToolGate, type ToolId, type ToolRisk } from '../sandbox/tool-gate';
 import { createFilesystemBackend } from '../sandbox/filesystem-backend';
 import { createNetworkGateway, installNetworkGuard, type NetworkGateway } from '../sandbox/network-gateway';
+// v1.5.4 章三：沙箱 HTTP 出口凭证注入基座（Vault 托管 + 轮换器 + 签发处对账）
+import {
+  createCredentialVault,
+  createCredentialRotator,
+  declareAndReconcile,
+  type CredentialStoreInput,
+  type CredentialView,
+} from '../vault';
 import type { ExecutableTool } from '../tools';
 
 /** 结果预览截断长度（审计事件不落盘超大结果） */
@@ -75,6 +83,9 @@ interface SandboxStatsBag {
 const SANDBOX_STATS_KEY = Symbol('sofagent.sandboxStats');
 type SandboxStatsCarrier = { [SANDBOX_STATS_KEY]?: SandboxStatsBag };
 
+/** 沙箱出口凭证缺省轮换周期（24h——`rotatedAt ?? issuedAt` 距 now 超此即判到期） */
+const DEFAULT_CREDENTIAL_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 /** 沙箱统计计数器读写（handle.stats 是快照函数——可变态挂符号键） */
 function sandboxStats(handle: SandboxHandle): SandboxStatsBag {
   const carrier = handle as unknown as SandboxStatsCarrier;
@@ -100,6 +111,14 @@ export function createSandboxHandle(options: HarnessWrapOptions): SandboxHandle 
     allowHosts: options.sandboxAllowHosts ?? ['.sofagent.local', 'localhost'],
   });
 
+  // v1.5.4 章三：沙箱 HTTP 出口凭证基座——装配出口时构造 Vault（含轮换器）。
+  // 宿主经 options.credentialVault 注入则复用宿主实例（外部签发场景）；否则本处新建。
+  const credentialVault = options.credentialVault ?? createCredentialVault();
+  if (!options.credentialVault) options.credentialVault = credentialVault;
+  const credentialRotator = createCredentialRotator(credentialVault, {
+    policy: { maxAgeMs: DEFAULT_CREDENTIAL_MAX_AGE_MS },
+  });
+
   /** 工具名 → tool-gate 唯一 ID（Symbol——名称可伪造，ID 不可） */
   const toolIds = new Map<string, ToolId>();
   const statsBag: SandboxStatsBag = { denied: 0, virtualWrites: 0, netDenied: 0 };
@@ -108,6 +127,8 @@ export function createSandboxHandle(options: HarnessWrapOptions): SandboxHandle 
     gate,
     vfs,
     net,
+    credentialVault,
+    credentialRotator,
     /** 注册工具进 gate（wrapTools 自动调用；宿主手动注册高危工具也走这里） */
     registerTool: (name: string, risk: ToolRisk) => {
       const id = gate.register(name, risk);
@@ -134,6 +155,21 @@ export function createSandboxHandle(options: HarnessWrapOptions): SandboxHandle 
     },
     /** 沙箱统计（观测出口——快照语义） */
     stats: () => ({ ...statsBag }),
+    /**
+     * 凭证签发处（v1.5.4 章三）——登记凭证（真实 secret 只进 Vault），并即产出
+     * 范围声明交章七台账级对账（结论挂 decision-log HMAC 链，kind=CREDENTIAL_RECONCILE）。
+     * 对账面默认关（L1）：开关经既有 options 面传入，不新增独立开关入口。
+     *
+     * @returns 脱敏视图（零 secret）
+     */
+    issueCredential: (input: CredentialStoreInput): CredentialView => {
+      const view = credentialVault.store(input);
+      declareAndReconcile(credentialVault, view.id, { requested: input.scope }, {
+        enabled: options.credentialReconcile === true,
+        dataDir,
+      });
+      return view;
+    },
   };
 
   // 统计载体挂符号键（wrapTools 内部计数——sandboxStats() 读写）

@@ -6,6 +6,10 @@
 // 恢复。旧版串行路径（--legacy）已按弃用公告在 v1.5.3 移除。
 
 import { join } from 'path';
+// v1.5.4 第四章：多实例交叉表决的**生产调用点**——`vote` 子命令经 HITL 处理器
+// 调用 `runMultiInstanceVote`（hitl.vote），使「表决 → 分歧路由 HITL/升级」整链
+// 在真实 CLI 分支可达（非仅注释/错误串提及）。
+import { createHITLHandler } from './hitl-handler';
 
 // ── 训练模块（v1.5.3 第 7 批 · train 拆包）────────────────────────
 // train 已迁至独立包 @sofagent/train（源码 engine/train/）。orchestrator 对它是
@@ -60,6 +64,9 @@ async function main() {
     console.log('                                   --node-filter 只激活指定节点');
     console.log('  run-enterprise [--workflow <path>]');
     console.log('                                   v1.2.8: 从 workflow.yml 构建图 + 逐节点执行企业 Agent');
+    console.log('  vote --task <desc> [--instances N] [--threshold <0..1>] [--on-divergence hitl|escalate]');
+    console.log('                                   v1.5.4 章四: 多实例交叉表决——N 实例并发 + 多数表决');
+    console.log('                                   分歧超阈值 → 路由人工介入队列（HITL）或升级大模型重跑');
     console.log('  evolve [--data-dir <dir>] [--skill-dir <dir>] [--threshold <n>]');
     console.log('                                   v1.3.5: /evolve 聚合器——从 think.md + decision-log + 错题本');
     console.log('                                   提取 instinct，置信度达标聚合成 skill 写入运行时目录');
@@ -521,6 +528,49 @@ async function main() {
         process.exit(allSuccess ? 0 : 1);
       } catch (err) {
         console.error(`❌ run-enterprise 失败: ${(err as Error).message}`);
+        process.exit(1);
+      }
+    }
+    case 'vote': {
+      // v1.5.4 章四：多实例交叉表决（**生产入口**）——经 HITL 处理器调用
+      // runMultiInstanceVote：N 实例并发 → 交叉比对 → 多数表决；分歧超阈值 →
+      // 路由人工介入队列（HITL）或升级大模型重跑。使整链在真实 CLI 分支可达。
+      const taskIdx = args.indexOf('--task');
+      const voteTask = taskIdx !== -1 ? (args[taskIdx + 1] ?? '') : '';
+      if (!voteTask) {
+        console.error('❌ 用法: sofagent-orchestrator vote --task <desc> [--instances N] [--threshold <0..1>] [--on-divergence hitl|escalate]');
+        process.exit(1);
+      }
+      const instIdx = args.indexOf('--instances');
+      const parsedInstances = instIdx !== -1 ? Number.parseInt(args[instIdx + 1] ?? '', 10) : 3;
+      const voteInstances = Number.isInteger(parsedInstances) ? parsedInstances : 3;
+      const thrIdx = args.indexOf('--threshold');
+      const parsedThreshold = thrIdx !== -1 ? Number.parseFloat(args[thrIdx + 1] ?? '') : 0.34;
+      const divergenceThreshold = Number.isFinite(parsedThreshold) ? parsedThreshold : 0.34;
+      const odIdx = args.indexOf('--on-divergence');
+      const onDivergence: 'hitl' | 'escalate' = odIdx !== -1 && args[odIdx + 1] === 'escalate' ? 'escalate' : 'hitl';
+
+      const voteHandler = createHITLHandler();
+      try {
+        const outcome = await voteHandler.vote({
+          task: voteTask,
+          instances: voteInstances,
+          divergenceThreshold,
+          onDivergence,
+        });
+        console.log(
+          `[sofagent] 多实例表决：结论=${outcome.decision} winner=${outcome.winner ?? '(无)'} ` +
+          `占比=${outcome.agreement.toFixed(2)} 分歧=${outcome.divergence.toFixed(2)} 路由=${outcome.route}`,
+        );
+        console.log(`  实例：成功 ${outcome.succeeded} / 失败 ${outcome.failed}（法定人数 ${outcome.quorum}，平票=${outcome.tied}）`);
+        if (outcome.decision !== 'consensus') {
+          const exceptions = voteHandler.getExceptions();
+          const last = exceptions[exceptions.length - 1];
+          console.warn(`  ⚠️ 分歧已入人工介入队列（${exceptions.length} 条）${last ? `：${last.message}` : ''}`);
+        }
+        process.exit(outcome.decision === 'consensus' ? 0 : 2);
+      } catch (err) {
+        console.error(`❌ 表决失败: ${(err as Error).message}`);
         process.exit(1);
       }
     }

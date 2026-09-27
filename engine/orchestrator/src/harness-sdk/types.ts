@@ -11,7 +11,8 @@ import type { AgentIdentity } from '@sofagent/core';
 import type { ToolGate, ToolId, ToolRisk } from '../sandbox/tool-gate';
 import type { FilesystemBackend } from '../sandbox/filesystem-backend';
 import type { NetworkGateway } from '../sandbox/network-gateway';
-import type { CredentialVault } from '../vault/credential-vault';
+import type { CredentialVault, CredentialStoreInput, CredentialView } from '../vault/credential-vault';
+import type { CredentialRotator } from '../vault/credential-rotation';
 
 /**
  * 审批模式——v1.3.1 审批语义的 SDK 暴露面。
@@ -70,6 +71,13 @@ export interface HarnessWrapOptions {
    * 范围），不读任何界面 / 配置开关（v1.5.4 章三设计约束：身份与能力两职拆开）。
    */
   credentialVirtualKey?: string;
+  /**
+   * 凭证对账面开关（v1.5.4 章七 · 可选，缺省 false = 对账面关 L1）。
+   * 凭证签发处（`SandboxHandle.issueCredential`）产出范围声明后是否交章七台账级对账——
+   * 关档时零判定、零记录（行为与今日一致）；开档则结论挂 decision-log HMAC 链。
+   * ⚠️ 经**既有 options 面**传入，不新增独立开关入口（对齐 mandate-gate 的 enabled 契约）。
+   */
+  credentialReconcile?: boolean;
   /**
    * LLM 调用级 Trace 开关（v1.3.1 trace 体系）。
    * 缺省 true——wrap 的默认价值主张就是全链可观测。
@@ -179,6 +187,24 @@ export interface SandboxHandle {
   teardown(): void;
   /** 沙箱判定统计（denied / virtualWrites / netDenied） */
   stats(): { denied: number; virtualWrites: number; netDenied: number };
+  /**
+   * 凭证隔离 Vault（v1.5.4 章三）——沙箱 HTTP 出口凭证注入器的来源。
+   * `createSandboxHandle` 装配沙箱出口时构造（宿主经 `options.credentialVault`
+   * 注入则复用宿主实例）。沙箱层④（wrapTools 出站注入）经它取真实凭证。
+   */
+  credentialVault: CredentialVault;
+  /**
+   * 凭证轮换 / 吊销器（v1.5.4 章三）——定时/事件轮换 + 泄露响应。
+   * 与 `credentialVault` 同批构造（同一数据面），随会话生命周期存续。
+   */
+  credentialRotator: CredentialRotator;
+  /**
+   * 登记一条凭证（**凭证签发处**）——真实 secret 只进 Vault，登录后即产出范围声明
+   * 并交章七台账级对账（结论挂 decision-log HMAC 链，kind=CREDENTIAL_RECONCILE）。
+   *
+   * @returns 脱敏视图（零 secret）
+   */
+  issueCredential(input: CredentialStoreInput): CredentialView;
 }
 
 /** 副作用类工具名前缀/全名——require-approval/deny 模式的拦截判据 */
