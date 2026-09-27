@@ -49,7 +49,7 @@
 | `fde_distill` | fde | FDE 三层交付物生成（引擎五）——跑通过程沉淀：文档层手册（人读：现状/六步/验收/回滚）+ Skill 层模板（Agent 可执行）+ 运行层 yaml 片段（引擎六组装用），归档 deliverables/ 带 README 索引。 |
 | `fde_deploy` | fde | FDE workflow 组装部署（引擎六）——三层交付物 → deployments/<name>.yml（与 fde_compose 同格式）；只产出工件不代激活——激活走 workflow_submit + activate_workflow（人审闸门保留）。 |
 
-### 审计与合规（代码 / 轨迹 / 数据审计 · 浏览器取证 · 语料导出）（10）
+### 审计与合规（代码 / 轨迹 / 数据审计 · 语料导出）（10）
 
 | tool | roles | 说明 |
 |---|---|---|

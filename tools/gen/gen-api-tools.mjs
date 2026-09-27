@@ -23,7 +23,7 @@ const API_DOC = join(REPO_ROOT, 'docs', 'API.md');
 const GROUP_ORDER = ['fde', 'audit', 'workflow', 'org', 'snapshot', 'train', 'eval', 'knowledge', 'commons', 'ops'];
 const GROUP_NAMES = {
   fde: 'FDE 进场 · 六引擎（访谈 → 分类 → 量化 → 推导 → 沉淀 → 部署）',
-  audit: '审计与合规（代码 / 轨迹 / 数据审计 · 浏览器取证 · 语料导出）',
+  audit: '审计与合规（代码 / 轨迹 / 数据审计 · 语料导出）',
   workflow: '工作流编排（workflow DAG · 循环执行与优化）',
   org: 'Agent 组织与协作（数字员工 · 团队阵型 · HITL 人工介入）',
   snapshot: '快照与回溯（状态留档 · 回滚恢复）',
