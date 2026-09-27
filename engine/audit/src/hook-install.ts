@@ -30,8 +30,8 @@ function resolveGlobalAuditPkg(): string | null {
         [
           "const p=require('path');let e=null;",
           "const r=[p.resolve(p.dirname(process.execPath),'..','lib','node_modules')];",
-          "try{r.push(require('child_process').execSync('npm root -g',{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim())}catch(x){}",
-          "for(const q of r){try{e=require.resolve('@sofagent/audit',{paths:[q]});break}catch(x){}}",
+          "try{r.push(require('child_process').execSync('npm root -g',{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim())}catch(x){/*为何可静默：该候选根不可用，解析链按序试下一个根*/}",
+          "for(const q of r){try{e=require.resolve('@sofagent/audit',{paths:[q]});break}catch(x){/*为何可静默：该候选根不可用，解析链按序试下一个根*/}}",
           "if(e)process.stdout.write(p.dirname(p.dirname(e)))",
         ].join(''),
       ],
@@ -321,7 +321,8 @@ export function installHooks(opts: InstallHooksOptions): InstallHooksResult {
       }
     }
   } catch {
-    /* 建立失败不阻塞安装：hook 会给出可达指引（--install-hook / --doctor --baseline） */
+    /* 为何可静默：建立失败不阻塞安装——hook 会给出可达指引（--install-hook / --doctor --baseline），
+       且「基准缺失 ⇒ 拦截」语义不因本处失败而放松 */
   }
 
   return { hooksDir, configured, configuredValue, installed };

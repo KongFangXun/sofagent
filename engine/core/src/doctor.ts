@@ -558,7 +558,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
               ok('ℹ️ 未检测到全局安装的 @sofagent/audit——全局引擎基准不适用（跳过）');
             }
           } catch {
-            /* 全局锚建立失败不阻断基线重置（hook 仍给出可达指引） */
+            /* 为何可静默：全局锚建立失败不阻断基线重置——hook 仍给出可达指引；
+               且失败只会让用户多跑一次命令，不会放宽任何校验语义 */
           }
         } catch (err) {
           fail(`基准哈希重置失败: ${err instanceof Error ? err.message : String(err)}`);

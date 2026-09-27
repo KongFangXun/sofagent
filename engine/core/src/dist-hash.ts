@@ -31,7 +31,8 @@ export function computeDistAggregateHash(distRoot: string): string | null {
   try {
     isDir = statSync(distRoot).isDirectory();
   } catch {
-    /* 不存在 → 返回 null（与内联版 process.exit(0) 同义） */
+    /* 为何可静默：dist 不存在即返回 null（与 hook 内联版 process.exit(0) 同义）——
+       调用方按「算不出 ≠ 一致」处理，禁当一致放行 */
   }
   if (!isDir) return null;
 
@@ -69,8 +70,8 @@ export function resolveGlobalAuditDistRoot(): string | null {
         [
           "const p=require('path');let e=null;",
           "const r=[p.resolve(p.dirname(process.execPath),'..','lib','node_modules')];",
-          "try{r.push(require('child_process').execSync('npm root -g',{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim())}catch(x){}",
-          "for(const q of r){try{e=require.resolve('@sofagent/audit',{paths:[q]});break}catch(x){}}",
+          "try{r.push(require('child_process').execSync('npm root -g',{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim())}catch(x){/*为何可静默：该候选根不可用，解析链按序试下一个根*/}",
+          "for(const q of r){try{e=require.resolve('@sofagent/audit',{paths:[q]});break}catch(x){/*为何可静默：该候选根不可用，解析链按序试下一个根*/}}",
           "if(e)process.stdout.write(p.join(p.dirname(p.dirname(e)),'dist'))",
         ].join(''),
       ],

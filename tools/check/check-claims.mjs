@@ -60,7 +60,7 @@ for (const pj of tracked.filter((f) => /^engine\/[^/]+\/package\.json$/.test(f))
   try {
     const p = JSON.parse(readFileSync(join(root, pj), "utf8"));
     for (const v of Object.values(p.bin ?? {})) binBases.add(String(v).replace(/^dist\//, "").replace(/\.js$/, ".ts"));
-  } catch { /* 坏 package.json 不阻断本组（信息位） */ }
+  } catch { /* 为何可静默：坏 package.json 只影响 A 组（信息位）的 bin 排除精度，不影响 B/C 阻断面 */ }
 }
 const zeroConsumerFiles = [];
 for (const f of srcFiles) {
