@@ -40,7 +40,7 @@ WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/ac
 
 ## 审查维度（85 维 · 编号规则见头部）
 
-### 审查维度正文（#1-142 · 维度流连续不中断）
+### 审查维度正文（#1-145 · 维度流连续不中断）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
@@ -411,7 +411,7 @@ grep "parseSubagentRunArgs\|--mode" engine/orchestrator/src/cli-args.ts # --mode
 grep -rl "sofagent-releaser\|releaser-skill" engine/scripts/lib/file-deploy.sh install.sh 2>/dev/null | wc -l # 期望=0（releaser 复制契约已移除）
 ```
 
-## 分组：审查约束类（维度 #23-#77 · 标题行是该组一句话基线，非独立检查项）
+## 分组：审查约束类（维度 #23-#101 · 标题行是该组一句话基线，非独立检查项）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · CHANGELOG 纯度 · 测试数一致 · 安全约束 fail-closed · npm 产物三方一致
 
@@ -940,21 +940,6 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 # 期望：3 种状态都有分支处理（EXIT_CODE_TO_RESULT 含 0/1/2 三个映射）
 ```
 
-#### 108. SOP hook 测试用例自身合格性——message 长度 + git add -f
-
-**背景**：07-tool-health.md 的 hook 测试用例 message 用 `test`/`add app`（太短），被 A5+A19 正确拦截——**测试用例自己不合格导致假失败**，误判为 hook 坏了。且 `.env` 被 init 自带 .gitignore 挡住时不 `-f` 强加，hook 层 A1/A2 根本测不到（只测到 git 层双保险）。SOP 已修，本维度防 SOP 再漂移。
-
-```bash
-# SOP 用例 message 必须合格（≥8 有效字符，Conventional Commits）
-grep -A2 "拦截验证" docs/changelog/releasing/07-tool-health.md | grep -oE 'commit -m "[^"]+"' | while read -r c; do
- msg=$(echo "$c" | grep -oE '"[^"]+"' | tr -d '"'); [ ${#msg} -lt 20 ] && echo "⚠️ SOP hook 测试 message 过短: $msg"
-done
-# -f 说明存在
-grep -q "git add -f .env" docs/changelog/releasing/07-tool-health.md || echo "⚠️ 缺 git add -f 说明（hook 层测不到）"
-# 子项 c：verify.sh 脱敏测试输入不被全局脱敏误伤（测试输入须真实手机号，非 1**REDACTED***）
-grep -q "13812345678" engine/scripts/verify.sh || echo "⚠️ verify.sh 脱敏测试输入被误打码（脱敏误伤测试用例）"
-```
-
 #### 60. barrel re-export 一致性——新增导出 public-api.ts 和 index.ts 要同步
 
 > P0 数据主权导出只在 public-api.ts，audit/src/index.ts 没同步 re-export，导致 daemon/mcp/orchestrator 的 tsc 报 TS2305。
@@ -1362,9 +1347,6 @@ echo "B 层: $AB 行 / LIMIT_B=$LIMIT_VAL"
 grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh && echo "✅ 101-anchor-降级开关在位" || echo "❌ 101-anchor-降级开关丢失——WorkBuddy 下 pre-push 必失败"
 ```
 
-## 输出报告格式
-> 审查日期 / 范围 / 环境验证（tools/release/pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。
-
 ## 🔴 环境验证铁律（防误报 · 先读再跑下面维度）
 
 > **测试框架铁律**：本项目用 **vitest** 非 Jest。正确命令：`npx vitest run --reporter=dot` 或 `npm test --workspace=engine/<pkg>`；❌ 禁止 `npx jest`。失败信息含 `from 'vitest'`/`import type` 解析错误 = 用了 Jest，换 vitest 重跑。
@@ -1375,7 +1357,7 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh && echo "✅ 101-anchor-降
 
 > **路径迁移感知**：`.sofagent/` 已迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
-### 分组：环境敏感与后期维度（#59 起，上面铁律适用于本组所有维度）
+## 分组：环境敏感与后期维度（维度 #102-#145 · 上面铁律适用于本组所有维度）
 
 #### 102. 市场五环完整性——10 模块 + 6 MCP tool + inspector 双注册
 
@@ -1423,6 +1405,21 @@ grep -q "PERSPECTIVE_TOOL_SOFT = 50" FORGE/src/fresh-eyes-driver.mjs || echo "�
 grep -q "50 次工具调用" FORGE/SKILL/fresh-eyes-loop/prompts/a-check-perspective-1.md || echo "⚠️ prompt 预算未同步"
 # b-fix 的 A3 审计拦截有效性（b-audit 对越界 commit FAILED）
 grep -q "任务范围" engine/audit/src/rules/rule-a3*.ts 2>/dev/null || echo "ℹ️ A3 文件越界检测依赖规则引擎，人工抽查 b-fix diff 范围"
+```
+
+#### 108. SOP hook 测试用例自身合格性——message 长度 + git add -f
+
+**背景**：07-tool-health.md 的 hook 测试用例 message 用 `test`/`add app`（太短），被 A5+A19 正确拦截——**测试用例自己不合格导致假失败**，误判为 hook 坏了。且 `.env` 被 init 自带 .gitignore 挡住时不 `-f` 强加，hook 层 A1/A2 根本测不到（只测到 git 层双保险）。SOP 已修，本维度防 SOP 再漂移。
+
+```bash
+# SOP 用例 message 必须合格（≥8 有效字符，Conventional Commits）
+grep -A2 "拦截验证" docs/changelog/releasing/07-tool-health.md | grep -oE 'commit -m "[^"]+"' | while read -r c; do
+ msg=$(echo "$c" | grep -oE '"[^"]+"' | tr -d '"'); [ ${#msg} -lt 20 ] && echo "⚠️ SOP hook 测试 message 过短: $msg"
+done
+# -f 说明存在
+grep -q "git add -f .env" docs/changelog/releasing/07-tool-health.md || echo "⚠️ 缺 git add -f 说明（hook 层测不到）"
+# 子项 c：verify.sh 脱敏测试输入不被全局脱敏误伤（测试输入须真实手机号，非 1**REDACTED***）
+grep -q "13812345678" engine/scripts/verify.sh || echo "⚠️ verify.sh 脱敏测试输入被误打码（脱敏误伤测试用例）"
 ```
 
 #### 110. bugfix 批防复发（多版汇总）——门禁盲区+假绿族+路径隔离+verify-commit/test-count/hook（B 类防回归 · 多版 38+26 项浓缩 · 归并 #116 入此：verify-commit 路径②收紧 + test-count 双层防御 + hook 成功回声）
@@ -1997,3 +1994,7 @@ grep -c "createAuditScope" engine/audit/src/rules/assemble.ts # 唯一构造工�
 node tools/check/check-paired-records.mjs >/dev/null 2>&1; echo $? # 期望 0
 grep -c "盲区登记已过时" tools/check/check-paired-records.mjs # 盲区退役检测在位
 ```
+
+## 输出报告格式
+
+> 审查日期 / 范围 / 环境验证（tools/release/pre-push-check/npm test/check-docs/check-version）→ 问题清单（按「是否阻断发版」分三档：阻断 / 应修 / 可延——**不用 P0/P1/P2 分级**，见本仓版本规划铁律；每条给 维度 / 文件:行 / 问题 / 建议）→ 通过统计 → 最终建议（可发版 / 需修复阻断项 / 需重大修复）。追加维度前先 grep 同类。

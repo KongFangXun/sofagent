@@ -232,8 +232,11 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 
 | 侧 | 现状 | 证据 |
 | --- | --- | --- |
-| **DSH** | seam 是**声明 + 实现**——7 款插件里声明了宿主事件的 4 款（共 7 个事件位）经 `ctx.on()` 真实订阅：audit `tools/result` + `tools/pre-execute` + `fs/write-intent` + `agent/turn-stopping`；inject `agent/pre-step`；evolve `session/event`（按 `event.type === 'turn/end'` 过滤）；rollback `agent/error`。订阅 disposer 收进 apply 的复合卸载契约 | 各插件 `src/index.ts` 的 `seamHandlers`；`plugins.json.seamHandlers`；门禁三方对账；探针剧本见 §7.3 |
+| **DSH** | seam 是**声明 + 实现**——7 款插件里声明了宿主事件的 4 款（共 7 个事件位）经 `ctx.on()` 真实订阅（事件位归属见下表注）；订阅 disposer 收进 apply 的复合卸载契约 | 各插件 `src/index.ts` 的 `seamHandlers`；`plugins.json.seamHandlers`；门禁三方对账；探针剧本见 §7.3 |
 | **OpenClaw** | hook 是**实现**——`api.on('before_tool_call', handler)` 真注册，拦停返回 `{ block: true, blockReason }` | `engine/openclaw-plugins/*/src/index.ts` |
+
+> **DSH 侧 7 个事件位的归属**：audit → `tools/result` · `tools/pre-execute` · `fs/write-intent` · `agent/turn-stopping`；
+> inject → `agent/pre-step`；evolve → `session/event`（按 `event.type === 'turn/end'` 过滤）；rollback → `agent/error`。
 
 > ⚠️ **对使用者的含义**：DSH 侧插件的运行时介入已经接线，但**能力边界不同**，
 > 不要笼统写成「已自动拦截」：
@@ -256,12 +259,14 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 
 | # | 实测项 | 结论 |
 | --- | --- | --- |
-| ① | 契约形状复核 | 与任务书 §1.2 相符：三种取法（`ctx.get('tools')` / `ctx.get('tools', false)` / `ctx.tools`）全部可用、返回 ToolRuntime；**非同一引用**（属性访问经 getTraceable 包装，方法面一致）。🔴 修正：`output.render` 是**双参** `render(exec.arguments, value)`（dsh-tools/lib/index.js:3431） |
+| ① | 契约形状复核 | 与任务书 §1.2 相符：三种取法（`ctx.get('tools')` / `ctx.get('tools', false)` / `ctx.tools`）全部可用、返回 ToolRuntime；**非同一引用**（属性访问经 getTraceable 包装，方法面一致）——但 `output.render` 签名有修正，见下注 |
 | ② | 就绪时机与 inject 声明 | `inject: ['tools']` 声明后 apply() 内立即可用（无竞态）；不声明时属性访问抛 `cannot get property "tools" without inject`，`ctx.get` 则返 undefined。裁定走 `ctx.get?.('tools')`（见 7.2） |
 | ③ | 工具可见可调 + guard | **通**：模型真实调用注册工具（pre-execute → result 全链路）；`guard()` 返回字符串=拒绝理由、单调不可翻案 |
 | ④ | ask 分支 | **通，headless fail-closed**：`ctx.get('approval')` 服务在、无 answerer → `requires approval, but no approval channel is available`。WebUI 弹窗待 P3（web profile） |
 | ⑤ | 命令/UI 面 | **headless 无 commands 注册面**（`<CommandsService add:undefined>`）→ kit 不做命令面；web 端待 P3 复核 |
 | ⑥ | 可复现剧本 | 见 7.3 + 证据案例 Case 022 |
+
+> 🔴 **① 的签名修正**：`output.render` 是**双参** `render(exec.arguments, value)`（`dsh-tools/lib/index.js:3431`）。
 
 ### 7.2 两种取法的机制裁定（静态源码 + 动态双重确认）
 
