@@ -169,17 +169,17 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-08-18     | 20260818-01❗   | release-gate | 20   | PASS❗复验FAIL | FAIL       | PASS     | PASS→FAIL | 复验修正（run-08 同款假 PASS 第二次）：verdict.md 主体=FAIL（regression 一票否决：55/87 维 precheck 中段截断 63% 盲区 + #102/103/104 市场簇同簇缺失疑 market→commons 更名检查未同步 + #98/99 路径缺 PROJECT_ROOT + #106 超时 + #94/101 脚本自身缺陷 + #1 glob 缺失）；F 链 f-fix 报告自述「修复验证❌未通过」但 driver 仅凭空 diff 的 f-audit 全绿判「修复收敛 FAIL→PASS」（F 分支零 commit 三方证据：verdict 主体 FAIL + f-fix 自述未通过 + git 零 commit）。driver 债确认：f-audit 无「分支有无新 commit」前置校验，必修后才能再跑。真实裁决=FAIL 交回阶段五 | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-18/run-01
 
 2026-08-18     | 20260818-08    | release-gate | 17   | PASS       | PASS       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-18/run-08
-| run-27 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-sandbox-kill | driver+worker 双亡（nohup 启动违反 SOP——被沙箱 session 清理，同 run-12 死法）；round-1 a-check-p1 中断，零 finding 产出 | 主 session |
-| run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 24 视角+合并 15 finding（0P0/4P1/11P2）全部落盘后，a-verify 分片 1/3 裸 LLM 降级调用中进程静默消失（无栈无 OOM 无退出标记，日志冻结于 22:23:30/心跳止于 22:25:55）——run-27 nohup 死法后又一同款：driver 随启动 session 被回收。finding 资产可复用，主 session 已接手零信任复验 | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-18/run-28 |
+run-27 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-sandbox-kill | driver+worker 双亡（nohup 启动违反 SOP——被沙箱 session 清理，同 run-12 死法）；round-1 a-check-p1 中断，零 finding 产出 | 主 session |
+run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 24 视角+合并 15 finding（0P0/4P1/11P2）全部落盘后，a-verify 分片 1/3 裸 LLM 降级调用中进程静默消失（无栈无 OOM 无退出标记，日志冻结于 22:23:30/心跳止于 22:25:55）——run-27 nohup 死法后又一同款：driver 随启动 session 被回收。finding 资产可复用，主 session 已接手零信任复验 | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-18/run-28 |
 
 2026-08-18     | 20260818-28    | fresh-eyes  | 3    | 0   | 0   | 1   | consecutive-degraded-error | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-18/run-28
 
 2026-08-19     | 20260819-01    | release-gate | 25   | PASS       | SKIP       | SKIP     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-19/run-01
-| — | 2026-08-19 | release-gate-复验 | v1.3.7 阶段六 run-01 后主 session 零信任复验 | 复验改判：FAIL→检查器侧债（非仓库问题） | dim106 SSOT 222 漏跟（已修→226）/ dim49 凌晨 IO 高压时段性超时（本机实测 1.5s 绿）/ coverage P1-1 跳号 70=基线重建既成事实（补豁免注记）/ P2-1 搜索口径错（S290-S293 无版本前缀）。修复：SSOT 修正+跳号豁免+空文件清理+孤儿分支 tag 存档删除。driver 流程债（失败未阻断+F 空转）记 FORGE 待演进。可重跑 run-02 | 主 session |
+— | 2026-08-19 | release-gate-复验 | v1.3.7 阶段六 run-01 后主 session 零信任复验 | 复验改判：FAIL→检查器侧债（非仓库问题） | dim106 SSOT 222 漏跟（已修→226）/ dim49 凌晨 IO 高压时段性超时（本机实测 1.5s 绿）/ coverage P1-1 跳号 70=基线重建既成事实（补豁免注记）/ P2-1 搜索口径错（S290-S293 无版本前缀）。修复：SSOT 修正+跳号豁免+空文件清理+孤儿分支 tag 存档删除。driver 流程债（失败未阻断+F 空转）记 FORGE 待演进。可重跑 run-02 | 主 session |
 
 2026-08-19     | 20260819-04    | release-gate | 25   | PASS       | FAIL       | SKIP     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-19/run-04
-| — | 2026-08-19 | release-gate-复验 | v1.3.7 阶段六 run-04 后主 session 零信任复验 | 复验改判：两阻塞项一修一验 | dim116 超时锚点 awk 转义炸（driver bash -c 注入场景 \$ 原样进 awk——本机直跑正常预检炸的双环境差异型检查器 bug）已换 grep 链双文档同步修复；coverage worker 退出 1 无产物=driver 侧偶发（precheck 完整/30min 存活/无栈），判定重跑验证；F 循环二次产空文件 v1.3.7 已清（根因待修）。可重跑 run-05 | 主 session |
-| — | 2026-08-19 | release-gate-手工裁决 | v1.3.7 阶段六（run-01/04 两轮 loop FAIL 均复验为检查器侧债后） | 手工裁决 PASS | regression 89/89 全绿（主 session 复刻 driver runCommand 逐字同款 spawn bash -c 亲跑，两轮 loop 的 dim106/dim116 检查器 bug 已修）+ coverage 12 交付关键词×审查文档矩阵全命中 + acceptance 303/303 EXIT=0。run-04 的 coverage worker 偶发退出判定 driver 侧（precheck 完整），手工矩阵等价覆盖。依据：SOP 判定与循环「verdict=PASS→进阶段七」+ v1.3.5 run-08 手工裁决先例 | 主 session |
+— | 2026-08-19 | release-gate-复验 | v1.3.7 阶段六 run-04 后主 session 零信任复验 | 复验改判：两阻塞项一修一验 | dim116 超时锚点 awk 转义炸（driver bash -c 注入场景 \$ 原样进 awk——本机直跑正常预检炸的双环境差异型检查器 bug）已换 grep 链双文档同步修复；coverage worker 退出 1 无产物=driver 侧偶发（precheck 完整/30min 存活/无栈），判定重跑验证；F 循环二次产空文件 v1.3.7 已清（根因待修）。可重跑 run-05 | 主 session |
+— | 2026-08-19 | release-gate-手工裁决 | v1.3.7 阶段六（run-01/04 两轮 loop FAIL 均复验为检查器侧债后） | 手工裁决 PASS | regression 89/89 全绿（主 session 复刻 driver runCommand 逐字同款 spawn bash -c 亲跑，两轮 loop 的 dim106/dim116 检查器 bug 已修）+ coverage 12 交付关键词×审查文档矩阵全命中 + acceptance 303/303 EXIT=0。run-04 的 coverage worker 偶发退出判定 driver 侧（precheck 完整），手工矩阵等价覆盖。依据：SOP 判定与循环「verdict=PASS→进阶段七」+ v1.3.5 run-08 手工裁决先例 | 主 session |
 
 2026-08-20     | 20260820-03    | release-gate | 1    | SKIP       | SKIP       | SKIP     | ERROR   | ~/.sofagent/data/forge-runs/release-gate-loop/2026-08-20/run-03
 

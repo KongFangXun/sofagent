@@ -17,7 +17,7 @@
 | # | 检查项 | 级别 | 失败表现 |
 |---|--------|------|---------|
 | ① | cwd / repoRoot 路径 | HALT | 目录不存在/不是目录 → git 命令全崩 |
-| ② | stdout 管道 SIGPIPE | **WARN** | stdout 是管道 → 下游 `| head` 截断会杀 driver |
+| ② | stdout 管道 SIGPIPE | **WARN** | stdout 是管道 → 下游 `\| head` 截断会杀 driver |
 | ③ | 模型 API 可达 | HALT | fetch 超时/网络错误 → 长任务必然中途断 |
 | ④ | 工具预算配置 | HALT | soft > hard 预算倒挂 → 熔断逻辑失效 |
 | ⑤ | runDir 可写 | HALT | 无法创建/写入 → 产物写不出去 |
