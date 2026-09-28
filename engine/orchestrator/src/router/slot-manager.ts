@@ -249,7 +249,10 @@ export class SlotManager {
   /**
    * 释放槽位（主模型槽或判定链在飞计数）。
    * 释放主模型槽时按优先级 + FIFO 提升队首（提升动作经 justPromoted 暴露）。
-   * @returns 释放是否命中（false = 该 requestId 未在任何池中）
+   * @returns 释放是否命中（false = 主模型槽未命中**且**判定链在飞数已为 0。
+   *   注意：decision 取用无 id 登记面（仅计数），故主模型槽未命中但
+   *   decisionInFlight>0 时**任意 id** 都会命中判定链分支并递减计数——
+   *   调用方不得用本返回值做「该 id 是否存在」的存在性判定）
    */
   release(requestId: string): boolean {
     if (this.inUse.delete(requestId)) {
@@ -272,6 +275,18 @@ export class SlotManager {
 
   /** 最近一次因释放而提升的租约（promote 事件读取面；无则 null） */
   justPromoted: SlotLease | null = null;
+
+  /**
+   * 撤回排队（只清队列位，不动任何池——与 release 的区别：release 面向**已获槽**的
+   * 租约，withdraw 面向**仍在排队**的票据）。转云端升级等「不再需要本地槽」的场景
+   * 用它退出队列；未命中（不在队列）幂等返回 false。
+   */
+  withdraw(requestId: string): boolean {
+    const idx = this.queue.findIndex((e) => e.requestId === requestId);
+    if (idx === -1) return false;
+    this.queue.splice(idx, 1);
+    return true;
+  }
 
   /** 排队位置查询（不在队列返回 0） */
   positionOf(requestId: string): number {

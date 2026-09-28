@@ -297,7 +297,11 @@ export class PolicyEngine {
         const w = this.slotManager.evaluateWait(decision.decisionId, { complianceAllowsCloud });
         wait = w;
         if (w.action === 'escalate-cloud') {
-          // 合规允许出门 → 自动提议转云端（routeReason 留痕）
+          // 合规允许出门 → 自动提议转云端（routeReason 留痕）。
+          // 队列卫生：转云端即不再占本地队列位——withdraw 把排队票据移出
+          //（不能用 release：该 id 未获槽，release 会误走判定链分支递减计数，
+          //  且残留票据会在后续 release 同名 id 时误提升队首占用其位）。
+          this.slotManager.withdraw(decision.decisionId);
           decision = {
             ...decision,
             target: 'cloud-strong',

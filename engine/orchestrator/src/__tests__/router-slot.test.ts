@@ -146,6 +146,23 @@ describe('第一章 · 路由策略引擎（任务×敏感度双维）', () => {
 // ────────────────────────────────────────────────
 
 describe('第二章 · 本地槽位信号量 + 排队 + 优先级 + 超时升级', () => {
+  it('withdraw 撤回排队：只清队列位不动池（转云端升级的队列卫生）', () => {
+    const m = new SlotManager({ maxSlots: 1, avgServiceMs: 1000 });
+    expect('granted' in m.acquire({ requestId: 'a' })).toBe(true);
+    const q = m.acquire({ requestId: 'b' });
+    expect('queued' in q).toBe(true);
+    // 撤回命中 · 队列清空 · 判定链计数未被误触
+    expect(m.withdraw('b')).toBe(true);
+    expect(m.snapshot().queueDepth).toBe(0);
+    expect(m.snapshot().decisionInFlight).toBe(0);
+    // 幂等：重复撤回返回 false；未排队 id 撤回也返回 false
+    expect(m.withdraw('b')).toBe(false);
+    expect(m.withdraw('never-queued')).toBe(false);
+    // 已获槽的 id 不受 withdraw 影响（仍在 inUse——release 才是它的出口）
+    expect(m.withdraw('a')).toBe(false);
+    expect('granted' in m.acquire({ requestId: 'a' })).toBe(true); // 幂等重取仍 granted
+  });
+
   it('槽位上限可配；超限排队（前台可见位置与预估等待）', () => {
     const m = new SlotManager({ maxSlots: 2, avgServiceMs: 1000 });
     expect('granted' in m.acquire({ requestId: 'a' })).toBe(true);

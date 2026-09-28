@@ -540,18 +540,43 @@ async function main() {
       // 路由人工介入队列（HITL）或升级大模型重跑。使整链在真实 CLI 分支可达。
       const taskIdx = args.indexOf('--task');
       const voteTask = taskIdx !== -1 ? (args[taskIdx + 1] ?? '') : '';
+      const voteUsage = '用法: sofagent-orchestrator vote --task <desc> [--instances N(≥2)] [--threshold <0..1>] [--on-divergence hitl|escalate]（适用域：短答案/结构化任务——自由文本产出同义不同词会被判分歧）';
       if (!voteTask) {
-        console.error('❌ 用法: sofagent-orchestrator vote --task <desc> [--instances N] [--threshold <0..1>] [--on-divergence hitl|escalate]');
+        console.error(`❌ ${voteUsage}`);
         process.exit(1);
       }
+      // fail-closed（对齐 SlotManager 构造器纪律）：显式传参非法即报错退出——不静默回退默认值
+      //（静默回退会让「--instances 10 打错成 1O」被当成 3 实例跑，用户以为做了 N=10 表决）。
       const instIdx = args.indexOf('--instances');
-      const parsedInstances = instIdx !== -1 ? Number.parseInt(args[instIdx + 1] ?? '', 10) : 3;
-      const voteInstances = Number.isInteger(parsedInstances) ? parsedInstances : 3;
+      let voteInstances = 3;
+      if (instIdx !== -1) {
+        const parsedInstances = Number.parseInt(args[instIdx + 1] ?? '', 10);
+        if (!Number.isInteger(parsedInstances) || parsedInstances < 2) {
+          console.error(`❌ --instances 非法（须 ≥2 的整数，收到：${args[instIdx + 1] ?? '(缺值)'}）——${voteUsage}`);
+          process.exit(1);
+        }
+        voteInstances = parsedInstances;
+      }
       const thrIdx = args.indexOf('--threshold');
-      const parsedThreshold = thrIdx !== -1 ? Number.parseFloat(args[thrIdx + 1] ?? '') : 0.34;
-      const divergenceThreshold = Number.isFinite(parsedThreshold) ? parsedThreshold : 0.34;
+      let divergenceThreshold = 0.34;
+      if (thrIdx !== -1) {
+        const parsedThreshold = Number.parseFloat(args[thrIdx + 1] ?? '');
+        if (!Number.isFinite(parsedThreshold) || parsedThreshold < 0 || parsedThreshold > 1) {
+          console.error(`❌ --threshold 非法（须 [0,1] 数值，收到：${args[thrIdx + 1] ?? '(缺值)'}）——${voteUsage}`);
+          process.exit(1);
+        }
+        divergenceThreshold = parsedThreshold;
+      }
       const odIdx = args.indexOf('--on-divergence');
-      const onDivergence: 'hitl' | 'escalate' = odIdx !== -1 && args[odIdx + 1] === 'escalate' ? 'escalate' : 'hitl';
+      let onDivergence: 'hitl' | 'escalate' = 'hitl';
+      if (odIdx !== -1) {
+        const odVal = args[odIdx + 1];
+        if (odVal !== 'hitl' && odVal !== 'escalate') {
+          console.error(`❌ --on-divergence 非法（须 hitl 或 escalate，收到：${odVal ?? '(缺值)'}）——${voteUsage}`);
+          process.exit(1);
+        }
+        onDivergence = odVal;
+      }
 
       const voteHandler = createHITLHandler();
       try {
