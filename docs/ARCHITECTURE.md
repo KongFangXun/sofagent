@@ -83,28 +83,10 @@ graph LR
 
 > 以下两个视角是对双层架构内部结构的补充展开，不是独立的架构框架——**双层架构是唯一主框架**。**何时需要哪张图**：产品定位 → 双层架构图；约束层内部组织 → 约束层工程视角；企业业务概念 → 业务概念视角；落地终态 → 四层运行形态图。**生命周期五段 vs 激活链四阶段**：诊断=进场审计，激活=ACTIVATE，编排=ORCHESTRATE，执行=EXECUTE，进化=SUSTAIN。
 
-**约束层工程视角**——约束层内部按「环境 → 流程 → 反馈」组织：
+**约束层工程视角**——约束层内部按「环境 → 流程 → 反馈」组织：约束层（工作环境：注入链/审计/daemon/data/ToolGate——决定「能做什么」）→ Graph（流程拓扑：编排模块 + LangGraph——决定「下一步去哪」）→ Loop（反馈改进：fresh-eyes/release-gate + sustain——决定「怎么越做越好」），审计趋势回流约束层。
+**完整 ASCII 架构图与记忆法见 [WIKI §四·三层嵌套](./WIKI.md#三层嵌套harness--graph--loop)（唯一源 / SSOT）**——本节只做补充说明，不重复维护；修改三层结构请改 WIKI 那份。
 
-```mermaid
-graph TD
-    H[约束层 · 工作环境<br/>约束注入链 + 审计能力 + 回溯能力<br/>daemon + SKILL 约束注入链 + data/ 状态持久<br/>——决定模型「能做什么」]
-    H --> G[Graph 层 · 流程拓扑<br/>FORGE 内部工具（LOOP 流水线）<br/>LangGraph StateGraph<br/>——项目自迭代内部使用]
-    G --> L[Loop 层 · 反馈改进<br/>FORGE fresh-eyes-loop + release-gate-loop<br/>进化能力 sustain · eval 反馈闭环<br/>——决定「怎么越做越好」]
-    L -.->|审计趋势回流| H
-```
-
-> **记忆法：环境、流程、反馈。** 约束层给 Agent 一个稳定的工作间（上下文/工具/权限/可观测性），Graph 告诉它任务流向哪（节点边界/路由条件/并行/汇合），Loop 让它出错后能基于证据自己改进（验证→反馈→修复→再验证）。三层缺一不可——再漂亮的 Graph 没有约束层就不可执行，再好的 Loop 没有 Graph 就不知道在哪个环节改进。
->
-> 📌 三层嵌套的**完整 ASCII 架构图（唯一源 / SSOT）见 [WIKI §四·三层嵌套](./WIKI.md#三层嵌套harness--graph--loop)**。本节只做补充说明，不在 ARCHITECTURE 重复维护完整三层图——修改三层结构请改 WIKI 那份。
-
-**业务概念视角**——从企业用户角度看，同一套系统体现为四个自外向内的嵌套层级：
-
-| 层级 | 定义 | sofagent 对应 | 例子 |
-|------|------|--------------|------|
-| **本体图谱（Ontology Graph）** | 企业全部业务节点和关联关系的全局拓扑——FDE 交付的静态语义图谱（机器读） | FDE 第三章 本体数据（objects / relations / knowledge-domain） | objects.yml + relations |
-| **业务图谱（Workflow Graph）** | 企业全部工作流组成的流程图谱——FDE 交付的动态流程图谱（人读）；其中每条完整业务链路即单个工作流 | FDE 第四章 梳理出的工作流集合 | 采购审批流、财报生成流 |
-| **Loop** | 工作流中的一个闭环执行单元，由 Goal 驱动 | FORGE loop / AI 节点跑起来 | fresh-eyes-loop、release-gate-loop |
-| **Goal** | Loop 的退出条件——达成即停，偏离即纠 | exit-gate 判定 | 「所有 P0 修复完成」 「审查全绿」 |
+**业务概念视角**——从企业用户角度看，同一套系统体现为四个自外向内的嵌套层级：**本体图谱（Ontology Graph）**＝企业全部业务节点与关联的全局拓扑（FDE 第三章，机器读）→ **业务图谱（Workflow Graph）**＝企业全部工作流组成的流程图谱（FDE 第四章，人读）→ **Loop**＝工作流中由 Goal 驱动的闭环执行单元 → **Goal**＝Loop 的退出条件（exit-gate 判定）。
 
 **工作流（Workflow）由业务节点组成**——业务节点 = AI 节点 + Human 节点（对应 FDE 第四章 三问判定法：从业务节点中识别哪些可 AI 化 → 🔄/⚡ 成为 AI 节点，👤 保持 Human 节点）：
 
@@ -166,11 +148,11 @@ graph TB
 | FDE | Forward Deployed Engineer（前线部署工程师） | 源自 Palantir 交付纪律：工程师驻场客户，掌握完整上下文、打破岗位边界、对结果负责。sofagent 把 FDE 能力产品化——FDE 进场生成判断并部署 AI 节点，离场后节点按判断自己跑 |
 | FDEing | 打法层动词位（万物皆可 FDEing） | **语法纪律**：FDE = 名词位（人/角色）；FDEing = 动词位（可复用的打法能力——把 FDE 从人力工作做成产品能力）。「万物皆可 FDEing」= 场景框架首句（三域视角见 [v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)），不与「FDE Harness 层」品类词互换 |
 | 中间件（Harness 中间件） | Middleware | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断（[设计哲学](./PHILOSOPHY.md) 明确否定该义，改称「数字员工的组织入职协议执行器」）。两义并存不矛盾：一个答**属于什么品类**，一个答**在组织里扮演什么角色** |
-| Harness | 约束层 | FDE Harness 层的核心：一个层五种能力（注入·审计·回溯·沉淀·进化）。对外中文「约束层」、英文「Harness」为 SSOT；「FDE Harness 层」即产品整体（约束层 + FDE 方法论 + 审计），「约束层」即其核心，两者一体两面不另作区分；约束层的构成表述 = **一个引擎 + 一组插件**（引擎=约束层本体，即五个功能模块构成的整体，不可拆不可裁；插件=把引擎能力挂到宿主，可插拔可裁剪）；两者的咬合机制（两相位）：FDE 是判断的**生成相位**（进场时把「该不该上 AI / 做好标准 / 谁拍板 / 何时跑」判断出来并冻结成交付物），约束层是判断的**驻留相位**（离场后 7×24 按冻结的判断执行并产生反馈信号），交接物 = workflow.yml + ontology + MD（FDE 写入、约束层读写、持续进化——是共享状态不是一次性交付）；「Constraint Layer」为同义英文旧称，不再单独使用。**外部定义参照**：agent harness 的构成性定义（必要充分条件 + 可操作的包含/排除检验）见 [THANKS · Loop → Harness → Graph](./THANKS.md) 登记的同题论文——本仓上述口径是该定义下的一种实现形态，**不是该定义的复述** |
+| Harness | 约束层 | FDE Harness 层的核心：一个层五种能力（注入·审计·回溯·沉淀·进化）。对外中文「约束层」、英文「Harness」为 SSOT；「FDE Harness 层」即产品整体（约束层 + FDE 方法论 + 审计），「约束层」即其核心，两者一体两面不另作区分；约束层的构成表述 = **一个引擎 + 一组插件**（引擎=约束层本体，即五个功能模块构成的整体，不可拆不可裁；（详→注-1） |
 | Gateway | Gateway | 企业级 AI 统一入口（WorkBuddy / OpenClaw 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
 | Ontology | 本体数据 | 企业的业务世界模型——一套「什么实体存在、能做什么动作、受什么约束」的规则书（机器可读），FDE 帮你搭建并持续维护 |
-| 打法层 / 判定层 / 治理层 | FDEing / S1M / Harness | **产品身份三层口径**（[README · 三因子口径](../README.md)——FDEing 打法 / S1M 判定 / harness 治理）。与本文件「约束层」架构术语是**同一事物的两个视角**（身份叙事视角 vs 架构术语视角），不是两套体系；三域视角已在本档落位（场景/判定/治理域锚见 [心智模型 · 三域视角](#双层架构约束层与生命周期主框架)），全量重构与五域→三域映射表见 [v1.5.3 开发日志](./changelog/v1.5/v1.5.3.md) |
+| 打法层 / 判定层 / 治理层 | FDEing / S1M / Harness | **产品身份三层口径**（[README · 三因子口径](../README.md)——FDEing 打法 / S1M 判定 / harness 治理）。与本文件「约束层」架构术语是**同一事物的两个视角**（身份叙事视角 vs 架构术语视角），不是两套体系；（详→注-2） |
 | River | 统一 Agent 入口 | 多个 Workflow 的集合——每段 Workflow 把模型能力引到业务侧，汇入同一条大河。详见 §五 River—Workflow—Subagent 三层架构 |
 | SMB | 中小企业（Small & Medium Business） | 没有专职 AI 部署团队、想低成本具备 FDE 能力的企业 |
 | OPC | 一人公司（One Person Company） | 个人或小团队，用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 |
@@ -179,8 +161,14 @@ graph TB
 | ORCHESTRATE | 编排 | 多个企业 SubAgent → LangGraph StateGraph 工作流 |
 | EXECUTE | 执行 | DAG 运行 + HITL 人工审批 + 审计集成 + 异常兜底 |
 | SUSTAIN | 持续 | wrapToolCall 联动：执行 → 审计 → 反思 → 进化 |
-| S1M | System One Model（决策模型 · 身份句） | 本仓判定件之名——不生成文字、只输出类型化决策（三原语 Choice/Score/Noul）+ 校准概率 + 弃权语义。**判定/决策/判断三层口径**：身份句用「**决策模型**」（对齐 System One 谱系，产品身份）；机制句用「**判定**」（名词 · 机构面——判定面 · 判定底座 · 判定档 · 判据集 · 判定调用，只出结论、指向治理面）；叙事句用「**判断**」（动词 · 动作面——S1M 执行判断 · 判断被治理）。不互换：「决策」含行动意志指向应用面，「判定」是机制实体，「判断」是动作——混用会把治理面读成应用面 |
-| System 1 Agent | 品类名 | `S1A = S1M + Harness`（受 FDEing 作用——FDEing 为方法论 plug-in，见 v2.0.0 §一）定义的 Agent 品类（[v2.0.0 §一](./changelog/v2.0/v2.0.0.md)宣告）：FDE 定义场景，S1M 执行判断，Harness 保证判断被治理——不是更快的 Agent，是判断先被治理的 Agent。sofagent = **System One For Agents**（名字 backronym，谐音彩蛋保留） |
+| S1M | System One Model（决策模型 · 身份句） | 本仓判定件之名——不生成文字、只输出类型化决策（三原语 Choice/Score/Noul）+ 校准概率 + 弃权语义。**判定/决策/判断三层口径**：身份句用「**决策模型**」（对齐 System One 谱系，产品身份）；机制句用「**判定**」（名词 · 机构面——判定面 · 判定底座 · 判定档 · 判据集 · 判定调用，只出结论、指向治理面）；（详→注-3） |
+| System 1 Agent | 品类名 | `S1A = S1M + Harness`（受 FDEing 作用——FDEing 为方法论 plug-in，见 v2.0.0 §一）定义的 Agent 品类（[v2.0.0 §一](./changelog/v2.0/v2.0.0.md)宣告）：FDE 定义场景，S1M 执行判断，Harness 保证判断被治理——不是更快的 Agent，是判断先被治理的 Agent。（详→注-4） |
+
+> 注-1：插件=把引擎能力挂到宿主，可插拔可裁剪）；两者的咬合机制（两相位）：FDE 是判断的**生成相位**（进场时把「该不该上 AI / 做好标准 / 谁拍板 / 何时跑」判断出来并冻结成交付物），约束层是判断的**驻留相位**（离场后 7×24 按冻结的判断执行并产生反馈信号），
+> 交接物 = workflow.yml + ontology + MD（FDE 写入、约束层读写、持续进化——是共享状态不是一次性交付）；「Constraint Layer」为同义英文旧称，不再单独使用。**外部定义参照**：agent harness 的构成性定义（必要充分条件 + 可操作的包含/排除检验）见 [THANKS · Loop → Harness → Graph](./THANKS.md) 登记的同题论文——本仓上述口径是该定义下的一种实现形态，**不是该定义的复述**
+> 注-2：三域视角已在本档落位（场景/判定/治理域锚见 [心智模型 · 三域视角](#双层架构约束层与生命周期主框架)），全量重构与五域→三域映射表见 [v1.5.3 开发日志](./changelog/v1.5/v1.5.3.md)
+> 注-3：叙事句用「**判断**」（动词 · 动作面——S1M 执行判断 · 判断被治理）。不互换：「决策」含行动意志指向应用面，「判定」是机制实体，「判断」是动作——混用会把治理面读成应用面
+> 注-4：sofagent = **System One For Agents**（名字 backronym，谐音彩蛋保留）
 
 > ⚠️ **旧名兼容**：五能力（注入/审计/回溯/沉淀/进化）中，前四能力即原约束底座/审计模块/回溯引擎/进化模块（v1.2.9 统一为「约束层四种能力」），「沉淀」承接原「进化」表述中的「经验沉淀」语义与知识蒸馏管线（knowledge/）。历史文档中的四能力与「引擎」表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
 
@@ -241,10 +229,10 @@ gate 并入 audit）+ 4 个 OpenClaw 插件包（`engine/openclaw-plugins/`）+ 
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
-| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + FDE 六引擎工作台 + workflow 模板血缘（lineage 事件流 + fork 谱系回溯）+ 执行时 Skill 快照（打包/清理/审计锚点） | ✅ 已实现（1612 测试） |
+| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 工具门禁（职责边界与文件落点见 [DEVELOPMENT · 编排哲学](./DEVELOPMENT.md)） |
 | train | 后训模块：train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告 + 云端执行面（替换路径 `import { createTrainJob } from '@sofagent/train'`） | ✅ 已实现（717 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（589 测试） |
-| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（104 tools）——含 FDE 六引擎（fde_interview/classify/quantify/derive/distill/deploy）、训练系（train_status/train_list/train_diagnose/corpus_export/train_serve/train_compliance/train_deliverable）、连接器与模板面（connector_register/connector_list/workflow_export/workflow_import） | ✅ 已实现 |
+| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources 暴露（104 tools 分域清单见 [API](./API.md)，由 tool-registry 生成） |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt） | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
@@ -331,14 +319,14 @@ graph TB
 
 | 版本 | 关键能力 |
 |------|---------|
-| **基座（v1.2.0）** | FDE 常驻部署 · AI 节点自动化 · 25 条规则行为审计（零 token 纯静态）· 一键回滚 · 平台无关核心约束（Hook 自动注入 / 手动注入 + 审计照常）· AI 知识库自动积累 · Ontology 本体数据 · USB 一键烧录 · 安全联邦多设备互查 · 4 个 Sub Agent · daemon + A/B 调度器 · MCP Server · FDE 四阶段十二步 · sustain 模式 · ControlGraphState（逐项说明见 [HANDBOOK](./HANDBOOK.md) 与各版 [开发日志](./changelog/)） |
+| **基座（v1.2.0）** | FDE 常驻部署 · AI 节点自动化 · 25 条规则行为审计（零 token 纯静态）· 一键回滚 · 平台无关核心约束 · AI 知识库自动积累 · Ontology 本体数据 · USB 一键烧录 · 安全联邦多设备互查 · 4 个 Sub Agent · daemon + A/B 调度器 · MCP Server · FDE 四阶段十二步 · sustain 模式（逐项见 [HANDBOOK](./HANDBOOK.md) 与 [开发日志](./changelog/)） |
 | **v1.2.9** | 三个入口产品（npx 零配置审计 CLI + 规则市场 `--ruleset` + GitHub Action）· FORGE Driver 短任务化 + Checkpoint/Resume worker 级断点 + PM2 守护进程 |
 | **v1.3.0** | 运行时审计最小闭环（wrapToolCall middleware + tool-gate 动态拦截 + 运行时审计日志）· 决策审计（emitDecision + HMAC 链 + kind-wise 查询）· 规则透明化（`list_rules` MCP tool）· 危险操作 HITL 钩子 · 双规则系统统一（`ruleType`）· 激活链 Phase 4 收尾（SUSTAIN 全闭环）· 外部记忆后端 Path A（可选，缺省关闭）· 进化链路写保护 |
-| **v1.3.1** | Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）· 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 副作用幂等）· Agent 身份码 Ed25519 · 🚀 Onboard Agent L1（loop_debug）· 📊 Benchmark 评测（evaluate）· 工具审批四模式 · LLM 调用级 Trace · 错误处理升级（stop_reason + 退避）· L4 渐进加载 · 本体建模要求对齐 GB/T 48000.3-2026（`runRules({gb48000:true})`）· 跨设备审计轨迹聚合（audit_trail） |
+| **v1.3.1** | Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）· 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 副作用幂等）· Agent 身份码 Ed25519 · Benchmark 评测 · 工具审批四模式 · LLM 调用级 Trace · L4 渐进加载 · 跨设备审计轨迹聚合 |
 | **v1.3.3** | L2 团队协作协议 + Refine Agent 完整版 + 入口路由 |
 | **v1.3.4** | L3 组织能力公地（发布→发现→调用→评价→养护）+ SkillScan 安全门（三态判定）+ 编排层与执行层分离（ExecutionBackend） |
 | **v1.3.5** | MCP 自进化+运维闭环（A/B 实验 run_ab_test / promote_ab 人审晋升 + 快照 snapshot_list / snapshot_restore 人审恢复）+ instinct→skill 自动进化（三源提取 + 置信度评分 + /evolve 聚合）+ FDE 运维五件 + DSH MCP 互通 |
-| **v1.3.6** | 引擎接口外化——Workflow 标准格式 + 运行容器（`workflow_submit`）/ Ontology Schema 注册（`ontology_import` D1-D5 留痕）/ 模型注册 + 灰度切换（`model_register` / `model_switch`）/ SubAgent 托管 SDK（`harness.wrap` 双形态）/ 训练协议三约定 + 预算控制（`train_budget`）/ 机器可判定验收（`define_acceptance` / `check_acceptance`）/ 路由决策可解释性（EndpointProfile + route-policy + routeReason）/ 可靠性五件（worktree 隔离 + 双闸验证 + 疲劳度检测 + 分级降级 + decisions.jsonl 完整版）· MCP 60 tools |
+| **v1.3.6** | 引擎接口外化——Workflow 标准格式 + 运行容器 / Ontology Schema 注册 / 模型注册 + 灰度切换 / SubAgent 托管 SDK / 训练协议三约定 + 预算控制 / 机器可判定验收 / 路由决策可解释性 / 可靠性五件（worktree 隔离 + 双闸验证 + 疲劳度检测 + 分级降级 + decisions.jsonl）· MCP 60 tools |
 | **v1.3.7** | SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 虚拟 key / 独立进程 / A-B 双跑）· 场景驱动权限 · AgentShield 五类扫描 · 行业 overlay 四套 · 断路器行为监控 · ontology 生命周期 |
 | **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固 |
 
@@ -608,24 +596,17 @@ graph LR
 
 **证据分层**：git diff = 硬证据（不可绕过），Agent 日志 = 软证据（可伪造）。`--silent` 模式只跑纯 git-diff 规则，零依赖 Agent 配合。
 
-**过程面与结果面的分工**：行业一线实践将运行时托管拆为双面——过程审计由运行时托管 Harness 承担（每步工具调用实时可见、可拦截，如 OpenAI Agents SDK 的 guardrail 拦截 + 审计留痕），结果审计由外置审计层承担（git diff 硬证据裁决）。两者组合构成完整运行时托管：过程面防「当下越权」，结果面裁「最终改了什么」——与证据分层（硬证据/软证据）互补，而非替代。
+**审计的五面读数速览**（成篇行业论证已归 VALIDATION / 归档，此处只留判据句）：
 
-> 📖 来源：[OpenAI Agents SDK v0.22.0 release notes](https://github.com/openai/openai-agents-python/releases/tag/v0.22.0)（2026-08-19 · 官方 changelog · A 级源）
+| 面 | 判据 | 出处 |
+|------|------|------|
+| **过程面 / 结果面分工** | 过程审计由运行时托管 Harness 承担（每步工具调用可拦截，如 Agents SDK guardrail），结果审计由外置审计层承担（git diff 裁决）——过程面防「当下越权」，结果面裁「最终改了什么」 | [Agents SDK v0.22.0](https://github.com/openai/openai-agents-python/releases/tag/v0.22.0)（2026-08-19 · A 级源） |
+| **僵局信号** | 审计读数须含过程形态信号：「同一动作连续重复 N 次且无状态推进」即告警（141 小时长时评测实测：受挫后行为分布塌缩，产出照常增长但状态推进为零） | [Vals AI《我的世界》141h 评测](https://aihot.news/items/cmuai7c0w0jy6ro5tcdo4c8ro)（2026-09-21） |
+| **凭证与能力解耦** | UI 开关必须等于数据面真关——「界面上关了」≠「引擎里关了」；高危工具许可在模型上下文之外设独立确认、确认链路进审计链（Meta Muse 零日教训：token 同时担「身份」与「能力开关」即被全权接管） | [Meta Muse 零日漏洞](https://aihot.news/items/cmubu7pzq035vro99rplg4qt9)（2026-09-22） |
+| **决策即节点** | 决策记录是一等审计对象不是日志行：与「看到什么/考虑过什么/为何选这个/执行后如何」四层绑定入库，复核状态随决策本体走——查决策 = 查审计链 | Semantica 源码导览（2026-09-20）等三源，与 [VALIDATION](./VALIDATION.md) 互证 |
+| **自评判警示** | 自评判与环境真值一致率 0.88 但价值估计误差同样 0.88，评判准确度与下一步改进几乎零相关（r=-0.23）——自我评分可保留（think.md），保留/晋升判定必须交给模型外信号 | [S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed，2026-08） |
 
-> [Anthropic《When AI builds itself》](https://www.anthropic.com/institute/recursive-self-improvement)（2026-06）：工程师代码产出达 2024 年 8 倍后，人工代码审查成为新堵点。sofagent 的审计把审查外置到 git diff 自动化——正是解这个瓶颈的方向。
-
-**僵局也是审计对象：行为分布塌缩信号**。审计若只记「完成了什么」，卡死就不可见——141 小时长时评测实测：Agent 受挫后行为分布塌缩为单一重复动作，产出行数照常增长但状态推进为零。故审计读数须含过程形态信号：「同一动作连续重复 N 次且无状态推进」即告警。这与过程面（逐步可见）、结果面（git diff 裁决）互补成第三面——不看产出多少，只看行为是否还在发散。
-
-> 📖 来源：[Vals AI《我的世界》141 小时长时评测](https://aihot.news/items/cmuai7c0w0jy6ro5tcdo4c8ro)（2026-09-21，一手实测）；与恢复策略挖掘、轨迹失败模式挖掘互证（彼为进化侧训练信号，此为审计侧告警信号）
-
-**凭证与能力解耦：UI 开关必须等于数据面真关**。Meta Muse 零日漏洞的教训：一个未校验的配置端点即可窃取 token 全权接管——根因是 token 同时承担「身份」与「能力开关」两个职责。治理判据：高危工具的许可在模型上下文之外设独立确认（许可门既有形态），且确认链路本身可回溯（进审计链）；界面开关状态不得作为控制面依据——「界面上关了」不等于「引擎里关了」，开关无效即控制面装饰。
-
-> 📖 来源：[Meta Muse 零日漏洞](https://aihot.news/items/cmubu7pzq035vro99rplg4qt9)（Ars Technica/The Verge 转述，2026-09-22）；与决策模型 credential scope 最小授权、许可门「验证通过前不产生副作用」互证
-
-**决策即节点：决策记录是一等审计对象，不是日志行**。行业三源同构收敛（Semantica 源码级实现、Palantir 动态本体决策捕获、动态本体 MVP 实操）：决策与「当时看到什么（上下文）、考虑过什么（候选）、为何选这个（依据）、执行后如何（反馈）」四层绑定入库，使「查决策 = 查审计链」，因果追溯从翻日志变为沿链遍历；人工复核闸门本身成为决策记录的字段（复核状态随决策走，而非散落在流程日志里）。
-对 sofagent 的对位：决策审计（emitDecision）已记录运行时理由链——此处补的是结构方向：决策记录按四层完备入库、复核状态随决策本体走，让意图问责与行为问责（git diff）在查询层合流（方向性结论，非现状能力）。
-
-> 📖 来源：《Semantica 源码导览：开源版 Palantir 的 16 站数据流水线》（噪声之下，2026-09-20）；渊亭防务《Palantir 全景动态本体技术研究报告·第三章》（2026-09-17）；动态本体 MVP V0.033 实操复盘（2026-08-17，参考 Semantica）；与 [VALIDATION](./VALIDATION.md)「Semantica 真身定位」节互证（「决策即节点」为其对 Palantir 的独特性判据）
+**行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 A15 约束验证同源；Palantir OAG 的「确定性与概率性分离」与 sofagent 审计完全同构（20/25 条纯 git-diff 即其工程实现）。完整行业对标见 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型) 和 [VALIDATION](./VALIDATION.md)。
 
 **行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 A15 约束验证同源（同 §三审计外置原则）。Palantir OAG 的「确定性与概率性分离」与 sofagent 审计完全同构——sofagent 的 20/25 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。
 完整的行业对标分析（Palantir OAG 五层映射、Ledger-Views-Policy 对照、DeerFlow/Omnigent/DataFlow 等）见 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型) 和 [VALIDATION](./VALIDATION.md)。
@@ -702,37 +683,12 @@ graph LR
 **评估即需求（Eval as Spec）**：在 Agent 系统中，传统软件的需求文档（PRD）正在被评估用例取代——不是先写 PRD 再让 Agent 照着做，而是先定义「什么算做对了」（可量化、可执行的验收标准），让 Agent 在这个靶子里自主循环收敛。sofagent 的审计就是这个理念的工程骨架：25 条规则 = 25 条可执行的验收标准（20 条纯 git-diff 零 token 确定性判定 + 5 条非纯 git-diff：4 条 hybrid 需 Agent 日志 + 1 条 filesystem 扫描），每次 commit 自动跑一轮回归——不是「写完看看对不对」，
 是「不满足标准就进不了主干」。这与 fresh-eyes 独立审查、release-gate 验收闭环同构：把「做完了的判定」（What + Done）从人的主观审查变成代码的确定性裁决。评估驱动的约束比提示词约束更坚固——提示词会被模型吞噬，可执行约束不会。
 
-**审计的三重身份**：Code Review 体系化实践中，Review / Verification / Gate 是三个独立环节——sofagent 的审计同时承担三者：
+**审计的三重身份与 E2E Harness**：sofagent 审计同时承担 Code Review 三环节——Review（静态分析，A3/A4/A5/A7 需理解意图的规则）/ Verification（规则校验，A1/A2/A9/A10 纯 pattern 匹配，确定性 100% 可复现）/ Gate（exit code 0/1/2 → 放行/WARN/阻断 commit）；
+也是 E2E Test Harness——`git commit` 触发 → 25 条规则并行判定 → exit code 决定能否进主干，且零执行权限（不看 Agent 跑出什么结果，只看 git diff 留下什么证据，不可被「好结果」说服）。**可执行约束 > 提示词约束**：前者是文件系统的是非题，后者是概率推理的判断题。
 
-| 环节 | 属性 | sofagent 对应 |
-|------|------|--------------|
-| Review（静态分析） | 模型读代码判断逻辑合理性，概率性 | A3/A4/A5/A7 等需理解意图的规则 |
-| Verification（规则校验） | 固定校验流程，确定性 100% 可复现 | A1/A2/A9/A10 等纯 pattern 匹配规则 |
-| Gate（决策管控） | 基于 Review+Verification 结果判断能否合并 | exit code 0/1/2 → 放行/WARN/阻断 commit |
+**数据面参照：Langfuse**。[Langfuse](https://github.com/langfuse/langfuse)（开源 LLM 可观测与评估平台）对位审计的**数据面**（trace 采集 + 指标看板 + 评估数据集回归），sofagent 做控制面——**可观测性是控制面的必要非充分条件**，看得见不等于管得住。两点可借力：①自托管满足「数据不出内网」（金融/政务/医疗硬约束）；② 其 dataset + evaluation 数据模型可作审计回归门禁 schema 参照。
 
-> **设计原则**：Review Agent 默认不配代码执行权限——纯静态分析避免执行逻辑干扰审查客观性。sofagent 审计同样零执行权限，只看 git diff 硬证据。
-
-**审计作为 E2E Test Harness**：对 Coding Agent 最有效的约束不是更多提示词（模型会内化文字约束），而是端到端测试 Harness——一套提交时自动触发、判定通过/不通过的执行层。sofagent 审计就是这种 Harness：`git commit` 触发 → 25 条规则并行判定 → exit code 决定能否进主干。与 CI/CD 的测试管线相比，审计的优势在「零执行权限」——不看 Agent 跑出来什么结果，只看 git diff 留下什么证据，因此不可被 Agent 的「好结果」说服而放过坏变更。
-可执行约束 > 提示词约束：前者是文件系统的是非题，后者是概率推理的判断题。
-
-**数据面参照：Langfuse**。[Langfuse](https://github.com/langfuse/langfuse)（开源 LLM 可观测与评估平台）做 trace 采集（每次调用的输入/输出/工具/耗时）+ 指标看板 + 评估数据集与回归，正好对位审计的**数据面**；sofagent 做控制面（约束在先、变更留痕、经验回流）。两者互补——**可观测性是控制面的必要非充分条件**，看得见不等于管得住。
-
-两点可直接借力：① Langfuse 支持自托管，而「数据不出内网」是金融/政务/医疗客户的硬约束，这条路径下无需自研 trace 存储；② 其 dataset + evaluation 数据模型可作为审计回归门禁的 schema 参照。
-
-> 📖 来源：[langfuse/langfuse](https://github.com/langfuse/langfuse)（github.com，2026-08 核实）
-
-**审计留痕的六项必留字段**：Agent 写入生产系统时，审计日志必须保留六项信息才能支撑事后追溯与回滚重建。这一规格来自 OWASP LLM Top 10 2025（LLM06:2025 过度授权）和 Microsoft Security Blog「Least Privilege for AI Agents」（2026-07）的行业共识——比通用审计日志的默认字段更严格：
-
-| # | 必留字段 | 为什么不能省 | sofagent 当前覆盖 |
-|---|---------|------------|:---:|
-| 1 | 谁（操作主体） | Agent 独立身份，不复用人账号 | ✅ v1.2.5 身份码 |
-| 2 | 何时（时间戳） | 跨系统时间戳需可对齐 | ✅ 审计记录 timestamp |
-| 3 | 对哪个对象 | 改了哪个文件 / 哪条记录 | ✅ git diff 文件路径 |
-| 4 | 执行了什么 | 动作类型 + 参数 | 🟡 部分覆盖（diff 可推断） |
-| 5 | 改前改后值 | 对比才能判断影响 | 🟡 v1.4.4 补齐（`actionGovernance.beforeAfter` 结构化摘要——从 diff 提取、截断 200 字符、落盘前脱敏） |
-| 6 | 是否可回滚 | 有回滚路径才能撤销 | 🟡 回溯能力有，日志未显式标记（排期中） |
-
-字段 6 是当前缺口——回滚路径存在（快照 + `--revert`）但审计日志未显式标记可回滚性；字段 5 自 v1.4.4 起以 `beforeAfter` 结构化摘要落盘（差异快照级完整还原仍靠 WAL 与快照体系，见上表）。字段 6 补齐后排期覆盖完整六项。离开 Foundry 这类平台的统一权限模型后，这六项必留痕是不可省的工程门槛——平台原生留痕通常只含时点、数据版本、经手应用三项，不含操作主体、改前改后值与回滚标记。
+**审计留痕的六项必留字段**（OWASP LLM06:2025 / Microsoft Least Privilege 行业共识）：Agent 写入生产系统时须留**谁 / 何时 / 对哪个对象 / 执行了什么 / 改前改后值 / 是否可回滚**六项。当前覆盖：字段 1-3 ✅（身份码 / timestamp / diff 路径）；字段 5 自 v1.4.4 以 `beforeAfter` 结构化摘要落盘 🟡；字段 4 🟡 部分覆盖、字段 6（回滚性显式标记）🟡 排期中——离开 Foundry 类统一权限模型后，这六项是不可省的工程门槛。
 
 > 📖 来源：OWASP LLM Top 10 2025（LLM06:2025）/ Microsoft Security Blog 2026-07-16「Least Privilege for AI Agents」/ SAP Architecture Center ref-arch 137800 / Palantir Foundry 官方文档（Ontology 留痕能力对照）
 
@@ -740,21 +696,9 @@ graph LR
 
 > 📐 **定位**：将 GB/T 48000.3-2026《标准数字化 第 3 部分:本体建模要求》作为审计层 / Ontology 层的**合规参考基线**（reference baseline）——不是认证声明，是映射清单 + opt-in 覆盖度报告。合规口径：不虚构国标条款原文编号（无权威文本在手），按「本体建模要求类别」映射到 v1.3.1 交付 1 的 CORE-OBJ/ACT/LNK/STM 四类内核契约。
 
-**条款映射表**（单一事实源：`engine/audit/src/gb48000.ts` 的 `GB48000_CLAUSE_MAP`，审计维度与本文档共用）：
+**条款映射**（单一事实源：`engine/audit/src/gb48000.ts` 的 `GB48000_CLAUSE_MAP`，审计维度与本文档共用）：8 条条款类别（OBJ/LNK/ACT/STM/META/VAL/VER/ITF）映射到 v1.3.1 CORE-OBJ/ACT/LNK/STM 四类内核契约，逐条落地路径与对齐状态**以 `GB48000_CLAUSE_MAP` 为准**——已对齐 5 / 部分对齐 2（STM 迁移执行待规划、VER Schema 版本迁移未落地）/ 不适用 1（ITF）。
 
-| 条款 | 本体建模要求类别 | sofagent 落地映射 | 状态 |
-|------|------|------|:--:|
-| OBJ-01 | 对象建模要求（实体/概念定义） | CORE-OBJ · ontology/schema/entity.schema.json + concept.schema.json | ✅ 已对齐 |
-| LNK-01 | 关系建模要求（关联方向与基数） | CORE-LNK · ontology/schema/relations.schema.json | ✅ 已对齐 |
-| ACT-01 | 动作/行为建模要求（动作→载体映射） | CORE-ACT · ontology/action-registry.ts | ✅ 已对齐 |
-| STM-01 | 状态建模要求（生命周期状态迁移） | CORE-STM · ontology/contracts.ts 状态机契约 | 🟡 部分对齐（迁移执行模块待规划） |
-| META-01 | 元数据/标识要求 | frontmatter name + created_at/updated_at（D4 规则） | ✅ 已对齐 |
-| VAL-01 | 一致性/校验要求 | validateAgainstSchema + 审计 D 规则 | ✅ 已对齐 |
-| VER-01 | 版本/演进要求 | Benchmark revision freeze + Durable checkpoint | 🟡 部分对齐（本体 Schema 版本迁移未落地，不挂过期版本锚点，见 [ROADMAP](./ROADMAP.md)） |
-| ITF-01 | 互操作/标准化导出要求 | v1.3.6 已交付 `ontology_import` 注册接口面（D1-D5 留痕） | ⚪ 不适用（当前版本） |
-
-**审计报告「本体建模要求对齐」维度（opt-in）**：`runRules({ gb48000: true })`（编程接口选项，非 CLI flag）→ 结果追加 `GB48000` 信息条目（ruleClass='工程规范'，按 name 排除 exitCode 计算——默认行为零变化）。
-该维度对齐的是 **GB/T 48000.3-2026「标准数字化·本体建模要求」**（ontology schema/action-registry/contracts 合规映射，8 条 OBJ/LNK/ACT/STM/META/VAL/VER/ITF），**不是行为审计国标**，且为**非认证声明**。覆盖度：已对齐 5 / 部分对齐 2 / 不适用 1。
+**审计报告「本体建模要求对齐」维度（opt-in）**：`runRules({ gb48000: true })`（编程接口选项，非 CLI flag）→ 结果追加 `GB48000` 信息条目（ruleClass='工程规范'，按 name 排除 exitCode 计算——默认行为零变化）。该维度对齐的是 **GB/T 48000.3-2026「标准数字化·本体建模要求」**（ontology schema/action-registry/contracts 合规映射），**不是行为审计国标**，且为**非认证声明**。
 
 ### 双规则系统重叠（v1.5.3 施工收敛：正则与定义层同源）
 
@@ -835,53 +779,21 @@ graph LR
 
 ### 运行时数据层：引擎间数据流全景
 
-约束层（审计/回溯/沉淀/进化）运行时共同往 `data/` 目录读写数据（编排模块 @sofagent/orchestrator 为内部实现，也读写此目录）。以下是生产者→数据文件→消费者的完整单向数据流（v1.2.1 补全 eval + ab-test 后的全景）：
+约束层（审计/回溯/沉淀/进化）运行时共同往 `data/` 目录读写（编排模块为内部实现，也读写此目录）。生产者→数据文件→消费者的完整单向数据流全景图（v1.2.1 补全 eval + ab-test 后的全景，ASCII 大图）**已归档**：[archive/validation-deep/architecture-dataflow.md](./archive/validation-deep/architecture-dataflow.md)。
 
-```
-                        写入侧（生产者）                          data/ 目录                          读取侧（消费者）
-┌─────────────────────────────────────────┐  ┌──────────────────────┐  ┌─────────────────────────────────────┐
-│ @sofagent/audit（审计）               │  │ audit/               │  │ @sofagent/daemon（巡检器）            │
-│   每次 commit/变更 → runRules()          │→ │   history.jsonl      │→ │   warn-accumulator（WARN 聚合）      │
-│   会话结束 → buildSessionReport()        │→ │   session-report.json│→ │   audit-history-analyzer（趋势）     │
-│                                          │→ │   session-report.md  │→ │   qa-verify-warn-accumulator         │
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/think（反思生成器）              │  │ think.md             │  │ @sofagent/inject（加载链第3层）      │
-│   generateThinkEntry() 基于 diff+审计结果 │→ │   （append-only）      │→ │   buildConstrainedSystemPrompt()     │
-│                                          │→ │                      │→ │ @sofagent/daemon（dream-cycle）       │
-│                                          │→ │                      │→ │   extract-facts() → knowledge/       │
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/eval（评分模块）⭐ v1.2.1 补全   │  │ eval/ ⭐              │  │ @sofagent/think（进化模块）⭐ 接通    │
-│   runEval() 跑 golden set                │→ │   history.jsonl      │→ │   检测 passRate 下降→写 think.md      │
-│   eval-reporter 持久化                    │→ │   reports/*.md       │→ │ Dashboard 质量趋势面板               │
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/ab-test（A/B 框架）⭐ v1.2.1   │  │ ab-test/ ⭐           │  │ @sofagent/orchestrator（ab-scheduler）│
-│   runABTest() 对比方案                     │→ │   history.jsonl      │→ │   aggregateRecent() 方案判定          │
-│                                          │→ │   reports/*.md       │→ │ Dashboard A/B 对比面板               │
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/daemon（守护进程）              │  │ dashboard/           │  │ Dashboard                            │
-│   health-reporter → runHealthReport()    │→ │   daemon-health.json │→ │   健康面板                            │
-│   dream-cycle → extract/synthesize       │→ ├──────────────────────┤  │ @sofagent/inject（加载链第4层）      │
-│                                          │→ │ knowledge/           │→ │   buildConstrainedSystemPrompt()     │
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ FORGE driver                             │  │ forge-runs/          │  │ verdict.md（人类读）                  │
-│   fresh-eyes / release-gate              │→ │   <loop>/<date>/run/ │→ │                                     │
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/core ⭐ v1.2.7                 │  │ orchestrator/goals/ ⭐│  │ @sofagent/orchestrator ⭐ v1.2.7     │
-│   /goal → evaluateGoal() 写 current.json │→ │   current.json       │→ │   goal_eval 节点（每轮评估收敛）     │
-│   （Session Goals 持久化）                │→ │                      │→ │                                     │
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/audit ⭐ v1.2.7                │  │ support-bundles/ ⭐   │  │ 人类（报障附件）                      │
-│   --support-bundle → generateSupportBundle│→ │   <timestamp>.zip    │→ │   （脱敏后的诊断快照）               │
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/core ⭐ v1.3.0                 │  │ memory/ ⭐ v1.3.0     │  │ @sofagent/daemon（dream-cycle）      │
-│   createMemoryStore → per-fact Markdown  │→ │   memory.json 索引   │→ │   extract-facts 写入事实级记忆       │
-│   （事实级记忆存储）                      │→ │   __default__/*.md   │→ │ @sofagent/core（search/list/delete）│
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/daemon ⭐ v1.3.0               │  │ scheduler/ ⭐ v1.3.0  │  │ CLI（scheduler list/history）        │
-│   createScheduler → cron/once 定时任务   │→ │   tasks.json 索引    │→ │   daemon start → getDueTasks()       │
-│   （定时任务调度器）                      │→ │   history/<id>/*.json│→ │                                     │
-└─────────────────────────────────────────┘  └──────────────────────┘  └─────────────────────────────────────┘
-```
+**数据流速览**（写入侧 → data/ → 读取侧）：
+
+| 数据面 | 写入侧 | 读取侧 |
+|------|------|------|
+| `audit/`（history.jsonl · session-report） | @sofagent/audit | daemon（WARN 聚合/趋势分析）· Dashboard |
+| `think.md`（append-only） | @sofagent/think | inject 加载链第 3 层 · daemon dream-cycle |
+| `eval/` · `ab-test/` | @sofagent/eval · ab-test | think（进化）· orchestrator（ab-scheduler）· Dashboard |
+| `knowledge/` | daemon dream-cycle | inject 加载链第 4 层 |
+| `dashboard/daemon-health.json` | daemon health-reporter | Dashboard 健康面板 |
+| `forge-runs/` | FORGE driver（fresh-eyes/release-gate） | verdict.md（人类读） |
+| `orchestrator/goals/current.json` | @sofagent/core（/goal） | orchestrator goal_eval 节点 |
+| `support-bundles/` | @sofagent/audit --support-bundle | 人类（脱敏诊断快照） |
+| `memory/`（事实级） · `scheduler/`（定时任务） | @sofagent/core · daemon | daemon dream-cycle · CLI |
 
 **数据流铁律**：
 - ✅ 生产者 → data/ → 消费者：合法（单向派生）
@@ -889,10 +801,7 @@ graph LR
 - ❌ Views → Ledger：禁止反向写回（代码级强制）
 - ❌ 任何层 → 历史条目覆写：禁止（append-only 不变量）
 
-> 📖 此图的 v1.2.1 原始出处及交付细节见 [changelog v1.2.1 §P0b](./changelog/v1.2/v1.2.1.md)。
-
----
-
+> 📖 全景大图（v1.2.1 原始出处与交付细节见 [changelog v1.2.1 §P0b](./changelog/v1.2/v1.2.1.md)）。
 
 ## 三、架构设计决策的行业锚点
 
@@ -914,11 +823,8 @@ graph LR
 
 **养护的操作化身**：上表「养护」不是抽象姿态，而是由 fresh-eyes 独立审查机制兑现——`playbook/fresh-eyes-review.md`（23 视角独立审查——常规发版 driver 跑其中 1-12，13-23 为手动层：零上下文、相信直觉、只报告不修复）正是护栏的审阅范式；FORGE `fresh-eyes-loop` 把这套独立视角自动化，ROADMAP v2.x 借 MLflow agent 评估为其补量化评审标准。换言之，本体分支要合入主干前，先过 fresh-eyes 这一关。
 
-**本体运维（OntologyOps = 知识资产的可版本化治理）**：本体数据不只是「一棵在长的树」，它还需要一套运维体系——把 DevOps 的版本化、可审计、可回滚实践应用到知识资产。sofagent 的落地：本体节点 = 带版本和 frontmatter 的文件（可 diff、可 review、可 revert）；knowledge/ 目录 = 可审计的知识仓库（daemon 的 conflict-check 巡检矛盾/孤儿/死链 = 知识层的 CI）；think.md append-only 契约 = 不可篡改的变更日志。
-换言之，Ledger-Views-Policy 三层不只是知识分类法，还是一套知识运维管线——Ledger 是 git 历史，Views 是构建产物，Policy 是合并保护规则。本体数据走向规模化的标志，不是「节点变多了」，而是「改一个节点有完整的 diff → review → merge → audit → rollback 流程」。
-
-**本体运维的判据与治理取向**：判断一套本体是否真的被运营起来，不看它建模多么严谨，看它能否被查询——**跑不了查询的本体，只是一份严谨的意见书**；sofagent 的对应物是 MCP 工具面对本体数据的持续消费（实体、约束、图谱的每次查询都是「在生产环境里对着本体跑查询」）。治理取向与行业方法论（Deloitte Knowledge Spine 框架、思特沃克数据现代化方法论独立走到同构结论）一致：**联邦化而不吞并**——各业务域保有自己的知识与上下文，中心只统一互通协议，联邦查询正是这一取向的落地；
-**默认虚拟化**——数据留在源系统原地，语义在本体层被统一解析，本体是意义的解析层而非数据的搬运层；**上下文即服务**——组织上下文不是一次性采集的快照，而是活的、版本受控的语义资产，后续项目与 Agent 继承被调和过的上下文，而非每次重新发现它。
+**本体运维（OntologyOps = 知识资产的可版本化治理）**：本体数据不只是「一棵在长的树」，它还需要一套运维体系——把 DevOps 的版本化、可审计、可回滚实践应用到知识资产（本体节点 = 带 frontmatter 可 diff/review/revert 的文件；knowledge/ = daemon conflict-check 巡检的知识仓库；think.md = append-only 变更日志；Ledger-Views-Policy 三层即知识运维管线——Ledger 是 git 历史、Views 是构建产物、Policy 是合并保护规则）。
+**运维判据**：跑不了查询的本体只是一份严谨的意见书——MCP 工具面对本体数据的持续消费（实体/约束/图谱查询）才是「在生产环境里跑查询」。治理取向与行业方法论一致：**联邦化而不吞并**（各业务域保有自己的知识，中心只统一互通协议——联邦查询即落地）、**默认虚拟化**（数据留源系统原地，本体是意义的解析层非数据的搬运层）、**上下文即服务**（组织上下文是活的、版本受控的语义资产，后续项目继承被调和过的上下文而非重新发现）。
 
 ### Ontology 阶段匹配：不要提前进化（A1 实操）
 
@@ -1163,12 +1069,11 @@ graph LR
 
 ### 约束同源：一份定义，多端消费
 
-约束的写法只有一种是对的：定义时写下的那条规则，同时就是推理时的规则、检索时的护栏、动作门禁的边界、审计取证的依据——多端消费同一份定义，不各自维护。「这边说能、那边说不能」的分裂不是实现 bug，是定义未单源的必然结果。同一判断在四个独立方向上都能得到印证：工程侧的本体建模器以 AST 单一数据源为内核，建模公理同时充当推理规则与 Agent 工具的 schema 先验护栏；金融侧用函数注册+版本管理解决口径歧义，同一指标只允许一份规范实现；央企侧的护照模型让每个要素带来源片段/置信度/创建者的结构化溯源；方法论侧把动作按风险分级路由执行方式（自动/确认/审批），自主权边界由配置决定。
+约束的写法只有一种是对的：定义时写下的那条规则，同时就是推理时的规则、检索时的护栏、动作门禁的边界、审计取证的依据——多端消费同一份定义，不各自维护。「这边说能、那边说不能」的分裂不是实现 bug，是定义未单源的必然结果。四个独立方向印证同一判断：工程侧（本体建模器以 AST 单一数据源为内核，建模公理同时充当推理规则与工具 schema 护栏）· 金融侧（函数注册 + 版本管理，同一指标只允许一份规范实现）· 央企侧（护照模型：每要素带来源片段/置信度/创建者的结构化溯源）· 方法论侧（动作按风险分级路由，自主权边界由配置决定）。
 
 > 内部对位：双规则引擎统一已于 v1.5.3 收口（tool-level 与 git-diff 收敛为单一规则引擎、两种触发时机）——本节原则即该收口的设计依据，收敛落点见 [§双规则系统重叠](#双规则系统重叠v153-施工收敛正则与定义层同源)。
 
-**反过来说，多端消费的前提是消费端答得出依据**：留痕只回答「发生过什么」，可归因回答「为什么是这个值」——同一份定义若不携带判定依据（凭什么判定、依据哪条规则、证据来自哪份产物），消费端就得跨系统拼凑，归因链一断，记录就退回日志。**审计质量的分水岭不在留痕密度，而在归因密度**：只能回答「什么时候、谁、做了什么」的只是日志，能回答「为什么是这个值」的才是证据。这里归因到**因**（why），与 [VALIDATION](./VALIDATION.md) 的**结果负责三要素**互补——那里的「可归因（责任到人 · Agent 身份）」归因到**谁**（who）；责任要落地，两者缺一不可。
-而归因不必跨系统拼凑，正是本节「定义即证据」在审计侧的推论。
+**多端消费的前提是消费端答得出依据**：留痕只回答「发生过什么」，可归因回答「为什么是这个值」——同一份定义若不携带判定依据（凭什么判定、依据哪条规则、证据来自哪份产物），归因链一断，记录就退回日志。**审计质量的分水岭不在留痕密度，而在归因密度**。这里的归因到**因**（why），与 [VALIDATION](./VALIDATION.md) 结果负责三要素的「可归因（责任到人）」归因到**谁**（who）互补——责任要落地，两者缺一不可。
 
 ### 输出签名机制
 
@@ -1286,32 +1191,10 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 
 > 这一节回答一个具体问题：**企业员工在钉钉/飞书/企微里 @ 一个 tag，sofagent 怎么接住这个请求并跑完 Workflow？**
 
-大厂入口 Agent（River 载体）通过 MCP 协议调用 sofagent。`compose` 这个 MCP tool **已存在**（v1.1.0 起，v1.5.2 前名 `sofagent_compose`），v1.1.8 补上 `--run` 真正执行 + `--enterprise-workflow` 接收 FDE workflow 参考后，链路完整：
+大厂入口 Agent（River 载体）通过 MCP 协议调用 sofagent：`compose` MCP tool（v1.1.0 起，v1.5.2 前名 `sofagent_compose`）在 v1.1.8 补上 `--run` 真正执行 + `--enterprise-workflow` 接收 FDE workflow 后链路完整。
+**七步链路**：① 用户 IM @tag → ② 入口 LLM 识别意图、调 `compose`（task + enterprise_workflow + run）→ ③ sofagent 按企业 workflow 拆解、输出编排方案 YAML + SubAgent[] 配置（每个注入四层加载链）→ ④ dag-runner 调 LangGraph createReactAgent 调度 → ⑤ Sub Agent 带 Harness 约束执行（审计逐节点卡关）→ ⑥ 审计通过 → human_confirm → ⑦ 结果回传 LLM 翻译成自然语言给用户。
 
-```
-① 用户在钉钉 @sofagent-tag "帮我实现用户注册模块"
-     ↓ 钉钉 AI（LLM：Opus / GPT / 智谱 / DeepSeek 均可）识别意图
-② LLM 调用 MCP tool: compose
-     参数：
-      task: "实现用户注册模块"
-      enterprise_workflow: "fde梳理的认证流程.yaml"
-      run: true
-③ sofagent compose 基于企业 workflow 拆解任务
-     → 输出编排方案 YAML + 结构化 SubAgent[] 配置
-     → 每个 SubAgent 注入四层约束加载链（buildConstrainedSystemPrompt）
-④ dag-runner 调 LangGraph createReactAgent 真正调度（v1.2.0 前为 createDeepAgent（deepagents），已弃用）
-     → 主 Agent 自主决定何时委派给哪个 Sub Agent（串行 / 同步并行）
-⑤ Sub Agent 执行（带企业专有 Harness 约束）
-     → 审计在每个节点卡关（git diff 硬证据）
-⑥ 审计通过 → human_confirm → 结果回传给 LLM
-⑦ LLM 把结果翻译成自然语言返回给用户
-```
-
-**关键差异化**：大厂入口 Agent 做通用调度（什么都能干，但什么都不精），sofagent 做 **Workflow 专项**——FDE 帮企业梳理好的 workflow 做约束，Sub Agent 只做这一个专项任务，比入口 Agent 的通用调度更可控。这就是「专项 Harness > 通用 Agent」的价值，也是 sofagent 不与大厂 Agent 竞争而是做补充层的定位体现。
-
-**前提条件**：大厂入口 Agent 需支持 MCP 协议。目前 Coze / Dify / WorkBuddy 已支持，钉钉/飞书/企微的 AI 助手在跟进 MCP 标准。
-
-**与扣子（Coze，字节跳动）在 Slack @tag 的区别**：扣子把 Agent 嵌入协同平台（Agent 还是通用 Agent），sofagent 把**约束过的专项 Workflow** 嵌入协同平台（Agent 行为被 Harness 限制在企业业务流程边界内）。
+**关键差异化**：大厂入口 Agent 做通用调度（什么都能干，什么都不精），sofagent 做 **Workflow 专项**——Sub Agent 只做 FDE 梳理好的专项任务，比通用调度更可控（「专项 Harness > 通用 Agent」，不与大厂竞争而做补充层）。**前提**：入口 Agent 需支持 MCP（Coze / Dify / WorkBuddy 已支持，钉钉/飞书/企微跟进中）。与扣子（Coze）在 Slack @tag 的区别：扣子嵌入的是通用 Agent，sofagent 嵌入的是**约束过的专项 Workflow**。
 
 ### 编排层与执行层分离（v1.3.4 增量 · DSH 执行后端接入）
 
@@ -1346,8 +1229,7 @@ sofagent 的编排模块从 v1.3.4 起显式分为两层——**编排层不换�
 
 **DSH 关系定位**：DSH 是「agent 框架插件化」路线，sofagent 是「FDE 方法论 + 确定性审计」路线。两者通过 `ExecutionBackend` 接口对接——DSH Cordis 运行时成为 sofagent 执行层默认后端，LangGraph createReactAgent 作为 fallback。
 
-> ⚠️ **接入门禁状态**：早期候选包名（deepseek-harness / @dsh/core 等）曾长期 404，v1.4.0 已改走 **Cordis 内嵌路径**（@deepseek-ai/cordis@4.0.1 stable + `@deepseek-ai/dsh@0.1.2-alpha.3`（engine/orchestrator/package.json devDependencies 实测），rc.2 内嵌已验证可行：boot() + loadProfile() + 注入 cmdlineArgs/appExit + agent.followup 驱动，
->对照官方 dsh-headless runner 实现）。rc 期**内嵌为主路径**，内嵌执行失败自动 fallback CLI 桥接；LangGraph 作为最终 fallback。决策记录见 ROADMAP（precheck 证据注入保持主路径）。
+> ⚠️ **接入门禁状态**：早期候选包名曾长期 404，v1.4.0 已改走 **Cordis 内嵌路径**（`@deepseek-ai/cordis@4.0.1` stable + `@deepseek-ai/dsh@0.1.2-alpha.3`，rc.2 内嵌已验证可行）。rc 期**内嵌为主路径**，失败自动 fallback CLI 桥接，LangGraph 为最终 fallback。决策记录见 ROADMAP。
 
 > 💡 **为什么不把整个编排层也换成 DSH**：DSH 的事件驱动模型（插件 A 触发 B → B 触发 C）没有显式执行路径，运行时才确定——而 sofagent 的审计模块（git diff 硬证据 + HMAC 链 + 波次审计卡关）全部依赖预先画好的 DAG 图结构。用 DSH 替代 LangGraph 编排 = 放弃确定性审计能力。分层使用 = 两者各取所长。
 
@@ -1464,31 +1346,9 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 ##### RAG 三层视角：取知识 / 组织知识 / 管理检索与执行
 
-知识系统选型常被混为一谈，实际是三个正交层次。sofagent 三层全占，而非只做其中一层：
+知识系统选型常被混为一谈，实际是三个正交层次。sofagent 三层全占：**RAG**（固定检索——`search_knowledge` 单次检索 + FDE 进场知识库构建）／**LLM Wiki**（知识组织——Ledger-Views-Policy 三层，见上表）／**Agentic RAG**（智能控制——**编排模块本身**，ReAct 循环的每个决策点 + daemon 巡检补位 + A/B 收敛判定）。
 
-| 层 | 职责 | 流程特点 | sofagent 对应 |
-|------|------|---------|------|
-| **RAG**（固定检索） | 取知识 | 线性流程：提问 → 向量化 → 召回 → 重排 → 注入上下文 | `search_knowledge` 单次检索（sensitivity 分级过滤 + 联邦合并）；FDE 进场时的知识库构建 |
-| **LLM Wiki**（知识组织） | 组织和使用知识 | 知识体系建设：关系 / 来源 / 版本 / 更新 | Ledger-Views-Policy 三层（对照见上表）——面向 Agent 的知识结构，非供人查阅的文档库 |
-| **Agentic RAG**(智能控制) | 管理检索与执行过程 | 动态反馈循环：要不要检索 → 检索哪个源 → 结果够不够 → 拆解问题还是调用工具 → 继续还是收尾 | **编排模块本身**——ReAct 循环的每个决策点（检索规划 / 多源调用 / 结果评估 / 继续迭代）+ daemon 巡检补位 + A/B 收敛判定 |
-
-> 💡 **为什么这个视角重要**：市面上多数「企业知识库」产品只做到第一层（RAG）或第二层（Wiki），检索决策仍是固定管线——第一次检索不充分也不会换个查询方式再试。sofagent 的编排模块天然就是第三层（Agentic RAG 的控制循环 = ReAct Agent 的决策循环），且用 ontology 语义底座替代了裸向量检索（召回的是「有治理的实体关系」，不是「相似度碎片」）。**第一层是能力，第二层是资产，第三层是编排**——三层齐了，知识才从「存着」变成「被智能地使用」。
-
-**每层对现有引擎的调用关系**：
-
-| 层 | 主要读取方 | 主要写入方 | 审计/巡检方 | 现有引擎 |
-|------|------|------|------|------|
-| **Ledger** | 编排模块 / daemon（lessons-extract）/ Harness 加载链 / 人类 | 审计（git diff 自动反思）+ 主 Agent（write_think）+ FDE/loop 陪跑 | audit 模块（每次 commit 跑 25 条规则） | `@sofagent/audit` · `@sofagent/core`（memory-contract） |
-| **Views** | Agent + MCP tools（7 个 knowledge tool） | Dream Cycle 自动派生 | daemon 巡检（`conflict-check` 矛盾/孤儿/死链 · `knowledge-freshness` 新鲜度） | `@sofagent/daemon` · `@sofagent/mcp` |
-| **Policy** | Agent 启动时经 Harness 加载链注入 | 人 + FDE 维护（deploy 初次建 + sustain 每周迭代） | A15 约束验证（Agent 是否违反 SKILL 铁律） | `@sofagent/audit`（rule A15）· `@sofagent/inject`（加载链） |
-
-**为什么这样分层**：
-
-| LLM Wiki 设计意图 | sofagent 对应实现 |
-|------|------|
-| raw materials 必须可追溯、不可篡改 | think.md append-only，`memory-contract.ts` 代码级强制；audit history 环境指纹防篡改 |
-| Wiki entries 是加工品，应可重建 | knowledge/ 全部可从 think.md 派生重建（Dream Cycle 落地）；conflict-check 保证派生质量 |
-| spec norms 是人类意志的最后防线 | fde.md 业务四问由人写、A15 由代码强制；SKILL.md 铁律是 Agent 启动时注入的硬约束 |
+> 💡 市面多数「企业知识库」产品只做到前两层、检索决策仍是固定管线；sofagent 的编排模块天然是第三层（Agentic RAG 的控制循环 = ReAct Agent 的决策循环），且用 ontology 语义底座替代裸向量检索（召回的是「有治理的实体关系」，不是「相似度碎片」）。**第一层是能力，第二层是资产，第三层是编排**——三层齐了，知识才从「存着」变成「被智能地使用」。
 
 ### 模型选择
 
@@ -1535,7 +1395,9 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 | 3 | **用注入，不用 fine-tune / 显式 prompt** | 注入可审计、可回滚、可逐会话加载；另两方案分别不可审计、无机制保障 | fine-tune 侧出现**可逐条核对**约束是否内化的验证手段（审计性追平注入），或注入的「约束力 = 注意力 × 加载可靠性」被证明低于某一可用门槛且无兜底 |
 | 4 | **不信任 Agent 自我报告，只看 git diff 硬证据** | 硬证据不可绕过、软证据可伪造；20/25 条规则为纯 git-diff | 出现一类关键风险**只存在于运行时意图层、不落任何 git 变更**，且事后无法从任何硬证据回溯——此时「硬证据唯一裁决」会系统性漏判，须补运行时意图面（decision-log 已是该方向的局部应对） |
 | 5 | **编排层 LangGraph StateGraph 长期不换 + 执行层可换** | 确定性审计（25 条 git diff 规则 / HMAC 链 / 波次审计 / decision-log）全依赖显式图结构 | 确定性审计改由其他机制承载（不依赖显式图结构仍能逐条验证），或 LangGraph 出现使审计链无法维持的破坏性变更——此时「长期不换」的前提消失，该约束随之失效 |
-| — | （表用法注）证伪条件须为**可观测事件**（具体现象 / 实测数据 / 上游变更），非「将来有更好方案」类不可证伪措辞；第 5 条与 [四层运行形态](#四层运行形态企业-ai-从梳理到专属模型) / [§五 编排层与执行层分离](#编排层与执行层分离v134-增量--dsh-执行后端接入) 的「非永久承诺」口径一致；未列入 ≠ 不可证伪——本轮先补 5 条，其余后续版本增量补齐（不做一次性全量重写） |
+| — | （表用法注）证伪条件须为**可观测事件**（具体现象 / 实测数据 / 上游变更），非「将来有更好方案」类不可证伪措辞；第 5 条与 [四层运行形态](#四层运行形态企业-ai-从梳理到专属模型) / [§五 编排层与执行层分离](#编排层与执行层分离v134-增量--dsh-执行后端接入) 的「非永久承诺」口径一致；（详→注-5） |
+
+> 注-5：未列入 ≠ 不可证伪——本轮先补 5 条，其余后续版本增量补齐（不做一次性全量重写）
 
 
 ## 七、已知局限与未来方向
@@ -1578,45 +1440,5 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 ## 八、数据层路线建议
 
-> 本节为数据层路线建议——已审阅确认并纳入正式架构讨论，作为后续数据层演进的参考基线。本节记录建议与设计理由，不修改任何既有引擎行为。
-
-### 8.1 问题：语义层 / 本体该由谁建
-
-业界同一议题存在两种对立路线（非产品之争，是「业务上下文层该由谁建、谁说了算、怎么可信」之争）：
-
-- **路线 A · 人工精心构建（Palantir）**：语义层 = 共享行动现实，由人 / FDE 在部署时精心建模统一业务对象、状态、动作、权限；慢但出处清楚，是 Agent 规模化的前提。
-- **路线 B · 自动生成（Databricks Genie Ontology）**：语义层 = LLM Wiki 企业版 ＋ 权限过滤 ＋ 类 PageRank 权威排序，从公司已有使用痕迹里「长」出来；快但赌「流行 ≈ 正确」，且「认证能否强制压过流行」未定义。
-
-**关键咬合点**：自动语义层来了，手工语义层没死，反而变成整张图的**压舱石**——手工层负责「认证」（金标准不可被覆盖），自动层负责「补全」（长尾语义，默认权重低于认证层）。对立不是二选一，而是**两层怎么分工、谁压顶**。
-
-> **2026 年行业侧的新数据点**：微软 Fabric IQ 把 Ontology 定义为「业务实体、关系、属性、**规则**与动作」的统一框架，并在 FabCon 2026 让**规则直接进本体、对生态内所有 Agent 同规则执行**（Rules in ontology + Fabric Activator），同时把本体暴露为标准 MCP 端点，供任意厂商的 Agent 挂载。这为「认证能否强制压过流行」给出了产品化的答案形态——**规则进本体、由本体强制**，而不是靠权重排序。
-
-### 8.2 建议：采用「混合路线」，且人工认证层永远压顶
-
-sofagent 的现有架构**天然已是这种混合结构**，只是还没把「谁压顶」写成硬约束：
-
-| sofagent 层 | 对应路线 | 当前状态 |
-|------|------|------|
-| **Policy 层**（ontology / fde.md / SKILL.md） | 路线 A 人工构建 | FDE 部署时精心建模，是「业务世界模型」的压舱石 ✅ |
-| **Views 层**（knowledge/） | 路线 B 自动生成 | Dream Cycle 从 think.md（Ledger）自动抽取沉淀 ⚠️ 加权待硬化 |
-| **Ledger → Views 单向** | 派生方向约束 | 已有不变量（Views 不得反向写回 Ledger）✅ |
-
-### 8.3 待硬化的三条设计决策（建议上升为硬约束）
-
-1. **铁律：人工认证压顶**——ontology / fde.md 中显式声明的规则（`certified`）在冲突时**强制压过** knowledge/ 中由「被引用次数」隐式加权的自动沉淀条目。对应 Databricks 笔记点名的「认证能否强制压过流行」盲区，须显式闭合。
-2. **自动层只补全、不推翻**——knowledge/ 自动派生物不得反向覆盖 Policy 层认证条目。扩展现有 Ledger→Views 单向不变量为「**Views 自动条目不得覆盖 Policy 认证条目**」。
-3. **权威排序显式化**——进化模块经验加权当前按「命中次数」隐性加权，与 Databricks PageRank **同构**，存在「高频错误经验挤掉低频正确铁律」风险；须改为 **命中次数 × 来源可信度（certified 权重最高）**。
-
-### 8.4 落到版本的下一步
-
-- **数据层硬化（已评估未实施）**：ontology I/O schema 硬化与 knowledge/ 条目 `certified: true | false` 来源标记曾排在 v1.3.0——**certified 语义未落地**（引擎源码零实现），冲突裁决代码化随之未做；若需要见 ROADMAP 认知域再排期，不再挂已过期的版本锚点。
-- **进化模块加权改造**：经验条目从「纯命中次数」改为「命中次数 × 来源可信度」，`certified` 条目权重视为 ∞（不可被高频非认证条目挤掉）。
-- **巡检联动**：`conflict-check` 增加「认证条目被高频非认证条目反向影响」的告警维度。
-
-### 8.5 后续待办的问题
-
-1. 是否将「人工认证压顶」上升为 **A 系列审计规则**（类似 A15 的约束验证），在 commit 时硬拦截反向覆盖？
-2. knowledge/ 自动条目是否**强制带 `certified` 字段**（缺省 = false，不得压顶）？
-3. 此混合路线是否写入 **PHILOSOPHY.md §五 世界模型**，作为「世界模型优先于语言模型」的工程补充？
-4. 本节建议若后续细化为正式实现方案，需在实现前补充实施步骤与迁移影响评估。
+> 数据层路线建议（设计过程记录，非现态——不修改任何既有引擎行为）已归档。**一句话结论**：语义层/本体采用混合路线——Policy 层（人工认证）永远压顶、Views 层（自动派生）只补全不推翻、权威排序显式化为「命中次数 × 来源可信度」；`certified` 语义尚未落地（引擎源码零实现）。全文（两条路线对照 / 三条待硬化设计决策 / 落版下一步 / 待办问题）见 [归档](./archive/validation-deep/architecture-datalayer-roadmap.md)。
 
