@@ -29,6 +29,18 @@
 #      口径：**只管落盘物**——非 prompt 类文件（报告/讨论稿/开发日志）由内核 SKIP 并打印原因
 #      （沟通阶段允许多方案 + 推荐，落盘阶段只留一条）。
 #      判据 / 豁免（否定语境 + 行哈希台账）/ 失效模式分析见 tools/check/lib/prompt-fork-lint.mjs 头注释。
+#   6. 符号归属（`<file>.<ext>` 的 `<symbol>`——O-3 / 红线 9 机械面 · 2026-09-28 落）——
+#      文档写「某文件的某符号」时，断言该符号**确定义于该文件**。为什么必须有：
+#      原 v1.5.4 dev prompt 曾写「`engine/audit/src/egress-audit.ts` 的 `decideEgress`」，
+#      而 `decideEgress` 真实归属 `engine/rules/src/egress-policy.ts`——**路径存在性检查查不出
+#      这类错**（audit 包 + 该文件都在，符号也存在，只是不在那个文件里）⇒ 施工方照抄即卡。
+#      判据：文件存在 ∧ 符号在该文件有**定义**（function/const/let/var/class/type/interface/enum
+#      或 export 面）⇒ ✅；文件存在 ∧ 该文件无此定义 ∧ 该符号**在别处有定义** ⇒ ❌ 归属错（点明真实定义处）；
+#      其余（文件不存在 / 全仓无定义 / 命中纠错叙述行）⇒ 跳过并打印原因。
+#      失效模式分析：① **误报**——文档引用纠错/引述旧错（如「原 prompt 写 `a.ts` 的 `b`，实为…」）
+#        会被判归属错 ⇒ 豁免：行内含 纠错/引述语境词（原 prompt/勘误/真实归属/不在…包/实测/错误）即跳过；
+#      ② **漏报**——符号为 re-export / 同名多定义时可能判 ✅ 或跳过 ⇒ 宁可漏报不误报（与既有纪律一致）；
+#      ③ **提取失灵**——A_RE 被改坏 ⇒ 提取器自检位 16 报 RC=3 拒绝放行。
 #
 # 标记：
 #   ✅ 一致
@@ -299,6 +311,9 @@ var F_RE = /`([^`]*\.(?:ts|sh|mjs|json|yml))`/g; // 文件路径
 var N_RE = /`([a-zA-Z_][a-zA-Z0-9_]*)\(\)`/g;    // 函数名
 var D_RE = /`([^`]*\/)`/g;                       // 目录
 var L_RE = /`([^`]+)`\s*[（(]\s*(\d+)\s*行/g;    // 快照标记（路径 + 声明行数）
+// 符号归属（检查项 6）：`<file>.<ext>` 的 `<symbol>`——claim「symbol 定义于 file」
+// 允许「的」与符号间的粗体标记（`a.ts` 的 **`foo`**）。
+var A_RE = /`([^`]+\.(?:ts|sh|mjs))`[ \t]*的[ \t*]*`([A-Za-z_][A-Za-z0-9_]*)`/g;
 
 // 正向探针：模式必须命中；负向探针：模式**不得**命中。
 // 两组都要——只打正向探针只能发现模式彻底失效，发现不了被放宽
@@ -311,14 +326,16 @@ if (probeHit(F_RE, "`engine/x/a.ts`")) P_POS |= 1;
 if (probeHit(N_RE, "`foo()`")) P_POS |= 2;
 if (probeHit(D_RE, "`engine/x/`")) P_POS |= 4;
 if (probeHit(L_RE, "`a.md`（12 行）")) P_POS |= 8;
+if (probeHit(A_RE, "`engine/x/a.ts` 的 `foo`")) P_POS |= 16;
 
 if (!probeHit(F_RE, "`a.md`")) P_NEG |= 1;            // 扩展名白名单被放宽
 if (!probeHit(D_RE, "`engine/x/a.ts`")) P_NEG |= 2;   // 目录必须以 / 收尾
 if (!probeHit(N_RE, "`foo`")) P_NEG |= 4;             // 函数名必须带 ()
 if (!probeHit(L_RE, "`a.md`")) P_NEG |= 8;            // 快照必须带「N 行」
+if (!probeHit(A_RE, "`foo()`")) P_NEG |= 16;          // 归属必须「`file` 的 `sym`」双反引号形态
 
-if (P_POS !== 15 || P_NEG !== 15) {
-  process.stderr.write("提取器自检失败：正向=" + P_POS + "/15 负向=" + P_NEG + "/15\n");
+if (P_POS !== 31 || P_NEG !== 31) {
+  process.stderr.write("提取器自检失败：正向=" + P_POS + "/31 负向=" + P_NEG + "/31\n");
   process.exit(3);
 }
 
@@ -553,6 +570,24 @@ lines.forEach(function(line) {
     if (!seen[k]) {
       seen[k] = 1;
       console.log("L|" + p + "|" + n);
+    }
+  });
+});
+
+// 符号归属（检查项 6）：`<file>` 的 `<symbol>`
+// 豁免：纠错/引述语境行（引用「旧错写法」以指出其错，不是真主张归属）——
+//   行内含 原 prompt/勘误/真实归属/真实定义/不在…包/错误写法/归属错/❌ 任一即跳过。
+//   （失效模式①的机械解，见文件头检查项 6 说明。）
+var ATTR_EXEMPT_RE = /原 prompt|原任务书|勘误|真实归属|真实定义|不在[^\n]{0,8}包|错误写法|归属错|❌/;
+seen = {};
+lines.forEach(function(line) {
+  if (ATTR_EXEMPT_RE.test(line)) return;
+  [...line.matchAll(A_RE)].forEach(function(m) {
+    var p = m[1], sym = m[2];
+    var k = "A|" + p + "|" + sym;
+    if (!seen[k]) {
+      seen[k] = 1;
+      console.log("A|" + p + "|" + sym);
     }
   });
 });
@@ -874,6 +909,57 @@ if [ "$SNAPSHOTS" -eq 0 ]; then
 fi
 
 echo ""
+
+# ─── 6. 符号归属（`<file>` 的 `<symbol>`——claim「symbol 定义于 file」· O-3）───
+echo "--- 6. 符号归属（反引号内符号 ∈ 所指文件）---"
+ATTR_OKS=0
+ATTR_ERRS=0
+ATTR_SKIP=0
+
+# 定义形态（单一出处）：声明关键字 + 符号，或 export 面含该符号
+attr_def_pat() {
+  local s="$1"
+  printf '%s' "(^|[^A-Za-z0-9_])(function|const|let|var|class|type|interface|enum)[[:space:]]+${s}([^A-Za-z0-9_]|\$)|export[[:space:]]*\{[^}]*[^A-Za-z0-9_]${s}[^A-Za-z0-9_]"
+}
+
+while IFS='|' read -r tag ref sym || [ -n "$tag" ]; do
+  [ "$tag" != "A" ] && continue
+  [ -z "${ref:-}" ] && continue
+  [ -z "${sym:-}" ] && continue
+  clean="${ref#./}"
+  case "$clean" in node_modules/*|dist/*) continue ;; esac
+
+  if [ ! -f "$clean" ]; then
+    printf '  🔄 %s 的 %s（文件不存在——归检查项 1，跳过）\n' "$ref" "$sym"
+    ATTR_SKIP=$((ATTR_SKIP + 1))
+    continue
+  fi
+
+  if grep -qE "$(attr_def_pat "$sym")" "$clean" 2>/dev/null; then
+    printf '  ✅ %s 的 %s\n' "$ref" "$sym"
+    ATTR_OKS=$((ATTR_OKS + 1))
+  else
+    owner=$(grep -rlE "$(attr_def_pat "$sym")" \
+      --include="*.ts" --include="*.sh" --include="*.mjs" \
+      --exclude-dir=dist --exclude-dir=node_modules \
+      engine/ tools/ FORGE/src/ playbook/ 2>/dev/null | head -3 | tr '\n' ' ')
+    if [ -n "$owner" ]; then
+      printf '  %s %s 的 %s -> 符号归属错（%s 未定义该符号；真实定义处：%s）\n' \
+        "$EMARK" "$ref" "$sym" "$clean" "$owner"
+      mark_err
+      ATTR_ERRS=$((ATTR_ERRS + 1))
+    else
+      printf '  🔄 %s 的 %s（该符号全仓无定义——形态/归属需人工，跳过）\n' "$ref" "$sym"
+      ATTR_SKIP=$((ATTR_SKIP + 1))
+    fi
+  fi
+done < "$TMPFILE"
+
+if [ "$ATTR_OKS" -eq 0 ] && [ "$ATTR_ERRS" -eq 0 ] && [ "$ATTR_SKIP" -eq 0 ]; then
+  echo '  （无「`file` 的 `symbol`」归属声明，跳过）'
+fi
+
+echo ""
 echo "── 任务书零分支（方案 A/B 选项）──"
 # 判据与失效模式分析见 tools/check/lib/prompt-fork-lint.mjs 头注释；此处只做调用与记账。
 # 口径：**只管落盘物**——basename 不含 prompt 的文件（报告/讨论稿/开发日志）由内核 SKIP 并打印
@@ -933,14 +1019,16 @@ if [ "$DRIFT" -gt 0 ] || [ "$LEGACY" = "1" ]; then
 fi
 echo "  🔄 跳过: $SKIPPED"
 echo "  🚫 分支词（零分支检查）: ${FORK_VIOLATIONS}（豁免 ${FORK_EXEMPT} · 结论标记 ${FORK_CONCL}）"
+echo "  🔗 符号归属（检查项 6）: ${ATTR_OKS} 一致 / ${ATTR_ERRS} 归属错 / ${ATTR_SKIP} 跳过"
 
 # 覆盖度口径（本脚本，G-2② 要求注明）：
 #   asserts = 做出判定的引用数（✅一致 + ❌错误 + 🕘历史漂移 + ⚠️缺前缀 + 📋待新建 + 🗑已退场）
 #             ——历史漂移必须计入：否则历史档案会报 asserts=0，读起来像「什么都没查」
 #   covered = 被读取的源文件数——本脚本单文件入口，恒为 1
-#   skipped = 显式跳过的引用数（非纯路径 URL/内嵌命令 + 运行时目录 + 相对路径描述）
-ASSERTS=$((OKS + ERRORS + DRIFT + WARNINGS + PLANNED + RETIRED + FORK_VIOLATIONS + FORK_EXEMPT + FORK_CONCL))
-emit_coverage_line "check-dev-prompt" "$ASSERTS" "1" "$SKIPPED"
+#   skipped = 显式跳过的引用数（非纯路径 URL/内嵌命令 + 运行时目录 + 相对路径描述 + 归属跳过）
+#             ——符号归属的 ✅ 计入 asserts；其 ❌ 已并入 ERRORS（不重复计）
+ASSERTS=$((OKS + ERRORS + DRIFT + WARNINGS + PLANNED + RETIRED + FORK_VIOLATIONS + FORK_EXEMPT + FORK_CONCL + ATTR_OKS))
+emit_coverage_line "check-dev-prompt" "$ASSERTS" "1" "$((SKIPPED + ATTR_SKIP))"
 
 if [ "$ERRORS" -gt 0 ]; then
   echo ""

@@ -52,7 +52,7 @@
 | `check/check-open-boundary.sh` | 开源边界守卫（商业名/内部路径/未脱敏标识不得进入开源仓库——脱敏三层纪律的结构防线） | CI |
 | `check/check-spec-first.mjs` | 规范先行硬禁令门禁（engine/*/src 提交须含 `spec:` 关联或 `no-spec:` 豁免——观察期 WARN 不阻断，exit 恒 0） | CI（观察期）/ 发版 SOP / 定期 |
 | `check/check-deps.sh` | 关键依赖版本检查（npm 包版本对齐） | 发版前 / 定期 |
-| `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（路径 / 函数定义 / 目录 / 快照行数；含「待新建·待归档·迁移目标」与「已退场」两类本就应当不存在的归类） | 发版 SOP |
+| `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（路径 / 函数定义 / 目录 / 快照行数 / **符号归属**——「某文件的某符号」断言该符号确定义于该文件；含「待新建·待归档·迁移目标」与「已退场」两类本就应当不存在的归类） | 发版 SOP |
 | `check/public-api.mjs` | public API 变更检测门禁（@public 符号集 vs 基线，未 bump 即 FAIL；v1.3.9 四） | CI / 发版前 |
 | `check/public-api-baseline.json` | @public 符号集基线（12 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
