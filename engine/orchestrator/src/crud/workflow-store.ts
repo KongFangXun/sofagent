@@ -193,6 +193,57 @@ function gateFail(action: string, err: SchemaGateError): CrudResult {
 }
 
 // ────────────────────────────────────────────────────────────
+// AI 节点引用契约（治理状态前置检查——AI 节点治理接入章）
+// ────────────────────────────────────────────────────────────
+
+/**
+ * AI 节点 agent 引用形态：`ai-node:<nodeId>`（前缀命名空间——与既有
+ * SubAgent agent 名天然不撞；引用契约不绑编排栈：nodeId 只指治理面登记键，
+ * 具体编排实现（LangChain/LangGraph/自定义）由节点自身携带，workflow 侧零分支）。
+ */
+export const AI_NODE_AGENT_PREFIX = 'ai-node:';
+
+/** 判定 agent 引用是否指向外部 AI 节点（引用契约入口判定——纯函数） */
+export function isAiNodeAgentRef(agent: string): boolean {
+  return typeof agent === 'string' && agent.startsWith(AI_NODE_AGENT_PREFIX);
+}
+
+/** 从 agent 引用提取节点 id（非 ai-node: 形态返回 null） */
+export function aiNodeRefToId(agent: string): string | null {
+  if (!isAiNodeAgentRef(agent)) return null;
+  const id = agent.slice(AI_NODE_AGENT_PREFIX.length);
+  return id === '' ? null : id;
+}
+
+/**
+ * 治理状态前置检查器——workflowNodeAdd/workflowCreate/Update 引用 ai-node:*
+ * 节点时调用；返回告警文案与登记态（**引用不阻断**：未注册节点可被引用
+ * 但不入治理面，引用时告警留痕——任务书原文语义）。
+ *
+ * 注入形态：可选注入（缺省 undefined = 无治理面装配，引用照常、零告警——
+ * 宿主未启用治理面时 workflow CRUD 行为零变化）。
+ */
+export type AiNodeGovernanceProbe = (nodeId: string) => { registered: boolean; stack?: string };
+
+/** 对一个 workflow 文档做 AI 节点引用告警扫描（返回逐节点告警清单——空数组=无） */
+export function scanAiNodeReferences(
+  nodes: ReadonlyArray<{ agent: string; id: string }>,
+  probe?: AiNodeGovernanceProbe,
+): Array<{ nodeId: string; workflowNodeId: string; registered: boolean; stack?: string }> {
+  if (!probe) return [];
+  const warnings: Array<{ nodeId: string; workflowNodeId: string; registered: boolean; stack?: string }> = [];
+  for (const n of nodes) {
+    const nodeId = aiNodeRefToId(n.agent);
+    if (nodeId === null) continue;
+    const state = probe(nodeId);
+    if (!state.registered) {
+      warnings.push({ nodeId, workflowNodeId: n.id, registered: false });
+    }
+  }
+  return warnings;
+}
+
+// ────────────────────────────────────────────────────────────
 // 四操作实现
 // ────────────────────────────────────────────────────────────
 
@@ -333,10 +384,16 @@ export async function workflowUpdate(
 /**
  * workflow_node_add——向既有 workflow 追加单节点（增量改——商业平台
  * 上岗 prompt 产物的落点，见 onboard_prompt 闭环）。
+ *
+ * AI 节点引用契约接线：agent 为 `ai-node:<id>` 形态时做治理状态前置检查——
+ * 已注册节点正常入列；未注册节点**可被引用但不入治理面**，引用时告警留痕
+ * （结果 data 携 aiNodeWarning，audit 追加告警条目；引用不阻断——治理面是
+ * 观测/管控面，不是编排面的硬门槛）。
  */
 export async function workflowNodeAdd(
   input: unknown,
   dataDir: string,
+  options?: { aiNodeProbe?: AiNodeGovernanceProbe },
 ): Promise<CrudResult> {
   let args: WorkflowNodeAddInput;
   try {
@@ -424,10 +481,30 @@ export async function workflowNodeAdd(
     ],
   );
 
+  // AI 节点引用契约：agent 为 ai-node:<id> 形态时做治理状态前置检查
+  // （引用不阻断——未注册可引用但不入治理面，引用时告警留痕）
+  let aiNodeWarning: string | undefined;
+  const aiNodeId = aiNodeRefToId(args.node.agent);
+  if (aiNodeId !== null && options?.aiNodeProbe) {
+    const state = options.aiNodeProbe(aiNodeId);
+    if (!state.registered) {
+      aiNodeWarning = `节点 ${args.node.id} 引用外部 AI 节点「${aiNodeId}」未在治理面注册——可引用但不入治理面（无身份验签/出站裁决/事件进链），运行行为不在审计范围`;
+      await auditLog(
+        'node_add',
+        args.workflow_id,
+        `⚠️ AI 节点引用告警：${aiNodeWarning}`,
+        args.actor,
+        [`node=${args.node.id}`, `ai-node=${aiNodeId}`, 'governance=unregistered'],
+      );
+    }
+  }
+
   return {
-    text: isOwner
-      ? `[sofagent] ✅ 节点「${args.node.id}」已追加进 workflow「${args.workflow_id}」（v${existing.version}→v${stored.version}）`
-      : `[sofagent] ✅ 节点「${args.node.id}」追加已写入 branch-${args.actor}（基于 trunk v${existing.version}，等 owner 审阅合并）`,
+    text: aiNodeWarning
+      ? `[sofagent] ✅ 节点「${args.node.id}」已追加${isOwner ? `（v${existing.version}→v${stored.version}）` : `（branch-${args.actor}）`}——⚠️ ${aiNodeWarning}`
+      : isOwner
+        ? `[sofagent] ✅ 节点「${args.node.id}」已追加进 workflow「${args.workflow_id}」（v${existing.version}→v${stored.version}）`
+        : `[sofagent] ✅ 节点「${args.node.id}」追加已写入 branch-${args.actor}（基于 trunk v${existing.version}，等 owner 审阅合并）`,
     data: {
       isError: false,
       action: 'node_add',
@@ -435,6 +512,9 @@ export async function workflowNodeAdd(
       version: stored.version,
       branched: !isOwner,
       auditLogged,
+      ...(aiNodeWarning !== undefined
+        ? { aiNodeRef: aiNodeId as string, aiNodeRegistered: false, aiNodeWarning }
+        : {}),
     },
   };
 }

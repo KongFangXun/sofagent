@@ -53,6 +53,14 @@ export const EVENT_TYPES = {
   DEVICE_DEPLOY: 'device.deploy',
   /** 第五章：任务下发（payload：任务清单 + 目标设备 + 时效） */
   DEVICE_TASK_DISPATCH: 'device.task.dispatch',
+  /**
+   * AI 节点治理接入（外部 Agent 节点运行事件三类）——节点是「软件公民」：
+   * 注册面轻于设备面（无心跳/派单），运行事件经治理面挂接进审计链。
+   * 消费侧（治理面订阅 / cordis 事件桥）在 ai-node-events.ts / compat/ 接线。
+   */
+  AI_NODE_TOOL_CALL: 'ai-node.tool-call',
+  AI_NODE_EGRESS: 'ai-node.egress',
+  AI_NODE_TASK_COMPLETED: 'ai-node.task-completed',
 } as const;
 
 /** 已登记的事件类型取值 */
@@ -65,8 +73,8 @@ export const REGISTERED_EVENT_TYPES: readonly string[] = Object.values(EVENT_TYP
 // 事件来源
 // ────────────────────────────────────────────────────────────
 
-/** 事件来源类型——三类触发源 + 设备面（第四/五章同批登记） */
-export type EventSourceType = 'node-output' | 'webhook' | 'timer' | 'device';
+/** 事件来源类型——三类触发源 + 设备面（第四/五章同批登记）+ AI 节点面（治理接入章） */
+export type EventSourceType = 'node-output' | 'webhook' | 'timer' | 'device' | 'ai-node';
 
 /** webhook 入站子类型（≥2 类：表单提交 / IM 消息） */
 export type WebhookKind = 'form' | 'im';
