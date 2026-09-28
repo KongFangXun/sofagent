@@ -385,15 +385,14 @@ graph TB
 > ⚠️ **FDE 不该在自己电脑跑 install.sh**——install.sh 是企业设备安装器，不是 FDE 工具。FDE 的工具是 Skill（ClawHub 装）+ 未来商业模型。
 >
 > ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走商业侧平台（不在开源范围）。
+>
+> **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`node tools/dashboard/serve-dashboard.mjs` 起服务——与服务器同目录）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两种产品入口（README 三入口表）：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。二者职责不同，勿混用/勿删其一。
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（25 条规则，17 默认启用 + 8 扩展 opt-in + 快照 + 回滚）；全量形态为 27 个 workspace（包数构成权威表述见 [WIKI](./WIKI.md)），全装才是完整约束层。
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
 **排期中（未交付）**：完整多设备协同 L2 · 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，无近期版本单元格）。
-
->
-> **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`node tools/dashboard/serve-dashboard.mjs` 起服务——与服务器同目录）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两种产品入口（README 三入口表）：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。二者职责不同，勿混用/勿删其一。
 
 ---
 
@@ -635,7 +634,7 @@ graph LR
 
 > 💡 **规则编号说明**：A1–A11 + A18–A23 为默认规则（17 条），A14–A17 + A24 + E1/E2/E4 为扩展规则（8 条，需 opt-in），全量 25 条（17 默认 + 8 扩展）。**25 条规则完整清单（文档级 SSOT）见 [SECURITY.md → 25 条审计规则完整清单](../SECURITY.md#25-条审计规则完整清单文档级-ssot)**，逐条行为表见 `engine/audit/README.md`。A12/A13 已在 v0.99.4 合并入 A11，E3 已在 v1.2.5 并入 A11，编号不再使用。
 
-**审计的双重定位**：
+**审计的三重定位**：
 
 | 层级 | 做什么 | 行业对标 |
 |------|--------|---------|
