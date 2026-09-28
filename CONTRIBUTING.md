@@ -177,7 +177,7 @@ git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 ```
 
 - ❌ **反例（2026-09-28 实测代价）**：两个写者在同一工作树各自提交 ⇒ 共享索引被对方宽泛 `git add` 污染（索引里残留的旧值 blob 会在提交时把已改好的数字回退），后写者不得不 `git read-tree HEAD` 复位索引；双方还会互相把对方的提交判成「外部改动」，产生数轮协调开销。
-- ✅ **确需共享树时**（应急）：提交走隔离索引——`GIT_INDEX_FILE=/tmp/idx-$$` + `git read-tree HEAD` + 精确 `git add <路径>` + 提交后 `git reset`；提交前 `git status --short` 核对**不夹带他人文件**。
+- ✅ **确需共享树时**（应急）：提交走隔离索引——`GIT_INDEX_FILE=/tmp/idx-$$` + `git read-tree HEAD` + 精确 `git add <路径>`；提交前 `git status --short` 核对**不夹带他人文件**。🔴 **隔离索引 commit 后必须 `git reset -q HEAD` 刷新共享索引**——`GIT_INDEX_FILE` 只作用于本次提交，「提交」不会刷新 `.git/index` 这棵共享索引树；不显式 `git reset -q HEAD` 则共享索引残留旧树，`git status` 对已提交文件**假报 `MM`**（2026-09-28 实测：三笔隔离索引提交后遗留 `MM`，须 `unset GIT_INDEX_FILE; git reset -q HEAD` 才回到 `index==HEAD==worktree`）。
 - ✅ **跨版本移交必须双向登记**：把某事「顺延 / 移 vX.Y.Z」写进本版时，**同一批次**在目标版 devlog 写承接块（标题或正文含「由 <源版本> 移入」）——单向登记 = 高概率丢项。机械守卫：`tools/check/check-forms.mjs` 的 **A9 顺延↔承接双向登记**。
 - 🔴 **共享文件必须逐 hunk 核对（2026-09-28 实测代价）**：`git add -- <path>` 的 pathspec 精确**挡不住「同一文件被两方改过」**——`git add <file>` 会把对方改动**一起暂存**（实测：一行的「承接 v1.5.4 待补清单 #6」被误带进我的提交，`git log -S` 归属错位，只能靠提交信息事后披露）。⇒ 并发场景下凡「共享文件」（两人都可能改的 SOP / 清单 / 台账）：**先 `git diff <file>` 逐 hunk 核对**，或用 `git add -p` / 临时 worktree 错峰；**禁直接 `git add <共享文件>`**。
 

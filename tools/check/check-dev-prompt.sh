@@ -89,11 +89,14 @@ cd "$(dirname "$0")/../.." || exit 1
 # 参数：<file.md> [--strict]。允许标志位与路径任意顺序。
 # --strict：历史档案也按严格口径判定（默认历史档案归「🕘 历史漂移」、不构成失败）。
 STRICT=0
+SECTION_RECONCILE=0
 FILE=""
+PROMPT_FILE=""
 for _a in "$@"; do
   case "$_a" in
     --strict) STRICT=1 ;;
-    *) [ -z "$FILE" ] && FILE="$_a" ;;
+    --section-reconcile) SECTION_RECONCILE=1 ;;
+    *) if [ -z "$FILE" ]; then FILE="$_a"; elif [ -z "$PROMPT_FILE" ]; then PROMPT_FILE="$_a"; fi ;;
   esac
 done
 
@@ -101,6 +104,7 @@ if [ -z "$FILE" ]; then
   echo "用法: ./tools/check-dev-prompt.sh <file.md> [--strict]"
   echo "  检查开发日志或 dev prompt 中的代码引用是否与实际代码库一致"
   echo "  --strict  历史档案（版本低于当前根包版本）也按严格口径判定"
+  echo "  --section-reconcile <devlog.md> <prompt.md>  章节对照表机器断言（devlog↔prompt 章节集合双向相等 + 验收条数相等）"
   exit 1
 fi
 
@@ -110,6 +114,37 @@ if [ ! -f "$FILE" ]; then
   echo "❌ 文件不存在: $FILE"
   emit_coverage_line "check-dev-prompt" "0" "0" "0"
   exit 1
+fi
+
+# ─── 章节对照表机器断言（v1.5.4 承接 devlog〈待补清单〉#7）──────────────
+# 用法：check-dev-prompt.sh --section-reconcile <devlog.md> <prompt.md>
+# 断言：devlog `## ` 章节集合 ↔ dev prompt `## ` 节标题集合「双向相等」+ `- [ ]` 验收条数相等；
+#   集合差非空 或 条数不等 ⇒ 红（RC=1）。修「现状只查引用存在、不查章全不全，对账靠人眼」的缺口。
+NODE="${NODE:-node}"
+if [ "$SECTION_RECONCILE" = "1" ]; then
+  if [ -z "$PROMPT_FILE" ] || [ ! -f "$PROMPT_FILE" ]; then
+    echo "❌ --section-reconcile 需两个文件：<devlog.md> <prompt.md>（第二参缺失或不存在：${PROMPT_FILE:-未提供}）"
+    emit_coverage_line "check-dev-prompt" "0" "0" "0"
+    exit 1
+  fi
+  "$NODE" -e '
+  const fs=require("fs");
+  const dl=fs.readFileSync(process.argv[1],"utf8").split("\n");
+  const pl=fs.readFileSync(process.argv[2],"utf8").split("\n");
+  const heads=(ls)=>new Set(ls.filter(l=>/^## /.test(l)).map(l=>l.replace(/^##\s+/,"").trim()));
+  const D=heads(dl),P=heads(pl);
+  const onlyD=[...D].filter(x=>!P.has(x));
+  const onlyP=[...P].filter(x=>!D.has(x));
+  const ac=(ls)=>ls.filter(l=>/^\s*-\s*\[ \]/.test(l)).length;
+  const da=ac(dl),pa=ac(pl);
+  let bad=0;
+  if(onlyD.length){console.log("❌ 章节仅见于 devlog（prompt 缺）: "+onlyD.join(" | "));bad=1;}
+  if(onlyP.length){console.log("❌ 章节仅见于 prompt（devlog 缺）: "+onlyP.join(" | "));bad=1;}
+  if(da!==pa){console.log("❌ 验收条数不等：devlog "+da+" ≠ prompt "+pa);bad=1;}
+  if(!bad)console.log("✅ 章节集合双向相等（"+D.size+" 章）+ 验收条数相等（"+da+" 条）");
+  process.exit(bad);
+  ' "$FILE" "$PROMPT_FILE"
+  exit $?
 fi
 
 # 提取引用到临时文件（Node.js 做提取比 sed/grep 健壮）

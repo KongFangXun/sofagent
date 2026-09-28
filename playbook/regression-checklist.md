@@ -8,7 +8,8 @@
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4500 行（实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。 🔴 **欠账登记（已评估 · 移 v1.5.5）**：本版新增章对应的验收场景与回归维度欠账，**经对销可行性复核判定两文件均无真实可归并空间**（0 内容级可归并对；乐观叠加 checklist ≈43 < 需求 98 / acceptance DRY 16 < 需求 21），按 v1.5.4〈首项硬交付〉〈对销可行性评估〉节裁定**7 项全批移 v1.5.5 落位**；本版新增维度前仍须先真实归并 ≥新增数并附承接断言清单，详见 [v1.5.4 开发日志](../docs/changelog/v1.5/v1.5.4.md)〈首项硬交付〉节。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2006 行、`acceptance-test.sh` ≤ 4541 行（**承接落位批 · 上限重估**：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1986 + 1 维度余量 20 = **2006** · 4535 + 1 场景余量 6 = **4541**；**未删改任何既有断言**，前值 1950/4500。实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。 🔴 **欠账登记（已评估 · 移 v1.5.5）**：本版新增章对应的验收场景与回归维度欠账，**经对销可行性复核判定两文件均无真实可归并空间**（0 内容级可归并对；乐观叠加 checklist ≈43 < 需求 98 / acceptance DRY 16 < 需求 21），按 v1.5.4〈首项硬交付〉〈对销可行性评估〉节裁定**7 项全批移 v1.5.5 落位**；本版新增维度前仍须先真实归并 ≥新增数并附承接断言清单，详见 [v1.5.4 开发日志](../docs/changelog/v1.5/v1.5.4.md)〈首项硬交付〉节。
+> 🧾 **落位说明（承接落位批）**：本版 devlog〈待补清单〉之 4 个维度项（#1 发版状态翻牌面三分 / #2 registry 对账通道终局口径 / #5 bump 历史引用误伤 / #6 dev prompt 读数禁快照）**按维护公约 §8「有同类 → 扩展旧维度子项、不新增编号」以子项并入同类现役维度**（#1/#5 → #124 · #2 → #97 · #6 → #130），**无一新增编号**（`check-review-system.sh` §1a/§1f 读数值 85 不变、归并配额棘轮不触发）。**三条依据**：① 公约 §8 明文「有同类 → 扩展旧维度子项、不新增编号」是唯一合规路径；② 维护者所批「上限重估」只授权下方两行警戒线（该口径本含「真实归并 **或** 上调记录」两条路径），**不触及** §1f 维度计数棘轮（§1f 明文「基线只应被后续归并下调，不因新增而上调」）；③ 无新增编号 ⇒ 公约 §10 归并配额不触发。上游依据：[changelog v1.5](../docs/changelog/v1.5/)〈首项硬交付 · 对销可行性评估〉与〈承接验收资产欠账（7 项）〉节。
 
 **维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷，driver 白跑一轮）：
 1. **显式收尾**：每个维度的检查命令必须以 `echo "✅ ..."` 或 `echo "❌ ..."; exit 1` 收尾——**禁用「期望：无输出」「期望：exit 1」这类依赖退出码语义的写法**。driver 只看 exitCode，`grep 无命中返回 1` / `for 循环尾判假返回 1` 都被误判 FAIL（#59/#96 实证——输出全 ✅ 仍记 FAIL）。
@@ -25,7 +26,7 @@ ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1950 ] && echo "✅ checklist $WC_CHK (≤1950)" || { echo "❌ checklist $WC_CHK 超 1950（check-review-system 判 FAIL——走归并，不走上调）"; RC=1; }; [ "$WC_ACC" -le 4500 ] && echo "✅ acceptance $WC_ACC (≤4500)" || { echo "❌ acceptance $WC_ACC 超 4500（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+[ "$WC_CHK" -le 2006 ] && echo "✅ checklist $WC_CHK (≤2006)" || { echo "❌ checklist $WC_CHK 超 2006（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4541 ] && echo "✅ acceptance $WC_ACC (≤4541)" || { echo "❌ acceptance $WC_ACC 超 4541（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
@@ -1313,6 +1314,10 @@ fi
 # 期望：全部 = 当前版本号；未到 → cd engine/<pkg> && npm publish --access public
 # 🔴 对账口径（大包 CDN 传播坑）：publish 日志含 `+ <pkg>@<版本>` 即成功；对账查 `npm view <pkg> dist-tags --json` 的
 # latest（registry 主记录先行于 CDN，view 缓存路径可报旧值假失败）；同版本重发 E409（staged ~5 分钟自动 finalize）。
+# ── （承接待补清单 #2）registry 对账通道终局口径 = registry HTTP 直查：判定序在位 + 三态不存在判据齐备（--prefer-online 只作辅助、不作终判）──
+grep -qF "对账通道的终局口径 = registry HTTP 直查" docs/changelog/releasing/09-publish.md && echo "✅ #2 终局口径（registry HTTP 直查）在位" || { echo "❌ #2 registry 终局口径缺失"; exit 1; }
+grep -qF "先查 publish 日志" docs/changelog/releasing/09-publish.md && grep -qF "curl -s https://registry.npmjs.org" docs/changelog/releasing/09-publish.md && grep -qF "一律以 ② 为准" docs/changelog/releasing/09-publish.md && echo "✅ #2 判定序（日志入队行→curl 直查→CLI 辅助）在位" || { echo "❌ #2 判定序缺失（禁以 --prefer-online 作终判）"; exit 1; }
+grep -qF "空输出 / E404 退出码" docs/changelog/releasing/11-post-publish.md && grep -qF "空对象 packument" docs/changelog/releasing/11-post-publish.md && echo "✅ #2 三态不存在判据齐备（空输出 / E404 / 空对象 packument）" || { echo "❌ #2 三态不存在判据缺失（会把已下架终态读成数据缺失）"; exit 1; }
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
@@ -1615,6 +1620,37 @@ grep -q "intent.jsonl" docs/LIMITATIONS.md && echo "✅ 明文清单含 intent.j
 grep -q "digest-" engine/daemon/src/inspectors/weekly-digest.ts && grep -qE "无前端读取面|消费方" docs/changelog/v1.5/v1.5.1.md && echo "✅ 周报落点 + 消费方声明在位" || echo "🟡 周报落点声明人工复核（B5：只写目录名 = 声称不完整）"
 # B13: 旗舰能力双语 README + WIKI 露出（「排期」vs 实物已交付不得并存）
 grep -q "demo" README.md && grep -q "demo" docs/WIKI.md && echo "✅ demo 双面露出在位" || echo "🟡 demo README/WIKI 露出人工复核（B13：旗舰能力同 commit 露出）"
+# ── （承接待补清单 #1）发版状态翻牌面三分：A 活文档头（阶段十一翻）/ B 顶栏·索引（bump 时翻）/ C 规划表本版行（不翻）三类状态词各取一实例；「超前翻牌」与「漏翻」双向可查 ──
+node -e '
+const fs=require("fs"),{execSync}=require("child_process");
+const cur=require("./package.json").version;
+const rel=new Set(execSync("git tag",{encoding:"utf8"}).split("\n").map(s=>s.trim().replace(/^v/,"")).filter(Boolean));
+const lines=fs.readFileSync("docs/ROADMAP.md","utf8").split("\n");
+const norm=v=>String(v).replace(/^v/,"");
+function gt(a,b){const A=norm(a).split(".").map(Number),B=norm(b).split(".").map(Number);for(let i=0;i<3;i++){if((A[i]||0)!==(B[i]||0))return (A[i]||0)>(B[i]||0);}return false;}
+let bad=0;
+const here=lines.find(l=>/^## 现在在哪：/.test(l))||"";
+if(!/已发版/.test(here)){console.log("❌ #1 类A 「现在在哪」叙事行未见「已发版」（阶段十一漏翻）");bad=1;}
+const top=lines.find(l=>/^> v[0-9]+\.[0-9]+\.[0-9]+ · /.test(l))||"";
+if(!top.includes("v"+cur)||!/已发版/.test(top)){console.log("❌ #1 类B ROADMAP 顶栏未含已发版版号 v"+cur+"（bump 时漏翻）");bad=1;}
+let inPlan=false;
+for(const l of lines){
+  if(/^### 规划版本/.test(l)){inPlan=true;continue;}
+  if(inPlan&&/^#{2,3} /.test(l))break;
+  if(!inPlan)continue;
+  const m=l.match(/^\| \*\*(v[0-9]+\.[0-9]+\.[0-9]+)\*\*/);if(!m)continue;const v=norm(m[1]);
+  if(/已发版/.test(l)&&!rel.has(v)){console.log("❌ #1 类C 超前翻牌：规划表行 "+m[1]+" 标已发版但无 tag");bad=1;}
+  if(!gt(v,cur)){console.log("❌ #1 类C 漏翻/未移出：已发版版 "+m[1]+" 仍滞留规划表（规划表本版行不翻）");bad=1;}}
+if(!bad)console.log("✅ #1 翻牌面三分：A/B/C 三类状态词各一实例正确（超前翻牌/漏翻双向可查）");
+process.exit(bad);
+' || echo "❌ #1 翻牌面三分断言未通过（node rc=$?，见上）"
+# ── （承接待补清单 #5）bump 历史引用误伤：行首锚规则在位 + 「裸替换误伤正文 / 行首锚只翻头行」反测（09-publish 步骤五「bump 历史引用防线」的 regression 面）──
+grep -qF 's/^# \(.*\)· v' tools/release/bump-version.sh && echo "✅ #5 bump-version.sh 行首锚规则在位（· v旧版 只翻行首头行）" || { echo "❌ #5 bump-version.sh 行首锚规则缺失（裸替换会改正文历史叙述）"; exit 1; }
+_old=1.4.8; _new=1.4.9
+_head="# 标题 · v${_old}"; _body="正文：该能力随 v${_old} · v${_old} 引入"
+_bare=$(printf '%s\n%s\n' "$_head" "$_body" | sed "s/v${_old}/v${_new}/g")
+_anch=$(printf '%s\n%s\n' "$_head" "$_body" | sed "s/\(^# .*\)· v${_old}$/\1· v${_new}/")
+{ echo "$_bare" | grep -q "v${_new} · v${_new} 引入" && echo "$_anch" | grep -q "正文：该能力随 v${_old} · v${_old} 引入" && echo "$_anch" | grep -q "^# 标题 · v${_new}$"; } && echo "✅ #5 反测：裸替换误伤正文 / 行首锚只翻头行（正文历史叙述不动）" || { echo "❌ #5 行首锚反测失败（正文被误改或头行未翻）"; exit 1; }
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
@@ -1770,6 +1806,8 @@ grep -q "prefer-online" docs/changelog/releasing/09-publish.md && grep -q "prefe
 node -e "const s=require('./package.json').scripts.build; const order=['inject','core','ontology','rules','audit','eval','think','evolve','orchestrator','train','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); if(short.startsWith('dsh-plugins/')||short.startsWith('openclaw-plugins/')) continue; const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 14 包拓扑序（dsh-plugins/openclaw-plugins 家族序由 check-cross-package-relative.mjs 独立钉住，不在此面）"
 grep -q "rm -rf engine/\*/dist" docs/changelog/releasing/09-publish.md && echo "✅ 干净态排查法已写入 SOP" || echo "❌ 干净态排查法从 SOP 丢失"
 git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail-loud 在位" || echo "❌ 降级静默"
+# ── （承接待补清单 #6）dev prompt 读数禁快照：活读数形态规则在位（禁写就时快照；确需基线值必带 @时点注）——五处缺陷三处同源快照陈旧 ──
+grep -qF "读数禁快照" playbook/dev-prompt-checklist.md && grep -qF "活读数" playbook/dev-prompt-checklist.md && grep -qF "@时点" playbook/dev-prompt-checklist.md && echo "✅ #6 dev prompt 读数禁快照规则在位（活读数形态 / 基线带 @时点注）" || { echo "❌ #6 dev prompt 读数禁快照规则缺失（prompt 会写死陈旧快照）"; exit 1; }
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
