@@ -6,7 +6,8 @@
 >
 > v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
 
-> 💡 **行业背景**：sofagent 是一套 FDE 能力——装进成熟 Agent（DSH / OpenClaw / WorkBuddy）后，进场把业务判断写成文件（梳理工作流、构建本体数据、部署 AI 节点），离场后按文件 7×24 执行与审计。底层（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层五种能力（注入·审计·回溯·沉淀·进化），生命周期 = 五阶段（诊断→激活→编排→执行→进化；激活链四阶段 = 后四环 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
+> 💡 **行业背景**：sofagent 是一套 FDE 能力——装进成熟 Agent（DSH / OpenClaw / WorkBuddy）后，进场把业务判断写成文件（梳理工作流、构建本体数据、部署 AI 节点），离场后按文件 7×24 执行与审计。底层（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层五种能力（注入·审计·回溯·沉淀·进化），生命周期 = 五阶段（诊断→激活→编排→执行→进化；激活链四阶段 = 后四环 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，v1.2.5+）。
+>不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 
 > 💬 **开发铁律**：sofagent 不建编辑器类交互界面。只读 Dashboard 面板（如 `tools/dashboard/dashboard.html`）例外——它是状态可视化，不做双向编辑。核心能力通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。
 
@@ -642,7 +643,8 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 - **持久知识层是进化胜负手**：消融拿掉 Wiki 访问，平均分 63.7% → 48.7%（-15.0pt）——比任何方法间差距都大。印证 sofagent lessons/think.md 反思区这一柱的分量：经验沉淀不是锦上添花，是技能进化的前提。
 - **推理时禁查知识库反而更好**（-2.8pt）：训练 rollout 时让 Agent 直接查 Wiki，产出的轨迹对技能开发失去参考价值。反向印证 sofagent「约束层要轻、零 token 运行」——知识供进化者离线消费，不塞执行时上下文。
 - **跨模型技能迁移存在负迁移**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 走 OpenAI 兼容多供应商路由（任意兼容端点均可接入），技能应按模型分级门控，不能全局通用投放。
-- **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源。**v1.4.5 第七章四已落地**：`solves:` frontmatter 溯源字段（SKILL/ 子树 5 个带 frontmatter 的 SKILL.md 补齐——「为什么存在」回链 pattern，改技能先懂设计意图）+ skill-impact 台账（`engine/orchestrator/src/skill-evolution/`——JSONL append-only 程序化落账，被拒提案带原因不丢教训）+ eval 门控（技能变更过 eval 验证集、分数超历史最优才收编，接通 benchmark/evaluation-log 既有闭环）+ 执行/进化上下文隔离（rollout 期禁查进化知识库的运行时守卫——executor 访问即审计告警，对应消融 -2.8pt 实证的工程化防御）。
+- **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源。**v1.4.5 第七章四已落地**：`solves:` frontmatter 溯源字段（SKILL/ 子树 5 个带 frontmatter 的 SKILL.md 补齐——「为什么存在」回链 pattern，
+  改技能先懂设计意图）+ skill-impact 台账（`engine/orchestrator/src/skill-evolution/`——JSONL append-only 程序化落账，被拒提案带原因不丢教训）+ eval 门控（技能变更过 eval 验证集、分数超历史最优才收编，接通 benchmark/evaluation-log 既有闭环）+ 执行/进化上下文隔离（rollout 期禁查进化知识库的运行时守卫——executor 访问即审计告警，对应消融 -2.8pt 实证的工程化防御）。
 - **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计模块（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
 
 ## 十一、meta-harness 生态与 sofagent 的定位（2026-06 Meta-Harness Summer 印证）
@@ -721,7 +723,12 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 382（最大场景号 S458；v1.5.4 B-3 章级顺延项落位批 +2——S457 本地槽位排队行为锁 / S458 判定链三层与门控行为锁（原「⏭️ 顺延 v1.5.5」的章级验收资产落位，承接版相应块作废）；v1.5.4 承接落位批 +3——S454 `--doctor` 可达性 / S455 ClawHub 按款重发 / S456 devlog↔dev prompt 章节对照表机器断言；v1.5.3 release-gate 20260926-02 F 链 S316 复位 +1——阶段四批次误删场景恢复（原沿革记「S316→S298 归并」，发版闸门 F 链诊断以 git -S 实证 S298 壳内零承接断言即误删；daemon/watch/resume 三锚复位，锚文件更新为守护机制现态活体 release-gate-driver）；v1.5.3 release-gate 20260926-01 判断层 coverage 闭环批 +4：S450 模块一双规则引擎统一 / S451 模块五 ARCHITECTURE 三域结构锁 / S452 模块六判决成对完整门禁实跑 / S453 模块七 AuditScope 显式输入面（应用侧归并 S449）；v1.5.3 阶段四：S446→S442 / S316→S298 两处共壳归并 −2 + S449 三模块共壳 +1；v1.5.2 release-gate 20260924-01 判断层 P0×2 闭环 +3：S445 章八 BugFix 批五族代表锚点 / S446 章一 MCP audit 数据对外注册面+只读行为锁 / S447 章六 README 双语身份三层结构锁。原：最大场景号 S444，S1-S444 间 78 个历史空洞号；v1.5.2 审查面登记净 +2：新增 S442-S444 三场景 + S440/S441 锚点批归并入 S440 共壳（−1；断言整体移入 acceptance-node-probes.js，零删减）——章二/三 约束导出外部可验 + 运行时 should-run 判定链 / 章四/五 结论失效语义 + 网络出口治理面 / 章七/九 事前授权补环 + DSH 插件 npm 首发面；v1.5.1 验收增量 +1：S441 发布链加固代表锚——门禁清单覆盖对账三态 + 长跑凭据四道防线 + 随动面三锚，对齐 S440/S343 先例；v1.5.0 验收增量 +5：S427-S431 治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 382（最大场景号 S458；v1.5.4 B-3 章级顺延项落位批 +2——S457 本地槽位排队行为锁 / S458 判定链三层与门控行为锁（原「⏭️ 顺延 v1.5.5」的章级验收资产落位，承接版相应块作废）；v1.5.4 承接落位批 +3——S454 `--doctor` 可达性 / S455 ClawHub 按款重发 / S456 devlog↔dev prompt 章节对照表机器断言；
+>v1.5.3 release-gate 20260926-02 F 链 S316 复位 +1——阶段四批次误删场景恢复（原沿革记「S316→S298 归并」，发版闸门 F 链诊断以 git -S 实证 S298 壳内零承接断言即误删；daemon/watch/resume 三锚复位，锚文件更新为守护机制现态活体 release-gate-driver）；
+>v1.5.3 release-gate 20260926-01 判断层 coverage 闭环批 +4：S450 模块一双规则引擎统一 / S451 模块五 ARCHITECTURE 三域结构锁 / S452 模块六判决成对完整门禁实跑 / S453 模块七 AuditScope 显式输入面（应用侧归并 S449）；v1.5.3 阶段四：S446→S442 / S316→S298 两处共壳归并 −2 + S449 三模块共壳 +1；
+>v1.5.2 release-gate 20260924-01 判断层 P0×2 闭环 +3：S445 章八 BugFix 批五族代表锚点 / S446 章一 MCP audit 数据对外注册面+只读行为锁 / S447 章六 README 双语身份三层结构锁。原：最大场景号 S444，S1-S444 间 78 个历史空洞号；v1.5.2 审查面登记净 +2：新增 S442-S444 三场景 + S440/S441 锚点批归并入 S440 共壳（−1；
+>断言整体移入 acceptance-node-probes.js，零删减）——章二/三 约束导出外部可验 + 运行时 should-run 判定链 / 章四/五 结论失效语义 + 网络出口治理面 / 章七/九 事前授权补环 + DSH 插件 npm 首发面；v1.5.1 验收增量 +1：S441 发布链加固代表锚——门禁清单覆盖对账三态 + 长跑凭据四道防线 + 随动面三锚，对齐 S440/S343 先例；
+>v1.5.0 验收增量 +5：S427-S431 治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
 >
 > 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账见 [v1.5.0 开发日志 · 附录](./changelog/v1.5/v1.5.0.md)。
 

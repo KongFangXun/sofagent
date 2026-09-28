@@ -36,7 +36,8 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 **「数据不出本机」的三个显式例外**（均需用户 opt-in）：
 
 - **例外一 · 云同步**：用户主动配置云同步时数据会离开本机（见 [多设备同步指南](./docs/guides/multi-device-sync.md)）——该配置等于将 `knowledge/` 与 `think.md` 托管给云盘服务商，属用户自主取舍，与本地数据主权承诺互斥。
-- **例外二 · 模型推理端点**：用户显式配置后（`SOFAGENT_MODEL_API_KEY` / `SOFAGENT_MODEL_BASE_URL` / `SOFAGENT_MODEL_NAME`，opt-in 默认关闭），Dream Cycle「真实大脑」会话反思与 `train_serve` 推理会把 prompt 上下文发往用户指定的模型 API——出口为 `engine/core/src/model-client.ts` 的 `callModelAPI`，经 `engine/daemon/src/dream-cycle/real-provider.ts` → `state-machine.ts` 接线；未配置时降级 MockLLM，零外发。
+- **例外二 · 模型推理端点**：用户显式配置后（`SOFAGENT_MODEL_API_KEY` / `SOFAGENT_MODEL_BASE_URL` / `SOFAGENT_MODEL_NAME`，opt-in 默认关闭），Dream Cycle「真实大脑」会话反思与 `train_serve` 推理会把 prompt 上下文发往用户指定的模型 API——出口为 `engine/core/src/model-client.ts` 的 `callModelAPI`，
+  经 `engine/daemon/src/dream-cycle/real-provider.ts` → `state-machine.ts` 接线；未配置时降级 MockLLM，零外发。
 - **例外三 · 云 VM 执行面**（v1.4.6）：`train cloud` 远程训练时，经分拣闸（sorting-gate）放行的非敏感 / 脱敏训练数据会上传云 VM（ssh 隧道加密传输，敏感档拦截留本地）；属「控制面本地、执行面云上」的 opt-in 交付模式，不配置云 VM 则纯本地训练，零外发。
 
 > 🏠 **当前定位：单机单用户**——sofagent 当前为单机单用户设计，多 Agent 共享同一知识库/审计历史；**多人/多部门共用需等租户隔离（查询侧 v0 已随 v1.4.7 交付；写入侧隔离尚未落地，见 [LIMITATIONS](./docs/LIMITATIONS.md)）**。企业 IT 若规划多人共用同一 `~/.sofagent/`，部署前务必评估此边界（详见 [LIMITATIONS「知识库同样全局共享」](./docs/LIMITATIONS.md#三安全与信任模型局限)）。
@@ -76,7 +77,9 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
-- ✅ 静态加密已接线（daemon start 路径）：`initDataEncryption()` 已接入 daemon 启动路径（交互环境引导生成密钥 + 指纹确认 + 备份确认；非交互 WARN 不 FAIL 明文兼容；无头批量部署用 `SOFAGENT_CONFIRM_BACKUP=1` env 显式确认，SOP 见 [企业部署指南 §批量部署](./docs/guides/enterprise-deploy.md)）。密钥就绪后审计历史主链以 `SOFAGENT-AGE-V1` 密文落盘（AES-256-GCM，密钥 `~/.sofagent/keys/` 0600 + 指纹强制备份）；既有明文历史读侧 auto-detect 可读不回填。**降级可见性**：密钥删除/损坏后新记录回明文——写入侧首条告警 + history 落 ENCRYPTION_DEGRADED 事件留痕 + --doctor 一致性检查红（初始化标记在而 data.key 缺失）。附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文，见 LIMITATIONS 权威清单。激活口径：交互首启确认后生效；无头部署用 env 通道批量激活（[enterprise-deploy §④](./docs/guides/enterprise-deploy.md)），非交互 WARN 明文兼容。验证命令：启用后 `head -1 ~/.sofagent/data/audit/history.jsonl` 应见 `SOFAGENT-AGE-V1` 前缀
+- ✅ 静态加密已接线（daemon start 路径）：`initDataEncryption()` 已接入 daemon 启动路径（交互环境引导生成密钥 + 指纹确认 + 备份确认；非交互 WARN 不 FAIL 明文兼容；无头批量部署用 `SOFAGENT_CONFIRM_BACKUP=1` env 显式确认，SOP 见 [企业部署指南 §批量部署](./docs/guides/enterprise-deploy.md)）。
+  密钥就绪后审计历史主链以 `SOFAGENT-AGE-V1` 密文落盘（AES-256-GCM，密钥 `~/.sofagent/keys/` 0600 + 指纹强制备份）；既有明文历史读侧 auto-detect 可读不回填。**降级可见性**：密钥删除/损坏后新记录回明文——写入侧首条告警 + history 落 ENCRYPTION_DEGRADED 事件留痕 + --doctor 一致性检查红（初始化标记在而 data.key 缺失）。
+  附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文，见 LIMITATIONS 权威清单。激活口径：交互首启确认后生效；无头部署用 env 通道批量激活（[enterprise-deploy §④](./docs/guides/enterprise-deploy.md)），非交互 WARN 明文兼容。验证命令：启用后 `head -1 ~/.sofagent/data/audit/history.jsonl` 应见 `SOFAGENT-AGE-V1` 前缀
 - ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（静态加密已覆盖审计历史主链，但 forge-runs/checkpoint/model-registry 三目录与 task/logs/think.md 附链仍为明文，见 LIMITATIONS 权威清单）。合规审查员请注意：**强合规场景仍建议配合外部加密卷（gpg / disk encryption）覆盖附链目录**。
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
@@ -122,7 +125,8 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | **IV/nonce 管理** | 每条消息随机 12 字节 IV，绝不复用；GCM 16 字节认证标签校验失败即拒绝 |
 | **密钥轮换** | 24h 过渡窗口内旧 key 只解不加，过窗口销毁强制重新协商 |
 
-> ⚠️ **配对入口接线状态（v1.4.5 审查校准）**：`engine/core/src/crypto/pairing.ts` 的三条配对路径 API（`pairByCode` / `pairByToken` / `pairByFederationFile`，经 `@sofagent/core` 导出）已完整实现，但**交互式配对 CLI 入口尚未接线**（零生产调用点）。当前实际可用的联邦配对是 **USB 路径**——`daemon/src/usb-detect.ts`（federation.json + HMAC `.sig` sidecar 验签）与 `usb-runtime.ts`（从 U 盘 federation.json 读 AES/HMAC key），其验签逻辑为独立实现、不经过 pairing.ts。三条配对路径的交互式 CLI 接线尚未交付。
+> ⚠️ **配对入口接线状态（v1.4.5 审查校准）**：`engine/core/src/crypto/pairing.ts` 的三条配对路径 API（`pairByCode` / `pairByToken` / `pairByFederationFile`，经 `@sofagent/core` 导出）已完整实现，但**交互式配对 CLI 入口尚未接线**（零生产调用点）。
+>当前实际可用的联邦配对是 **USB 路径**——`daemon/src/usb-detect.ts`（federation.json + HMAC `.sig` sidecar 验签）与 `usb-runtime.ts`（从 U 盘 federation.json 读 AES/HMAC key），其验签逻辑为独立实现、不经过 pairing.ts。三条配对路径的交互式 CLI 接线尚未交付。
 
 ### 🔴 SOFAGENT_FEDERATION_TOKEN 进程可见（高危）— ✅ 已修复 v1.2.3
 
@@ -172,7 +176,8 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 > 引入版本：v1.1.9。
 
-> 「Node 便携版 + 启动脚本」方案——IT 用 `sofagent-daemon create-usb-key` 写入 U 盘（Node 便携版 + sofagent dist + 三平台启动脚本 + federation.json + 空 knowledge/），员工双击 `start` 3 秒联邦在线，拔盘零残留。两道防线：**HMAC-SHA256 全量签名防篡改**（`daemon/src/usb-signature.ts`，路径 POSIX 归一化 + 字典序 + 内容哈希串联，不含 mtime，确定性可复算）+ **knowledge/ AES-256-GCM 磁盘加密防失窃**（复用 v1.1.8 `core/crypto/aes-gcm.ts`，密钥 32 字节存 U 盘 `federation.json` 的 `key` 字段——U 盘本身即信任根，防的是「丢盘后 knowledge/ 被读」）。
+> 「Node 便携版 + 启动脚本」方案——IT 用 `sofagent-daemon create-usb-key` 写入 U 盘（Node 便携版 + sofagent dist + 三平台启动脚本 + federation.json + 空 knowledge/），员工双击 `start` 3 秒联邦在线，拔盘零残留。
+>两道防线：**HMAC-SHA256 全量签名防篡改**（`daemon/src/usb-signature.ts`，路径 POSIX 归一化 + 字典序 + 内容哈希串联，不含 mtime，确定性可复算）+ **knowledge/ AES-256-GCM 磁盘加密防失窃**（复用 v1.1.8 `core/crypto/aes-gcm.ts`，密钥 32 字节存 U 盘 `federation.json` 的 `key` 字段——U 盘本身即信任根，防的是「丢盘后 knowledge/ 被读」）。
 
 | 攻击场景 | 防线 | 结果 |
 |------|------|------|
@@ -240,7 +245,8 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | 7 | 高危动作强制人工确认 | entry-gate 🔴 高风险审批 | ✅ 已有 |
 | 8 | 全链路日志 + 红队测试 | 审计 history.jsonl + daemon WARN 累积；联邦查询 `federation_query` 审计条目 | ✅ 已有 |
 
-> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文「忽略类」指令、英文「ignore 类」指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），LLM 辅助检测暂未排期（跟踪于 ROADMAP）。**在 LLM 辅助检测落地前，建议对外部输入做归一化（Unicode NFC + 解码后再送检）。**
+> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文「忽略类」指令、英文「ignore 类」指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），LLM 辅助检测暂未排期（跟踪于 ROADMAP）。**在 LLM 辅助检测落地前，建议对外部输入做归一化（Unicode NFC + 解码后再送检）。
+>**
 
 > ℹ️ **职责边界（勿混）**：Onboard 诊断链的 L3 自动定位（LLM 推理定位「哪一步做错了」）属**诊断面**，服务的是 Onboard Agent 的错误归因，**不承担 A9 的注入检测**——A9 的语义级覆盖仍以本节的「未排期」状态为准。本条为 A9 编码绕过局限的**单一真相源**，其余文档一律指向此处。
 
@@ -278,13 +284,15 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 >
 > **当前性质是「设计期已知缺口」而非「已暴露面」**：三条下发面尚未接真实传输通道（npm registry / 制品库 / 安装脚本均为**注入端口**，缺省只落盘内联内容），外部无法触达；**一旦接上真实传输，①② 直接构成远程包注入面**——信任锚与任务面验签须随该批落地。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md)。
 >
-> ③ **「外部无法触达」的射程声明（穷尽性交代）**：该断言的对象是**三条下发面**，不是 daemon 的全部网络面——daemon 进程本身**确有一个在监听的 HTTP 端点**：`startHealthEndpoint`（`engine/daemon/src/health-endpoint.ts:191`，由 `engine/daemon/src/cli.ts:227` 在生产路径调用）执行 `http.createServer`（`:195`）+ `server.listen(port, host)`（`:213`），但其 URL 分支只有 `GET /health` 与 `/health/`（`:196`）两支，只回健康三态、不接收下发内容、不写盘。⇒ 它是**只读探针面**，与三条下发面的入站路径无交集；三条下发面的事件入站仍是注入端口。
+> ③ **「外部无法触达」的射程声明（穷尽性交代）**：该断言的对象是**三条下发面**，不是 daemon 的全部网络面——daemon 进程本身**确有一个在监听的 HTTP 端点**：`startHealthEndpoint`（`engine/daemon/src/health-endpoint.ts:191`，由 `engine/daemon/src/cli.ts:227` 在生产路径调用）执行 `http.createServer`（`:195`）+ `server.listen(port, host)`（`:213`），
+>但其 URL 分支只有 `GET /health` 与 `/health/`（`:196`）两支，只回健康三态、不接收下发内容、不写盘。⇒ 它是**只读探针面**，与三条下发面的入站路径无交集；三条下发面的事件入站仍是注入端口。
 
 ---
 
 ## 四、审计与存储安全
 
-> 🔒 **运行时审计日志按 git 仓库隔离（FORGE 自托管路径 + 约束层侧均已交付）**：运行时审计日志在 FORGE 自托管 SubAgent 路径已按 `data/audit/runtime/<repo-hash>/` 隔离存储（`git rev-parse --show-toplevel` hash；非 git 回退 `nogit-<cwd-hash>`，见 `FORGE/src/audit-middleware.mjs`）。**约束层侧 data-sovereignty 审计日志与 LLM 调用 Trace（`llm-calls.jsonl`）同样已按 repo-hash 隔离存储（`data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` 与 `data/audit/runtime/<repo-hash>/llm-calls.jsonl`）——旧版无段结构的既有历史读侧 fallback 原地可读（不迁移不回填）；commit 级审计历史 `history.jsonl` 保持全局（HMAC 链要求全量连续，跨仓查询是运维刚需）。**
+> 🔒 **运行时审计日志按 git 仓库隔离（FORGE 自托管路径 + 约束层侧均已交付）**：运行时审计日志在 FORGE 自托管 SubAgent 路径已按 `data/audit/runtime/<repo-hash>/` 隔离存储（`git rev-parse --show-toplevel` hash；非 git 回退 `nogit-<cwd-hash>`，见 `FORGE/src/audit-middleware.mjs`）。
+>**约束层侧 data-sovereignty 审计日志与 LLM 调用 Trace（`llm-calls.jsonl`）同样已按 repo-hash 隔离存储（`data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` 与 `data/audit/runtime/<repo-hash>/llm-calls.jsonl`）——旧版无段结构的既有历史读侧 fallback 原地可读（不迁移不回填）；commit 级审计历史 `history.jsonl` 保持全局（HMAC 链要求全量连续，跨仓查询是运维刚需）。**
 
 > 📁 审计与存储的目录落点见文首 [数据目录结构](#已知风险明文存储)。
 
@@ -366,7 +374,8 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 > 上表是 25 条规则的**完整清单**（有什么），本表是它们的**接管去向**（判定层就位后每条怎么触发）。配套的架构边界与三维度增补见 [ARCHITECTURE · 审计规则面的判定化边界](./docs/ARCHITECTURE.md#审计规则面的判定化边界25-条规则--判定层接管)。
 
-判定层的接管不改变规则条数，只改触发方式：规则从「自带判定器」降为「判据声明 + 证据采集器」。**分界线是规则自身的语义类**——`ruleClass` 为业务底线者说的是「是不是」（密钥提交没有「大概」），判定模型只能**加签**不能**代签**；能力拐杖与工程规范说的是「够不够」（越界程度、记录充分性），判定层承担主判定并用概率压误报。「仍需确定性」列的取值：**刚性** = 确定性判定为唯一防线，语义层只能把 PASS 升为 ASK、不得把 FAIL 降为放行；**加签** = 确定性判定保留，语义层可追加一级 ASK；**阈值须校准** = 确定性骨架保留、**语义型**常数换成带校准依据的概率阈值；**留代码** = 体内常数是**结构化输入的纯函数**（长度 / 行数 / 文件数 / 注释率），**保持确定性判定、不判定化**——改概率是白增一层不可审计的间接，其真实缺陷是「系数来源不可追溯」，修法是**记来源**而非改成概率；**否** = 判定层承担主判定。
+判定层的接管不改变规则条数，只改触发方式：规则从「自带判定器」降为「判据声明 + 证据采集器」。**分界线是规则自身的语义类**——`ruleClass` 为业务底线者说的是「是不是」（密钥提交没有「大概」），判定模型只能**加签**不能**代签**；能力拐杖与工程规范说的是「够不够」（越界程度、记录充分性），判定层承担主判定并用概率压误报。「仍需确定性」列的取值：**刚性** = 确定性判定为唯一防线，语义层只能把 PASS 升为 ASK、不得把 FAIL 降为放行；**加签** = 确定性判定保留，语义层可追加一级 ASK；
+**阈值须校准** = 确定性骨架保留、**语义型**常数换成带校准依据的概率阈值；**留代码** = 体内常数是**结构化输入的纯函数**（长度 / 行数 / 文件数 / 注释率），**保持确定性判定、不判定化**——改概率是白增一层不可审计的间接，其真实缺陷是「系数来源不可追溯」，修法是**记来源**而非改成概率；**否** = 判定层承担主判定。
 
 | 编号 | 名称 | `ruleClass` | 判定化后触发方式 | 仍需确定性？ |
 |------|------|-----------|-----------------|:--:|
@@ -405,12 +414,14 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 5. **判不了不得塞进 ASK**——弃权须以独立态 `ABSTAIN` 留痕，并带三源归因（置信不足 / 域外 / 判据缺失）。混装进 ASK 会让「该调阈值」与「该补判据」两件事在留痕上不可区分。
 6. **门槛健康度两个极端都要告警**——门槛过严 ⇒ 全量落入 ASK（等于没有分流）；过松 ⇒ ASK 率趋近于零（形同虚设）。**门槛设错不报错，只会静默失效。**「降级为判据者仍受自测约束」同族：判据声明（正负样例 + 拦截理由）随规则全量在位，样例一旦与规则行为不符即 fail-closed 曝红。
 
-**三处结构盲区（不是第 25、26、27 条规则）。** 25 条规则的检查对象是**变更产物 / 动作形态 / 声明清单比对**三类（`A14` 越权访问 / `A20` 外传 / `A22` 提权 / `A23` 穿越属**动作形态**，`A15` / `A16` 属**声明清单比对**），按动作门的六维检查清单做覆盖扫描后，有三件事**现有判定面完全没有人管**：**凭证范围**（当前凭证是否为本任务的最小授权——A22 查「有没有提权」，查的是权限本身，缺的是权限与任务的匹配度）、**动作授权状态**（这个动作有没有走过该走的授权——审批链在审计面不可见）与**序列累积效应**（每个单步都合规、合起来的序列是否造成不可接受的系统性变化；含隐蔽升级）。盲区登记见 [ARCHITECTURE · 审计规则面的判定化边界](./docs/ARCHITECTURE.md#审计规则面的判定化边界25-条规则--判定层接管)。
+**三处结构盲区（不是第 25、26、27 条规则）。** 25 条规则的检查对象是**变更产物 / 动作形态 / 声明清单比对**三类（`A14` 越权访问 / `A20` 外传 / `A22` 提权 / `A23` 穿越属**动作形态**，`A15` / `A16` 属**声明清单比对**），按动作门的六维检查清单做覆盖扫描后，有三件事**现有判定面完全没有人管**：**凭证范围**（当前凭证是否为本任务的最小授权——A22 查「有没有提权」，查的是权限本身，缺的是权限与任务的匹配度）、
+**动作授权状态**（这个动作有没有走过该走的授权——审批链在审计面不可见）与**序列累积效应**（每个单步都合规、合起来的序列是否造成不可接受的系统性变化；含隐蔽升级）。盲区登记见 [ARCHITECTURE · 审计规则面的判定化边界](./docs/ARCHITECTURE.md#审计规则面的判定化边界25-条规则--判定层接管)。
 
 **三处盲区的本质是证据面缺口，不是规则面缺口——故 25 条的条数一条不动。** 规则 = 判据 + 证据；**事实不可观测时加规则，只会得到一条永远弃权或永远放行的假规则**，它增加的不是覆盖而是「**看起来覆盖了**」的假绿。三处均已在仓内有归属，不另开出处：
 
 - **凭证范围** → 归口 [ARCHITECTURE · 权限四原则与零凭证沙箱](./docs/ARCHITECTURE.md#权限四原则与零凭证沙箱)第 1 条（**原则已在、判定未在**）。**证据面**随 v1.5.4 凭证 Vault 关闭（该版交付表补入**凭证范围声明**产出）；**判定面**折进 A22 不越权限的语义层（`A22-2`「凭证与任务的匹配度」）——不新增条数。
-- **动作授权状态** → **可闭合——缺的是记录完整性，不是通道**：门禁判决记录 `TOOL_GATE` 的类型声明是「拦截 / 放行 / 告警」三态，实现**只落「告警」一态**（放行与拦截不留痕）；人审支路 `hitl/resolved/*.json`（`approved` / `rejected`）已在落盘、已被治理报表消费，**仅审计规则面未消费它**。**证据面**归口 v1.5.1 审计输入面（补齐三态并与 `intent.jsonl` 对账）；**判定面**折进 A16 语义层（`A16-2`）——不新增条数。与企业级「事前授权（mandate）补环」是**两件事**（后者是「先批后干」流程，本处是记录完整性）。
+- **动作授权状态** → **可闭合——缺的是记录完整性，不是通道**：门禁判决记录 `TOOL_GATE` 的类型声明是「拦截 / 放行 / 告警」三态，实现**只落「告警」一态**（放行与拦截不留痕）；人审支路 `hitl/resolved/*.json`（`approved` / `rejected`）已在落盘、已被治理报表消费，**仅审计规则面未消费它**。**证据面**归口 v1.5.1 审计输入面（补齐三态并与 `intent.jsonl` 对账）；**判定面**折进 A16 语义层（`A16-2`）——不新增条数。
+  与企业级「事前授权（mandate）补环」是**两件事**（后者是「先批后干」流程，本处是记录完整性）。
 - **序列累积效应** → **证据面**归口 v1.5.1 审计输入面（调用意图流使动作时序可观测）；**判定面**折进 A17 异常批量变更的语义层（`A17-2`）——不新增条数。
 
 ### AST 规则引擎 SSOT（8+2）
@@ -515,7 +526,8 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 与 `SOFAGENT_DATA` 同属环境变量信任边界，本节一并声明：
 
 - **`SOFAGENT_KEY_PATH`**（`engine/core/src/audit-history.ts:82`）：HMAC 密钥路径覆盖，优先级为 `SOFAGENT_KEY_PATH > ~/.sofagent-key`。能设置该变量的攻击者可将签名密钥重定向到自控文件——写入侧与校验侧同读该密钥时链校验仍「通过」，但密钥已不在用户掌控。设计初衷同 `SOFAGENT_DATA`（测试隔离，如 `llm-call-trace.test.ts` 用其指向临时密钥）；风险分级与缓解同上节（本地低 / 共享中，防线是环境隔离非路径白名单）。
-- **`SOFAGENT_HOME_ALLOWED_PREFIXES`**（`engine/core/src/data-paths.ts:43`）：`SOFAGENT_HOME` 越界回退白名单的扩展入口（冒号分隔，企业场景显式扩展安装根前缀）。注意双向性：它既可把合法定制路径**收进来**（预期用途），也可把越界路径**放进来**——能设置该变量的攻击者可将 `SOFAGENT_HOME` 重定向到自控前缀下（数据落点与审计主链分家，同 [LIMITATIONS 数据目录解析](./docs/LIMITATIONS.md) 已披露的双轨风险叠加）。缓解同上节：入口环境清洗 + 部署期前缀清单管控。
+- **`SOFAGENT_HOME_ALLOWED_PREFIXES`**（`engine/core/src/data-paths.ts:43`）：`SOFAGENT_HOME` 越界回退白名单的扩展入口（冒号分隔，企业场景显式扩展安装根前缀）。注意双向性：它既可把合法定制路径**收进来**（预期用途），也可把越界路径**放进来**——能设置该变量的攻击者可将 `SOFAGENT_HOME` 重定向到自控前缀下（数据落点与审计主链分家，同 [LIMITATIONS 数据目录解析](./docs/LIMITATIONS.md) 已披露的双轨风险叠加）。
+  缓解同上节：入口环境清洗 + 部署期前缀清单管控。
 
 ### 已知绕过路径
 
@@ -539,21 +551,29 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > ⚠️ 以上绕过路径均依赖 Agent 的「自觉」——这是 sofagent 架构级别的信任模型选择：审计模块是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 
 > ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 400 .sofagent/config.yml` 只读锁定，**对同用户进程无效**——仅为纵深防御的辅助层）。与已有 `--no-verify` CI 兜底建议呼应。
-> ⚠️ **企业高安全默认**：基线规则（A1/A2/A9/A10/A11/A20-A23）有强制保护不可禁用，但**非基线规则（A3-A8、A14-A19）可经 `rules:{x:false}` 关闭**。高安全场景建议显式锁定所有规则：`extendedRulesEnabled: true` + 在 config 中对全部非基线规则显式 `rules:{a3:true, a4:true, ...}`（禁止依赖默认值），并配合 `chmod 400 .sofagent/config.yml` 只读锁定（**对同用户进程无效**，仅为纵深防御的辅助层，见 [LIMITATIONS §三](./docs/LIMITATIONS.md)）。
+> ⚠️ **企业高安全默认**：基线规则（A1/A2/A9/A10/A11/A20-A23）有强制保护不可禁用，但**非基线规则（A3-A8、A14-A19）可经 `rules:{x:false}` 关闭**。高安全场景建议显式锁定所有规则：`extendedRulesEnabled: true` + 在 config 中对全部非基线规则显式 `rules:{a3:true, a4:true, ...}`（禁止依赖默认值），并配合 `chmod 400 .sofagent/config.yml` 只读锁定（**对同用户进程无效**，仅为纵深防御的辅助层，
+>见 [LIMITATIONS §三](./docs/LIMITATIONS.md)）。
 >
 > 💡 **`hardenedMode` 配置项尚未实现**（代码中不存在此字段）——一键全规则基线化的便捷配置排入 ROADMAP 评估，当前需手动按上述方式逐条锁定。
 
-> ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent-audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。
+> ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。
+>**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent-audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。
 
-> ⚠️ **超大 diff 的 spill 落盘面（v1.3.9 能力 · v1.5.6 补口 · 如实披露）**：单文件 diff 超 5MB 时引擎溢出到磁盘再分块读回（`engine/core/src/diff-parser.ts`）。落盘位置经 `getDataDir()` SSOT 解析链（显式 `SOFAGENT_DATA` > 环境变量 > `~/.sofagent/data/`），**恒在引擎数据目录而非被审仓库内**——v1.4.3 已修复旧实现「spill 落 CWD 会被对方仓库 commit 卷入」的跨仓泄漏面；目录权限 0700（spill 可能含密钥类 diff 内容）。读回上限 64MB：以内全量扫描（oversized 不置位，无审计盲区），超限截断置位并注入 WARN，落盘件保留供按需取回。**残余面**：spill 文件含明文 diff 内容（sanitize 管道不覆盖 spill 原文），强合规场景建议将 `~/.sofagent/data/spill/` 纳入加密卷覆盖范围并定期清理。
+> ⚠️ **超大 diff 的 spill 落盘面（v1.3.9 能力 · v1.5.6 补口 · 如实披露）**：单文件 diff 超 5MB 时引擎溢出到磁盘再分块读回（`engine/core/src/diff-parser.ts`）。落盘位置经 `getDataDir()` SSOT 解析链（显式 `SOFAGENT_DATA` > 环境变量 > `~/.sofagent/data/`），**恒在引擎数据目录而非被审仓库内**——v1.4.3 已修复旧实现「spill 落 CWD 会被对方仓库 commit 卷入」的跨仓泄漏面；
+>目录权限 0700（spill 可能含密钥类 diff 内容）。读回上限 64MB：以内全量扫描（oversized 不置位，无审计盲区），超限截断置位并注入 WARN，落盘件保留供按需取回。**残余面**：spill 文件含明文 diff 内容（sanitize 管道不覆盖 spill 原文），强合规场景建议将 `~/.sofagent/data/spill/` 纳入加密卷覆盖范围并定期清理。
 
-> ⚠️ **Webhook SSRF——DNS 解析复验与残余 TOCTOU（v1.4.5 披露）**：webhook 推送 URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped IPv4 全段拒绝）之外，新增**DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，实际解析到的 A/AAAA 记录任一落在私网段仍拒绝——堵「域名看着公共、解析结果内网」的 DNS rebinding 式 SSRF。DNS 查询失败按拒绝处理（fail-closed：无法证明安全即不推送）。**残余窗口（如实声明）**：复验与实际 fetch 是两次独立解析，存在微小 TOCTOU 窗口——本防线拦「配置时刻就指向内网」的静态攻击面，动态 rebind 收敛至两次解析窗口内，属纵深防御增量而非绝对边界。
+> ⚠️ **Webhook SSRF——DNS 解析复验与残余 TOCTOU（v1.4.5 披露）**：webhook 推送 URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped IPv4 全段拒绝）之外，新增**DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，实际解析到的 A/AAAA 记录任一落在私网段仍拒绝——堵「域名看着公共、解析结果内网」的 DNS rebinding 式 SSRF。
+>DNS 查询失败按拒绝处理（fail-closed：无法证明安全即不推送）。**残余窗口（如实声明）**：复验与实际 fetch 是两次独立解析，存在微小 TOCTOU 窗口——本防线拦「配置时刻就指向内网」的静态攻击面，动态 rebind 收敛至两次解析窗口内，属纵深防御增量而非绝对边界。
 
-> ⚠️ **history.jsonl 的 beforeAfter 字段脱敏（v1.4.4 交付十三配套 · 端到端验证）**：审计条目的 `actionGovernance.beforeAfter`（变更前/后值摘要，从 diff 提取、截断至 200 字符）是新增落盘面——密钥可能混入。脱敏链路：`buildBeforeAfterSummary` 提取时脱敏 + `appendHistory` 落盘前经 sanitize 管道复扫（`baseSanitized` 之外的专项补面），端到端回归见 `engine/audit/src/before-after-redaction.test.ts`（构造含密钥的 beforeAfter 断言落盘无明文）。边界：脱敏是掩码非加密，密钥模式库未覆盖的自定义格式仍可能以明文入 history——与既有 sanitize 边界一致，强合规场景配合外部加密卷。
+> ⚠️ **history.jsonl 的 beforeAfter 字段脱敏（v1.4.4 交付十三配套 · 端到端验证）**：审计条目的 `actionGovernance.beforeAfter`（变更前/后值摘要，从 diff 提取、截断至 200 字符）是新增落盘面——密钥可能混入。
+>脱敏链路：`buildBeforeAfterSummary` 提取时脱敏 + `appendHistory` 落盘前经 sanitize 管道复扫（`baseSanitized` 之外的专项补面），端到端回归见 `engine/audit/src/before-after-redaction.test.ts`（构造含密钥的 beforeAfter 断言落盘无明文）。边界：脱敏是掩码非加密，密钥模式库未覆盖的自定义格式仍可能以明文入 history——与既有 sanitize 边界一致，强合规场景配合外部加密卷。
 
-> ⚠️ **快照恢复的人审门禁是约定级，不是机制（v1.5.0 如实披露）**：回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道、快照文件亦无 HMAC / 指纹可验（全链路无完整性校验）。即：**Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限**，该门禁是约定而非机制。与「管控能力不得静默降级」的既定纪律存在落差。整改方向（① 快照自身完整性校验；② 把 `human_confirmed` 改为复用仓内既有 HITL 机制的带外确认通道；③ 判定为设计取舍并保留本披露）**待维护者裁定**；裁定前请勿把该门禁当作安全边界。
+> ⚠️ **快照恢复的人审门禁是约定级，不是机制（v1.5.0 如实披露）**：回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道、快照文件亦无 HMAC / 指纹可验（全链路无完整性校验）。即：**Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限**，该门禁是约定而非机制。
+>与「管控能力不得静默降级」的既定纪律存在落差。整改方向（① 快照自身完整性校验；② 把 `human_confirmed` 改为复用仓内既有 HITL 机制的带外确认通道；③ 判定为设计取舍并保留本披露）**待维护者裁定**；裁定前请勿把该门禁当作安全边界。
 
-> ⚠️ **静态加密在非交互环境默认跳过（v1.5.0 如实披露）**：`initDataEncryption()`（`engine/daemon/src/crypto-init.ts`）在**非交互环境且未显式提供密钥**时**不生成密钥**，只打一条 `console.warn`（`status: 'warn'` / `action: 'skipped-non-interactive'`）后继续启动——**审计数据以明文落盘**。而 CI / docker / systemd / ssh 批量恰恰是企业最常见的部署形态，即该控制的默认态是「关」，且 systemd 下这条 warn 会淹没在 journal 里。这是「默认安全 vs 可用性」的**显式设计取舍**（避免无头部署因缺密钥而拒绝启动），交互首启或走 env 通道（`SOFAGENT_CONFIRM_BACKUP=1`，见 [企业部署指南 §批量部署](./docs/guides/enterprise-deploy.md)）可正常激活。**「当前是否处于明文态」可否被外部查询（`doctor` / `--stats` 显式标注）尚待裁定**；裁定前请以启动日志 + `head -1 ~/.sofagent/data/audit/history.jsonl` 是否含 `SOFAGENT-AGE-V1` 前缀自行核验。
+> ⚠️ **静态加密在非交互环境默认跳过（v1.5.0 如实披露）**：`initDataEncryption()`（`engine/daemon/src/crypto-init.ts`）在**非交互环境且未显式提供密钥**时**不生成密钥**，只打一条 `console.warn`（`status: 'warn'` / `action: 'skipped-non-interactive'`）后继续启动——**审计数据以明文落盘**。
+>而 CI / docker / systemd / ssh 批量恰恰是企业最常见的部署形态，即该控制的默认态是「关」，且 systemd 下这条 warn 会淹没在 journal 里。这是「默认安全 vs 可用性」的**显式设计取舍**（避免无头部署因缺密钥而拒绝启动），交互首启或走 env 通道（`SOFAGENT_CONFIRM_BACKUP=1`，见 [企业部署指南 §批量部署](./docs/guides/enterprise-deploy.md)）可正常激活。**「当前是否处于明文态」可否被外部查询（`doctor` / `--stats` 显式标注）尚待裁定**；
+>裁定前请以启动日志 + `head -1 ~/.sofagent/data/audit/history.jsonl` 是否含 `SOFAGENT-AGE-V1` 前缀自行核验。
 
 ### 详细缓解步骤
 
@@ -588,7 +608,8 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 
 > 💡 **企业集中收集**：v1.2.1 已支持 Webhook 推送（飞书/钉钉/企微），企业 IT 可配置 `webhook` 字段实现实时告警推送。如仍需集中收集审计日志（如用 Filebeat / Logstash / Fluentd 采集），可定时轮询 `data/audit/history.jsonl`（append-only、JSONL 明文），转发至 SIEM / 企业日志平台。注意 history.jsonl 为明文存储，转发前建议配合外部加密卷或 age 加密，避免敏感 diff 摘要外泄。
 
-> daemon 源码见 `engine/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`usb-detect.ts`（USB federation 检测，v1.1.4+）、`dream-cycle/`（Dream Cycle 6 阶段管道，v1.1.7+）、`inspectors/knowledge-health.ts`（知识健康巡检，v1.1.7+）、`commands/knowledge-status.ts`（知识状态聚合命令，v1.1.7+）、`federation/`（联邦查询，v1.1.8+）、`usb-signature.ts`（USB HMAC 签名，v1.1.9+）、`usb-key.ts`（USB key 创建，v1.1.9+）、`usb-runtime.ts`（USB 运行时启动，v1.1.9+）、`notify.ts`（统一通知接口，v1.1.3+）。
+> daemon 源码见 `engine/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`usb-detect.ts`（USB federation 检测，v1.1.4+）、`dream-cycle/`（Dream Cycle 6 阶段管道，v1.1.7+）、`inspectors/knowledge-health.ts`（知识健康巡检，v1.1.7+）、`commands/knowledge-status.ts`（知识状态聚合命令，v1.1.7+）、`federation/`（联邦查询，v1.1.8+）、
+>`usb-signature.ts`（USB HMAC 签名，v1.1.9+）、`usb-key.ts`（USB key 创建，v1.1.9+）、`usb-runtime.ts`（USB 运行时启动，v1.1.9+）、`notify.ts`（统一通知接口，v1.1.3+）。
 
 ---
 
@@ -620,7 +641,8 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 
 #### 远程安装（curl | bash）信任模型（v1.4.3 披露）
 
-一行安装（`curl ... bootstrap.sh | bash`）的行业通用信任链是「HTTPS 传输 + GitHub 账号安全」，**无代码签名**——若 raw.githubusercontent 通道或仓库账号被劫持，下载的脚本可被替换为任意代码。sofagent 自 v1.4.3 起在此模型上追加一层：**bootstrap.sh 内嵌发版时硬编码的 sha256（install.sh + 6 个 lib 文件共 7 个哈希），下载内容与发版时不一致即 fail-closed 拒绝执行**——劫持者即使控制传输通道，也无法在不改哈希（哈希在 bootstrap.sh 自身内，用户 curl 到的那份）的情况下替换安装载荷。残余信任面如实披露：① 用户 curl 到的 bootstrap.sh 本身仍无签名（首跳信任，与全行业一致）；② 哈希随发版更新，若发版流程被攻破（哈希与载荷同被替换）校验失效——此层防御针对传输劫持，不针对供应链根攻破；③ 高安全场景建议 `git clone` + 审查后 `bash install.sh`，绕开首跳信任。
+一行安装（`curl ... bootstrap.sh | bash`）的行业通用信任链是「HTTPS 传输 + GitHub 账号安全」，**无代码签名**——若 raw.githubusercontent 通道或仓库账号被劫持，下载的脚本可被替换为任意代码。sofagent 自 v1.4.3 起在此模型上追加一层：**bootstrap.sh 内嵌发版时硬编码的 sha256（install.sh + 6 个 lib 文件共 7 个哈希），下载内容与发版时不一致即 fail-closed 拒绝执行**——劫持者即使控制传输通道，也无法在不改哈希（哈希在 bootstrap.sh 自身内，
+用户 curl 到的那份）的情况下替换安装载荷。残余信任面如实披露：① 用户 curl 到的 bootstrap.sh 本身仍无签名（首跳信任，与全行业一致）；② 哈希随发版更新，若发版流程被攻破（哈希与载荷同被替换）校验失效——此层防御针对传输劫持，不针对供应链根攻破；③ 高安全场景建议 `git clone` + 审查后 `bash install.sh`，绕开首跳信任。
 
 #### 源码审查
 
@@ -656,8 +678,10 @@ v1.3.5 交付 4b 起，CRDT 依赖已从旧包 `automerge@1.0.1-preview.7`（pre
 
 ### Dashboard 本地服务面（核验结论）
 
-> **有网络面，已核验**：`serve-dashboard.mjs` 是真实 HTTP 服务面（非纯静态），三项核验——① 默认绑定 `127.0.0.1`（`DASHBOARD_HOST || '127.0.0.1'`，局域网共享须显式 `DASHBOARD_HOST=0.0.0.0` opt-in）；② dashboard.html 零外链 CDN（38 图标 SVG 内嵌 @2026-09-27 实测，数法：`grep -oE '\.bi-[^:]+::before' tools/dashboard/dashboard.html | sort -u`，断网可用——与 v2.0.0 离线 USB 节点叙事对齐）；③ 服务无密钥/凭据面（只读 `~/.sofagent/data/` 快照文件，无写操作、无鉴权需求）。
-> **GitHub Actions 供应链面**：8 个 workflow 26 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag（@2026-09-27 实测，**口径 = 脚本正则 `^\s*(?:-\s+)?uses:\s*(\S+)` 逐文件计数、排除注释行**；逐文件：daemon-linux 1 / daemon-macos 1 / pr-check 9 / release 4 / shellcheck 2 / sofagent-audit 2 / verify 5 / windows 2。⚠️ 直接 `grep "uses:"` 会多算 1 处——`pr-check.yml` 有一行含该词的注释），**另根 `action.yml` 1 处**同口径 pin（合计 27）；`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（**扫描面含根 `action.yml`**；离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
+> **有网络面，已核验**：`serve-dashboard.mjs` 是真实 HTTP 服务面（非纯静态），三项核验——① 默认绑定 `127.0.0.1`（`DASHBOARD_HOST || '127.0.0.1'`，局域网共享须显式 `DASHBOARD_HOST=0.0.0.0` opt-in）；
+>② dashboard.html 零外链 CDN（38 图标 SVG 内嵌 @2026-09-27 实测，数法：`grep -oE '\.bi-[^:]+::before' tools/dashboard/dashboard.html | sort -u`，断网可用——与 v2.0.0 离线 USB 节点叙事对齐）；③ 服务无密钥/凭据面（只读 `~/.sofagent/data/` 快照文件，无写操作、无鉴权需求）。
+> **GitHub Actions 供应链面**：8 个 workflow 26 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag（@2026-09-27 实测，**口径 = 脚本正则 `^\s*(?:-\s+)?uses:\s*(\S+)` 逐文件计数、排除注释行**；逐文件：daemon-linux 1 / daemon-macos 1 / pr-check 9 / release 4 / shellcheck 2 / sofagent-audit 2 / verify 5 / windows 2。
+>⚠️ 直接 `grep "uses:"` 会多算 1 处——`pr-check.yml` 有一行含该词的注释），**另根 `action.yml` 1 处**同口径 pin（合计 27）；`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（**扫描面含根 `action.yml`**；离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
 
 ---
 
@@ -748,7 +772,8 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 
 > 引入版本：v1.4.1（后训模块 · 地基）。
 
-后训模块开放后新增的攻击面（job.json 路径注入 / 超参命令注入 / 跨企业数据串读 / 云凭据经日志泄漏 / 训练产物篡改）由 v1.4.1 安全基线覆盖：路径白名单五重校验、spawn 元字符拒绝（拒绝而非清洗）、enterpriseId 全链路隔离 + 分区作用域读取、键名/值双轴凭据脱敏（先脱敏再签名）、权重 SHA-256 + HMAC manifest 与部署加载验签阻断（`artifact_tampered` 高危审计事件）。训练数据投毒检测与基座模型后门检测**明确不在开源版范围**（商业侧职责）。完整攻击面声明、模型层职责边界、系统级部署提示（Time Machine 快照 / SSD 覆写诚实边界）与红队核对清单见 [训练安全基线](./docs/guides/train-security.md)；双栈分层契约（决策面 / 计算面 / 资源面）见 [训练双栈契约](./docs/guides/train-stack.md)。
+后训模块开放后新增的攻击面（job.json 路径注入 / 超参命令注入 / 跨企业数据串读 / 云凭据经日志泄漏 / 训练产物篡改）由 v1.4.1 安全基线覆盖：路径白名单五重校验、spawn 元字符拒绝（拒绝而非清洗）、enterpriseId 全链路隔离 + 分区作用域读取、键名/值双轴凭据脱敏（先脱敏再签名）、权重 SHA-256 + HMAC manifest 与部署加载验签阻断（`artifact_tampered` 高危审计事件）。训练数据投毒检测与基座模型后门检测**明确不在开源版范围**（商业侧职责）。
+完整攻击面声明、模型层职责边界、系统级部署提示（Time Machine 快照 / SSD 覆写诚实边界）与红队核对清单见 [训练安全基线](./docs/guides/train-security.md)；双栈分层契约（决策面 / 计算面 / 资源面）见 [训练双栈契约](./docs/guides/train-stack.md)。
 
 ---
 

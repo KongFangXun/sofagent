@@ -18,7 +18,8 @@
 > | §11 | 交接 | 第五章 §5.8 |
 > | §12 | 离场 | 第五章 §5.10 |
 >
-> **本文档的定位：FDE 诊断方法论。** 它讲清楚一件事——怎么梳理 workflow、定义 ontology，最终交付 **Workflow Graph + Ontology Graph 双图谱**，并判定 AI 节点。**诊断是起点，不是终点**：诊断交付的 ontology + workflow.yml + skills/ 会通过激活链（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）自动注册为企业 SubAgent、编排成可运行工作流。本文档专注"把诊断做对"，激活链部分见 [5.12 交付之后](#512-交付之后激活链从交付物到自动运转activateorchestrateexecutesustain-完整交付)（完整设计见 sofagent 仓库 docs/guides/fde-activation-chain.md；仅读方法论的独立读者：激活链是 sofagent 引擎的自动执行机制，纯 FDE 手工交付可不依赖它——把它当作「交付物如何变成自动系统」的参考读法即可）。
+> **本文档的定位：FDE 诊断方法论。** 它讲清楚一件事——怎么梳理 workflow、定义 ontology，最终交付 **Workflow Graph + Ontology Graph 双图谱**，并判定 AI 节点。**诊断是起点，不是终点**：诊断交付的 ontology + workflow.yml + skills/ 会通过激活链（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）自动注册为企业 SubAgent、编排成可运行工作流。
+>本文档专注"把诊断做对"，激活链部分见 [5.12 交付之后](#512-交付之后激活链从交付物到自动运转activateorchestrateexecutesustain-完整交付)（完整设计见 sofagent 仓库 docs/guides/fde-activation-chain.md；仅读方法论的独立读者：激活链是 sofagent 引擎的自动执行机制，纯 FDE 手工交付可不依赖它——把它当作「交付物如何变成自动系统」的参考读法即可）。
 
 ---
 
@@ -55,7 +56,8 @@ sofagent 把它从岗位 title 升级为能力模型，再升级为**常驻 FDE 
 
 **最终目标不是培养更多 FDE，而是让 SMB 与 OPC 的每个人，都具备 FDE 的能力：掌握完整上下文、打破岗位边界、对结果负责。**
 
-**端到端责任的外部印证**：OpenAI 当前 FDE 岗位定义把 discovery（业务发现）、technical scoping（技术圈定）、system design、build、production rollout 五件事放在同一个人的端到端责任里（招聘原文 "You will own discovery, technical scoping, system design, build, and production rollout"）——**问问题的人和建系统的人是同一个人**，所以每个问题都直接服务于「能不能跑起来」。这和售前调研有本质区别：售前的调研服务于签单，FDE 的调研服务于交付。sofagent 的 `fde_interview`（访谈结构化落盘）就是这个纪律的机制化——访谈产出不是会议纪要，是可直接进 profile 重算的结构化对象。
+**端到端责任的外部印证**：OpenAI 当前 FDE 岗位定义把 discovery（业务发现）、technical scoping（技术圈定）、system design、build、production rollout 五件事放在同一个人的端到端责任里（招聘原文 "You will own discovery, technical scoping, system design, build, and production rollout"）——**问问题的人和建系统的人是同一个人**，所以每个问题都直接服务于「能不能跑起来」。
+这和售前调研有本质区别：售前的调研服务于签单，FDE 的调研服务于交付。sofagent 的 `fde_interview`（访谈结构化落盘）就是这个纪律的机制化——访谈产出不是会议纪要，是可直接进 profile 重算的结构化对象。
 
 > 📖 来源：OpenAI FDE 岗位招聘定义（openai.com/careers，2026-08 核验）
 
@@ -678,7 +680,8 @@ memory_backends:
 
 三个全「是」→ 🔄 自动执行（AI 自主，如数据拉取、报表生成）；两个「是」→ ⚡ 强化岗位（AI 做领航员辅助人，如设计稿审核、合同检查）；否则 → 👤 暂时不动（不量化）。
 
-> 🏢 **最小工作单元原则**：三问判定管「这个环节上不上 AI」，但在此之前还有一个更基础的问题——**按什么粒度切**。切分铁律：**按「最小工作单元」切，绝不按「部门/职能」切**。部门是工业时代的产物，它存在的两个前提（人的能力局限 + 利益局限）在 AI 时代都消失了——AI 没有专业边界、没有个人利益诉求，所以「按部门做财务 Agent / 法务 Agent / 营销 Agent 让它们互相开会」是旧地图找新大陆。正确做法是找到**最小化、AI 可参与甚至主动全部接管的工作单元**（有明确输入/输出/验收的一件事）。成熟公司尤其如此：不要一上来改流程（会动到大动脉、全公司慌），先从最小单元切入。切分粒度用「六步分解法」（配合三问判定使用），切分后每个最小单元 = 一个仓库 = 一棵树的枝条。
+> 🏢 **最小工作单元原则**：三问判定管「这个环节上不上 AI」，但在此之前还有一个更基础的问题——**按什么粒度切**。切分铁律：**按「最小工作单元」切，绝不按「部门/职能」切**。部门是工业时代的产物，它存在的两个前提（人的能力局限 + 利益局限）在 AI 时代都消失了——AI 没有专业边界、没有个人利益诉求，所以「按部门做财务 Agent / 法务 Agent / 营销 Agent 让它们互相开会」是旧地图找新大陆。正确做法是找到**最小化、AI 可参与甚至主动全部接管的工作单元**（有明确输入/输出/验收的一件事）。
+>成熟公司尤其如此：不要一上来改流程（会动到大动脉、全公司慌），先从最小单元切入。切分粒度用「六步分解法」（配合三问判定使用），切分后每个最小单元 = 一个仓库 = 一棵树的枝条。
 
 ### 4.1.1 梳理完成的 workflow 全景图
 
@@ -941,7 +944,8 @@ AI 节点跑起来后，自动生成这些文件：
 > | 产品化率 | ≥1.0 功能/engagement | 每次部署沉淀的可复用功能 |
 > | 复用率 | 12 个月 ≥70% 代码在主仓 | 从定制退化为产品的反向指标 |
 >
-> ⚠️ **口径声明**：以上是**传统 FDE 行业的验收阈值参考**（以 1650 测试 / 158 场景为例），**非 sofagent 当前验收标准**。sofagent 自有量化体系：测试数与验收场景数以门禁脚本实跑为准（`tools/check/test-count.sh` / `playbook/acceptance-test.sh` 头部声明）· 25 条规则。场景数口径 = `acceptance-test.sh` 中 `scenario` 调用行数，SSOT 由 `check-review-system.sh` 对账，**不等于最大 S 编号**——S 编号间有历史空洞号，勿按编号去重计数。此处仅作行业参考，帮助 FDE 评估自身交付成熟度。
+> ⚠️ **口径声明**：以上是**传统 FDE 行业的验收阈值参考**（以 1650 测试 / 158 场景为例），**非 sofagent 当前验收标准**。sofagent 自有量化体系：测试数与验收场景数以门禁脚本实跑为准（`tools/check/test-count.sh` / `playbook/acceptance-test.sh` 头部声明）· 25 条规则。
+>场景数口径 = `acceptance-test.sh` 中 `scenario` 调用行数，SSOT 由 `check-review-system.sh` 对账，**不等于最大 S 编号**——S 编号间有历史空洞号，勿按编号去重计数。此处仅作行业参考，帮助 FDE 评估自身交付成熟度。
 
 ### 5.11 案例：一次完整交付
 
