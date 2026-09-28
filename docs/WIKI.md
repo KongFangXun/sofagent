@@ -132,9 +132,9 @@ graph TB
 | 概念 | 一句话 | 详情 |
 |------|--------|------|
 | **FDE Harness** | 对外的产品身份：**FDE 方法论 × Harness 工程**——同一件事的两个阶段：FDE 进场生成判断（哪里上 AI、做好标准、谁拍板），冻结成交付物（workflow.yml + 本体数据）；约束层离场驻留判断（按交付物 7×24 执行、进化时写回），装进成熟 Agent（DSH / OpenClaw / WorkBuddy）；装上它的 Agent 即以 FDE 方式作业，离场后留一套能持续维护的 AI 化资产 | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
-| **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层五种能力（注入·审计·回溯·沉淀·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
+| **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层五种能力（注入·审计·回溯·沉淀·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——五种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；五种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
-| **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
+| **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#一这是什么定位与边界) |
 | **业务图谱** | 人读的流程图谱 = Workflow Graph——FDE 交付的企业工作流完整拓扑，每条业务链路即一条工作流 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体数据的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **工作流** | 企业业务链路的完整流程 = Workflow，由业务节点（AI 节点 + Human 节点）交替组成 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
@@ -175,7 +175,7 @@ graph TB
 
 ### 运行时数据流
 
-每个模块运行时往 `data/` 写数据，消费者从 `data/` 读数据：*（完整全景图见 [ARCHITECTURE §二·运行时数据层](./ARCHITECTURE.md)）*
+每个模块运行时往 `data/` 写数据，消费者从 `data/` 读数据：*（完整全景图见 [ARCHITECTURE §三·运行时数据层](./ARCHITECTURE.md)）*
 
 | 生产者（模块） | → data/ 目录 | → 消费者 |
 |---|---|---|
@@ -305,7 +305,7 @@ graph TB
 | 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | 约束层的英文 SSOT 称法（对外中文「约束层」、英文「Harness」同指一物）——"缰绳"，非"马" | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
-| 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE §二·双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |
+| 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE §三·双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |
 | 三层嵌套 | Harness → Graph → Loop——环境、流程、反馈三层嵌套，决定"能做什么 / 下一步去哪 / 怎么越做越好" | [WIKI §三·三层嵌套](#三层嵌套harness--graph--loop) |
 | 激活链四阶段 | ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN——交付物从静态文件到自运转 | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
 | 数据流铁律 | 生产者只写不读自己的输出，消费者只读不写——单向派生，不可逆 | [WIKI §三·运行时数据流](#运行时数据流) |
@@ -345,7 +345,7 @@ graph TB
 | 了解系统怎么设计的 | [ARCHITECTURE.md](./ARCHITECTURE.md) |
 | 搭建本地开发环境 | [DEVELOPMENT.md](./DEVELOPMENT.md) |
 | 查某个版本改了什么 | [CHANGELOG.md](../CHANGELOG.md) → `docs/changelog/vX.Y/vX.Y.Z.md` |
-| 了解审计规则 | [SECURITY.md](../SECURITY.md) + [ARCHITECTURE §三](./ARCHITECTURE.md) |
+| 了解审计规则 | [SECURITY.md](../SECURITY.md) + [ARCHITECTURE §五](./ARCHITECTURE.md) |
 | 了解 SKILL 约束体系 | [SKILL/SKILL.md](../SKILL/SKILL.md) |
 | 配置 GitHub Actions CI | [guides/github-action.md](./guides/github-action.md) |
 | 了解文件系统审计 | [guides/filesystem-audit.md](./guides/filesystem-audit.md) |

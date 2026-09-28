@@ -38,4 +38,4 @@
 - 这正是 FDE 进场四阶段（梳理→挖掘→交付→离场）中**梳理在第一位**的原因：先帮企业建立本体数据，再上 Agent
 - Ontology 本体数据不是可选的前置步骤——没有它，Agent 的"智能"只是把企业的混乱以更快的速度放大
 
-> 📖 对应 [ARCHITECTURE §七「本体数据 = GitHub 生长树」](../../ARCHITECTURE.md)——本体数据是根系，根系不牢树长歪。
+> 📖 对应 [ARCHITECTURE §六「本体数据 = GitHub 生长树」](../../ARCHITECTURE.md)——本体数据是根系，根系不牢树长歪。

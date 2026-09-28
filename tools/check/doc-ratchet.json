@@ -7,7 +7,8 @@
     "note": "2026-09-28 文档治理批：全量折行 + THANKS 判据级压缩后首次收紧——总墙式行 261→17（-244），墙式格 34→34（下一批：表格单元格内容压缩）",
     "updated": "2026-09-28-b",
     "note2": "FORGE/LEDGER 为运行台账（append-only 数据面）：表格结构不可折，锁现状防恶化；tools/README、evidence 双语已清零可从台账移除",
-    "note3": "2026-09-28 内容压缩批：VALIDATION 台账化（6+3 节归档）/ ARCHITECTURE §七 10 节归位 / ROADMAP 表格拆注 / evidence 双语清零 / 新增 11 文件入册"
+    "note3": "2026-09-28 内容压缩批：VALIDATION 台账化（6+3 节归档）/ ARCHITECTURE §七 10 节归位 / ROADMAP 表格拆注 / evidence 双语清零 / 新增 11 文件入册",
+    "note4": "2026-09-28-c 结构批：ARCHITECTURE 章序重排（一~八顺序）、PHILOSOPHY §一 5 节并段、GUIDE 头部 25→8、重复论证收敛"
   },
   "docs/ARCHITECTURE.md": {
     "wall": 7,

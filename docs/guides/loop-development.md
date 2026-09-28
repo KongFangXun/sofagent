@@ -386,7 +386,7 @@ FORGE/SKILL/fresh-eyes-loop/
 | 机械操作（文件读写、API） | 脚本（bash） | 确定性操作 |
 | 硬安全（加载链、断路器） | Runtime（Agent 平台，如 OpenClaw） | Agent 失控时没法自己管自己 |
 
-**编排收敛条件**：目标必须可验证（有量化标准）+ 模型可自主判断。Maker-Checker 分离是收敛前提——详见「解题/验证分离」（本篇）及 [ARCHITECTURE §四 编排收敛与 A/B 测试](../../docs/ARCHITECTURE.md#编排收敛与-ab-测试)。
+**编排收敛条件**：目标必须可验证（有量化标准）+ 模型可自主判断。Maker-Checker 分离是收敛前提——详见「解题/验证分离」（本篇）及 [ARCHITECTURE §六 编排收敛与 A/B 测试](../../docs/ARCHITECTURE.md#编排收敛与-ab-测试)。
 
 > 💡 **Loop 和 Graph 不是替代关系**
 >
