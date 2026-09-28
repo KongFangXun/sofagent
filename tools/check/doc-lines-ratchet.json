@@ -1,0 +1,21 @@
+{
+  "_meta": {
+    "counter": "wc -l <file>（单一口径：物理行数，含空行）",
+    "rule": "实测值 ≤ 基线 = 绿；任何文件超基线 = 红（只许降不许升）。净增需求必须先「同文档移出等量行」再进（与 06 三道闸闸一对价同源，此处为 CI 红线）",
+    "origin": "doc-slim 批 2026-09-28：11 份核心文档精简后实测值锁死为基线（VALIDATION 926→263 / THANKS 241→159 / ARCHITECTURE 1622→1444 / FDE/GUIDE 1206→1177 / PHILOSOPHY 624→617 / DEVELOPMENT 740→734 / HANDBOOK 754 / WIKI 383 / ROADMAP 249→241 / API 233→231 / CHANGELOG 160→156）",
+    "exception": "发版窗口例外：release 阶段 bump 版本号行不计增（行数不变，仅内容替换）；CHANGELOG.md 每版 +1 行新条目属目录索引的正当增长，超出时须同版压旧条目配平",
+    "consumed_by": "doc-discipline.sh Face 6（行数棘轮）",
+    "note": "批 6 更新：WIKI 383→385（+2 = 分工表「体量纪律」列的正当净增，任务书点名动作；本行即台账记录，净增透明）"
+  },
+  "docs/VALIDATION.md": 263,
+  "docs/THANKS.md": 159,
+  "docs/ARCHITECTURE.md": 1444,
+  "FDE/GUIDE.md": 1177,
+  "docs/PHILOSOPHY.md": 617,
+  "docs/DEVELOPMENT.md": 734,
+  "docs/HANDBOOK.md": 754,
+  "docs/WIKI.md": 385,
+  "docs/ROADMAP.md": 241,
+  "docs/API.md": 231,
+  "CHANGELOG.md": 158
+}

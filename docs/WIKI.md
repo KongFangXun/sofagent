@@ -19,22 +19,24 @@
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
 > - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.5.3。
 
-> **📋 文档分工一页表**（写内容前先看——什么内容往哪个文档写，防止交叉重复）：
+> **📋 文档分工一页表**（写内容前先看——什么内容往哪个文档写，防止交叉重复；**体量纪律列** = 该文档的行数带上限，`doc-lines-ratchet.json` 门禁兜底——新写内容先看带内有没有位置，没有先砍旧的）：
 >
-> | 内容类型 | 落点文档 | 文体 | 纪律 |
-> |---------|---------|------|------|
-> | 行业案例 / 研报数据 / 外部印证 | [VALIDATION](./VALIDATION.md) | 叙事·印证 | 案例不进 PHILOSOPHY——PHILOSOPHY 只引用结论（如「Harvey 筑起垂直壁垒」），数据与来源全在 VALIDATION |
-> | 产品结论 / 设计哲学 / 论证 | [PHILOSOPHY](./PHILOSOPHY.md) | 叙事·论证 | 结论自带的最小论证可以，行业案例展开留给 VALIDATION |
-> | 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 25 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 |
-> | 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 |
-> | 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 |
-> | 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP |
-> | 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 七大接口面 + 104 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） |
-> | 已知限制 / 诚实边界 | [LIMITATIONS](./LIMITATIONS.md) | 参考 | 各文档披露「已知风险」时引用 LIMITATIONS，不展开重复 |
-> | 任务流程 / 操作步骤 / 发版 SOP | [SKILL/](../SKILL/) · [changelog/releasing/](./changelog/releasing/) | 任务流程 | 「干什么用什么步骤」——写给执行者（人/Agent）照着做；深度参考链接 docs/，不复制 |
-> | 面向使用者的操作说明 | [README](../README.md) · [HANDBOOK](./HANDBOOK.md) | 用户手册 | 永不含代码库内部细节；开发者向操作说明进 DEVELOPMENT/guides |
-> | 全局导航 / 文档间分工 | [WIKI](./WIKI.md)（本表） | 导航 | 只做索引与分工声明；内容本体仅「三层嵌套架构图 / 运行时数据流」两处为已声明例外（见 §四） |
-> | 致谢 / 外部出处（基石 · 生成伙伴 · 思想之源） | [THANKS](./THANKS.md) | 参考 | 只记「谁在哪个设计决策上留下痕迹」，不写能力声称（能力声称的唯一真相源是实现面）；不计入 A/B 层硬预算 |
+> | 内容类型 | 落点文档 | 文体 | 纪律 | 体量纪律 |
+> |---------|---------|------|------|---------|
+> | 行业案例 / 研报数据 / 外部印证 | [VALIDATION](./VALIDATION.md) | 叙事·印证 | 案例不进 PHILOSOPHY——PHILOSOPHY 只引用结论（如「Harvey 筑起垂直壁垒」），数据与来源全在 VALIDATION | ≤263 行（三行制收录） |
+> | 产品结论 / 设计哲学 / 论证 | [PHILOSOPHY](./PHILOSOPHY.md) | 叙事·论证 | 结论自带的最小论证可以，行业案例展开留给 VALIDATION | ≤617 行 |
+> | 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 25 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 | （SECURITY 面） |
+> | 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 | ≤241 行 |
+> | 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 | CHANGELOG ≤156 行 |
+> | 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP | ≤1444 行 |
+> | 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 七大接口面 + 104 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） | ≤231 行 |
+> | 已知限制 / 诚实边界 | [LIMITATIONS](./LIMITATIONS.md) | 参考 | 各文档披露「已知风险」时引用 LIMITATIONS，不展开重复 | （LIMITATIONS 面） |
+> | 任务流程 / 操作步骤 / 发版 SOP | [SKILL/](../SKILL/) · [changelog/releasing/](./changelog/releasing/) | 任务流程 | 「干什么用什么步骤」——写给执行者（人/Agent）照着做；深度参考链接 docs/，不复制 | （任务面） |
+> | 面向使用者的操作说明 | [README](../README.md) · [HANDBOOK](./HANDBOOK.md) | 用户手册 | 永不含代码库内部细节；开发者向操作说明进 DEVELOPMENT/guides | HANDBOOK ≤754 行 |
+> | 全局导航 / 文档间分工 | [WIKI](./WIKI.md)（本表） | 导航 | 只做索引与分工声明；内容本体仅「三层嵌套架构图 / 运行时数据流」两处为已声明例外（见 §四） | ≤383 行 |
+> | 致谢 / 外部出处（基石 · 生成伙伴 · 思想之源） | [THANKS](./THANKS.md) | 参考 | 只记「谁在哪个设计决策上留下痕迹」，不写能力声称（能力声称的唯一真相源是实现面）；一行制收录 | ≤159 行 |
+> | FDE 方法论（四阶段十二步） | [FDE/GUIDE.md](../FDE/GUIDE.md) | 用户手册 | 交付物本体（模板/清单/话术）优先保留，论证段归档 | ≤1177 行 |
+> | 开发者内部机制 | [DEVELOPMENT](./DEVELOPMENT.md) | 参考 | 内部实现与数据架构；维护者对账数据归档不进正文 | ≤734 行 |
 >
 > **单一权威源禁二份纪律**：任何清单/数字/规则在仓内出现第二处时，必须一处为权威源、其余标注「引用自哪里」——不维护第二份完整副本（防止与权威源漂移；存量漂移由 check-docs §15 全仓扫描兜底）。
 
@@ -267,7 +269,7 @@ graph TB
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 P2 合并批 10→7）——6 款原子（audit（含验收门禁面）· rollback · inject · evolve · daemon · fde（本体/FDE/公地三域厚插件））+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 发布形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/ARCHITECTURE.md §27 个 workspace 源码包`（包数口径：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件，见 §六口径表；**测试计数口径** = 13 个含 test script 的 workspace 包 —— 与 README「工程可信度」段同口径；@sofagent/load-chain 与 @sofagent/dsh-plugin-kit 为工具包另列） |
+| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md)（口径：27 = 13 模块 + 工具/聚合/插件族，见 §六口径表） |
 
 ### 关键数据路径（`data/`）
 
@@ -302,7 +304,7 @@ graph TB
 | 术语 | 简释 | 精确定义 |
 |------|------|---------|
 | FDE | Forward Deployed Engineer——进场生成判断、部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
-| FDEing（= Forward Deployed Engineering） | FDE 的动词化——把 FDE 从一项人力工作变成一种可自动执行的能力（人走能力不走，花更少的人力提供更多的能力）；万物皆可 FDEing：任何业务对象、流程、节点被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」。**思维方式三问**：workflow 怎么搭 / AI 节点是什么 / 怎么让 AI 帮实现。FDE 名词位（岗位）、FDEing 动词位（能力与动作），禁混用 | [README · 什么是 FDE Harness（含 FDEing 愿景引语）](../README.md#什么是-fde-harness) |
+| FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理 → 判定 → 交付 → 养护」。名词位（岗位）/ 动词位（能力）禁混用 | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
 | 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | 约束层的英文 SSOT 称法（对外中文「约束层」、英文「Harness」同指一物）——"缰绳"，非"马" | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |

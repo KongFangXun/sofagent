@@ -228,10 +228,43 @@ else
   fi
 fi
 
+# ── Face 6 行数棘轮（doc-slim 批 2026-09-28）─────────────────────────
+# 11 份核心文档的**物理行数上限** = tools/check/doc-lines-ratchet.json 基线（本批精简后实测值锁死）。
+# 与 Face 5（可读性棘轮：wall/cell）正交——Face 5 管「每行有多挤」，Face 6 管「总共有多少行」。
+# 纪律：只许降不许升；净增需求必须先「同文档移出等量行」（与 06 三道闸闸一对价同源），
+#       把它从纪律变成 CI 红。例外见台账 _meta.exception（发版窗口版本号行 / CHANGELOG 目录索引正当增长）。
+LINES_RATCHET="tools/check/doc-lines-ratchet.json"
+echo "[Face 6] 核心文档行数棘轮（物理行数 ≤ doc-lines-ratchet.json 基线）"
+if [ ! -f "$LINES_RATCHET" ]; then
+  echo "  ❌ 台账缺失：${LINES_RATCHET}——行数棘轮无基线可依，拒绝假绿"
+  HITS=$((HITS + 1))
+else
+  OVER=$(node -e "
+    const fs=require('fs');
+    const base=JSON.parse(fs.readFileSync('$LINES_RATCHET','utf8'));
+    const out=[];
+    for(const [f,lim] of Object.entries(base)){
+      if(f==='_meta') continue;
+      if(!fs.existsSync(f)){ out.push(f+'  (文件不存在——台账条目陈旧)'); continue; }
+      const n=fs.readFileSync(f,'utf8').split('\n').length-1;  // wc -l 口径（末行换行）
+      if(n>lim) out.push(f+'  '+n+' > 基线 '+lim+'（+'+(n-lim)+'）');
+    }
+    if(out.length) console.log(out.join('\n'));" 2>/dev/null || true)
+  if [ -n "$OVER" ]; then
+    printf '%s\n' "$OVER" | sed 's|^|    |'
+    OVER_N=$(printf '%s\n' "$OVER" | grep -c .)
+    HITS=$((HITS + OVER_N))
+    echo "  ❌ ${OVER_N} 处超基线——内容只许降不许升；净增须先同文档移出等量行（06 · 三道闸闸一），再动基线"
+  else
+    REG_N=$(node -e "const b=require('./$LINES_RATCHET'); console.log(Object.keys(b).filter(k=>k!=='_meta').length);" 2>/dev/null || echo '?')
+    echo "  ✓ 全部 ≤ 基线（${REG_N} 份核心文档；精简后请改小台账让 diff 记录）"
+  fi
+fi
+
 echo ""
 if [ "$HITS" -gt 0 ]; then
   echo "发现 ${HITS} 处违规"
   exit 1
 fi
-echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 / 可读性棘轮 四面）"
+echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 / 可读性棘轮 / 行数棘轮 五面）"
 exit 0

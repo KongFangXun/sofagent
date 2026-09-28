@@ -10,12 +10,40 @@
 
 ---
 
+## 文档收录纪律（THANKS 一行制 / VALIDATION 三行制 / 归档分层）
+
+> 这一节回答「内容往核心文档里写时按什么形态收录」——防的是「读数/风险/边界小论文」 creeping 进致谢与印证文档。机械面由门禁兜底：行数上限 `tools/check/doc-lines-ratchet.json`（doc-discipline Face 6）+ 墙式棘轮 Face 5；发版窗口全量体检见 [06-doc-finalize · 每版文档大扫除清单](./docs/changelog/releasing/06-doc-finalize.md)。
+
+### THANKS 一行制
+
+- **新条目必须 ≤1 行**：`**[名字](链接)** · 作者 — 一句话（≤25 字）说它启发了什么`。
+- 读数 / 风险 / 边界 / 对本仓价值的分析段**不进 THANKS**——有保留价值的全文进 `docs/archive/validation-deep/thanks-extended.md`（按原分组：实验与证据 / 编排与架构 / 判定与校准 / 认知与反馈），原地零副本。
+- 分组结构保留（基石 / 生成伙伴 / 思想之源 / 工具与实践 / 社区），每组前一句话定位即可。
+
+### VALIDATION 三行制
+
+- **新印证条目 ≤3 行**：一句判据 + 出处链接（含「为什么印证了 sofagent 的哪条直觉」）。
+- 需要展开的深论证（多源互证 / 消融数据 / 对比表格）全文进 `docs/archive/validation-deep/`（一主题一文件，头部注明原节与搬出日期），原地留 1-3 行摘要 + 归档指针。
+- **被引用锚点不死**：收敛前先 `grep -rn "VALIDATION.md#" docs/ engine/ tools/ playbook/` 列被引锚点——被引节的标题与判据句必须保留（内容收敛、锚不能死）。
+
+### 归档分层（archive 是显式出口，不是垃圾场）
+
+| 出口 | 收什么 | 形态要求 |
+|------|--------|---------|
+| `docs/archive/validation-deep/` | 成篇深论证 / 判定件谱系 / 方法论长文 | 一主题一文件；头部「搬出原因 + 原位置」；保留完整可查（归档件一字不减） |
+| `docs/archive/validation-digest/` | 早期台账化归档（既有先例） | 同上 |
+| `docs/archive/design/` 等 | 历史设计过程记录 | 同上 |
+| 正文回指 | 每处搬出留「1-3 行摘要 + 链接」 | 🔴 只归档不减正文 = 假扫除——归档净增与核心净减两数须写进开发日志文档治理行 |
+
+---
+
 ## 目录
 
 - [新人 30 秒快速开始](#新人-30-秒快速开始)
 - [怎么参与](#怎么参与)
 - [项目维护模型](#项目维护模型)
 - [开发环境 + 发版](#开发环境--发版)
+- [文档收录纪律（THANKS 一行制 / VALIDATION 三行制 / 归档分层）](#文档收录纪律thanks-一行制--validation-三行制--归档分层)
 - [文档体例（H1 语言 / 术语大小写）](#文档体例h1-语言--术语大小写)
 - [目前最需要的帮助](#目前最需要的帮助)
 - [Seeking Co-maintainers](#seeking-co-maintainers)
@@ -69,7 +97,8 @@ bash install.sh && bash engine/scripts/verify.sh
 
 | 目录 | 内容 |
 |------|------|
-| `engine/` | 13 个 @sofagent/* 模块包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `train` 后训 / `mcp` / `rules` / `eval` / `think` / `evolve` / `ontology` / `inject`（v1.5.0 前名 harness）/ `ab-test`，13 个均含 test script）+ `hooks/sofagent-load-chain`（加载链 Hook，工具包非模块包）+ `umbrella/`（npm 裸名总包 `sofagent`）——模块包全部发布到 npm；另有 2 个插件族：`engine/dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `engine/openclaw-plugins/`（OpenClaw code-plugin 4 款） |
+| `engine/` | 13 个 @sofagent/* 模块包（audit/core/orchestrator/train/mcp/rules/eval/think/evolve/ontology/inject/ab-test/daemon，13 个均含 test script）+ hooks/sofagent-load-chain 工具包 + umbrella/ 裸名总包——模块包全发布到 npm |
+另有 2 个插件族：`engine/dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `engine/openclaw-plugins/`（OpenClaw code-plugin 4 款） |
 | `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A24 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
 | `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明 |
 | `engine/audit/src/permission/` | 权限配置加载与检查 |
