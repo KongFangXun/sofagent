@@ -79,6 +79,7 @@
 | `check/doc-ratchet.json` | 核心文档**可读性棘轮台账**（被 `doc-discipline.sh` Face 5 消费：墙式行/墙式格实测值**只许降不许升**——治「内容只进不出」；键 = 逐文档实测计数，`_meta` 记口径，与 `lib/readability-count.mjs` 注释同源）。 |
 | `check/lib/readability-count.mjs` | **可读性计数器（单一口径）**（被 doc-discipline Face 5 / reflow-walls 共用：墙式行/墙式格的定义与计数实现；改口径先改本文件头注释再同步 `doc-ratchet.json` `_meta`）。 |
 | `check/lib/reflow-walls.mjs` | **墙式行折行器**（一次性治理工具，非门禁：把超长段落/表格格折行，产出供 doc-ratchet 重新基线；治理批 261→17 的执行器）。 |
+| `check/lib/split-table-cells.mjs` | **墙式表格格拆注工具**（一次性治理工具，非门禁：把超长表格内的墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线）。 |
 | `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件（上一 tag 后有改动或本轮暂存）零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine` + `tools`（`playbook/` **剔出* (→n14) | CI / 改 SECURITY 测绘数字或 hook 时 |
 
 > n1: md` 词汇表；DSH 三处 seam 逐条一致 + description 不滞后；反向：词汇表每条在**真实宿主**里 grep 到定义处，宿主缺席打印 `SKIP` 不静默通过；双向对账拦「漏写 seam」；`SKILL.md` 反向对账——SKILL.md 出现 `（seam: …）` 字面量的每一处都必须与三处一致，**残余缺口：SKILL.md 整体删去 seam 字样时不判红，只打印显著提示**；`--selftest` 合成回归验证必报红）

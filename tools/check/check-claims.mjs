@@ -134,7 +134,13 @@ for (const f of srcFiles) {
   if (isNew) {
     const ledgerPath = join(root, 'tools/check/claims-sdk-ledger.json');
     let ledger = {};
-    try { ledger = JSON.parse(readFileSync(ledgerPath, 'utf8')).exempt ?? {}; } catch { /* 台账缺失=无豁免 */ }
+    try {
+      ledger = JSON.parse(readFileSync(ledgerPath, 'utf8')).exempt ?? {};
+    } catch {
+      // 台账缺失/损坏 ⇒ 按「无豁免」处理（fail-closed：宁可多报也不静默放行新增件），
+      // 但降级动作必须可见——静默吞错会把「台账读不到」伪装成「台账为空」。
+      console.warn('  ⚠️  SDK 面豁免台账不可读（缺失或 JSON 损坏）——按无豁免处理：tools/check/claims-sdk-ledger.json');
+    }
     if (!ledger[f]) newZeroConsumerFiles.push(label);
   }
 }
