@@ -4514,18 +4514,21 @@ for p in audit evolve inject; do _pub "$p" || true; done   # reset 后按款重�
   && echo "  ✓ S455 按款独立判定 + 失败留日志 + 重发幂等（audit/inject 跳过、evolve 重发一次）" || { echo "  ✗ S455 按款重发非幂等（重发了已成功款或漏重发失败款）"; REPUB_OK=0; }
 rm -rf "$_rt"
 if [ "$REPUB_OK" = 1 ]; then pass "S455 按款独立判定成败 + 失败留日志 + 重发幂等（已成功款跳过，不必整批重来）"; else fail "按款重发路径回潮"; fi
-scenario 456 "v1.5.4 承接 #7：devlog↔dev prompt 章节对照表机器断言——章节集合双向相等 + 验收条数相等（集合差非空或条数不等即红）"
+scenario 456 "v1.5.4 承接 #7：devlog↔dev prompt 章节对照表机器断言——归一化对账（章名规范主名做键 + 元章/非任务节显式豁免 + 同键章任务分解 ≥ devlog 验收；缺章/缺条即红）"
 SEC_OK=1; _sr=$(mktemp -d)
 _mkln() { printf '%s\n' "$@" > "$1"; }
-_mkln "$_sr/d.md" '# devlog' '## 一、甲章' '- [ ] a1' '- [ ] a2' '## 二、乙章' '- [ ] b1'
-_mkln "$_sr/p.md" '# prompt' '## 一、甲章' '- [ ] a1' '- [ ] a2' '## 二、乙章' '- [ ] b1'
+# 夹具①匹配：devlog 任务章（含括注全名）↔ prompt 短形+「第N章 · 」前缀名——归一化后同键；元章/非任务节各在豁免清单
+_mkln "$_sr/d.md" '# devlog' '## 定位' '## 一、模型路由层（Harness 路由 · 云端/本地分流）' '- [ ] 验收A' '- [ ] 验收B' '## 与后续版本的依赖' '## 二、凭证隔离 Vault（OMA 启发）' '- [ ] 验收C'
+_mkln "$_sr/p.md" '# prompt' '## 零、红线（任何章节不得违反）' '## 一、第一章 · 模型路由层（Harness 路由 · 云端/本地分流）' '- [ ] 任务1' '- [ ] 任务2' '- [ ] 任务3' '## 二、第二章 · 凭证隔离 Vault（OMA 启发）' '- [ ] 任务4'
 bash "$PROJECT_ROOT/tools/check/check-dev-prompt.sh" --section-reconcile "$_sr/d.md" "$_sr/p.md" >/dev/null 2>&1 || { echo "  ✗ S456: 匹配夹具被误判红（假红）"; SEC_OK=0; }
-_mkln "$_sr/p.md" '# prompt' '## 一、甲章' '- [ ] a1' '- [ ] a2'   # 反例A：章节集合差（prompt 缺「二、乙章」）
+# 夹具②章节集合差：prompt 删「凭证隔离 Vault」章（元章豁免照常）⇒ 必红
+_mkln "$_sr/p.md" '# prompt' '## 零、红线（任何章节不得违反）' '## 一、第一章 · 模型路由层（Harness 路由 · 云端/本地分流）' '- [ ] 任务1' '- [ ] 任务2' '- [ ] 任务3'
 bash "$PROJECT_ROOT/tools/check/check-dev-prompt.sh" --section-reconcile "$_sr/d.md" "$_sr/p.md" >/dev/null 2>&1 && { echo "  ✗ S456: 章节集合差未判红（假绿）"; SEC_OK=0; }
-_mkln "$_sr/p.md" '# prompt' '## 一、甲章' '- [ ] a1' '## 二、乙章' '- [ ] b1'   # 反例B：验收条数不等（3 vs 2）
-bash "$PROJECT_ROOT/tools/check/check-dev-prompt.sh" --section-reconcile "$_sr/d.md" "$_sr/p.md" >/dev/null 2>&1 && { echo "  ✗ S456: 验收条数不等未判红（假绿）"; SEC_OK=0; }
+# 夹具③任务分解条数 < devlog 验收条数（模型路由层 prompt 只给 1 条 < devlog 2 条）⇒ 必红
+_mkln "$_sr/p.md" '# prompt' '## 零、红线（任何章节不得违反）' '## 一、第一章 · 模型路由层（Harness 路由 · 云端/本地分流）' '- [ ] 任务1' '## 二、第二章 · 凭证隔离 Vault（OMA 启发）' '- [ ] 任务4'
+bash "$PROJECT_ROOT/tools/check/check-dev-prompt.sh" --section-reconcile "$_sr/d.md" "$_sr/p.md" >/dev/null 2>&1 && { echo "  ✗ S456: 任务分解条数不足未判红（假绿）"; SEC_OK=0; }
 rm -rf "$_sr"
-if [ "$SEC_OK" = 1 ]; then pass "S456 章节对照表机器断言：集合双向相等 + 条数相等（匹配/集合差/条数差 三类夹具实测）"; else fail "章节对照表机器断言回潮"; fi
+if [ "$SEC_OK" = 1 ]; then pass "S456 章节对照表机器断言：归一化对账（匹配/章节差/条数不足 三类夹具实测——判据以 v1.5.4↔原版 dev-prompt 两件套校准 rc=0）"; else fail "章节对照表机器断言回潮"; fi
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数

@@ -90,12 +90,14 @@ cd "$(dirname "$0")/../.." || exit 1
 # --strict：历史档案也按严格口径判定（默认历史档案归「🕘 历史漂移」、不构成失败）。
 STRICT=0
 SECTION_RECONCILE=0
+SR_MODE=""
 FILE=""
 PROMPT_FILE=""
 for _a in "$@"; do
   case "$_a" in
     --strict) STRICT=1 ;;
     --section-reconcile) SECTION_RECONCILE=1 ;;
+    --partial) SR_MODE="partial" ;;
     *) if [ -z "$FILE" ]; then FILE="$_a"; elif [ -z "$PROMPT_FILE" ]; then PROMPT_FILE="$_a"; fi ;;
   esac
 done
@@ -104,7 +106,7 @@ if [ -z "$FILE" ]; then
   echo "用法: ./tools/check-dev-prompt.sh <file.md> [--strict]"
   echo "  检查开发日志或 dev prompt 中的代码引用是否与实际代码库一致"
   echo "  --strict  历史档案（版本低于当前根包版本）也按严格口径判定"
-  echo "  --section-reconcile <devlog.md> <prompt.md>  章节对照表机器断言（devlog↔prompt 章节集合双向相等 + 验收条数相等）"
+  echo "  --section-reconcile <devlog.md> <prompt.md> [--partial]  章节对照表机器断言（归一化对账：章名取规范主名做键 + 元章/非任务节显式豁免 + 同键章任务分解 ≥ devlog 验收；--partial = 补做 prompt 范围内对账，devlog 未覆盖章降为提示）"
   exit 1
 fi
 
@@ -116,10 +118,33 @@ if [ ! -f "$FILE" ]; then
   exit 1
 fi
 
-# ─── 章节对照表机器断言（v1.5.4 承接 devlog〈待补清单〉#7）──────────────
+# ─── 章节对照表机器断言（v1.5.4 承接 devlog〈待补清单〉#7；判据 v2 归一化对账）──────────────
 # 用法：check-dev-prompt.sh --section-reconcile <devlog.md> <prompt.md>
-# 断言：devlog `## ` 章节集合 ↔ dev prompt `## ` 节标题集合「双向相等」+ `- [ ]` 验收条数相等；
-#   集合差非空 或 条数不等 ⇒ 红（RC=1）。修「现状只查引用存在、不查章全不全，对账靠人眼」的缺口。
+#
+# v1 判据（章标题字符串全等 + 全文 checkbox 计数相等）对真实任务书必红（实测 2026-09-28
+#   team-lead 验收抓到）：① devlog 章名是全名（含括注/拍板日期），prompt 节名是短形或
+#   「第N章 · 」前缀形——字符串相等永不成立；② devlog 元章（定位/依赖/审查修复批）与
+#   prompt 非任务节（红线/开工前/纪律/附录等）互相缺席——集合差天然非空；③ 「验收条数」
+#   两侧口径不同形（devlog 验收标准 vs prompt 任务分解 checkbox，后者 ⊇ 前者）。
+#   ⇒ 只有合成夹具能绿的判据 = 假门禁。v2 改归一化对账（三段）：
+#
+# ① 章名归一化（canonical key）——取「规范主名」做键：
+#     a. 先剥 prompt 侧「第N章 · 」前缀（`第[零一二三四五六七八九十百0-9]+章 · `）
+#     b. 再取首个 `·` / `：` / `（` 之前的段（无分隔符则整名），去首尾空白
+#     c. 键还需非空且含至少一个非标点字符（防空键互相误配）
+# ② 元章/非任务节显式豁免清单（两侧各自列，逐条可审计——豁免必须可见）：
+#     DEVLOG_META  ：devlog 侧不产任务的元章（对账对象不存在于 prompt）
+#     PROMPT_META  ：prompt 侧非任务节（红线/开工/纪律/对照表/附录/完成判据等）
+#     豁免按归一化键精确匹配；清单外仍有集合差 ⇒ 红（防清单膨胀静默放水）。
+# ③ 验收条数同键比对——只在「同键章」内比：devlog 侧 `- [ ]` 计数 vs prompt 侧
+#     `- [ ]` 计数；两侧口径不同形（prompt 是任务分解 ⊇ devlog 验收标准）⇒ 判据取
+#     「prompt 侧 ≥ devlog 侧」（缺任务分解即红；prompt 更细不红——它该更细）。
+#     devlog 侧该章为 0 条（元章/无验收章）⇒ 不比（豁免面内已排除元章；任务章 0 条
+#     且 prompt 也 0 条时按通过计）。
+#
+# 校准证据（本判据 v2 的实测基准，见 devlog v1.5.4〈待补清单〉#7 验收）：
+#   docs/changelog/v1.5/v1.5.4.md ↔ 原版 dev-prompt（八章任务 + 元章豁免）⇒ rc=0
+#   反向：临时删 prompt 一章 ⇒ 必红 ⇒ 还原。
 NODE="${NODE:-node}"
 if [ "$SECTION_RECONCILE" = "1" ]; then
   if [ -z "$PROMPT_FILE" ] || [ ! -f "$PROMPT_FILE" ]; then
@@ -131,19 +156,86 @@ if [ "$SECTION_RECONCILE" = "1" ]; then
   const fs=require("fs");
   const dl=fs.readFileSync(process.argv[1],"utf8").split("\n");
   const pl=fs.readFileSync(process.argv[2],"utf8").split("\n");
-  const heads=(ls)=>new Set(ls.filter(l=>/^## /.test(l)).map(l=>l.replace(/^##\s+/,"").trim()));
-  const D=heads(dl),P=heads(pl);
-  const onlyD=[...D].filter(x=>!P.has(x));
-  const onlyP=[...P].filter(x=>!D.has(x));
-  const ac=(ls)=>ls.filter(l=>/^\s*-\s*\[ \]/.test(l)).length;
-  const da=ac(dl),pa=ac(pl);
-  let bad=0;
-  if(onlyD.length){console.log("❌ 章节仅见于 devlog（prompt 缺）: "+onlyD.join(" | "));bad=1;}
-  if(onlyP.length){console.log("❌ 章节仅见于 prompt（devlog 缺）: "+onlyP.join(" | "));bad=1;}
-  if(da!==pa){console.log("❌ 验收条数不等：devlog "+da+" ≠ prompt "+pa);bad=1;}
-  if(!bad)console.log("✅ 章节集合双向相等（"+D.size+" 章）+ 验收条数相等（"+da+" 条）");
+
+  // ── ① 章名归一化：剥外层引导件 → 取首个 ·/：/（/；前的规范主名 ──
+  // 顺序：外层序数「一、」→「第N章 ·/空格」→「任务 X（…）· 」→ 分隔符截断
+  const canon=(h)=>{
+    let s=h.trim()
+      .replace(/^[零一二三四五六七八九十百0-9]+、[ \t]*/,"")                                  // 剥外层序数（devlog「五、」/ prompt「三、」同规则）
+      .replace(/^任务[ \t]*[A-Za-z][ \t]*(?:[（(][^（）()]*[）)])?[ \t]*·[ \t]*/,"")            // 剥「任务 A（…）· 」引导前缀
+      .replace(/^[（(][^（）()]*[）)][ \t]*·[ \t]*/,"")                                         // 剥「（任务 X）· 」类引导前缀
+      .replace(/^第[零一二三四五六七八九十百0-9]+章(?:[ \t]*·[ \t]*|[ \t]+)/,"")                // 剥「第N章 · 」/「第N章 」前缀（序数剥净后才能命中「第五章」内嵌形）
+      .replace(/^[零一二三四五六七八九十百0-9]+、[ \t]*/,"");                                   // 复剥一层序数（「一、第五章」双前缀形态）
+    const cut=Math.min(...["·","：",":","（","("].map(c=>{const i=s.indexOf(c);return i<0?s.length:i;}));
+    s=s.slice(0,cut).trim().replace(/[，,。;；、\s]+$/,"").trim();
+    // 键须含至少一个字母/数字（防分隔符切出的空键互相误配）
+    return /[\p{L}\p{N}]/u.test(s)?s:"";
+  };
+  // 重塑名别名（同义改称，显式可审计；新增须附一句「为何同义」注释）
+  const ALIAS={"首项硬交付落位":"首项硬交付"};  // 补做 prompt 任务 B 节名 = devlog〈首项硬交付〉章的落位施工（同题改称）
+
+  // ── ② 元章/非任务节显式豁免清单（按原始章标题前缀匹配 · 逐条可审计）──
+  // devlog 侧元章：目标陈述/依赖声明/审查纪实——不产任务，prompt 无对应节
+  const DEVLOG_META=["定位","与后续版本的依赖","审查修复批"];
+  // prompt 侧非任务节：红线/开工/对照表/纪律/附录/已完成区/全局验收/收口（原版与补做两形态并列）
+  const PROMPT_META=[
+    "零、","零·五、","一、开工前","一、未完成面清单","一·五、",
+    "十、章节对照表","十一、全局验收","十二、已完成区","十三、开发纪律","十四、发布检查清单",
+    "四、任务 C","五、门禁与全局验收","六、纪律","七、完成判据","附录"
+  ];
+  const isMeta=(h,list)=>list.some(p=>h.startsWith(p));
+
+  // partial 模式（补做/收尾 prompt）：prompt 只覆盖剩余工作面 ⇒ devlog「章缺于 prompt」降为
+  // 可见提示（ℹ️ + skipped++），反向断言（prompt 任务节须有 devlog 同键章）与同键章条数断言不降。
+  const PARTIAL=(process.argv[3]==="partial");
+
+  // 分节收集：归一化键 → { h 原始标题, n 未勾, x 已勾 }；键撞车（两节同键）= 映射歧义 ⇒ 红
+  const collect=(ls)=>{
+    const m=new Map(); let cur=null;
+    for(const l of ls){
+      if(/^##\s/.test(l)){
+        const h=l.replace(/^##\s+/,"").trim();
+        let k=canon(h); if(ALIAS[k])k=ALIAS[k];
+        cur={h,k,n:0,x:0};
+        if(m.has(k)){cur.dup=m.get(k);}else{m.set(k,cur);}
+        continue;
+      }
+      if(!cur)continue;
+      if(/^\s*-\s*\[ \]/.test(l))cur.n++;
+      else if(/^\s*-\s*\[[xX]\]/.test(l))cur.x++;
+    }
+    return m;
+  };
+  const D=collect(dl),P=collect(pl);
+  let bad=0, skipped=0, asserts=0, uncovered=0;
+  for(const [k,d] of D){ if(d.dup){console.log("❌ devlog 归一化键撞车（两章同键「"+k+"」，映射歧义）: "+d.h+" / "+d.dup.h);bad=1; } }
+  for(const [k,p] of P){ if(p.dup){console.log("❌ prompt 归一化键撞车（两节同键「"+k+"」，映射歧义）: "+p.h+" / "+p.dup.h);bad=1; } }
+  if(bad)process.exit(1);
+  // devlog 任务章（豁免清单外）逐键断言：prompt 须有同键章 + 验收条数不小于
+  for(const [k,d] of D){
+    if(isMeta(d.h,DEVLOG_META)){skipped++;continue;}
+    if(!k){asserts++;console.log("❌ devlog 章名归一化后为空键（无法对账）: "+d.h);bad=1;continue;}
+    if(!P.has(k)){
+      if(PARTIAL){uncovered++;console.log("ℹ️ devlog 章未入本 prompt（partial 范围外，已提示不判红）: 键「"+k+"」");skipped++;continue;}
+      asserts++;console.log("❌ 任务章仅见于 devlog（prompt 缺）: 键「"+k+"」（原章名: "+d.h+"）");bad=1;continue;
+    }
+    asserts++;
+    const p=P.get(k);
+    const dt=d.n+d.x, pt=p.n+p.x;   // 两侧都按「验收项总数」计（prompt 执行中打勾不构成假红）
+    if(pt<dt){console.log("❌ 章「"+k+"」prompt 任务分解条数 "+pt+" < devlog 验收条数 "+dt+"（任务分解不得少于验收标准）");bad=1;}
+  }
+  // prompt 任务节（豁免清单外）反向断言：devlog 须有同键章（partial 模式同样生效——prompt 不得凭空造章）
+  for(const [k,p] of P){
+    if(isMeta(p.h,PROMPT_META)){skipped++;continue;}
+    asserts++;
+    if(!k){console.log("❌ prompt 节名归一化后为空键（无法对账）: "+p.h);bad=1;continue;}
+    if(!D.has(k)){console.log("❌ 任务节仅见于 prompt（devlog 缺）: 键「"+k+"」（原节名: "+p.h+"）");bad=1;}
+  }
+  const matched=[...D.keys()].filter(k=>{const d=D.get(k);return !isMeta(d.h,DEVLOG_META)&&P.has(k);}).length;
+  if(!bad)console.log("✅ 章节对照归一化对账"+(PARTIAL?"（partial：补做范围 "+matched+" 章同键，devlog 未覆盖 "+uncovered+" 章已提示）":"：任务章双向齐（"+matched+" 章同键）")+"· 同键章任务分解条数 prompt ≥ devlog 验收条数 全过（豁免可见：devlog 元章 "+[...D.values()].filter(d=>isMeta(d.h,DEVLOG_META)).length+" / prompt 非任务节 "+[...P.values()].filter(p=>isMeta(p.h,PROMPT_META)).length+"）");
+  process.stdout.write("[check:coverage] script=check-dev-prompt(--section-reconcile"+(PARTIAL?" --partial":"")+") asserts="+asserts+" covered=2 skipped="+skipped+"\n");
   process.exit(bad);
-  ' "$FILE" "$PROMPT_FILE"
+  ' "$FILE" "$PROMPT_FILE" "$SR_MODE"
   exit $?
 fi
 
