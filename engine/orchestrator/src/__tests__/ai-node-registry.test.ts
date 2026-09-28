@@ -356,10 +356,17 @@ describe('节点事件进审计链（tapAiNodeEvents）', () => {
   });
 
   it('环形缓冲有界（超过上界丢弃最旧——观测面非存储面）', async () => {
-    const bus = newBus();
-    const tap = tapAiNodeEvents(bus);
+    // 用内存 bus 替身（tapAiNodeEvents 只消费 bus.subscribe/publish 两个方法）——
+    // 300 次真实 publish 会各做一次落盘 + HMAC（~18s/文件），本用例只需验证
+    // 「环形截断」这一内存性质，故隔离磁盘面（真实总线的端到端覆盖见上方用例）。
+    const memBus = makeMemoryBus();
+    const tap = tapAiNodeEvents(memBus as unknown as EventBus);
     for (let i = 0; i < 300; i++) {
-      await publishAiNodeTaskCompleted(bus, { nodeId: 'n', taskId: `t-${i}`, outcome: 'done' });
+      await publishAiNodeTaskCompleted(memBus as unknown as EventBus, {
+        nodeId: 'n',
+        taskId: `t-${i}`,
+        outcome: 'done',
+      });
     }
     expect(tap.handled).toBe(300);
     expect(tap.recent.length).toBe(256);
@@ -367,3 +374,23 @@ describe('节点事件进审计链（tapAiNodeEvents）', () => {
     expect((tap.recent[0]!.payload as { taskId: string }).taskId).toBe('t-44');
   });
 });
+
+/** 内存事件总线替身（仅实现 tap 消费的 subscribe/publish 两面——零磁盘副作用） */
+function makeMemoryBus() {
+  const subs = new Map<string, Array<(evt: { type: string; payload: unknown }) => void>>();
+  return {
+    subscribe(type: string, handler: (evt: { type: string; payload: unknown }) => void): () => void {
+      const list = subs.get(type) ?? [];
+      list.push(handler);
+      subs.set(type, list);
+      return () => {
+        const cur = subs.get(type) ?? [];
+        const idx = cur.indexOf(handler);
+        if (idx >= 0) cur.splice(idx, 1);
+      };
+    },
+    async publish(input: { type: string; payload: unknown }): Promise<void> {
+      for (const h of [...(subs.get(input.type) ?? [])]) h({ type: input.type, payload: input.payload });
+    },
+  };
+}

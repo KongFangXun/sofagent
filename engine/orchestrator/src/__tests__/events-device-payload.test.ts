@@ -106,7 +106,8 @@ describe('收口① · 设备面 payload 契约（唯一定义在 events/types.t
   });
 
   it('与第一章三类触发源共用同一注册表（不另立事件名事实源）', () => {
-    // 8 个已登记类型：3（第一/三章）+ 3（设备面）+ timer.tick + anomaly.reported
+    // 11 个已登记类型：3（第一/三章）+ 3（设备面）+ timer.tick + anomaly.reported
+    //   + 3（v1.5.4 第五章 AI 节点面：tool-call / egress / task-completed）
     expect([...REGISTERED_EVENT_TYPES].sort()).toEqual(
       [
         EVENT_TYPES.ANOMALY_REPORTED,
@@ -117,6 +118,9 @@ describe('收口① · 设备面 payload 契约（唯一定义在 events/types.t
         EVENT_TYPES.TIMER_TICK,
         EVENT_TYPES.WEBHOOK_FORM,
         EVENT_TYPES.WEBHOOK_IM,
+        EVENT_TYPES.AI_NODE_TOOL_CALL,
+        EVENT_TYPES.AI_NODE_EGRESS,
+        EVENT_TYPES.AI_NODE_TASK_COMPLETED,
       ].sort(),
     );
     expect(new Set(REGISTERED_EVENT_TYPES).size).toBe(REGISTERED_EVENT_TYPES.length);
