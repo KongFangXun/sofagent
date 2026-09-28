@@ -6,6 +6,21 @@
 # v1.4.4 复盘中暴露（runInspectors / runAllLayers / runDreamCycle /
 # registerBuiltinSlashCommands 四符号零生产调用），本门禁防复发。
 #
+# ── v1.5.4 收紧：判定从「引用存在」升级为「生产可达」（判定面变更，维护者已批准）──
+# 背景：原 --since 判定只问「非测试代码里是否出现过该符号」，有三条能力边界，
+# 导致 **「门禁绿」≠「生产可达」**——v1.5.4 三个新能力面都曾靠这些盲区过闸：
+#   ① type-only 被计入接线：`import type { X }` / `import { type X }` / 纯类型注解位
+#      （实例：policy-engine.ts:48、harness-sdk/types.ts:14）。
+#   ② 只查一跳 ⇒「A 调 B、B 无人用」不被发现（实例：runMultiInstanceVote → hitl-handler）。
+#   ③ 循环自证 ⇒ 两枚互指的新增符号互相「证明」有接线。
+# 收紧规则（内核：tools/check/lib/unwired-reachability.mjs）：
+#   ① type-only / import / barrel / 注释 / 字符串字面量 **边不进引用图**。
+#   ② 以 S（本批新增 @public 符号）为起点，沿生产源码引用图做可达性分析，
+#      要求存在路径到达 **S 之外且存活（live）的** 生产代码；S 内互指不构成出口。
+#   ③ 锚点自身零接线或仅被 S 内部引用 ⇒ 明确报「一跳断链」（与「零接线」区分）。
+# 判定件自证：内核带内建探针（P1 type-only / P2 循环自证 / P3 一跳断链），
+#   门禁每次运行前先跑自检，内核失明即报红（exit 2），拒绝把内核故障伪装成通过。
+#
 # v1.4.5 二次修订（daemon 批完工后撤豁免）：四符号已接线/间接接线，
 # 默认豁免清空。新增「间接消费」判定口径，规则如下：
 #
@@ -291,6 +306,31 @@ done <<< "$SDK_FACE_WAIVER"
 echo ""
 
 # ============================================================
+# 判定内核自检（v1.5.4 门禁收紧 · 判定件必须自证）
+# ============================================================
+# 收紧后的接线判定依赖 tools/check/lib/unwired-reachability.mjs 的「生产可达」分析。
+# 若内核被改坏（type-only 又被计入 / 循环自证被放行 / 一跳断链被误判为有接线），
+# 门禁会**静默失明**——正是本脚本存在的理由被反向利用。故此处对内核跑内建探针
+# （P1 type-only / P2 循环自证 / P3 一跳断链），任一不符预期即按脚本错误退出（exit 2），
+# 拒绝把「内核故障」伪装成「全部有接线」。
+_UNWIRED_LIB="tools/check/lib/unwired-reachability.mjs"
+if [ ! -f "${_UNWIRED_LIB}" ]; then
+  echo -e "  ${RED}✗${NC} 生产可达判定内核缺失：${_UNWIRED_LIB}——门禁失明，拒绝继续"
+  exit 2
+fi
+if ! command -v node >/dev/null 2>&1; then
+  echo -e "  ${RED}✗${NC} 找不到 node——生产可达判定内核无法运行，拒绝静默放行"
+  exit 2
+fi
+if ! node "${_UNWIRED_LIB}" --selftest >/dev/null 2>&1; then
+  echo -e "  ${RED}✗${NC} 判定内核自检失败（P1/P2/P3 探针不符预期）——收紧判定失明，拒绝继续"
+  node "${_UNWIRED_LIB}" --selftest 2>&1 | sed 's/^/      /' || true
+  exit 2
+fi
+echo -e "  ${GREEN}✓${NC} 判定内核自检通过（P1 type-only / P2 循环自证 / P3 一跳断链 三探针全符）"
+echo ""
+
+# ============================================================
 # --since 版本 diff 驱动模式（TASK-33）
 # 提取 <tag>..HEAD 新增 @public 导出全集并逐个判定接线状态。
 # ============================================================
@@ -371,6 +411,16 @@ if [ -n "$SINCE_TAG" ]; then
     NP_TOTAL=$(echo "$NEW_PUBLICS" | wc -l | tr -d ' ')
     echo -e "  新增 @public 值导出 ${NP_TOTAL} 个，逐个判定："
     NP_FAIL=0
+    # v1.5.4 门禁收紧：判定从「引用存在」升级为「生产可达」——
+    # 以 S（本批新增符号）为起点，沿生产源码引用图（排除 import / barrel /
+    # type-only / 注释 / 字符串字面量边）做可达性分析，要求存在路径到达 **S 之外且存活**
+    # 的生产代码。三条收紧：① type-only 不计 ② S 内循环自证不计 ③ 一跳断链明确报红。
+    # 内核单次调用产出全部符号结论（省重复扫描）。
+    _NP_VERDICTS=$(node "${_UNWIRED_LIB}" --root . --symbols "$(printf '%s\n' "$NEW_PUBLICS" | tr '\n' ',')" 2>/dev/null || true)
+    if [ -z "${_NP_VERDICTS}" ]; then
+      echo -e "  ${RED}✗${NC} 生产可达判定内核未产出结论——门禁失明，拒绝继续"
+      exit 2
+    fi
     while IFS= read -r np_sym; do
       [ -z "$np_sym" ] && continue
       # SDK-face 白名单判定（格式 符号:reason:目标版本）
@@ -381,18 +431,23 @@ if [ -n "$SINCE_TAG" ]; then
         sw_sym="${sw_entry%%:*}"
         if [ "$sw_sym" = "$np_sym" ]; then np_waived="$sw_entry"; break; fi
       done <<< "$SDK_FACE_WAIVER"
-      # 生产调用点判定（v1.5.1 J2：与 SYMBOLS 表模式**共用同一份排除实现** prod_callers——
-      # 含「符号定义行」排除，旧实现此处漏了该规则导致整类假绿；不再各写一套）
-      np_callers=$(prod_callers "$np_sym" 3 || true)
-      if [ -n "$np_callers" ]; then
-        np_first=$(echo "$np_callers" | head -1 | cut -d: -f1-2)
-        echo -e "  ${GREEN}✓${NC} ${np_sym}——生产调用 ${np_first} 等"
+      # 生产可达判定（内核结论：WIRED/ONEHOP/CIRCULAR/ZERO）
+      np_verdict=$(printf '%s\n' "${_NP_VERDICTS}" | grep -F "${np_sym}"$'\t' | head -1 | cut -f2 || true)
+      np_detail=$(printf '%s\n' "${_NP_VERDICTS}" | grep -F "${np_sym}"$'\t' | head -1 | cut -f3 || true)
+      if [ "$np_verdict" = "WIRED" ]; then
+        echo -e "  ${GREEN}✓${NC} ${np_sym}——生产可达（S 外存活消费者：${np_detail}）"
         PASS_COUNT=$((PASS_COUNT + 1))
       elif [ -n "$np_waived" ]; then
         echo -e "  ${YELLOW}○${NC} ${np_sym}——SDK-face 白名单（${np_waived#*:}）——SDK 先行债务登记，目标版本到期未接线自动转红"
         WAIVED_COUNT=$((WAIVED_COUNT + 1))
       else
-        echo -e "  ${RED}✗${NC} ${np_sym}——零生产调用点（新增 @public 导出无人用）"
+        case "$np_verdict" in
+          ZERO)     np_reason="零接线（无任何生产消费者：type-only / import / barrel / 注释 / 测试均不计）" ;;
+          ONEHOP)   np_reason="一跳断链（消费者自身零接线或仅被本批新增符号引用，追不到 S 外存活生产代码；锚点：${np_detail}）" ;;
+          CIRCULAR) np_reason="循环自证（本批新增符号互相引用成环，不构成 S 外接线；环内：${np_detail}）" ;;
+          *)        np_reason="判定内核无该符号结论（内核失明，拒绝假绿）" ;;
+        esac
+        echo -e "  ${RED}✗${NC} ${np_sym}——${np_reason}"
         NP_FAIL=$((NP_FAIL + 1))
         FAIL_COUNT=$((FAIL_COUNT + 1))
       fi
