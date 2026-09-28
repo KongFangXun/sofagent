@@ -1347,7 +1347,7 @@ echo "B 层: $AB 行 / LIMIT_B=$LIMIT_VAL"
 grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh && echo "✅ 101-anchor-降级开关在位" || echo "❌ 101-anchor-降级开关丢失——WorkBuddy 下 pre-push 必失败"
 ```
 
-## 🔴 环境验证铁律（防误报 · 先读再跑下面维度）
+### 🔴 环境验证铁律（防误报 · 下一组的共同前置，先读再跑下面维度）
 
 > **测试框架铁律**：本项目用 **vitest** 非 Jest。正确命令：`npx vitest run --reporter=dot` 或 `npm test --workspace=engine/<pkg>`；❌ 禁止 `npx jest`。失败信息含 `from 'vitest'`/`import type` 解析错误 = 用了 Jest，换 vitest 重跑。
 
