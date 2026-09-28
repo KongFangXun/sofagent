@@ -41,6 +41,12 @@ audit:
   # 扩展规则（E1-E4 + A14），默认关闭，按需启用
   extendedRulesEnabled: false
 
+  # v1.5.5: 沙箱 HTTP 出口凭证「对账面开关」（默认 false = 关）。
+  # 仅当以 SOFAGENT_SANDBOX_EGRESS=1 装配沙箱出口时生效；置 true 后凭证签发处产出的
+  # 范围声明交章七台账级对账，结论挂 decision-log（kind=CREDENTIAL_RECONCILE）。
+  # 🔴 经本配置面传入，无独立开关入口。
+  # credentialReconcile: false
+
   # loop-check 绝对轮次上限——超过自动 closure 交还人类（默认 20）
   # loopCheckMaxRounds: 20
 

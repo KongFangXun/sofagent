@@ -221,9 +221,26 @@ export async function executeNode(
     let egressTools = gatedTools;
     if (process.env.SOFAGENT_SANDBOX_EGRESS === '1') {
       const { wrapTools, createSandboxHandle } = await import('./harness-sdk');
+      // ── v1.5.5 P1-1：对账开闸走**既有配置面**（config.yml `audit.credentialReconcile`）──
+      // 🔴 缺省关（配置缺该键 / false）⇒ credentialReconcile=false，保持 L1 语义（零判定、
+      //    零记录，行为与接线前一致）。配置不可读（YAML 损坏 / 验签失败等）亦回退 false
+      //    —— fail-safe：不因配置缺失把「缺省关」的出口面翻成开档。
+      // ⚠️ 不新增独立开关入口（对齐 harness-sdk「既有 options 面」/ mandate-gate 的 enabled
+      //    契约）：此处只把既有配置值透传给 createSandboxHandle，读配置仅在出口装配时发生。
+      let credentialReconcile = false;
+      try {
+        const { loadConfig } = await import('@sofagent/core');
+        credentialReconcile = loadConfig(ctx.projectRoot).credentialReconcile === true;
+      } catch {
+        credentialReconcile = false;
+      }
       // 装配沙箱出口：Vault（含轮换器）在此构造（createSandboxHandle 内 createCredentialVault
       // / createCredentialRotator）——沙箱 HTTP 出口凭证注入的基座。
-      const sandboxHandle = createSandboxHandle({ dataDir: ctx.dataDir, sandbox: true });
+      const sandboxHandle = createSandboxHandle({
+        dataDir: ctx.dataDir,
+        sandbox: true,
+        credentialReconcile,
+      });
       // 出口凭证来自环境变量（运行时读取——非硬编码；A2 env 引用豁免形态）。
       if (process.env.SOFAGENT_EGRESS_SECRET) {
         // 凭证签发处：登记节点作用域凭证 → 即产出范围声明并交章七台账级对账。

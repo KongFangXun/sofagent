@@ -114,6 +114,18 @@ export interface AuditConfig {
       maxCostPerDay?: number;
     };
   };
+  /**
+   * v1.5.5 P1-1: 沙箱 HTTP 出口凭证**对账面开关**（opt-in，默认 false = 对账面关 L1）。
+   *
+   * 凭证签发处（`SandboxHandle.issueCredential`）产出范围声明后是否交章七台账级
+   * 对账——关档时零判定、零记录（行为与今日一致、不留半开状态）；开档则结论挂
+   * decision-log HMAC 链（kind=CREDENTIAL_RECONCILE）。
+   *
+   * 🔴 经**既有配置面**（本 schema）传入，**不新增独立开关入口**（对齐 `HarnessWrapOptions` /
+   *    mandate-gate 的 `enabled` 契约）：消费点 = `node-executor` 出口装配处——仅当
+   *    `SOFAGENT_SANDBOX_EGRESS=1` 装配沙箱出口时读取并透传，缺省关保持 L1 语义。
+   */
+  credentialReconcile?: boolean;
 }
 
 /**
@@ -301,7 +313,7 @@ export function warnUnknownConfigKeys(auditObj: Record<string, unknown>, filePat
     'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
     'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A24', 'A2',
     'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends', 'memory_sync',
-    'cost',
+    'cost', 'credentialReconcile',
   ]);
 
   for (const key of Object.keys(auditObj)) {
@@ -446,6 +458,7 @@ function tryLoadYaml(filePath: string, strict?: boolean): Partial<AuditConfig> |
         'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
         'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A24', 'A2',
         'loop', 'webhook', 'sanitizePatterns', 'memory_backends', 'memory_sync',
+        'toolGate', 'cost', 'credentialReconcile',
       ];
       const hasAny = topLevelAuditKeys.some(k => k in parsed);
       if (hasAny) {
@@ -602,7 +615,7 @@ function configHasRuleContent(parsed: Record<string, unknown>): boolean {
     'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
     'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A24', 'A2',
     'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends', 'memory_sync',
-    'cost',
+    'cost', 'credentialReconcile',
     // 顶层包装节
     'audit',
   ]);
@@ -705,6 +718,9 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     // 透传契约：warnUnknownConfigKeys 的 knownKeys 认识的键必须全部在此透传，
     // 否则「合法配置被静默丢弃」——knownKeys 不告警 + merge 不透传 = 防呆双失效。
     cost: partial.cost,
+    // v1.5.5 P1-1: 沙箱出口凭证对账面开关透传（认识即透传——knownKeys 已认，此处必须透传）。
+    // 默认 false = 对账面关 L1（同 strict 的「未配即缺省关」范式）。
+    credentialReconcile: partial.credentialReconcile ?? false,
   };
 
   // v1.4.5 (T2): 数值字段类型校验——防 YAML 注入字符串（如 carefulModifyThreshold: "0.1 OR 1=1"）

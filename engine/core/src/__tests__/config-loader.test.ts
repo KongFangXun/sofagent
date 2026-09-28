@@ -187,6 +187,7 @@ describe('config-loader', () => {
             '  cost:',
             '    budget:',
             '      maxTokensPerRun: 100000',
+            '  credentialReconcile: true',
           ].join('\n'),
           'utf-8',
         );
@@ -207,6 +208,8 @@ describe('config-loader', () => {
         expect(config.memory_backends).toBeDefined();
         expect(config.memory_sync?.persona_sources?.[0]).toBe('persona.md');
         expect(config.cost?.budget?.maxTokensPerRun).toBe(100000);
+        // v1.5.5 P1-1：沙箱出口对账面开关走既有配置面（认识即透传）
+        expect(config.credentialReconcile).toBe(true);
       } finally {
         try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* 沙箱清理失败可接受 */ }
       }
