@@ -284,7 +284,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 >
 > **当前性质是「设计期已知缺口」而非「已暴露面」**：三条下发面尚未接真实传输通道（npm registry / 制品库 / 安装脚本均为**注入端口**，缺省只落盘内联内容），外部无法触达；**一旦接上真实传输，①② 直接构成远程包注入面**——信任锚与任务面验签须随该批落地。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md)。
 >
-> ③ **「外部无法触达」的射程声明（穷尽性交代）**：该断言的对象是**三条下发面**，不是 daemon 的全部网络面——daemon 进程本身**确有一个在监听的 HTTP 端点**：`startHealthEndpoint`（`engine/daemon/src/health-endpoint.ts:191`，由 `engine/daemon/src/cli.ts:227` 在生产路径调用）执行 `http.createServer`（`:195`）+ `server.listen(port, host)`（`:213`），
+> ③ **「外部无法触达」的射程声明（穷尽性交代）**：该断言的对象是**三条下发面**，不是 daemon 的全部网络面——daemon 进程本身**确有一个在监听的 HTTP 端点**：`startHealthEndpoint`（`engine/daemon/src/health-endpoint.ts:191`，由 `engine/daemon/src/cli.ts:248` 在生产路径调用）执行 `http.createServer`（`:195`）+ `server.listen(port, host)`（`:213`），
 >但其 URL 分支只有 `GET /health` 与 `/health/`（`:196`）两支，只回健康三态、不接收下发内容、不写盘。⇒ 它是**只读探针面**，与三条下发面的入站路径无交集；三条下发面的事件入站仍是注入端口。
 
 ---
@@ -526,7 +526,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 与 `SOFAGENT_DATA` 同属环境变量信任边界，本节一并声明：
 
 - **`SOFAGENT_KEY_PATH`**（`engine/core/src/audit-history.ts:82`）：HMAC 密钥路径覆盖，优先级为 `SOFAGENT_KEY_PATH > ~/.sofagent-key`。能设置该变量的攻击者可将签名密钥重定向到自控文件——写入侧与校验侧同读该密钥时链校验仍「通过」，但密钥已不在用户掌控。设计初衷同 `SOFAGENT_DATA`（测试隔离，如 `llm-call-trace.test.ts` 用其指向临时密钥）；风险分级与缓解同上节（本地低 / 共享中，防线是环境隔离非路径白名单）。
-- **`SOFAGENT_HOME_ALLOWED_PREFIXES`**（`engine/core/src/data-paths.ts:43`）：`SOFAGENT_HOME` 越界回退白名单的扩展入口（冒号分隔，企业场景显式扩展安装根前缀）。注意双向性：它既可把合法定制路径**收进来**（预期用途），也可把越界路径**放进来**——能设置该变量的攻击者可将 `SOFAGENT_HOME` 重定向到自控前缀下（数据落点与审计主链分家，同 [LIMITATIONS 数据目录解析](./docs/LIMITATIONS.md) 已披露的双轨风险叠加）。
+- **`SOFAGENT_HOME_ALLOWED_PREFIXES`**（`engine/core/src/data-paths.ts:42`）：`SOFAGENT_HOME` 越界回退白名单的扩展入口（冒号分隔，企业场景显式扩展安装根前缀）。注意双向性：它既可把合法定制路径**收进来**（预期用途），也可把越界路径**放进来**——能设置该变量的攻击者可将 `SOFAGENT_HOME` 重定向到自控前缀下（数据落点与审计主链分家，同 [LIMITATIONS 数据目录解析](./docs/LIMITATIONS.md) 已披露的双轨风险叠加）。
   缓解同上节：入口环境清洗 + 部署期前缀清单管控。
 
 ### 已知绕过路径
