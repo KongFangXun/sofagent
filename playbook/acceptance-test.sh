@@ -1586,10 +1586,10 @@ MCP_REFS=$(grep -oE '\b(run_audit|get_think|write_think|audit_file|search_knowle
 scenario 180 "v1.2.4 P3 S5 — SKILL/SKILL.md 行数 ≤200（v1.4.1 上调 180→200：FDE Harness 叙事收编 +DSH 生态速查表，真实新内容不删）"
 SKILL_LINES=$(wc -l < "$PROJECT_ROOT/SKILL/SKILL.md" | tr -d ' ')
 [ "$SKILL_LINES" -le 200 ] && pass "SKILL/SKILL.md 行数达标（$SKILL_LINES ≤ 200）" || fail "SKILL/SKILL.md 行数超标（$SKILL_LINES > 200）"
-scenario 181 "v1.2.4 P4 R1-R2 — FDE/README.md ≤80 行 + FDE/GUIDE.md 存在"; S181_OK=true
+scenario 181 "v1.2.4 P4 R1-R2 — FDE/README.md ≤90 行 + FDE/GUIDE.md 存在"; S181_OK=true
 [ -f "$PROJECT_ROOT/FDE/README.md" ] || { fail "FDE/README.md 不存在"; S181_OK=false; }
 README_LINES=$(wc -l < "$PROJECT_ROOT/FDE/README.md" 2>/dev/null | tr -d ' ')
-[ "$README_LINES" -le 80 ] || { fail "FDE/README.md 行数超标（$README_LINES > 80）"; S181_OK=false; }
+[ "$README_LINES" -le 90 ] || { fail "FDE/README.md 行数超标（$README_LINES > 90）"; S181_OK=false; }  # 🔴 抬线记录（本仓铁律「超标上调不删内容」· 声明源）：50e7cb76（跨仓认知框架验证落盘）新增「Harness 两个作用面（通道视角）+ FDE 能力梯度」使 FDE/README.md 80→82 行、破 v1.2.4 P4 R1「≤80」硬线；按铁律**超标上调不删内容**（删内容回 80 恰违铁律）→ 上限 80→90（82 + ≥1 单位余量；本锚无抬线史故取整 90；同源先例 = check-docs.sh LIMIT_E/LIMIT_A 历次「超标上调不删内容」记录）。**原线（v1.2.4 P4 R1 ≤80）保留于沿革档 docs/changelog/v1.2/v1.2.4.md**，本场景标题/阈值/消息三处同步为 90。维护者裁定（B-3 验收后批）。
 [ -f "$PROJECT_ROOT/FDE/GUIDE.md" ] || { fail "FDE/GUIDE.md 不存在"; S181_OK=false; }
 $S181_OK && pass "FDE 人读门面完整（README $README_LINES 行 + GUIDE 存在）"
 scenario 182 "v1.2.4 P4 R3-R4 — SKILL/SKILL.md 主入口 + 子 Skill 01-05 完整"; S182_OK=true
