@@ -44,8 +44,8 @@
 
 > 每次新 session 或新阶段开始时，先读这 11 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
 
-- [x] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)　✅ 2026-09-28（维护者确认；含治理批：可读性棘轮/墙式折行/内容压缩/尺子落地）
-- [x] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)　✅ 2026-09-28（两轮施工+补做批：43/43 验收 · 测试 5568/5568 · devlog 翻牌 92b1be61）
+- [x] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)　✅ 完成（维护者确认 · 含治理批：可读性棘轮/墙式折行/内容压缩/尺子落地 · 台账见 git 演进史）
+- [x] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)　✅ 完成（两轮施工+补做批：43/43 验收 · 测试 5568/5568 · devlog 已翻牌——出处见 git 演进史）
 - [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（入口裁定一次 · A 快速直收 / B 盲审复制一次 prompt）→ [03-quality-loop.md](./releasing/03-quality-loop.md)（走对话式多轮审查等价形态：22 视角分层取用 + 零信任复验通过）
 - [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)
 - [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)
