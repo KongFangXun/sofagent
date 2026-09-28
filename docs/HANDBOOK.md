@@ -575,7 +575,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 
 **节点类型选择**：自动运行节点（需 OpenClaw 或其他企业级平台全栈）vs 个人增强节点（WorkBuddy / Codex，无需平台全栈）。完整对照表见 [ARCHITECTURE 双节点架构](./ARCHITECTURE.md#双节点架构)。
 
-### USB 烧录：三种部署场景全覆盖（v1.1.8+ / v1.2.0 叙事收口）
+### USB 烧录：三种部署场景全覆盖（v1.1.8+）
 
 **三种场景，一种方式**——sofagent 用 USB key 覆盖全部部署需求：
 
