@@ -723,14 +723,8 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 382（最大场景号 S458；v1.5.4 B-3 章级顺延项落位批 +2——S457 本地槽位排队行为锁 / S458 判定链三层与门控行为锁（原「⏭️ 顺延 v1.5.5」的章级验收资产落位，承接版相应块作废）；v1.5.4 承接落位批 +3——S454 `--doctor` 可达性 / S455 ClawHub 按款重发 / S456 devlog↔dev prompt 章节对照表机器断言；
->v1.5.3 release-gate 20260926-02 F 链 S316 复位 +1——阶段四批次误删场景恢复（原沿革记「S316→S298 归并」，发版闸门 F 链诊断以 git -S 实证 S298 壳内零承接断言即误删；daemon/watch/resume 三锚复位，锚文件更新为守护机制现态活体 release-gate-driver）；
->v1.5.3 release-gate 20260926-01 判断层 coverage 闭环批 +4：S450 模块一双规则引擎统一 / S451 模块五 ARCHITECTURE 三域结构锁 / S452 模块六判决成对完整门禁实跑 / S453 模块七 AuditScope 显式输入面（应用侧归并 S449）；v1.5.3 阶段四：S446→S442 / S316→S298 两处共壳归并 −2 + S449 三模块共壳 +1；
->v1.5.2 release-gate 20260924-01 判断层 P0×2 闭环 +3：S445 章八 BugFix 批五族代表锚点 / S446 章一 MCP audit 数据对外注册面+只读行为锁 / S447 章六 README 双语身份三层结构锁。原：最大场景号 S444，S1-S444 间 78 个历史空洞号；v1.5.2 审查面登记净 +2：新增 S442-S444 三场景 + S440/S441 锚点批归并入 S440 共壳（−1；
->断言整体移入 acceptance-node-probes.js，零删减）——章二/三 约束导出外部可验 + 运行时 should-run 判定链 / 章四/五 结论失效语义 + 网络出口治理面 / 章七/九 事前授权补环 + DSH 插件 npm 首发面；v1.5.1 验收增量 +1：S441 发布链加固代表锚——门禁清单覆盖对账三态 + 长跑凭据四道防线 + 随动面三锚，对齐 S440/S343 先例；
->v1.5.0 验收增量 +5：S427-S431 治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
->
-> 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账见 [v1.5.0 开发日志 · 附录](./changelog/v1.5/v1.5.0.md)。
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 382（最大场景号 S458）。
+> 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账（v1.5.0–v1.5.4 各批 +N 明细）见 [归档](./archive/validation-deep/development-maintainer.md) 与 [v1.5.0 开发日志 · 附录](./changelog/v1.5/v1.5.0.md)。
 
 ### 加载链预算目标跟踪
 
