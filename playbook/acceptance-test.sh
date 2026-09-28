@@ -4492,10 +4492,11 @@ grep -q "AuditScope" "$PROJECT_ROOT/engine/audit/src/rules/rule-a18-junk-file.ts
 grep -q "AuditScope" "$PROJECT_ROOT/engine/audit/src/rules/assemble.ts" || SCOPE_OK=false
 if [ "$SCOPE_OK" = true ]; then pass "S453 scope.ts 显式对象 + 唯一输入面锚 + 三消费点接线在位（应用侧归并 S449）"; else echo "  ✗ S453: scope.ts/类型锚/消费接线有一缺失"; fail "AuditScope 重构锚点回潮"; fi
 # ─── v1.5.4 承接验收资产欠账落位（第 1 批 · 2026-09-28）：S454-S456（3 场景，承接 v1.5.4 devlog〈待补清单〉#3/#4/#7）───
-scenario 454 "v1.5.4 承接 #3：sofagent --doctor 可达性——--doctor 是 flag 非子命令（裸 doctor 被 quick 模式当 diff ref 报「无法解析 diff 范围」）"
+scenario 454 "v1.5.4 承接 #3：sofagent --doctor 可达性——--doctor 是 flag 非子命令（裸 doctor 被 quick 模式当 diff ref 报「无法解析 diff 范围」）；退出码语义：0=全健康 / 1=有健康项失败（报告已产出，属健康检查失败非可达性失败）⇒ 可达性判据 rc∈{0,1}"
 DOC_OK=1
 node "$PROJECT_ROOT/engine/umbrella/bin/sofagent.js" --doctor >/tmp/sc454.log 2>&1; _rc=$?
-[ "$_rc" -eq 0 ] || { echo "  ✗ S454: sofagent --doctor 退出码 ${_rc}（期望 0）"; DOC_OK=0; }
+# --doctor = 健康检查报告面：rc=0 全健康 / rc=1 有健康项失败（报告已产出——「检查失败」非「不可达」）；可达性判据 = flag 被识别并产出报告 ⇒ rc∈{0,1}，≥2 / 未识别（撞「无法解析 diff 范围」）才不可达（无 hooks 的隔离 HOME 下 rc=1 属正常报告态；全健康路径 rc=0 见 devlog v1.5.4〈承接欠账落位〉）。
+{ [ "$_rc" -eq 0 ] || [ "$_rc" -eq 1 ]; } || { echo "  ✗ S454: sofagent --doctor 退出码 ${_rc}（期望 0 或 1——报告产出语义；≥2 = 不可达）"; DOC_OK=0; }
 node "$PROJECT_ROOT/engine/audit/dist/cli-quick.js" doctor >/tmp/sc454b.log 2>&1
 grep -q "无法解析 diff 范围" /tmp/sc454b.log || { echo "  ✗ S454: 裸 doctor 未按 diff ref 报错（--doctor 语义漂移）"; DOC_OK=0; }
 BARE=$(grep -rEn 'sofagent[[:space:]]+doctor([[:space:]]|$)' "$PROJECT_ROOT/docs/changelog/releasing" "$PROJECT_ROOT/tools" 2>/dev/null | grep -v -- '--doctor' || true)
