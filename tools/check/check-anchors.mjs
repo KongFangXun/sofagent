@@ -9,6 +9,15 @@
 //       ② 文件内部目录引用 ](#yyy)。
 //       按 GitHub 锚点归一化规则生成实际锚点表，比对引用的
 //       #yyy 是否存在。跨文件目标不存在报断链，锚点不存在报锚点过时。
+//       ③ 章号一致性：链接**显示文本**以「N、」开头、且锚点解析到的目标标题
+//          也以「N、」开头时，两个章号必须相同；另对「§N」形式做越界判定
+//          （N > 目标文件最大 H2 章号即报）。治的是「章节重排只改锚点、
+//          不改人眼看到的章号」——锚点是 slug（由标题即时生成，必然自洽），
+//          故这一缺陷在只判锚点的旧版里结构性看不见。
+//
+// 自测（红不了的门禁是装饰品）：把任一目录项的章号改错应看到命中并 exit 1——
+//   perl -i -pe 's/\[一、核心理念/\[二、核心理念/ if $.==25' docs/ARCHITECTURE.md && \
+//     node tools/check/check-anchors.mjs; echo "rc=$?"; git checkout -- docs/ARCHITECTURE.md
 //
 // 检查范围: 跨文件锚点引用（](文件.md#锚点)）+ 文件内部目录链接（](#锚点)）。
 // 文件内部引用的排除规则：跳过空锚点 ](#)；跳过被 ``` 包裹的代码块内容。
@@ -324,6 +333,62 @@ function extractAnchors(content) {
   return anchors;
 }
 
+/**
+ * 提取「锚点 → 标题原文」映射（供章号一致性断言反查目标标题）。
+ * 与 extractAnchors 同一套 slug 语义（同文档 slugger 去重），只是保留标题文本。
+ * @param {string} content
+ * @returns {Map<string, string>} anchor → 标题（去掉行内代码反引号、trim）
+ */
+function extractHeadingMap(content) {
+  const map = new Map();
+  const lines = content.split('\n');
+  const mask = computeCodeBlockMask(lines);
+  const slugger = new GithubSlugger();
+
+  for (let i = 0; i < lines.length; i++) {
+    if (mask[i]) continue;
+    const match = lines[i].match(/^(#{1,6})\s+(.+)$/);
+    if (!match) continue;
+    const title = match[2].replace(/`([^`]*)`/g, '$1').trim();
+    const anchor = githubAnchor(match[2], slugger);
+    if (anchor) map.set(anchor, title);
+  }
+
+  return map;
+}
+
+// ── 章号一致性（显示文本「N、」vs 目标标题「N、」）───────────
+//
+// 背景（v1.5.4 文档治理批）：章节重排后若只改锚点、不改**链接显示文本里的章号**，
+//   check-anchors 原本只看锚点能否解析——锚点是 slug（由标题即时生成），
+//   所以「锚点全绿」与「显示章号说的是另一章」可以同时成立。
+//   实测形态：ARCHITECTURE 目录 8 条里 5 条显示旧章号（「五、激活链」实为「二、」）。
+// 判据：链接显示文本以「中文数字、」开头，且目标标题也以「中文数字、」开头时，
+//   两个数字必须相同。二者缺一即跳过（不猜）。
+const CN_DIGIT = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+
+/**
+ * 取文本开头的章号（「一、」「十二、」…），无则 null。
+ * @param {string} text
+ * @returns {{n: number, str: string}|null}
+ */
+function leadingChapterNo(text) {
+  const m = /^\s*([一二三四五六七八九十]+)、/.exec(text || '');
+  if (!m) return null;
+  let n = 0;
+  for (const ch of m[1]) n += CN_DIGIT[ch] || 0;
+  return n > 0 ? { n, str: m[1] } : null;
+}
+
+/** 取文本里的 `§<中文数字>` 章号引用（形如「ARCHITECTURE §六」），无则 null。 */
+function sectionRefNo(text) {
+  const m = /§\s*([一二三四五六七八九十]+)/.exec(text || '');
+  if (!m) return null;
+  let n = 0;
+  for (const ch of m[1]) n += CN_DIGIT[ch] || 0;
+  return n > 0 ? { n, str: m[1] } : null;
+}
+
 // ── 引用提取 ────────────────────────────────────────────────
 
 // 模板占位符白名单（与 check-docs.sh 1b 同口径）：版本未定时的规划占位，
@@ -344,10 +409,11 @@ function extractAnchorRefs(content, filePath) {
   const dir = path.dirname(filePath);
   const mask = computeCodeBlockMask(lines);
 
-  // 匹配 ](xxx.md#yyy) 或 ](xxx.md#yyy "title")
-  // 不匹配纯文件链接 ](xxx.md)
+  // 匹配 [显示文本](xxx.md#yyy) 或 [显示文本](xxx.md#yyy "title")
+  // 不匹配纯文件链接 [](xxx.md)
   // 不匹配 http 链接
-  const refRegex = /\]\(([^)#\s]+\.md)#([^)\s]+)\)/g;
+  // 捕获显示文本（组1）供章号一致性断言使用
+  const refRegex = /\[([^\]]*)\]\(([^)#\s]+\.md)#([^)\s]+)\)/g;
 
   for (let i = 0; i < lines.length; i++) {
     if (mask[i]) continue; // 跳过代码块内的内容
@@ -355,11 +421,12 @@ function extractAnchorRefs(content, filePath) {
     const line = lines[i];
     refRegex.lastIndex = 0;
     while ((match = refRegex.exec(line)) !== null) {
-      const targetFile = path.resolve(dir, match[1]);
-      const anchor = decodeURIComponent(match[2].split(/\s/)[0]);
+      const targetFile = path.resolve(dir, match[2]);
+      const anchor = decodeURIComponent(match[3].split(/\s/)[0]);
       refs.push({
+        display: match[1],
         targetFile,
-        targetRef: match[1],
+        targetRef: match[2],
         anchor,
         fullMatch: match[0],
         lineNum: i + 1,
@@ -382,8 +449,8 @@ function extractInternalAnchorRefs(content) {
   const lines = content.split('\n');
   const mask = computeCodeBlockMask(lines);
 
-  // 匹配 ](#yyy)（yyy 非空即排除空锚点 ](#)）
-  const internalRegex = /\]\(#([^)\s]+)\)/g;
+  // 匹配 [显示文本](#yyy)（yyy 非空即排除空锚点 [](#)）
+  const internalRegex = /\[([^\]]*)\]\(#([^)\s]+)\)/g;
 
   for (let i = 0; i < lines.length; i++) {
     if (mask[i]) continue; // 跳过代码块内的内容
@@ -391,9 +458,10 @@ function extractInternalAnchorRefs(content) {
     const line = lines[i];
     internalRegex.lastIndex = 0;
     while ((match = internalRegex.exec(line)) !== null) {
-      const anchor = decodeURIComponent(match[1]);
+      const anchor = decodeURIComponent(match[2]);
       if (!anchor) continue; // 空锚点兜底跳过
       refs.push({
+        display: match[1],
         anchor,
         lineNum: i + 1,
         line: line.trim(),
@@ -492,9 +560,25 @@ console.log('');
 
 // 预构建每个文件的锚点表
 const anchorTables = new Map();  // filePath → Set<anchor>
+const headingMaps = new Map();   // filePath → Map<anchor, title>（章号一致性反查用）
+/** 每个文件 H2 章号的最大值（「N、」形式），无编号 H2 则 0。 */
+const maxChapterOf = new Map();
 for (const f of files) {
   const content = fs.readFileSync(f, 'utf8');
   anchorTables.set(f, extractAnchors(content));
+  headingMaps.set(f, extractHeadingMap(content));
+
+  const lines = content.split('\n');
+  const mask = computeCodeBlockMask(lines);
+  let mx = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (mask[i]) continue;
+    const m = lines[i].match(/^##\s+(.+)$/);
+    if (!m) continue;
+    const c = leadingChapterNo(m[1].replace(/`([^`]*)`/g, '$1').trim());
+    if (c) mx = Math.max(mx, c.n);
+  }
+  maxChapterOf.set(f, mx);
 }
 console.log(`  构建锚点表: ${anchorTables.size} 个文件`);
 console.log('');
@@ -504,8 +588,24 @@ let brokenFiles = 0;     // 文件本身不存在（文件断链）
 let staleAnchors = 0;    // 锚点过时（跨文件 + 文件内，同一口径）
 let validRefs = 0;
 let fixedCount = 0;
+let chapterMismatches = 0; // 显示章号 ≠ 目标标题章号
+let fixedChapters = 0;
+let chapterOutOfRange = 0; // 「§N」指向的目标文件无该章号
 const staleReports = [];
 const brokenFileReports = [];
+const chapterReports = [];
+
+/**
+ * 章号一致性判定（显示文本「N、」vs 目标标题「N、」）。
+ * 只有两侧都取到章号才判——缺一即跳过（不猜，防假红）。
+ * @returns {boolean} 命中即 true
+ */
+function checkChapterNo(dispText, targetTitle) {
+  const dispChap = leadingChapterNo(dispText);
+  const tgtChap = leadingChapterNo(targetTitle || '');
+  if (!dispChap || !tgtChap || dispChap.n === tgtChap.n) return false;
+  return { dispChap, tgtChap, targetTitle };
+}
 
 for (const f of files) {
   const content = fs.readFileSync(f, 'utf8');
@@ -539,6 +639,31 @@ for (const f of files) {
     // 2. 检查锚点是否存在
     if (anchors.has(ref.anchor)) {
       validRefs++;
+      // 2b. 章号一致性（显示文本「N、」vs 目标标题「N、」）
+      const hit = checkChapterNo(ref.display, headingMaps.get(ref.targetFile)?.get(ref.anchor));
+      if (hit) {
+        chapterMismatches++;
+        chapterReports.push({
+          sourceFile: relFile,
+          sourceLine: ref.lineNum,
+          targetFile: path.relative(PROJECT_ROOT, ref.targetFile),
+          display: ref.display,
+          targetTitle: hit.targetTitle,
+          dispChap: hit.dispChap.str,
+          tgtChap: hit.tgtChap.str,
+          line: ref.line,
+        });
+        if (FIX_MODE) {
+          const fixedDisplay = ref.display.replace(/^(\s*)[一二三四五六七八九十]+、/, `$1${hit.tgtChap.str}、`);
+          const oldLink = `[${ref.display}]`;
+          if (fileLines[ref.lineNum - 1].includes(oldLink)) {
+            fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldLink, `[${fixedDisplay}]`);
+            fileDirty = true;
+            fixedChapters++;
+            console.log(colors.green(`  ✓ 章号修复: ${relFile}:${ref.lineNum}  ${hit.dispChap.str}、→ ${hit.tgtChap.str}、`));
+          }
+        }
+      }
       continue;
     }
 
@@ -574,6 +699,31 @@ for (const f of files) {
   for (const ref of internalRefs) {
     if (ownAnchors.has(ref.anchor)) {
       validRefs++;
+      // 章号一致性（文件内目录同样判）
+      const hit = checkChapterNo(ref.display, headingMaps.get(f)?.get(ref.anchor));
+      if (hit) {
+        chapterMismatches++;
+        chapterReports.push({
+          sourceFile: relFile,
+          sourceLine: ref.lineNum,
+          targetFile: relFile,
+          display: ref.display,
+          targetTitle: hit.targetTitle,
+          dispChap: hit.dispChap.str,
+          tgtChap: hit.tgtChap.str,
+          line: ref.line,
+        });
+        if (FIX_MODE) {
+          const fixedDisplay = ref.display.replace(/^(\s*)[一二三四五六七八九十]+、/, `$1${hit.tgtChap.str}、`);
+          const oldLink = `[${ref.display}]`;
+          if (fileLines[ref.lineNum - 1].includes(oldLink)) {
+            fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldLink, `[${fixedDisplay}]`);
+            fileDirty = true;
+            fixedChapters++;
+            console.log(colors.green(`  ✓ 章号修复: ${relFile}:${ref.lineNum}（文件内）  ${hit.dispChap.str}、→ ${hit.tgtChap.str}、`));
+          }
+        }
+      }
       continue;
     }
 
@@ -602,6 +752,37 @@ for (const f of files) {
     }
   }
 
+  // ③ 「§N」章号引用越界（[](X.md) 无锚点形式；显示文本形如「ARCHITECTURE §六」）
+  //    判据保守：只在 N > 目标文件最大 H2 章号时报（越界必然失指，零假阳性）；
+  //    「章号在范围内但指向另一章」属语义错配，机器判不了，由 check-chapter 人工面兜。
+  const mask3 = computeCodeBlockMask(fileLines);
+  const plainRefRegex = /\[([^\]]*)\]\(([^)#\s]+\.md)\)/g;
+  for (let i = 0; i < fileLines.length; i++) {
+    if (mask3[i]) continue;
+    plainRefRegex.lastIndex = 0;
+    let match;
+    while ((match = plainRefRegex.exec(fileLines[i])) !== null) {
+      const sec = sectionRefNo(match[1]);
+      if (!sec) continue;
+      const targetFile = path.resolve(path.dirname(f), match[2]);
+      const mx = maxChapterOf.get(targetFile);
+      if (mx === undefined || mx === 0) continue; // 目标不在扫描面 / 无编号章
+      if (sec.n > mx) {
+        chapterOutOfRange++;
+        chapterReports.push({
+          sourceFile: relFile,
+          sourceLine: i + 1,
+          targetFile: path.relative(PROJECT_ROOT, targetFile),
+          display: match[1],
+          targetTitle: `（目标文件最大章号 = ${mx}）`,
+          dispChap: sec.str,
+          tgtChap: `≤${mx}`,
+          line: fileLines[i].trim(),
+        });
+      }
+    }
+  }
+
   // 该文件有修复 → 一次性写回
   if (fileDirty) {
     fs.writeFileSync(f, fileLines.join('\n'));
@@ -620,8 +801,21 @@ if (brokenFileReports.length > 0) {
   }
 }
 
-if (staleReports.length === 0 && brokenFileReports.length === 0) {
-  console.log(colors.green(`  ✓ 全部通过：${validRefs} 个锚点引用全部有效，无文件断链`));
+if (chapterReports.length > 0) {
+  console.log(colors.red(`  ✗ 发现 ${chapterReports.length} 处章号不一致（显示文本章号 ≠ 目标标题章号，或 §N 越界）`));
+  console.log('');
+  for (const r of chapterReports) {
+    console.log(colors.red(`  ✗ ${r.sourceFile}:${r.sourceLine}  → ${r.targetFile}`));
+    console.log(`    显示「${r.dispChap}、」 vs 目标「${r.tgtChap}、」  ${r.targetTitle}`);
+    console.log(`    行: ${r.line.substring(0, 100)}`);
+    console.log('');
+  }
+  console.log(colors.yellow('  提示：运行 node tools/check/check-anchors.mjs --fix 自动同步显示章号（越界项需人工）'));
+  console.log('');
+}
+
+if (staleReports.length === 0 && brokenFileReports.length === 0 && chapterReports.length === 0) {
+  console.log(colors.green(`  ✓ 全部通过：${validRefs} 个锚点引用全部有效，无文件断链，章号一致`));
   console.log('');
   console.log(colors.bold(colors.cyan('═'.repeat(60))));
   process.exit(0);
@@ -677,10 +871,11 @@ if (FIX_MODE && fixedCount > 0) {
   console.log(colors.green(`  ✓ 已修复 ${fixedCount}/${staleAnchors} 处`));
 }
 const remaining = staleAnchors - fixedCount;
-if (remaining > 0 || brokenFiles > 0) {
-  console.log(colors.red(`  ✗ 剩余 ${remaining} 处锚点过时 + ${brokenFiles} 处文件断链需手动修复`));
+const chapterRemaining = chapterMismatches - fixedChapters + chapterOutOfRange;
+if (remaining > 0 || brokenFiles > 0 || chapterRemaining > 0) {
+  console.log(colors.red(`  ✗ 剩余 ${remaining} 处锚点过时 + ${brokenFiles} 处文件断链 + ${chapterRemaining} 处章号不一致需手动修复`));
   process.exit(1);
-} else if (FIX_MODE && fixedCount > 0) {
+} else if (FIX_MODE && (fixedCount > 0 || fixedChapters > 0)) {
   console.log(colors.green(`  ✓ 全部修复完成`));
   process.exit(0);
 } else {

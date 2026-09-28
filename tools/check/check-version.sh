@@ -1043,7 +1043,11 @@ EXPECTED_DOC_DATE=""
 if [ -n "$CUR_VER" ]; then
   # tail -1：一段式索引行可能含多个日期（如「待发版 · DDDD-DD-DD 开发完成 … · DDDD-DD-DD ·」），
   # 发版日期位固定在行尾——取最后一个
-  EXPECTED_DOC_DATE=$(grep -m1 "v${CUR_VER}.*—" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | tail -1 || echo "")
+  # 🔴 v1.5.4 修：索引条目**允许折行**（长条目为防墙式段落会折成 2 行，日期落在续行）。
+  #   原实现 `grep -m1 "v$CUR_VER.*—"` 只取首行 ⇒ 折行条目的日期抽不到 ⇒ 静默退回
+  #   硬编码 LAST_KNOWN_DATE ⇒ 全量文档头报「日期漂移」（23 处下游噪声，真因被淹没）。
+  #   现改为锚定索引行 `- **vX.Y.Z**` 并带 -A2 取续行（索引条目最多折 2 行）。
+  EXPECTED_DOC_DATE=$(grep -A2 -m1 -E "^- \*\*v${CUR_VER}\*\*" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | tail -1 || echo "")
 fi
 # 兜底：CHANGELOG 还没当前版本段（开发中）时退回最后已知日期
 # v1.3.6 开发中：文档头统一沿用上一版发版日期 2026-08-16，发版时随 CHANGELOG 段更新

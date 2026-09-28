@@ -37,7 +37,18 @@
 #      与 tools/check/doc-ratchet.json **逐文件 ≤ 比较**。口径：wall=围栏外 >300 字符行；
 #      cell=围栏外表格内 >200 字符格（计数器 tools/check/lib/readability-count.mjs 单一实现）。
 #      治的是「内容只进不出」：任何提交让核心文档变得更挤即红；清理后改小台账让 diff
-#      记录「债减少」。文件清零后从台账移除；新增核心文档须先测基线再登记。
+#      记录「债减少」。文件清零后从台账移除。
+#      另有**覆盖面断言**（v1.5.4 补）：台账只对在册文件做 ≤ 比较，「没登记」曾是棘轮的
+#      天然放水口——现要求「全仓非冻结 .md 中 wall/cell > 0 者必须已在册」，新增文档
+#      带债务却未登记即红，堵住「靠不登记规避门禁」。
+#
+# ⚠️ 范围诚实披露（排除面 ≠ 无覆盖，但必须可见）：
+#   · Face 1-3（内部代号 / 私有路径 / 来源块）判定面 = 根级 *.md + docs/**/*.md。
+#   · Face 5（棘轮 + 覆盖面）判定面 = 全仓 tracked .md 减去历史冻结区与 vendored 上游
+#     （docs/changelog · docs/archive · docs/evidence · playbook/vendor）。
+#   · 故 FORGE/ · SKILL/ · engine/ · playbook/ · FDE/ · tools/ 的**内部代号与私有路径**
+#     不在 Face 1-3 判定面内（这些目录的正文多为机器提示词与内部工具文档，纳入会
+#     大面积假红；其可读性由 Face 5 覆盖面兜底）。changelog 的写作纪律维持人工 SOP。
 #
 # 退出码契约（对齐本仓 check-* 家族）：
 #   0 = 绿 / 1 = 有命中（违规）/ 2 = 检查器失明（扫描面为空 ⇒ 拒绝把「读不到」当「零违规」）
@@ -184,6 +195,35 @@ else
       else
         echo "  ✓ 全部 ≤ 基线（$(printf '%s\n' "$TRACK_FILES" | grep -c .) 个核心文档；清理后请改小台账）"
       fi
+    fi
+  fi
+
+  # ── Face 5 覆盖面断言（v1.5.4 文档治理批补）────────────────────────
+  # 台账只对**在册**文件做 ≤ 比较——「没登记」＝「不受管」，是棘轮的天然放水口。
+  # 本断言把它堵上：全仓非冻结 .md 中，凡 wall/cell > 0 的文件必须已在册；
+  # 新增文档带债务却未登记 ⇒ 红（提示先清理，再登记基线）。
+  CANDS=$(git ls-files '*.md' 2>/dev/null \
+    | grep -vE '^docs/(changelog|archive|evidence)/' \
+    | grep -vE '^playbook/vendor/' || true)
+  if [ -z "$CANDS" ]; then
+    echo "  ❌ 覆盖面自检：候选文档集为空——git ls-files 失效，拒绝假绿"
+    HITS=$((HITS + 1))
+  else
+    # shellcheck disable=SC2086
+    CANDS_JSON=$(node "$COUNTER" $CANDS 2>/dev/null || echo '{}')
+    UNREG=$(node -e "
+      const base=require('./$RATCHET'); const act=JSON.parse(process.argv[1]);
+      const known=new Set(Object.keys(base).filter(k=>k!=='_meta'));
+      for(const [f,a] of Object.entries(act)){
+        if((a.wall>0||a.cell>0) && !known.has(f)) console.log(f+'  (wall '+a.wall+' / cell '+a.cell+')');
+      }" "$CANDS_JSON" 2>/dev/null || true)
+    if [ -n "$UNREG" ]; then
+      printf '%s\n' "$UNREG" | sed 's|^|    |'
+      UNREG_N=$(printf '%s\n' "$UNREG" | grep -c .)
+      HITS=$((HITS + UNREG_N))
+      echo "  ❌ 覆盖面 ${UNREG_N} 处：文件有墙式债务却未登记台账——先清理，或测基线后登记（登记 = 认下这笔债）"
+    else
+      echo "  ✓ 覆盖面：候选 $(printf '%s\n' "$CANDS" | grep -c .) 个非冻结文档，有债务者全部在册"
     fi
   fi
 fi

@@ -166,6 +166,50 @@ else
   bad "维度计数 ${ACTUAL_DIM} > 归并配额基线 ${DIM_BASELINE}——违反公约「归并配额（硬门槛）」" "    公约：新增 N 维必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查）；只调警戒线不归并 = 不合格。\n    正确处置是真实归并，不是上调基线 ${DIM_BASELINE}；基线只应被后续归并下调，不因新增而上调。"
 fi
 
+# 1g. 编号上界声称 vs 实际最大编号（v1.5.4 文档治理批补）
+#     实案：正文 H3 写「审查维度正文（#1-142 · 维度流连续不中断）」而实际最大编号 145
+#     ——「N 维」计数（1a/1b）对得上，但**编号上界**没人对账，人一读目录就发现说错。
+#     判据：头部/正文任一「编号 1-N」或「#1-N」声称，其 N 必须 = 实际最大 #### 编号。
+ACTUAL_MAX=$(grep -E "^#### " "$CHECKLIST" | grep -oE "^#### [0-9]+" | grep -oE "[0-9]+" | sort -n | tail -1 || echo "")
+ACTUAL_MAX=${ACTUAL_MAX:-0}
+# 取所有「编号 1-N」/「#1-N」形态上界声称（头部「编号 1-145」与正文「（#1-142」）
+CLAIM_MAXES=$(grep -oE '编号 ?1-[0-9]+|#1-[0-9]+' "$CHECKLIST" | grep -oE '[0-9]+$' | sort -n -u || true)
+if [ -z "$CLAIM_MAXES" ]; then
+  warn "checklist 未找到「1-N」编号上界声称（格式变化？人工确认）"
+else
+  BAD_MAX=""
+  for _c in $CLAIM_MAXES; do
+    [ "$_c" != "$ACTUAL_MAX" ] && BAD_MAX="${BAD_MAX}${_c} "
+  done
+  if [ -z "$BAD_MAX" ]; then
+    ok "编号上界声称一致：1-${ACTUAL_MAX}（实际最大 #### 编号）"
+  else
+    bad "checklist 编号上界声称与实际不符：声称 ${BAD_MAX}≠ 实际最大 ${ACTUAL_MAX}" "    修复：「1-N」的 N 改为实际最大编号（${ACTUAL_MAX}）；同批核对分组区间标注"
+  fi
+fi
+
+# 1h. 分组区间标注 vs 段内实际编号范围（v1.5.4 文档治理批补）
+#     实案：H2「分组：审查约束类（维度 #23-#77 …）」该段实际到 #145 ——区间标注陈旧。
+#     判据：`## 分组：…（#A-#B…）` 声明的区间须**包住**该 H2 到下一 H2 之间出现的全部 #### 编号。
+RANGE_BAD=$(awk '
+  /^## / {
+    hdr=$0; inr=0;
+    if (match($0, /#[0-9]+-#[0-9]+/)) { s=substr($0, RSTART+1, RLENGTH-1); gsub(/#/,"",s); split(s,a,"-"); lo=a[1]+0; hi=a[2]+0; inr=1 }
+    next
+  }
+  /^#### [0-9]+/ {
+    if (inr) { n=$2+0; if (n<lo || n>hi) print "  "hdr"  → 段内 #"n" 越界 ["lo"-"hi"]" }
+  }
+' "$CHECKLIST" || true)
+if [ -z "$RANGE_BAD" ]; then
+  ok "分组区间标注包住段内实际编号"
+else
+  RANGE_N=$(printf '%s\n' "$RANGE_BAD" | grep -c '越界' || true)
+  RANGE_SHOW=$(printf '%s\n' "$RANGE_BAD" | head -5)
+  [ "$RANGE_N" -gt 5 ] && RANGE_SHOW="${RANGE_SHOW}"$'\n'"    …（共 ${RANGE_N} 条越界，仅显示前 5 条）"
+  bad "checklist 分组区间标注与实际编号越界（${RANGE_N} 条）：" "$RANGE_SHOW"
+fi
+
 # ============================================================
 # 二、acceptance-test.sh 场景对账
 # ============================================================
