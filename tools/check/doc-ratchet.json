@@ -1,0 +1,22 @@
+{
+  "_meta": {
+    "purpose": "核心文档可读性棘轮基线（doc-discipline.sh Face 5）——实测值只许降不许升；清理后必须同步改小本台账，让 diff 记录「债减少」",
+    "counter": "node tools/check/lib/readability-count.mjs（单一口径：wall=围栏外>300字符行；cell=围栏外表格内>200字符格）",
+    "rule": "实测值 ≤ 基线 = 绿；任何文件 wall/cell 高于基线 = 红；文件清零后从本表移除；新增核心文档须先测基线再登记",
+    "scope": "核心文档面（用户必经路径）；changelog/archive/evidence 为冻结区不适用",
+    "note": "2026-09-28 文档治理批：全量折行 + THANKS 判据级压缩后首次收紧——总墙式行 261→17（-244），墙式格 34→34（下一批：表格单元格内容压缩）",
+    "updated": "2026-09-28"
+  },
+  "docs/ARCHITECTURE.md": { "wall": 7, "cell": 12 },
+  "docs/DEVELOPMENT.md": { "wall": 0, "cell": 1 },
+  "docs/HANDBOOK.md": { "wall": 1, "cell": 3 },
+  "docs/LIMITATIONS.md": { "wall": 2, "cell": 1 },
+  "docs/PHILOSOPHY.md": { "wall": 1, "cell": 1 },
+  "docs/VALIDATION.md": { "wall": 0, "cell": 0 },
+  "docs/WIKI.md": { "wall": 2, "cell": 4 },
+  "FDE/GUIDE.md": { "wall": 0, "cell": 0 },
+  "SECURITY.md": { "wall": 1, "cell": 3 },
+  "README.md": { "wall": 0, "cell": 0 },
+  "README.en.md": { "wall": 3, "cell": 4 },
+  "docs/THANKS.md": { "wall": 0, "cell": 0 }
+}

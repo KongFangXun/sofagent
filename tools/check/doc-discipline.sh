@@ -33,6 +33,11 @@
 #   3b 存量台账——缺链接 / 缺原文发布日，逐文件计数与 tools/check/source-block-exempt.txt
 #      **集合相等**（同 knowledge-legacy-path-exempt.json 家族）。新增即红；清理后
 #      未同步台账同样红——清存量是可见动作，必须让 diff 记录「债减少」。
+#   Face 5 可读性棘轮（v1.5.4 文档治理批）——核心文档的墙式段落 / 墙式单元格计数
+#      与 tools/check/doc-ratchet.json **逐文件 ≤ 比较**。口径：wall=围栏外 >300 字符行；
+#      cell=围栏外表格内 >200 字符格（计数器 tools/check/lib/readability-count.mjs 单一实现）。
+#      治的是「内容只进不出」：任何提交让核心文档变得更挤即红；清理后改小台账让 diff
+#      记录「债减少」。文件清零后从台账移除；新增核心文档须先测基线再登记。
 #
 # 退出码契约（对齐本仓 check-* 家族）：
 #   0 = 绿 / 1 = 有命中（违规）/ 2 = 检查器失明（扫描面为空 ⇒ 拒绝把「读不到」当「零违规」）
@@ -145,9 +150,48 @@ echo "  ℹ️ 豁免文件 ${FREEZE_N:-0} 个（changelog / archive / evidence 
 echo "  ℹ️ changelog 的写作纪律维持人工 SOP（纳入判定面会全红且只能靠篡改历史变绿）"
 
 echo ""
+echo "[Face 5] 核心文档可读性棘轮（墙式段落 / 墙式单元格 ≤ doc-ratchet.json 基线）"
+RATCHET="tools/check/doc-ratchet.json"
+COUNTER="tools/check/lib/readability-count.mjs"
+if [ ! -f "$RATCHET" ] || [ ! -f "$COUNTER" ]; then
+  echo "  ❌ 棘轮台账或计数器缺失（${RATCHET} / ${COUNTER}）——无基线可依，拒绝假绿"
+  HITS=$((HITS + 1))
+else
+  # 台账在册文件逐个 ≤ 比较
+  TRACK_FILES=$(node -e "const r=require('./$RATCHET');console.log(Object.keys(r).filter(k=>k!=='_meta').join('\n'))")
+  R5_FAIL=0
+  if [ -n "$TRACK_FILES" ]; then
+    # shellcheck disable=SC2086
+    ACTUAL_JSON=$(node "$COUNTER" $TRACK_FILES 2>/dev/null)
+    if [ -z "$ACTUAL_JSON" ]; then
+      echo "  ❌ 计数器输出为空——失明防护（文件被删/改名须同步台账）"
+      HITS=$((HITS + 1))
+    else
+      BAD=$(node -e "
+        const base=require('./$RATCHET'); const act=JSON.parse(process.argv[1]);
+        for(const [f,b] of Object.entries(base)){
+          if(f==='_meta')continue;
+          const a=act[f];
+          if(!a){ console.log(f+'：台账在册但文件不可读——改名/删除须同步台账'); continue; }
+          if(a.wall>b.wall) console.log(f+'：wall '+a.wall+' > 基线 '+b.wall);
+          if(a.cell>b.cell) console.log(f+'：cell '+a.cell+' > 基线 '+b.cell);
+        }" "$ACTUAL_JSON" || true)
+      if [ -n "$BAD" ]; then
+        printf '%s\n' "$BAD" | sed 's|^|    |'
+        R5_FAIL=$(printf '%s\n' "$BAD" | grep -c .)
+        HITS=$((HITS + R5_FAIL))
+        echo "  ❌ ${R5_FAIL} 处超基线——内容只许变清爽不许变挤；若确已清理，把 doc-ratchet.json 改小让 diff 记录「债减少」"
+      else
+        echo "  ✓ 全部 ≤ 基线（$(printf '%s\n' "$TRACK_FILES" | grep -c .) 个核心文档；清理后请改小台账）"
+      fi
+    fi
+  fi
+fi
+
+echo ""
 if [ "$HITS" -gt 0 ]; then
   echo "发现 ${HITS} 处违规"
   exit 1
 fi
-echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 三面）"
+echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 / 可读性棘轮 四面）"
 exit 0
