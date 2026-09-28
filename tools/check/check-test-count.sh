@@ -1225,14 +1225,40 @@ if [ -z "$CHANGELOG_LINE" ]; then
 else
   CL_LINENO=$(echo "$CHANGELOG_LINE" | cut -d: -f1)
   # 防一：锚定行版本核对——锚到旧版本行 = 最新版绕过校验，直接 FAIL（先于数字解析）
-  CL_LINE_VER=$(echo "$CHANGELOG_LINE" | grep -oE '\*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+  # 🔴 折行容忍（判定面缺陷修复，非放宽阈值）：索引条目是一个**逻辑行**（`- **vX.Y.Z** — …`），
+  #   可读性折行器会把它折成多个物理行 ⇒ 版本号 / 状态词与测试数**可能不在同一物理行**。
+  #   凡「在命中行上取版本 / 取状态词」的判定都会因此落空——实锤：v1.5.3 条目被折成两行、
+  #   测试数落在续行 ⇒ 同行取不到 `**vX.Y.Z**` ⇒ 报「锚定到 v未知」；而本判据的原意是
+  #   **防旧版行替代校验**（防绕过），不是防折行 ⇒ 折行把它误报成格式漂移。
+  #   修法：先求命中行的**归属条目**（自其起始 bullet 起到下一个 bullet 之前，物理续行拼
+  #   回同一行），再在条目上取版本与状态词——原判定语义（含待发版态）不变。
+  #   ⚠️ 同族修法另见 check-version.sh §14（按**版本号**取条目）：两处各取所需（此处按行归属，
+  #      彼处按版本号），共用同一「折行归一」理由；抽公共件须新增 tools/check/lib/ 共享文件
+  #      （新建件须先获授权，故暂以两处各自实现 + 本注记挂账）。
+  CL_SCOPE=$(awk -v ln="$CL_LINENO" '
+      match($0, /^- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*/) {
+        s = substr($0, RSTART, RLENGTH); sub(/^- \*\*v/, "", s); sub(/\*\*$/, "", s)
+        idx++
+        blk[idx] = NR; ver[idx] = s; txt[idx] = $0
+        next
+      }
+      idx > 0 { txt[idx] = txt[idx] " " $0 }
+      END {
+        for (i = 1; i <= idx; i++) {
+          nx = (i < idx) ? blk[i + 1] : NR + 1
+          if (ln >= blk[i] && ln < nx) { printf "%s\t%s", ver[i], txt[i]; exit }
+        }
+      }
+    ' CHANGELOG.md 2>/dev/null || true)
+  CL_LINE_VER=$(printf '%s' "$CL_SCOPE" | cut -f1)
+  CL_ENTRY_TEXT=$(printf '%s' "$CL_SCOPE" | cut -f2-)
   # 待发版态兼容：CHANGELOG 已收录下一版「⏳ 待发版」条目而 package.json 尚未 bump——
   # 此为发版流程固有次序（条目先行、版本号发版时统一 bump），非格式漂移。
-  # 判定：锚定行含「待发版」且版本号为 CUR_VERSION 的后继一版（patch 后继 / minor 后继
+  # 判定：锚定**条目**含「待发版」且版本号为 CUR_VERSION 的后继一版（patch 后继 / minor 后继
   # patch 归零 / major 后继 minor+patch 归零——与 check-version §24 四态同族；只建模
   # patch+1 会把 1.4.9→1.5.0 的 minor 窗口误判 FAIL）→ 放行（数字照常校验）。
   CL_PENDING_OK=false
-  if [[ "$CHANGELOG_LINE" == *待发版* ]]; then
+  if [[ "$CL_ENTRY_TEXT" == *待发版* ]]; then
     CUR_PATCH=$(echo "$CUR_VERSION" | cut -d. -f3)
     PENDING_VER="${CUR_VERSION%.*}.$((CUR_PATCH + 1))"
     if [ "$CL_LINE_VER" = "$PENDING_VER" ]; then

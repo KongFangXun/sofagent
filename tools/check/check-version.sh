@@ -1035,6 +1035,30 @@ echo ""
 # 不再硬编码——发版时无需手改脚本。提取逻辑：audit/package.json 的 version
 # → CHANGELOG 里 `vX.Y.Z — ... · YYYY-MM-DD ·` 的日期。兜底：提取不到时
 # 退回 LAST_KNOWN_DATE 并告警（避免开发中 CHANGELOG 还没更新时误报）。
+# ── CHANGELOG 逻辑条目迭代（折行容忍：把 bullet 与其物理续行拼成一个逻辑行）──
+# 为什么必须成件：CHANGELOG 索引条目是**一个逻辑行**（`- **vX.Y.Z** — …`），而可读性折行器
+#   会把长条目折成多个物理行（实测本仓条目折 **1~36 行不等**）。凡「在**单个物理行**上同时
+#   取版本号与事实（发版日期 / 状态词）」的解析都会因此落空，且**失败方式都是静默的**：
+#     · §14 取发版日期：抽不到 ⇒ 退回硬编码 LAST_KNOWN_DATE ⇒ 全量文档头误报（真因被淹没）；
+#     · §14b 版本+日期同行判定：折行条目两值永不同行 ⇒ 被 continue **静默跳过** ⇒ 顶版
+#       （最易被发版批误改、正是 P2-1 复发面）退出检测，覆盖静默收窄（实测 14 条只判到 10 条）。
+# 为什么不用 `grep -A<固定行数>`：「最多折 N 行」是伪假设——实测存在 4 / 11 / 26 / 36 行的条目，
+#   有界窗口会随折行位置变化静默漏取，等于把判定力绑在格式巧合上。
+# 用法：changelog_entries <file>  →  每个逻辑条目一行，`<版本号>\t<条目全文>`。
+# ⚠️ 孪生实现：check-test-count.sh 有同族修法（按**行归属**取条目，此处按**版本号**取）——
+#    共用同一「折行归一」理由；抽公共件须新增 tools/check/lib/ 共享文件（新建件须先获授权）。
+changelog_entries() {
+  awk '
+    match($0, /^- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*/) {
+      s = substr($0, RSTART, RLENGTH); sub(/^- \*\*v/, "", s); sub(/\*\*$/, "", s)
+      if (txt != "") printf "%s\t%s\n", ver, txt
+      ver = s; txt = $0; next
+    }
+    txt != "" { txt = txt " " $0 }
+    END { if (txt != "") printf "%s\t%s\n", ver, txt }
+  ' "$1"
+}
+
 echo "=== 14. 文档头日期一致性扫描（> vX.Y · YYYY-MM-DD）==="
 DOC_DATE_OK=true
 # 动态提取：从 CHANGELOG 当前版本段读发版日期（SSOT）
@@ -1042,12 +1066,13 @@ CUR_VER=$(node -p "require('${PROJECT_ROOT}/engine/audit/package.json').version"
 EXPECTED_DOC_DATE=""
 if [ -n "$CUR_VER" ]; then
   # tail -1：一段式索引行可能含多个日期（如「待发版 · DDDD-DD-DD 开发完成 … · DDDD-DD-DD ·」），
-  # 发版日期位固定在行尾——取最后一个
-  # 🔴 v1.5.4 修：索引条目**允许折行**（长条目为防墙式段落会折成 2 行，日期落在续行）。
-  #   原实现 `grep -m1 "v$CUR_VER.*—"` 只取首行 ⇒ 折行条目的日期抽不到 ⇒ 静默退回
-  #   硬编码 LAST_KNOWN_DATE ⇒ 全量文档头报「日期漂移」（23 处下游噪声，真因被淹没）。
-  #   现改为锚定索引行 `- **vX.Y.Z**` 并带 -A2 取续行（索引条目最多折 2 行）。
-  EXPECTED_DOC_DATE=$(grep -A2 -m1 -E "^- \*\*v${CUR_VER}\*\*" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | tail -1 || echo "")
+  # 发版日期位固定在条目行尾——取最后一个
+  # 🔴 折行容忍（判定面缺陷修复，非放宽阈值）：原实现 `grep -m1 "v$CUR_VER.*—"` 只取首行 ⇒
+  #   折行条目的日期抽不到 ⇒ 静默退回硬编码 LAST_KNOWN_DATE ⇒ 全量文档头报「日期漂移」
+  #   （23 处下游噪声，真因被淹没）。现改为在**逻辑条目**上取（见 changelog_entries）。
+  EXPECTED_DOC_DATE=$(changelog_entries "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null \
+    | grep -F "$(printf '%s\t' "${CUR_VER}")" | cut -f2- \
+    | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | tail -1 || true)
 fi
 # 兜底：CHANGELOG 还没当前版本段（开发中）时退回最后已知日期
 # v1.3.6 开发中：文档头统一沿用上一版发版日期 2026-08-16，发版时随 CHANGELOG 段更新
@@ -1105,15 +1130,18 @@ echo ""
 #   同步批的「日期同步」步骤把它**误改成 2026-09-13**（按「最新发版日」批量替换误伤上一版行，
 #   考古实证：`git show 1410794c` 的 diff）。§14 只认当前版本的文档头日期，看不到**非顶版行**，
 #   于是错日期随发版出门（WIKI 版本表仍写 v1.4.7 = 2026-09-11，两处互不一致）。
-# 判据：CHANGELOG 里每个「· YYYY-MM-DD 已发版」行，若该版本**存在 git tag**，其日期必须
+# 判据：CHANGELOG 里每个「· YYYY-MM-DD 已发版」**逻辑条目**，若该版本**存在 git tag**，其日期必须
 #   == 该 tag 的 creatordate（tag 是发版真值）。无 tag 的历史行不判（口径：tag 缺失即无真值可比）。
-# 守卫不空转：可判行数 == 0 ⇒ FAIL（说明判据正则失效或 CHANGELOG 结构变了，而不是「全过」）。
+# 守卫不空转：可判条目数 == 0 ⇒ FAIL（说明判据正则失效或 CHANGELOG 结构变了，而不是「全过」）。
+# 🔴 折行容忍：按**逻辑条目**迭代（版本号与「已发版」日期常分处不同物理行 ⇒ 按物理行迭代会把
+#   折行条目静默 `continue` 掉，实测 14 条只判到 10 条、**顶版被漏**——而顶版正是最易被发版批
+#   误改的 P2-1 复发面）。判定语义与容差不变。
 TAG_DATE_OK=true
 TAG_DATE_CHECKED=0
-while IFS= read -r _cl_line; do
-  _cl_ver=$(printf '%s' "$_cl_line" | grep -oE '^- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  _cl_date=$(printf '%s' "$_cl_line" | grep -oE '· [0-9]{4}-[0-9]{2}-[0-9]{2} 已发版' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
-  [ -z "$_cl_ver" ] || [ -z "$_cl_date" ] && continue
+while IFS=$'\t' read -r _cl_ver _cl_entry; do
+  [ -z "$_cl_ver" ] && continue
+  _cl_date=$(printf '%s' "$_cl_entry" | grep -oE '· [0-9]{4}-[0-9]{2}-[0-9]{2} 已发版' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
+  [ -z "$_cl_date" ] && continue
   # 🔴 固定发版时区提取（CI 时区脆弱性实锤 ×2）：%(creatordate:short) 按运行环境 TZ 渲染，
   #   且 TZ=Asia/Shanghai 前缀对 git 的 ref 过滤器在 CI（浅克隆+特定 git 版本）仍不可靠。
   #   治本：取 %(creatordate:unix) 原始时间戳（TZ 无关）再显式转上海日期。
@@ -1161,12 +1189,12 @@ while IFS= read -r _cl_line; do
     TAG_DATE_OK=false
     ERRORS=$((ERRORS + 1))
   fi
-done < "${PROJECT_ROOT}/CHANGELOG.md"
+done < <(changelog_entries "${PROJECT_ROOT}/CHANGELOG.md")
 if [ "$TAG_DATE_CHECKED" -eq 0 ]; then
-  echo -e "  ${RED}✗${NC} 非顶版发版日期 vs tag：可判行数为 0（判据未命中任何行）——守卫空转，判 FAIL"
+  echo -e "  ${RED}✗${NC} 非顶版发版日期 vs tag：可判条目数为 0（判据未命中任何条目）——守卫空转，判 FAIL"
   ERRORS=$((ERRORS + 1))
 elif $TAG_DATE_OK; then
-  echo -e "  ${GREEN}✓${NC} 非顶版发版日期与 tag 一致（可判 ${TAG_DATE_CHECKED} 行）"
+  echo -e "  ${GREEN}✓${NC} 非顶版发版日期与 tag 一致（可判 ${TAG_DATE_CHECKED} 条）"
   CHECKS=$((CHECKS + 1))
 fi
 echo ""
