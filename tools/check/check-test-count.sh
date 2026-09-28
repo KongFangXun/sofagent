@@ -598,8 +598,24 @@ else
   PDL_SKIP_LIST=""
   while IFS= read -r _pdl; do
     [ -n "$_pdl" ] || continue
-    # 行选取：锚「计数：测试 N → **M**」（当前口径行）。head -1 取首个匹配（每份规划 devlog 该行唯一）。
-    PDL_MATCH=$(grep -nE '计数：测试 [0-9]+ ?→ ?[*]{2}[0-9]+[*]{2}' "$_pdl" 2>/dev/null | head -1)
+    # 行选取（v1.5.4 批 P2-b）：锚「计数：测试 N → **M**」当前口径行，取**累计峰值行**
+    #   （箭头后粗体数 M 最大者）。规划 devlog 中该口径行**可有多条**（历史增量读数 +
+    #   末段收口读数；实测 v1.5.4.md 有 5 条：685/700/718/745/760），旧 `head -1` 取首行
+    #   在「首行非峰值」时读数偏小 ⇒ 改取峰值；峰值**并列时取最早一条**，与旧行为在
+    #   「首行即峰值」时逐字一致，避免锚点无谓迁移。
+    #   🔴 只改行选取，**不新增**「每行都须等于 SSOT」等式判定——历史增量行本就是历史读数，
+    #   盲判即假红（同 check-version.sh §26b「规划 devlog 逐处对账」口径：只认当值行）。
+    #   峰值只从**计数行内**的 M 取（不取同行其它箭头粗体数，如 v1.5.4.md:685 尾随的
+    #   `候选 3 → **2**`）。
+    PDL_ALL=$(grep -nE '计数：测试 [0-9]+ ?→ ?[*]{2}[0-9]+[*]{2}' "$_pdl" 2>/dev/null || true)
+    if [ -n "$PDL_ALL" ]; then
+      PDL_MAXV=$(printf '%s\n' "$PDL_ALL" | grep -oE '计数：测试 [0-9]+ ?→ ?[*]{2}[0-9]+[*]{2}' \
+        | grep -oE '[*]{2}[0-9]+[*]{2}' | grep -oE '[0-9]+' | sort -n | tail -1)
+      PDL_MATCH=$(printf '%s\n' "$PDL_ALL" | grep -E "计数：测试 [0-9]+ ?→ ?[*]{2}${PDL_MAXV}[*]{2}" | head -1)
+      [ -n "$PDL_MATCH" ] || PDL_MATCH=$(printf '%s\n' "$PDL_ALL" | head -1)
+    else
+      PDL_MATCH=""
+    fi
     if [ -z "$PDL_MATCH" ]; then
       # 规划 devlog 尚未到计数阶段（占位/未施工）——无「旧→新」可替换，计入聚合 SKIP（非静默）
       PDL_SKIP_N=$((PDL_SKIP_N + 1))
