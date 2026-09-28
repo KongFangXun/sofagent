@@ -66,7 +66,6 @@ function makeIdentity(name = 'ext-node'): AgentIdentity {
   return generateAgentIdentity(name, {
     principal: 'acme-corp',
     constraints: ['仅读'],
-    systemPrompt: '约束文本',
   });
 }
 
