@@ -39,8 +39,13 @@ export async function workflowUpdate(args: Record<string, unknown>): Promise<Cru
 }
 
 export async function workflowNodeAdd(args: Record<string, unknown>): Promise<CrudResult> {
-  const { workflowNodeAdd } = await import('@sofagent/orchestrator/workflow');
-  return workflowNodeAdd(args, await resolveDataDir(args.data_dir as string | undefined));
+  const { workflowNodeAdd, buildAiNodeGovernanceProbe } = await import('@sofagent/orchestrator/workflow');
+  // v1.5.4 第五章 · A-4 真接线：注入**生产 AI 节点治理面探针**——节点 agent 引用
+  // `ai-node:<id>` 时经默认注册表做治理状态前置检查（未注册可引用但不入治理面，
+  // 引用告警留痕）。使 crud/workflow-store.ts 的 aiNodeProbe 分支在生产链路可达。
+  return workflowNodeAdd(args, await resolveDataDir(args.data_dir as string | undefined), {
+    aiNodeProbe: buildAiNodeGovernanceProbe(),
+  });
 }
 
 export async function workflowDiffPreview(args: Record<string, unknown>): Promise<CrudResult> {

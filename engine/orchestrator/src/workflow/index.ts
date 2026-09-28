@@ -27,6 +27,12 @@ export {
 } from '../crud/workflow-store';
 export type { CrudResult } from '../crud/workflow-store';
 
+// AI 节点治理面探针（v1.5.4 第五章 · A-4 真接线）——workflow-crud tool 经此注入
+// **生产治理面探针**，使 workflowNodeAdd 的 `ai-node:<id>` 引用前置检查在生产链路
+// 真实可达（crud/workflow-store.ts 的 aiNodeProbe 分支由 inert 转 live）。
+// ⚠️ 走本 **subpath** barrel（非包根 index.ts）——不新增 @public 导出、不触 public-api 门禁。
+export { buildAiNodeGovernanceProbe } from '../ai-node-governance';
+
 // workflow 血缘（v1.4.9 G1 · T5——workflow-export / workflow-import tools 消费）
 export {
   lineagePath,

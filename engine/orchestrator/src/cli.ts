@@ -92,6 +92,9 @@ async function main() {
   console.log('                                   读 formation.yml → schema 校验（fail-closed）→ 实例化 → 打印拓扑');
   console.log('  formation --name <formation> [--json] [--out <f>]');
   console.log('                                   用内置模板实例化（formation.yml 最小形态：只有阵型名）');
+  console.log('  plugin-probe --self               v1.5.4 第五章: cordis 双桥 + 插件四段预检（进程内自检）');
+  console.log('  plugin-probe --services           打印 services 桥默认命名空间面（@sofagent/* @public 投影）');
+  console.log('  plugin-probe <decl.json> [--json] 读插件声明 JSON → 四段预检（两态结论 + 缺口明细）');
     process.exit(0);
   }
 
@@ -1070,9 +1073,16 @@ async function main() {
       process.exit(await runFormationCommand(args));
       break;
     }
+    case 'plugin-probe': {
+      // v1.5.4 第五章 接线批：cordis 双桥（事件桥 + services 桥）+ 插件可用性四段预检的
+      // 生产 CLI 入口——第三方插件挂载前的「读得出 / 读不出」诊断面。
+      const { runPluginProbeCommand } = await import('./compat/plugin-probe-command');
+      process.exit(await runPluginProbeCommand(args));
+      break;
+    }
     default:
       console.error(`❌ sofagent 提示：不支持的子命令 "${subcommand}"`);
-      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise | evolve | train | formation');
+      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise | evolve | train | formation | plugin-probe');
       process.exit(1);
   }
 }

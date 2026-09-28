@@ -13,10 +13,15 @@
 // ============================================================
 
 import { join } from 'path';
+import { createHash } from 'crypto';
 import { resolveAgent, type SubAgentConfig } from './workflow-parser';
 import type { WorkflowNode } from './workflow-parser';
 import { listAgents, type SubAgentDefinition } from './registry';
 import { writeEntity } from './entity-store';
+// v1.5.4 第五章：AI 节点治理接入——生产接线（A-4 真接线）
+import { aiNodeRefToId } from './crud/workflow-store';
+import { getDefaultAiNodeGovernance, type AiNodeGovernance } from './ai-node-governance';
+import { declareNodeEgress } from './ai-node-egress';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -58,6 +63,23 @@ export interface NodeExecutionResult {
   entitiesWritten: string[];
   /** 执行耗时 ms */
   durationMs: number;
+}
+
+/** 节点执行可注入依赖（测试 mock + v1.5.4 第五章治理面注入） */
+export interface NodeExecutorDeps {
+  createReactAgent?: (params: { llm: unknown; tools: unknown[]; prompt: string }) => Promise<{
+    invoke: (input: { messages: Array<{ role: string; content: string }> }, config?: { recursionLimit?: number }) => Promise<unknown>;
+  }>;
+  resolveModel?: () => Promise<unknown | null>;
+  buildSystemPrompt?: (projectRoot: string, agentConfig: SubAgentConfig) => string;
+  /** v1.2.9：hitl-handler 已审批后传入 true，跳过 fail-fast */
+  hitlCleared?: boolean;
+  /**
+   * v1.5.4 第五章：AI 节点治理面（显式注入优先于默认单例）。
+   * 仅当节点 agent 引用外部 AI 节点（`ai-node:<id>`）时被消费——普通企业节点路径
+   * 不构造治理面（零行为变化）。
+   */
+  aiNodeGovernance?: AiNodeGovernance;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -115,8 +137,50 @@ export function resolveEnterpriseAgent(
 // 节点执行（核心）
 // ────────────────────────────────────────────────────────────
 
+export async function executeNode(
+  ctx: NodeExecutionContext,
+  deps?: NodeExecutorDeps,
+): Promise<NodeExecutionResult> {
+  // ── v1.5.4 第五章：AI 节点治理接入——生产接线（A-4 真接线）──
+  // 仅当节点 agent 引用外部 AI 节点（`ai-node:<id>`）时进入治理包装；普通企业
+  // 节点（agent='enterprise' 等）直通 executeNodeCore，与接线前逐字一致。
+  const aiNodeRef = aiNodeRefToId(ctx.node.agent);
+  if (aiNodeRef === null) return executeNodeCore(ctx, deps);
+
+  const governance = deps?.aiNodeGovernance ?? getDefaultAiNodeGovernance(ctx.dataDir);
+
+  // ③ 出站管控消费：按治理面登记的能力面 egressHosts 逐 host 过白名单裁决
+  //    （判定面 decideEgress 为 @public；留痕经装配点注入的 decision-log sink）。
+  const reg = governance.registry.lookup(aiNodeRef);
+  const hosts = reg?.capabilities.egressHosts ?? [];
+  if (hosts.length > 0) {
+    const policy = declareNodeEgress(aiNodeRef, hosts);
+    for (const host of hosts) {
+      governance.adjudicateEgress(aiNodeRef, { host }, policy);
+    }
+  }
+
+  const result = await executeNodeCore(ctx, deps);
+
+  // ② 事件挂接：节点执行结果进观测面——工具调用 + 任务完成两类事件
+  //    （出站事件由 adjudicateEgress 内部 bus.publish 承载——同总线同链）。
+  await governance.recordToolCall({
+    nodeId: aiNodeRef,
+    tool: ctx.node.id,
+    argsDigest: `sha256:${digestText(ctx.node.task ?? '')}`,
+    outcome: result.success ? 'ok' : 'error',
+  });
+  await governance.recordTaskCompleted({
+    nodeId: aiNodeRef,
+    taskId: ctx.node.id,
+    outcome: result.success ? 'done' : 'failed',
+  });
+
+  return result;
+}
+
 /**
- * 执行单个企业 Agent 节点。
+ * 执行单个企业 Agent 节点（核心路径——不含 AI 节点治理包装）。
  *
  * 使用 createReactAgent 包装企业 Agent，注入约束 system prompt + ENGINEER_TOOLS。
  * 执行后自动写审计日志（通过 writeEntity 写入 execution-log entity）。
@@ -125,17 +189,9 @@ export function resolveEnterpriseAgent(
  * @param deps 可注入依赖（测试 mock）
  * @returns NodeExecutionResult
  */
-export async function executeNode(
+async function executeNodeCore(
   ctx: NodeExecutionContext,
-  deps?: {
-    createReactAgent?: (params: { llm: unknown; tools: unknown[]; prompt: string }) => Promise<{
-      invoke: (input: { messages: Array<{ role: string; content: string }> }, config?: { recursionLimit?: number }) => Promise<unknown>;
-    }>;
-    resolveModel?: () => Promise<unknown | null>;
-    buildSystemPrompt?: (projectRoot: string, agentConfig: SubAgentConfig) => string;
-    /** v1.2.9：hitl-handler 已审批后传入 true，跳过 fail-fast */
-    hitlCleared?: boolean;
-  },
+  deps?: NodeExecutorDeps,
 ): Promise<NodeExecutionResult> {
   const startTime = Date.now();
   const entitiesWritten: string[] = [];
@@ -357,6 +413,11 @@ export async function executeNode(
 // ────────────────────────────────────────────────────────────
 // 辅助函数
 // ────────────────────────────────────────────────────────────
+
+/** 参数摘要（脱敏：只留 sha256 前 16 hex——禁凭证明文进事件流） */
+function digestText(text: string): string {
+  return createHash('sha256').update(text).digest('hex').slice(0, 16);
+}
 
 /** 从 createReactAgent 结果中提取文本（兼容多种返回格式） */
 function extractText(result: unknown): string {
