@@ -14,10 +14,20 @@
 //          （N > 目标文件最大 H2 章号即报）。治的是「章节重排只改锚点、
 //          不改人眼看到的章号」——锚点是 slug（由标题即时生成，必然自洽），
 //          故这一缺陷在只判锚点的旧版里结构性看不见。
+//       ④ §N 一致性：显示文本含「§N」、且锚点解析到的标题**有有效所属章**
+//          （最近上游 `## N、`）时，两者必须相同。③ 只覆盖标题式显示文本（目录项），
+//          正文里的章号引用更多写作「§N」——旧版对带锚点的 `[§N 名称](#锚点)` 完全失明，
+//          实测章块位移后 10 处里 6 处指错章。落在无章号区（导读层）⇒ 跳过（不猜）。
 //
-// 自测（红不了的门禁是装饰品）：把任一目录项的章号改错应看到命中并 exit 1——
-//   perl -i -pe 's/\[一、核心理念/\[二、核心理念/ if $.==25' docs/ARCHITECTURE.md && \
-//     node tools/check/check-anchors.mjs; echo "rc=$?"; git checkout -- docs/ARCHITECTURE.md
+// 自测（红不了的门禁是装饰品 · 全程用 /tmp 备份回滚，**不用 `git checkout --`**——
+//   该命令会连未提交的改动一并丢弃，实测踩过）：
+//   ③ 显示章号：把目录里某章的显示号改错应命中并 exit 1——
+//     cp docs/ARCHITECTURE.md /tmp/a.bak && perl -i -pe 's/^- \[二、约束层/- [三、约束层/' docs/ARCHITECTURE.md && \
+//       node tools/check/check-anchors.mjs; echo "rc=$?"; \
+//       node tools/check/check-anchors.mjs --fix; cp /tmp/a.bak docs/ARCHITECTURE.md
+//     首跑应报「章号不一致」，--fix 应输出「章号修复」并一步收敛（二次 --fix 无输出）。
+//   ④ §N 显示号：把正文任一「§N 名称」链接的 N 改错（如 [§二 · 🧬 进化能力](#-进化能力) → §五）——
+//     应报「§N 章号失指」，--fix 输出「§N 修复」并一步改回 §二。
 //
 // 检查范围: 跨文件锚点引用（](文件.md#锚点)）+ 文件内部目录链接（](#锚点)）。
 // 文件内部引用的排除规则：跳过空锚点 ](#)；跳过被 ``` 包裹的代码块内容。
@@ -27,7 +37,9 @@
 //       vX.Y.Z、vX.Y.md 的占位链接不视为断链（版本未定时的规划占位）。
 //
 // --fix: 对锚点过时的引用（含文件内部引用），尝试用模糊匹配找到
-//        最接近的实际锚点，自动修复（改 #yyy 为正确值）。
+//        最接近的实际锚点，自动修复（改 #yyy 为正确值）；**同一步同步显示章号**
+//        （显示文本以「N、」开头时按新目标标题改写）——只换锚点不改显示会让
+//        章号停留在旧号，需第二遍 --fix 才收敛。
 //        无法确定时跳过并输出建议。
 //
 // 退出码:
@@ -389,6 +401,60 @@ function sectionRefNo(text) {
   return n > 0 ? { n, str: m[1] } : null;
 }
 
+// ── ④ §N 显示章号一致性（显示文本里的「§N」vs 目标锚点所属章）───
+//
+// 背景（v1.5.4 文档治理批）：③ 的「N、」断言只覆盖**标题式**显示文本（目录项），
+//   而正文里的章号引用更多写成「§N」（「详见 §三 River—Workflow—Subagent 三层架构」）。
+//   章块位移 / 章序重排后这类引用同样会指错章，而旧版只对「无锚点的整文件链接」判越界，
+//   带锚点的 `[§N 名称](#锚点)` 完全无人看 —— 实测 ARCHITECTURE 章块位移后，
+//   正文 10 处带锚点的 §N 引用中 6 处指错章（如「见下文 §七 的保留判据」实为 §二）。
+// 判据：链接显示文本含「§N」，且目标锚点解析到的标题**有有效所属章**
+//   （其最近的上游 `## N、` 二级标题）时，N 必须 == 该章号。
+//   目标落在无章号区（导读层 / 无编号章的文档）⇒ 跳过（不猜，零假阳性优先）。
+const CN_NUM = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+
+function checkSectionRefNo(dispText, targetChapter) {
+  const sec = sectionRefNo(dispText);
+  if (!sec || !targetChapter || sec.n === targetChapter) return false;
+  return { sec, targetChapter };
+}
+
+/** §N 显示章号重同步（--fix 用）：把显示文本里的第一个 §N 改写为目标所属章号。 */
+function resyncSectionDisplay(dispText, targetChapter) {
+  const hit = checkSectionRefNo(dispText, targetChapter);
+  if (!hit) return dispText;
+  if (targetChapter < 1 || targetChapter > 10) return dispText; // 超十暂不自动改写（不猜）
+  return dispText.replace(/§\s*[一二三四五六七八九十]+/, `§${CN_NUM[targetChapter]}`);
+}
+
+/**
+ * 提取「锚点 → 所属章号」映射：每个标题归属其最近的上游 `## N、` 二级标题的章号，
+ * 无编号章（导读层 / 未编号文档）为 null。
+ * @param {string} content
+ * @returns {Map<string, number|null>} anchor → 章号
+ */
+function extractChapterMap(content) {
+  const map = new Map();
+  const lines = content.split('\n');
+  const mask = computeCodeBlockMask(lines);
+  const slugger = new GithubSlugger();
+  let cur = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    if (mask[i]) continue;
+    const match = lines[i].match(/^(#{1,6})\s+(.+)$/);
+    if (!match) continue;
+    if (match[1].length === 2) {
+      const c = leadingChapterNo(match[2]);
+      cur = c ? c.n : null;
+    }
+    const anchor = githubAnchor(match[2], slugger);
+    if (anchor) map.set(anchor, cur);
+  }
+
+  return map;
+}
+
 // ── 引用提取 ────────────────────────────────────────────────
 
 // 模板占位符白名单（与 check-docs.sh 1b 同口径）：版本未定时的规划占位，
@@ -561,12 +627,14 @@ console.log('');
 // 预构建每个文件的锚点表
 const anchorTables = new Map();  // filePath → Set<anchor>
 const headingMaps = new Map();   // filePath → Map<anchor, title>（章号一致性反查用）
+const chapterMaps = new Map();   // filePath → Map<anchor, 所属章号|null>（§N 一致性反查用）
 /** 每个文件 H2 章号的最大值（「N、」形式），无编号 H2 则 0。 */
 const maxChapterOf = new Map();
 for (const f of files) {
   const content = fs.readFileSync(f, 'utf8');
   anchorTables.set(f, extractAnchors(content));
   headingMaps.set(f, extractHeadingMap(content));
+  chapterMaps.set(f, extractChapterMap(content));
 
   const lines = content.split('\n');
   const mask = computeCodeBlockMask(lines);
@@ -591,9 +659,12 @@ let fixedCount = 0;
 let chapterMismatches = 0; // 显示章号 ≠ 目标标题章号
 let fixedChapters = 0;
 let chapterOutOfRange = 0; // 「§N」指向的目标文件无该章号
+let sectionMismatches = 0; // 显示文本「§N」≠ 目标锚点所属章号
+let fixedSections = 0;
 const staleReports = [];
 const brokenFileReports = [];
 const chapterReports = [];
+const sectionReports = [];
 
 /**
  * 章号一致性判定（显示文本「N、」vs 目标标题「N、」）。
@@ -605,6 +676,15 @@ function checkChapterNo(dispText, targetTitle) {
   const tgtChap = leadingChapterNo(targetTitle || '');
   if (!dispChap || !tgtChap || dispChap.n === tgtChap.n) return false;
   return { dispChap, tgtChap, targetTitle };
+}
+
+// 显示章号重同步：显示文本以「N、」开头时，按目标标题的新章号改写。
+// 用途：--fix 修正过时锚点后，链接的显示章号往往仍是旧号（锚点变了但显示没变）——
+//   若不在同一步同步，需跑第二遍 --fix 才收敛（实测：章标题改名后首轮 --fix 只换锚点）。
+function resyncChapterDisplay(dispText, targetTitle) {
+  const hit = checkChapterNo(dispText, targetTitle);
+  if (!hit) return dispText;
+  return dispText.replace(/^(\s*)[一二三四五六七八九十]+、/, `$1${hit.tgtChap.str}、`);
 }
 
 for (const f of files) {
@@ -664,6 +744,30 @@ for (const f of files) {
           }
         }
       }
+      // 2c. §N 一致性（显示文本「§N」vs 目标锚点所属章）
+      const secHit = checkSectionRefNo(ref.display, chapterMaps.get(ref.targetFile)?.get(ref.anchor));
+      if (secHit) {
+        sectionMismatches++;
+        sectionReports.push({
+          sourceFile: relFile,
+          sourceLine: ref.lineNum,
+          targetFile: path.relative(PROJECT_ROOT, ref.targetFile),
+          display: ref.display,
+          dispSec: secHit.sec.str,
+          tgtChap: secHit.targetChapter,
+          line: ref.line,
+        });
+        if (FIX_MODE) {
+          const fixedDisplay = resyncSectionDisplay(ref.display, secHit.targetChapter);
+          const oldLink = `[${ref.display}]`;
+          if (fileLines[ref.lineNum - 1].includes(oldLink)) {
+            fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldLink, `[${fixedDisplay}]`);
+            fileDirty = true;
+            fixedSections++;
+            console.log(colors.green(`  ✓ §N 修复: ${relFile}:${ref.lineNum}  §${secHit.sec.str} → §${CN_NUM[secHit.targetChapter]}`));
+          }
+        }
+      }
       continue;
     }
 
@@ -681,13 +785,22 @@ for (const f of files) {
     if (FIX_MODE) {
       const suggestion = fuzzyMatch(ref.anchor, anchors);
       if (suggestion) {
-        const oldRef = `#${ref.anchor}`;
-        const newRef = `#${suggestion}`;
-        fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldRef, newRef);
+        const newTitle = headingMaps.get(ref.targetFile)?.get(suggestion);
+        const fixedDisplay = resyncChapterDisplay(ref.display, newTitle);
+        const oldLink = `[${ref.display}](#${ref.anchor})`;
+        const newLink = `[${fixedDisplay}](#${suggestion})`;
+        if (fileLines[ref.lineNum - 1].includes(oldLink)) {
+          fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldLink, newLink);
+        } else {
+          fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(`#${ref.anchor}`, `#${suggestion}`);
+        }
         fileDirty = true;
         fixedCount++;
         console.log(colors.green(`  ✓ 修复: ${relFile}:${ref.lineNum}`));
-        console.log(colors.green(`    ${oldRef} → ${newRef}`));
+        console.log(colors.green(`    #${ref.anchor} → #${suggestion}`));
+        if (fixedDisplay !== ref.display) {
+          console.log(colors.green(`    显示章号同步: ${ref.display} → ${fixedDisplay}`));
+        }
         console.log('');
       }
     }
@@ -724,6 +837,30 @@ for (const f of files) {
           }
         }
       }
+      // §N 一致性（文件内目录同样判）
+      const secHit = checkSectionRefNo(ref.display, chapterMaps.get(f)?.get(ref.anchor));
+      if (secHit) {
+        sectionMismatches++;
+        sectionReports.push({
+          sourceFile: relFile,
+          sourceLine: ref.lineNum,
+          targetFile: relFile,
+          display: ref.display,
+          dispSec: secHit.sec.str,
+          tgtChap: secHit.targetChapter,
+          line: ref.line,
+        });
+        if (FIX_MODE) {
+          const fixedDisplay = resyncSectionDisplay(ref.display, secHit.targetChapter);
+          const oldLink = `[${ref.display}]`;
+          if (fileLines[ref.lineNum - 1].includes(oldLink)) {
+            fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldLink, `[${fixedDisplay}]`);
+            fileDirty = true;
+            fixedSections++;
+            console.log(colors.green(`  ✓ §N 修复: ${relFile}:${ref.lineNum}（文件内）  §${secHit.sec.str} → §${CN_NUM[secHit.targetChapter]}`));
+          }
+        }
+      }
       continue;
     }
 
@@ -740,13 +877,22 @@ for (const f of files) {
     if (FIX_MODE) {
       const suggestion = fuzzyMatch(ref.anchor, ownAnchors);
       if (suggestion) {
-        const oldRef = `#${ref.anchor}`;
-        const newRef = `#${suggestion}`;
-        fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldRef, newRef);
+        const newTitle = headingMaps.get(f)?.get(suggestion);
+        const fixedDisplay = resyncChapterDisplay(ref.display, newTitle);
+        const oldLink = `[${ref.display}](#${ref.anchor})`;
+        const newLink = `[${fixedDisplay}](#${suggestion})`;
+        if (fileLines[ref.lineNum - 1].includes(oldLink)) {
+          fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldLink, newLink);
+        } else {
+          fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(`#${ref.anchor}`, `#${suggestion}`);
+        }
         fileDirty = true;
         fixedCount++;
         console.log(colors.green(`  ✓ 修复: ${relFile}:${ref.lineNum}（文件内）`));
-        console.log(colors.green(`    ${oldRef} → ${newRef}`));
+        console.log(colors.green(`    #${ref.anchor} → #${suggestion}`));
+        if (fixedDisplay !== ref.display) {
+          console.log(colors.green(`    显示章号同步: ${ref.display} → ${fixedDisplay}`));
+        }
         console.log('');
       }
     }
@@ -814,7 +960,20 @@ if (chapterReports.length > 0) {
   console.log('');
 }
 
-if (staleReports.length === 0 && brokenFileReports.length === 0 && chapterReports.length === 0) {
+if (sectionReports.length > 0) {
+  console.log(colors.red(`  ✗ 发现 ${sectionReports.length} 处 §N 章号失指（显示文本「§N」≠ 目标锚点所属章）`));
+  console.log('');
+  for (const r of sectionReports) {
+    console.log(colors.red(`  ✗ ${r.sourceFile}:${r.sourceLine}  → ${r.targetFile}`));
+    console.log(`    显示「§${r.dispSec}」 vs 目标所属「§${CN_NUM[r.tgtChap] || r.tgtChap}」`);
+    console.log(`    行: ${r.line.substring(0, 100)}`);
+    console.log('');
+  }
+  console.log(colors.yellow('  提示：运行 node tools/check/check-anchors.mjs --fix 自动同步显示章号'));
+  console.log('');
+}
+
+if (staleReports.length === 0 && brokenFileReports.length === 0 && chapterReports.length === 0 && sectionReports.length === 0) {
   console.log(colors.green(`  ✓ 全部通过：${validRefs} 个锚点引用全部有效，无文件断链，章号一致`));
   console.log('');
   console.log(colors.bold(colors.cyan('═'.repeat(60))));
@@ -871,11 +1030,11 @@ if (FIX_MODE && fixedCount > 0) {
   console.log(colors.green(`  ✓ 已修复 ${fixedCount}/${staleAnchors} 处`));
 }
 const remaining = staleAnchors - fixedCount;
-const chapterRemaining = chapterMismatches - fixedChapters + chapterOutOfRange;
+const chapterRemaining = chapterMismatches - fixedChapters + chapterOutOfRange + (sectionMismatches - fixedSections);
 if (remaining > 0 || brokenFiles > 0 || chapterRemaining > 0) {
   console.log(colors.red(`  ✗ 剩余 ${remaining} 处锚点过时 + ${brokenFiles} 处文件断链 + ${chapterRemaining} 处章号不一致需手动修复`));
   process.exit(1);
-} else if (FIX_MODE && (fixedCount > 0 || fixedChapters > 0)) {
+} else if (FIX_MODE && (fixedCount > 0 || fixedChapters > 0 || fixedSections > 0)) {
   console.log(colors.green(`  ✓ 全部修复完成`));
   process.exit(0);
 } else {
