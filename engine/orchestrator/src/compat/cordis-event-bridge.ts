@@ -115,7 +115,8 @@ export function createCordisEventBridge(bus: EventBus): CordisEventBridge {
         try {
           h(...shapeFor(evt, sourceType, payload));
         } catch {
-          // 单 handler 抛错不拖垮转发（适配层降级红线——错误可见性归 handler 自身日志）
+          // 为何可静默：单 handler 抛错不拖垮转发（适配层降级红线——错误可见性归 handler
+          //   自身日志；桥只做形态转发、不复制证据，此处吞错不隐藏本桥自身产生的任何信息）
         }
       }
     }
@@ -160,7 +161,8 @@ export function createCordisEventBridge(bus: EventBus): CordisEventBridge {
         try {
           off();
         } catch {
-          // 卸载幂等（个别 disposer 抛错不阻断其余卸载）
+          // 为何可静默：卸载幂等——个别 disposer 抛错不阻断其余卸载（dispose 无返回面，
+          //   桥不持有可上报对象；重复卸载必须成功，否则清理链断裂）
         }
       }
       handlerRegistry.clear();
