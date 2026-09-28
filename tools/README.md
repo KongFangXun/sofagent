@@ -68,10 +68,11 @@
 | `check/check-gate-inventory.sh` | 门禁清单覆盖对账（**登记 ≠ 调用**：`tools/check/` 全体守卫 ⊆ 真实调用面——抓「脚本写好、登记在册、零调用点」的**孤儿守卫**，其红态无人知晓）。口径四项显式声明：脚本面认裸名且**剔注释行** · 文档面只认 `tools/check/` 路径化引用 · **登记表与 `docs/changelog/v*` 历史记述不在任何面内**（描述守卫 ≠ 调用守卫）· 区分大小写。豁免写 `playbook/.gate-inventory-exempt`（`文件名:理由`，理由不可为空）。**语料装载完整性对账**（清单件数 ≡ 语料件数 ∧ 语料行数 ≡ 非空件行数之和）把「漏载某个面」这一整类故障变成 exit 2，而非静默把真接线误判成孤儿。退出码 0 绿 / 1 有孤儿或陈旧豁免 / 2 失明 | pre-push 第 1c 步 / 新增或搬迁 tools/check/ 守卫后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
 | `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 徽章的「被 Awesome 仓收录」声称变成可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 `search/code` API，防超大 README 假阴性），输出 OK / MISSING / SKIP。能力边界：依赖 gh CLI + 网络，封闭环境恒 SKIP = 断言未生效（不假绿也不假红）。退出码 0 = 无 MISSING / 1 = 存在 MISSING | 被 check-storefront 消费（需 gh 环境） |
+| `check/lib/unwired-reachability.mjs` | **生产可达判定内核**（被 `check-unwired-exports.sh --since` 调用 · v1.5.4 收紧批）：把「非测试代码里出现过该符号」升级为**生产可达**——① `import type` / 纯类型注解位不计接线 ② 追链可达（一跳有调用、上一跳无人用 ⇒ 断链）③ 破循环自证（A 的锚点落在零接线的 B 体内不算自证）；输出区分「有接线 / 零接线 / 一跳断链 / 循环自证」；内建自检 P1/P2/P3，内核缺失或无 node 一律 `exit 2`（拒绝把内核故障伪装成通过）。 |
 | `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
 | `check/check-table-shape.mjs` | GFM 表格形状门禁（两条**独立**断言：① 超列——单元格数 > 表头列数，GFM 下多余单元格**不渲染**、内容静默消失；② 孤儿行——含 `\|` 但上方无「表头 + 分隔线」归属，渲染为裸管道。内建 3 样本自检防守卫空转；存量见 `table-shape-baseline.json`） | CI / 改 .md 表格后 / 发版 SOP |
 | `check/table-shape-baseline.json` | 表格形状**存量台账**（被 `check-table-shape.mjs` 消费；只拦新增。签名 = 行内容归一化后 sha256 前 16 位——**不用行号**：行号随编辑漂移即静默放行；**不存行原文**：表格单元格常含正则/安全词，落原文会触发 A9 注入检测自指） | 被 check-table-shape.mjs 消费（`--update-baseline` 重生成） |
-| `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（信息位不阻断——排除 bin 入口与桶文件引用，列 ◇ 候选供裁定）· **B** SECURITY 测绘数字（图标数 ↔ dashboard `::before` 去重；uses 数 ↔ workflow 面，**口径 = 正则排除注释行**）· **C** hook 信任根（hook 内变量**不得**指向被审仓 `tools/`——原病即「指纹脚本从被审仓执行」） | CI / 改 SECURITY 测绘数字或 hook 时 |
+| `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（信息位不阻断——生产面 = `engine` + `tools`（`playbook/` **剔出**：行为锁本质是测试）；排除 bin 入口与**包 tsconfig 显式 exclude 的文件**；另列「**仅验证面引用**」档，列 ◇ 候选供裁定）· **B** SECURITY 测绘数字（图标数 ↔ dashboard `::before` 去重；uses 数 ↔ workflow 面，**口径 = 正则排除注释行**）· **C** hook 信任根（hook 内变量**不得**指向被审仓 `tools/`——原病即「指纹脚本从被审仓执行」） | CI / 改 SECURITY 测绘数字或 hook 时 |
 
 ## 二、gen/ — 草稿生成
 

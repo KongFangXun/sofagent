@@ -70,6 +70,14 @@
 //                    缺目标版本号、目标不存在都判红——否则豁免变成「把真章标成指针 + 补
 //                    一章合成章」的洗白通道。
 //                    判定面 = **任何含标记的标题**（宽），与 A2 的豁免面（章体存根）**解耦**。
+//   A9 顺延↔承接双向登记（2026-09-28 补）跨版本移交只在**移出版本**写「顺延 / 移 vX」、
+//                    接收版本零承接登记 ⇒ 单向登记 = 高概率丢项（v1.5.4 两处〈验收资产
+//                    顺延 v1.5.5〉即如此，实测后补齐）。口径**收窄到零误报**：源 = 本脚本
+//                    VERSION_SOURCES（规划中版本，发版即移出 ⇒ 天然不涉冻结区）；声明模式
+//                    = `顺延|后移|移` + 版本号（**排除「前移」**，方向相反）；只对「目标 > 源
+//                    且目标也在 VERSION_SOURCES 内」的声明对强制承接标记（`由 <源> 移入` /
+//                    `承接 … <源>` / `顺延自 <源>`）。已发版历史不扫（冻结区不回改 + 历史拆版
+//                    承载方式各异，全扫生大量假红）。
 //                    为什么必须解耦：两面共用一个谓词时，「标记写在末尾括注内 / 括注外」
 //                    会决定它是否被校验——同一个不存在的版本号，写括注内判红、写括注外
 //                    完全免检（实测 P-d 型假目标）。宽判定面的代价是多校验几处真章标题，
@@ -1440,6 +1448,72 @@ function main() {
       colors.yellow('      处置：文档错则改文档（本守卫只读，不自动改）；口径错则改本脚本并说明——两者不许含糊'),
     );
     console.log(colors.cyan(`      （以下 ${a7Passed.length} 条模式对上：${a7Passed.join(' · ')}）`));
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // A9 顺延 ↔ 承接 双向登记对账（2026-09-28 补）
+  //   病：跨版本移交只在移出版本写「顺延/移 vX」，接收版本零承接登记 ⇒ 单向登记 = 丢项风险。
+  //   口径：见文件头 A9 段（源限 VERSION_SOURCES · 排除「前移」· 只强制目标在扫描面内的对）。
+  //   「无跨版本移交」是合法状态，但**必须显式打印**（不静默 —— 与全脚本同一纪律）。
+  // ════════════════════════════════════════════════════════════════
+  const a9Details = [];
+  const a9Pairs = [];
+  {
+    const fileOfVersion = (v) => `docs/changelog/${v.split('.').slice(0, 2).join('.')}/${v}.md`;
+    const vcmp = (a, b) => {
+      const A = a.slice(1).split('.').map(Number);
+      const B = b.slice(1).split('.').map(Number);
+      return (A[0] - B[0]) || (A[1] - B[1]) || (A[2] - B[2]);
+    };
+    const known = new Set(VERSION_SOURCES.map((v) => v.version));
+    const declRe = /(?<!前)(?:顺延|后移|移)\s*(?:至|到)?\s*(v\d+\.\d+\.\d+)/g;
+    const seen = new Set();
+    for (const { version: src, file } of VERSION_SOURCES) {
+      if (!fs.existsSync(file)) continue;
+      const text = fs.readFileSync(file, 'utf8');
+      for (const m of text.matchAll(declRe)) {
+        const tgt = m[1];
+        if (!known.has(tgt) || vcmp(tgt, src) <= 0) continue; // 只守「向更高规划版本移交」
+        const key = `${src}→${tgt}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const tf = fileOfVersion(tgt);
+        const ttext = fs.existsSync(tf) ? fs.readFileSync(tf, 'utf8') : '';
+        const esc = src.replace(/\./g, '\\.');
+        // 三形态收紧（2026-09-28 探针修正）：松散窗口「承接…\」会把无关散文误判为承接
+        //   （实测：替换「由 X 移入」短语后，标题「承接 X …」仍命中 ⇒ 探针不红 = 判据过松）。
+        const carried = new RegExp(
+          `^#{2,4}\\s*承接[^\\n]*${esc}|由\\s*${esc}\\s*移入|顺延自\\s*${esc}`,
+          'm',
+        ).test(ttext);
+        a9Pairs.push(`${src} → ${tgt}${carried ? '' : '（缺承接）'}`);
+        if (!carried) {
+          a9Details.push(
+            `${src} 声明「顺延/移 ${tgt}」，但 ${tf} 无承接标记（应有「由 ${src} 移入」/「承接 …${src}」）——单向登记 = 丢项风险`,
+          );
+        }
+      }
+    }
+  }
+  judge(
+    'A9',
+    '顺延↔承接双向登记',
+    a9Details.length === 0,
+    `${a9Pairs.length} 对跨版本移交声明全部有承接登记`,
+    a9Details,
+  );
+  if (a9Details.length === 0) {
+    console.log(
+      colors.green(
+        `  ✓ A9 顺延↔承接双向登记：${a9Pairs.length ? `${a9Pairs.length} 对全部有承接（${a9Pairs.join(' · ')}）` : '当前无跨版本移交声明'}`,
+      ),
+    );
+  } else {
+    console.log(colors.red(`  ✗ A9 顺延↔承接双向登记：${a9Details.length} 处单向登记`));
+    printViolations(a9Details);
+    console.log(
+      colors.yellow('      处置：在目标版本 devlog 补承接块（标题/正文含「由 <源版本> 移入」），或修正源侧声明'),
+    );
   }
 
   // ── 汇总 ──

@@ -168,6 +168,18 @@ cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 >
 > 已发布版本的 changelog 按"已发布不改"原则保留原样。
 
+### 并行 session 纪律（多写者防冲突）
+
+同一工作树**只允许一个写者**。要并行（多 session / 多 agent / 人与 AI 同时改仓），给每个写者独立 worktree：
+
+```bash
+git worktree add ../sofagent-<用途> -b <分支名或 --detach>
+```
+
+- ❌ **反例（2026-09-28 实测代价）**：两个写者在同一工作树各自提交 ⇒ 共享索引被对方宽泛 `git add` 污染（索引里残留的旧值 blob 会在提交时把已改好的数字回退），后写者不得不 `git read-tree HEAD` 复位索引；双方还会互相把对方的提交判成「外部改动」，产生数轮协调开销。
+- ✅ **确需共享树时**（应急）：提交走隔离索引——`GIT_INDEX_FILE=/tmp/idx-$$` + `git read-tree HEAD` + 精确 `git add <路径>` + 提交后 `git reset`；提交前 `git status --short` 核对**不夹带他人文件**。
+- ✅ **跨版本移交必须双向登记**：把某事「顺延 / 移 vX.Y.Z」写进本版时，**同一批次**在目标版 devlog 写承接块（标题或正文含「由 <源版本> 移入」）——单向登记 = 高概率丢项。机械守卫：`tools/check/check-forms.mjs` 的 **A9 顺延↔承接双向登记**。
+
 ---
 
 ## 文档体例（H1 语言 / 术语大小写）
