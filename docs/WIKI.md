@@ -71,7 +71,7 @@
 >**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Harness 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。**自举不是比喻，是可核对的事实**：本仓的每次变更过审计闸门、判据集版本可举证、门禁故障注入自证、经验沉淀进反思区——sofagent 项目本身就是第一个被 FDEing 的对象，本仓的全部工程纪律都是 FDEing 循环跑过一遍的产物。
 
 **FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph，本体数据的图形化形态）。图谱里每个 AI 节点承担工作流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束层审计 + 回溯净化（plugin 功能）。
-**行业坐标**：两张图谱同属「知识层」（描述业务世界的语义资产），构建·校验·维护实践属「工程层」（图谱工程），详见 [ARCHITECTURE §一](./ARCHITECTURE.md)。
+**行业坐标**：两张图谱同属「知识层」（描述业务世界的语义资产），构建·校验·维护实践属「工程层」（图谱工程），详见 [ARCHITECTURE · 四层运行形态](./ARCHITECTURE.md#四层运行形态企业-ai-从梳理到专属模型)。
 
 **训练 Agent（内层新 workflow）**：企业 AI 节点要数据主权 → 训练 Agent（受约束）驱动后训练工具：收集企业数据 → 模型后训练 → 私有化部署回节点。这本身是几个新 workflow（数据采集 / 训练 / 部署）。后训模块**工程骨架**随开源仓排期交付（编排/审计/沙箱，详见 ROADMAP；训练资产走商业侧）；训练也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。
 
@@ -132,8 +132,8 @@ graph TB
 | 概念 | 一句话 | 详情 |
 |------|--------|------|
 | **FDE Harness** | 对外的产品身份：**FDE 方法论 × Harness 工程**——同一件事的两个阶段：FDE 进场生成判断（哪里上 AI、做好标准、谁拍板），冻结成交付物（workflow.yml + 本体数据）；约束层离场驻留判断（按交付物 7×24 执行、进化时写回），装进成熟 Agent（DSH / OpenClaw / WorkBuddy）；装上它的 Agent 即以 FDE 方式作业，离场后留一套能持续维护的 AI 化资产 | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
-| **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层五种能力（注入·审计·回溯·沉淀·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
-| **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——五种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；五种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
+| **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层五种能力（注入·审计·回溯·沉淀·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
+| **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——五种能力各自覆盖其中哪些维度 | [ARCHITECTURE 导读层 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；五种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#一这是什么定位与边界) |
 | **业务图谱** | 人读的流程图谱 = Workflow Graph——FDE 交付的企业工作流完整拓扑，每条业务链路即一条工作流 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体数据的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
@@ -175,7 +175,7 @@ graph TB
 
 ### 运行时数据流
 
-每个模块运行时往 `data/` 写数据，消费者从 `data/` 读数据：*（完整全景图见 [ARCHITECTURE §三·运行时数据层](./ARCHITECTURE.md)）*
+每个模块运行时往 `data/` 写数据，消费者从 `data/` 读数据：*（完整全景图见 [ARCHITECTURE §二·运行时数据层](./ARCHITECTURE.md)）*
 
 | 生产者（模块） | → data/ 目录 | → 消费者 |
 |---|---|---|
@@ -305,10 +305,10 @@ graph TB
 | 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | 约束层的英文 SSOT 称法（对外中文「约束层」、英文「Harness」同指一物）——"缰绳"，非"马" | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
-| 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE §三·双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |
-| 三层嵌套 | Harness → Graph → Loop——环境、流程、反馈三层嵌套，决定"能做什么 / 下一步去哪 / 怎么越做越好" | [WIKI §三·三层嵌套](#三层嵌套harness--graph--loop) |
+| 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE 导读层 · 双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |
+| 三层嵌套 | Harness → Graph → Loop——环境、流程、反馈三层嵌套，决定"能做什么 / 下一步去哪 / 怎么越做越好" | [WIKI §四·三层嵌套](#三层嵌套harness--graph--loop) |
 | 激活链四阶段 | ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN——交付物从静态文件到自运转 | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
-| 数据流铁律 | 生产者只写不读自己的输出，消费者只读不写——单向派生，不可逆 | [WIKI §三·运行时数据流](#运行时数据流) |
+| 数据流铁律 | 生产者只写不读自己的输出，消费者只读不写——单向派生，不可逆 | [WIKI §四·运行时数据流](#运行时数据流) |
 | Ledger | 原始数据层（think.md + history.jsonl），append-only | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | Views | 派生视图层（knowledge/ 四子目录），Ledger 单向派生 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | Policy | 约束规则层（SKILL + fde.md），Agent 启动时注入 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
@@ -345,7 +345,7 @@ graph TB
 | 了解系统怎么设计的 | [ARCHITECTURE.md](./ARCHITECTURE.md) |
 | 搭建本地开发环境 | [DEVELOPMENT.md](./DEVELOPMENT.md) |
 | 查某个版本改了什么 | [CHANGELOG.md](../CHANGELOG.md) → `docs/changelog/vX.Y/vX.Y.Z.md` |
-| 了解审计规则 | [SECURITY.md](../SECURITY.md) + [ARCHITECTURE §五](./ARCHITECTURE.md) |
+| 了解审计规则 | [SECURITY.md](../SECURITY.md) + [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | 了解 SKILL 约束体系 | [SKILL/SKILL.md](../SKILL/SKILL.md) |
 | 配置 GitHub Actions CI | [guides/github-action.md](./guides/github-action.md) |
 | 了解文件系统审计 | [guides/filesystem-audit.md](./guides/filesystem-audit.md) |
