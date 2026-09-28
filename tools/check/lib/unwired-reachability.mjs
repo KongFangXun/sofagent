@@ -18,6 +18,16 @@
 //   ③ 禁一跳断链（ONEHOP）：锚点符号自身若「零接线」或「仅被 S 内部引用」，
 //      即引用链止步于 S 内、追不到 S 之外的生产代码 ⇒ 明确报「一跳断链」
 //      （与「零接线 ZERO」区分，便于定位）。
+//   ④ **存活上下文同口径**（本项修的是**假红**，方向与「放宽阈值让红变绿」相反）：
+//      出口（消费者）若落在**模块顶层**（owner=@module，随模块加载即执行）或**可执行入口
+//      顶层**（owner=@entry，随启动即执行），本身即存活上下文。种子侧早已按此口径——
+//      它把「被 @module 引用的 id」直接当存活种子；出口侧若只认「符号 id ∈ live」而不认
+//      这两个上下文 owner，模型即内部不自洽：**唯一消费者是「模块顶层裸调用」的符号会被
+//      误判 ONEHOP**（实锤：PROBE_SEGMENTS / SEGMENT_LABELS 被判「一跳断链 @module」，
+//      而二者在各自模块顶层被引用）。P8 探针锁定该口径，防回退。
+//      注：@entry 与 @module 同源——`link(id, '@entry')` 只在「同一文件已因模块顶层引用
+//      产生 @module owner」时赋值，故 @entry ⊆ @module 消费者的子集；两者一并列入存活
+//      上下文集合，避免未来某一侧单独演化。
 //
 // 引用图边规则：barrel 再导出边、import 边、comment 边（`//` 行注释 + `/* */` 块注释，
 // 含跨行块注释）、字符串字面量边**不进图**。
@@ -30,7 +40,7 @@
 //
 // 模式：
 //   node unwired-reachability.mjs --root <dir> --symbols a,b,c
-//   node unwired-reachability.mjs --selftest        # 内建 P1–P4 探针
+//   node unwired-reachability.mjs --selftest        # 内建 P1–P8 探针
 //
 // 退出码：0=分析成功 / 1=自检失败 / 2=参数或环境错误。
 // ============================================================
@@ -420,6 +430,13 @@ function isShebangEntry(file) {
 }
 
 /**
+ * 存活上下文 owner（不是符号名，而是**执行上下文**）：模块顶层与可执行入口顶层。
+ * 二者随加载/启动即执行 ⇒ 作为「消费者」时本身就是存活的出口，与种子侧同口径。
+ * 见文件头 ④；P8 探针锁定。
+ */
+const LIVE_CONTEXT_OWNERS = new Set(['@module', '@entry']);
+
+/**
  * 主分析：对 S 中每个符号做「生产可达」判定。
  *
  * 图模型：节点=符号名；`callers[x]` = 以值位引用 x 的 owner 集合（即 x 的消费者）。
@@ -509,7 +526,9 @@ export function analyze(root, symbols) {
     while (q.length) {
       const o = q.shift();
       if (!Sset.has(o)) {
-        if (!exit && live.has(o)) exit = o;
+        // 出口须为**存活的消费上下文**：存活符号，或存活上下文 owner
+        // （@module/@entry——随加载/启动即执行，与种子侧同口径，见文件头 ④）。
+        if (!exit && (live.has(o) || LIVE_CONTEXT_OWNERS.has(o))) exit = o;
         continue;
       }
       if (visited.has(o)) {
@@ -531,7 +550,8 @@ export function analyze(root, symbols) {
 }
 
 // ────────────────────────────────────────────────────────────
-// 内建自检（P1–P4）——各条收紧判定 + 两条已知漏洞面（类型别名右值 / 块注释）各自探针
+// 内建自检（P1–P8）——各条收紧判定 + 存活上下文口径 + 两条已知漏洞面
+// （类型别名右值 / 块注释）各自探针
 // ────────────────────────────────────────────────────────────
 function writeFixture(dir, rel, content) {
   const p = path.join(dir, rel);
@@ -585,7 +605,14 @@ export function selftest() {
     writeFixture(dir, 'engine/p7/use.ts',
       "import { p7Wired } from './app';\nexport const p7Runner = (): number => p7Wired();\n");
 
-    const S = ['p1NewSym', 'p2A', 'p2B', 'p3A', 'p3B', 'p4ATotal', 'p5AliasSym', 'p6BlkSym', 'p7Wired'];
+    // P8：唯一消费者是**模块顶层裸调用**（owner = @module）⇒ 必须 WIRED。
+    //     锁死文件头 ④ 的存活上下文口径：模块顶层代码随加载即执行，是存活出口。
+    //     若把 LIVE_CONTEXT_OWNERS 从出口判定里拿掉（回到「只认 live 符号」），
+    //     本探针即由 WIRED 退化为 ONEHOP（实锤回归面：PROBE_SEGMENTS / SEGMENT_LABELS）。
+    writeFixture(dir, 'engine/p8/app.ts', '/* @public */ export function p8Sym(): number { return 1; }\n');
+    writeFixture(dir, 'engine/p8/use.ts', "import { p8Sym } from './app';\np8Sym();\n");
+
+    const S = ['p1NewSym', 'p2A', 'p2B', 'p3A', 'p3B', 'p4ATotal', 'p5AliasSym', 'p6BlkSym', 'p7Wired', 'p8Sym'];
     const res = analyze(dir, S);
     const expect = {
       p1NewSym: 'ZERO',
@@ -597,6 +624,7 @@ export function selftest() {
       p5AliasSym: 'ZERO',
       p6BlkSym: 'ZERO',
       p7Wired: 'WIRED',
+      p8Sym: 'WIRED',
     };
     for (const [sym, want] of Object.entries(expect)) {
       const got = res.get(sym)?.verdict;
