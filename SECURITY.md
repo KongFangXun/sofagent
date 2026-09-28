@@ -128,7 +128,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > ⚠️ **配对入口接线状态（v1.4.5 审查校准）**：`engine/core/src/crypto/pairing.ts` 的三条配对路径 API（`pairByCode` / `pairByToken` / `pairByFederationFile`，经 `@sofagent/core` 导出）已完整实现，但**交互式配对 CLI 入口尚未接线**（零生产调用点）。
 >当前实际可用的联邦配对是 **USB 路径**——`daemon/src/usb-detect.ts`（federation.json + HMAC `.sig` sidecar 验签）与 `usb-runtime.ts`（从 U 盘 federation.json 读 AES/HMAC key），其验签逻辑为独立实现、不经过 pairing.ts。三条配对路径的交互式 CLI 接线尚未交付。
 
-### 🔴 SOFAGENT_FEDERATION_TOKEN 进程可见（高危）— ✅ 已修复 v1.2.3
+### ✅ 已修复（v1.2.3）：SOFAGENT_FEDERATION_TOKEN 进程可见
 
 **风险（已修复）**：联邦配对使用的 `SOFAGENT_FEDERATION_TOKEN` 曾通过环境变量传递，
 在进程列表（`ps e`、`/proc/*/environ`）中明文可见。

@@ -133,14 +133,6 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 
 ## 二、平台与兼容性局限
 
-### 📦 v1.5.1：`npm i -g sofagent` 全新安装失败（v1.5.2 修复）
-
-上游依赖的传递版本解析问题导致 npm 全新安装失败（`install.sh` 安装路径与 `@sofagent/audit` 直装不受影响，可正常使用）。修复已进入主干，v1.5.2 发布后恢复。
-
-### 📦 v1.5.1：OpenClaw rollback 插件被 ClawHub 标记 suspicious（v1.5.2 消除）
-
-平台安全扫描对 1.5.1 版 rollback 插件的启发式标记（源于一项配置读取缺陷，功能不受影响，不影响安装使用）。v1.5.2 重发后消除。
-
 ### 📦 v1.5.3：ClawHub OpenClaw 插件带 `manifest-unknown-fields` 告警（下一版修复）
 
 平台对 `openclaw.plugin.json` 顶层若干字段（`seam` / `seamSemantics` / `uiHints` 等）给出「非受支持字段」告警——**安装与使用不受影响**，仅为平台校验提示。处置方向是把这些字段移入平台受支持的承载位；下一版随插件重发时同批处理。
