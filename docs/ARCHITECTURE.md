@@ -275,8 +275,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 >
 > **控制的两层**（读能力表前的一个定位）：平台（Agents API / guardrail 类）治**动作**——Agent 能不能删库、能不能调这个工具，答案写在平台文档里，generic；sofagent 治**判据**——交期改得对不对、报价能不能发，答案在这家企业的本体数据里。两层互补不互替：平台拦得住越权动作，拦不住业务对错。104 个 tool、25 条审计规则裁的都是后者——这是「嵌在 Agent 与模型之间」的确切含义。
 
-> 🗺️ **MCP 工具五域一环（104 tools）**（工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95，v1.4.9 G9 增 device_register/device_list 至 97，G10/G11 增 device_data_query/device_data_push 至 99，G5b/G1 增连接器与模板 4 个至 103，批 5 增 router_session_push 至 104，v1.5.0 增 trace_reconcile 至 105，
->v1.5.2 章一/章二 增 audit_query/ruleset_export 至 107，2026-09-26 浏览器四件套退役至 103）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 25 条审计规则。
+> 🗺️ **MCP 工具五域一环（104 tools）**（工具数逐版沿革见 [CHANGELOG](../CHANGELOG.md)）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 25 条审计规则。
 >
 > ⚠️ **三套标签不要混用**：五域按**业务职能**划分（本图组织法，**三域视角下属映射源**——五域→三域映射表见 [v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）；`tool-registry` 的 `roles` 是**使用场景标签**（7 面：audit/fde/eval/agent/ops/commons/browser），服务于 `SOFAGENT_MCP_ROLES` 按角色收窄暴露面；`docs/API.md` 的**十能力域**是文档编制分组（一个组 = 一个可独立讲述的产品能力）。
 >三者用途不同，条目数不相等属预期——**工具总数的唯一权威源始终是 `engine/mcp/src/tool-registry.ts` 的 TOOLS 数组**。
@@ -326,8 +325,7 @@ graph TB
 > ⚠️ **数字口径（五域重算）**：五域条目数之和 **27 + 16 + 30 + 16 + 15 = 104**（按域序 D1→D5），与图题 104 及 registry 实数**三处自洽**（2026-09-26 浏览器四件套退役：D2 执行与模型 19→15；v1.5.4 章二 `router_slots` 归 D2 B3 +1 至 104）——以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶（分桶依据是**业务职能**，不是 registry 的 `roles` 标签，见上方「三套标签不要混用」）。
 >**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。
 >
-> **增量化简记**（记号：域 +N = 该域条目数变化）：v1.4.9 分四批把 95 推到 104——G9 设备注册面 D3 +2、G10/G11 设备数据面 D3 +2、G5b/G1 连接器与模板面 D3 +2 与 D1 A3 +2、批 5 router 承接面 D3 +1（C8 新域）；同批回填 2 枚此前未归域的工具（`contribution_query` 治理 KPI 报表、`list_capabilities` 能力发现元工具，落 D3 C5）。v1.5.0 `trace_reconcile` 归 D3 C1 +1 至 105。
->v1.5.2 章一/章二 `audit_query`（审计数据只读查询）与 `ruleset_export`（规则集导出）归 D3 C1 +2 至 107——审计域新增「对外可消费」两面（数据面只读查询 + 规则面标准 JSON 导出），C1 审计子项 8→10。v1.5.4 章二 `router_slots`（本地槽位态观测 + 路由预览）归 D2 B3 +1 至 104（浏览器四件套退役后回落再升至 104）。
+> **增量化简记**（记号：域 +N = 该域条目数变化）：五域条目的逐版归域变化（v1.4.9 设备/连接器/模板/router 承接面扩面与 2 枚回填、v1.5.0 `trace_reconcile`、v1.5.2 `audit_query`/`ruleset_export`、v1.5.4 `router_slots`，及 2026-09-26 浏览器四件套退役）见 [CHANGELOG](../CHANGELOG.md)。
 
 > 📌 本表覆盖至 v1.3.8；v1.3.9 及其后版本（v1.4.0~v1.4.9、v1.5.0）的能力沿革见 [CHANGELOG](../CHANGELOG.md) 索引与各版开发日志，本表不再逐版续列。
 
