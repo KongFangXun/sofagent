@@ -2,9 +2,9 @@
 
 > 发版时全项目版本号升级的操作手册。releasing.md 阶段九（09-publish 步骤五）引用本文件。
 
-### 全项目版本号扫描（用脚本，禁止手动 grep）
+## 全项目版本号扫描（用脚本，禁止手动 grep）
 
-#### Step 1: 一键升级
+### Step 1: 一键升级
 
 ```bash
 # 先 dry-run 看会影响哪些文件
@@ -14,7 +14,7 @@
 ./tools/release/bump-version.sh <旧版本> <新版本>
 ```
 
-#### 🔴 bump 的两条前置动作（漏做必红）
+### 🔴 bump 的两条前置动作（漏做必红）
 
 ```bash
 # ① 先看影响面（dry-run），确认历史档案未被纳入
@@ -36,7 +36,7 @@ dashboard.html）：
 
 **不碰**：正文中的历史引用（如 "v1.0 新增"）。这是正确设计。
 
-#### Step 2: 一致性校验
+### Step 2: 一致性校验
 
 ```bash
 ./tools/check/check-version.sh
@@ -44,7 +44,7 @@ dashboard.html）：
 
 从 `package.json` 读 SSOT 版本号，逐项比对全项目版本位置（范围同 bump-version.sh 头部「替换范围」）。任何不一致 → 红字报错 + exit 1。
 
-#### 同步 package-lock.json（🔴 教训）
+### 同步 package-lock.json（🔴 教训）
 
 bump-version.sh 改了 `package.json` 但不会自动同步 `package-lock.json`。必须手动执行：
 
@@ -57,7 +57,7 @@ grep -A3 '"engine/audit":' package-lock.json | grep '"version"'
 
 **🔴 铁律**：**禁止用 `sed` 直接改 `package-lock.json`**——全局替换 `1.1.0→1.1.3` 会把外部包（如 `reusify@1.1.0`）也污染为不存在的版本（`reusify@1.1.3`），导致 CI 全平台 `npm ci` 崩溃。只能用 `npm install --package-lock-only` 重新生成锁文件。
 
-#### 🔴 npm 发布铁律：版本号永久锁死（详见 releasing.md 索引段）
+### 🔴 npm 发布铁律：版本号永久锁死（详见 releasing.md 索引段）
 
 > 🔴 教训：npm 版本号 publish 后永久封存，unpublish 无法复写。发之前确认一切就绪 → 一次性批量发布。
 
@@ -66,7 +66,7 @@ grep -A3 '"engine/audit":' package-lock.json | grep '"version"'
 # ✅ 正确：确认就绪 → 一次性批量发布 → 发完即锁定
 ```
 
-#### 手动排查（脚本未覆盖的边缘情况）
+### 手动排查（脚本未覆盖的边缘情况）
 
 ```bash
 # 全项目搜旧版本号（排除 changelog 历史 + node_modules）
@@ -76,7 +76,7 @@ grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
 
 > 手动 grep 的结果会包含大量"合理的历史引用"（如 "v1.0 新增"）。这些**不改**——它们是变更溯源标记（bump 语境 = 不改已有的；新写规则正文时不引入溯源标记，见 releasing.md 禁考古条）。
 
-#### 脚本不覆盖（必须手动）
+### 脚本不覆盖（必须手动）
 
 | 文件 | 为什么脚本不碰 | 什么时候改 |
 |------|------|------|
@@ -92,7 +92,7 @@ grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
 | 根 `package.json` 内部依赖（`@sofagent/<pkg>`） | 只改了子包版号，根依赖未跟 | bump 后补，再 `npm install --package-lock-only` 重生成 lock |
 | 文档头冗余父栏「（vX.Y.Z 更新 DATE）」 | 与行首日期重复且 bump 不覆盖 → 每版必漂 | **该形态已整体消除**；新增文档头不要再引入同类重复日期栏 |
 
-#### 🔴 版本重编号全局 grep（教训）
+### 🔴 版本重编号全局 grep（教训）
 
 版本重编号时（如 v1.0.x 系列内部跳号），只改规划版本表是不够的——ROADMAP 的详情表、HANDBOOK、DEVELOPMENT、THANKS 中的版本引用也要跟着改。必须全局 grep 所有 `vX.Y.x` 引用，区分"历史引用"（不改）和"未来规划引用"（必须改）。
 
@@ -102,7 +102,7 @@ grep -rn "v1\.0\.[0-9]" --include="*.md" . | grep -v "docs/changelog/" | grep -v
 # 逐一判断哪些是"未来规划引用"（要改），哪些是"历史引用"（不改）
 ```
 
-#### 新增 SKILL.md 覆盖检查（🔴 教训）
+### 新增 SKILL.md 覆盖检查（🔴 教训）
 
 新增 SKILL.md 文件时，确认 check-version.sh 能检测到它。check-version.sh 用 `find -name 'SKILL.md'` 动态扫描，理论上自动覆盖——但 SKILL.md 的 version 字段必须用 3 段格式（如 `1.0.3`），否则 2 段比对会漏检 patch 差异。
 

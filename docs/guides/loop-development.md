@@ -410,7 +410,7 @@ FORGE/SKILL/fresh-eyes-loop/
 >
 > **④ 五问检验真工程还是花架子**：每个节点交什么？边上传递什么？并行后怎么汇合？失败从哪里继续？哪一步会扩大权限？答得出来才是能稳定运行的图。
 
-#### 四节点状态机（v1.1.3+）
+### 四节点状态机（v1.1.3+）
 
 编排模块的核心是 LangGraph StateGraph——一条 `engineer → audit → reviewer → human_confirm` 的流水线，跑挂了能回退重试，中断了能从断点续跑。
 
@@ -441,7 +441,7 @@ flowchart LR
 
 **为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A11、A14-A24 + E1-E2/E4（共 25 条）规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit 做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
 
-#### 状态契约：LoopArtifacts
+### 状态契约：LoopArtifacts
 
 节点之间不靠全局变量，全靠 `state.artifacts` 这个对象传递。LangGraph 的 `Annotation` 给它配了浅合并 reducer——节点返回时只需给增量字段，框架自动合并。
 
@@ -466,7 +466,7 @@ flowchart LR
 > - **共享状态**：整张图有一份持续更新的公共记事本（任务 ID、版本、证据、修改记录、当前步骤）。LoopArtifacts 的浅合并 reducer 就是这个公共记事本。
 > - **上下文隔离**：不是所有节点都能看全部信息——前端调查 Agent 不需要生产数据库凭证。sofagent v1.3.7 的 SubAgent 沙箱（文件系统隔离 + 虚拟 key 边界注入）正是上下文隔离的工程落地。Graph 决定信息往哪儿走，Context Engineering 决定每个节点具体看到什么。
 
-#### Graph Engineering 视角（控制图 = StateGraph）
+### Graph Engineering 视角（控制图 = StateGraph）
 
 > 📐 2026-07 行业新概念「Graph Engineering」把 Prompt→Context→Harness→Loop→**Graph** 的演进框定为五层工程化方法。核心判断：「先做扎实前四层再上 Graph，跳过前四层直接上图会组织混乱」。sofagent 前四层已扎实（v1.2.0 完成），**Graph 层是自然进化而非跳步。
 >** Carlos E. Perez（[From Loop Engineering to Graph Engineering?](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)）系统论证了四类失效与拓扑解法，并指出真正的分界线不在 Loop vs Graph，而在是否显式化了 grounding。理论根 = FSM/Statecharts（Harel 1987）。
@@ -520,13 +520,13 @@ sofagent 落点对照（dag-runner vs Send API 并行 / worktree 隔离 / StateG
 
 **Graph Engine 进化路线**（v1.2.2–v1.3.1 六项全数交付）：Planner 节点任务分解 → 降级路由链（retry→降级→标记→人工）→ engineer-decide/execute 分层 → 并行子图执行（worktree 隔离 + 多 engineer 并发）→ Dashboard ASCII 控制图 → 多循环 DAG 波次并行（LangGraph 原生 Send API + ★Reality Anchor 每波次卡关）。逐版落点见 [ROADMAP](../../docs/ROADMAP.md)。
 
-#### 重试语义：统一计数器
+### 重试语义：统一计数器
 
 `retryCount` 一个计数器管两种失败——audit 判 FAIL 或 HITL 驳回，都 `retryCount++` 回 engineer。达到上限（默认 3）仍未过 → `finalStatus = 'blocked'` 终态 + 写 audit history（engine 字段标 `loop-graph`），不无限循环。blocked 可被 `audit-root-cause` / 周报追溯。
 
 WARN 不阻断流转——`[审计告警]` 前缀透传给 reviewer 输入，由 reviewer + human_confirm 兜底把关。
 
-#### Checkpoint 持久化
+### Checkpoint 持久化
 
 每个节点执行**前后各 snapshot 一次**到 `.sofagent/checkpoint/`。`resumeLoopGraph()` 读 latest checkpoint → 算出恢复入口节点 → 重新跑图。daemon 重启后的自动续跑也复用这条路径。
 
@@ -540,11 +540,11 @@ WARN 不阻断流转——`[审计告警]` 前缀透传给 reviewer 输入，由
 | 4 | 原子写 | `writeFileSync(tmp) + renameSync(final)`，跨设备 EXDEV 时降级 copy+unlink |
 | 5 | 文件锁 | `O_EXCL` 排它创建 `locks/{checkpointId}.lock`，30s stale 检测回收，防多进程并发写脏 |
 
-#### audit 节点降级逻辑
+### audit 节点降级逻辑
 
 audit 节点程序化调用 `@sofagent/audit`（比 CLI 子进程侵入更小，类型安全）。审计不可用时（如 git 环境缺失）**降级 WARN 而非 FAIL**——不直接烧穿重试次数，由 reviewer + human_confirm 兜底。降级时 audit history 的 engine 字段标 `loop-graph-degraded` 便于追溯。`git diff HEAD` 为空时也返回 WARN（engineer 可能未产生文件修改）。
 
-#### 上下文预算管理：四层防御
+### 上下文预算管理：四层防御
 
 FORGE 的 worker（LangGraph createReactAgent）跑长任务时面临上下文膨胀——工具调用越多、工具输出越长，prompt_tokens 从 30K 膨胀到 100K+ 直至 OOM。v1.2.5–v1.2.9 的性能优化经验总结为四层防御，每层解决不同层面的膨胀问题：
 
