@@ -10,15 +10,17 @@
 //
 //   ① type-only 不计：`import type { X }` / `import { type X }` / 纯类型注解位
 //      （`x: X` 注解、`as X` 断言类型位、`x is X` 类型守卫、`<X>` 泛型位、
-//      `X[]` 数组类型）**均不构成接线**。实现上**所有 import 语句一律不计**
-//      （import 只是「取用声明」不是「消费点」）+ 代码行按位置剔除纯类型位。
+//      `X[]` 数组类型、**`type Y = X` 类型别名右值**、interface 类型引用、
+//      泛型实参列表 `Foo<A, X>` 内）**均不构成接线**。实现上**所有 import 语句
+//      一律不计**（import 只是「取用声明」不是「消费点」）+ 代码行按位置剔除纯类型位。
 //   ② 禁循环自证（CIRCULAR）：锚点若落在 S 内部（S 内互相引用成环）不算——
 //      互指的两枚新增符号不得互相「证明」有接线。
 //   ③ 禁一跳断链（ONEHOP）：锚点符号自身若「零接线」或「仅被 S 内部引用」，
 //      即引用链止步于 S 内、追不到 S 之外的生产代码 ⇒ 明确报「一跳断链」
 //      （与「零接线 ZERO」区分，便于定位）。
 //
-// 引用图边规则：barrel 再导出边、import 边、comment 边、字符串字面量边**不进图**。
+// 引用图边规则：barrel 再导出边、import 边、comment 边（`//` 行注释 + `/* */` 块注释，
+// 含跨行块注释）、字符串字面量边**不进图**。
 // 节点 = 符号名；owner(命中行) = 该行所属**最近前置定义**（函数/类/const/方法/
 // 对象字面量箭头属性），无名则 `@module`。
 //
@@ -28,7 +30,7 @@
 //
 // 模式：
 //   node unwired-reachability.mjs --root <dir> --symbols a,b,c
-//   node unwired-reachability.mjs --selftest        # 内建 P1/P2/P3 探针
+//   node unwired-reachability.mjs --selftest        # 内建 P1–P4 探针
 //
 // 退出码：0=分析成功 / 1=自检失败 / 2=参数或环境错误。
 // ============================================================
@@ -110,12 +112,55 @@ function defNameOf(raw) {
     // 这类「含回调的调用式」会被误当成函数常量 owner（历史实锤：把 cli.ts 的
     // `const depResults = results.filter((r) => …)` 当成 owner，使 vote 的消费者
     // 归属到 depResults 而非 main ⇒ 存活分析误判）。
-    const isArrow = /^\(/.test(init) || /^(?:async\s+)?[A-Za-z_$][\w$]*\s*=>/.test(init) || /^async\b/.test(init);
+    // 且「以 `(` 开头」**不足以**认定箭头——必须参数表之后确有 `=>`，否则
+    // `const q = (query || '').toLowerCase().trim()` 这类「括号开头的普通赋值」
+    // 会被误当函数常量 owner，把 WIRED 锚点落到局部 `q`/`s` 上（历史实锤：MAX_OPTIONS
+    // 等消费者锚点显示成局部变量名，判定虽对但可诊断性差）。
+    const isArrow =
+      /^\([\s\S]*\)\s*(?::[^=]*)?=>/.test(init) || // (a, b) => / (a): T => / ({a, b}) =>
+      /^(?:async\s+)?[A-Za-z_$][\w$]*\s*=>/.test(init) || // x => / async x =>
+      /^async\b/.test(init);
     const isFn = isArrow || /=\s*function\b/.test(line);
     if (isFn || init.startsWith('{') || init.startsWith('[')) return { name: m[1], kind: 'const', isFn };
     return null;
   }
   return null;
+}
+
+/** 判断 idx 是否落在**类型泛型列表** `<...>` 内。
+ *  仅把「前一位是类型名/`>`」的 `<` 认作泛型开口，且要求存在**配对**的 `>`——
+ *  未配对的 `<`（如无空格的值位比较 `i<count && …`）不成对、不计入，
+ *  以此压住「把值位比较误判为泛型位」从而漏报真接线的风险。 */
+function insideGenericArgs(line, idx) {
+  let st = 'code';
+  const stack = []; // 泛型开口 `<` 的位置栈
+  let inside = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    const p = line[i - 1];
+    const n = line[i + 1];
+    if (st === 'code') {
+      if (c === "'") st = 'sq';
+      else if (c === '"') st = 'dq';
+      else if (c === '`') st = 'bt';
+      else if (c === '/' && n === '/') break; // 行尾注释起，右侧不再扫描
+      else if (c === '<' && p && /[A-Za-z0-9_$>]/.test(p)) stack.push(i);
+      else if (c === '>' && stack.length) {
+        const open = stack.pop();
+        if (open < idx && idx < i) inside = true; // idx 落在该配对泛型对内
+      }
+    } else if (st === 'sq') {
+      if (c === '\\') i++;
+      else if (c === "'") st = 'code';
+    } else if (st === 'dq') {
+      if (c === '\\') i++;
+      else if (c === '"') st = 'code';
+    } else if (st === 'bt') {
+      if (c === '\\') i++;
+      else if (c === '`') st = 'code';
+    }
+  }
+  return inside;
 }
 
 /** 命中行的引用类别：'value' | 'type' | 'neutral'（仅用于代码行单次出现判定）。 */
@@ -133,9 +178,19 @@ function classifyOccurrence(line, idx, sym) {
   if (nextChar === '(' || nextChar === '`') return 'value'; // 调用 / 标签模板
   if (nextChar === '.' || after.startsWith('?.')) return 'value'; // 属性访问
   if (prevWord === 'new' || prevWord === 'return' || prevWord === 'typeof') return 'value';
-  if (prevChar === '=' && !/[=<>!]$/.test(beforeTrim.slice(-2, -1) || '')) return 'value'; // `= X`
-  if (nextChar === '=' ) return 'value'; // 赋值目标
-  if (/[(,[]$/.test(prevChar) && /[),\]}]/.test(nextChar === '' ? ')' : nextChar)) return 'value';
+  if (nextChar === '=') return 'value'; // 赋值目标
+  if (prevChar === '=') {
+    const beforeEq = beforeTrim.slice(-2, -1) || '';
+    if (!/[=<>!]/.test(beforeEq)) {
+      // `type Y = X`（含 `export type`、泛型形参 `type Y<T> =`）的右值是**类型位**，
+      // 不是赋值值位——历史实锤：函数体内 `type Alias = Sym;` 曾被误判 WIRED。
+      if (/(?:^|[^A-Za-z0-9_$])type\s+[A-Za-z_$][\w$]*(?:\s*<[^{};=]*>)?\s*=$/.test(beforeTrim)) return 'type';
+      return 'value'; // 普通赋值 `= X`
+    }
+  }
+
+  // —— 泛型实参/形参列表内（须先于下方「实参位」判定，否则 `Map<K, Sym>` 会误按值位）——
+  if (insideGenericArgs(line, idx)) return 'type';
 
   // —— 明确「类型位」——
   if (prevChar === ':') return 'type'; // `x: X` 注解
@@ -145,10 +200,60 @@ function classifyOccurrence(line, idx, sym) {
   if (nextChar === '[' && /^\[\s*\]/.test(after.trimStart())) return 'type'; // 数组类型 X[]
   if (prevChar === '|' || nextChar === '|' || prevChar === '&') return 'type'; // 联合/交叉类型
 
+  // —— 实参/数组/索引位（歧义，保守按值位，避免误伤真接线）——
+  if (/[(,[]$/.test(prevChar) && /[),\]}]/.test(nextChar === '' ? ')' : nextChar)) return 'value';
+
   return 'neutral';
 }
 
-/** 判断某位置是否落在字符串字面量或行尾注释内（这些出现不构成引用）。 */
+/** 把块注释（`/* … *​/`，含跨行延续）替换为**等长空格**，保持列位与行号不变；
+ *  字符串字面量内的 `/*` 不生效。返回 {masked, inBlk}，inBlk 供下一篇续行使用。
+ *  行尾 `//` 注释保持原样（交由 inStringOrComment 处理），仅块注释被抹。 */
+function maskComments(line, incoming) {
+  let out = '';
+  let st = incoming ? 'blk' : 'code';
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    const n = line[i + 1];
+    if (st === 'blk') {
+      if (c === '*' && n === '/') {
+        out += '  ';
+        i++;
+        st = 'code';
+      } else out += ' ';
+    } else if (st === 'sq' || st === 'dq') {
+      out += c;
+      if (c === '\\') {
+        out += line[i + 1] || '';
+        i++;
+      } else if ((st === 'sq' && c === "'") || (st === 'dq' && c === '"')) st = 'code';
+    } else if (st === 'bt') {
+      out += c;
+      if (c === '\\') {
+        out += line[i + 1] || '';
+        i++;
+      } else if (c === '`') st = 'code';
+    } else {
+      // code
+      if (c === '/' && n === '*') {
+        out += '  ';
+        i++;
+        st = 'blk';
+      } else if (c === '/' && n === '/') {
+        out += line.slice(i); // 行尾注释原样保留
+        break;
+      } else {
+        out += c;
+        if (c === "'") st = 'sq';
+        else if (c === '"') st = 'dq';
+        else if (c === '`') st = 'bt';
+      }
+    }
+  }
+  return { masked: out, inBlk: st === 'blk' };
+}
+
+/** 判断某位置是否落在字符串字面量、行尾注释或**单行块注释**内（这些出现不构成引用）。 */
 function inStringOrComment(line, idx) {
   let st = 'code';
   for (let i = 0; i < idx; i++) {
@@ -159,6 +264,12 @@ function inStringOrComment(line, idx) {
       else if (c === '"') st = 'dq';
       else if (c === '`') st = 'bt';
       else if (c === '/' && n === '/') st = 'line';
+      else if (c === '/' && n === '*') {
+        st = 'blk'; // 单行块注释起
+        i++;
+      }
+    } else if (st === 'line') {
+      // 行尾注释：其后全部不算引用（保持状态直至行末）
     } else if (st === 'sq') {
       if (c === '\\') i++;
       else if (c === "'") st = 'code';
@@ -168,6 +279,11 @@ function inStringOrComment(line, idx) {
     } else if (st === 'bt') {
       if (c === '\\') i++;
       else if (c === '`') st = 'code';
+    } else if (st === 'blk') {
+      if (c === '*' && n === '/') {
+        st = 'code';
+        i++;
+      }
     }
   }
   return st !== 'code';
@@ -213,9 +329,14 @@ function scanFileRefs(file) {
   let depth = 0; // 花括号深度（模块级=0；用于判定模块级定义）
   let inBlock = null; // 'import' | 'export'
   let blockOpen = 0;
+  let blk = false; // 跨行块注释状态（上一行未闭合的 `/* … ）
 
   for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i];
+    // 先把块注释（含跨行延续）抹为等长空格——块注释内的标识符不得计入引用，
+    // 也不得干扰花括号深度；行尾 `//` 注释交给 inStringOrComment 处理。
+    const mk = maskComments(lines[i], blk);
+    blk = mk.inBlk;
+    const raw = mk.masked;
     // 去行首块注释（`/* @public */ export ...`）——后续所有判定基于 stripped
     const stripped = raw.replace(/^\s*\/\*.*?\*\/\s*/, '');
     const t = stripped.trim();
@@ -410,7 +531,7 @@ export function analyze(root, symbols) {
 }
 
 // ────────────────────────────────────────────────────────────
-// 内建自检（P1/P2/P3）——三条收紧判定各自的探针
+// 内建自检（P1–P4）——各条收紧判定 + 两条已知漏洞面（类型别名右值 / 块注释）各自探针
 // ────────────────────────────────────────────────────────────
 function writeFixture(dir, rel, content) {
   const p = path.join(dir, rel);
@@ -434,9 +555,49 @@ export function selftest() {
     writeFixture(dir, 'engine/p3/b.ts',
       "import { p3A } from './a';\n/* @public */ export function p3B(): number { return p3A(); }\n");
 
-    const S = ['p1NewSym', 'p2A', 'p2B', 'p3A', 'p3B'];
+    // P4：新增导出 A 的**唯一**消费者是一段**死代码**（同名函数无人调用）⇒ 必须 ONEHOP。
+    //     锁死「出口必须存活」这条 live 维度——若把 `if(!exit) exit=o` 的
+    //     `live.has(o)` 要求去掉，A 会被误判 WIRED，本探针即转红。
+    writeFixture(dir, 'engine/p4/a.ts', '/* @public */ export function p4ATotal(): number { return 1; }\n');
+    writeFixture(dir, 'engine/p4/dead.ts',
+      "import { p4ATotal } from './a';\nfunction p4DeadFn(): number { return p4ATotal(); }\n");
+
+    // P5：类型别名右值 `type Alias = X`（在**存活函数体**内）不算值位引用 ⇒ X 必须 ZERO。
+    //     历史实锤：`type InFnAlias = tpAliasInFn;` 曾被误判为 WIRED。
+    //     宿主用「模块级箭头常量」⇒ 经 moduleEnv 判定**存活**（与 QA 的 liveFn 场景一致）。
+    writeFixture(dir, 'engine/p5/app.ts', '/* @public */ export function p5AliasSym(): number { return 1; }\n');
+    writeFixture(dir, 'engine/p5/use.ts',
+      "import { p5AliasSym } from './app';\nexport const p5Host = (): number => {\n" +
+        '  type Alias = p5AliasSym;\n  return 1;\n};\n');
+
+    // P6：行内块注释 `/* X */`（含跨行块注释）不算引用 ⇒ X 必须 ZERO。
+    //     历史实锤：`const y = 1 /* qaBlkOnly() … */;` 与 `await /*QA-REMOVED …*/(merged);`
+    //     曾被误判 WIRED。
+    writeFixture(dir, 'engine/p6/app.ts', '/* @public */ export function p6BlkSym(): number { return 1; }\n');
+    writeFixture(dir, 'engine/p6/use.ts',
+      "import { p6BlkSym } from './app';\nexport const p6Host = (): number => {\n" +
+        '  const y = 1 /* p6BlkSym() QA-ONLY */;\n' +
+        '  /* 跨行块注释\n     p6BlkSym();\n  */\n' +
+        '  return y;\n};\n');
+
+    // P7：正向对照——真正被**存活**代码消费的符号必须 WIRED，防上述收紧「一刀切」过度抑制。
+    writeFixture(dir, 'engine/p7/app.ts', '/* @public */ export function p7Wired(): number { return 1; }\n');
+    writeFixture(dir, 'engine/p7/use.ts',
+      "import { p7Wired } from './app';\nexport const p7Runner = (): number => p7Wired();\n");
+
+    const S = ['p1NewSym', 'p2A', 'p2B', 'p3A', 'p3B', 'p4ATotal', 'p5AliasSym', 'p6BlkSym', 'p7Wired'];
     const res = analyze(dir, S);
-    const expect = { p1NewSym: 'ZERO', p2A: 'CIRCULAR', p2B: 'CIRCULAR', p3A: 'ONEHOP', p3B: 'ZERO' };
+    const expect = {
+      p1NewSym: 'ZERO',
+      p2A: 'CIRCULAR',
+      p2B: 'CIRCULAR',
+      p3A: 'ONEHOP',
+      p3B: 'ZERO',
+      p4ATotal: 'ONEHOP',
+      p5AliasSym: 'ZERO',
+      p6BlkSym: 'ZERO',
+      p7Wired: 'WIRED',
+    };
     for (const [sym, want] of Object.entries(expect)) {
       const got = res.get(sym)?.verdict;
       if (got !== want) fail.push(`${sym}: 期望 ${want} 实得 ${got}`);
