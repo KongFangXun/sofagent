@@ -363,11 +363,14 @@ while IFS= read -r ts; do
   # 功能引入版本的历史叙述，不是当前版本锚点——历史误伤的根源，check-version [12/14] 已同步豁免。
   # 「条目」同属 CHANGELOG 历史档案锚（任务表行号），永不随 SSOT 抬号——
   # 误抬会击穿 acceptance S407（三形态定位边界锚「v1.4.8 条目 10」）类锚定场景。
+  # 「第N章」同属功能溯源标记（记录该功能出生于哪一版第几章），不是当前版本锚点——
+  # 曾漏列致其被逐版抬号（功能出身版被误改写成当前版）；与「条目」同理永不抬号。
   ts_head=$(head -10 "$ts")
   ts_rest=$(tail -n +11 "$ts")
   ts_head_new=$(echo "$ts_head" | awk -v OLD3="$OLD_3SEG" -v NEW3="$NEW_3SEG" -v OLD2="$OLD_2SEG" -v NEW2="$NEW_2SEG" '
     {
       if ($0 ~ /新增|增强|基础版|补上|交付|升级|引入|首次|条目/) { print; next }
+      if ($0 ~ /第/ && $0 ~ /章/) { print; next }
       gsub(OLD3, NEW3)
       gsub(OLD2 "([^0-9.]|$)", NEW2 "\\1")
       print
