@@ -566,7 +566,15 @@ async function main() {
         if (outcome.decision !== 'consensus') {
           const exceptions = voteHandler.getExceptions();
           const last = exceptions[exceptions.length - 1];
-          console.warn(`  ⚠️ 分歧已入人工介入队列（${exceptions.length} 条）${last ? `：${last.message}` : ''}`);
+          const detail = last ? `：${last.message}` : '';
+          // v1.5.5 P2-c：分歧路由措辞分离——route='escalate'（升级大模型重跑）与
+          // route='hitl'（入人工介入队列）是两条不同的处置链，不得共用「已入人工介入
+          // 队列」措辞（此前 escalate 也打印该句，误导操作者以为已进人审）。
+          if (outcome.route === 'escalate') {
+            console.warn(`  ⚠️ 分歧已升级大模型重跑（route=escalate；分歧记录 ${exceptions.length} 条）${detail}`);
+          } else {
+            console.warn(`  ⚠️ 分歧已入人工介入队列（${exceptions.length} 条）${detail}`);
+          }
         }
         process.exit(outcome.decision === 'consensus' ? 0 : 2);
       } catch (err) {

@@ -62,4 +62,13 @@ describe('CLI vote 子命令（生产入口接线自证）', () => {
     expect(src).toContain('createHITLHandler');
     expect(src).toContain('voteHandler.vote(');
   });
+
+  it('cli.ts 分歧路由措辞分离（v1.5.5 P2-c：escalate 不误报「已入人工介入队列」）', () => {
+    const src = readFileSync(join(__dirname, '..', 'cli.ts'), 'utf-8');
+    // route='escalate'（升级大模型重跑）与 route='hitl'（入人工介入队列）是两条处置链，
+    // 措辞必须分支——此前 escalate 也打印「已入人工介入队列」，误导操作者。
+    expect(src).toContain("outcome.route === 'escalate'");
+    expect(src).toContain('升级大模型重跑');
+    expect(src).toContain('分歧已入人工介入队列');
+  });
 });
