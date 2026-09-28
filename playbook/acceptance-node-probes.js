@@ -890,9 +890,9 @@ async function s426() {
   if (dimClaim && Number(dimClaim[1]) !== dimActual) bad.push('checklist 维度声称 ' + dimClaim[1] + ' ≠ 实际 ' + dimActual);
   const numMax = (rc.match(/^#### (\d+)\./gm) || []).map((s) => Number(s.replace(/\D/g, '')));
   if (dimClaim && numMax.length && Math.max(...numMax) !== Number(dimClaim[2])) bad.push('checklist 编号上界声称 ' + dimClaim[2] + ' ≠ 实际 ' + Math.max(...numMax));
-  if (!/regression-checklist\.md` ≤ 2006 行、`acceptance-test\.sh` ≤ 4541 行/.test(rc)) bad.push('警戒线双值锚漂移');
+  if (!/regression-checklist\.md` ≤ 2009 行、`acceptance-test\.sh` ≤ 4554 行/.test(rc)) bad.push('警戒线双值锚漂移');
   const rcLines = (rc.match(/\n/g) || []).length; // wc -l 口径（与 check-review-system 同——换行符数，非 split 段数）
-  if (rcLines > 2006) bad.push('checklist 超警戒线:' + rcLines);
+  if (rcLines > 2009) bad.push('checklist 超警戒线:' + rcLines);
   // ② C 类锚：calibration v1.4.9 收编 5 条特征锚（提取为空/同构替换 SSOT/死断言可达性/重跑全量/协议升级归 C）
   const cal = read('playbook/fresh-eyes-calibration.md');
   for (const anchor of [
@@ -1967,7 +1967,108 @@ async function s449() {
   _s41x_done(bad, 'S449', 'schema 通电（RuleLoadError+装载点）/ A24 段边界四态 / refresh 三段+keep 覆盖');
 }
 
-const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439, s440, s441, s442, s443, s444, s445, s447, s449 };
+// ── S457 · v1.5.4 章二 本地槽位排队行为锁（B-3 章级顺延项落位批：ch1/2 验收资产）──
+// 🔗 交叉登记：回归面 = checklist #144 子项 t（ch3/7 Vault 与授权/凭证对账回归）——场景抓行为、
+//   维度抓回归，双向指认（本注释指向维度；维度子项 t 反向 grep "scenario 45[78] " 指向本场景）。
+// 断言：槽位上限可配 / 超限排队（位置 1-based）/ 预估等待 ceil(pos/max)×avg /
+//   超时升级留痕 routeReason（达阈+合规出门=escalate-cloud；信创全封=wait）/
+//   判定链不占本地主模型槽（行为锁：kind='decision' 零主模型授予、不排队）/ 非法槽位上限 fail-closed。
+// 反向验证：把 slot-manager.ts 的 kind==='decision' 分支改为计入 mainModelGrants ⇒ 本探针 FAIL
+//   （单测对应用例名 `🔒 行为锁：判定链（kind=decision）不占本地主模型槽`）。
+async function s457() {
+  _s41x_init('s457'); const bad = [];
+  const { SlotManager, SlotManagerConfigError } = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/router/slot-manager.js');
+  // ① 槽位上限可配（maxSlots=2 生效——一体机默认 3–5，此处取 2 验「可配」非写死）
+  const m = new SlotManager({ maxSlots: 2, queueTimeoutMs: 30000, avgServiceMs: 5000 });
+  if (m.snapshot().maxSlots !== 2) bad.push('槽位上限不可配:' + m.snapshot().maxSlots);
+  // ② 超限排队 + 排队位置（1-based）+ 预估等待（ceil(position/maxSlots)×avgServiceMs = ceil(1/2)×5000）
+  const a = m.acquire({ requestId: 'r1' }); const b = m.acquire({ requestId: 'r2' });
+  if (!('granted' in a) || !('granted' in b)) bad.push('前两请求未获槽（maxSlots=2）');
+  const c = m.acquire({ requestId: 'r3' });
+  if (!('queued' in c)) bad.push('超限未排队');
+  else {
+    if (c.queued.position !== 1) bad.push('排队位置错:' + c.queued.position);
+    if (c.queued.estimatedWaitMs !== 5000) bad.push('预估等待错:' + c.queued.estimatedWaitMs);
+  }
+  // ③ 判定链不占本地主模型槽（行为锁）——kind='decision' 直接授予、零主模型授予、不排队
+  const before = m.snapshot().counters.mainModelGrants;
+  const d = m.acquire({ requestId: 'dt1', kind: 'decision' });
+  if (!('granted' in d)) bad.push('判定链取用应直接授予（不排队）');
+  if (m.snapshot().counters.mainModelGrants !== before) bad.push('判定链误计主模型授予（行为锁破）:' + m.snapshot().counters.mainModelGrants);
+  if (m.snapshot().counters.decisionGrants !== 1) bad.push('判定链授予计数错:' + m.snapshot().counters.decisionGrants);
+  if (m.snapshot().queueDepth !== 1) bad.push('判定链误入主模型队列:' + m.snapshot().queueDepth);
+  // ④ 超时升级留痕 routeReason（注入时钟确定性）——达阈+合规出门=escalate-cloud；信创全封=wait
+  let clock = 1000;
+  const m2 = new SlotManager({ maxSlots: 1, queueTimeoutMs: 100, avgServiceMs: 10, now: () => clock });
+  m2.acquire({ requestId: 'x1' }); m2.acquire({ requestId: 'x2' });
+  clock = 1000 + 100;
+  const esc = m2.evaluateWait('x2', { complianceAllowsCloud: true });
+  if (esc.action !== 'escalate-cloud' || !esc.reason) bad.push('达阈+允许出门未升级或零留痕:' + JSON.stringify(esc));
+  const sealed = m2.evaluateWait('x2', { complianceAllowsCloud: false });
+  if (sealed.action !== 'wait' || !/信创全封/.test(sealed.reason)) bad.push('信创全封应继续等待:' + JSON.stringify(sealed));
+  // ⑤ 非法槽位上限 fail-closed（不静默取默认值）
+  let threw = false;
+  try { new SlotManager({ maxSlots: 0 }); } catch (e) { threw = e instanceof SlotManagerConfigError; }
+  if (!threw) bad.push('非法槽位上限未 fail-closed');
+  _s41x_done(bad, 'S457', '槽位上限可配(2)/超限排队位置1+预估5000ms/判定链不占主模型槽(mainModelGrants 恒0·行为锁)/超时升级 escalate-cloud vs 信创全封 wait 留痕/非法上限 fail-closed');
+}
+
+// ── S458 · v1.5.4 章二 判定链三层与门控行为锁（B-3 章级顺延项落位批：ch1/2 验收资产）──
+// 🔗 交叉登记：回归面 = checklist #144 子项 t（同上——场景抓行为、维度抓回归）。
+// 断言：L0 声明式映射命中零模型调用（judge 不被调）/ L1 语义分类命中且判定链不占本地主模型槽
+//   （行为锁：mainModelGrants 恒 0，走 kind='decision'）/ evidenceReadiness 未就绪 fail-closed 拒绝启用
+//   （rejected，非静默降级）/ 校准门控未达阈拒绝分流（rejected）+ 已校准放行（正反双向）/
+//   通道不可用 fail-closed 降 L0 规则面兜底。
+// 反向验证：删 intent-triage.ts 的 validateEvidenceReadiness / 校准门控分支 ⇒ 本探针 FAIL
+//   （单测对应用例名 `证据未就绪（none）+ 需证据判据 ⇒ 拒绝启用（judge 零调用）`、
+//     `校准硬线：未校准分桶 ⇒ 拒绝用于分流决策（fail-closed）`）。
+async function s458() {
+  _s41x_init('s458'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const { SlotManager } = require(root + '/engine/orchestrator/dist/router/slot-manager.js');
+  const { IntentTriage } = require(root + '/engine/orchestrator/dist/router/intent-triage.js');
+  const dc = require(root + '/engine/orchestrator/dist/router/decision-channel.js');
+  // 探针通道：judge 计数（验「零模型调用」）+ 固定高置信答案（触发 L1 ALLOW）
+  let judged = 0;
+  const channel = {
+    name: 'probe-channel',
+    async judge() {
+      judged += 1;
+      return { answers: [{ id: 'q1', value: 'x', probability: 0.9, status: 'answered' }], modelVersion: 'probe-v1', tempBucket: 'choice×2', latencyMs: 1 };
+    },
+  };
+  // ① L0 声明式映射命中 → 零模型调用（judge 不被调）
+  const t0 = new IntentTriage({ channel, config: { l0Mappings: [{ refs: ['node-7'], target: 'local-executor', reason: '节点级映射' }] } });
+  const o0 = await t0.triage({ text: 'anything', refs: ['node-7'], evidenceReadiness: 'none' }, [{ id: 'q1', primitive: 'noul' }]);
+  if (o0.layer !== 'L0' || judged !== 0) bad.push('L0 未零模型调用:layer=' + o0.layer + ' judged=' + judged);
+  // ② L1 语义分类命中 + 判定链不占本地主模型槽（行为锁——mainModelGrants 恒 0）
+  const slot = new SlotManager({ maxSlots: 2 });
+  const t1 = new IntentTriage({ channel, slotManager: slot });
+  const o1 = await t1.triage({ text: '自由文本', evidenceReadiness: 'none' }, [{ id: 'q1', primitive: 'choice', options: ['a', 'b'], fallback: 'a' }]);
+  if (o1.layer !== 'L1') bad.push('L1 未命中:' + JSON.stringify(o1));
+  if (slot.snapshot().counters.mainModelGrants !== 0) bad.push('判定链误占主模型槽（行为锁破）:' + slot.snapshot().counters.mainModelGrants);
+  if (slot.snapshot().counters.decisionGrants < 1) bad.push('判定链未走 decision 槽:' + slot.snapshot().counters.decisionGrants);
+  if (slot.snapshot().queueDepth !== 0) bad.push('判定链误入队:' + slot.snapshot().queueDepth);
+  // ③ evidenceReadiness fail-closed 门禁（需证据判据 + 就绪度 none ⇒ rejected，非静默降级）
+  const t2 = new IntentTriage({ channel });
+  const o2 = await t2.triage({ text: 't', evidenceReadiness: 'none' }, [{ id: 'q1', primitive: 'noul', evidence: 'trace' }]);
+  if (!o2.rejected || o2.rejected.reason.indexOf('证据就绪度') < 0) bad.push('证据未就绪未拒绝启用:' + JSON.stringify(o2));
+  // ④ 校准门控拒绝分流（未校准分桶 → rejected；登记达阈记录后 → 放行 L1——正反双向）
+  const registry = new dc.CalibrationRegistry();
+  const t3 = new IntentTriage({ channel, calibration: { registry } });
+  const o3 = await t3.triage({ text: 't', evidenceReadiness: 'none' }, [{ id: 'q1', primitive: 'choice', options: ['a', 'b'], fallback: 'a' }]);
+  if (!o3.rejected || o3.rejected.reason.indexOf('校准门控') < 0) bad.push('未校准未拒绝分流:' + JSON.stringify(o3));
+  registry.register({ bucketKey: dc.tempBucketKey('choice', 2), ece: 0.01, sampleCount: 200, modelVersion: 'probe-v1', fittedAt: new Date().toISOString() });
+  const o4 = await t3.triage({ text: 't', evidenceReadiness: 'none' }, [{ id: 'q1', primitive: 'choice', options: ['a', 'b'], fallback: 'a' }]);
+  if (o4.layer !== 'L1') bad.push('已校准应放行判定:' + JSON.stringify(o4));
+  // ⑤ 通道不可用 → fail-closed 降 L0 规则面兜底（不静默放行）
+  const t4 = new IntentTriage({});
+  const o5 = await t4.triage({ text: 't', evidenceReadiness: 'none' }, [{ id: 'q1', primitive: 'noul' }]);
+  if (o5.layer !== 'L0' || !/规则面兜底/.test(o5.routeReason)) bad.push('通道不可用未降 L0 兜底:' + JSON.stringify(o5));
+  _s41x_done(bad, 'S458', 'L0 零模型调用(judge=0)/L1 走 decision 槽(mainModelGrants=0·行为锁)/证据未就绪 fail-closed 拒绝启用/校准门控拒绝分流(未校准 rejected·已校准放行)/通道不可用降 L0 规则面兜底');
+}
+
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439, s440, s441, s442, s443, s444, s445, s447, s449, s457, s458 };
 
 async function main() {
   const name = process.argv[2];
