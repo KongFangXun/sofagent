@@ -8,7 +8,8 @@
     "updated": "2026-09-28-b",
     "note2": "FORGE/LEDGER 为运行台账（append-only 数据面）：表格结构不可折，锁现状防恶化；tools/README、evidence 双语已清零可从台账移除",
     "note3": "2026-09-28 内容压缩批：VALIDATION 台账化（6+3 节归档）/ ARCHITECTURE §七 10 节归位 / ROADMAP 表格拆注 / evidence 双语清零 / 新增 11 文件入册",
-    "note4": "2026-09-28-c 结构批：ARCHITECTURE 章序重排（一~八顺序）、PHILOSOPHY §一 5 节并段、GUIDE 头部 25→8、重复论证收敛"
+    "note4": "2026-09-28-c 结构批：ARCHITECTURE 章序重排（一~八顺序）、PHILOSOPHY §一 5 节并段、GUIDE 头部 25→8、重复论证收敛",
+    "note5": "2026-09-28-d 表格批：ROADMAP 三表收敛——「规划版本」表去与各版 devlog 逐字重复的交付明细（改述为「主题 + 形态归属计数 + 归位来历」，A7 对账形态不变）、「迭代历程」表收敛为「主题 + 件名 + 快照数字」摘要（明细 SSOT = CHANGELOG）、「探索方向」表截断尾巴按原文恢复为「> 注-N：」注行；同批修 33 处悬空「（详→注-N）」标记与 15 个断句单元格、3 处墙式段落折行 ⇒ wall 17→0 / cell 16→0，本文件清零移出"
   },
   "docs/ARCHITECTURE.md": {
     "wall": 7,
@@ -61,10 +62,6 @@
   "FORGE/LEDGER.md": {
     "wall": 27,
     "cell": 2
-  },
-  "docs/ROADMAP.md": {
-    "wall": 17,
-    "cell": 16
   },
   "CHANGELOG.md": {
     "wall": 0,
