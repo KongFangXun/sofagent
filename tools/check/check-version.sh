@@ -1059,6 +1059,25 @@ changelog_entries() {
   ' "$1"
 }
 
+# ── CHANGELOG **首个**逻辑条目（标题形态；供 §15 关键词对账）──
+# 与 changelog_entries 同源理由（折行容忍：索引条目是一个逻辑条目，bullet + 物理续行，
+#   实测折 1~36 行不等）。两处**刻意不同**，不可合并：
+#   ① 范围：本函数只取**首个**条目（顶版）；changelog_entries 取全部。
+#   ② 锚点面：§15 还须接受历史格式 `### [vX.Y.Z]`（legacy），故锚点比 changelog_entries 宽。
+#   ③ 续行判据**更紧**：只累积「非空 **且** 不以新块起始符开头（`- ` / `###` / `>` / `#` / `|`）」
+#      的行。理由：§15 做的是**关键词重合**判定，若像 changelog_entries 那样「一路累积到下一
+#      bullet」，会把握手区/blockquote 一并吞进标题 ⇒ **放宽匹配面 ⇒ 假绿**（假绿比假红更坏）。
+changelog_entry_text() {
+  awk '
+    /^- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*/ || /^### \[v[0-9]+\.[0-9]+\.[0-9]+\]/ {
+      if (n == 0) { txt = $0; n = 1 } else { n = 2 }
+      next
+    }
+    n == 1 && $0 != "" && $0 !~ /^(- |###|> |#|\|)/ { txt = txt " " $0 }
+    END { if (n >= 1) print txt }
+  ' "$1"
+}
+
 echo "=== 14. 文档头日期一致性扫描（> vX.Y · YYYY-MM-DD）==="
 DOC_DATE_OK=true
 # 动态提取：从 CHANGELOG 当前版本段读发版日期（SSOT）
@@ -1236,7 +1255,11 @@ if [[ -n "${ROADMAP_HEADER}" ]]; then
     | grep -vE '^$' | head -8 || true)
   # 提取 CHANGELOG 当前版本标题
   # v1.2.5 起 CHANGELOG.md 改为纯目录索引格式（- **vX.Y.Z** — 摘要），旧格式 ### [vX.Y.Z] 已废弃
-  CHANGELOG_TITLE=$(grep -m1 -E "^(- \*\*|### \[)v" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || echo "")
+  # 🔴 折行容忍：标题取**逻辑条目**（bullet + 物理续行），不取首个物理行——同一族缺陷，实测
+  #    顶版条目物理行 171 字 vs 逻辑条目 461 字，续行整段（`规则 24→25` / `doctor 修复闭环` /
+  #    `5408` / `2026-09-26`）对旧口径**不可见** ⇒ ROADMAP 版本头关键词若落在续行上，
+  #    关键词重合判零 ⇒ **假红**「版本名疑似错版」（§14/§14b 同源，方向相反）。
+  CHANGELOG_TITLE=$(changelog_entry_text "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || echo "")
   # 🔴 待发版窗口感知（与 §24-27 同口径）：CHANGELOG 顶版超前 SSOT 一版（minor/patch 后继）
   # 时处于「CHANGELOG 已收录新版、ROADMAP 版本头仍指 SSOT 旧版」的合法中间态——ROADMAP
   # 五步同步挂账 bump 后同批执行（06-doc-finalize 时序定谳），窗口内本项对「顶版 ≠ SSOT」
@@ -1894,7 +1917,21 @@ if $F6_RELEASED; then
     fi
     _I2_HITS="${_I2_HITS}${_ln}"$'\n'
   done <<< "${_I2_CAND}"
-  _STALE_ROOT=$(grep -nE "^- \*\*v[0-9.]+\*\* *— *(⏳|📋)? *待发版" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || true)
+  # 🔴 本项原实现**双重失效**（对 CHANGELOG 的覆盖实际为零），改用**版本域**判据：
+  #    ① **守卫空转**（比折行更根本）：原正则要求「待发版」紧跟 `— `，而本仓真实格式是条目
+  #       **中部**的 `· **⏳ 待发版** · <开发日志链接>` ⇒ 该正则**从未命中过一次**（实测历史
+  #       待发版条目：a38bb2ff `- **v1.5.3** — … · **⏳ 待发版** · [开发日志](…)`）。
+  #    ② **折行漏判**：即便修好 ①，按物理行判仍会漏掉被折到续行的状态词（同 §14b 一族）。
+  #    判据（版本域，是唯一能同时消掉两个失效、且不与 §26 抢同一口径的形态）：
+  #      CHANGELOG 每个**逻辑条目**取其版本号 V；V == 已发版的 SSOT 而条目仍含「待发版」⇒ 残留。
+  #    顶版的 待发版 标注**天然豁免**（V ≠ SSOT）——与 §26 F-14 同口径，因此不会再出现
+  #      「§25a 在窗口态强制顶版标待发版 × 本项判其为残留」的互斥假红。
+  #    与 §26 的分工（勿删其一当冗余）：§26 = 全活文档 **行级** 扫描；本项 = CHANGELOG **条目级**
+  #      （版本域）。两者粒度不同：§26 的 ① 只认列表/引用/表格行，折到续行的状态词它看不见，
+  #      而本项由逻辑条目拼装，看得见——本条补的正是该盲区。
+  _STALE_ROOT=$(changelog_entries "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null \
+    | awk -F'\t' -v sot="${SSOT_VERSION}" \
+        '$1 == sot && $2 ~ /待发版|待发布/ { print "CHANGELOG.md:" $2 }' || true)
   if [ -n "${_I2_HITS}${_STALE_ROOT}" ]; then
     echo -e "  ${RED}✗${NC} 活文档仍含「待发版」（发版后应已翻转为「已发版」）："
     # 逐条引用（`${var}` 必须带引号：命中行含空格，裸展开会被 word-split 打散）
@@ -1912,7 +1949,13 @@ fi
 
 if [[ -n "${CHANGELOG_TOP_VERSION}" ]] && [[ "${CHANGELOG_TOP_VERSION}" != "${PKG_VERSION}" ]]; then
   # a. CHANGELOG 顶版行必须带「待发版」状态标注（索引规则自我一致：收录了就要标）
-  if grep -m1 -F -- "- **${CHANGELOG_TOP_VERSION}**" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null | grep -q "待发版"; then
+  # 🔴 折行容忍：原 `grep -m1 -F` 只取**首个物理行**；「待发版」被折到续行时判不到 ⇒ **假红**
+  #    「已收录但缺『待发版』标注」（与 §15 同源：续行面对旧口径不可见）。改用 changelog_entries
+  #    按**版本号字段**精确取条目（`${CHANGELOG_TOP_VERSION#v}` 去 `v` 前缀，与 `版本<TAB>条目`
+  #    的版本字段口径对齐），再在**整条**里找状态词。
+  if changelog_entries "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null \
+       | awk -F'\t' -v v="${CHANGELOG_TOP_VERSION#v}" '$1 == v { print $2 }' \
+       | grep -q "待发版"; then
     echo -e "  ${GREEN}✓${NC} CHANGELOG 顶版行带「待发版」标注"
     CHECKS=$((CHECKS + 1))
   else
