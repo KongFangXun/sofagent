@@ -11,7 +11,8 @@
     "note4": "2026-09-28-c 结构批：ARCHITECTURE 章序重排（一~八顺序）、PHILOSOPHY §一 5 节并段、GUIDE 头部 25→8、重复论证收敛",
     "note5": "2026-09-28-d 表格批：ROADMAP 三表收敛——「规划版本」表去与各版 devlog 逐字重复的交付明细（改述为「主题 + 形态归属计数 + 归位来历」，A7 对账形态不变）、「迭代历程」表收敛为「主题 + 件名 + 快照数字」摘要（明细 SSOT = CHANGELOG）、「探索方向」表截断尾巴按原文恢复为「> 注-N：」注行；同批修 33 处悬空「（详→注-N）」标记与 15 个断句单元格、3 处墙式段落折行 ⇒ wall 17→0 / cell 16→0，本文件清零移出",
     "note6": "2026-09-28-e 形态批：表格形态门禁扩为四断言（补「悬空注标」「断句格」）+ 在役文档存量清零（台账 64→43，余者全为冻结区）。本文件同步收紧 FORGE/LEDGER.md：其 5 行曾多带行首管道而与同文件其余行式不一致（GFM 下渲染为裸管道文本），去掉后该文件不再是表格 ⇒ cell 2→0、wall 27→26",
-    "note7": "doc-slim 批 2026-09-28：ARCHITECTURE wall 7→0（reflow + 长行收敛）/ cell 12→4（workspace 表与能力表长格收敛为「摘要 + 回指」）——基线随真实清理下调"
+    "note7": "doc-slim 批 2026-09-28：ARCHITECTURE wall 7→0（reflow + 长行收敛）/ cell 12→4（workspace 表与能力表长格收敛为「摘要 + 回指」）——基线随真实清理下调",
+    "note8": "doc-slim 批 2026-09-28（批3）：PHILOSOPHY wall 1→0 / cell 1→0（DSH 长格拆注行 + Conway 结论折行）——清零随批记录"
   },
   "docs/ARCHITECTURE.md": {
     "wall": 0,
