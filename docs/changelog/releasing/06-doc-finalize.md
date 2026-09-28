@@ -103,7 +103,14 @@
 
 **② 再查冗余（内容层）**：
 - 活文档历史版本新能力段堆叠（check-docs 3b 自动检查，警告项）——「新能力段只留最新版，旧版去 CHANGELOG」
-- 跨文档重复主题 / 完全相同句（用 dup-check 脚本扫 >40 字符相同句）
+- 跨文档重复主题 / 完全相同句——一行命令取候选（归一化去 markdown 标记与链接目标后，取 ≥40 字符的重复行）：
+  ```bash
+  git ls-files '*.md' | grep -v -E '^(docs/(changelog|archive|evidence)/|FORGE/(SKILL|archive)/|FDE/templates/|engine/|node_modules/)' \
+    | xargs grep -h '^' 2>/dev/null \
+    | sed -E 's/\[([^]]*)\]\([^)]*\)/\1/g; s/[`*_>|#]//g; s/[[:space:]]+/ /g; s/^ //; s/ $//' \
+    | awk 'length($0)>=40' | sort | uniq -d
+  ```
+  🔴 **候选非违规**：徽章行 / `uses:` pin / 模板共享前言（FORGE/SKILL 的 24 视角共同段）/ 各文档统一头部块命中属**设计如此**，须人工剔；真违规是「同一主题在两份**同为 SSOT** 的文档里各写全份」——处置按 §去重纪律：留一份全文 + 另一份「一句 + 链接」。
 - 已闭环的占位桩 / 历史 stub 泄漏到公共 API（grep `stub|占位|TODO.*交付` 排查）
 
 **③ 最后才上调预算（铁律）**：确属真实内容增长（非错位非冗余）→ 上调 LIMIT_* 并在注释记录「为什么涨 + 涨多少」（超标上调不删内容，但必须给理由，不留模糊地带）
