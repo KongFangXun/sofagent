@@ -71,7 +71,7 @@
 | `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 徽章的「被 Awesome 仓收录」声称变成可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 `search/code` API，防超大 README 假阴性），输出 OK / MISSING / SKIP。 (→n11) | 被 check-storefront 消费（需 gh 环境） |
 | `check/lib/unwired-reachability.mjs` | **生产可达判定内核**（被 `check-unwired-exports.sh --since` 调用 · v1.5.4 收紧批）：把「非测试代码里出现过该符号」升级为**生产可达**——① `import type` / 纯类型注解位不计接线 ② 追链可达（一跳有调用、上一跳无人用 ⇒ 断链）③ (→n12) |
 | `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
-| `check/check-table-shape.mjs` | GFM 表格形状门禁（两条**独立**断言：① 超列——单元格数 > 表头列数，GFM 下多余单元格**不渲染**、内容静默消失；② 孤儿行——含 `\|` 但上方无「表头 + 分隔线」归属，渲染为裸管道。内建 3 样本自检防守卫空转；存量见 `table-shape-baseline.json`） | CI / 改 .md 表格后 / 发版 SOP |
+| `check/check-table-shape.mjs` | 表格形态门禁（四断言）：① 超列——格数 > 表头列数（GFM 丢弃多余格）；② 孤儿行——含 `\|` 但无「表头 + 分隔线」归属，渲染成裸管道；③ 悬空注标——`（详→注-N）` 无对应 `> 注-N：` 定义；④ 断句格——拆注格切口未落句读符。内建 10 样本自检（含负样本）；存量见 `table-shape-baseline.json` | CI / 改 .md 表格后 / 发版 SOP |
 | `check/lib/prompt-fork-lint.mjs` | **任务书零分支 lint**（被 `check-dev-prompt.sh` 调用 · 检查项 5）：禁「方案 A/B」「二选一」「视情况而定」「由你决定」——交给执行方的任务书不得留选择（出题方须先比完并选定一条）。 (→n13) |
 | `check/table-shape-baseline.json` | 表格形状**存量台账**（被 `check-table-shape.mjs` 消费；只拦新增。签名 = 行内容归一化后 sha256 前 16 位——**不用行号**：行号随编辑漂移即静默放行；**不存行原文**：表格单元格常含正则/安全词，落原文会触发 A9 注入检测自指） | 被 check-table-shape.mjs 消费（`--update-baseline` 重生成） |
 | `check/prompt-fork-baseline.json` | 任务书零分支 lint 的**豁免台账**（被 `prompt-fork-lint.mjs` 消费；签名 = 行内容归一化后 sha256 前 16 位——**不用行号**（行号漂移即静默放行，同 table-shape-baseline 理据）；每条须带理由，变更进 review）。 |
@@ -79,7 +79,7 @@
 | `check/doc-ratchet.json` | 核心文档**可读性棘轮台账**（被 `doc-discipline.sh` Face 5 消费：墙式行/墙式格实测值**只许降不许升**——治「内容只进不出」；键 = 逐文档实测计数，`_meta` 记口径，与 `lib/readability-count.mjs` 注释同源）。 |
 | `check/lib/readability-count.mjs` | **可读性计数器（单一口径）**（被 doc-discipline Face 5 / reflow-walls 共用：墙式行/墙式格的定义与计数实现；改口径先改本文件头注释再同步 `doc-ratchet.json` `_meta`）。 |
 | `check/lib/reflow-walls.mjs` | **墙式行折行器**（一次性治理工具，非门禁：把超长段落/表格格折行，产出供 doc-ratchet 重新基线；治理批 261→17 的执行器）。 |
-| `check/lib/split-table-cells.mjs` | **墙式表格格拆注工具**（一次性治理工具，非门禁：把超长表格内的墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线）。 |
+| `check/lib/split-table-cells.mjs` | **超长表格格拆注工具**（一次性治理工具，非门禁：把超长表格内的墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线）。产出契约受 `check-table-shape.mjs` ③④ 两条断言机械对账——标记形态 `（详→注-N）`、同文件必有 `> 注-N：` 定义、**切口必落句读符**（找不到切口就整格不拆，留长格交棘轮报人裁定，不硬切） | 拆注治理时 |
 | `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件（上一 tag 后有改动或本轮暂存）零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine` + `tools`（`playbook/` **剔出* (→n14) | CI / 改 SECURITY 测绘数字或 hook 时 |
 
 > n1: md` 词汇表；DSH 三处 seam 逐条一致 + description 不滞后；反向：词汇表每条在**真实宿主**里 grep 到定义处，宿主缺席打印 `SKIP` 不静默通过；双向对账拦「漏写 seam」；`SKILL.md` 反向对账——SKILL.md 出现 `（seam: …）` 字面量的每一处都必须与三处一致，**残余缺口：SKILL.md 整体删去 seam 字样时不判红，只打印显著提示**；`--selftest` 合成回归验证必报红）

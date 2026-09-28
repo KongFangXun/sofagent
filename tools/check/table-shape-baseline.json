@@ -1,391 +1,265 @@
 {
-  "$schema": "GFM 表格形状存量基线（tools/check/check-table-shape.mjs 消费）——只拦新增；登记项逐条带理由。",
+  "$schema": "表格形态存量基线（tools/check/check-table-shape.mjs 消费）——只拦新增；登记项逐条带理由。",
   "usage": "node tools/check/check-table-shape.mjs [--update-baseline]",
-  "note": "签名 = 行内容归一化前 120 字符（不用行号：行号随编辑漂移、漂移即静默放行）",
+  "note": "签名 = 行内容归一化（trim + 折叠空白）后 sha256 前 16 位（不用行号：行号随编辑漂移、漂移即静默放行）",
   "entries": [
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "64a984c51828fe64",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "cc9e792a296f65f4",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "24a6f3124334bffc",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "3ae89b1020ef8ebb",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "babf3375be1b9e54",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "FORGE/lessons/driver.md",
-      "kind": "超列",
-      "signature": "2256f214863c8c77",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "FORGE/lessons/index.md",
-      "kind": "超列",
-      "signature": "35bea3f250821521",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "FORGE/lessons/index.md",
-      "kind": "超列",
-      "signature": "b692a210e4770072",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
     {
       "file": "docs/archive/changelog-experimental/v0.90.md",
       "kind": "超列",
       "signature": "6679ed321e14363e",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/changelog-experimental/v0.97.md",
       "kind": "超列",
       "signature": "b32c2d4ca2b6fb01",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/changelog-experimental/v0.97.md",
       "kind": "超列",
       "signature": "61bff2a287673073",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/changelog-experimental/v0.97.md",
       "kind": "超列",
       "signature": "fc2a3ca901ffac8a",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/changelog-experimental/v0.97.md",
       "kind": "超列",
       "signature": "a7f2467c0b7c503a",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/changelog-experimental/v0.99.3.md",
       "kind": "超列",
       "signature": "fc90c2655fdff1c6",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/changelog-experimental/v0.99.6.md",
       "kind": "超列",
       "signature": "e454a441dcd75f1b",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-24-cross.md",
       "kind": "超列",
       "signature": "735525c8bd51d0d3",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-24-cross.md",
       "kind": "超列",
       "signature": "597c52e2132842d6",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-24-cross.md",
       "kind": "超列",
       "signature": "f957151955aa138e",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-24-cross.md",
       "kind": "超列",
       "signature": "597c52e2132842d6",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-24-cross.md",
       "kind": "超列",
       "signature": "7dc3638eff219060",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-24-cross.md",
       "kind": "超列",
       "signature": "ac76f03b9ffb7496",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-24-cross.md",
       "kind": "超列",
       "signature": "b02fc1fdad14240b",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-24-cross.md",
       "kind": "超列",
       "signature": "097c0ef35758c7bf",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-24-cross.md",
       "kind": "超列",
       "signature": "b19d75f556f3a3cc",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "735525c8bd51d0d3",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "597c52e2132842d6",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "f957151955aa138e",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "597c52e2132842d6",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "7dc3638eff219060",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "ac76f03b9ffb7496",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "b02fc1fdad14240b",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "ad172fe5f8b39446",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "5ec31a615eee3c70",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "af1dfb47d74c083f",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "097c0ef35758c7bf",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/2026-06-25-cross.md",
       "kind": "超列",
       "signature": "b19d75f556f3a3cc",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/archive/evidence/italy-travel-2026-06-18/evidence-original.md",
       "kind": "孤儿行",
       "signature": "55fe6c6ac59a813c",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing.md",
-      "kind": "超列",
-      "signature": "7ae70ea25e69dbb9",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/06-doc-finalize.md",
-      "kind": "孤儿行",
-      "signature": "d8fa5567dabf8a29",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/06-doc-finalize.md",
-      "kind": "孤儿行",
-      "signature": "ca6a2fc804e474e4",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/06-doc-finalize.md",
-      "kind": "孤儿行",
-      "signature": "64f1f2565a0aa587",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/06-doc-finalize.md",
-      "kind": "孤儿行",
-      "signature": "5847b12d82f22ad6",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/06-doc-finalize.md",
-      "kind": "孤儿行",
-      "signature": "241cbcb9273bb734",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/06-doc-finalize.md",
-      "kind": "孤儿行",
-      "signature": "1c0ad67250be204b",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/06-doc-finalize.md",
-      "kind": "孤儿行",
-      "signature": "0e415f981663c04e",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/11-post-publish.md",
-      "kind": "孤儿行",
-      "signature": "0b4c90765b9f8e89",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/11-post-publish.md",
-      "kind": "孤儿行",
-      "signature": "940eff77f56bff99",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/11-post-publish.md",
-      "kind": "孤儿行",
-      "signature": "5b4c11e3d5b17c57",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/11-post-publish.md",
-      "kind": "孤儿行",
-      "signature": "cb6d5bbf9c8e6dbe",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
-    },
-    {
-      "file": "docs/changelog/releasing/11-post-publish.md",
-      "kind": "超列",
-      "signature": "5510248a56c46bc4",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.1/v1.1.5.md",
       "kind": "超列",
       "signature": "ac60e268d2814819",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.2/v1.2.2.md",
       "kind": "超列",
       "signature": "9469daa7c3158803",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.3/v1.3.5.md",
       "kind": "超列",
       "signature": "f6c5cdf41e15d20d",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.3/v1.3.8.md",
       "kind": "孤儿行",
       "signature": "4b343e21557767f4",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.4/v1.4.0.md",
       "kind": "超列",
       "signature": "70797c7968fb0366",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.4/v1.4.0.md",
       "kind": "孤儿行",
       "signature": "a743d8836cbf527f",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.4/v1.4.4.md",
       "kind": "超列",
       "signature": "140cd701ba8065b4",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.4/v1.4.9.md",
       "kind": "超列",
       "signature": "bdf341a380e79c9a",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.5/v1.5.5.md",
       "kind": "超列",
       "signature": "2f8ee9ea24b6afd3",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.8/v1.8.0.md",
       "kind": "孤儿行",
       "signature": "c60c775ce388ef3c",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.8/v1.8.0.md",
       "kind": "孤儿行",
       "signature": "c1c8ccbc195186c4",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v1.8/v1.8.0.md",
       "kind": "孤儿行",
       "signature": "9a37fc7891862a88",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/changelog/v2.0/v2.0.0.md",
       "kind": "超列",
       "signature": "aef12c8614b3ebd0",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     },
     {
       "file": "docs/evidence/anti-cases/002-cli-one-shot-ineffective.md",
       "kind": "超列",
       "signature": "afa564e0db49f7f5",
-      "reason": "冻结区历史文档（表结构回改须作者裁定）"
+      "reason": "存量（本批未修）——冻结区历史文档（表结构回改须作者裁定）"
     }
   ]
 }
