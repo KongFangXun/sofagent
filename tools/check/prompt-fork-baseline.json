@@ -1,0 +1,4 @@
+{
+  "_doc": "任务书「零分支」lint 豁免台账（被 tools/check/lib/prompt-fork-lint.mjs 读取）。签名 = 行内容归一化后 sha256 前 16 位——**不用行号**（行号随编辑漂移即静默放行，同 table-shape-baseline.json 的理据）。每条必须带理由；新增/变更须进 review。",
+  "exempt": {}
+}

@@ -23,6 +23,12 @@
 #   2. 函数名引用（反引号包裹的 functionName()）
 #   3. 目录引用（反引号包裹的 path/ 路径）
 #   4. 快照标记对账（`<file>.md`（N 行）——声明行数 vs 实际 wc -l）
+#   5. 任务书零分支（`方案 A/B` / `二选一` / `视情况而定` / `由你决定` …）——
+#      交给执行方的任务书**不得留选择**：出题方须在出题阶段比完并**选定一条**，只写
+#      「选定方案 + 一句话理由 + 执行步骤」；未选项不进任务书。
+#      口径：**只管落盘物**——非 prompt 类文件（报告/讨论稿/开发日志）由内核 SKIP 并打印原因
+#      （沟通阶段允许多方案 + 推荐，落盘阶段只留一条）。
+#      判据 / 豁免（否定语境 + 行哈希台账）/ 失效模式分析见 tools/check/lib/prompt-fork-lint.mjs 头注释。
 #
 # 标记：
 #   ✅ 一致
@@ -445,6 +451,11 @@ OKS=0
 SKIPPED=0
 RETIRED=0
 DRIFT=0
+# 检查项 5（任务书零分支）计数：违规=决定退出码；豁免/结论=覆盖度证据
+FORK_VIOLATIONS=0
+FORK_EXEMPT=0
+FORK_CONCL=0
+FORK_SKIPPED=0
 
 # 记一次「引用不一致」：历史档案且未开 --strict → 归入 🕘 历史漂移（不构成失败）；
 # 其余情形计入 ERRORS（决定退出码）。判定与打印共用 EMARK，二者不会走调。
@@ -736,6 +747,52 @@ if [ "$SNAPSHOTS" -eq 0 ]; then
 fi
 
 echo ""
+echo "── 任务书零分支（方案 A/B 选项）──"
+# 判据与失效模式分析见 tools/check/lib/prompt-fork-lint.mjs 头注释；此处只做调用与记账。
+# 口径：**只管落盘物**——basename 不含 prompt 的文件（报告/讨论稿/开发日志）由内核 SKIP 并打印
+# 原因（沟通阶段允许多方案 + 推荐，落盘阶段只留选定的一条）。
+FORK_LINT="${_SELF_DIR}/lib/prompt-fork-lint.mjs"
+if [ ! -f "$FORK_LINT" ]; then
+  echo "  ${EMARK} 零分支内核缺失（${FORK_LINT}）——拒绝假绿"
+  ERRORS=$((ERRORS + 1))
+elif [ -z "$NODE" ] || ! command -v "$NODE" >/dev/null 2>&1; then
+  echo "  ${EMARK} 找不到 node——零分支检查无法执行，拒绝假绿"
+  ERRORS=$((ERRORS + 1))
+else
+  FORK_OUT=$("$NODE" "$FORK_LINT" "$FILE" 2>&1); FORK_RC=$?
+  if [ "$FORK_RC" -eq 3 ]; then
+    echo "  ${EMARK} 零分支内核内部故障（rc=3）——拒绝放行"
+    echo "$FORK_OUT" | sed 's/^/      /'
+    ERRORS=$((ERRORS + 1))
+  else
+    while IFS=$'\t' read -r kind a b rest; do
+      case "$kind" in
+        VIOLATION)
+          FORK_VIOLATIONS=$((FORK_VIOLATIONS + 1))
+          echo "  ${EMARK} 第 ${a} 行出现分支词「${b}」：${rest}"
+          ;;
+        EXEMPT)
+          FORK_EXEMPT=$((FORK_EXEMPT + 1))
+          echo "  ℹ️  第 ${a} 行「${b}」已豁免（${rest}）"
+          ;;
+        SKIP)
+          FORK_SKIPPED=1
+          echo "  🔄 跳过：${a}"
+          ;;
+        SUMMARY)
+          FORK_CONCL=$(printf '%s' "${a} ${b} ${rest}" | sed -n 's/.*conclusion=\([0-9]*\).*/\1/p')
+          ;;
+      esac
+    done <<< "$FORK_OUT"
+    if [ "$FORK_VIOLATIONS" -gt 0 ]; then
+      ERRORS=$((ERRORS + FORK_VIOLATIONS))
+      echo "  ${EMARK} 任务书留了选择：${FORK_VIOLATIONS} 处分支（执行方会反问「选哪个」——出题方须在出题阶段选定一条）"
+      echo "      修法：只写「选定方案 + 一句话理由 + 执行步骤」；未选项不进任务书（留档写内部记录）"
+    elif [ "$FORK_SKIPPED" -eq 0 ]; then
+      echo "  ✅ 零分支：无分支词（结论标记 ${FORK_CONCL} 处 · 豁免 ${FORK_EXEMPT} 处）"
+    fi
+  fi
+fi
 
 # ─── 汇总 ───
 echo "=== 汇总 ==="
@@ -748,13 +805,14 @@ if [ "$DRIFT" -gt 0 ] || [ "$LEGACY" = "1" ]; then
   echo "  🕘 历史漂移: ${DRIFT}（冻结档案，不计失败）"
 fi
 echo "  🔄 跳过: $SKIPPED"
+echo "  🚫 分支词（零分支检查）: ${FORK_VIOLATIONS}（豁免 ${FORK_EXEMPT} · 结论标记 ${FORK_CONCL}）"
 
 # 覆盖度口径（本脚本，G-2② 要求注明）：
 #   asserts = 做出判定的引用数（✅一致 + ❌错误 + 🕘历史漂移 + ⚠️缺前缀 + 📋待新建 + 🗑已退场）
 #             ——历史漂移必须计入：否则历史档案会报 asserts=0，读起来像「什么都没查」
 #   covered = 被读取的源文件数——本脚本单文件入口，恒为 1
 #   skipped = 显式跳过的引用数（非纯路径 URL/内嵌命令 + 运行时目录 + 相对路径描述）
-ASSERTS=$((OKS + ERRORS + DRIFT + WARNINGS + PLANNED + RETIRED))
+ASSERTS=$((OKS + ERRORS + DRIFT + WARNINGS + PLANNED + RETIRED + FORK_VIOLATIONS + FORK_EXEMPT + FORK_CONCL))
 emit_coverage_line "check-dev-prompt" "$ASSERTS" "1" "$SKIPPED"
 
 if [ "$ERRORS" -gt 0 ]; then

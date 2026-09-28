@@ -71,7 +71,9 @@
 | `check/lib/unwired-reachability.mjs` | **生产可达判定内核**（被 `check-unwired-exports.sh --since` 调用 · v1.5.4 收紧批）：把「非测试代码里出现过该符号」升级为**生产可达**——① `import type` / 纯类型注解位不计接线 ② 追链可达（一跳有调用、上一跳无人用 ⇒ 断链）③ 破循环自证（A 的锚点落在零接线的 B 体内不算自证）；输出区分「有接线 / 零接线 / 一跳断链 / 循环自证」；内建自检 P1/P2/P3，内核缺失或无 node 一律 `exit 2`（拒绝把内核故障伪装成通过）。 |
 | `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
 | `check/check-table-shape.mjs` | GFM 表格形状门禁（两条**独立**断言：① 超列——单元格数 > 表头列数，GFM 下多余单元格**不渲染**、内容静默消失；② 孤儿行——含 `\|` 但上方无「表头 + 分隔线」归属，渲染为裸管道。内建 3 样本自检防守卫空转；存量见 `table-shape-baseline.json`） | CI / 改 .md 表格后 / 发版 SOP |
+| `check/lib/prompt-fork-lint.mjs` | **任务书零分支 lint**（被 `check-dev-prompt.sh` 调用 · 检查项 5）：禁「方案 A/B」「二选一」「视情况而定」「由你决定」——交给执行方的任务书不得留选择（出题方须先比完并选定一条）。带**两条实测豁免**（否定语境 + 行哈希台账）与**内置自检**（判据被改坏即 `exit 3`）；**只管落盘物**：basename 不含 `prompt` 的文件 SKIP 并打印原因（沟通阶段允许多方案 + 推荐）。判据 / 失效模式分析见其文件头。 |
 | `check/table-shape-baseline.json` | 表格形状**存量台账**（被 `check-table-shape.mjs` 消费；只拦新增。签名 = 行内容归一化后 sha256 前 16 位——**不用行号**：行号随编辑漂移即静默放行；**不存行原文**：表格单元格常含正则/安全词，落原文会触发 A9 注入检测自指） | 被 check-table-shape.mjs 消费（`--update-baseline` 重生成） |
+| `check/prompt-fork-baseline.json` | 任务书零分支 lint 的**豁免台账**（被 `prompt-fork-lint.mjs` 消费；签名 = 行内容归一化后 sha256 前 16 位——**不用行号**（行号漂移即静默放行，同 table-shape-baseline 理据）；每条须带理由，变更进 review）。 |
 | `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（信息位不阻断——生产面 = `engine` + `tools`（`playbook/` **剔出**：行为锁本质是测试）；排除 bin 入口与**包 tsconfig 显式 exclude 的文件**；另列「**仅验证面引用**」档，列 ◇ 候选供裁定）· **B** SECURITY 测绘数字（图标数 ↔ dashboard `::before` 去重；uses 数 ↔ workflow 面，**口径 = 正则排除注释行**）· **C** hook 信任根（hook 内变量**不得**指向被审仓 `tools/`——原病即「指纹脚本从被审仓执行」） | CI / 改 SECURITY 测绘数字或 hook 时 |
 
 ## 二、gen/ — 草稿生成
