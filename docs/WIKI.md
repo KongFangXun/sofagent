@@ -245,7 +245,7 @@ graph TB
 | `docs/COMMUNITY.md` | 社区现状、贡献路径、公开数据 |
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
-| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/` `v1.5/` `v2.0/`）。⚠️ 早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明。✅ **v1.3.3 起已清理审查元信息**（见 v1.3.4 bugfix），当前版本 changelog 只含产品变更声明。以各版本 changelog 顶部的"已开发/已排期"标记为准。规划中版本的开发排期见 [ROADMAP](./ROADMAP.md) |
+| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/` `v1.5/` `v2.0/`）——⚠️ 早期版本日志含审查元信息等非产品文档内容，不代表产品能力声明；阅读须知（含清理门槛与"已开发/已排期"标记口径）见 [changelog/README](./changelog/README.md)。规划中版本的排期见 [ROADMAP](./ROADMAP.md) |
 | `docs/changelog/releasing.md` | **发版 SOP**——十一阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |

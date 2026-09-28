@@ -330,8 +330,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >云 VM 失联止损（心跳超时 → 强制 stop + 清理）防止 VM 按「时薪 × 时长」空烧，但止损依赖心跳可达——控制面与云 VM 网络断连时止损命令无法送达，VM 可能继续计费（成本口径见 train-cloud 预算注释）。
 
 > ⚠️ **`.sofagent/.git-shadow/` 在被审计仓库内创建**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/.git-shadow/` 目录存放审计快照——设计意图是按 git 仓库隔离快照（不同仓库的快照不能串，否则回溯到错误仓库）。快照内容**已 sanitize 脱敏**（API key / 密码 / 手机号打码，v1.3.4 起），位于仓库内便于 git worktree 隔离。
->经 `--init` 或 `--install-hook` 安装时，自动写入 .gitignore（v1.3.6 起两路径行为一致），且 v1.4.2 起三层 hook 防线兜底（pre-commit 在 commit 前将 .sofagent/ 移出暂存区 + commit-msg 二次清理 + post-commit HEAD tree 对账告警），`git add -f` 强制暂存也会被移出（reset 失败则 fail-loud 拒绝 commit）；该目录不进 git 提交，但用户 `ls -a` 可见。可安全删除（重新审计会重建）。 改存储位置是 v1.4 架构决策，当前版本只披露。
->
+>经 `--init` 或 `--install-hook` 安装时，自动写入 .gitignore（v1.3.6 起两路径行为一致），且 v1.4.2 起三层 hook 防线兜底（pre-commit 在 commit 前将 .sofagent/ 移出暂存区 + commit-msg 二次清理 + post-commit HEAD tree 对账告警），`git add -f` 强制暂存也会被移出（reset 失败则 fail-loud 拒绝 commit）；该目录不进 git 提交，但用户 `ls -a` 可见。可安全删除（重新审计会重建）。
 >
 > task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。静态加密已接线 daemon 启动路径（crypto-init.ts AES-256-GCM + SOFAGENT-AGE-V1 格式）——**密钥就绪后仅 `history.jsonl` 密文落盘**（唯一有加密写挂点的主链文件——写挂点在 `engine/audit/src/audit-history.ts` 的 `isDataEncryptionActive() → encryptWithAge`）；
 >`decision-log.jsonl` 写侧走 `chain-kernel.appendChained`，该内核**零加密代码路径、恒明文**；v1.5.1 新增的 `intent.jsonl` / `intent-skips.jsonl`（意图面，含工具名 + 脱敏参数摘要）同样恒明文；task/logs、think.md 与 forge-runs/checkpoint/model-registry、knowledge/ 属附链目录仍为明文（脱敏管道仍生效；
