@@ -145,7 +145,7 @@ graph TB
 
 > 这张图的三处关键精化：
 > - **L1 是「双图谱并行产出」不是单向转换**——Workflow Graph 管流转（**人读它理解企业怎么运转**）、Ontology Graph 管语义（**AI 读它理解企业是什么**），两者从同一次 FDE 访谈并行产出、互相校验（SHACL），不是「Workflow Graph 画完再转 Ontology Graph」（转换会丢访谈里的隐性知识）。
->**双图谱术语**：ontology 本身是哲学定义，加 Graph 让它成为可被理解、可视化的东西——FDE 交付的两张图谱即 Workflow Graph（多个 workflow 组成，人读的运转图）与 Ontology Graph（本体数据的图谱化形态，AI 读的语义图）。
+>**双图谱术语**：Workflow Graph（人读的运转图）/ Ontology Graph（AI 读的语义图）的完整定义（含「ontology 是哲学定义，加 Graph 才可被理解」的解释）见 [§六 · 四层运行形态的三条决策](#四层运行形态的三条决策)。
 >**行业坐标**：Workflow Graph / Ontology Graph / 知识图谱 / 上下文图谱同属「知识层」（描述业务世界），图谱工程（构建·校验·维护图谱的工程实践）属「工程层」——sofagent 的双图谱交付 = 用工程层方法产出知识层资产，行业对标详见 [VALIDATION](./VALIDATION.md)。
 > - **L2 是「编排层长期不动 + 执行层可换」两层分离**——编排层 LangGraph StateGraph 长期不换（确定性审计依赖显式图结构；换掉编排层 = 放弃确定性审计，这是架构级取舍而非永久承诺），执行层走 ExecutionBackend 接口：DSH 默认 / createReactAgent fallback / 三平台可选。DSH 是最大的一条河，但「堤修在哪条河上都行」，不把企业命脉押在 developer preview 上。
 > - **L3 挂的是「事件域」不是节点**——plugin 装一次即在 tools/result、turn-stopping、approval seam 上全域生效，无需逐节点插桩；独立模式（OpenClaw/WorkBuddy + git diff 审计）永远保留，不依赖 DSH 才成立。
@@ -1267,8 +1267,6 @@ sofagent 支持两种节点类型：
 
 **River = 多个 Workflow 的集合**——每段 Workflow 把模型能力（水）引到业务侧，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
 
-Workflow 的混合架构（外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）实现细节见本节下文「Workflow 的混合架构」段。
-
 ```
 用户 → River（统一入口）→ Workflow A/B/C（分发）→ Subagent（执行）
               ↑ 回流                                    ↑ 审计
@@ -1413,18 +1411,13 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 | **状态最贵** | CS 两大难题都指向状态——缓存失效和命名 | Ralph Loop 无状态范式：Agent 失忆，文件不失忆 |
 | **模型输出是提案** | 大模型是带噪声的随机过程——不消除随机性，用循环驯化 | git diff + 审计规则 = 适应度函数 |
 | **先有掌控感再自动化** | 不信任 Agent 自我验证 | Maker-Checker 分离：审计独立于 Agent |
-| **90%/10% 价值分层** | 模型完成 90% 常规任务，剩余 10% 高风险场景价值反升 | 约束层占据高价值 10%——模型越强，约束越值钱 |
+| **90%/10% 价值分层** | 模型完成 90% 常规任务，剩余 10% 高风险场景价值反升 | 见 [§四 · 90%/10% 价值分层](#四核心理念与全局设计)（约束层占据高价值 10%）|
 
 > **历史转折（v0.98）**：sofagent 最初走「事前约束」路线——在 Agent 干活前注入规则，指望它自律。两次 200 次对照实验后放弃：不是约束无效，是实验室测不出来。转向「事后审计」路线——git diff 是客观证据，不依赖实验设计。这次转向定义了 sofagent 的立身之本：**不信任 Agent 自我报告，只看文件 diff 硬证据。**
 
 ### 四层加载链：为什么是这个顺序
 
-| 层 | 文件 | 权限 | 位置原因 |
-|:--:|------|:--:|------|
-| 1 | SKILL.md（宪法） | ❌ 不可改 | 最前面——开头注意力最高 |
-| 2 | fde.md（规范） | ✅ 可改 | 企业专属规则 |
-| 3 | think.md（反思） | ⚠️ 自动生成 | 上轮踩过的坑 |
-| 4 | knowledge/（知识） | 📚 自动积累 | 按需加载 top-N，不占基础预算 |
+四层的**层序定义（层 / 文件 / 权限）见 [§二 · 📥 注入（约束注入链）](#-注入约束注入链)**（本档 SSOT）；「为什么是这个顺序」= **权限递减**（宪法层 ❌ 不可改 → 知识层可积累）+ **开头位置注意力最高**——**不是**代码强制的高低优先级（准确语义见该节「加载顺序的准确语义」表）。本节只留**预算**口径。
 
 四层中前三层（SKILL.md / fde.md / think.md）在 Agent 启动时加载，第四层 knowledge/ 按需召回 top-N，不占基础预算。加载链总占用不超过上下文窗口的 3%，规范类文件（SKILL.md/fde.md 等）预算 ≤500 字，think.md 反思区单独预算 ≤2K token——这是 Agent 压缩后可读的最低保证（**上述预算为规划目标，尚未全量落地**，落地状态见下方注记）。
 
@@ -1455,7 +1448,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 ### 文件系统架构
 
-理由：`cat task/logs/` 就能拿到记录，不需要 SQL/连接串/权限管理。天然可审计、可传输、支持 Git。Ledger-Views-Policy 三层映射：task/logs + think.md = Ledger（原始数据，只追加）→ knowledge/ = Views（派生视图）→ fde.md = Policy（读写规则）。
+理由：`cat task/logs/` 就能拿到记录，不需要 SQL/连接串/权限管理。天然可审计、可传输、支持 Git。三层映射（Ledger / Views / Policy）的定义见下方「Ledger-Views-Policy ↔ LLM Wiki 三层同构对照」表。
 
 > 记忆模型的完整契约（追加不变量、多写入方、派生方向单向）以 `docs/PHILOSOPHY.md` §五 为唯一权威文字定义，并以 `@sofagent/core` 的 `memory-contract.ts` 在代码层强制（路径 `getThinkPath()`、只追加写入点 `appendThinkEntry()`）。本文件仅描述架构映射，不重复定义契约。
 
