@@ -97,6 +97,7 @@ const isPkgExcluded = (f) => {
 };
 const zeroConsumerFiles = [];
 const playbookOnlyFiles = [];
+const newZeroConsumerFiles = []; // 🔴 新增件零消费（阻断面 · v1.5.4 复核裁定）
 const refFilter = (f) => (h) =>
   h !== f && !h.includes('__tests__') && !h.endsWith('.test.ts') && !h.includes('/dist/') && !h.includes('.map');
 for (const f of srcFiles) {
@@ -115,12 +116,36 @@ for (const f of srcFiles) {
     );
   const label = `${f}（导出 ${names.length} 个符号）`;
   if (hitIn(['engine', 'tools'])) continue; // 生产面有消费 ⇒ 非本组候选
+  // 🔴 A 组升级（v1.5.4 复核裁定 · 治第四条盲区）：**新增件零消费 ⇒ 阻断**——
+  // 本版 ch5 六模块曾以「孤儿 + 门禁不扫」溜过（纸面接线第 4 次复发的逃逸路径）。
+  // 判据：文件在上一 tag（取 git describe --abbrev=0）之后有改动 ⇒ 视为新增件；
+  // 存量孤儿仍走信息位（历史裁定通道不变）。豁免：登记 SDK 面（tools/check/claims-sdk-ledger.json）。
+  // 新增判据（双通道，探针实测补全）：
+  //   ① 已提交面：文件在上一 tag 之后有任何提交（含未提交到 tag 间的历史）
+  //   ② 工作树面：intent-to-add / 本轮暂存的新文件（git log 对未提交内容返回空 ⇒ 单靠①漏判）
+  const lastTag = sh('git', ['describe', '--abbrev=0']).trim();
+  const committedNew = lastTag
+    ? sh('git', ['log', '--oneline', `${lastTag}..HEAD`, '--', f]).trim().length > 0
+    : false;
+  const stagedNew = sh('git', ['status', '--porcelain', '--', f]).trim().startsWith('A ');
+  const isNew = committedNew || stagedNew;
   if (hitIn(['playbook'])) playbookOnlyFiles.push(label); // 仅验证面引用（行为锁/回归清单）
   else zeroConsumerFiles.push(label);
+  if (isNew) {
+    const ledgerPath = join(root, 'tools/check/claims-sdk-ledger.json');
+    let ledger = {};
+    try { ledger = JSON.parse(readFileSync(ledgerPath, 'utf8')).exempt ?? {}; } catch { /* 台账缺失=无豁免 */ }
+    if (!ledger[f]) newZeroConsumerFiles.push(label);
+  }
 }
 console.log(`=== A. 整文件零生产消费者（信息位 · 不阻断）===`);
-if (zeroConsumerFiles.length === 0 && playbookOnlyFiles.length === 0) ok('零命中');
-else {
+// 🔴 新增件零消费 = 阻断（豁免须登记 SDK 面台账并逐条带理由）
+if (newZeroConsumerFiles.length > 0) {
+  bad(`🔴 新增件零生产消费 ${newZeroConsumerFiles.length} 个（阻断——接线 / 登记 SDK 面台账 / 退役，三选一后复跑）：`);
+  for (const z of newZeroConsumerFiles) console.log(`      ${z}`);
+  console.log('      豁免通道：tools/check/claims-sdk-ledger.json 的 exempt 表（逐条带理由，变更进 review）');
+} else if (zeroConsumerFiles.length === 0 && playbookOnlyFiles.length === 0) ok('零命中');
+if (zeroConsumerFiles.length > 0 || playbookOnlyFiles.length > 0) {
   console.log(`  ◇ 零生产消费候选 ${zeroConsumerFiles.length} 个（**不阻断**——接线 / 登记 SDK 面 / 退役由维护者裁定）：`);
   for (const z of zeroConsumerFiles.slice(0, 20)) console.log(`      ${z}`);
   console.log(`  ◇ 仅验证面引用候选 ${playbookOnlyFiles.length} 个（只被 playbook 行为锁/回归清单引用——验证面≠生产消费，同列候选）：`);
@@ -182,5 +207,5 @@ if (fails > 0) {
   console.log(`✗ check-claims：${fails} 组断言未通过`);
   process.exit(1);
 }
-console.log(`✓ check-claims：B/C 两组断言通过（A 组为信息位）`);
+console.log(`✓ check-claims：B/C 两组断言通过（A 组存量件为信息位 · 新增件零消费已阻断）`);
 process.exit(0);
