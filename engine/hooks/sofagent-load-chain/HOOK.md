@@ -83,7 +83,8 @@ DSH 原生支持 **8 个生命周期 hook，全部为瀑布流（Waterfall）可
 >
 > 唯一在所有宿主上强度相同的是**审计**：git diff 25 条规则不依赖 Agent 配合，任何宿主下提交都拦得住。**约束是建议性的，审计是强制性的**——这也是「薄挂载」仍然可用的原因。
 
-> 🔌 **Codex 生命周期 hook 是候选位，未交付**：Codex 的 hooks 复用 Claude Code 兼容协议——JSON in/out 命令行引擎（`ClaudeHooksEngine` + `CommandHookRuntime`），事件含 `pre-tool-use`（工具调用前拦截 + permission_mode，与 DSH `tools/pre-execute` 功能同构）/ `post-tool-use` / `permission-request` / `session-start` / `subagent-start` / `stop`，挂载点是 `.codex/hooks/` 下的 JSON 命令行 hook（仿本文件 OpenClaw 形态）。**协议可挂不等于已挂**：目前 `install.sh --platform codex` 只部署 `AGENTS.md` 挂载点，Codex plugin 家族属**拍板候选、排期待议**——上表按「未交付」登记。协议核验参考见 [v1.4.0 开发日志](https://github.com/KongFangXun/sofagent/blob/main/docs/changelog/v1.4/v1.4.0.md)。
+> 🔌 **Codex 生命周期 hook 是候选位，未交付**：Codex 的 hooks 复用 Claude Code 兼容协议——JSON in/out 命令行引擎（`ClaudeHooksEngine` + `CommandHookRuntime`），事件含 `pre-tool-use`（工具调用前拦截 + permission_mode，与 DSH `tools/pre-execute` 功能同构）/ `post-tool-use` / `permission-request` / `session-start` / `subagent-start` / `stop`，
+>挂载点是 `.codex/hooks/` 下的 JSON 命令行 hook（仿本文件 OpenClaw 形态）。**协议可挂不等于已挂**：目前 `install.sh --platform codex` 只部署 `AGENTS.md` 挂载点，Codex plugin 家族属**拍板候选、排期待议**——上表按「未交付」登记。协议核验参考见 [v1.4.0 开发日志](https://github.com/KongFangXun/sofagent/blob/main/docs/changelog/v1.4/v1.4.0.md)。
 
 **为什么 OpenClaw 是宿主平台之一、而非主战场**：Hook 依赖平台的「会话生命周期事件」机制（`agent:bootstrap`），只有 OpenClaw 暴露了这个事件。它保证「先有规则、后有执行、再有审计」在 OpenClaw 上完整——但当 DSH 成为默认执行后端后，sofagent 自建执行链路里的逐调用约束才是覆盖所有场景的完整形态。
 

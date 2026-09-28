@@ -53,7 +53,8 @@ Node 发 SIGINT → Python 捕获后存 checkpoint 优雅退出（退出码 0）
 
 **定位**：在 Mac 开发机（Apple Silicon Metal）上，用 `@mlx-node/trl`（npm 0.0.10 实验版）的 Rust native 计算核心（`@mlx-node/core` 的 `MxArray`——底层即 MLX → Metal GPU）验证「reward 规则 → 参数学习 → reward 收敛」这条最小回路。**它不替代生产训练**——它是降级路径上的概念验证：证明双栈里 Node 这一侧对 reward 语义的理解是可实测的，而不是纸面推理。
 
-**实测结论（2026-08-25 概念验证，过程记录归档见 [v1.4.1 开发日志](../changelog/v1.4/v1.4.1.md)）**：`@mlx-node/trl` 的 trainer 完整能力（SFT/GRPO 真跑）需要本地模型权重目录，reward 收敛回路已在 Mac Metal 实算验证通过；「npm 404」「BigInt64Array shape」等坑的精炼版见 [train-quickstart 当前限制](./train-quickstart.md)。隔离纪律（/tmp 独立目录实测、绝不碰仓库 package.json/node_modules）延续为后训实测的通行纪律。
+**实测结论（2026-08-25 概念验证，过程记录归档见 [v1.4.1 开发日志](../changelog/v1.4/v1.4.1.md)）**：`@mlx-node/trl` 的 trainer 完整能力（SFT/GRPO 真跑）需要本地模型权重目录，reward 收敛回路已在 Mac Metal 实算验证通过；「npm 404」「BigInt64Array shape」等坑的精炼版见 [train-quickstart 当前限制](./train-quickstart.md)。
+隔离纪律（/tmp 独立目录实测、绝不碰仓库 package.json/node_modules）延续为后训实测的通行纪律。
 
 ### 生产 · Python 框架 spawn（verl / TRL / DeepSpeed）
 

@@ -1030,16 +1030,9 @@ graph LR
 
 ### Ontology 阶段匹配：不要提前进化（A1 实操）
 
-Lyman Talk（2026-07-21）给出一张「你该在哪个阶段」的决策图——核心：**行业知识组织方式应与团队规模匹配，阶段无好坏、只有匹配，不要提前进化**。
+Lyman 阶段匹配表（Stage 1-4 按团队规模选型、勿提前进化）已归档——判据：多数团队人数一维即可定位，Stage 2 能力等「改了要重启」成真痛点再上。
 
-| 判断维度 | Stage 1 | Stage 2 | Stage 3 | Stage 4 |
-|----------|---------|---------|---------|---------|
-| 团队人数 | 1-5 | 5-15 | 15-50 | 50+ |
-| 别名数量 | <500 | 500-2000 | 2000-10000 | >10000 |
-| 改一个别名的流程 | 改 YAML→重启（~5min） | CLI 一行→立即生效（~1min） | Web 界面→搜索→编辑→审批 | 系统自动发现→专家确认 |
-| 典型痛点 | AI 不认识别名 | 改别名要重启 | 改了无审批出过事 | 外部客户需不同命名空间 |
-
-**sofagent 启示**：多数团队用第一步（人数）即可定位。FDE 在客户侧交付 Ontology 时，应先打 Stage 1 基础（共享/任务本体分离、命名规范、加载器健壮），热加载/集中管理等 Stage 2 能力等「改了要重启」真正成为痛点再上；Stage 3/4 两年不用考虑。Palantir 的先进源于其规模量级，不是更聪明——你的 YAML 方案不是「低级」。
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### Action Type 七步管线（A2）
 
@@ -1069,86 +1062,51 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 
 ### Benchmark 评测与工具审批（PenguinHarness 方法论）
 
-[PenguinHarness](https://github.com/Prism-Shadow/penguin-harness)（Yaowei Zheng，Apache-2.0）的自我进化方法论，经方案 D（Skill 层借鉴——只提炼方法论、不引入代码依赖）落地为 v1.3.1 两个能力：
+PenguinHarness 方法论两件（Benchmark 评测体系 statement/rubric 分离 + 工具审批四模式保守默认拒绝）已归档——判据留在本档 §三编排模块。
 
-**① Benchmark 评测体系**——「不 crash ≠ 能用」的量化判据，Onboard Agent L1 前置：
-- **Statement / Rubric 物理分离**：statement 公开给被测 Agent，rubric 私有（评分标准 + Gold 答案），statement 中绝不放 Gold——防泄露的根本设计
-- **Pilot 校准**：初稿是假设 → 跑一轮看 Agent 怎么解题 → 调难度 → Freeze 冻结 + 记录 Formal Baseline
-- **隔离执行**：独立 workspace + 只暴露 statement + 协议化 YAML 输出 + 四种失败码（invalid_request / benchmark_invalid / version_changed / evaluation_failed）
-- 数据落 `data/<project>/benchmarks/<id>/`，评测记录进 evaluation-log.jsonl（复用 HMAC 审计链）
-
-**② 工具审批模式**——wrapToolCall 运行时拦截增强（v1.3.0 已有拦截层，v1.3.1 加审批模式）：
-- 四模式：`allow-with-audit`（默认，全放行+审计）/ `deny-all` / `read-only`（只放行 `permission: "r"` 工具）/ `always-ask`
-- **保守默认拒绝**：SDK 未传审批回调时默认拒绝一切（不是放行）
-- 审批继承：子 Agent 继承父 Agent 审批模式；每次审批决定记录 `approval_decision` 事件
-- **Benchmark 评测时 Test Agent 强制 read-only**——隔离 workspace + statement 物理分离 + read-only 审批三重保障
-
-> 🧭 **借鉴边界（方案 D 铁律）**：只借鉴方法论，不引入 `@prismshadow/*` 依赖。评测记录复用 sofagent 自有审计链（HMAC 防篡改），审批复用 v1.3.0 wrapToolCall——零新第三方依赖。
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### 工具设计的约束内嵌：上限写进工具，不写进提示词
 
-一线工程实录（Series B 金融科技，14 个生产自治 Agent）给出工具设计期的四条判据：**① hint 字段**——工具失败时返回结构化错误＋一条修正提示（如「改用 issue_credit_note」），无提示则 Agent 原地打转；**② 幂等键**——写操作全带键，否则重试即重复执行；**③ dry-run 做成独立工具**——`refund_order_preview` 与实际执行工具并存时，规划模型 94% 会先调预览；
-  **④ 硬上限写进工具实现**——退款 > $500 直接由工具拒绝，除非带 `human_approved` 令牌（写进提示词的限额在压力下会被忽略）。
-开场事故即反例：退款分诊 Agent 在熔断前连续误退约 $42K——「模型没坏，坏的是我们暴露的工具」。
+一线工程实录四判据（hint 字段/幂等键/dry-run 独立工具/硬上限写进工具不写提示词）与五类失效模式表已归档——「约束须在模型外可强制」判据与加载链纪律同源。
 
-同源的五类失效模式（每类配一条生产已验证的修法，原始案例与数字见来源文）：**目标漂移**——长工具调用链后模型悄悄改写原任务，修法是周期性重注入原始目标（实测可显著提升评测通过率）；**谄媚式确认**——Agent 宣称「已完成」而实际没有，修法是加 `assert_state(expected)` 验证工具强制宣称前调用；**重试烧钱**——失控 Agent 可一夜烧掉大量 token，修法是按运行包「金额 × 步数」预算并在**模型外**强制；**工具名撞车**——同前缀工具并存时模型选错率显著，修法是「动词后置＋命名空间」；
-**工具输出泄漏隐状态**——查询工具顺带返回过量字段会让 Agent 把隐状态算进决策，修法是只返回当前任务所需字段。
-
-对 sofagent 的含义：这四条是**设计期**约束内嵌的可操作清单，与上节「工具审批四模式」（运行时放行）互补成对——审批管「这一次放不放行」，工具设计管「约束生在模型内还是模型外」。判据本身（约束须在模型外可强制）已有落点（[VALIDATION](./VALIDATION.md) 的金融风控归因消融级实证 + [loop-development](./guides/loop-development.md)「prompt 层纪律对模型无效，须代码层硬熔断」），此处只补清单、不重复论证。
-
-> 📖 来源：[The Stack Stories《Agentic AI in Production: What I Learned Shipping 14 Autonomous Agents in 2026》(2026-05-09)](https://thestackstories.com/blog/agentic-ai-in-production-2026-lessons)（一线工程实录，作者匿名；文中数据为该团队自述，非第三方评测）
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### Harness 代际半衰期与规则库消融巡检
 
-Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟：**Harness 补丁的保质期约半年**——模型每次代际升级都会吞噬一批「教模型怎么做」的能力补丁，此时正确动作不是加规则而是删除（Claude Code 曾一次砍掉 80% 的 prompt）。对 sofagent 的含义：**能力型规则会过时，约束/审计职能常青**——「哪些行为不允许」不随模型变强而失效，「怎么做得更好」会。
+Boris Cherny「Harness 补丁保质期约半年」+ 规则库消融删除法（逐条禁用跑 golden-set，无退化=代际冗余候选人审删除）已归档——与 Dream Cycle 互补（沉淀该加什么/消融发现该删什么）。
 
-工程落点（规则库健康巡检的「消融删除法」）：每代模型升级后，对 25 条审计规则与四层加载链做一轮消融测试——逐条禁用后跑 golden-set，**无指标退化的条目标记为「代际冗余」候选**，进入人审删除队列（不自动删，删什么由人决策）。这与进化模块的 Dream Cycle 互补：Dream Cycle 沉淀「该加什么」，消融巡检发现「该删什么」。
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### 记忆查算分离与冷热分层同构
 
-模型架构层的「记忆=事实 / 计算=推理」功能解耦（DeepSeek Engram 的查算分离）与 Agent 系统层的外部记忆后端跨层同构：sofagent 的约束层本质是**可独立读写的持久记忆层**（SKILL.md/审计规则/decision-log），与模型参数化能力正交——模型换代会丢能力，不丢这份外部记忆。分层存储（GPU 显存/CPU/NVMe 按成本分级）映射到 sofagent 记忆冷热分级：热层=加载链常驻（SKILL.md 铁律），温层=按需检索（knowledge/ 目录），冷层=归档（日忆沉淀后的 wiki）。
+DeepSeek Engram 查算分离与本仓「外部记忆层与模型参数化能力正交」同构——冷热分层映射（热=加载链/温=knowledge//冷=归档 wiki）已归档。
+
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### Harness 中层自进化信号（RSI 数据飞轮印证 · 消化重写）
 
-行业自迭代循环（RSI data flywheel）把「让系统自己变好」的中层信号归为六类优化对象：Prompt / Skill / 任务剧本 / 模型路由 / 故障恢复 / 消息解析。逐项对位 sofagent 现状：Prompt 优化＝SKILL.md 加载链与 evolve（已覆盖）、Skill＝instinct→skill 自动进化 v1.3.5（已覆盖）、任务剧本＝workflow 模板库（已覆盖）、模型路由＝模型注册表 v1.3.6（已覆盖）、故障恢复＝durable execution 断点续跑（已覆盖）、消息解析＝工具审批四模式（部分覆盖）——六项大半已有落点，
-**不照抄清单**。真正的增量是两条被行业点破但 sofagent 此前未显式命名的机制：
+RSI 数据飞轮六类对位 + 空房间错误分流器（客观错误归 Harness 修复、主观偏好归记忆后训）+ 进程活着≠大脑活着（产出级探测 providerStatus）三条判据已归档。
 
-- **空房间错误分流器**：Agent 失败的归因必须先分「客观错误 vs 主观偏好」——客观错误（命令非零退出/断言失败/超时）归 Harness 修复（规则/工具/workflow 层面的确定性修复），主观偏好（答得不够好/风格不符）归记忆与后训（经验沉淀/增量再训）。混淆两者会把「模型不喜欢」误修成「约束加码」——约束层越叠越厚而问题不解决。落到 sofagent：错题本（instinct/failure-log）已按客观错误记录，v1.4.5 台账的 `solves:` 溯源字段把「这条技能解决的是哪类问题」显式化，正是分流器的落点。
-- **进程活着 ≠ 大脑活着**：daemon 心跳只能证明进程在，不能证明认知功能正常——Dream Cycle 跑完六阶段但 LLM 层降级为 MockLLM 时，管道「成功」而知识产出为零（占位符）。v1.4.5 的应对是产出级探测：采样记录 `providerStatus`（real/mock），降级轮在周报与 evolution report 醒目标注且不计入达标天数——「占位符跑 7 天」永不默默发生。这与上文「关键认知：进程活着 ≠ 服务健康」同构，但探测对象从「进程处理消息」深化到「认知管道产出真实知识」。
-
-一句收口的判据与行业叙事同构：**普通 AI 自动化的是工作，更深一层的 AI 自动化的是进步**——前者把活干完，后者每干完一次活，系统就多学一点（飞轮闭环，见 PHILOSOPHY「从一次交付到下一代模型」）。
-
-> 📖 来源：企业 AI 落地三层境界（得到大脑，2026-09-15，第三方表述框架）
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### Meta-RSI 三算子架构（RSI 的统一形式化与 sofagent 对位）
 
-递归自我改进的最新形式化（MetaRSI）把自我改进拆为三个**可写面算子**共享一个闭环内核：Data-RSI（执行轨迹→验证记录→经验池）、Harness-RSI（改 scaffold——system prompt / memory / 内置工具 / skills / MCP 五槽位）、Model-RSI（参数内化），其上再加**改进调度器**（横向选算子顺序、纵向改算子自身的提案策略）。对位 sofagent 三面现状：Data 面＝instinct 链（提取→错题本→置信度评分→注入）与 audit 轨迹；
-Harness 面＝SKILL.md 加载链 + evolve + eval-gate + A/B 调度器（**最强面**）；Model 面＝TrainChannel 训练通道（通道在、料未接——dataset-builder 只吃外部数据，不消费 instinct 池）。该研究的两条结构性结论直接支撑 sofagent 的生态位判断：**保护性评估器与发布门必须在所有可写面之外**，且四个控制角色（调度器/子代理/元代理/转换适配器）均可由人类专家按同一套类型化契约替换——企业场景恰恰需要独立的第三方治理面，
-这正是「约束基础设施」生态位在 RSI 时代的延伸：**sofagent 不做 RSI 引擎，做 RSI 循环的治理与审计层**。落地节奏见 [ROADMAP · 版本规划](./ROADMAP.md#版本规划)（自进化链路补强按版本承接）。
+Meta-RSI 三算子（Data/Harness/Model）对位 + 保护面独立判据（评估器与发布门在所有可写面之外）已归档；RSI 定调句：进步的单位不是模型是循环，本仓管循环。
 
-> **RSI 定调句（一句话边界）**：**进步的单位不是模型，是循环；sofagent 管的是循环，不是模型。** 别人造让 AI 变强的引擎，sofagent 让变强的每一步「有据可查、可拒绝、可回退」——改进可以自动发生，但验证门、留痕与回退权永远在约束层手里，不随改进一起交出去。
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### 判断与生成分离：决策面独立成层的行业印证（System One 模型）
 
-「判断」正在成为独立的模型类别——TypeSafe AI 的 Jev（System One 决策模型）把「语义判断」从生成式 LLM 中剥离为专门一类：不生成文字、只输出类型化决策（选项/评分/是非三原语）+ 校准概率（RLCD 训练，声称 90% 把握就真的对 ~90%），百毫秒级延迟、判断成本低 LLM 两个数量级。
-这对 sofagent 是三重印证与一条纪律：①「能用规则不用模型判断」的既有信条被升级为「判断是独立层」的行业共识——[v1.5.4 判定分层 L0/L1/L2](./ROADMAP.md#版本规划) 的分层设计与行业「规则 <1ms → 语义路由 → LLM」延迟阶梯同构（RouteLLM/semantic-router 学术谱系见 [VALIDATION · System One](./VALIDATION.md#system-one-决策模型判断与生成分离jev--2026-09)）；
-②**校准判据（新纪律）**——引擎所有置信度数字（instinct scorer / 敏感识别分层 / 路由判定）从「拍脑袋常数」升格为「须有校准依据的设计承诺」：声称 X% 准确的阈值须有实测验证支撑，概率必须有意义，否则三段门控（高自动/中复核/低转人工）的门槛就是虚设；③类型化决策输出天然适配 decision-log 留痕。**边界纪律**：决策模型可被 state 内容操纵（已知失灵面），永不进信任地基——只坐确定性规则之后的语义兜底层，审计判定源零改动的架构顺序不因新模型类别而动摇。
-落地为 [v1.5.4 第二章](./changelog/v1.5/v1.5.4.md) DecisionChannel 通道接口（实现由用户自带，云端 opt-in 默认关、本地可跑开源并行约束解码方案——TrainChannel 同款纪律）。
+System One 行业印证节已归档（判据句保留在 §二判定层与 v1.5.4 路由章）——「决策模型永不进信任地基、只坐语义兜底层」。
 
-> 📖 来源：[MetaRSI/RSI² (arXiv 2609.06396)](https://arxiv.org/abs/2609.06396)（CosmosMind，2026-09）
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### RSI 的第四轴：环境供给是训练信号的可信前提
 
-Meta-RSI 形式化把自我改进拆为三个可写面算子（Data / Harness / Model）。行业大规模实践点破了这三个面共同的**上游**——**环境供给**：Agent 在什么样的执行环境里跑、环境能否被它自己伪造、环境造得够不够快够多。环境供给不可信，不是「少练一点」而是「训练信号是假的」——Agent 能在不牢的沙盒里刷出漂亮的通过率（翻读残留答案、伪造依赖响应、改块设备绕过检查），评估随之作废。
+DSec 环境供给论断（自我改进卡住的不是 GPU 是环境供给）两条架构主张（沙盒=评估前提/捕获层克制是必需）已归档——本仓边界：不管造场，管造场有没有留痕可验可退。
 
-这条对本仓是**边界澄清**而非功能扩张，落成两条架构主张：
-
-- **沙盒的第二重身份是评估前提**：execution 模块的沙盒此前只按「安全边界」叙事（拦不该做的），此处补上——它是任何「跑出来算数」的评估在架构上成立的条件。同一把锁既关风险，也关「伪造的成功」。
-- **捕获层的克制是必需而非洁癖**：只收经审计链锚定的真实轨迹、捕获层零外部调用、评估结果只排序不自动入池——这三条纪律的前提正是「训练信号可以被环境伪造」。环境能不能信，决定了这些门该不该立。
-
-**边界**：基础模型实验室造环境（谁造场、场跑多快是它们的生态位），sofagent 管的是**环境供给有没有被留痕、可验证、可回退**——「谁造的场、场里发生了什么、结论能不能复现」。造环境不归约束层，**管的资格**归约束层。
-
-> 📖 来源：DeepSeek Elastic Compute ([arXiv:2609.22978](https://arxiv.org/abs/2609.22978)，DeepSeek，2026-09）——生产级 Agent 训练沙盒基础设施，其 Agent 作弊实录是上述两条主张的实证。
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### 判定底座的边界：做马鞍，不做马场
 
@@ -1234,9 +1192,9 @@ Meta-RSI 形式化把自我改进拆为三个可写面算子（Data / Harness / 
 
 ### SHACL 语义契约（跨 Agent 协同的管控层参照）
 
-跨 Agent 协同缺的不是连接而是**统一语义契约**：静态 OWL 本体配 SHACL 形状约束作守门（语义漂移/版本偏移在提交时拦截），相当于「审计模块的协同版」——单 Agent 场景审计 git diff，多 Agent 协同场景审计本体变更是否符合契约。对 sofagent v1.3.9 meta-harness（多 harness 统一编排）的参照价值：协同层的语义校验不必自研，SHACL 是 W3C 标准化实现路径；本体驱动的工程实践（OAG 方向）显示推理校验可显著提升结果可靠性。
+SHACL（W3C 形状约束作本体提交时守门）参照已归档——多 Agent 协同语义校验不必自研。
 
----
+> 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### 架构反模式：五种常见 Agent 工程错误
 

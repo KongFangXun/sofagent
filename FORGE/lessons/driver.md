@@ -1,8 +1,10 @@
 # 四、Driver 编排规范
 
-> 🔴 **历史档案导航（2026-09-26 整合归一）**：本章所述多轮编排循环（preflight / 分片执行 / 停止条件判定 / spawn 编排 / daemon+watch 守护 / --resume 断点续跑 / LEDGER 与 latest.json 自动维护）**已从 `fresh-eyes-driver.mjs` 删除**——该文件现为纯单步角色执行器（`--worker --step`），编排职责上收给 harness session 注入的主任务协议（SSOT：`FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节）。本章保留为机制档案与经验源；整合决策与能力交接清单见本章末「编排循环退役与单步执行器」节。
+> 🔴 **历史档案导航（2026-09-26 整合归一）**：本章所述多轮编排循环（preflight / 分片执行 / 停止条件判定 / spawn 编排 / daemon+watch 守护 / --resume 断点续跑 / LEDGER 与 latest.json 自动维护）**已从 `fresh-eyes-driver.mjs` 删除**——该文件现为纯单步角色执行器（`--worker --step`），编排职责上收给 harness session 注入的主任务协议（SSOT：`FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节）。
+>本章保留为机制档案与经验源；整合决策与能力交接清单见本章末「编排循环退役与单步执行器」节。
 
-> 冻结窗口：driver 跑循环期间主仓目录处于「冻结」状态（commit-msg hook 2.6 段读 `~/.sofagent/internal/fresh-eyes-run.lock` 判 PID 存活 + 命中 driver 源码路径 → exit 1 阻断）。锁文件含 runId+指纹+PID；PID 已死=锁滞留 → WARN 放行。开发新循环时如需同款保护，参照 fresh-eyes-driver 的 acquireRunLock/releaseRunLock 挂点。（现态：hook 2.6 段与 driver 锁函数均已随编排循环退役删除，验收面以 S382 退役哨点承接；「审查中途不碰审查标准面」改由 fresh-eyes-loop 主任务协议承担）
+> 冻结窗口：driver 跑循环期间主仓目录处于「冻结」状态（commit-msg hook 2.6 段读 `~/.sofagent/internal/fresh-eyes-run.lock` 判 PID 存活 + 命中 driver 源码路径 → exit 1 阻断）。锁文件含 runId+指纹+PID；PID 已死=锁滞留 → WARN 放行。开发新循环时如需同款保护，参照 fresh-eyes-driver 的 acquireRunLock/releaseRunLock 挂点。（现态：hook 2.6 段与 driver 锁函数均已随编排循环退役删除，验收面以 S382 退役哨点承接；
+>「审查中途不碰审查标准面」改由 fresh-eyes-loop 主任务协议承担）
 
 > [← 返回索引](./index.md)
 
@@ -252,11 +254,13 @@ a-consolidate 撞硬熔断（40-60 次调用 vs 全局 45）
 
 **修复范式（三层防御）**：防熔断（步骤级预算）→ 兜底格式（裸 LLM 生成器对多产物步骤也输出 `===FILE:` 分隔符 + finding-NN 结构）→ 最后保险（判定产物空占位/格式不符检测 + 降级重建 + isDegraded 强制不干净）。
 
-**补充（降级重建后必须 diff 原始 worker findings 清单防漏派）**：a-consolidate 降级重建走 writeFallbackFindings 时，重建清单以「降级时可见的产物」为准——若部分 worker（check-a-pN）的 findings 已落盘但未被重建逻辑纳入，这些真实 P1 会被**静默漏派**到 b-fix（实例：降级轮漏派 2 条真实 P1，其中 diff-parser 文件头误滤一条游离两轮未修，直到主 session 收尾人工补修）。修复范式：降级重建完成后，driver 必须 `ls roundDir/check-a-p*.md` 与重建清单 diff——存在「已落盘但未入清单」的 worker 产物即追加为独立 finding（标注来源 worker），宁可重派不可漏派。同理适用于任何「中间产物→汇总清单」的降级路径：**降级产物的覆盖率必须以文件系统实存为准自证，不能以重建逻辑的可见面为准**。
+**补充（降级重建后必须 diff 原始 worker findings 清单防漏派）**：a-consolidate 降级重建走 writeFallbackFindings 时，重建清单以「降级时可见的产物」为准——若部分 worker（check-a-pN）的 findings 已落盘但未被重建逻辑纳入，这些真实 P1 会被**静默漏派**到 b-fix（实例：降级轮漏派 2 条真实 P1，其中 diff-parser 文件头误滤一条游离两轮未修，直到主 session 收尾人工补修）。
+修复范式：降级重建完成后，driver 必须 `ls roundDir/check-a-p*.md` 与重建清单 diff——存在「已落盘但未入清单」的 worker 产物即追加为独立 finding（标注来源 worker），宁可重派不可漏派。同理适用于任何「中间产物→汇总清单」的降级路径：**降级产物的覆盖率必须以文件系统实存为准自证，不能以重建逻辑的可见面为准**。
 
 **补充（收尾以仓库现态为准，不信执行 session 的过程汇报）**：用户停手/中断后做收尾对账时，执行 session 汇报的「未完成项」可能已在其后的清理动作中实际消解（时序差：先汇报后清理，汇报不回改）。收尾 session 必须逐项以仓库/git 现态实测（文件存在性 + git status + 分支 diff），不得转述执行 session 的过程态清单——判据与「零信任复验」同源：过程汇报不是证据，仓库现态才是。
 
-**补充（收尾勾稽的判据必须是交付物自带的验收命令，禁用语义放宽）**：收尾做「N 条 finding 全量勾稽」时，判据只有一条——**逐条实跑交付物（result.md）里该 finding 自带的「验证」命令，通过即 PASS、不通过即 FAIL**。禁用「核心风险是否仍存在」「别处是否已有等价实体」这类放宽口径：它会把 never-landed 的修复判成 PASS（实例：一轮 40 条 finding 勾稽报 0 FAIL，逐条实跑后暴露 9 处修复从未落地——修复批只产出代码/工具文件，文档面 finding 整类未执行，放宽口径下它们被「别处已有」掩盖）。两条配套纪律：① **勾稽必须区分「修复未落地」与「验证命令自身有缺陷」**——命令过宽（`grep "v1.5.2" | grep "规划中"` 会命中其它版本行对该版本的引用）、管道取错退出码（`cmd | tail; echo $?` 取的是 tail 的码）、字面未含空值护栏（找 `escapeHtml(x)` 匹配不到实际写法 `escapeHtml(x||'')`）都属命令缺陷，须单列并给出真实状态，**不得为了让命令变绿去改产品代码**；② **「N/N 勾稽通过」这类汇总数字必须由当轮实跑产生**，不得从上一轮结论转写——转写即失真，且会把上一轮的误判固化进永久台账。
+**补充（收尾勾稽的判据必须是交付物自带的验收命令，禁用语义放宽）**：收尾做「N 条 finding 全量勾稽」时，判据只有一条——**逐条实跑交付物（result.md）里该 finding 自带的「验证」命令，通过即 PASS、不通过即 FAIL**。禁用「核心风险是否仍存在」「别处是否已有等价实体」这类放宽口径：它会把 never-landed 的修复判成 PASS（实例：一轮 40 条 finding 勾稽报 0 FAIL，逐条实跑后暴露 9 处修复从未落地——修复批只产出代码/工具文件，文档面 finding 整类未执行，放宽口径下它们被「别处已有」掩盖）。
+两条配套纪律：① **勾稽必须区分「修复未落地」与「验证命令自身有缺陷」**——命令过宽（`grep "v1.5.2" | grep "规划中"` 会命中其它版本行对该版本的引用）、管道取错退出码（`cmd | tail; echo $?` 取的是 tail 的码）、字面未含空值护栏（找 `escapeHtml(x)` 匹配不到实际写法 `escapeHtml(x||'')`）都属命令缺陷，须单列并给出真实状态，**不得为了让命令变绿去改产品代码**；② **「N/N 勾稽通过」这类汇总数字必须由当轮实跑产生**，不得从上一轮结论转写——转写即失真，且会把上一轮的误判固化进永久台账。
 
 #### 🔴 worker 写完产物不退出 → driver 永久 await
 
@@ -614,7 +618,8 @@ node FORGE/src/fresh-eyes-driver.mjs --target <版本> > /tmp/fresh-eyes.log 2>&
 - 恢复流程铁律：先 `diff -rq` 双向对账确认超集方向 → 快照（`cp -r` 到 /tmp）→ 再单向恢复
 - push 频率即安全边际：本地未推 commit 数 = 风险敞口，重要落盘当天推
 
-**补充教训（driver 裸 commit 卷走队友暂存实录）**：`git add -A` 是明面的核弹，**裸 `git commit -m`（不带文件清单）是暗面的核弹**——它会提交暂存区里**所有已 staged 内容**，把队友并行编辑时先 `git add` 进暂存区的文件（如 docs/ 规划文档）一起卷进 auto-commit。修复：`git commit -m "..." -- <filesToAdd 清单>`，只提交本轮改动文件，队友 staged 的文件保持原状；且 filesToAdd 为空时**完全跳过 commit**（不执行任何裸 commit）。已在 `driver-base.mjs runAuditGate` 修复（fresh-eyes + release-gate 两 driver 共用，一处生效两处）。
+**补充教训（driver 裸 commit 卷走队友暂存实录）**：`git add -A` 是明面的核弹，**裸 `git commit -m`（不带文件清单）是暗面的核弹**——它会提交暂存区里**所有已 staged 内容**，把队友并行编辑时先 `git add` 进暂存区的文件（如 docs/ 规划文档）一起卷进 auto-commit。修复：`git commit -m "..." -- <filesToAdd 清单>`，只提交本轮改动文件，队友 staged 的文件保持原状；且 filesToAdd 为空时**完全跳过 commit**（不执行任何裸 commit）。
+已在 `driver-base.mjs runAuditGate` 修复（fresh-eyes + release-gate 两 driver 共用，一处生效两处）。
 
 ## release-gate 三连事故：并发 OOM + 两轮同款假 PASS + 假盲区（实录）
 
@@ -831,7 +836,8 @@ rc.2 的实际 API 与 `runCordisAgent` 的 `resolveAgentDriver` 契约不一致
 
 ### 编排循环退役与单步执行器（整合归一）
 
-**决策**：fresh-eyes-loop 的资产是**协议**（角色/轮次/产物 schema/停止条件），不是某个编排进程。快速模式（有人值守 session 编排）实测能力不低于 driver 编排循环后，两条路径整合归一：删 driver 多轮编排循环（4801→约 2000 行），保留 `--worker --step` 单步执行链路；编排逻辑文档化为主任务协议六条（状态接续先行 / 角色零上下文三通道 / status.md+verdict.md 落盘 / 收敛红线引 auto-converge SSOT / 机器守闸 check-fresh-eyes-artifacts / 收尾两动作），任何具备「读文件/写文件/跑命令」工具面的 harness（WorkBuddy 有人值守 / DSH 无头 / Codex headless）注入即跑。协议与产物契约跨形态同构，中途换载体按文件断点续跑。
+**决策**：fresh-eyes-loop 的资产是**协议**（角色/轮次/产物 schema/停止条件），不是某个编排进程。快速模式（有人值守 session 编排）实测能力不低于 driver 编排循环后，两条路径整合归一：删 driver 多轮编排循环（4801→约 2000 行），保留 `--worker --step` 单步执行链路；
+编排逻辑文档化为主任务协议六条（状态接续先行 / 角色零上下文三通道 / status.md+verdict.md 落盘 / 收敛红线引 auto-converge SSOT / 机器守闸 check-fresh-eyes-artifacts / 收尾两动作），任何具备「读文件/写文件/跑命令」工具面的 harness（WorkBuddy 有人值守 / DSH 无头 / Codex headless）注入即跑。协议与产物契约跨形态同构，中途换载体按文件断点续跑。
 
 **删了什么**（连同机制）：preflight / 逐轮 worktree re-sync / 版本指纹门禁与冻结窗口锁（exit 86 防线）/ 编排参数与断点续跑 / 增量视角裁剪调度 / b-fix·c-verify 分片编排与 d-review 回注 / spawnWorker·spawnParallel（含 empty-response 自动重启重试）/ 停止条件判定与加权收敛 / LEDGER·成本汇总·latest.json 指针自动维护 / runRound·runRoundTail / watcher 与 liveness 探针。
 
@@ -864,5 +870,7 @@ rc.2 的实际 API 与 `runCordisAgent` 的 `resolveAgentDriver` 契约不一致
 1. **死检查三态处置**：writer 已删 → consumer 恒空过。① 删 + 哨点（默认——恒空过的检查比没有检查更糟，它假装在守门）② 保留 + 现态标注（仅当描述有档案价值且零误导）③ 复活 writer（仅当存在真实保护需求且 writer 归属清晰）
 2. **删机制必扫消费面五件套**：机制主体 / 头部变更注记 / 活文档机制描述（releasing SOP）/ 测试场景 / 工具 README 关联描述——本次联动四处全靠删完 grep 反查出来
 3. **场景数对账撞行时的保计数策略**——删场景要动头部总数声明 + 三处文档声称值；若声明行正被并行 session 编辑（本次 373→372 归并对账进行中），**改写为哨点（编号保留、计数不变）优于删除**，零对账面波及
-4. **多 session 并发提交三条**（同窗实战）：① 同主题撞车用**临时 index 分离**——`git show HEAD:<file>` 构造只含自己改动的 blob + `git update-index --cacheinfo` 提交，并行改动留工作区由对方提交；② **partial commit 副作用**——`git commit <pathspec>` 会把真 index 写回「上一提交树 + pathspec」状态，与 HEAD 出现表观 staged 差异，`git reset`（mixed）对齐即净，非数据丢失；③ **hash-object 构造 blob 必先 `git ls-tree HEAD <path>` 读原 mode 位**——硬编码 100644 让两个 100755 脚本掉可执行位，amend 修复
-5. **writer 退役后的展示链路是「历史活、新数据死」**——消费端（Web fallback / 终端渲染 sofagent-dashboard.sh / API 端点）读安装态历史 runs 仍能渲染，属历史数据展示而非死代码；死的是新数据写入。三类面分开处置：展示面等新形态（status.md 锚）定型再统一适配、固定路径的死引用删、测试面自造 fixture 的场景（如 S157）测的是渲染能力不是假绿。**反查教训**：本轮第一轮反查自己就漏了 sofagent-dashboard.sh（只扫了端点名 forge-latest 与单个文件，没按数据文件名 latest.json 全仓扫）——消费面反查必须用**数据文件名**全仓 grep，端点名/单文件扫必漏
+4. **多 session 并发提交三条**（同窗实战）：① 同主题撞车用**临时 index 分离**——`git show HEAD:<file>` 构造只含自己改动的 blob + `git update-index --cacheinfo` 提交，并行改动留工作区由对方提交；② **partial commit 副作用**——`git commit <pathspec>` 会把真 index 写回「上一提交树 + pathspec」状态，与 HEAD 出现表观 staged 差异，`git reset`（mixed）对齐即净，非数据丢失；
+  ③ **hash-object 构造 blob 必先 `git ls-tree HEAD <path>` 读原 mode 位**——硬编码 100644 让两个 100755 脚本掉可执行位，amend 修复
+5. **writer 退役后的展示链路是「历史活、新数据死」**——消费端（Web fallback / 终端渲染 sofagent-dashboard.sh / API 端点）读安装态历史 runs 仍能渲染，属历史数据展示而非死代码；死的是新数据写入。三类面分开处置：展示面等新形态（status.md 锚）定型再统一适配、固定路径的死引用删、测试面自造 fixture 的场景（如 S157）测的是渲染能力不是假绿。
+  **反查教训**：本轮第一轮反查自己就漏了 sofagent-dashboard.sh（只扫了端点名 forge-latest 与单个文件，没按数据文件名 latest.json 全仓扫）——消费面反查必须用**数据文件名**全仓 grep，端点名/单文件扫必漏

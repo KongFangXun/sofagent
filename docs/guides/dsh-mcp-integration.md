@@ -22,7 +22,8 @@ DSH（DeepSeek Harness）有两条接入路径：① **本文档**——用官�
     toolCallTimeoutMs: 120000    # 可选：run_ab_test 等长任务建议放宽（默认 60000）
 ```
 
-> 字段名以 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`（2026-08-15 npm 实测拉包核对 `lib/types/index.d.ts` 的 `StdioConfig`）为准——`transport` / `serverName` / `command` / `args` / `env` / `cwd` / `toolCallTimeoutMs` / `failOnStartupError` / `reconnect`。DSH 尚处 developer preview（rc），后续版本字段可能变化，以 [DSH 官方仓库](https://github.com/deepseek-ai/deepseek-harness) config 文档为最终依据。
+> 字段名以 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`（2026-08-15 npm 实测拉包核对 `lib/types/index.d.ts` 的 `StdioConfig`）为准——`transport` / `serverName` / `command` / `args` / `env` / `cwd` / `toolCallTimeoutMs` / `failOnStartupError` / `reconnect`。
+>DSH 尚处 developer preview（rc），后续版本字段可能变化，以 [DSH 官方仓库](https://github.com/deepseek-ai/deepseek-harness) config 文档为最终依据。
 
 挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），全部 tool 可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
 
@@ -45,6 +46,7 @@ DSH（DeepSeek Harness）有两条接入路径：① **本文档**——用官�
 
 ## 验证状态
 
-> ⚠️ **本节配置示例的验证口径**：字段结构已对照 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6` 的类型定义与官方 README 核对（2026-08-15），但**尚未经 DSH 真实连接端到端验证**——DSH 本体处于 developer preview（rc），安装面与 profile 结构仍在变动。验证口径：以 MCP Inspector（`npx @modelcontextprotocol/inspector`）做 stdio 通道等价冒烟（工具可见 + 只读 tool 调用 + 破坏性 tool 未确认时挂起）；DSH 直连验证待 DSH 正式版后补做。若你基于本节配置实操遇到字段不匹配，请以 DSH 报错信息与官方文档为准并[提 issue](https://github.com/KongFangXun/sofagent/issues)反馈。
+> ⚠️ **本节配置示例的验证口径**：字段结构已对照 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6` 的类型定义与官方 README 核对（2026-08-15），但**尚未经 DSH 真实连接端到端验证**——DSH 本体处于 developer preview（rc），安装面与 profile 结构仍在变动。验证口径：以 MCP Inspector（`npx @modelcontextprotocol/inspector`）做 stdio 通道等价冒烟（工具可见 + 只读 tool 调用 + 破坏性 tool 未确认时挂起）；
+>DSH 直连验证待 DSH 正式版后补做。若你基于本节配置实操遇到字段不匹配，请以 DSH 报错信息与官方文档为准并[提 issue](https://github.com/KongFangXun/sofagent/issues)反馈。
 
 ---

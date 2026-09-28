@@ -8,8 +8,13 @@
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2009 行、`acceptance-test.sh` ≤ 4554 行（**B-3 章级顺延项落位批 · 上限重估（2026-09-28）**：落 ch1/2 行为锁场景 S457/S458（acceptance +9 → **4548**）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144·t +3 → **1989**）后，按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4548 + 1 场景余量 6 = **4554**；**未删改任何既有断言**，前值 2006/4541。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1986 + 1 维度余量 20 = **2006** · 4535 + 1 场景余量 6 = **4541**（后续 S454 降语义修复 `e869c670` +4，当批实测 4539 / ≤4541 余 2）；**未删改任何既有断言**，前值 1950/4500。实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。 🔴 **欠账登记（已评估 · 移 v1.5.5）**：本版新增章对应的验收场景与回归维度欠账，**经对销可行性复核判定两文件均无真实可归并空间**（0 内容级可归并对；乐观叠加 checklist ≈43 < 需求 98 / acceptance DRY 16 < 需求 21），按 v1.5.4〈首项硬交付〉〈对销可行性评估〉节裁定**7 项全批移 v1.5.5 落位**；本版新增维度前仍须先真实归并 ≥新增数并附承接断言清单，详见 [v1.5.4 开发日志](../docs/changelog/v1.5/v1.5.4.md)〈首项硬交付〉节。
-> 🧾 **落位说明（承接落位批）**：本版 devlog〈待补清单〉之 4 个维度项（#1 发版状态翻牌面三分 / #2 registry 对账通道终局口径 / #5 bump 历史引用误伤 / #6 dev prompt 读数禁快照）**按维护公约 §8「有同类 → 扩展旧维度子项、不新增编号」以子项并入同类现役维度**（#1/#5 → #124 · #2 → #97 · #6 → #130），**无一新增编号**（`check-review-system.sh` §1a/§1f 读数值 85 不变、归并配额棘轮不触发）。**三条依据**：① 公约 §8 明文「有同类 → 扩展旧维度子项、不新增编号」是唯一合规路径；② 维护者所批「上限重估」只授权下方两行警戒线（该口径本含「真实归并 **或** 上调记录」两条路径），**不触及** §1f 维度计数棘轮（§1f 明文「基线只应被后续归并下调，不因新增而上调」）；③ 无新增编号 ⇒ 公约 §10 归并配额不触发。上游依据：[changelog v1.5](../docs/changelog/v1.5/)〈首项硬交付 · 对销可行性评估〉与〈承接验收资产欠账（7 项）〉节。 **（B-3 章级顺延项落位批）**：第一/二章与第三/七章「新增 acceptance 场景/回归维度」原「⏭️ 顺延下版」的章级验收资产**已本版落位**——acceptance **S457/S458**（ch1/2 槽位排队 + 判定三层/门控行为锁）+ checklist **#144 子项 t**（ch3/7 Vault 与授权/凭证对账六面回归，依公约 §8 子项并入、不新增编号）；承接版开发日志〈承接章级验收资产顺延〉块随之作废。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2009 行、`acceptance-test.sh` ≤ 4554 行（**上限重估**（台账注记见 git 演进史）：落 ch1/2 行为锁场景 S457/S458（acceptance +9 → **4548**）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144·t +3 → **1989**）后，
+按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4548 + 1 场景余量 6 = **4554**；**未删改任何既有断言**，前值 2006/4541。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
+按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1986 + 1 维度余量 20 = **2006** · 4535 + 1 场景余量 6 = **4541**（后续 S454 降语义修复 `e869c670` +4，当批实测 4539 / ≤4541 余 2）；**未删改任何既有断言**，前值 1950/4500。实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
+🔴 **欠账登记（已评估 · 移 v1.5.5）**：本版新增章对应的验收场景与回归维度欠账，**经对销可行性复核判定两文件均无真实可归并空间**（0 内容级可归并对；乐观叠加 checklist ≈43 < 需求 98 / acceptance DRY 16 < 需求 21），按 v1.5.4〈首项硬交付〉〈对销可行性评估〉节裁定**7 项全批移 v1.5.5 落位**；本版新增维度前仍须先真实归并 ≥新增数并附承接断言清单，详见 [v1.5.4 开发日志](../docs/changelog/v1.5/v1.5.4.md)〈首项硬交付〉节。
+> 🧾 **落位说明（承接落位批）**：本版 devlog〈待补清单〉之 4 个维度项（#1 发版状态翻牌面三分 / #2 registry 对账通道终局口径 / #5 bump 历史引用误伤 / #6 dev prompt 读数禁快照）**按维护公约 §8「有同类 → 扩展旧维度子项、不新增编号」以子项并入同类现役维度**（#1/#5 → #124 · #2 → #97 · #6 → #130），**无一新增编号**（`check-review-system.sh` §1a/§1f 读数值 85 不变、归并配额棘轮不触发）。
+>**三条依据**：① 公约 §8 明文「有同类 → 扩展旧维度子项、不新增编号」是唯一合规路径；② 维护者所批「上限重估」只授权下方两行警戒线（该口径本含「真实归并 **或** 上调记录」两条路径），**不触及** §1f 维度计数棘轮（§1f 明文「基线只应被后续归并下调，不因新增而上调」）；③ 无新增编号 ⇒ 公约 §10 归并配额不触发。上游依据：[changelog v1.5](../docs/changelog/v1.5/)〈首项硬交付 · 对销可行性评估〉与〈承接验收资产欠账（7 项）〉节。
+>**（B-3 章级顺延项落位批）**：第一/二章与第三/七章「新增 acceptance 场景/回归维度」原「⏭️ 顺延下版」的章级验收资产**已本版落位**——acceptance **S457/S458**（ch1/2 槽位排队 + 判定三层/门控行为锁）+ checklist **#144 子项 t**（ch3/7 Vault 与授权/凭证对账六面回归，依公约 §8 子项并入、不新增编号）；承接版开发日志〈承接章级验收资产顺延〉块随之作废。
 
 **维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷，driver 白跑一轮）：
 1. **显式收尾**：每个维度的检查命令必须以 `echo "✅ ..."` 或 `echo "❌ ..."; exit 1` 收尾——**禁用「期望：无输出」「期望：exit 1」这类依赖退出码语义的写法**。driver 只看 exitCode，`grep 无命中返回 1` / `for 循环尾判假返回 1` 都被误判 FAIL（#59/#96 实证——输出全 ✅ 仍记 FAIL）。
@@ -871,7 +876,8 @@ grep -q "shannonEntropy < 3" engine/core/src/audit-history.ts && echo "✅ 阈�
 
 #### 53. SSOT 零硬编码——产品代码不得绕过 data-paths.ts 拼路径
 
-> ⚠️ **判定规则（防误报）**：data-paths.ts 管的是 `~/.sofagent/data/` **运行时数据路径**（resolveAuditDir/resolveDataDir 等）。包内自带的 fixture / golden-set 文件路径（如 `join(__dirname, '..', 'data', 'golden-set.yaml')`）是**随包发布的测试数据**，不是运行时数据，不适用此维度。仅当路径指向用户 home 下的运行时数据目录（如 `~/.sofagent/data/`、`data/audit/`）却绕过 data-paths.ts 时才算 FAIL。
+> ⚠️ **判定规则（防误报）**：data-paths.ts 管的是 `~/.sofagent/data/` **运行时数据路径**（resolveAuditDir/resolveDataDir 等）。包内自带的 fixture / golden-set 文件路径（如 `join(__dirname, '..', 'data', 'golden-set.yaml')`）是**随包发布的测试数据**，不是运行时数据，不适用此维度。
+>仅当路径指向用户 home 下的运行时数据目录（如 `~/.sofagent/data/`、`data/audit/`）却绕过 data-paths.ts 时才算 FAIL。
 
 ```bash
 # 产品代码零硬编码检查（排除测试文件、data-paths.ts 自身、注释、包内 fixture 路径）
@@ -980,7 +986,8 @@ done
 
 #### 62. 发版闸门裁决解析健壮性——禁止「全文含 FAIL 即判 FAIL」脆弱兜底
 
-> 教训：release-gate-driver.mjs 的 parseVerdict / parseStepResults 曾有脆弱兜底——「报告全文含 \bFAIL\b 字样就判 FAIL」。但发版验证报告的真实结论是 PASS，正文却**必然**提到 FAIL（负向测试场景的预期输出 / 覆盖率表的 ❌ 标记 / 「无 FAIL 条目」这类措辞）。结果一次真实通过的验证被自动化误标成 FAIL，写进 LEDGER.md 和 status.json，靠读 verdict.md 权威产物才还原真相。根因：结论 PASS 的报告正文必然含 FAIL 字样，脆弱兜底把 PASS 误判 FAIL。**读发版裁决以 verdict.md 权威产物为准，别被 LEDGER / status.json 的自动化解析带偏。**
+> 教训：release-gate-driver.mjs 的 parseVerdict / parseStepResults 曾有脆弱兜底——「报告全文含 \bFAIL\b 字样就判 FAIL」。但发版验证报告的真实结论是 PASS，正文却**必然**提到 FAIL（负向测试场景的预期输出 / 覆盖率表的 ❌ 标记 / 「无 FAIL 条目」这类措辞）。结果一次真实通过的验证被自动化误标成 FAIL，写进 LEDGER.md 和 status.json，靠读 verdict.md 权威产物才还原真相。根因：结论 PASS 的报告正文必然含 FAIL 字样，脆弱兜底把 PASS 误判 FAIL。
+>**读发版裁决以 verdict.md 权威产物为准，别被 LEDGER / status.json 的自动化解析带偏。**
 
 ```bash
 # 显式判定版（健康态语义 exit=1 被 driver 归一化旁路，须显式 if）；锚点以源码实况为准：slice 窗口在 extractVerdictKeyword 内仅 1 处，围栏剥离 replace(/```[\s\S]*?```/g
@@ -1012,7 +1019,8 @@ grep -rnE "^#{1,4} .*(🔮|🔄|🪟|✨|[+/（）():：])" docs/ README.md SECU
 
 #### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（归并 65+66）
 
-> 教训（归并原 65+66）：FORGE stream 迁移有两个数据处理陷阱：① `stream(streamMode: 'updates')` 的 chunk 是 `{ nodeName: stateDelta }`，直接 `finalState = chunk` 会丢 `result.messages` → 输出 `[object Object]`——必须 `Object.entries(chunk)` 累积。② LangGraph message content 可能是 `Array<{type, text}>` 或嵌套对象，`extractAgentText` 只做 string 判断时会 fallback 到 `String(message)` → 同样输出 `[object Object]`。
+> 教训（归并原 65+66）：FORGE stream 迁移有两个数据处理陷阱：① `stream(streamMode: 'updates')` 的 chunk 是 `{ nodeName: stateDelta }`，直接 `finalState = chunk` 会丢 `result.messages` → 输出 `[object Object]`——必须 `Object.entries(chunk)` 累积。
+>② LangGraph message content 可能是 `Array<{type, text}>` 或嵌套对象，`extractAgentText` 只做 string 判断时会 fallback 到 `String(message)` → 同样输出 `[object Object]`。
 
 ```bash
 # 验证两个 driver 的 stream chunk 处理含 Object.entries 解包（而非裸赋值）
@@ -1214,7 +1222,8 @@ grep -c "stripped.*replace.*cd" FORGE/src/fresh-eyes-driver.mjs # ≥1
 
 #### 86. FORGE driver auto-commit 代码领域限定——防卷队友未提交内容
 
-**背景**：driver 用 `git add -A` 把队友并行编辑的规划文档（docs/changelog/v1.4/*.md）一起卷进 auto-commit；修复改为只 add 代码领域（engine/FORGE/src/tools/SKILL）。**同族扩展（发版流程侧实锤）**：人工发版窗口的翻牌/收尾批 `git add <file>` 同样会裹挟并行 session 在该文件工作区的未提交 hunk——数字预改混入翻牌 commit 导致 CI 测试数漂移红；发版 SOP 已沉淀「commit 前 `git diff --cached` 逐 hunk 核对，非自己 hunk 不入」（docs/changelog/releasing/11-post-publish.md 步骤三）。
+**背景**：driver 用 `git add -A` 把队友并行编辑的规划文档（docs/changelog/v1.4/*.md）一起卷进 auto-commit；修复改为只 add 代码领域（engine/FORGE/src/tools/SKILL）。**同族扩展（发版流程侧实锤）**：人工发版窗口的翻牌/收尾批 `git add <file>` 同样会裹挟并行 session 在该文件工作区的未提交 hunk——数字预改混入翻牌 commit 导致 CI 测试数漂移红；
+发版 SOP 已沉淀「commit 前 `git diff --cached` 逐 hunk 核对，非自己 hunk 不入」（docs/changelog/releasing/11-post-publish.md 步骤三）。
 
 ```bash
 # driver-base runAuditGate 不含 git add -A
@@ -1779,7 +1788,8 @@ grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在
 ```
 #### 130. 发版流程与发版域教训防复发——sha256 预计算 + Marketplace 延续 + ClawHub 快照 + Edit 串行 + npm 对账缓存 + 干净态排查
 
-> 发版四坑实录：① bootstrap.sh INSTALL_SHA256 回填走「tag 后算哈希再回填再重打 tag」两次 tag 往返——预计算 HEAD 哈希与 URL bump 同 commit 可让 tag 一次打自洽（install.sh/lib 无改动时 lib 哈希不变免回填）；② GitHub Marketplace listing 勾选自动延续（v1.4.2 起每版勾选后 listing 关联保持），版本页出现新版号即免网页操作；③ ClawHub verify 的 `security.status_not_clean` 可能是既有状态（1.4.3 时代已存在）——发布前先快照对照，新引入才需处置；④ 同一文件多处 Edit 并行调用发生读写竞态（5 处只落 2 处）——同文件多编辑必须串行。
+> 发版四坑实录：① bootstrap.sh INSTALL_SHA256 回填走「tag 后算哈希再回填再重打 tag」两次 tag 往返——预计算 HEAD 哈希与 URL bump 同 commit 可让 tag 一次打自洽（install.sh/lib 无改动时 lib 哈希不变免回填）；② GitHub Marketplace listing 勾选自动延续（v1.4.2 起每版勾选后 listing 关联保持），版本页出现新版号即免网页操作；
+>③ ClawHub verify 的 `security.status_not_clean` 可能是既有状态（1.4.3 时代已存在）——发布前先快照对照，新引入才需处置；④ 同一文件多处 Edit 并行调用发生读写竞态（5 处只落 2 处）——同文件多编辑必须串行。
 
 ```bash
 (

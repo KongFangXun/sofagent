@@ -6,7 +6,8 @@
 
 ---
 
-**目录**：[核心问题](#核心问题) · [激活链总览](#激活链总览) · [Phase 1: ACTIVATE — 从交付物注册企业 SubAgent](#phase-1-activate--从交付物注册企业-subagent) · [Phase 2: ORCHESTRATE — 按 workflow 依赖构建 LangGraph](#phase-2-orchestrate--按-workflow-依赖构建-langgraph) · [Phase 3: EXECUTE — DAG 运行 + 审计监控](#phase-3-execute--dag-运行--审计监控) · [Phase 4: SUSTAIN — 持续优化](#phase-4-sustain--持续优化) · [设计问题与决策](#设计问题与决策) · [文件清单](#文件清单) · [验证方式](#验证方式) · [与其他开发线的衔接](#与其他开发线的衔接) · [企业 SubAgent = 引擎公民，不是独立脚本](#企业-subagent--引擎公民不是独立脚本) · [一句话总结](#一句话总结)
+**目录**：[核心问题](#核心问题) · [激活链总览](#激活链总览) · [Phase 1: ACTIVATE — 从交付物注册企业 SubAgent](#phase-1-activate--从交付物注册企业-subagent) · [Phase 2: ORCHESTRATE — 按 workflow 依赖构建 LangGraph](#phase-2-orchestrate--按-workflow-依赖构建-langgraph) · [Phase 3: EXECUTE — DAG 运行 + 审计监控](#phase-3-execute--dag-运行--审计监控) · [Phase
+4: SUSTAIN — 持续优化](#phase-4-sustain--持续优化) · [设计问题与决策](#设计问题与决策) · [文件清单](#文件清单) · [验证方式](#验证方式) · [与其他开发线的衔接](#与其他开发线的衔接) · [企业 SubAgent = 引擎公民，不是独立脚本](#企业-subagent--引擎公民不是独立脚本) · [一句话总结](#一句话总结)
 
 ## 核心问题
 
@@ -112,7 +113,8 @@ nodes:
       prompt: "请确认以下排程方案是否可执行："
 ```
 
-第三个节点 `id: quality-check`（质量检验，`skill_ref: skills/质量检验/SKILL.md`，`entity_ref: entities/质量检验.md`，`task: "自动检验产品合格率，不合格批次自动标记并通知"`）只在差异字段上不同：`type: 🔄` · `depends_on: [production-scheduling]` · `actions: [read, write]` · `hitl: false` · `knowledge_domain` = `include: [检验标准, 合格阈值, 不合格处理流程]` + `exclude: []`（空数组）。字段集与上面两个节点完全一致。
+第三个节点 `id: quality-check`（质量检验，`skill_ref: skills/质量检验/SKILL.md`，`entity_ref: entities/质量检验.md`，`task: "自动检验产品合格率，不合格批次自动标记并通知"`）只在差异字段上不同：`type: 🔄` · `depends_on: [production-scheduling]` · `actions: [read, write]` · `hitl: false` · `knowledge_domain` = `include: [检验标准, 合格阈值, 不合格处理流程]` + `exclude:
+[]`（空数组）。字段集与上面两个节点完全一致。
 
 ### activate 命令
 
@@ -139,7 +141,8 @@ export async function activateWorkflow(opts: {
 }): Promise<ActivateResult>
 ```
 
-内部七步（逐步幂等，dryRun 只预览不落盘）：①读 workflow.yml → ②遍历节点（👤 暂不动跳过并记录 reason）→ ③读 SKILL.md 提取 system prompt + actions → ④读 entity 提取 knowledge-domain → ⑤`buildConstrainedPrompt` 组装企业 SubAgent 定义（type 按 🔄/⚡ 映射 auto/assist，携带 hitl/hitlConfig）→ ⑥非 dryRun 时写 `.sofagent/subagents/<node-id>.yml`（registry.ts `loadDefinition()` 已支持读）→ ⑦`buildTopology` 生成 LangGraph 拓扑描述（供 Phase 2）。
+内部七步（逐步幂等，dryRun 只预览不落盘）：①读 workflow.yml → ②遍历节点（👤 暂不动跳过并记录 reason）→ ③读 SKILL.md 提取 system prompt + actions → ④读 entity 提取 knowledge-domain → ⑤`buildConstrainedPrompt` 组装企业 SubAgent 定义（type 按 🔄/⚡ 映射 auto/assist，
+携带 hitl/hitlConfig）→ ⑥非 dryRun 时写 `.sofagent/subagents/<node-id>.yml`（registry.ts `loadDefinition()` 已支持读）→ ⑦`buildTopology` 生成 LangGraph 拓扑描述（供 Phase 2）。
 
 ### 企业 SubAgent YML 格式（写入 `.sofagent/subagents/`）
 

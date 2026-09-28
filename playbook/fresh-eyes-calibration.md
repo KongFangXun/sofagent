@@ -48,7 +48,8 @@
 - **脚本环境三坑**——bash 3.2 空数组 + `set -u` 崩溃；测试 finally 的 rmSync 必须 try-catch（shim 环境会拦截致假失败，先非 shim 复验）；随机断言须大量采样锁契约（概率性 CI 红）
 - **二进制读前判 isBinaryBuffer**——文本快照读二进制会静默产生 U+FFFD 损坏；测试敏感数据用占位符/运行时拼接，不字面写真实格式
 - **断言校准三同步**——校准过时断言时，判定条件、场景标题注释、pass 消息展示文本三处都可能残留旧值；一次改齐
-- **Git Data API 绕行推送必须验 tree 一致性**——git push 死代理时的唯一通道（断网期全量推送实证有效）：三坑——tree 条目 mode 硬编码 100644 丢全部 .sh 执行位（verify CI 失败根因，恢复靠「blob 内容寻址——引用既有 blob 建新 tree」）；rename R100 在 diff 取新路径；create-tree 无法表达删除条目（rename/删除残留旧文件，须 Contents API 逐个补删）。**验收唯一标准：远端 tree sha == 本地 `git rev-parse HEAD^{tree}`，逐字节一致才算成功**
+- **Git Data API 绕行推送必须验 tree 一致性**——git push 死代理时的唯一通道（断网期全量推送实证有效）：三坑——tree 条目 mode 硬编码 100644 丢全部 .sh 执行位（verify CI 失败根因，恢复靠「blob 内容寻址——引用既有 blob 建新 tree」）；rename R100 在 diff 取新路径；create-tree 无法表达删除条目（rename/删除残留旧文件，须 Contents API 逐个补删）。
+  **验收唯一标准：远端 tree sha == 本地 `git rev-parse HEAD^{tree}`，逐字节一致才算成功**
 - **发布物与锚点结构对照**——release note（title `vX.Y.Z — emoji 主题短语` + body 五要素：定位句/核心变更/破坏性变更/质量验证 7 项表/尾链）生成后必须与上一版/锚点实际发布物并排对照，**不是对照 SOP 文字**（SOP 文字曾漂移——两次被作者退回：漏质量验证表 + 漏标题主题）。发布物本身是检验标准
 - **执行者写权限前置验证**——只读沙箱里跑的修复环节零落盘、driver 结构性停机；派单前验证执行者对审查快照可写
 - **崩溃视角强制补位**——worker 崩溃的视角是覆盖缺口，下轮补跑，不静默略过
@@ -175,7 +176,8 @@
 
 ## 审查校准收编（阶段四 C 类 · 最新批）
 
-- **验证命令必须可证伪**：本版实锤 10 条验证命令用 `grep -c X | xargs test 1 -ge` 形态——`test 1 -ge N` 在实测计数 N≤1 时恒真（计数 0 也「通过」），修与不修都绿，致 40 条勾稽的 PASS 数整体失真（自报缺陷 3 条，实测为 10 条）。校准：result.md 每条验证命令须先在未修复态验「它会红」再定稿；`-ge`/`-le`/`-eq` 比较方向逐个核对；字符串锚取目标文件的**实际写法**（实锤：代码是 `escapeHtml(rec.time||'')`，锚写 `escapeHtml(rec.time)` 恒 0 命中）——生成侧规范已落 a-consolidate 与 lessons。
+- **验证命令必须可证伪**：本版实锤 10 条验证命令用 `grep -c X | xargs test 1 -ge` 形态——`test 1 -ge N` 在实测计数 N≤1 时恒真（计数 0 也「通过」），修与不修都绿，致 40 条勾稽的 PASS 数整体失真（自报缺陷 3 条，实测为 10 条）。校准：result.md 每条验证命令须先在未修复态验「它会红」再定稿；`-ge`/`-le`/`-eq` 比较方向逐个核对；
+  字符串锚取目标文件的**实际写法**（实锤：代码是 `escapeHtml(rec.time||'')`，锚写 `escapeHtml(rec.time)` 恒 0 命中）——生成侧规范已落 a-consolidate 与 lessons。
 - **判「存量红 vs 本次引入」必须 worktree 隔离**：本版 check-readme-parity 被定性「存量红（HEAD 处 FAIL=3）」，worktree 二分实锤为**本次自引入**（开工 HEAD 为绿 → `#>` 畸形行 + 单侧 `###`→`##` 造成层级不对称 → 后续批次修复）。校准：定性前必 `git worktree add --detach <开工 HEAD>` 实测对照；凭上下文推断会给修复优先级排序注入假信号（本版据此更正了一条定性）。
 - **勾稽判据 = 交付物自带验收命令，禁用语义放宽**：本版同一批勾稽先报「35 PASS / 0 FAIL / 5 SKIP」（判据为「核心风险是否仍存在」的语义放宽），逐条实跑后真值不同。校准：勾稽只认交付物自带命令的实跑结果 + 逐条留痕；语义放宽口径（「风险是否仍在」类）一律不得计入 PASS。
 - **consolidate 降级重建后必须 diff 原始 worker findings 清单**：本版 a-consolidate 降级重建时漏派 2 条真实 P1（其一被后续轮次顺带修、其一两轮皆漏）。校准：降级重建产物须与原始 worker 清单做**差集核对**，差集非空即补派——重建产物的完整性无人守护是结构性盲区。
@@ -190,7 +192,8 @@
 - **发布窗口的 verify 红是 fail-closed 语义的预期形态**：verify 工作流装 `@sofagent/audit@<本版>`，publish 前必红——这是供应链修复（目标版本不存在即拒绝，不降级 @latest）按设计工作；上一版同点位「绿」是 fail-open 假绿。判别口径：verify 红在「npm 未发本版」时点 = 预期，publish 后 rerun 应转绿；其他时点红才是真故障。
 - **ClawHub CLI 输出不可作为发布成败判据**：三轮实测再证实——Docs 链接输出、Plugin Inspector blocked、OOM 报错后版本实际都已上平台。唯一可信通道 = API 查证（`https://clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>` 的 latestVersion），SOP 已载明，此处补校准：「CLI 报错后不要改版本号重试，先查 API」。
 - **平台侧 OOM/限流的重试纪律**：ClawHub Convex 512MB OOM 等 reset（8-59s 提示值）后重试即成；SkillHub「发布频率过高」等 60s+ 补发即成——都不是包问题，重试间隔从提示值取（勿猜）；连环失败时把逐款间隔从 20s 拉到 40s。
-- **bump 残留有五类长尾形态**：本轮实测——package-lock version 字段（需 --package-lock-only 重生成）/ 生成器常量（TRAIN_DELIVERABLE_GENERATOR_VERSION）/ 深读文档正文「当前 vX.Y」行（WIKI·evidence·SECURITY）/ docs/guides 全目录文档头日期 / root package.json 依赖段 + ROADMAP 版本头描述行（关键词与 CHANGELOG 标题重合度断言会抓错版）。校准：bump 后 check-version 红的每一行都按类处置，勿只改第一处就复跑（本轮五轮才清零）。
+- **bump 残留有五类长尾形态**：本轮实测——package-lock version 字段（需 --package-lock-only 重生成）/ 生成器常量（TRAIN_DELIVERABLE_GENERATOR_VERSION）/ 深读文档正文「当前 vX.Y」行（WIKI·evidence·SECURITY）/ docs/guides 全目录文档头日期 / root package.json 依赖段 + ROADMAP 版本头描述行（关键词与 CHANGELOG 标题重合度断言会抓错版）。
+  校准：bump 后 check-version 红的每一行都按类处置，勿只改第一处就复跑（本轮五轮才清零）。
 
 ## v1.5.1 审查校准收编（阶段四 C 类）
 
@@ -206,7 +209,8 @@
 - **探针代际混淆要验体例**：两代场景体例并存时，新场景误用旧壳会「既不判也不计数」而 REPORT 仍称已落地 ⇒ 审查须验格式守卫，不能只验计数
 - **驳回必须附反证**：不接受「我觉得不是」——读实现 + 现场复验才算驳回
 - **报告须声明未出 finding 的视角**：缺的编号须声明「跑过无发现」还是「未跑」，否则读者会误读为全跑过
-- **「守卫会不会红」之前先问「守卫会不会跑」——哑守卫四形态**：①哑守卫（路径写死指向已搬迁目录 + `catch { return }` 静默跳过：有代码、有注释、从未执行）②空集假绿（解析结果为空时比对恒成立）③抽取/装载失明（路径错 + 吞错 ⇒ 输入恒空）④locale 退化（中间产物非空但不具判别力——C locale 下 sed 按字节切多字节产出非法 UTF-8，perl 读到即死而 `2>/dev/null`+`|| true` 吞掉，残留「非空」反而使空集守卫失效）。共同点：**守卫存在、代码在、永不生效，而门禁全绿**。审查断言必须验两条：执行可达性 + 非空/非重言；CJK 脚本头部强制 UTF-8、排序去重阶段强制 `LC_ALL=C`，locale 不变性（默认 vs C 环境输出逐字节一致）是判据
+- **「守卫会不会红」之前先问「守卫会不会跑」——哑守卫四形态**：①哑守卫（路径写死指向已搬迁目录 + `catch { return }` 静默跳过：有代码、有注释、从未执行）②空集假绿（解析结果为空时比对恒成立）③抽取/装载失明（路径错 + 吞错 ⇒ 输入恒空）④locale 退化（中间产物非空但不具判别力——C locale 下 sed 按字节切多字节产出非法 UTF-8，perl 读到即死而 `2>/dev/null`+`|| true` 吞掉，残留「非空」反而使空集守卫失效）。共同点：**守卫存在、代码在、永不生效，而门禁全绿**。审查断言必须验两条：执行可达性 + 非空/非重言；
+  CJK 脚本头部强制 UTF-8、排序去重阶段强制 `LC_ALL=C`，locale 不变性（默认 vs C 环境输出逐字节一致）是判据
 
 ## v1.5.0 审查校准收编（阶段四 C 类）
 

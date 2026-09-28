@@ -29,7 +29,8 @@ node tools/gen/gen-plugin-manifests.mjs
 > **防御**：bump 后必跑 `grep -rn "v[0-9]\+\.[0-9]\+\.[0-9]\+" $(git diff --name-only)` 逐条核对，
 > 或直接跑 `bash tools/check/check-template-drift.sh`（断言一/三 覆盖 hook 头版本自报）。
 
-**脚本覆盖范围**（全自动扫描，新增 .ts/.sh/.ps1 文件自动发现；🔴 类数与位置清单 SSOT = `tools/release/bump-version.sh` 头部「替换范围」注释，随脚本演进——本手册不复述逐项清单，防双源漂移。已知覆盖面含：各层 package.json（SSOT/workspace 子包/openclaw 双 manifest）/ const VERSION / .ts 头注释 / index.ts / .sh / .ps1 / MD 头尾 / README badge / SKILL.md / SECURITY.md / hook 头 / dashboard.html）：
+**脚本覆盖范围**（全自动扫描，新增 .ts/.sh/.ps1 文件自动发现；🔴 类数与位置清单 SSOT = `tools/release/bump-version.sh` 头部「替换范围」注释，随脚本演进——本手册不复述逐项清单，防双源漂移。已知覆盖面含：各层 package.json（SSOT/workspace 子包/openclaw 双 manifest）/ const VERSION / .ts 头注释 / index.ts / .sh / .ps1 / MD 头尾 / README badge / SKILL.md / SECURITY.md / hook 头 /
+dashboard.html）：
 1. 版本号替换位置以脚本头部注释为准（`head -30 tools/release/bump-version.sh`），此处不维护第二份清单
 2. **bump 后必跑门禁**：`bash tools/check/check-version.sh`——bump 能改的 check 必须能查，两脚本覆盖范围一致性是阶段二开发纪律既有项
 

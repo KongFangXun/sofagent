@@ -158,7 +158,8 @@ git clone https://github.com/KongFangXun/sofagent.git
 cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 ```
 
-发版：按 [docs/changelog/releasing.md](./docs/changelog/releasing.md) 十一阶段 SOP 执行——阶段一~四（审查/开发/质量循环/审查体系）→ 阶段五~七（发版闸门/文档收尾/工具健康）→ 阶段八（确认关口）→ 阶段九~十（发布：npm 13 包 + ClawHub/SkillHub 双分发 + tag + Release）→ 阶段十一（发布后收尾）。简版：`docs/changelog/vX.Y/vX.Y.Z.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/release/bump-version.sh` 升级版本号 → `tools/release/pre-push-check.sh` 全绿 → `git tag vX.Y && git push` → `gh release create vX.Y`。
+发版：按 [docs/changelog/releasing.md](./docs/changelog/releasing.md) 十一阶段 SOP 执行——阶段一~四（审查/开发/质量循环/审查体系）→ 阶段五~七（发版闸门/文档收尾/工具健康）→ 阶段八（确认关口）→ 阶段九~十（发布：npm 13 包 + ClawHub/SkillHub 双分发 + tag + Release）→ 阶段十一（发布后收尾）。
+简版：`docs/changelog/vX.Y/vX.Y.Z.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/release/bump-version.sh` 升级版本号 → `tools/release/pre-push-check.sh` 全绿 → `git tag vX.Y && git push` → `gh release create vX.Y`。
 
 > 📋 **changelog 写作规范**：changelog 是对外公开文档，**不写人名、内部私有路径、内部工单/审查代号**。
 > - ❌ 不写开发成员名字或角色代号（如"某某拍板""供某某实现"）
@@ -177,9 +178,11 @@ git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 ```
 
 - ❌ **反例（2026-09-28 实测代价）**：两个写者在同一工作树各自提交 ⇒ 共享索引被对方宽泛 `git add` 污染（索引里残留的旧值 blob 会在提交时把已改好的数字回退），后写者不得不 `git read-tree HEAD` 复位索引；双方还会互相把对方的提交判成「外部改动」，产生数轮协调开销。
-- ✅ **确需共享树时**（应急）：提交走隔离索引——`GIT_INDEX_FILE=/tmp/idx-$$` + `git read-tree HEAD` + 精确 `git add <路径>`；提交前 `git status --short` 核对**不夹带他人文件**。🔴 **隔离索引 commit 后必须 `git reset -q HEAD` 刷新共享索引**——`GIT_INDEX_FILE` 只作用于本次提交，「提交」不会刷新 `.git/index` 这棵共享索引树；不显式 `git reset -q HEAD` 则共享索引残留旧树，`git status` 对已提交文件**假报 `MM`**（2026-09-28 实测：三笔隔离索引提交后遗留 `MM`，须 `unset GIT_INDEX_FILE; git reset -q HEAD` 才回到 `index==HEAD==worktree`）。
+- ✅ **确需共享树时**（应急）：提交走隔离索引——`GIT_INDEX_FILE=/tmp/idx-$$` + `git read-tree HEAD` + 精确 `git add <路径>`；提交前 `git status --short` 核对**不夹带他人文件**。🔴 **隔离索引 commit 后必须 `git reset -q HEAD` 刷新共享索引**——`GIT_INDEX_FILE` 只作用于本次提交，「提交」不会刷新 `.git/index` 这棵共享索引树；
+  不显式 `git reset -q HEAD` 则共享索引残留旧树，`git status` 对已提交文件**假报 `MM`**（2026-09-28 实测：三笔隔离索引提交后遗留 `MM`，须 `unset GIT_INDEX_FILE; git reset -q HEAD` 才回到 `index==HEAD==worktree`）。
 - ✅ **跨版本移交必须双向登记**：把某事「顺延 / 移 vX.Y.Z」写进本版时，**同一批次**在目标版 devlog 写承接块（标题或正文含「由 <源版本> 移入」）——单向登记 = 高概率丢项。机械守卫：`tools/check/check-forms.mjs` 的 **A9 顺延↔承接双向登记**。
-- 🔴 **共享文件必须逐 hunk 核对（2026-09-28 实测代价）**：`git add -- <path>` 的 pathspec 精确**挡不住「同一文件被两方改过」**——`git add <file>` 会把对方改动**一起暂存**（实测：一行的「承接 v1.5.4 待补清单 #6」被误带进我的提交，`git log -S` 归属错位，只能靠提交信息事后披露）。⇒ 并发场景下凡「共享文件」（两人都可能改的 SOP / 清单 / 台账）：**先 `git diff <file>` 逐 hunk 核对**，或用 `git add -p` / 临时 worktree 错峰；**禁直接 `git add <共享文件>`**。
+- 🔴 **共享文件必须逐 hunk 核对（2026-09-28 实测代价）**：`git add -- <path>` 的 pathspec 精确**挡不住「同一文件被两方改过」**——`git add <file>` 会把对方改动**一起暂存**（实测：一行的「承接 v1.5.4 待补清单 #6」被误带进我的提交，`git log -S` 归属错位，只能靠提交信息事后披露）。⇒ 并发场景下凡「共享文件」（两人都可能改的 SOP / 清单 / 台账）：**先 `git diff <file>` 逐 hunk 核对**，或用 `git add -p` / 临时 worktree 错峰；
+  **禁直接 `git add <共享文件>`**。
 
 ---
 

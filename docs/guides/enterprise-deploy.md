@@ -221,7 +221,8 @@ sofagent-audit --init    # 数据写入 /data/sofagent-hr/data/
 
 > `SOFAGENT_HOME` 影响全部数据路径：审计历史、知识库、HMAC 密钥、引擎内部状态。每个 `SOFAGENT_HOME` 实例的 HMAC 密钥互相独立，审计链条互不交叉。
 >
-> ⚠️ **隔离现状分两层（2026-09-26 对齐）**：**查询侧隔离已交付**——[v1.4.7](../changelog/v1.4/v1.4.7.md) G7 多租户 v0（查询按 orgId 过滤 + `data/<tenant>/` 身份归属隔离地基）；**写入侧隔离仍是环境变量级手动方案**——不设 `SOFAGENT_HOME` 则全部项目共享 `~/.sofagent/data/`；租户级鉴权 / 配额 / 跨租户策略与写入侧自动隔离尚未落地（诚实边界见 [LIMITATIONS §三](../LIMITATIONS.md#三安全与信任模型局限)）——多租户硬隔离需求当前仍建议按本节每实例独立 `SOFAGENT_HOME` 部署。
+> ⚠️ **隔离现状分两层（2026-09-26 对齐）**：**查询侧隔离已交付**——[v1.4.7](../changelog/v1.4/v1.4.7.md) G7 多租户 v0（查询按 orgId 过滤 + `data/<tenant>/` 身份归属隔离地基）；**写入侧隔离仍是环境变量级手动方案**——不设 `SOFAGENT_HOME` 则全部项目共享 `~/.sofagent/data/`；
+>租户级鉴权 / 配额 / 跨租户策略与写入侧自动隔离尚未落地（诚实边界见 [LIMITATIONS §三](../LIMITATIONS.md#三安全与信任模型局限)）——多租户硬隔离需求当前仍建议按本节每实例独立 `SOFAGENT_HOME` 部署。
 
 ### 多机状态汇聚（v1.2.8）
 
@@ -305,7 +306,8 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 {"timestamp":"2026-07-30T10:00:01Z","diffRange":"HEAD~2..HEAD~1","exitCode":2,"diffFileCount":5,"commitMsg":"update config","ruleResults":[{"name":"secret-leak","number":2,"status":"FAIL","details":["src/utils.ts:3 leaked AWS AKIA key"]}],"prevHash":"a1b2c3…","engine":"sofagent-audit"}
 ```
 
-关键字段速查：`timestamp`（ISO 8601）/ `diffRange`（审计区间）/ `exitCode`（0=PASS / 1=WARN / 2=FAIL）/ `ruleResults[]`（逐规则 name/number/status/details）/ `diffFileCount`（变更文件数）/ `commitMsg` / `prevHash`（链完整性）/ `engine`（审计模块标识）。可选字段：`commitSha` / `parentSha` / `commitPhase` / `actionGovernance`（动作溯源组）/ `agentId`（Agent 身份码）。
+关键字段速查：`timestamp`（ISO 8601）/ `diffRange`（审计区间）/ `exitCode`（0=PASS / 1=WARN / 2=FAIL）/ `ruleResults[]`（逐规则 name/number/status/details）/ `diffFileCount`（变更文件数）/ `commitMsg` / `prevHash`（链完整性）/ `engine`（审计模块标识）。
+可选字段：`commitSha` / `parentSha` / `commitPhase` / `actionGovernance`（动作溯源组）/ `agentId`（Agent 身份码）。
 
 ### SIEM 对接方案
 

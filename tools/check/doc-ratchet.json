@@ -5,18 +5,104 @@
     "rule": "实测值 ≤ 基线 = 绿；任何文件 wall/cell 高于基线 = 红；文件清零后从本表移除；新增核心文档须先测基线再登记",
     "scope": "核心文档面（用户必经路径）；changelog/archive/evidence 为冻结区不适用",
     "note": "2026-09-28 文档治理批：全量折行 + THANKS 判据级压缩后首次收紧——总墙式行 261→17（-244），墙式格 34→34（下一批：表格单元格内容压缩）",
-    "updated": "2026-09-28"
+    "updated": "2026-09-28-b",
+    "note2": "FORGE/LEDGER 为运行台账（append-only 数据面）：表格结构不可折，锁现状防恶化；tools/README、evidence 双语已清零可从台账移除",
+    "note3": "2026-09-28 内容压缩批：VALIDATION 台账化（6+3 节归档）/ ARCHITECTURE §七 10 节归位 / ROADMAP 表格拆注 / evidence 双语清零 / 新增 11 文件入册"
   },
-  "docs/ARCHITECTURE.md": { "wall": 7, "cell": 12 },
-  "docs/DEVELOPMENT.md": { "wall": 0, "cell": 1 },
-  "docs/HANDBOOK.md": { "wall": 1, "cell": 3 },
-  "docs/LIMITATIONS.md": { "wall": 2, "cell": 1 },
-  "docs/PHILOSOPHY.md": { "wall": 1, "cell": 1 },
-  "docs/VALIDATION.md": { "wall": 0, "cell": 0 },
-  "docs/WIKI.md": { "wall": 2, "cell": 4 },
-  "FDE/GUIDE.md": { "wall": 0, "cell": 0 },
-  "SECURITY.md": { "wall": 1, "cell": 3 },
-  "README.md": { "wall": 0, "cell": 0 },
-  "README.en.md": { "wall": 3, "cell": 4 },
-  "docs/THANKS.md": { "wall": 0, "cell": 0 }
+  "docs/ARCHITECTURE.md": {
+    "wall": 7,
+    "cell": 12
+  },
+  "docs/DEVELOPMENT.md": {
+    "wall": 0,
+    "cell": 1
+  },
+  "docs/HANDBOOK.md": {
+    "wall": 1,
+    "cell": 3
+  },
+  "docs/LIMITATIONS.md": {
+    "wall": 2,
+    "cell": 1
+  },
+  "docs/PHILOSOPHY.md": {
+    "wall": 1,
+    "cell": 1
+  },
+  "docs/VALIDATION.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "docs/WIKI.md": {
+    "wall": 2,
+    "cell": 4
+  },
+  "FDE/GUIDE.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "SECURITY.md": {
+    "wall": 1,
+    "cell": 3
+  },
+  "README.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "README.en.md": {
+    "wall": 3,
+    "cell": 4
+  },
+  "docs/THANKS.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "FORGE/LEDGER.md": {
+    "wall": 27,
+    "cell": 2
+  },
+  "docs/ROADMAP.md": {
+    "wall": 17,
+    "cell": 16
+  },
+  "CHANGELOG.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "docs/evidence/evidence.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "docs/evidence/evidence.en.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "tools/README.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "docs/API.md": {
+    "wall": 0,
+    "cell": 1
+  },
+  "FORGE/lessons/index.md": {
+    "wall": 6,
+    "cell": 2
+  },
+  "FORGE/lessons/driver.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "playbook/regression-checklist.md": {
+    "wall": 1,
+    "cell": 0
+  },
+  "CONTRIBUTING.md": {
+    "wall": 1,
+    "cell": 1
+  },
+  "docs/guides/loop-development.md": {
+    "wall": 0,
+    "cell": 1
+  }
 }
