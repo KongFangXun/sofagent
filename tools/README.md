@@ -113,7 +113,7 @@
 |------|------|---------|
 | `release/bump-version.sh` | 版本号 bump（SSOT 联动 253+ 处） | 发版 SOP 阶段九 |
 | `release/pre-push-check.sh` | 推送前完整检查（CI 等价聚合 22+ 检查位：shellcheck / check-prepush-checklist / check-gate-inventory / check-version / check-unwired-exports / check-template-drift / c (→n15) | git push 前 |
-| `release/heavy-gate-receipt.sh` | 长跑门禁「一次跑、多环节复用」凭据（`acceptance-test.sh` 单跑 9~15 分钟，而阶段三/四/五会反复跑同一内容 ⇒ 最高 5 倍耗时且零新信息）。 (→n16) | 发版 SOP 阶段五脚本层 |
+| `release/heavy-gate-receipt.sh` | 长跑门禁「一次跑、多环节复用」凭据（`acceptance-test.sh` 单跑 9~15 分钟，而阶段三/四/五会反复跑同一内容 ⇒ 最高 5 倍耗时且零新信息；凭据台账落 `.sofagent/heavy-gate-receipts.log`）。 (→n16) | 发版 SOP 阶段五脚本层 |
 | `release/publish-packages.sh` | npm 分批发布（依赖拓扑序）：`@sofagent/*` scope 包（含 `dsh-plugin-kit`——目录由根 `package. (→n17) | 发版 SOP 阶段九 |
 | `release/sign-config.mjs` | config.yml HMAC-SHA256 签名颁发（读 `~/.sofagent-key`，DP-2） | 安装后 |
 | `release/gitdata-push.mjs` | Git Data API 推送备选通道（blobs→trees→commits→refs，https 断连绕行） | push 502 时 |
