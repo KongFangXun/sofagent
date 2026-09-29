@@ -637,7 +637,7 @@ graph LR
 **自评判的实验警示（为什么审计必须外置的实验证据）**：[S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed，2026-08）用 7 个文字游戏、11.6 万条转移实测「自测试→自评判→自改进」三环耦合：自评判与环境真值的一致率可达 0.88，但价值估计误差同样高达 0.88（NMAE）——模型知道动作「看起来有用」，却严重估错其价值；更关键的是**评判准确度与下一步改进几乎零相关**（run 级 r=-0.23），「认得出好动作」不能保证「把反馈变成好策略」。
 ⇒ benchmark 级证据：自我评分可保留（think.md），保留/晋升判定必须交给模型外信号（同 §三审计外置结论）。
 
-> 📖 来源：[S³Gym: Can LLMs Turn Self-Testing and Self-Judging into Self-Improvement?](https://arxiv.org/abs/2608.31100)（arXiv 2608.31100，2026-08-31 检索）
+> 📖 [ByteDance Seed · S³Gym: Can LLMs Turn Self-Testing and Self-Judging into Self-Improvement?](https://arxiv.org/abs/2608.31100)
 
 #### 运行时审计 tool wrapper
 
@@ -685,7 +685,7 @@ graph LR
 
 **审计留痕的六项必留字段**（OWASP LLM06:2025 / Microsoft Least Privilege 行业共识）：Agent 写入生产系统时须留**谁 / 何时 / 对哪个对象 / 执行了什么 / 改前改后值 / 是否可回滚**六项。当前覆盖：字段 1-3 ✅（身份码 / timestamp / diff 路径）；字段 5 自 v1.4.4 以 `beforeAfter` 结构化摘要落盘 🟡；字段 4 🟡 部分覆盖、字段 6（回滚性显式标记）🟡 排期中——离开 Foundry 类统一权限模型后，这六项是不可省的工程门槛。
 
-> 📖 来源：OWASP LLM Top 10 2025（LLM06:2025）/ Microsoft Security Blog 2026-07-16「Least Privilege for AI Agents」/ SAP Architecture Center ref-arch 137800 / Palantir Foundry 官方文档（Ontology 留痕能力对照）
+> 📖 [OWASP · LLM Top 10 (LLM06)](https://owasp.org/www-project-top-10-for-large-language-model-applications/) · [Microsoft · Least Privilege for AI Agents](https://www.microsoft.com/en-us/security/blog/) · [SAP · Architecture Center](https://www.sap.com/architecture-center) · [Palantir · Foundry Docs](https://www.palantir.com/docs/foundry/)
 
 ### 本体建模要求对齐：GB/T 48000.3-2026 合规参考基线（v1.3.1 交付 2）
 
@@ -731,7 +731,7 @@ sofagent-audit --revert SHA   # 回滚到任意快照
 需要说清分工：业界已把「有状态 + 可回溯 + 可人审」确立为生产级 Agent 编排的**默认要求**，而非 sofagent 独创。差异在 LangGraph 提供机制（checkpoint / interrupt 原语），sofagent 提供策略（什么该拦、拦了怎么判、经验怎么回流）。
 sofagent 的回溯实现是自有的 FileCheckpointer（五条并发安全规矩，详见 [guides/loop-development.md · Checkpoint 持久化](./guides/loop-development.md#checkpoint-持久化)）+ 自研同构 Git 引擎——与 LangGraph checkpoint 是同一思路的两种载体。
 
-> 📖 来源：[langchain-ai/langgraph](https://github.com/langchain-ai/langgraph)（github.com，2026-08 核实）
+> 📖 [LangChain · langgraph](https://github.com/langchain-ai/langgraph)
 
 ### ⚙️ FORGE 自迭代工具链（内部）
 
@@ -770,7 +770,7 @@ graph LR
 **蒸馏的精度门槛：合理而粗糙的建议，不如不给**。S³Gym 对 Summary Memory 的逐对比较给出一个蒸馏纪律的硬边界：经验能压缩成可复用策略规则的场景（博弈结构、可总结流程），蒸馏优于原始历史；依赖局部精确细节的场景（几何导航、状态敏感操作），「方向全对但缺精度」的总结反而有害（逐对实验数字见 [VALIDATION](./VALIDATION.md)）。
 对 think.md → knowledge/ 的启示：**蒸馏前先判经验的可压缩性**——能提炼为「条件 → 动作」规则的才进 knowledge/，依赖具体上下文细节的留在 think.md 原始轨迹层，宁可不清蒸馏，不可清错。
 
-> 📖 来源：[HarnessDev: Can LLMs Create and Evolve Their Own Agent Harness?](https://arxiv.org/abs/2609.01437) · [Aspire: Can Models Self-Evolve from Vague Goals?](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed 自进化系列，self-developing-agents.github.io，2026-09-09 检索）
+> 📖 [ByteDance Seed · HarnessDev](https://arxiv.org/abs/2609.01437) · [Aspire](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100) · [self-developing-agents](https://self-developing-agents.github.io)
 
 ### 运行时数据层：引擎间数据流全景
 

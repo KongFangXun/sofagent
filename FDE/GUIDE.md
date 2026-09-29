@@ -56,13 +56,13 @@ sofagent 把它从岗位 title 升级为能力模型，再升级为**常驻 FDE 
 **端到端责任的外部印证**：OpenAI 当前 FDE 岗位定义把 discovery、technical scoping、system design、build、production rollout 五件事放在同一个人的端到端责任里——**问问题的人和建系统的人是同一个人**，所以每个问题都直接服务于「能不能跑起来」。这和售前调研有本质区别：售前的调研服务于签单，FDE
 的调研服务于交付。sofagent 的 `fde_interview`（访谈结构化落盘）就是这个纪律的机制化。
 
-> 📖 来源：OpenAI FDE 岗位招聘定义（openai.com/careers，2026-08 核验）
+> 📖 [OpenAI · FDE 岗位招聘定义](https://openai.com/careers)
 
 **Palantir 官方口径的三种 Echo 形态**：① Echo 与 Delta 的边界是模糊的（两个角色都是产品经理 + 软件工程师 + 战略师的混合体）；② 同一职位名下并存 Pilot Lead（4-12 周试点）/ Enterprise Lead（偏组织赋能与售前）/ **Internal Echo**（审 PR、给核心产品补现场急需功能）三种形态——其中
 Internal Echo 就是 sofagent 进化模块的人肉版本，「同时跑一个项目和造一个产品、确保学到的一切回流进软件」说的就是经验回流；
 sofagent 做的是把这条职责**机制化**，不依赖个人自觉。三形态对照表见[归档](../docs/archive/validation-deep/guide-extended.md)。
 
-> 📖 来源：[A Day in the Life of a Palantir Deployment Strategist](https://blog.palantir.com/a-day-in-the-life-of-a-palantir-deployment-strategist-951cb59a5a96)（blog.palantir.com，2022）
+> 📖 [Palantir · A Day in the Life of a Palantir Deployment Strategist](https://blog.palantir.com/a-day-in-the-life-of-a-palantir-deployment-strategist-951cb59a5a96)
 
 ### 1.3 三种交付形态与三角色
 

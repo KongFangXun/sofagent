@@ -41,7 +41,7 @@
 
 Loop 真正的瓶颈是 **Verifier**（定义什么是合格、何时算完成），不是生成器——模型生成能力已严重过剩，稀缺的是「定义合格」的能力，这正是 90/10 里那 10%。sofagent 审计 + 约束注入链做的正是「定义合格与完成」：把验收标准写进确定性规则，让 Loop 有判停依据。闸门必须分层（快闸门确定性低耗时 / 慢闸门全量异步），调优口径是等待时间——与「确定性判定为主、语义判定为加签」同构。Linear 实测：AI 编码使测试套件一年增长约 4 倍，验证成为新瓶颈。
 
-> 📖 来源：[Linear 工程博客《重构 CI 应对 AI 编码的验证瓶颈》](https://aihot.news/items/cmublfs5a03bcro0lebbtf8fb)（2026-09-21，官方一手）
+> 📖 [Linear · Refactoring CI for the AI coding verification crunch](https://aihot.news/items/cmublfs5a03bcro0lebbtf8fb)
 
 ### FDE 职能的组织学验证：五常设岗位
 
@@ -53,7 +53,7 @@ BCG 访谈 50+ 家 AI 领先公司归纳出五种新角色原型——工作流�
 
 Cloudflare CEO 把工作角色分三类（Builder/Seller/Measurer），**Measurer 最先被 AI 逼近**；测量类岗位减少但「测量」无处不在——以前月底一张审计报表，以后**每次 AI 行动都留日志**。判断工作安全度不看岗位名称，看承担的角色：被重新定价的是「输入完整、标准清楚、结果可验证的具体任务」——sofagent 审计的判定哲学同构（输入=git diff、标准=25 条规则、结果=PASS/FAIL 可验证）。「审计模块 + daemon + worklog」正是测量者形态的工程化：不做审计人员外包，做审计模块基建。
 
-> 📖 来源：Cloudflare CEO Matthew Prince《How I Choose Which Cloudflare Employees to Replace With AI》（WSJ 一手访谈，2026-06）
+> 📖 [Matthew Prince · How I Choose Which Cloudflare Employees to Replace With AI](https://www.wsj.com/articles/cloudflare-ceo-how-i-choose-which-cloudflare-employees-to-replace-with-ai)
 
 **▍厂商实证——Harness 品类被多方独立验证（一句话判据，逐家深读见 [归档](./archive/validation-deep/harness-vendors.md)）**
 
@@ -61,10 +61,10 @@ Cloudflare CEO 把工作角色分三类（Builder/Seller/Measurer），**Measure
 |---|---|---|
 | **DeerFlow 2.0**（字节） | 自称 "super agent harness"，Harness 品类词站住；它是「河」（运行时）sofagent 是「堤」（约束层），互补不冲突 | [bytedance/deer-flow](https://github.com/bytedance/deer-flow) |
 | **DeepSeek Harness** | 模型厂商开源 `Agent = Model + Harness` 运行时（一切皆插件）——「Harness 独立于模型」获厂商级验证；机制与 sofagent 深度同构（可逆性/事件留痕/两旋钮权限） | [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) |
-| **OpenAI Codex Harness** | ARC-AGI-3 上仅调 Harness 两项（保留推理+上下文压缩）得分 13.3%→38.3%、token 降 6 倍——「Harness 决定 Agent 表现」被官方量化（⚠️ 量纲限定：能力型表现 ≠ 治理型可靠性，只作方向性信号） | [openai/codex](https://github.com/openai/codex)（2026-08-22 源码核验） |
+| **OpenAI Codex Harness** | ARC-AGI-3 上仅调 Harness 两项（保留推理+上下文压缩）得分 13.3%→38.3%、token 降 6 倍——「Harness 决定 Agent 表现」被官方量化（⚠️ 量纲限定：能力型表现 ≠ 治理型可靠性，只作方向性信号） | [openai/codex](https://github.com/openai/codex) |
 | **OpenAI Agents API**（2026-09-10 公测） | Harness 托管商品化、零平台费——编排层护城河在消失，壁垒收窄到治理工程（25 规则/HMAC 链/本体/审批流）；压缩不是审计记录 ⇒ 审计证据链必须独立落盘 | [Introducing the Agents API](https://openai.com/index/introducing-the-agents-api/) |
-| **Anthropic 产品真相** | 运行的生产代码是产品最可靠的事实来源——审计「不看 Agent 说什么，看 git diff 留下什么」同源 | Anthropic Joel 访谈（2026-09-14，第三方框架） |
-| **Codex Guardian 模块** | 审查结论的失效语义（`IncompatibleCompaction` 等）——「压缩不是审计记录」的工程化背书 | [codex guardian/](https://github.com/openai/codex/tree/main/codex-rs/core/src/guardian)（2026-09-16 核验） |
+| **Anthropic 产品真相** | 运行的生产代码是产品最可靠的事实来源——审计「不看 Agent 说什么，看 git diff 留下什么」同源 | Anthropic Joel 访谈（第三方框架转述） |
+| **Codex Guardian 模块** | 审查结论的失效语义（`IncompatibleCompaction` 等）——「压缩不是审计记录」的工程化背书 | [codex guardian/](https://github.com/openai/codex/tree/main/codex-rs/core/src/guardian) |
 | **Omnigent**（Databricks 系） | meta-harness 把策略强制在基础设施层而非 prompt；密钥不进 Agent 进程——「约束进代码层」的工程化版本 | [Databricks blog](https://www.databricks.com/blog/introducing-omnigent) |
 | **DataFlow**（北大 DCAI） | 顶尖高校独立用「Harness」命名（同月第三家）——品类共识非孤证 | [OpenDCAI/DataFlow](https://github.com/OpenDCAI/DataFlow) + arXiv:2607.16617 |
 | **OpenFDE** | 以 Forward Deployed Engineer 命名售前工作流——FDE 术语同源佐证；spec-first 硬禁令与 decisions.jsonl 是可借鉴方向 | [OpenFDEAI/ChatDemo](https://github.com/OpenFDEAI/ChatDemo) |
@@ -89,14 +89,14 @@ Cloudflare CEO 把工作角色分三类（Builder/Seller/Measurer），**Measure
 RSI 统一形式化：三个可写面算子（Data-RSI 经验池 / Harness-RSI 五槽位 scaffold / Model-RSI 参数内化）共享一个闭环内核（消费学习信号→提出改动→验证器裁决→回流），其上加改进调度器。实测：自托管 35B 四基准平均自提升 10.9 分；六款前沿 API 模型仅走 Harness 路线（不动权重）平均 +7.3 分——context-space 改进对不可训练的前沿模型同样有效。
 三条判据级启示：① **保护面独立**——评估器与发布门必须在所有可写面之外（eval-gate + audit HMAC 链 + release-gate-loop 恰是这个形态）；② **验证差距是自进化的适用边界**——自提升仅在有廉价验证器的域成立，开放式域必须人审兜底；③ **多层写的成本模型**——context 更新「每次推理重付」（租用）、权重更新「一次付清」（摊销），三层须有显式晋级判据。行业 RSI 分级与五层谱系对位见 [PHILOSOPHY · 自进化五层谱系](./PHILOSOPHY.md#自进化的五层谱系update是分界线)。
 
-> 📖 来源：[MetaRSI/RSI² (arXiv 2609.06396)](https://arxiv.org/abs/2609.06396)（CosmosMind，2026-09-06）+ [RSI-Harness](https://github.com/CosmosMind-ai/RSI-Harness) + Two Substrates 综述（2026）
+> 📖 [CosmosMind · MetaRSI/RSI²](https://arxiv.org/abs/2609.06396) · [RSI-Harness](https://github.com/CosmosMind-ai/RSI-Harness)
 
 ### 记忆要笨：应用层记忆的死亡测试
 
 清华唐杰团队综述《Memory for Large Language Models》两条直接对位：① **模型内部记忆出场后加不进去**（ANM 门控只在预训练开放，LoRA 外挂记忆降损最快方式就是关门）——模型身体里的记忆是厂商地盘，应用层碰不了；② **应用层记忆只做「笨事」**——前沿图景是模型自己分层消化原始记忆，应用层手搓「切块→向量化→检索→重排」会被内置记忆取代；按「等原始记忆能全量丢进模型那天，这个功能还有意义吗」的死亡尺子，剩三样不需要聪明：**一样不忘（全量 append-only）、可带走（长在文件里非权重里）、入口在本地**。
 这把「Agent 失忆，文件不失忆」从工程直觉升维为架构定律；「写入笨、派生灵活」（Ledger 绝对不压缩、Views 可自由整理）由此立得住。
 
-> 📖 来源：唐杰团队等《Memory for Large Language Models》（2026 综述）
+> 📖 [唐杰团队 · Memory for Large Language Models](https://arxiv.org/abs/2604.08915)
 
 **▍其他（2026-09 深读，一句话判据）**
 
@@ -199,7 +199,7 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构系统之�
 双 MCP 体系把「改结构」（proposal 人工门）与「改数据」（受控 Action）拆成两条治理通道——每个 action type 独立暴露为 MCP 工具 = **审计粒度到单个业务动作**，与「25 条规则按变更类型切分」同构（粒度即治理面）。Snowflake 反向「自下而上」路径（数仓长出本体栈，Cortex Sense 47%→83%）与 Palantir 互为外部佐证——**本体 = 运行时 context 层被多家独立复现**；其 Action 语义缺失恰是审计 + HITL + 审计链的主场。
 纳德拉「学习循环」（Token 资本复利，2800 万浏览）四要素与 sofagent 能力面逐项对齐：「可以外包一项任务甚至一份工作，但永远无法外包学习过程」——模型可换、平台可换，企业积累的约束规则与审计历史不动。深读全文见 [归档](./archive/validation-deep/architecture-mapping.md)。
 
-> 📖 来源：[Palantir Foundation · Ontology MCP](https://palantirfoundation.org/docs/foundry/ontology-mcp/sample-architecture)（官方）· [Snowflake Cortex Sense](https://www.snowflake.com/en/blog/enterprise-ai-agents-grounded-context/)（官方博客）· 纳德拉《A frontier without an ecosystem is not stable》（2026-06）
+> 📖 [Palantir Foundation · Ontology MCP](https://palantirfoundation.org/docs/foundry/ontology-mcp/sample-architecture) · [Snowflake · Cortex Sense](https://www.snowflake.com/en/blog/enterprise-ai-agents-grounded-context/) · [Satya Nadella · A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/frontier-without-ecosystem-stable-satya-nadella)
 
 ### Loop 四层循环：从 Agent Demo 到可交付 AI 产品
 
