@@ -42,10 +42,11 @@
 > 🧩 **The three-factor framing**: sofagent is a S1M with a built-in Harness, delivered with the FDE playbook — FDEing is the playbook layer (turning FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
 >from generation; its foundation is under construction across v1.6.0–v1.9.0, with the declaration landing in v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities — today's main landing points). Each layer sits in its own place; see "Core Features".
 
-**An open-source FDE Harness layer** (FDE = Forward Deployed Engineer — see the "[What is the FDE Harness](#what-is-the-fde-harness)" section) — embedded between mature Agents (DSH /
-OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it
+**An open-source FDE Harness layer** (FDE = Forward Deployed Engineer — see the "[What is the FDE Harness](#what-is-the-fde-harness)" section) — embedded between mature Agents (DSH / OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it
 writes the business judgment down as files (workflow, ontology data, AI-node deployment); after departure, it audits every change against those files.
+
 Five Harness capabilities (inject · audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard).
+
 sofagent does not build the Agent — it delivers the layer that keeps any Agent governed.
 
 <p align="center">
@@ -286,6 +287,7 @@ sofagent-audit --doctor    # verify the environment (optional)
 
 **To uninstall**: `bash ~/.sofagent/scripts/uninstall.sh` (installed layout) or `bash engine/scripts/uninstall.sh` (clone layout) — removes the Skill/constitution files, hook registrations
 and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data.
+
 Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the two channels both named `sofagent` apart (npm bare-name umbrella = sub-package forwarder, see the package-name warning in Usage; the install.sh state exposes `status` / `web` / `dashboard`) → [HANDBOOK · Installation](./docs/HANDBOOK.md).
 
 Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
