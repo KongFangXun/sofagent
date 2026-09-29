@@ -483,7 +483,8 @@ fi
 
 **工序一 · 按骨架+规范生成**：以上一版骨架为模板，按下方「Release Notes 格式规范」填充本版内容（title 主题短语 / 首行定位句 / TL;DR (EN) / Install 升级命令带本版号 / 核心变更功能领域式 / 质量验证固定 7 项 / 深入了解表 / 尾链）。
 
-> 🔴 **数字取值锚（单一来源）**：body 中全部数字（测试数 / acceptance 通过数 / 维度数 / check-version 项数 / 工具数）一律取**阶段八冻结基线终值表**——禁止取 run/precheck/修复批等中间过程值（终值与过程值差一轮修复批，曾出现 acceptance 用了 precheck 旧值 385/386 而基线终态 386/387）。CHANGELOG 索引行同口径。
+> 🔴 **数字取值锚（单一来源）**：body 中全部数字（测试数 / acceptance 通过数 / 维度数 / check-version 项数 / 工具数）一律取**阶段八冻结基线终值表**——禁止取 run/precheck/修复批等中间过程值（终值与过程值差一轮修复批，曾出现 acceptance 用了 precheck 旧值 385/386 而基线终态 386/387）。CHANGELOG 索引行同口径。 
+> 🔴 **发布时点终核（防并发窗口数字漂移）**：生成 body 后、`gh release create` 前，把 body 里每个数字当轮重算一遍（check-version 实测项数会因并发批新增检查而变——实测案例见 git 演进史：冻结时 134 → 发布前 137）；有差即改 body 并同批改 devlog RN 段（提取源一致）。
 
 **工序二 · 生成后自检（跑脚本，不看感觉）**：
 
@@ -500,8 +501,11 @@ for item in "npm test" "acceptance-test" "shellcheck" "check-version" "回归检
   echo "$BODY" | grep -q "$item" && echo "✅ $item" || echo "🔴 缺 $item"
 done
 
-# ④ 尾链存在且为 markdown 链接语法
-echo "$BODY" | grep -qE '\[详细开发日志\]\(\./docs/changelog/' && echo "✅ 尾链" || echo "🔴 缺尾链"
+# ④ 尾链存在且必须是绝对 URL（🔴 release 页相对链接按 /releases/tag/ 解析 = 404——上一版实物即此断链形态，用户复检定论）
+echo "$BODY" | grep -qE '\[详细开发日志\]\(https://github\.com' && echo "✅ 尾链（绝对）" || echo "🔴 尾链缺失或为相对路径（必 404）"
+# ④b 链接可达性第六查：body 内所有 markdown 链接禁相对路径（深入了解表曾用 ../../../docs/ → 全 404）
+echo "$BODY" | grep -oE '\]\((\.|\.\.)[^)]*\)' | head -3
+echo "$BODY" | grep -qE '\]\((\.|\.\.)' && echo "🔴 存在相对路径链接（release 页必断）" || echo "✅ 链接全绝对"
 
 # ⑤ 开头段长度双实测（N9：定位句 ≤220 · TL;DR(EN) ≤650）——两条都必须跑，禁只测其一
 POS_LEN=$(node -e "console.log(require('fs').readFileSync(0,'utf8').split('\n')[0].length)")  # 🔴 禁用 awk length——macOS awk 按字节计，中文行会 3 倍误报超限
