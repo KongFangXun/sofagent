@@ -104,17 +104,17 @@
 - **[JevK5](https://github.com/allebee/jevk5)** · allebee — 独立开源替代；蒸馏 LoRA 合并权重同批开源
 - **[OpenThai-SystemOne](https://github.com/iapp-technology/openthai-systemone)** · iApp — 泰/英双语 0.8B，契约兼容成本品类默认
 - **[AutoJev-27B](https://github.com/denis-pplx/autojev)** · denis-pplx —「自主 agent 全程建成」活体样本；主动披露 ECE 三列
-- **[RSI-Jev](https://github.com/Shanghua-Gao/RSI-Jev)** · Shanghua Gao — RSI 循环直接造判定件；判定头与生成面分离的同向实证
+- **[RSI-Jev](https://github.com/Shanghua-Gao/RSI-Jev)** · Shanghua Gao — RSI 循环直接造判定件；判定头与生成面分离的同向实证。v3.0（2026-09-28）为**首个 RL 奏效版本**——奖励取多候选**排序**（逐项标签表达不出的目标），hippo R@1 0.192→0.308，此前 59 个 reward-trained arm 均未越线（对方自报、本仓未复算；release 面仍 v2.0）
 - **[AgentJev](https://github.com/malevrigns/agent-jev)** · malevrigns —「去 LM head」形态正例（置换等变判定头）
 - **[TensorFlow.js](https://github.com/tensorflow/tfjs)** + [tfjs-models](https://github.com/tensorflow/tfjs-models) · Google — 一套 API 四后端+模型即 npm 包的十年先例
 - **[Verdict / rlcd-modernbert-151m](https://huggingface.co/heman10x/rlcd-modernbert-151m)** · Heman10x-NGU —「编码器+判定头」最早可复算建仓时点（2026-09-17）
-- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜（密封半集须持续演进）
-- **[AgentGovBench](https://github.com/agentic-control-plane/agentgovbench)** + [ST-WebAgentBench](https://github.com/segev-shlomov/ST-WebAgentBench)** — 治理对照基准两件套（CuP 双轴指标）
+- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜（密封半集须持续演进）；@2026-09-29 实测 v1.4.2.2 榜首 **Imajev-4B**（冠主 [`mohit67890/imajev`](https://github.com/mohit67890/imajev)，Apache-2.0），视觉分支 ImageJevBench v0.1.3（49 系统 / 684 题）中 **NeoHorse Jev 4B** 71.94 居第 3
+- **[AgentGovBench](https://github.com/agentic-control-plane/agentgovbench)** + **[ST-WebAgentBench](https://github.com/segev-shlomov/ST-WebAgentBench)** — 治理对照基准两件套（CuP 双轴指标）
 - **[NIST 官方标准面](https://nist.gov/caisi/ai-agent-standards-initiative)**（CAISI 三支柱 + RFI + NCCoE 四功能域 + AI 800 系列）— agent = 非人类身份 principal；Delegation 双身份令牌
 - **[Jev-Mem](https://arxiv.org/abs/2609.23986)** — System One 控制面管 agentic memory：第四类消费面候选
 - **[jev-harness-lab](https://github.com/Aitejiu/jev-harness-lab)** · Aitejiu — 判定件 harness 内可用面黑箱评测（窄判断可用/跨步因果不行）
 - **[JevAdvBench](https://arxiv.org/abs/2609.31142)** — 判定件对抗基准（被攻击决策对干净决策打分）
-- **[LAVOIR](https://arxiv.org/abs/2609.30706)** — 判定件「该问什么」扩展（VOI 槽位）
+- **[LAVOIR](https://arxiv.org/abs/2609.30706)** — 判定件「该问什么」扩展（VOI 槽位）；已开源（[code](https://github.com/moganai/lavoir) / [权重](https://huggingface.co/moganai/lavoir)），其问句策略与 greedy oracle VOI 策略打平（AUC 0.799 对 0.797，论文自报）
 - **严格适当评分规则** · Gneiting & Raftery 等 — RLCD 数学正确性依据：诚实报告校准概率才取最大期望奖励
 
 ### 认知与反馈
