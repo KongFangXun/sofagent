@@ -49,7 +49,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 
 ---
 
-## 暴露的 Tools（103 个）
+## 暴露的 Tools（104 个）
 
 > 🗑️ 浏览器四件套（`playwright_*`）已于 2026-09-26 注销（[v2.0.0 §七 B 表](../../docs/changelog/v2.0/v2.0.0.md) 裁定退役，UI 审计实做窗口已关）——107→103。
 
@@ -61,7 +61,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 | `get_think` | 读取 think.md 最近 N 条反思条目 |
 | `write_think` | 向 think.md 追加一条反思记录 |
 | `device_register` / `device_list` | G9 设备注册面（v1.4.9）：Ed25519 验签注册 + 清单在线态 |
-| `worklog_query` / `cost_query` / `fde_*` / `train_*` / `snapshot_*` / `ontology_*` / `pr_*` / `workflow_*` / `data_push` / … | 其余 102 个——审计/编排/后训/治理/成本/知识/PR 生命周期/workflow CRUD/数据推送各域，见 API.md 分域清单 |
+| `worklog_query` / `cost_query` / `fde_*` / `train_*` / `snapshot_*` / `ontology_*` / `pr_*` / `workflow_*` / `data_push` / … | 其余 103 个——审计/编排/后训/治理/成本/知识/PR 生命周期/workflow CRUD/数据推送各域，见 API.md 分域清单 |
 
 > 注：A12/A13 已在 v0.99.4 合并入 A11（不滥资源），编号不再使用。
 

@@ -141,7 +141,7 @@ pgrep -f "release-gate-driver"  # 有输出=活着，无输出=已死
 
 ### 🔴 中止 run 的产物处置
 
-中止 run 的已完成产物**不浪费**——regression.md / coverage.md 等已落盘步骤可直接读取采信（dsh-headless 直跑证据可信），只须补跑缺失步骤：`--step consolidate --target <版本号> --run-dir <runDir>` 单步续跑，或全新 run 重跑四步（precheck 有 96 维证据缓存价值不大，重跑仅 ~20 分钟）。处置决策由用户拍板，不默认重跑。
+中止 run 的已完成产物**不浪费**——regression.md / coverage.md 等已落盘步骤可直接读取采信（dsh-headless 直跑证据可信），只须补跑缺失步骤：`--step consolidate --target <版本号> --run-dir <runDir>` 单步续跑，或全新 run 重跑四步（precheck 有 85 维证据缓存价值不大，重跑仅 ~20 分钟）。处置决策由用户拍板，不默认重跑。
 
 ### 汇报规则
 

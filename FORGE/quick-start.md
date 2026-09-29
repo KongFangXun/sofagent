@@ -161,7 +161,7 @@ node FORGE/src/release-gate-driver.mjs --step verdict       --target v1.3.7 --ru
 **5 步协议**（driver 自动编排）：
 
 ```
-acceptance  → V 跑 acceptance-test.sh（115 场景），输出 acceptance 报告
+acceptance  → V 跑 acceptance-test.sh（386 场景，以脚本头部声明为准），输出 acceptance 报告
 regression  → V 跑 regression-checklist 检查，输出 regression 报告
 coverage    → V 交叉检查覆盖率，输出 coverage 报告
 consolidate → V 合并三份报告，输出综合报告
