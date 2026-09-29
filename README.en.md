@@ -186,7 +186,7 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.4: Execution · Model Routing & Credential Verification (pending)
+## v1.5.4: Execution · Model Routing & Credential Verification (2026-09-30)
 
 🎯 **A routing decision chain and credential isolation for Agents** — three things at once:
 
