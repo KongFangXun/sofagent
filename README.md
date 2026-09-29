@@ -255,7 +255,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 <p align="center"><img src="docs/assets/usage-path.svg" alt="使用路径：试用 → 团队 → 企业 → 自运转" width="85%" /></p>
 
 | 入口 | 做什么 | 装在哪 | 花多久 |
-|---|---|---|:---|
+|---|---|---|---|
 | **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，秒级出结果（首次 npx 约 30 秒） | 任意 git 仓库（临时） | 30 秒 |
 | **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 同上 | 1 分钟 |
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
@@ -307,7 +307,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 - 7 款 `cordis-plugin-sofagent*` 插件源码（6 款原子 + 1 款聚合）：[`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | 你想了解 | 看哪里 |
-|:---|:---|
+|---|---|
 | **全部文档索引**（按意图选路） | [WIKI](./docs/WIKI.md) |
 | 怎么装、怎么用、排查 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 架构设计与 25 条规则 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |

@@ -38,7 +38,7 @@
 > 开发前先确认标准安装通过——[HANDBOOK §安装](./HANDBOOK.md#安装)。
 
 | 依赖 | 用途 | 版本 |
-|---|---|:---|
+|---|---|---|
 | Node.js + TypeScript | 审计模块、CLI、MCP Server | ≥18（v1.1.0 起纳入） |
 | [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | 编排模块（createReactAgent）+ Sub Agent 系统 | v1.2.0+（编排模块迁移史：ao→v1.0.6 DeepAgents→v1.2.0 LangGraph createReactAgent；deepagents 已弃用） |
 | [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.0.1+ |
@@ -485,7 +485,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 ### 反思什么
 
 | 来源 | 提取什么 | 写不写 |
-|---|---|:---|
+|---|---|---|
 | task/logs 当天文件 | 做了什么任务、拆了几个子任务、结果如何 | ✅ 必写 |
 | think.md 新增反思 | 反思标题 + 标签 + 置信度 | ✅ 有则写 |
 | data/eval/ | 哪个 Skill 使用次数变化、社区评分更新 | ✅ 有变化则写 |
@@ -520,7 +520,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 ### 按模块归属
 
 | 文件 | 归属模块 | 干什么 | 加载 |
-|---|---|---|:---|
+|---|---|---|---|
 | `think.md` | **多写入方 / 只追加（Ledger）** | 反思摘要（Ledger 原始数据）。写入方：①审计模块 git diff 自动反思 ②主 Agent 按模板手动 write_think ③FDE/loop 陪跑期写入；读取方：编排模块、daemon(Dream Cycle/lessons-extract)、harness 加载链、人类。**只追加，绝不整体覆写/截断**。代码契约见 `@sofagent/core` 的 `getThinkPath()` / `appendThinkEntry()` | 全文 |
 | `task/logs/` | **审计模块读 / 编排模块写** | 执行日志。审计 A7/A8 读它；编排模块闭环时写入 | 日期目录树 |
 | `fde.md` | **编排模块读** | 企业运行规范，含项目目标、验收标准、风险边界 | 全文 |
@@ -567,7 +567,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 
 | 模式 | 版本 | 触发 | 适用 | 需要 git |
-|---|:---|---|---|:---|
+|---|---|---|---|---|
 | git commit 审计 | v0.92+ | `git commit` → commit-msg hook | 开发者 | ✅ |
 | 文件系统审计 | v1.0.8+ | daemon 监控文件变更 | 开发者 + 非开发者 | ❌（自研 git-shadow diff） |
 

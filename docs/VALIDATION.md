@@ -126,7 +126,7 @@ deepagents 启发了 v1.0-1.1 的 DAG 编排（Harness 范式 + HITL 功不可�
 ### 技术选型原则——用什么、不用什么
 
 | LangChain 生态组件 | 是否使用 | 理由 |
-|---|:---|---|
+|---|---|---|
 | **LangChain Core** | ✅ | LLM 调用底座——模型接口抽象、消息格式标准化 |
 | **LangGraph** | ✅ | DAG 编排底座——StateGraph 状态机 + createReactAgent，白盒可控 |
 | **LangChain 全家桶**（Loader/VectorStore/RAG） | ❌ | 不做 RAG/向量检索——知识管理用干净 Markdown + YAML + Git |

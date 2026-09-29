@@ -108,7 +108,7 @@
 落到代码就是 **约束层 × 生命周期** 双层架构：
 
 | 层 | 是什么 | 一句话 | 状态 |
-|:---|---|---|:---|
+|---|---|---|---|
 | **层 1 · 约束层** | 约束层五种能力（注入·审计·回溯·沉淀·进化） | 怎么保证每次执行都做对 | ✅ 已交付 |
 | **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 进化（激活链四阶段 = 激活→编排→执行→进化 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环；第五段命名与五种能力之「进化」同词，SUSTAIN 英文不变） | 企业 AI 从诊断到自运转怎么走 | 🔗 Phase 1-4 已交付 |
 
@@ -126,7 +126,7 @@
 **层 2 · 生命周期（激活链，v1.2.5+ Phase 1-4 已交付）**：
 
 | 环 | 阶段 | 做什么 |
-|:---|---|---|
+|---|---|---|
 | ① | **诊断**（FDE 四阶段） | 进场生成判断：梳理工作流、构建本体图谱、判定 AI 节点、交付三层实体（✅ 已交付） |
 | ② | **激活** ACTIVATE（v1.2.5） | 读交付物 → 注册企业 SubAgent |
 | ③ | **编排** ORCHESTRATE（v1.2.6-7） | 多 Agent → StateGraph 工作流 |
@@ -278,7 +278,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 每次对话启动时先加载 4 层常驻地基：
 
 | 层 | 文件 | 干什么 | 能改吗 |
-|:---|---|---|:---|
+|---|---|---|---|
 | 1 | `SKILL.md`（宪法内联） | 4 底线 + 9 铁律 | ❌ |
 | 2 | `fde.md` | 你的运行规范，优先级最高 | ✅ 随便改 |
 | 3 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用。→ [反思工程](./DEVELOPMENT.md#六反思工程) |
@@ -297,7 +297,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 **铁律**：
 
 | # | 铁律 | 一句话 | 做错时的表现 |
-|:---|---|---|---|
+|---|---|---|---|
 | 0 | 知行合一 | 说和做一致，声称必有证据 | 说读了文件实际没读 |
 | 1 | 目标驱动 | 回到原始意图，不跑偏 | 做着做着跑偏了 |
 | 2 | 全局视角 | 先找现有代码和工具，不重复造轮子 | 有现成库不用自己写 |
@@ -317,7 +317,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 Agent 先判断任务复杂度：
 
 | 级别 | 特征 | Agent 行为 |
-|:---|---|---|
+|---|---|---|
 | 🟢 简单 | 单步指令，说得明确 | 直接干活 |
 | 🟡 中等 | 多步但方向清楚 | 先干，说一句「中间需要随时叫我」 |
 | 🔴 复杂 | 模糊、多模块 | 问「需要拆解吗？」→ 用户同意才启动 |
@@ -474,7 +474,7 @@ jobs:
 #### 模式对照表
 
 | 模式 | 标志 | 说明 | 退出码 |
-|---|---|---|:---|
+|---|---|---|---|
 | 默认 | *(无)* | 全部规则（含 Agent 日志） | 0/1/2 |
 | 静默 | `--silent` | 只跑 git-diff 规则（零 Agent 依赖） | 0/1/2 |
 | 严格 | `--strict` | 任何警告都 exit 2 | 0/2 |
@@ -549,7 +549,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 ### 部署规模参考（企业 IT）
 
 | 部署规模 | 并发 Agent | CPU | 内存 | 磁盘 | 适用场景 |
-|---|:---|:---|:---|:---|---|
+|---|---|---|---|---|---|
 | 个人 / 小团队 | 1-3 | 1 核 | 512 MB | 500 MB | 单人开发，git commit hook 审计 |
 | 中型团队 | 5-10 | 2 核 | 1 GB | 2 GB | 多人协作，daemon 常驻 + webhook 推送 |
 | 企业级 | 10+ | 4 核 | 2 GB | 5 GB+ | 多仓库联邦，A/B 审查 + 知识库 + Dashboard |
@@ -686,7 +686,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 sofagent 不是孤立的——它构建于以下成熟项目之上，各司其职：
 
 | 技术 | 在 sofagent 中的角色 | 引入版本 |
-|---|---|:---|
+|---|---|---|
 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) | 编排模块——状态图、条件路由、HITL、持久化 | v1.0.1 |
 | [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | Sub Agent 系统（createReactAgent）——FDE Sub Agent + Audit Sub Agent | v1.0.1（v1.2.0 从 deepagents 迁移） |
 | [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.0.3 |

@@ -288,7 +288,7 @@ the installed UI is the source of truth.)</sub></p>
 <p align="center"><img src="docs/assets/usage-path-en.svg" alt="Usage path: trial → team → enterprise → self-running" width="85%" /></p>
 
 | Entry | What it does | Where installed | Time needed |
-|---|---|---|:---|
+|---|---|---|---|
 | **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | Any git repo (temporary) | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or custom JSON rules | Same as above | 1 min |
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | CI/CD | Set up once |
@@ -343,7 +343,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 - 7 `cordis-plugin-sofagent*` plugin sources (6 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | What you want to know | Where |
-|:---|:---|
+|---|---|
 | **Full doc index** (by intent) | [WIKI](./docs/WIKI.md) |
 | Install, use, troubleshoot | [HANDBOOK](./docs/HANDBOOK.md) |
 | Architecture & the 25 rules | [ARCHITECTURE](./docs/ARCHITECTURE.md) |

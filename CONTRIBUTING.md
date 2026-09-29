@@ -66,7 +66,7 @@
 **只看 3 个文件**：
 
 | 顺序 | 文件 | 看什么 | 约几分钟 |
-|:---|---|---|:---|
+|---|---|---|---|
 | 1 | [SKILL.md](./SKILL/SKILL.md) | 4 底线 + 9 则铁律 | 3 min |
 | 2 | [CHANGELOG.md](./CHANGELOG.md) | 最新版本的变更 | 5 min |
 | 3 | [LIMITATIONS.md](./docs/LIMITATIONS.md) | 已知局限 | 2 min |
@@ -74,7 +74,7 @@
 **先改 3 个文件（最低门槛）**：
 
 | 脚本 | 改什么 | 难度 |
-|---|---|:---|
+|---|---|---|
 | `install.sh` | BSD/macOS 兼容性修复 | ⭐⭐ |
 | `engine/scripts/verify.sh` | 新增检查项（bash 版，安装流程内调用） | ⭐ |
 | `engine/audit/src/verify.ts` | TS 版验证（命令为 `sofagent-core verify`；无 `sofagent-verify` 这个 bin） | ⭐ |
@@ -111,7 +111,7 @@ bash install.sh && bash engine/scripts/verify.sh
 ### 微任务清单（5-15 分钟）
 
 | # | 任务 | 文件 | 难度 | 时间 |
-|:---|---|---|:---|:---|
+|---|---|---|---|---|
 | 1 | 改一条审计规则的正则 | `engine/audit/src/rules/rule-a*.ts` | ⭐ | 5 min |
 | 2 | 给 install.sh lib 模块加参数校验 | `engine/scripts/lib/*.sh` | ⭐ | 10 min |
 | 3 | 修复一个 ShellCheck 警告 | 见 ShellCheck Action 报告 | ⭐⭐ | 10 min |
@@ -219,7 +219,7 @@ git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 **规则**：H1 的推荐形式是「**英文识别名 · 中文主题词**」（如 `# 路线图 · Roadmap`）——识别名给外链引用与全文检索（稳定），中文主题词给中文读者（可读）。**省略中文主题词是允许的例外，但必须在本清单登记**，新增文档不得默认走例外。
 
 | 类别 | 规则 | 已登记文档 |
-|:---|---|---|
+|---|---|---|
 | **A · 中文 H1** | 面向中文读者的首读 / 规范文档，用纯中文（品牌名 `sofagent` 视为语言中立，可单独作 H1） | `README.md`·`README.en.md`（均为 `# sofagent`）·`SECURITY.md`·`CONTRIBUTING.md`·`docs/COMMUNITY.md`·`docs/THANKS.md`·`docs/WIKI.md` |
 | **B · 英文元文件 H1** | 沿用 GitHub / 开源生态约定俗成的英文名，**刻意不改**（改了反而不被工具与读者识别） | `CHANGELOG.md`·`CODE_OF_CONDUCT.md` |
 | **C · 中英混排 H1**（推荐形态） | 「英文识别名 · 中文主题词」 | `docs/API.md`·`docs/PHILOSOPHY.md`·`docs/ROADMAP.md`·`docs/VALIDATION.md`·`AGENTS.md`·`GEMINI.md` |
@@ -240,7 +240,7 @@ git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 ## 目前最需要的帮助
 
 | 优先级 | 需要什么 | 你能得到什么 |
-|:---|---|---|
+|---|---|---|
 | 🔴 | **真实使用数据** | 在 docs/evidence/evidence.md 留名 |
 | 🟡 | **跨平台测试** | Codex / Hermes / Claude Code 运行报告 |
 | 🟡 | **英文翻译** | Handbook 目前只有中文 |
@@ -261,7 +261,7 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 **急需的技能方向**：
 
 | 方向 | 具体做什么 | 每周时间 |
-|---|---|:---|
+|---|---|---|
 | **bash BSD/macOS 兼容** | install/verify/uninstall 跨平台修复 | 2-4 小时 |
 | **安全审计** | 审查 SECURITY.md + 企业合规缺口 | 不限 |
 | **OpenClaw hook (TS)** | handler.ts 回归测试 + 升级适配 | 2-3 小时 |

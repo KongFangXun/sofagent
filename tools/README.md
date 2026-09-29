@@ -12,7 +12,7 @@
 ## 一、check/ — 门禁与检查
 
 | 脚本 | 用途 | 何时使用 |
-|------|------|---------|
+|---|---|---|
 | `check/check-version.sh` | 版本号一致性检查（14 段：TS 常量/文档头/包版本/规则数等） | 发布前 / CI |
 | `check/check-docs.sh` | 文档预算与结构检查（A/B/C/D/E 层行数警戒线） | 发版 SOP / CI |
 | `check/check-test-count.sh` | 测试数对账（README/文档声称 vs 实测，双口径；漂移输出逐处 `file:line` + 旧→新 + 一条可粘贴执行的修复命令；`--fix` 显式回填并自动复验） | 发版 SOP / CI |
@@ -103,7 +103,7 @@
 ## 二、gen/ — 草稿生成
 
 | 脚本 | 用途 | 何时使用 |
-|------|------|---------|
+|---|---|---|
 | `gen/gen-abc-draft.mjs` | 阶段四 A/B/C 三类清单草稿（单次 LLM） | 发版 SOP 阶段四 |
 | `gen/gen-fresh-eyes-draft.mjs` | fresh-eyes 16 视角审查草稿（单次 LLM） | fresh-eyes-loop |
 | `gen/gen-acceptance-shard-prompts.mjs` | 验收测试 12 分片 prompt 生成 | 发版 SOP |
@@ -116,7 +116,7 @@
 ## 三、dashboard/ — 仪表盘
 
 | 文件 | 用途 | 何时使用 |
-|------|------|---------|
+|---|---|---|
 | `dashboard/sofagent-dashboard.sh` | 审计仪表盘入口（零前端依赖 bash+jq） | 日常监控 |
 | `dashboard/serve-dashboard.mjs` | Dashboard HTTP 服务（localhost:3780） | 日常监控 |
 | `dashboard/dashboard.html` | Dashboard 页面 | 被 serve-dashboard 加载 |
@@ -125,7 +125,7 @@
 ## 四、release/ — 发布与签名
 
 | 脚本 | 用途 | 何时使用 |
-|------|------|---------|
+|---|---|---|
 | `release/bump-version.sh` | 版本号 bump（SSOT 联动 253+ 处） | 发版 SOP 阶段九 |
 | `release/pre-push-check.sh` | 推送前完整检查（CI 等价聚合 22+ 检查位：（详→注-15） | git push 前 |
 | `release/heavy-gate-receipt.sh` | 长跑门禁「一次跑、多环节复用」凭据（`acceptance-test.sh` 单跑 9~15 分钟，而阶段三/四/五会反复跑同一内容 ⇒ 最高 5 倍耗时且零新信息；凭据台账落 `.sofagent/heavy-gate-receipts.log`）。子命令 `fingerprint` / `verify` / `record` / `show`；（详→注-16） | 发版 SOP 阶段五脚本层 |
@@ -142,7 +142,7 @@
 ## 五、forge/ — FORGE 运维
 
 | 脚本 | 用途 | 何时使用 |
-|------|------|---------|
+|---|---|---|
 | `forge/forge-pm2-start.sh` | PM2 守护 FORGE driver（fresh-eyes / release-gate） | FORGE 长循环 |
 | `forge/forge-smoke-test.sh` | FORGE 冒烟测试 | FORGE 改动后 |
 | `forge/forge-runs-stats.mjs` | FORGE 质量循环离线统计（纯只读：视角生产力/复发热点/运行健康度三报告） | 定期复盘 |
@@ -150,7 +150,7 @@
 ## 六、audit/ — FDE 进场审计
 
 | 内容 | 说明 | 备注 |
-|------|------|------|
+|---|---|---|
 | `audit/client-audit.mjs` | FDE 进场审计问卷脚本（按行业输出 Markdown），问卷数据源同目录 |
 | `audit/audit-questionnaires/*.json` | 7 个行业审计问卷（finance/generic/government/healthcare/manufacturing/retail/supplychain），每行业 15-20 题，三段式（审计现状/痛点定位/合规要求），`client-audit.mjs` 数据源 |
 | `audit-baseline-sync.sh` | dist 聚合哈希基线同步（rebuild 后重置 `~/.sofagent/internal/audit-dist-hash.txt` 基线——不跑则 P1-A2 影子审计器拦 commit） | 发版 SOP 阶段七 |
@@ -164,13 +164,13 @@
 ## 七、hooks/ — 共享 hook 脚本
 
 | 内容 | 说明 |
-|------|------|
+|---|---|
 | `hooks/sofagent-precommit.sh` | 跨平台共享 pre-commit hook（stdin 模式——Cursor/Claude Code/Gemini CLI 等平台 commit 审计共用；v1.4.0 交付五） |
 
 ## 八、train/ — 训练环境与设备打包
 
 | 脚本 | 用途 | 何时使用 |
-|------|------|---------|
+|---|---|---|
 | `train/train-env-init.sh` | 训练环境一键安装（venv + 框架 + CUDA 校验；Mac 降级 npm --prefix 装 @mlx-node/trl；与 env-manager.ts 同一套判定——脚本形态是「无 Node 也能装」） | 装训练环境时 |
 | `train/package-train-runtime.sh` | 训练运行时打包（orchestrator+core dist + 模板 + 环境脚本 + 可选基座缓存 → tar.gz + setup.sh，U 盘/离线交付形态） | 设备交付时 |
 | `train/examples/hosted-channel.example.mjs` | TrainChannel 托管 API 参考适配示例（教学形态非引擎依赖——虚构 API 四动作演示状态机归一，内置 fake 轮询零真实网络；真实适配按 `docs/guides/train-channel-spec.md` 规范实现） | 对接自有托管微调云时 |
@@ -178,13 +178,13 @@
 ## 九、report/ — 报告生成
 
 | 脚本 | 用途 | 何时使用 |
-|------|------|---------|
+|---|---|---|
 | `report/evolution-report.mjs` | 进化实证报告生成（Dream Cycle 持续采样 → skill-impact 台账汇总） | 进化模块周报 / 发版证据 |
 
 ## 十、verify/ — 独立验签器（第三方举证面 · v1.5.2 章二）
 
 | 脚本 | 用途 | 何时使用 |
-|------|------|---------|
+|---|---|---|
 | `verify/verify-chain.mjs` | 独立 HMAC 验签器（单文件零依赖，裸 `node` 可跑）——同时校验 `history.jsonl` 历史链 + `decision-log.jsonl` 决策链；三态输出（链完整 / 某条断裂·给条目号与期望值 / 链头不匹配）+ 降级态（不可复验 / 不足）；`--selftest` 内置 golden vector 硬锚与篡改注入合成回归。（详→注-18） | 第三方举证 / 合规审计 / `--verify-chain` 机内校验的独立对照 |
 | `verify/README.md` | 验签器说明（输入格式 / 三态输出 / 第三方举证用法 / 环境指纹换机要点） | 随验签器查阅 |
 
@@ -197,7 +197,7 @@
 以下脚本**刻意不接 CI**——接了会永久红或本身不是门禁。此处登记用途与「不接线」理由，防「不登记的新脚本过几版就没人知道为什么存在」（对齐 `docs/changelog/releasing/07-tool-health.md` 的登记纪律）。
 
 | 脚本 | 用途 | 不接 CI 的理由 |
-|------|------|---------------|
+|---|---|---|
 | `check/check-deps.sh` | 关键依赖版本检查（含 DSH / LangGraph / automerge 等） | **exit 1 = 有依赖落后于上游最新版**，而「是否升级」是人工决策（SOP 步骤 5 决策规则）——接线即永久红。需要人做决策的工具不进 CI |
 | `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（引用路径/函数是否真实存在；历史档案漂移单列 🕘 不计失败） | **参数化按需工具**：必须传 `<file.md>`，可加 `--strict` 强制历史档案按严格口径判；无参数时报用法错并 exit 1——CI 无处传参。生成 prompt 后手动跑 |
 | `check/sync-test-count.sh` | 测试数多文档一键同步（实测值回写各文档声称位） | **写文档的收口工具**，不是检查器——发版 SOP 数字收口阶段人工触发 |

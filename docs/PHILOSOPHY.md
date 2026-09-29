@@ -214,7 +214,7 @@ sofagent 不做 Prompt（那是模型的事），在 Context 层有约束注入�
 **Agent 是世上最会解释自己的人。** 问它「你改对了吗」，它会给你一篇条理清晰的自我辩护。所以 sofagent 不问 Agent——直接读 git diff。改了什么就是什么。
 
 | 谁的证据 | 可信度 | 谁会伪造 |
-|---|:---|---|
+|---|---|---|
 | Agent 说「我改了 X」 | 🟡 | 梯度下降本能——找最低成本通过路径 |
 | git diff | 🟢 | 无法伪造——diff 是文件系统真相 |
 | think.md | 🟡 | 可能写空话填模板，所以不强制、不强校验 |
@@ -405,7 +405,7 @@ FDE 一线观察指出：AI 项目失败的最根因往往不是技术，而是�
 **飞轮的四个齿轮**：
 
 | 齿轮 | 数据形态 | 落盘点 | 当前状态 |
-|---|---|---|:---|
+|---|---|---|---|
 | ① 交付物 | workflow.yml + ontology + skills/ | `.sofagent/` 目录（activate 读它） | ✅ 已实现 |
 | ② 离场报告 | FDE 经验（踩坑/调试难点/可复用模式） | `delivery-report.md`（FDE/templates/） | ✅ 模板已建 |
 | ③ 知识聚合 | 多客户报告 → 统一知识库 | `knowledge/`（Dream Cycle 自动派生） | ✅ 已实现 |
@@ -462,7 +462,7 @@ sofagent 的 FORGE（fresh-eyes 独立审查 + release-gate 发版闸门）正�
 自进化从浅到深分五层，sofagent 的覆盖度：
 
 | 层 | 进化什么 | sofagent 对应 | 状态 |
-|---|---|---|:---|
+|---|---|---|---|
 | L1 记忆 | 记住什么好用（B 数据源比 A 稳） | think.md Ledger + Dream Cycle 每晚知识提取 | ✅ |
 | L2 策略 | 规划瘦身（10 步砍到 7 步） | route-policy + evolve 优化 | ✅ 部分 |
 | L3 技能 | 成功路径封装成可调用技能 | instinct→skill（三源提取 + 置信度 + 人审聚合，v1.3.5） | ✅ |

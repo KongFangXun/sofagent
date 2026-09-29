@@ -27,7 +27,7 @@
 > 最关键 5 条局限，快速了解 sofagent 的边界：
 
 | # | 局限 | 详见 |
-|:---|---|---|
+|---|---|---|
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
@@ -145,7 +145,7 @@ SKILL.md B1 步用 bash heredoc 创建 `~/.sofagent/data/` 数据目录。Window
 PowerShell 脚本（`.ps1`）作为 bash 脚本的平行实现存在，但**功能覆盖不全**：
 
 | 脚本 | .sh 行数 | .ps1 行数 | 覆盖度 |
-|---|:---|:---|---|
+|---|---|---|---|
 | verify | 955 | 230 | ~25%（按行数比，缺 §4 Hook 检查、§8 断路器配置、§10 企业合规验证、§11 daemon 状态） |
 | install | 1638 | 559 | 实现路径完全不同：ps1 含 Windows 注册表逻辑，但覆盖面窄于 sh（sh 走完整安装流程） |
 | daemon | 349 | 131 | ~38%（按行数比） |
@@ -401,7 +401,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 > 以下表格说的是「哪些能力在哪个层生效」——不是「哪些 Agent 被支持」。审计层对所有 Agent 一视同仁（只看 git diff），编排层全平台可用（LangGraph createReactAgent 驱动）。
 
 | 能力 | OpenClaw | WorkBuddy | Codex / Hermes / Claude Code |
-|---|:---|:---|:---|
+|---|---|---|---|
 | 核心约束 | ✅ Hook注入 | ✅ SKILL加载 | ⚠️ 种子指令 |
 | Skill 自启 | ✅ | ✅ | ❌ |
 | 加载链脚本 | ✅ 内部 hook | ❌ Agent Read替代 | ❌ |
@@ -470,7 +470,7 @@ A14 规则在 commit 时检查 Agent 是否访问了超出工作流声明范围�
 sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARCHITECTURE.md](./ARCHITECTURE.md)），但各步骤的成熟度不同：
 
 | 步骤 | 成熟度 | 说明 |
-|---|:---|---|
+|---|---|---|
 | 1. git diff 扫描 | ✅ 生产可用 | 纯 git 操作，确定性输出 |
 | 2. 规则检查（A1-A11、A14-A24 + E1-E2/E4） | ✅ 生产可用 | 25 条规则全部有测试覆盖 |
 | 3. 审计报告生成 | ✅ 生产可用 | JSON/text/table 三种格式 |
@@ -486,7 +486,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 当前审计核心 1456 个、全 workspace 5569 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
-|---|:---|---|
+|---|---|---|
 | install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
 | daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试。**行为边界**：daemon 监控 think.md/fde.md 文件 hash 变化 → 写 daemon-health.json，不直接审计 git commit。commit 审计由 commit-msg hook（`sofagent-audit --install-hook` 安装）负责 |
 | MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |

@@ -102,7 +102,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > 引入版本：v1.1.8。
 
 | 层 | 做什么 | 谁负责 | 被攻破的后果 | 攻击者需要 |
-|:---|---|:---|---|---|
+|---|---|---|---|---|
 | 1 | MCP 走 stdio 本地进程通信（无网络监听面） | sofagent | 无法从网络直接访问 MCP | 先攻破本机 |
 | 2 | OpenClaw channel 路由 | OpenClaw | 无法接入联邦 channel | OpenClaw device token |
 | 3 | AES-256-GCM 加密 payload（`core/src/crypto/aes-gcm.ts`） | sofagent | channel 被窃听但内容不可读 | 256-bit 密钥（2^256 暴力不可行） |
@@ -151,7 +151,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > ⚠️ **企业环境警告**：v1.1.4 的 USB federation 曾是**基础检测模式**、**无签名校验**；**自 v1.1.5 起已加入 HMAC 签名校验**。
 
 | 维度 | v1.1.4（基础检测，无签名） | v1.1.5+（HMAC 签名，当前） |
-|---|:---|:---|
+|---|---|---|
 | 检测条件 | USB 卷标 = `SOFAGENT` + 存在 `federation.json` | 同左 + HMAC 签名校验（`.sig` sidecar） |
 | 配置应用 | 写入 `~/.sofagent/federation.json`，**不自动分发到各目录**（applyFederation 未实现） | 自动 nodes → orchestrator/nodes/、policies → audit/policies/（✅ v1.1.5 已落地，`applyFederation()`） |
 | 注入风险 | 🔴 **任何人制作的 SOFAGENT 卷标 U 盘可注入任意 federation 配置** | ✅ 签名不匹配则拒绝导入 |
@@ -231,7 +231,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > 引入版本：v1.1.8（补齐层 1/4/5）。
 
 | 层 | 防护内容 | sofagent 落点 | 状态 |
-|:---|---|---|:---|
+|---|---|---|---|
 | 1 | 指令分层隔离——外部内容 `<untrusted>` 标签包裹 | `core/src/security/prompt-sanitizer.ts` `wrapUntrusted()`（闭合标签转义防逃逸；harness 加载链联邦知识强制包裹） | ✅ v1.1.8 补齐 |
 | 2 | 工具动态最小权限 | Sub Agent 工具集零重叠设计 | ✅ 已有 |
 | 3 | 工具参数后端强制校验 | 审计模块 git diff 硬证据 | ✅ 已有 |
@@ -333,7 +333,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 **默认规则 17 条（始终生效）**：
 
 | 编号 | 名称 | 检测什么 | 判定 |
-|---|---|---|:---|
+|---|---|---|---|
 | A1 | 不碰敏感 | `.env` / `*.pem` / `id_rsa` 等敏感文件被修改 | FAIL |
 | A2 | 不泄密钥 | API Key（AWS、OpenAI、Anthropic、DeepSeek、GitHub、Stripe、Google、Slack）/ Token / JWT / 私钥模式泄漏 | FAIL |
 | A3 | 不改越界 | 修改文件路径与任务描述不匹配 | WARN |
@@ -355,7 +355,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 **扩展规则 8 条（默认关闭，`extendedRulesEnabled: true` 启用）**：
 
 | 编号 | 名称 | 检测什么 | 判定 |
-|---|---|---|:---|
+|---|---|---|---|
 | A14 | 知识库越权 | 访问超出工作流声明范围的知识库页面（事后审计） | WARN |
 | A15 | 不盲动 | workflow 节点未声明 actions | FAIL |
 | A16 | 非授权文件变更 | 非声明范围文件被修改（行为级） | FAIL |
@@ -373,7 +373,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 **阈值须校准** = 确定性骨架保留、**语义型**常数换成带校准依据的概率阈值；**留代码** = 体内常数是**结构化输入的纯函数**（长度 / 行数 / 文件数 / 注释率），**保持确定性判定、不判定化**——改概率是白增一层不可审计的间接，其真实缺陷是「系数来源不可追溯」，修法是**记来源**而非改成概率；**否** = 判定层承担主判定。
 
 | 编号 | 名称 | `ruleClass` | 判定化后触发方式 | 仍需确定性？ |
-|---|---|---|---|:---|
+|---|---|---|---|---|
 | A1 | 不碰敏感 | 业务底线 | 文件身份匹配（确定性 FAIL），判定层不介入 | 刚性 |
 | A2 | 不泄密钥 | 业务底线 | 模式扫描（确定性 FAIL），判定层不介入 | 刚性 |
 | A3 | 不改越界 | 能力拐杖 | Score：变更路径与任务声明的语义越界度 | 否 |
@@ -443,7 +443,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下为当前访问模型：
 
 | 操作 | Agent 能否？ | 说明 |
-|---|:---|---|
+|---|---|---|
 | 读取 | ✅ 能（以当前用户身份） | Agent 和审计模块共享同一文件系统权限 |
 | 写入 | ✅ 能 | Agent 可以追加/删除/篡改 history.jsonl |
 | 检测篡改 | ⚠️ --doctor 第 8 项检查 | 通过 hash chain 验证——但 Agent 可以在篡改后重新计算整条链 |
@@ -508,7 +508,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 **信任边界与风险分级**：能设置目标进程环境变量的攻击者，可将审计历史重定向到任意路径——「写到别处 + 校验读别处」使篡改表面看起来正常。该风险**完全取决于部署场景**：
 
 | 部署场景 | 风险等级 | 说明 |
-|---|:---|---|
+|---|---|---|
 | 本地开发机 | 🟢 低 | 攻击者已能在本机设置环境变量 = 已拥有本机用户权限，游戏结束，审计重定向不构成额外提权 |
 | CI / 共享服务器 | 🟡 中 | 同机其他用户/作业可能注入环境变量，审计历史可被悄悄重定向 |
 
@@ -776,7 +776,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 ### OWASP Agentic Top 10 映射表
 
 | ASI | 威胁 | sofagent 对策 | 已披露边界 |
-|:---|---|---|---|
+|---|---|---|---|
 | ASI01 目标劫持 | 注入指令覆盖 Agent 目标（prompt 注入） | A9 不纳注入（正则+leet 归一化）+ AST `asi01-prompt-injection`（system prompt 载体扫描）+ `<untrusted>` 包裹（§三 8 层防护层 1） | A9 不覆盖 Unicode 同形字/Base64 编码注入（§三编码绕过注）；语义级检测未排期 |
 | ASI02 工具滥用 | 越权调用工具、参数投毒 | Sub Agent 工具集零重叠（§三）+ 工具参数后端强制校验（8 层防护层 3，git diff 硬证据）+ A16 非授权文件变更（扩展） | 工具层校验是 commit 时点，非运行时阻断 |
 | ASI03 身份与权限滥用 | Agent 冒用身份、越权访问资源 | A22 不越权限（chmod/sudoers/setuid）+ A23 不逃路径（路径穿越/symlink）+ A14 知识库越权（扩展，事后审计）+ config `--sign-config` 签名防篡改 | A14/A15 是 commit 时审计非运行时阻断（§四）；同机多 Agent 无身份隔离（LIMITATIONS） |
