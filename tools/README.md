@@ -83,7 +83,6 @@
 | `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件（上一 tag 后有改动或本轮暂存）零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine` + `tools`（`playbook/` **剔出**：行为锁本质是测试）；（详→注-14） | CI / 改 SECURITY 测绘数字或 hook 时 |
 
 > 注-1：`SKILL.md` 反向对账——SKILL.md 出现 `（seam: …）` 字面量的每一处都必须与三处一致，**残余缺口：SKILL.md 整体删去 seam 字样时不判红，只打印显著提示**；`--selftest` 合成回归验证必报红）
-> 注-1（续）：md` 词汇表；DSH 三处 seam 逐条一致 + description 不滞后；反向：词汇表每条在**真实宿主**里 grep 到定义处，宿主缺席打印 `SKIP` 不静默通过；双向对账拦「漏写 seam」；`SKILL.md` 反向对账——SKILL.md 出现 `（seam: …）` 字面量的每一处都必须与三处一致，**残余缺口：SKILL.md 整体删去 seam 字样时不判红，只打印显著提示**；`--selftest` 合成回归验证必报红）
 > 注-2：`--self-test` 脚本内双探针故障注入）
 > 注-3：core 侧真实 `require` dist 调用、harness 侧用 `skill/custom` 哨兵经 `buildConstrainedSystemPrompt` 反推，子进程受控 `$HOME`/`cwd` 不碰真实 `~/.sofagent`；**已登记差异（空串口径）差异消失也判红**；提取不到实现 / 观测不到哨兵 ⇒ FAIL）
 > 注-4：豁免 = 能力/阶段版本门槛（`vX.Y.Z+`·`vX.Y.Z 起`·`低于`·`达到`）/ 文件头版本标识 / 机器注释 / 机器字面量（引号或命令内的版本号，逐处摘除）/ 台账锚串；带 `--selftest` 正反例夹具 + `--list-exempt` 列豁免行）

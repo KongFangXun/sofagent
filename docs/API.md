@@ -60,7 +60,6 @@
 | `ruleset_export` | audit | 规则集导出——25 条默认规则 + 已加载扩展规则导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。（详→注-2） |
 
 > 注-1：边界：audit_trail 按 agentId 查跨设备轨迹 / worklog_query 查工作效能指标 / run_audit 跑规则写 think.md（写侧）/ ruleset_export 导出规则面——本 tool 只查「时间·规则·exitCode·因果链」维度，勿混用。
-> 注-1（续）：严格只读，不写任何审计链。边界：audit_trail 按 agentId 查跨设备轨迹 / worklog_query 查工作效能指标 / run_audit 跑规则写 think.md（写侧）/ ruleset_export 导出规则面——本 tool 只查「时间·规则·exitCode·因果链」维度，勿混用。
 > 注-2：边界：list_rules 只列规则清单、corpus_export 导出训练语料三件套——本 tool 导出「规则面标准 JSON」供第三方零转换消费。
 
 ### 工作流编排（workflow DAG · 循环执行与优化）（18）
