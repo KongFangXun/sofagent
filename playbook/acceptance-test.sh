@@ -4545,9 +4545,9 @@ CLI="$PROJECT_ROOT/engine/orchestrator/dist/cli.js"
 # 🔴 set -e 承接（S454 同族先例）：被测行为本身就是「非法入参 rc=1」——set -e 下命令非零退出即杀脚本，
 # `; rc=$?` 后取码根本执行不到（bash -c 复现实证）。正解 = `|| rc=$?`（命令整体不再非零，退出码进变量供判定），
 # 行尾 rc=0 复位防污染下一断言。
-node "$CLI" vote --task x --instances 1O >/dev/null 2>&1 || rc=$?; [ "$rc" -eq 1 ] || { fail "非法 --instances 应 rc=1（实际 $rc）"; S459_OK=false; }; rc=0
-node "$CLI" vote --task x --threshold abc >/dev/null 2>&1 || rc=$?; [ "$rc" -eq 1 ] || { fail "非法 --threshold 应 rc=1（实际 $rc）"; S459_OK=false; }; rc=0
-node "$CLI" vote --task x --on-divergence bad >/dev/null 2>&1 || rc=$?; [ "$rc" -eq 1 ] || { fail "非法 --on-divergence 应 rc=1（实际 $rc）"; S459_OK=false; }; rc=0
+node "$CLI" vote --task x --instances 1O >/dev/null 2>&1 || rc=$?; [ "$rc" -eq 1 ] || { fail "非法 --instances 应 rc=1（实际 ${rc}）"; S459_OK=false; }; rc=0
+node "$CLI" vote --task x --threshold abc >/dev/null 2>&1 || rc=$?; [ "$rc" -eq 1 ] || { fail "非法 --threshold 应 rc=1（实际 ${rc}）"; S459_OK=false; }; rc=0
+node "$CLI" vote --task x --on-divergence bad >/dev/null 2>&1 || rc=$?; [ "$rc" -eq 1 ] || { fail "非法 --on-divergence 应 rc=1（实际 ${rc}）"; S459_OK=false; }; rc=0
 $S459_OK && pass "vote 三参数 fail-closed（静默回退默认值 = 打错参数当合法跑，是 fail-open 缺陷面）" || true
 
 # ─── v1.5.4 release-gate coverage P0 闭环批（S460-S461）：对齐 S450 先例（coverage P0 补场景收口）───
