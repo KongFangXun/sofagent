@@ -4538,14 +4538,17 @@ if [ "$SEC_OK" = 1 ]; then pass "S456 章节对照表机器断言：归一化对
 scenario 457 "v1.5.4 第二章·本地槽位排队行为锁（B-3 落位）——槽位上限可配 / 超限排队（位置 + 预估等待）/ 超时升级留痕 routeReason（escalate-cloud vs 信创全封 wait）/ 🔒 判定链不占本地主模型槽（行为锁：mainModelGrants 恒 0）/ 非法槽位上限 fail-closed（回归面 = checklist #144·t）"
 probe_assert s457 "S457 槽位上限可配 + 超限排队位置/预估等待 + 超时升级留痕 + 判定链不占主模型槽（行为锁）+ 非法上限 fail-closed" "槽位排队/判定链行为锁回潮——见上方 ✗ 行"
 scenario 458 "v1.5.4 第二章·判定链三层与门控行为锁（B-3 落位）——L0 声明式映射零模型调用（judge 不被调）/ L1 语义分类命中且 🔒 不占本地主模型槽 / evidenceReadiness 未就绪 fail-closed 拒绝启用（非静默降级）/ 校准门控未达阈拒绝分流 + 已校准放行（正反双向）/ 通道不可用降 L0 规则面兜底（回归面 = checklist #144·t）"
+probe_assert s458 "S458 L0 零模型调用 + L1 不占主模型槽 + 证据就绪度 fail-closed 门禁 + 校准门控拒绝分流（正反双向）+ 通道不可用降 L0 兜底" "判定三层链/门控 fail-closed 回潮——见上方 ✗ 行"
 scenario 459 "v1.5.4 阶段三修复批 · vote 参数 fail-closed 行为锁——非法 --instances/--threshold/--on-divergence 必须报错退出（rc=1），禁静默回退默认值"; S459_OK=true
 CLI="$PROJECT_ROOT/engine/orchestrator/dist/cli.js"
 [ -f "$CLI" ] || { fail "cli.js 不存在（先 build）"; S459_OK=false; }
-node "$CLI" vote --task x --instances 1O >/dev/null 2>&1; [ $? -eq 1 ] || { fail "非法 --instances 应 rc=1"; S459_OK=false; }
-node "$CLI" vote --task x --threshold abc >/dev/null 2>&1; [ $? -eq 1 ] || { fail "非法 --threshold 应 rc=1"; S459_OK=false; }
-node "$CLI" vote --task x --on-divergence bad >/dev/null 2>&1; [ $? -eq 1 ] || { fail "非法 --on-divergence 应 rc=1"; S459_OK=false; }
+# 🔴 set -e 承接（S454 同族先例）：被测行为本身就是「非法入参 rc=1」——裸命令非零退出会被
+# set -euo pipefail 当场杀死整个 acceptance（实测全量跑截断于本行、无 SUMMARY）。rc 无害
+#（由 [ $? -eq 1 ] 逐条判定），|| true 只承接退出码不改判定语义。
+node "$CLI" vote --task x --instances 1O >/dev/null 2>&1; rc=$?; [ "$rc" -eq 1 ] || { fail "非法 --instances 应 rc=1（实际 $rc）"; S459_OK=false; }  # 🔴 rc 先存变量再判——`|| true` 形态下 $? 恒 0（断言恒败）；`[ ... ]` 是命令会使 set -e 失效故安全
+node "$CLI" vote --task x --threshold abc >/dev/null 2>&1; rc=$?; [ "$rc" -eq 1 ] || { fail "非法 --threshold 应 rc=1（实际 $rc）"; S459_OK=false; }
+node "$CLI" vote --task x --on-divergence bad >/dev/null 2>&1; rc=$?; [ "$rc" -eq 1 ] || { fail "非法 --on-divergence 应 rc=1（实际 $rc）"; S459_OK=false; }
 $S459_OK && pass "vote 三参数 fail-closed（静默回退默认值 = 打错参数当合法跑，是 fail-open 缺陷面）" || true
-probe_assert s458 "S458 L0 零模型调用 + L1 不占主模型槽 + 证据就绪度 fail-closed 门禁 + 校准门控拒绝分流（正反双向）+ 通道不可用降 L0 兜底" "判定三层链/门控 fail-closed 回潮——见上方 ✗ 行"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数
