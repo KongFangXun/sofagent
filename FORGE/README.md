@@ -44,7 +44,7 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 | A6（release-gate-loop） | `FORGE/src/release-gate-driver.mjs` | verdict = FAIL = 回阶段五 |
 | VERSION-check | `tools/check/check-version.sh` | 版本号不一致 = 阻断发布 |
 
-> **通向自转的路径**：外环每转一圈，就有新的证据闸门补上。当前这一轮补上的是 A0 的 `check-dev-prompt.sh`（v1.2.2 教训：dev prompt 引用了不存在的文件路径）。下一轮可能补的是 A8 文档收尾的自动化检查。当所有关键节点都有证据闸门、所有内环都能 driver 自转时，外环就能从"半自动"走向"人只在确认关口介入"。
+> **通向自转的路径**：外环每转一圈，就有新的证据闸门补上。当前这一轮补上的是 A0 的 `check-dev-prompt.sh`（教训：曾有 dev prompt 引用不存在的文件路径）。下一轮可能补的是 A8 文档收尾的自动化检查。当所有关键节点都有证据闸门、所有内环都能 driver 自转时，外环就能从"半自动"走向"人只在确认关口介入"。
 
 ### 终局：外环自转
 
@@ -81,13 +81,13 @@ FORGE 有两个内环，共用同一套模型配置（详见 [`quick-start.md`](
 | 内环 | 阶段 | 命令 |
 |------|------|------|
 | **fresh-eyes-loop**（质量循环） | 阶段三（开发后） | 对 harness 注入主任务协议（`SKILL/fresh-eyes-loop/loop.md`「执行形态」节）——编排者即 harness session，逐角色调执行器 `node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>` |
-| **release-gate-loop**（发版闸门） | 阶段五（发版前） | `node FORGE/src/release-gate-driver.mjs --target v1.2.4` |
+| **release-gate-loop**（发版闸门） | 阶段五（发版前） | `node FORGE/src/release-gate-driver.mjs --target <版本号>` |
 
 release-gate-loop 支持 `--dry-run`（只打印 step 序列不调 LLM）与 `--skip-acceptance`（sandbox/OOM 环境）；fresh-eyes-loop 的多轮编排已退役（整合归一），执行载体 = harness 注入（详见 [`quick-start.md`](quick-start.md)）。
 
 ## 密钥注入纪律
 
-FORGE driver 运行依赖 LLM API key，经 `env.local` 注入：复制 `env.local.template` 为 `~/.sofagent/env.local` 并填入真实 key 后 `source ~/.sofagent/env.local`。**key 文件存放在仓库目录之外**（2026-09-12 收面批从 `FORGE/env.local` 迁出）——不再只靠 .gitignore 挡，而是让它根本不在仓库里。仓库目录内不落任何真实格式密钥——审计工具的仓库不能有审计红旗（A2 纪律的自我要求）。
+FORGE driver 运行依赖 LLM API key，经 `env.local` 注入：复制 `env.local.template` 为 `~/.sofagent/env.local` 并填入真实 key 后 `source ~/.sofagent/env.local`。**key 文件存放在仓库目录之外**（已从 `FORGE/env.local` 迁出）——不再只靠 .gitignore 挡，而是让它根本不在仓库里。仓库目录内不落任何真实格式密钥——审计工具的仓库不能有审计红旗（A2 纪律的自我要求）。
 key 泄露嫌疑时优先轮换（控制台重新生成），而非仅删文件。
 
 ### 敏感文件纪律（env.local 防呆三查）
@@ -146,7 +146,7 @@ playbook/                       ← 顶层工具面（与 docs/ tools/ 同级）
   version-bump.md / doc-sync.md
 ```
 
-> 📏 **LEDGER.md 新条目禁绝对路径**：登记 run 时数据路径一律写 `~/.sofagent/data/forge-runs/...`（展开符），不写 `/Users/<who>/...` 绝对路径——账本会长期更新，他人机器上的绝对路径是纯噪声（2026-08-29 一次性清理 58 处存量后立此规约）。
+> 📏 **LEDGER.md 新条目禁绝对路径**：登记 run 时数据路径一律写 `~/.sofagent/data/forge-runs/...`（展开符），不写 `/Users/<who>/...` 绝对路径——账本会长期更新，他人机器上的绝对路径是纯噪声（一次性清理 58 处存量后立此规约）。
 
 > 🗂️ **runs 目录边界（看执行证据只看数据目录）**：run 产物**唯一落点是 `~/.sofagent/data/forge-runs/<loop名>/<日期>/run-NN/`**（含 verdict.md / usage.jsonl / findings 等全部证据），数据目录不进 git。
 >仓内 `FORGE/SKILL/*/runs/` 仅是**占位壳**（`.gitignore` 自排除全部内容），无任何历史 run 产物——新 session 查执行证据时若只翻仓内 runs/ 会得出「无运行痕迹」误判，正确姿势：读 `FORGE/LEDGER.md`（跨 run 索引）→ 按索引去数据目录核对原始产物。另注：顶层 `FORGE/runs/` 历史留档已移出仓——新 run 产物一律进数据目录，勿在仓内新建运行输出。
@@ -158,7 +158,7 @@ playbook/                       ← 顶层工具面（与 docs/ tools/ 同级）
 
 ### 技术债登记 · 拆分排期
 
-- **`FORGE/src/fresh-eyes-driver.mjs`（1980 行实测 @2026-09-26）**：整合归一后仅剩 worker 单步执行链路（多轮编排循环已删除，编排职责归 harness 注入协议——见 `SKILL/fresh-eyes-loop/loop.md`「执行形态」节）；`driver-base.mjs` 已抽 1940 行公共层。原「仓内最大脚本拆分排期」登记随编排删除大幅缓解，保留观察：**触发条件 = 单步执行链路再增长超 2500 行或新增执行器能力**；
+- **`FORGE/src/fresh-eyes-driver.mjs`（1980 行实测）**：整合归一后仅剩 worker 单步执行链路（多轮编排循环已删除，编排职责归 harness 注入协议——见 `SKILL/fresh-eyes-loop/loop.md`「执行形态」节）；`driver-base.mjs` 已抽 1940 行公共层。原「仓内最大脚本拆分排期」登记随编排删除大幅缓解，保留观察：**触发条件 = 单步执行链路再增长超 2500 行或新增执行器能力**；
   行数以 `wc -l FORGE/src/fresh-eyes-driver.mjs FORGE/src/driver-base.mjs` 实测为准，本登记数字须随 driver 提交同步复核（防再次静默漂移）。
 
 > **演进历程**：FORGE 从硬编码串行工具包（engineer→audit→reviewer 单循环 + loop-install.sh 独立安装）→ workflow 驱动（`FORGE/SKILL/<loop>/` + driver 自动编排）→ 双层循环架构（外环 releasing.md loop body + 内环 fresh-eyes/release-gate）。旧 `loop-workflow.sh`、`FORGE/SKILL.md`、`FORGE/loop-install.sh`、`FORGE/releaser/` 已删除。当前两个内环已可 driver 自转；

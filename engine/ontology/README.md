@@ -1,6 +1,6 @@
 # @sofagent/ontology
 
-sofagent 领域本体定义——场景类型、约束类型、审计规则注册表。v1.2.0 从 audit 包迁出。
+sofagent 领域本体定义——场景类型、约束类型、审计规则注册表。从 audit 包迁出。
 
 ## API
 

@@ -224,7 +224,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 | `get_think` | 读取 think.md 最近 N 条反思条目 | `count`（默认 1） |
 | `write_think` | 向 think.md 追加一条反思记录 | `lesson`（必填）、`task`（可选） |
 
-> 注：A12/A13 已在 v0.99.4 合并入 A11（不滥资源），编号不再使用。
+> 注：A12/A13 已合并入 A11（不滥资源），编号不再使用。
 
 **`run_audit` 返回示例**：
 
@@ -276,7 +276,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 | A8 不逃验证 | 构建文件变更后无测试记录 | FAIL/WARN | 能力拐杖 |
 | A9 不纳注入 | 代码中存在命令注入风险模式 | FAIL | 业务底线 |
 | A10 不引毒源 | 依赖包黑名单检测 + typosquatting + postinstall 脚本注入 | WARN | 业务底线 |
-| A11 不滥资源 | 资源滥用检测（超大文件、大行数删除等，v1.2.5 合并原 E3） | WARN | 业务底线 |
+| A11 不滥资源 | 资源滥用检测（超大文件、大行数删除等，已合并原 E3） | WARN | 业务底线 |
 | A18 垃圾文件 | 临时文件名模式的垃圾文件（v1.1.5 起提升为默认规则，评估误报率 0/513） | WARN | 能力拐杖 |
 | A19 commit message 质量 | message 命中黑名单词或过短（防"add"/"test"/"fix" 等低质 message） | FAIL | 工程规范 |
 | A20 不泄外联 | 数据外传检测（curl/wget POST 外传、WebSocket 外联、DNS 隧道） | FAIL | 业务底线 |
@@ -286,7 +286,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 
 ### 扩展规则（A14-A17 + A24 + E1/E2/E4，共 8 条）
 
-> ℹ️ E1-E4 内部规则 ID 为 201-204，预留 101-199 区间给未来默认规则扩展。E3 已在 v1.2.5 并入 A11（行数维度），编号跳号。
+> ℹ️ E1-E4 内部规则 ID 为 201-204，预留 101-199 区间给未来默认规则扩展。E3 已并入 A11（行数维度），编号跳号。
 
 A14-A17 + A24 + E1/E2/E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
 

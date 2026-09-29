@@ -328,7 +328,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 ### 25 条审计规则完整清单（文档级 SSOT）
 
-> 本表是全部 25 条规则的文档级单一事实源（v1.3.8 口径，复核规则未变；代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已于 v0.99.4 合并入 A11、E3 已于 v1.2.5 并入 A11，编号不再使用。
+> 本表是全部 25 条规则的文档级单一事实源（代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已合并入 A11、E3 已并入 A11，编号不再使用。
 
 **默认规则 17 条（始终生效）**：
 
@@ -421,7 +421,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 ### AST 规则引擎 SSOT（8+2）
 
-> 官方 AST 规则引擎（`sofagent-ruleset-ast`，v1.3.9 交付）——10 条示范规则（8 条代码 AST + 2 条 OWASP 语义），与上面 25 条 git-diff 规则同管线。规则代码在 `engine/rules/src/ast/rules/`（注册表 `engine/rules/src/ast/rules/index.ts` 的 `builtinAstRules`），触发条件以各文件 `description` 字段为准。
+> 官方 AST 规则引擎（`sofagent-ruleset-ast`）——10 条示范规则（8 条代码 AST + 2 条 OWASP 语义），与上面 25 条 git-diff 规则同管线。规则代码在 `engine/rules/src/ast/rules/`（注册表 `engine/rules/src/ast/rules/index.ts` 的 `builtinAstRules`），触发条件以各文件 `description` 字段为准。
 
 | 编号 | 名称 | 触发条件 | 代码位置 |
 |---|---|---|---|
@@ -560,7 +560,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > ⚠️ **Webhook SSRF——DNS 解析复验与残余 TOCTOU（v1.4.5 披露）**：webhook 推送 URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped IPv4 全段拒绝）之外，新增**DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，实际解析到的 A/AAAA 记录任一落在私网段仍拒绝——堵「域名看着公共、解析结果内网」的 DNS rebinding 式 SSRF。
 >DNS 查询失败按拒绝处理（fail-closed：无法证明安全即不推送）。**残余窗口（如实声明）**：复验与实际 fetch 是两次独立解析，存在微小 TOCTOU 窗口——本防线拦「配置时刻就指向内网」的静态攻击面，动态 rebind 收敛至两次解析窗口内，属纵深防御增量而非绝对边界。
 
-> ⚠️ **history.jsonl 的 beforeAfter 字段脱敏（v1.4.4 交付十三配套 · 端到端验证）**：审计条目的 `actionGovernance.beforeAfter`（变更前/后值摘要，从 diff 提取、截断至 200 字符）是新增落盘面——密钥可能混入。
+> ⚠️ **history.jsonl 的 beforeAfter 字段脱敏（端到端验证）**：审计条目的 `actionGovernance.beforeAfter`（变更前/后值摘要，从 diff 提取、截断至 200 字符）是新增落盘面——密钥可能混入。
 >脱敏链路：`buildBeforeAfterSummary` 提取时脱敏 + `appendHistory` 落盘前经 sanitize 管道复扫（`baseSanitized` 之外的专项补面），端到端回归见 `engine/audit/src/before-after-redaction.test.ts`（构造含密钥的 beforeAfter 断言落盘无明文）。边界：脱敏是掩码非加密，密钥模式库未覆盖的自定义格式仍可能以明文入 history——与既有 sanitize 边界一致，强合规场景配合外部加密卷。
 
 > ⚠️ **快照恢复的人审门禁是约定级，不是机制（v1.5.0 如实披露）**：回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道、快照文件亦无 HMAC / 指纹可验（全链路无完整性校验）。即：**Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限**，该门禁是约定而非机制。

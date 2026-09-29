@@ -86,7 +86,7 @@
 - **结果**：PASS（或 FAIL / SKIP——必须为此裸词独占一行，driver 据此行提取判定；禁止用「有条件通过」「N/N 覆盖」等叙述句代替。存在不阻塞放行的 P1 时仍写 PASS，把条件写进正文发现清单即可）
 ```
 
-🔴 **结论行格式铁律（run-07 实证）**：报告必须含一行 `- **结果**：PASS`（或 FAIL/SKIP 裸词）。「有条件通过（CONDITIONAL PASS）」这类叙述无法被 driver 的 `extractVerdictKeyword` 识别，导致 status.json 记 SKIP、下游 consolidate/verdict 证据面失真。
+🔴 **结论行格式铁律**：报告必须含一行 `- **结果**：PASS`（或 FAIL/SKIP 裸词）。「有条件通过（CONDITIONAL PASS）」这类叙述无法被 driver 的 `extractVerdictKeyword` 识别，导致 status.json 记 SKIP、下游 consolidate/verdict 证据面失真。
 
 ## 🔴 铁律：完整报告必须进最终回复
 

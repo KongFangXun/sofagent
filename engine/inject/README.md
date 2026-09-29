@@ -1,6 +1,6 @@
 # @sofagent/inject
 
-sofagent 四层约束加载链——`buildConstrainedSystemPrompt()` 生成 Sub Agent 启动时的 context prompt。v1.2.0 从 audit 包的 subagents/launcher.ts 迁出。
+sofagent 四层约束加载链——`buildConstrainedSystemPrompt()` 生成 Sub Agent 启动时的 context prompt。从 audit 包的 subagents/launcher.ts 迁出。
 
 ## 加载链顺序
 

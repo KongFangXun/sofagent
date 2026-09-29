@@ -1,6 +1,6 @@
 # @sofagent/core
 
-sofagent 核心运行时基础设施——常量、原子写入、git diff 解析、配置加载、装后验证（doctor / verify）。v1.2.0 从 audit 包迁出，不含审计逻辑。
+sofagent 核心运行时基础设施——常量、原子写入、git diff 解析、配置加载、装后验证（doctor / verify）。从 audit 包迁出，不含审计逻辑。
 
 ## 安装
 

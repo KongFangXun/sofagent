@@ -40,7 +40,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 - 执行 session（用户新开）：粘贴交接 prompt → 按下方「Session 监控协议」启动 driver 并轮询到 verdict → 回报六项终态数据。
 
 **交接 prompt 必含要素**（主 session 生成，自包含）：目标版本号、启动 commit（预期干净树）、启动命令行（含 source ~/.sofagent/env.local）、监控协议要点（120s 轮询 / heartbeat 死亡检测 / 已知降级信号不处理清单）、verdict 产出后的六项回报清单（verdict+stopReason / 四步产物存在性 / usage token 总量 / verdict.md 头 50 行 / status.json 全文 / driver 日志尾 30 行）、异常处置（启动即崩回报不修 / 卡死 15 分钟查 pid）。
-**交付形式**：直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件——用户复制粘贴到新 session 执行（2026-08-30 用户拍板）。
+**交付形式**：直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件——用户复制粘贴到新 session 执行（用户裁定）。
 
 ## Session 监控协议（CRITICAL · 适用于执行 session）
 
@@ -50,7 +50,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 
 ### 🔴 启动前独占窗口检查
 
-**启动 driver 前，必须确认本仓库当前没有其他写操作会话在跑**——release-gate 的 worker 与主仓共享工作目录，git 基线被并发改写（restore / 回补 / 批量 commit）会直接杀死进程树。检查项与 fresh-eyes-loop SKILL 同款：问用户有无并发写会话 + `git status --porcelain` 抽查。git worktree 隔离（v1.3.6 交付 8）落地后本检查降级为提醒项。
+**启动 driver 前，必须确认本仓库当前没有其他写操作会话在跑**——release-gate 的 worker 与主仓共享工作目录，git 基线被并发改写（restore / 回补 / 批量 commit）会直接杀死进程树。检查项与 fresh-eyes-loop SKILL 同款：问用户有无并发写会话 + `git status --porcelain` 抽查。git worktree 隔离落地后本检查降级为提醒项。
 
 ### 执行方式
 
@@ -63,7 +63,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    export SOFAGENT_LLM_V="${SOFAGENT_LLM_A}"
    export SOFAGENT_LLM_F="${SOFAGENT_LLM_B}"
 
-   # 并发自适应（v1.3.7 ⑦）：未显式设置时 driver 自动探测物理内存取并发
+   # 并发自适应：未显式设置时 driver 自动探测物理内存取并发
    # （<12GB→1 / 12-23GB→2 / 24-47GB→4 / ≥48GB→6）——8GB 机器自动取 1，无需手动设。
    # 运行中 worker OOM（SIGKILL）自动熔断降级（本批剩余串行，连续 2 批回退 1）。
    # 需强制指定时才设 FORGE_MAX_CONCURRENCY：
@@ -93,7 +93,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    # 依据：全流程实测 30.7 万 token 中 61% 花在 acceptance 12 分片 LLM 复核（复核脚本
    # exit 0 的确定性结果，增值≈0）；判断层四步约 9 万 token / 20 分钟，盲审独立性保留在
    # 有判断空间的 regression 语义审查 + 终裁。
-   # v1.3.8 交付七：--judgment-only 替代原「--step 四步手工编排」——一次进程串行四步，
+   # --judgment-only 替代原「--step 四步手工编排」——一次进程串行四步，
    # 无需外层脚本逐步调用。旧 --step 单步模式仍可用于单步调试。
    # verdict=FAIL 时**自动进 F 修复链**（默认启用，无需人工介入）——f-diagnose → f-fix →
    # f-audit → 下一轮 V，最多 MAX_FIX_ROUNDS 轮，loop 一次跑到底直至收敛。
@@ -102,7 +102,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    # 除这两类外一切内部修复（改代码 / 改文档 / 修检查器 / 补场景）由 F 链自主完成，不得停手。
    # 显式 --no-auto-fix 可关闭自动修复（FAIL 即 loop-end，修复责任回主 session）。
 
-   # 全流程模式的 acceptance 抽查化（v1.3.8 交付七）——只审本版新增场景区间：
+   # 全流程模式的 acceptance 抽查化——只审本版新增场景区间：
    node FORGE/src/release-gate-driver.mjs --target <版本号> --acceptance-range S294-S310
    # 分片范围从全量 12 片均分收敛为指定区间（本版新增场景），跳过历史场景的重复复核。
 

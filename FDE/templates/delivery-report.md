@@ -59,7 +59,7 @@
 |---------|---------|-----------|---------|:-------:|---------|
 | （如：customer-intake） | （Agent 反复调用错误工具） | （审计日志 A15 告警） | （SKILL.md 工具描述重写 + 加 few-shot） | 3 | ✅ 跑通 |
 
-> 💡 **未来 Loop Agent 的数据源**：当 Loop Agent（v1.3.2+ 规划中）实现自动调试后，本表可由 Loop Agent 自动填写。当前阶段（v1.2.x）由 FDE 手工回填。
+> 💡 **Loop Agent 的数据源**：Loop Agent（`engine/orchestrator/src/loop-agent/`：activate→run→judge→fix）已实现自动调试，本表可由其自动填写；未接入 Loop Agent 时由 FDE 手工回填。
 
 ---
 

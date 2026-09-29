@@ -13,7 +13,7 @@ npm install -g @sofagent/orchestrator
 ## API
 
 - `composeWithReactAgent()` / `compose()` — 任务描述 → 编排方案 YAML + SubAgent 配置
-- `runDAG()` — 编排执行器（当前串行状态机——完整 DAG 并行调度规划中，见 `dag-runner.ts` 头注）
+- `runDAG()` — 编排执行器（当前串行状态机——完整 DAG 并行调度仍在规划，见 `dag-runner.ts` 头注与 ROADMAP）
 - `parseWorkflow()` — YAML → SubAgent 映射（含环检测 / 悬空校验）
 - 依赖关系：`@sofagent/core` + `@sofagent/inject` + `@langchain/langgraph`
 
