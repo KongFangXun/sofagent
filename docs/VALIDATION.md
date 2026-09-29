@@ -43,11 +43,11 @@ Loop 真正的瓶颈是 **Verifier**（定义什么是合格、何时算完成�
 
 > 📖 来源：[Linear 工程博客《重构 CI 应对 AI 编码的验证瓶颈》](https://aihot.news/items/cmublfs5a03bcro0lebbtf8fb)（2026-09-21，官方一手）
 
-### FDE 职能的组织学验证：五常设岗位（BCG · 2026-09）
+### FDE 职能的组织学验证：五常设岗位
 
-BCG 访谈 50+ 家 AI 领先公司（23 AI 原生 / 18 数字平台 / 9 传统改造，九主题半结构化、只计已落地）归纳出**五种新角色原型**——工作流设计师（重画端到端流程）/ 领域知识负责人（专家知识编码成可复用资产）/ 业务自建者（业务人员自建应用与 Agent）/ AI 治理者（风险合规边界）/ Agent 运营负责人（Agent 权限、表现与生命周期）。对本仓的三重印证：① **FDE 方法论被组织学外部验证**——五岗位恰是 FDE 三重角色（梳理/部署/养护）在企业内部的常设化拆分，FDE 是生成相位的总承包人、五岗位是驻留相位的分包编制（映射 SSOT 见 [FDE/ROLES.md](../FDE/ROLES.md)）；② **「先重构再上 AI」被定量定价**——能用 AI 重做工作与人才机制的公司年度 TSR 比同行高 11+ 个百分点，且 BCG 另一份调研显示 60% 企业未获 AI 价值的根因是「任务层面叠加工具、未触及流程」= 跳过 FDE 梳理直接买工具；③ **治理与运维两岗的自动化恰是本仓存量**——Guardian（审计/HMAC 举证/快照回溯）与 Shepherd（daemon 巡检/插件生命周期）对应的能力全部已发版。边界：五岗位为定性归纳原型非统计抽样，读数 BCG 自报、本仓未复算。
+BCG 访谈 50+ 家 AI 领先公司归纳出五种新角色原型——工作流设计师 / 领域知识负责人 / 业务自建者 / AI 治理者 / Agent 运营负责人。三重印证：① **五岗位恰是 FDE 三重角色（梳理/部署/养护）在企业内部的常设化拆分**——FDE 是生成相位的总承包人，五岗位是驻留相位的分包编制（映射 SSOT 见 [FDE/ROLES.md](../FDE/ROLES.md)）；② **「先重构再上 AI」被定量定价**——重做工作与人才机制的公司年度 TSR 比同行高 11+ 个百分点，BCG 另一调研显示 60% 企业未获 AI 价值的根因是任务层面叠加工具、未触及流程（= 跳过 FDE 梳理直接买工具）；③ **治理与运维两岗的自动化恰是本仓存量**——Guardian（审计/HMAC/回溯）与 Shepherd（daemon 巡检/插件生命周期）对应能力全部已发版。边界：定性原型非统计抽样，读数自报未复算。
 
-> 📖 来源：[BCG · Five Ways That AI Front-Runners Change How Work Gets Done](https://www.bcg.com/publications/2026/companies-use-ai-to-redesign-work)（Sagar Goel 等，2026-09-24，官方一手）
+> 📖 [Sagar Goel et al. · Five Ways That AI Front-Runners Change How Work Gets Done](https://www.bcg.com/publications/2026/companies-use-ai-to-redesign-work)
 
 ### 测量者转型：从「月底审计报表」到「每次 AI 行动留日志」（Cloudflare 实证）
 
