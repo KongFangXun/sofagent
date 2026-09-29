@@ -23,7 +23,6 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.3: Audit · Rule Engine & Self-Test](#v153-audit--rule-engine--self-test-2026-09-26)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -198,21 +197,6 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 Also: AI-node governance onboarding (registry / warn / egress deny-by-default) · MCP tools 103→104 (`router_slots`) · gate hardening (production reachability / zero-branch prompt lint / six-dimension doc scoring).
 
-## v1.5.3: Audit · Rule Engine & Self-Test (2026-09-26)
-
-🔍 **Converge the rule engine first, then give the rules a self-test** — three things at once:
-
-| Capability | In one line |
-|---|---|
-| **Unified rule engine** | The two rule engines (tool-level and git-diff) merge into a single engine — one definition, two trigger points (pre-call interception / post-commit audit), removing the risk of divergent behaviour from parallel maintenance |
-| **Rule self-test schema** | Every rule must carry `match` / `notMatch` positive/negative examples, asserted fail-closed at load time — a mis-written rule fails loudly instead of relying on memory; FAIL messages attach a suggested fix, and multi-rule hits take the strictest |
-| **A24 deliverable-location rule** | Allowlist opt-in, intercepted before the act, **born with positive/negative examples** (rules 24 → 25) — no legacy debt |
-
-Also in this release: doctor repair loop (`--refresh` backup + one-click reset to defaults + before/after diff) · `@sofagent/skillopt` legacy package retirement ·
-ARCHITECTURE three-domain rewrite (FDE scenario layer → S1M decision layer → harness governance layer + five-domain/three-domain mapping) · paired completeness for verdict records (a one-sided record alone now raises red, closing the "no record" blind spot) ·
-audit-scope semantics as a first-class citizen (`AuditScope` explicit object; rules no longer each call git).
-
-**Tests 5296 → 5408 · acceptance 373 → 377 · 85 regression dimensions · rules 24 → 25** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.3.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
