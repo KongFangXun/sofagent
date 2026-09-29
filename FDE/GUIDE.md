@@ -918,7 +918,7 @@ AI 节点跑起来后，自动生成这些文件：
 
 > 📋 **离场前必做：回写交付报告**。FDE 工程师离场前，按 `templates/delivery-report.md` 模板回写一份交付报告——把本次交付中踩的坑、调试难点、可复用模式结构化沉淀。这份报告**不交给客户**，而是回流到 sofagent 知识库，作为飞轮闭环的数据入口（详见 PHILOSOPHY §五「飞轮闭环」）。没有它，经验就散落在对话和脑子里，随时间流失。
 
-> 📖 **外部参考：FDE 量化验收指标（Perspective AI，2026）**
+> 📖 [Perspective AI · FDE 量化验收指标](https://www.getperspective.ai)
 >
 > Perspective AI《2026 FDE Founder's Playbook》（getperspective.ai 官方报告，1500 名 FDE / 154 家公司普查）给出四指标记分卡：
 >
