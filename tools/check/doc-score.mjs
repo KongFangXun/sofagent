@@ -577,7 +577,10 @@ function cmpVer(a, b) {
  * 返回 Map<itemId, 'pass'|'fail'|'unknown'>（未列出即 unknown，按不通过计）。
  */
 function readAttestations() {
-  const devlogs = LIVE_MD.filter((f) => /^docs\/changelog\/v\d+\.\d+\/v\d+\.\d+\.\d+\.md$/.test(f))
+  // ⚠️ 留痕节载体 = 版本 devlog（docs/changelog/ 下）——它整体属 FROZEN_RE 冻结面，
+  // 从 LIVE_MD 过滤会**恒空**（实测：留痕节写了也报「未找到」）。留痕读取不受冻结限制，
+  // 故从 LS_ALL 取 devlog 候选；「取最新」语义不变。
+  const devlogs = LS_ALL.filter((f) => /^docs\/changelog\/v\d+\.\d+\/v\d+\.\d+\.\d+\.md$/.test(f))
     .map((f) => ({ f, v: versionKey(f) }))
     .filter((x) => x.v)
     .sort((a, b) => cmpVer(b.v, a.v));
