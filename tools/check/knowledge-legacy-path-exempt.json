@@ -14,5 +14,9 @@
   "engine/inject/src/__tests__/knowledge-index.test.ts": {
     "count": 2,
     "reason": "🔴 **测试面，与 `engine/inject/src/index.ts`（源码面）同源**（v1.4.9 G-9 形态 ③ 补判后的派生发现）：`:148` 与 `:208` 两处 `const knowledgeDir = path.join(skillDir, 'knowledge')`，其中 `skillDir = path.join(tmpDir, '.sofagent')` ⇒ 夹具把知识页喂到 `{tmpDir}/.sofagent/knowledge`，正好掩盖了 `index.ts:235` 的旧路径（**测试与实现共享同一个错误路径 ⇒ 恒绿**，是「守卫空转」的测试面形态）。⚠️ 本批**不改**（team-lead 裁定「本版不动」）：改它必须与 `index.ts:235` 的收口同批做（同时要动 5 个 harness 测试文件），否则测试会立刻红。本条目由形态 ③ 补判才首次可见——此前形态 ①②（行内）对它**零命中**。待专项派单。"
+  },
+  "engine/core/src/config-loader.ts": {
+    "count": 1,
+    "reason": "✅ **非残留，属 SSOT 自身合法展开（v1.5.4 闸门 P2-4 复核登记）**：`:989` `return join(home, '.sofagent', 'data')` 是「未设置 SOFAGENT_HOME 时默认 home = `~`」的 fallback，展开结果即 SSOT 数据目录 `{SOFAGENT_HOME}/data` 本身——与 knowledge 新路径规范同向而非旧路径 `~/.sofagent/knowledge`。verdict P2-4 指出回归维度摘要截断致豁免依据不可见，故补此条目留痕（复核于 v1.5.4 发版闸门 run-01）。"
   }
 }
