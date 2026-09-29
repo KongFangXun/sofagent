@@ -45,7 +45,8 @@ Loop 真正的瓶颈是 **Verifier**（定义什么是合格、何时算完成�
 
 ### FDE 职能的组织学验证：五常设岗位
 
-BCG 访谈 50+ 家 AI 领先公司归纳出五种新角色原型——工作流设计师 / 领域知识负责人 / 业务自建者 / AI 治理者 / Agent 运营负责人。三重印证：① **五岗位恰是 FDE 三重角色（梳理/部署/养护）在企业内部的常设化拆分**——FDE 是生成相位的总承包人，五岗位是驻留相位的分包编制（映射 SSOT 见 [FDE/ROLES.md](../FDE/ROLES.md)）；② **「先重构再上 AI」被定量定价**——重做工作与人才机制的公司年度 TSR 比同行高 11+ 个百分点，BCG 另一调研显示 60% 企业未获 AI 价值的根因是任务层面叠加工具、未触及流程（= 跳过 FDE 梳理直接买工具）；③ **治理与运维两岗的自动化恰是本仓存量**——Guardian（审计/HMAC/回溯）与 Shepherd（daemon 巡检/插件生命周期）对应能力全部已发版。边界：定性原型非统计抽样，读数自报未复算。
+BCG 访谈 50+ 家 AI 领先公司归纳出五种新角色原型——工作流设计师/领域知识负责人 / 业务自建者 / AI 治理者 / Agent 运营负责人。三重印证：① **五岗位恰是 FDE 三重角色（梳理/部署/养护）在企业内部的常设化拆分**——FDE 是生成相位的总承包人，五岗位是驻留相位的分包编制（映射 SSOT 见 [FDE/ROLES.md](../FDE/ROLES.md)）；② **「先重构再上 AI」被定量定价**——
+重做工作与人才机制的公司年度 TSR 比同行高 11+ 个百分点，BCG 另一调研显示 60% 企业未获 AI 价值的根因是任务层面叠加工具、未触及流程（= 跳过 FDE 梳理直接买工具）；③ **治理与运维两岗的自动化恰是本仓存量**——Guardian（审计/HMAC/回溯）与 Shepherd（daemon 巡检/插件生命周期）对应能力全部已发版。边界：定性原型非统计抽样，读数自报未复算。
 
 > 📖 [Sagar Goel et al. · Five Ways That AI Front-Runners Change How Work Gets Done](https://www.bcg.com/publications/2026/companies-use-ai-to-redesign-work)
 
@@ -199,7 +200,8 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构系统之�
 双 MCP 体系把「改结构」（proposal 人工门）与「改数据」（受控 Action）拆成两条治理通道——每个 action type 独立暴露为 MCP 工具 = **审计粒度到单个业务动作**，与「25 条规则按变更类型切分」同构（粒度即治理面）。Snowflake 反向「自下而上」路径（数仓长出本体栈，Cortex Sense 47%→83%）与 Palantir 互为外部佐证——**本体 = 运行时 context 层被多家独立复现**；其 Action 语义缺失恰是审计 + HITL + 审计链的主场。
 纳德拉「学习循环」（Token 资本复利，2800 万浏览）四要素与 sofagent 能力面逐项对齐：「可以外包一项任务甚至一份工作，但永远无法外包学习过程」——模型可换、平台可换，企业积累的约束规则与审计历史不动。深读全文见 [归档](./archive/validation-deep/architecture-mapping.md)。
 
-> 📖 [Palantir Foundation · Ontology MCP](https://palantirfoundation.org/docs/foundry/ontology-mcp/sample-architecture) · [Snowflake · Cortex Sense](https://www.snowflake.com/en/blog/enterprise-ai-agents-grounded-context/) · [Satya Nadella · A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/frontier-without-ecosystem-stable-satya-nadella)
+> 📖 [Palantir Foundation · Ontology MCP](https://palantirfoundation.org/docs/foundry/ontology-mcp/sample-architecture) · [Snowflake · Cortex Sense](https://www.snowflake.com/en/blog/enterprise-ai-agents-grounded-context/) · [Satya Nadella ·
+A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/frontier-without-ecosystem-stable-satya-nadella)
 
 ### Loop 四层循环：从 Agent Demo 到可交付 AI 产品
 

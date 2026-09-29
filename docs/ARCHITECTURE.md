@@ -685,7 +685,8 @@ graph LR
 
 **审计留痕的六项必留字段**（OWASP LLM06:2025 / Microsoft Least Privilege 行业共识）：Agent 写入生产系统时须留**谁 / 何时 / 对哪个对象 / 执行了什么 / 改前改后值 / 是否可回滚**六项。当前覆盖：字段 1-3 ✅（身份码 / timestamp / diff 路径）；字段 5 自 v1.4.4 以 `beforeAfter` 结构化摘要落盘 🟡；字段 4 🟡 部分覆盖、字段 6（回滚性显式标记）🟡 排期中——离开 Foundry 类统一权限模型后，这六项是不可省的工程门槛。
 
-> 📖 [OWASP · LLM Top 10 (LLM06)](https://owasp.org/www-project-top-10-for-large-language-model-applications/) · [Microsoft · Least Privilege for AI Agents](https://www.microsoft.com/en-us/security/blog/) · [SAP · Architecture Center](https://www.sap.com/architecture-center) · [Palantir · Foundry Docs](https://www.palantir.com/docs/foundry/)
+> 📖 [OWASP · LLM Top 10 (LLM06)](https://owasp.org/www-project-top-10-for-large-language-model-applications/) · [Microsoft · Least Privilege for AI Agents](https://www.microsoft.com/en-us/security/blog/) · [SAP · Architecture Center](https://www.sap.com/architecture-center) · [Palantir ·
+Foundry Docs](https://www.palantir.com/docs/foundry/)
 
 ### 本体建模要求对齐：GB/T 48000.3-2026 合规参考基线（v1.3.1 交付 2）
 
