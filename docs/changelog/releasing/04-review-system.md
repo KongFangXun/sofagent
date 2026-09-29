@@ -98,6 +98,14 @@ VIEWS=$(grep -cE '^### .*视角[一二三四五六七八九十]+ \[' playbook/fr
 #    --inject 会短暂改仓内文件（注入坏样本→验证必红→还原→验证必绿），前置要求工作树干净；
 #    并行 session 工作期间勿跑（改文件动作与并行写入冲突）。只读静态扫（无 --inject）随时可跑。
 bash tools/check/check-guards.sh --inject
+
+# 5. 审查文档族补检（勿增实体 / 无废话 / 排版三尺）：覆盖面 = 四份核心之外的全部关联件——
+#    playbook/deep-module-review.md · playbook/doc-fresh-review.md · docs/guides/review-system.md
+#    · check-version.sh 注释面。逐份过三查：
+#    ① 引用真实性（vendored 上游/PROVENANCE/被引脚本在位）② 无硬编码快照读数（行数/计数一律动态写法——
+#    实锤：doc-fresh-review 的「2938 行」漂到 2955 才被发现）③ 无双源数值（表格声明"以 X 为 SSOT"
+#    却又写死现值——实锤：review-system.md 的「当前上限 530 行」）。
+#    命中即修，同批提交；无需改动时零提交收场（合规也是一种结论）。
 ```
 
 > 💡 **什么时候 `git diff` 显示无变更也是正常的**：如果所有预料外发现都属于"可精确描述的具体问题模式"，它们全部进了 regression-checklist，fresh-eyes-review 本版本无需更新。零变更 = 审查体系稳定，不是遗漏。
