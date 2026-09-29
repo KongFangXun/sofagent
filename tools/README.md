@@ -72,7 +72,7 @@
 | `check/public-api.mjs` | public API 变更检测门禁（@public 符号集 vs 基线，未 bump 即 FAIL；v1.3.9 四） | CI / 发版前 |
 | `check/public-api-baseline.json` | @public 符号集基线（12 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
-| `check/doc-postcheck.mjs` | **文档落盘后自检（单文件秒级 · 排障工具非门禁）**：五项机械判据聚合既有口径——U+FFFD（check-docs §2b 同判据）/ 墙式行格（readability-count 同口径，**按 doc-ratchet 台账只拦新增**）/ 字符数棘轮与抬头块（doc-char-ratchet 同判据）/ 标题粘连（「正文。## 标题」同行——行内代码剥离 + 格式说明豁免，正负样本 `--selftest`）。`--fix` 调 `lib/reflow-walls.mjs` 折行；`--changed` 只查 git 变更中的 .md | 文档落盘后即时快检（全量防线仍归 doc-discipline / check-docs / check-anchors / check-table-shape / doc-score，不替代） |
+| `check/doc-postcheck.mjs` | **文档落盘后自检（排障非门禁）**：五项机械判据聚合既有口径——U+FFFD/ 墙式行格/ 字符数棘轮与抬头块（doc-char-ratchet 同判据）/ 标题粘连（「正文。## 标题」同行——行内代码剥离 + 格式说明豁免，正负样本 `--se…| 文档落盘后即时快检（全量防线仍归 doc-discipline / check-docs / check-anchors / check-table-shape / doc-score，不替代） |
 | `check/vitest-setup.mjs` | 全局测试隔离（预置 SOFAGENT_DATA 到 tmp，防测试污染真实 HOME——被 5 个 engine/*/vitest.config.ts setupFiles 引用） | vitest 自动挂载 |
 | `check/check-cross-package-relative.mjs` | 越包相对引用守卫（相对 import/require 解析后越出**包根**即 FAIL；现存 6 条豁免 = 6 处清单 SSOT 对账测试读 `plugins.json`，登记在 `cross-package-relative-exempt.json`。（详→注-6） | CI（pre-push 步骤 2e）/ 改 dsh-plugins 后 / `--selftest` |
 | `check/cross-package-relative-exempt.json` | 越包相对引用存量豁免台账（被 `check-cross-package-relative.mjs` 消费；集合相等判定——新增/漂移/陈旧均红） | 被 check-cross-package-relative.mjs 消费 |

@@ -11,7 +11,7 @@
   },
   "README.md": 19847,
   "README.en.md": 38590,
-  "CHANGELOG.md": 16747,
+  "CHANGELOG.md": 16756,
   "SECURITY.md": 48123,
   "CONTRIBUTING.md": 12658,
   "docs/API.md": 15315,
@@ -21,7 +21,7 @@
   "docs/HANDBOOK.md": 32778,
   "docs/LIMITATIONS.md": 41221,
   "docs/PHILOSOPHY.md": 33244,
-  "docs/ROADMAP.md": 18545,
+  "docs/ROADMAP.md": 18572,
   "docs/THANKS.md": 11653,
   "docs/VALIDATION.md": 19929,
   "docs/WIKI.md": 23040,
@@ -29,5 +29,5 @@
   "FDE/README.md": 5085,
   "SKILL/SKILL.md": 7299,
   "SKILL/AGENTS.md": 7623,
-  "tools/README.md": 21039
+  "tools/README.md": 21566
 }
