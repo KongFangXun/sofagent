@@ -186,6 +186,18 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
+## v1.5.4: Execution · Model Routing & Credential Verification (pending)
+
+🎯 **A routing decision chain and credential isolation for Agents** — three things at once:
+
+| Capability | One-liner |
+|---|---|
+| **Model routing layer** | Three-tier task routing + sensitive-content forced-local + hard-block when local is unavailable (fail-closed); local slot queueing with configurable caps — the decision chain never occupies the main-model slot |
+| **Credential isolation Vault** | Sandbox requests get credentials injected via the Vault — token plaintext is unreachable from code level; mandate/credential reconciliation flags three classes of scope mismatch as privilege risk |
+| **Multi-instance self-verification** | N-instance parallel voting (majority / unanimous / quorum-shortfall escalate / tie / N<2 rejected) — CLI `vote` rejects bad args instead of silently falling back |
+
+Also: AI-node governance onboarding (registry / warn / egress deny-by-default) · MCP tools 103→104 (`router_slots`) · gate hardening (production reachability / zero-branch prompt lint / six-dimension doc scoring).
+
 ## v1.5.3: Audit · Rule Engine & Self-Test (2026-09-26)
 
 🔍 **Converge the rule engine first, then give the rules a self-test** — three things at once:

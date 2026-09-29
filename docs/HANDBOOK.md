@@ -473,6 +473,7 @@ jobs:
 
 | 能力 | 版本 | 一句话 | 明细 |
 |---|---|---|---|
+| 执行模块·模型路由与凭证验证 | v1.5.4 | 路由决策链（三级路由/敏感强制本地/本地不可用硬拒）· 凭证隔离 Vault（代码层取不到 token）· 多实例表决 · AI 节点治理接入 | [开发日志](./changelog/v1.5/v1.5.4.md) |
 | 审计模块·规则引擎统一与自测 | v1.5.3 | 双规则引擎统一（一套定义、两种触发时机）· 规则自测 schema（每条规则强制 match/notMatch 正负样例，加载 fail-closed + FAIL 报文附替代建议 + 多规则取最严）· A24 交付物落点规则（24→25）· doctor 修复闭环（`--refresh` 备份 + 一键重置 + 前后 diff）· ARCHITECTURE 三域重构 · 判决类记录成对完整 · AuditScope 一等公民化 | [v1.5.3 开发日志](./changelog/v1.5/v1.5.3.md) |
 | 审计模块·对外面与判定语义 | v1.5.2 | MCP audit 数据对外（audit_query 只读查询 + 事件订阅推送）· 约束导出与证据链外部可验（ruleset_export 双向可逆 + verify-chain 独立验签器——获取路径：npm 包内 verify/verify-chain.mjs 或安装态 ~/.sofagent/verify/）· should-run 五问判定链 · 结论失效语义 · 出口治理（host 白名单 + 出站裁决挂链）· 事前授权 mandate | [v1.5.2 开发日志](./changelog/v1.5/v1.5.2.md) |
 
