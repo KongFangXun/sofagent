@@ -2502,7 +2502,7 @@ grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/tool-output-budget.mjs" || S
 grep -q "已完成轮禁止重开" "$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/loop.md" || S293_OK=false  # resume 越轮守卫（v1.5.3 载体：loop.md 状态接续纪律）
 grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/rules/skill-safety-rules.ts" || S293_OK=false  # rm-rf 豁免（skill-safety 侧）
 grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" || S293_OK=false  # rm-rf 豁免（shield 侧）
-grep -q "仅需 Node.js" "$PROJECT_ROOT/docs/VALIDATION.md" || S293_OK=false  # finding-04 措辞修复
+grep -q "仅需 Node.js" "$PROJECT_ROOT/docs/archive/validation-deep/harness-vendors.md" || S293_OK=false  # finding-04 措辞修复（锚随 VALIDATION 台账化压缩迁 archive/validation-deep——内容在、只搬家，锚随之改指；dcc9fb79 治理批）
 $S293_OK && pass "driver 超时+resume 守卫+rm-rf 同源+VALIDATION 措辞在位" || fail "阶段四基建加固缺件"
 scenario 294 "v1.3.8 交付①：ProxyGateway + 权限上界单调守卫（只减不增）——fail-closed 越界 deny"; S294_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/gateway/permission-ceiling.ts" ] || S294_OK=false
