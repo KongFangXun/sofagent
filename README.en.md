@@ -192,7 +192,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 | Capability | One-liner |
 |---|---|
-| **Model routing layer** | Three-tier task routing + sensitive-content forced-local + hard-block when local is unavailable (fail-closed); local slot queueing with configurable caps — the decision chain never occupies the main-model slot |
+| **Model routing layer** | Three-tier task routing + sensitive-content forced-local + hard-block when local unavailable (fail-closed); slot queueing is cap-configurable, and the decision chain never takes a main-model slot |
 | **Credential isolation Vault** | Sandbox requests get credentials injected via the Vault — token plaintext is unreachable from code level; mandate/credential reconciliation flags three classes of scope mismatch as privilege risk |
 | **Multi-instance self-verification** | N-instance parallel voting (majority / unanimous / quorum-shortfall escalate / tie / N<2 rejected) — CLI `vote` rejects bad args instead of silently falling back |
 
