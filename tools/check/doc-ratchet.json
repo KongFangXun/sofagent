@@ -14,7 +14,8 @@
     "note7": "doc-slim 批 2026-09-28：ARCHITECTURE wall 7→0（reflow + 长行收敛）/ cell 12→4（workspace 表与能力表长格收敛为「摘要 + 回指」）——基线随真实清理下调",
     "note8": "doc-slim 批 2026-09-28（批3）：PHILOSOPHY wall 1→0 / cell 1→0（DSH 长格拆注行 + Conway 结论折行）——清零随批记录",
     "note9": "doc-slim 批 6（2026-09-28）：WIKI 分工表加「体量纪律」列连带两处墙式行折行 ⇒ wall 2→0 / cell 4→3——基线随真实清理下调",
-    "note10": "doc-slim 批 6（2026-09-28）：CONTRIBUTING 新增「文档收录纪律」节连带表行收敛 ⇒ wall 1→0 / cell 1→0"
+    "note10": "doc-slim 批 6（2026-09-28）：CONTRIBUTING 新增「文档收录纪律」节连带表行收敛 ⇒ wall 1→0 / cell 1→0",
+    "note11": "2026-09-29 文档瘦身批：随分隔线归一/横线删除，实际 wall/cell 下降处同步收紧台账（LIMITATIONS wall 2→1）；12 个已清零文件按规则移出（含 2 个死条目 docs/evidence/*——Face 5 候选面本就排除 docs/evidence/）。**未抬任何基线**：playbook/regression-checklist.md 的 wall 1→2 是另一 session 引入，保持基线 1 不放宽。"
   },
   "docs/ARCHITECTURE.md": {
     "wall": 0,
@@ -29,7 +30,7 @@
     "cell": 3
   },
   "docs/LIMITATIONS.md": {
-    "wall": 2,
+    "wall": 1,
     "cell": 1
   },
   "docs/PHILOSOPHY.md": {
