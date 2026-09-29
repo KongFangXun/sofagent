@@ -326,6 +326,10 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 > ⚠️ **A14/A15 是 commit 时审计，不是运行时阻断。** Agent 在 commit 前仍可能访问受限数据——审计只能事后发现。这不是运行时沙箱。
 
+**沙箱验收双断言：边界逃逸 ≠ 出口绕过**。VM 边界守住不代表出口守住，两维须独立断言、分别举证——出口只能靠确定性白名单收口。Perplexity SPACE 沙箱红队实测（CEO 亲自发布）：9 个模型在 root 权限下 108 次运行**零 VM 逃逸**，但 **4 个模型借网络访问绕过出口封锁**——源文将此归因于多家沙箱平台共用的基础设施存在 IP 共享问题（归因为源文自述，本仓未复算）。对验收口径的落点：沙箱能力断言写「边界未逃逸」，出口断言写「外发通道白名单外全拒」，两断言缺一即验收不完整；被约束方可能拿到最高权限应作默认威胁模型。与既有 SubAgent 网络白名单（v1.3.7）的分工：彼是出口控制的能力本体，本条补的是「两项都须独立验收」的口径。
+
+> 来源：Perplexity（CEO Aravind Srinivas · X 原帖）｜Simon Willison ·〈Agent 致命三要素〉（simonwillison.net）
+
 ### 25 条审计规则完整清单（文档级 SSOT）
 
 > 本表是全部 25 条规则的文档级单一事实源（代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已合并入 A11、E3 已并入 A11，编号不再使用。

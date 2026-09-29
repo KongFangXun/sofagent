@@ -583,6 +583,10 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 
 > 来源：Anthropic AAR 技术报告（arXiv 2608.28945，2026-09-27）｜NVIDIA Open Agent Safety Platform（2026-09-27/28）｜智谱 ZCode 整改公告（IT之家 2026-09-28）｜Codex 用户报告（Hacker News 2026-09-27）｜Laya choice 缺陷解剖（2026-09-22）｜METR Notes（metr.org，2026-09-27）
 
+**validate 闸口是新的权力中心，权力必须有主人且自身被审计**。哪个 action 可直执行、哪个须审批，全由 validator 规则决定——validator 必须挂主管名下、每次变更进审计日志，否则架构里出现一层没有主人的新权限。OpenAI 前沿训练安全指导原则把同一判据写进组织流程：「谁有权叫停」须事前显式写入流程（否决权分散到研究/安全负责人与首席科学家多人，安全论证先于训练开跑），而非事后临时授权。两源合成的落点：**闸口的权力归属与闸口自身的审计留痕是同一件事的两面**——只挂主人不留痕则权力不受监督，只留痕不挂主人则告警无人认领。
+
+> 来源：hugozhu.site ·〈数字员工不是一个更大的 Agent Loop：双 Loop 分界与 validate 权力中心〉｜OpenAI ·〈前沿 AI 训练安全指导原则〉（本仓经 IT之家转述收录，未复算官方原文——引用判据句时以句内转述为准）
+
 ```mermaid
 graph LR
     A[Agent 改代码/改文件] --> B[git commit 或 daemon 检测到变更]
@@ -773,7 +777,9 @@ graph LR
 **蒸馏的精度门槛：合理而粗糙的建议，不如不给**。S³Gym 对 Summary Memory 的逐对比较给出一个蒸馏纪律的硬边界：经验能压缩成可复用策略规则的场景（博弈结构、可总结流程），蒸馏优于原始历史；依赖局部精确细节的场景（几何导航、状态敏感操作），「方向全对但缺精度」的总结反而有害（逐对实验数字见 [VALIDATION](./VALIDATION.md)）。
 对 think.md → knowledge/ 的启示：**蒸馏前先判经验的可压缩性**——能提炼为「条件 → 动作」规则的才进 knowledge/，依赖具体上下文细节的留在 think.md 原始轨迹层，宁可不清蒸馏，不可清错。
 
-> 📖 [ByteDance Seed · HarnessDev](https://arxiv.org/abs/2609.01437) · [Aspire](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100) · [self-developing-agents](https://self-developing-agents.github.io)
+**裁决记录是一等知识资产，拒绝路径须显式沉淀**。被拒绝的路径/裁决与被采纳的同等值钱：大淘宝 decision_function 设 `reject_routes` 字段——明确哪些路径看似合理但必须拒绝，「哪些路不能走」既不在模型权重里也不在编排里，只在一等结构化字段里；电网项目本体护照模型把「裁决记录」列为十要素之一（字段级溯源要素：冲突交人裁决、裁决记录留痕）；hugozhu 的判语「GitHub 上被丢掉的代码才是最值钱的资产」是同一哲学的工程面——负样本与偏好是资产，Eval 是过程数据的生产设备。对进化闭环的落点：think.md 反思与 dream-cycle 蒸馏**须为拒绝路径设一等结构化落位**（如 reject case / 负样本条目），而非任其散落在对话历史里。
+
+> 📖 [ByteDance Seed · HarnessDev](https://arxiv.org/abs/2609.01437) · [Aspire](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100) · [self-developing-agents](https://self-developing-agents.github.io)｜裁决记录条：大淘宝技术〈Ontology 决策结构化实践〉（自述，本仓未复算）· 华力江海〈电网项目管理护照模型〉（微信公众号转述，未复算）· hugozhu.site〈被丢掉的代码〉
 
 ### 运行时数据层：引擎间数据流全景
 
