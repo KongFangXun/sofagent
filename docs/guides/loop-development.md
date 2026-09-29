@@ -36,7 +36,8 @@ const agent = createReactAgent({ llm: model, tools, prompt: systemPrompt });
 
 ## 二、为什么选 LangGraph（弃用 deepagents）
 
-deepagents 早期启发了编排模块设计，后因三个**不可逆硬伤**弃用（强制中间件注入无法禁用 / 并行工具调用崩溃根因未解 / 内置中间件白名单不可排除）——逐条踩坑实录见 [FORGE/lessons/index.md](../../FORGE/lessons/index.md)，此处只留选型结论。**适用边界**：deepagents 适合快速原型 / 串行工具调用 / 标准文件操作；FORGE loop 需要进程隔离、并行双盲审查、自定义工具集、按步 recursionLimit、审计可追溯——这些需求下 deepagents 的黑盒成了枷锁。
+deepagents 早期启发了编排模块设计，后因三个**不可逆硬伤**弃用（强制中间件注入无法禁用 / 并行工具调用崩溃根因未解 / 内置中间件白名单不可排除）——逐条踩坑实录见 [FORGE/lessons/index.md](../../FORGE/lessons/index.md)，此处只留选型结论。**适用边界**：deepagents 适合快速原型 / 串行工具调用
+/ 标准文件操作；FORGE loop 需要进程隔离、并行双盲审查、自定义工具集、按步 recursionLimit、审计可追溯——这些需求下 deepagents 的黑盒成了枷锁。
 
 ---
 
@@ -148,7 +149,8 @@ try {
 
 ### 3.7 spawnWorker 独立进程模型
 
-每个步骤在独立 `node` 子进程中执行，保证真·零上下文（完整实现见 `FORGE/src/fresh-eyes-driver.mjs`）。核心模式：`spawn(process.execPath, [__filename, '--worker', '--step', step, ...])`，stdio 继承、`FORGE_ROUND` 环境变量传轮次，`close` 事件里非 0 退出码 reject。
+每个步骤在独立 `node` 子进程中执行，保证真·零上下文（完整实现见 `FORGE/src/fresh-eyes-driver.mjs`）。核心模式：`spawn(process.execPath, [__filename, '--worker', '--step', step, ...])`，stdio 继承、`FORGE_ROUND` 环境变量传轮次，`close`
+事件里非 0 退出码 reject。
 
 步骤 ①②（双盲独立审查）可并行调用 `spawnParallel`；步骤 ③④⑤ 必须串行（有数据依赖）。
 
@@ -397,9 +399,11 @@ FORGE/SKILL/fresh-eyes-loop/
 
 **工具集设计约束**：每个 Sub Agent 的工具集应零重叠、无歧义——工具功能描述不能模糊交叉。当工具数上百时，瓶颈不在模型推理而在工具描述歧义。工具注册的静态重叠检测已在位——tool-registry 以 name 全局唯一测试守卫（tool-bijection 双射前提）。
 
-**为什么多 Agent 协作 > 单强模型**（来源：Apple Dex RSI 训练团队一手观察）：self-attention 架构的固有局限使单模型处理超长上下文存在上限；多 Agent 协作（分治验证 + 多路径冗余 + 记忆机制）效果远超单强模型——推论是**工程化能力具备独立于模型基础能力的结构性壁垒**。编排模块（Sub Agent 分治 + Maker-Checker 分离）即该理论的产品化落地。
+**为什么多 Agent 协作 > 单强模型**（来源：Apple Dex RSI 训练团队一手观察）：self-attention 架构的固有局限使单模型处理超长上下文存在上限；多 Agent 协作（分治验证 + 多路径冗余 + 记忆机制）效果远超单强模型——推论是**工程化能力具备独立于模型基础能力的结构性壁垒**。编排模块（Sub Agent 分治 +
+Maker-Checker 分离）即该理论的产品化落地。
 
-**解题/验证分离**：同一 Agent 自验覆盖率仅 7-33%，分离为独立验证后升至 73%（内部实测参考值，非外部基准）——与审计「不信任 Agent 自我报告」同构，解题与验证 Agent 必须物理隔离；验证手段分领域（代码用单测、数学用形式化证明、非标准领域用多 Agent 协作）。数字口径见 [ARCHITECTURE §六 编排收敛与 A/B 测试](../../docs/ARCHITECTURE.md#编排收敛与-ab-测试)。
+**解题/验证分离**：同一 Agent 自验覆盖率仅 7-33%，分离为独立验证后升至 73%（内部实测参考值，非外部基准）——与审计「不信任 Agent 自我报告」同构，解题与验证 Agent 必须物理隔离；验证手段分领域（代码用单测、数学用形式化证明、非标准领域用多 Agent 协作）。数字口径见 [ARCHITECTURE §六 编排收敛与 A/B
+测试](../../docs/ARCHITECTURE.md#编排收敛与-ab-测试)。
 
 > 💡 **Agent 粒度判定（X4）**：单请求内被调 >3 次的 Agent 合并到上游；日均调用 <5 次的 Agent 标记僵尸预警——防纳米 Agent 膨胀。
 
@@ -442,7 +446,8 @@ flowchart LR
 | `routeAfterHuman` | 非 running→END；running（驳回）→engineer | engineer / END |
 | `routeFromStart` | 正常→engineer；resume→指定节点 | 四节点之一 |
 
-**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A11、A14-A24 + E1-E2/E4（共 25 条）规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit 做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
+**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A11、A14-A24 + E1-E2/E4（共 25 条）规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit
+做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
 
 ### 状态契约：LoopArtifacts
 
@@ -487,7 +492,8 @@ sofagent 的编排模块天然就是一张**控制图（Control Graph）**——
 
 **控制图 vs 数据图二分天然具备**：管道（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
 
-**Org Graph vs Work Graph 双图模型**（行业前沿框架）：Org Graph = 长期稳定的角色节点（engineer/audit/reviewer/human_confirm），变动慢，像公司组织架构；Work Graph = 为当前任务动态拼装的协作拓扑（子任务 engineer 实例 + 并行扇出），任务结束即解散。两者分离——长期能力与短期任务解耦，避免每次任务都重建整套组织。
+**Org Graph vs Work Graph 双图模型**（行业前沿框架）：Org Graph = 长期稳定的角色节点（engineer/audit/reviewer/human_confirm），变动慢，像公司组织架构；Work Graph = 为当前任务动态拼装的协作拓扑（子任务 engineer 实例 +
+并行扇出），任务结束即解散。两者分离——长期能力与短期任务解耦，避免每次任务都重建整套组织。
 
 **Org Graph 节点六要素**（每节点定义：职责 / 输入契约 / 输出契约 / 工具权限 / 状态范围 / 退出条件）：
 
@@ -519,13 +525,15 @@ START → plan（拆解："调研 AI 笔记产品"）
 **Loop → Graph 六触发信号**（什么时候该升级，sofagent 并行编排 v1.3.1 的适用性判断框架）：任务需交接 / 需散出汇合 / 每步不同模型工具 / 需显式可审计角色 / 节点失败需隔离 / 需独立 reviewer——满足其一才上 Graph，否则用 Loop 就够（"先用 loop，复杂到需要多角色协作再 graph"，避免过度设计）。
 sofagent 落点对照（dag-runner vs Send API 并行 / worktree 隔离 / StateGraph 四节点 / audit+fresh-eyes 独立审查）见 [VALIDATION §三](../../docs/VALIDATION.md#循环的边界入场判据与升级判据)。
 
-**五类边契约**（行业共识）：当前实现仅有 **数据流**（`artifacts` 传递）和 **控制流**（`routeAfterAudit`/`routeAfterHuman`）——**缺权限流、证据流、失败流**。v1.3.1 已落地数据流与控制流两类；其余三类的形式化仍待后续版本。
+**五类边契约**（行业共识）：当前实现仅有数据流（`artifacts` 传递）和控制流（`routeAfterAudit`/`routeAfterHuman`）——**缺权限流、证据流、失败流**。v1.3.1 已落地数据流与控制流两类；其余三类的形式化仍待后续版本。
 
-**Graph Engine 进化路线**（v1.2.2–v1.3.1 六项全数交付）：Planner 节点任务分解 → 降级路由链（retry→降级→标记→人工）→ engineer-decide/execute 分层 → 并行子图执行（worktree 隔离 + 多 engineer 并发）→ Dashboard ASCII 控制图 → 多循环 DAG 波次并行（LangGraph 原生 Send API + ★Reality Anchor 每波次卡关）。逐版落点见 [ROADMAP](../../docs/ROADMAP.md)。
+**Graph Engine 进化路线**（v1.2.2–v1.3.1 六项全数交付）：Planner 节点任务分解 → 降级路由链（retry→降级→标记→人工）→ engineer-decide/execute 分层 → 并行子图执行（worktree 隔离 + 多 engineer 并发）→ Dashboard ASCII 控制图 → 多循环 DAG
+波次并行（LangGraph 原生 Send API + ★Reality Anchor 每波次卡关）。逐版落点见 [ROADMAP](../../docs/ROADMAP.md)。
 
 ### 重试语义：统一计数器
 
-`retryCount` 一个计数器管两种失败——audit 判 FAIL 或 HITL 驳回，都 `retryCount++` 回 engineer。达到上限（默认 3）仍未过 → `finalStatus = 'blocked'` 终态 + 写 audit history（engine 字段标 `loop-graph`），不无限循环。blocked 可被 `audit-root-cause` / 周报追溯。
+`retryCount` 一个计数器管两种失败——audit 判 FAIL 或 HITL 驳回，都 `retryCount++` 回 engineer。达到上限（默认 3）仍未过 → `finalStatus = 'blocked'` 终态 + 写 audit history（engine 字段标 `loop-graph`），不无限循环。blocked 可被
+`audit-root-cause` / 周报追溯。
 
 WARN 不阻断流转——`[审计告警]` 前缀透传给 reviewer 输入，由 reviewer + human_confirm 兜底把关。
 
@@ -545,7 +553,8 @@ WARN 不阻断流转——`[审计告警]` 前缀透传给 reviewer 输入，由
 
 ### audit 节点降级逻辑
 
-audit 节点程序化调用 `@sofagent/audit`（比 CLI 子进程侵入更小，类型安全）。审计不可用时（如 git 环境缺失）**降级 WARN 而非 FAIL**——不直接烧穿重试次数，由 reviewer + human_confirm 兜底。降级时 audit history 的 engine 字段标 `loop-graph-degraded` 便于追溯。`git diff HEAD` 为空时也返回 WARN（engineer 可能未产生文件修改）。
+audit 节点程序化调用 `@sofagent/audit`（比 CLI 子进程侵入更小，类型安全）。审计不可用时（如 git 环境缺失）**降级 WARN 而非 FAIL**——不直接烧穿重试次数，由 reviewer + human_confirm 兜底。降级时 audit history 的 engine 字段标 `loop-graph-degraded`
+便于追溯。`git diff HEAD` 为空时也返回 WARN（engineer 可能未产生文件修改）。
 
 ### 上下文预算管理：四层防御
 
@@ -558,4 +567,5 @@ FORGE 的 worker（LangGraph createReactAgent）跑长任务时面临上下文�
 | L3 上下文裁剪 | 每次模型调用前裁剪历史消息 | trimMessagesSafe + preModelHook + 动态 token 估算 | 保留 system + 首条 user + 最近 N 条 |
 | L4 工具调用预算 + 内存限制 | 硬上限撞了立即 break | TOOL_SOFT_LIMIT=35 / HARD=45 + --max-old-space-size=2048 | prompt 层纪律对模型无效，须代码层硬熔断 |
 
-与 ClaudeCode 上下文管理的对标：ClaudeCode 三级压缩（SN 快照→微压缩→全局压缩）解决单进程长会话；FORGE 四层防御解决多 worker 短任务进程。交集在 L1（渐进式加载）和 L3（消息裁剪），差异在 FORGE 独有的 L4（工具调用预算——ClaudeCode 不限制工具调用次数，FORGE 用零窗口熔断强制收敛）。FORGE 不需要 ClaudeCode 的磁盘持久化恢复——worker 是短命子进程，跑完就退出，不存在跨 session 恢复场景。
+与 ClaudeCode 上下文管理的对标：ClaudeCode 三级压缩（SN 快照→微压缩→全局压缩）解决单进程长会话；FORGE 四层防御解决多 worker 短任务进程。交集在 L1（渐进式加载）和 L3（消息裁剪），差异在 FORGE 独有的 L4（工具调用预算——ClaudeCode 不限制工具调用次数，FORGE 用零窗口熔断强制收敛）。FORGE 不需要
+ClaudeCode 的磁盘持久化恢复——worker 是短命子进程，跑完就退出，不存在跨 session 恢复场景。

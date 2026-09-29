@@ -57,8 +57,10 @@ sofagent does not build the Agent — it delivers the layer that keeps any Agent
 <summary>🗺️ System architecture overview (FDE Harness five-module structure)</summary>
 
 <p align="center">
-  <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training / governance / execution modules" width="860" /><br/>
-  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure: governance module released in v1.5.0 · execution module planned for v1.5.4; full interactive version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
+  <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training /
+governance / execution modules" width="860" /><br/>
+  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure: governance module released in v1.5.0 · execution module planned for v1.5.4; full interactive
+version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 </p>
 
 </details>
@@ -85,16 +87,19 @@ sofagent does not build the Agent — it delivers the layer that keeps any Agent
 | Maintenance burden | Low — rules track upstream | Medium — custom scripts are yours to maintain | Medium — rules and hooks ship with this repo, but each version needs the hook reinstalled and config re-aligned |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both — focused on Agent governance |
 
-**10-minute lightweight trial** (covers package fetch and environment checks end to end; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p @sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
+**10-minute lightweight trial** (covers package fetch and environment checks end to end; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p
+@sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
 
 > 💡 For the trial, keep commit messages **at least 6 characters** (e.g. `initial audit test`) — A19 flags ultra-short messages (`init`/`add`) by design (it guards against meaningless commit messages), not a malfunction.
 
-**Five-minute theatrical demo** (shipped in v1.5.1; sandboxed, zero touch on real files): `npx -y -p @sofagent/audit sofagent-audit demo` — one command runs the full five-act chain: sandbox build → injection → deliberate violation → audit interception → snapshot rollback → HMAC evidence export
+**Five-minute theatrical demo** (shipped in v1.5.1; sandboxed, zero touch on real files): `npx -y -p @sofagent/audit sofagent-audit demo` — one command runs the full five-act chain: sandbox
+build → injection → deliberate violation → audit interception → snapshot rollback → HMAC evidence export
 (`--speed fast` for a 60-second cut; artifacts land under `$SOFAGENT_DATA/demo` (default `~/.sofagent/data/demo`), touching neither the audited repository nor other directories).
 
 ## Core Features
 
-Three layers, each in its place: the **playbook layer (FDEing)** writes judgment down on entry, the **judgment layer (S1M)** governs how judgment forms, is traced, and is evidenced, and the **governance layer (harness)** keeps judgment executing 24/7 after departure.
+Three layers, each in its place: the **playbook layer (FDEing)** writes judgment down on entry, the **judgment layer (S1M)** governs how judgment forms, is traced, and is evidenced, and the
+**governance layer (harness)** keeps judgment executing 24/7 after departure.
 
 **Playbook layer · FDEing** (on entry · generate judgment, the FDE stage — deciding where AI belongs and what it's worth, frozen into deliverables):
 
@@ -102,7 +107,8 @@ Three layers, each in its place: the **playbook layer (FDEing)** writes judgment
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 📦 **Judgment frozen into deliverables** — every node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
-**Judgment layer · S1M** (System One Model — a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0 and its declaration for v2.0.0 — not yet shipped**. What ships today in this layer is the existing judgment-and-evidence
+**Judgment layer · S1M** (System One Model — a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0 and its declaration
+for v2.0.0 — not yet shipped**. What ships today in this layer is the existing judgment-and-evidence
 surface):
 
 - 🔎 **Judgment trail** — decision-log causal chains record every accountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
@@ -113,25 +119,28 @@ surface):
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
 - 🧱 **25 audit rules + 104 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 20 of the 25 rules run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs, active once an Agent is connected), 1 filesystem scan;
-  log-based rules such as A7/A8 are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design); evidence is based on local diffs; **not fail-closed by default** — the config can be tampered with and the hooks
+  log-based rules such as A7/A8 are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design);
+evidence is based on local diffs; **not fail-closed by default** — the config can be tampered with and the hooks
   skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 25 = 17 default + 8 extensions)
 - 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
 
 ## What is the FDE Harness
 
-**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents you already have (DSH / OpenClaw / WorkBuddy) and the model layer. A full FDE workflow has two stages, **sewn
+**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents
+you already have (DSH / OpenClaw / WorkBuddy) and the model layer. A full FDE workflow has two stages, **sewn
 together by the deliverables handed over in between**:
 
 - **On entry · generate judgment**: four steps — **map the workflow → build dual graphs → qualify AI nodes → deploy**. Dual graphs = business graph (system boundaries, data flows; read by humans) + ontology graph (shared semantic foundation; read by AI), turning the enterprise into a
-  machine-readable structure; for every AI node, "what counts as done (merge_criteria) · who signs off (approver) · when it runs (trigger)" is judged here and frozen into the deliverables (workflow.yml + ontology + skills).
+  machine-readable structure; for every AI node, "what counts as done (merge_criteria) · who signs off (approver) · when it runs (trigger)" is judged here and frozen into the deliverables
+(workflow.yml + ontology + skills).
 - **After departure · retain judgment**: the FDE leaves, the judgment stays — audit triggers automatically on change events (commits) against the frozen criteria (evidence-tiered: 20 of the 25 rules run on git-diff hard evidence — see Core Features); daemon inspects 7×24, snapshots roll back,
   experience distills back. The human leaves, governance doesn't.
 
 > 🔗 **Why they must be one thing**: the deliverables are a living state shared by both stages — written on entry, read during execution, written back during evolution (trial branches promoted to baseline, reflections distilled back). Without FDE, the constraint layer has no criteria to enforce;
 >without the constraint layer, FDE judgment evaporates the moment the engineer leaves. That is where the name "FDE Harness" comes from — not a bundle of an FDE feature and a Harness feature, but two stages of one job.
 >
-> **From FDE to FDEing — everything can be FDEing**: the combined effect of the two stages is turning Forward Deployed **Engineer** (a job title) into Forward Deployed **Engineering** (a capability) — the person moves on, the capability stays with the deliverables. **FDEing is short for Forward
->Deployed Engineering** (pronounced /ef-di-i-ing/) — as a noun it names that capability, as a verb it means turning FDE labor into it.
+> **From FDE to FDEing — everything can be FDEing**: the combined effect of the two stages is turning Forward Deployed **Engineer** (a job title) into Forward Deployed **Engineering** (a capability) — the person moves on, the capability stays with the deliverables. FDEing is short for Forward
+>Deployed Engineering (pronounced /ef-di-i-ing/) — as a noun it names that capability, as a verb it means turning FDE labor into it.
 >
 > - **FDE is the noun; FDEing is the verb** — turning FDE from human labor into an auto-executable capability (playbook × judgment × governance): less human labor, more capability delivered.
 > - **Not limited to software** — any business object, process, or node can be FDEing'd through "map → judge → deliver → sustain"; hardware nodes and robot motion are workflows too — the difference lies in the actuator, not the governance.
@@ -145,7 +154,8 @@ together by the deliverables handed over in between**:
   postings surged 729% in a year (verification in [VALIDATION](./docs/VALIDATION.md))
 - **Completeness comes from the union** — DSH solves "can work"; sofagent solves "keeps working"; only together do they make a complete FDE Harness (next chapter)
 - **"Continuous optimization" only holds with a constraint layer** — backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment (ARC-AGI-3, **capability-harness data** — it lifts task scores and token efficiency, a different dimension from the
-  reliability gains of a governance constraint layer): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md) (write-surface audit coverage: the weight and skill surfaces have
+  reliability gains of a governance constraint layer): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in
+[VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md) (write-surface audit coverage: the weight and skill surfaces have
   shipped; the prompt / memory surfaces are scheduled for v1.5.9)
 - **Capabilities are portable, never dead-bound to a platform** — the constraint layer is platform-agnostic; the methodology follows the business, not the platform
 
@@ -153,7 +163,8 @@ together by the deliverables handed over in between**:
 
 ## Multi-platform Mounting
 
-Sits between the Agents you already use and the model layer — it doesn't replace the model, only adds reliable execution. **The FDE Harness layer is platform-agnostic** (five forms — plugin / Skill / MCP / CLI / Dashboard — distributed by host capability); the methodology follows the business, not
+Sits between the Agents you already use and the model layer — it doesn't replace the model, only adds reliable execution. **The FDE Harness layer is platform-agnostic** (five forms — plugin
+/ Skill / MCP / CLI / Dashboard — distributed by host capability); the methodology follows the business, not
 the platform:
 
 | Tier | Platform | Constraint injection | Mounting method |
@@ -183,17 +194,20 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 | **Rule self-test schema** | Every rule must carry `match` / `notMatch` positive/negative examples, asserted fail-closed at load time — a mis-written rule fails loudly instead of relying on memory; FAIL messages attach a suggested fix, and multi-rule hits take the strictest |
 | **A24 deliverable-location rule** | Allowlist opt-in, intercepted before the act, **born with positive/negative examples** (rules 24 → 25) — no legacy debt |
 
-Also in this release: doctor repair loop (`--refresh` backup + one-click reset to defaults + before/after diff) · `@sofagent/skillopt` legacy package retirement · ARCHITECTURE three-domain rewrite (FDE scenario layer → S1M decision layer → harness governance layer + five-domain/three-domain mapping)
-· paired completeness for verdict records (a one-sided record alone now raises red, closing the "no record" blind spot) · audit-scope semantics as a first-class citizen (`AuditScope` explicit object; rules no longer each call git). **Tests 5296 → 5408 · acceptance 373 → 377 · 85 regression
+Also in this release: doctor repair loop (`--refresh` backup + one-click reset to defaults + before/after diff) · `@sofagent/skillopt` legacy package retirement · ARCHITECTURE three-domain
+rewrite (FDE scenario layer → S1M decision layer → harness governance layer + five-domain/three-domain mapping)
+· paired completeness for verdict records (a one-sided record alone now raises red, closing the "no record" blind spot) · audit-scope semantics as a first-class citizen (`AuditScope`
+explicit object; rules no longer each call git). **Tests 5296 → 5408 · acceptance 373 → 377 · 85 regression
 dimensions · rules 24 → 25** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.3.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
-**On entry · generate judgment** (FDE phase): map workflows (five-element deep-dive + three-question test — price every AI node) → build the dual graphs (business graph for humans + ontology for AI) → decide AI nodes → deploy three-layer deliverables. Each node carries "done criteria
+**On entry · generate judgment** (FDE phase): map workflows (five-element deep-dive + three-question test — price every AI node) → build the dual graphs (business graph for humans + ontology
+for AI) → decide AI nodes → deploy three-layer deliverables. Each node carries "done criteria
 (merge_criteria) · who approves (approver) · when it runs (trigger)", frozen into the deliverable.
 
-**After departure · retain judgment** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7, every commit triggers the 25 audit rules (including **AgentShield static scanning across five config surfaces**), snapshots are rollback-ready, experience keeps accumulating; evolution
-writes promotion and distilled reflection back into the deliverable.
+**After departure · retain judgment** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7,
+every commit triggers the 25 audit rules (including **AgentShield static scanning across five config surfaces**), snapshots are rollback-ready, experience keeps accumulating; evolution writes promotion and distilled reflection back into the deliverable.
 
 **The organizational-management lens** — the two phases map onto onboarding a digital employee:
 
@@ -215,9 +229,11 @@ writes promotion and distilled reflection back into the deliverable.
 
 ## Installation
 
-**Release stage (read before installing)**: sofagent is in its **Alpha construction period** (**v1.x**) — the feature surface moves fast and **no interface stability is promised**; read the [CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
+**Release stage (read before installing)**: sofagent is in its **Alpha construction period** (v1.x) — the feature surface moves fast and **no interface stability is promised**; read the
+[CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
 
-The matching npm release-channel policy: **no dist-tag split — `latest` is the newest version** — `npx @sofagent/audit` pulls the current latest by default, no tag needed (version numbers carry the stage semantics: v1.x alpha construction period / beta from v2.0.0).
+The matching npm release-channel policy: **no dist-tag split — `latest` is the newest version** — `npx @sofagent/audit` pulls the current latest by default, no tag needed (version numbers
+carry the stage semantics: v1.x alpha construction period / beta from v2.0.0).
 The `alpha` tag remains as a historical release trace and is not maintained.
 
 > ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the
@@ -237,8 +253,10 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > ⚠️ This step is a **one-off audit** (inside a single process) — it does not install a git hook, so later commits will not be auto-blocked. For continuous protection run `sofagent-audit --init` (see Full install below).
 
-Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and other known formats — generic secret shapes are intentionally out of scope, a conservative design against false
-positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). This is exactly the scenario shown in the screenshot above (first screen); not repeated here.
+Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and
+other known formats — generic secret shapes are intentionally out of scope, a conservative design against false
+positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). This is exactly the scenario shown in
+the screenshot above (first screen); not repeated here.
 
 **Full install** (Node.js ≥ 18, download and review before running) — **installed on the enterprise devices running the AI nodes**:
 
@@ -268,14 +286,18 @@ sofagent-audit --doctor    # verify the environment (optional)
 >
 > 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh — `curl bootstrap.sh | bash` is equivalent to "download install.sh + run install.sh". Both scripts install exactly the same thing; bootstrap just saves you the manual clone/download step.
 
-**To uninstall**: `bash ~/.sofagent/scripts/uninstall.sh` (installed layout) or `bash engine/scripts/uninstall.sh` (clone layout) — removes the Skill/constitution files, hook registrations and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data.
-Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the two channels both named `sofagent` apart (npm bare-name umbrella `sofagent` = sub-package forwarder, see the package-name warning in Usage; the install.sh state exposes
-`status` / `web` / `dashboard`) → [HANDBOOK · Installation](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest
+**To uninstall**: `bash ~/.sofagent/scripts/uninstall.sh` (installed layout) or `bash engine/scripts/uninstall.sh` (clone layout) — removes the Skill/constitution files, hook registrations
+and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data.
+Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the two channels both named `sofagent` apart (npm bare-name
+umbrella `sofagent` = sub-package forwarder, see the package-name warning in Usage; the install.sh state exposes
+`status` / `web` / `dashboard`) → [HANDBOOK · Installation](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see
+[FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest
 path" section).
 
 ## Usage
 
-<p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" /><br/><sub>Dashboard cockpit (single-file HTML · screenshot shows v1.4.0): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>(See CHANGELOG for UI evolution;
+<p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" /><br/><sub>Dashboard cockpit (single-file HTML · screenshot shows v1.4.0): rule pass
+rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>(See CHANGELOG for UI evolution;
 the installed UI is the source of truth.)</sub></p>
 
 > 📊 **The Dashboard has three entries, each in its place**:
@@ -365,5 +387,6 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 
 <p align="center">
   Issues and PRs welcome, especially the nitpicky kind · <a href="./CONTRIBUTING.md">Contributing</a> · <a href="./docs/THANKS.md">Thanks</a><br/>
-  <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">Kong Fangxun</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ If sofagent helps you, star it and help more people find it</a></sub>
+  <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">Kong Fangxun</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ If sofagent helps you, star it and help more
+people find it</a></sub>
 </p>

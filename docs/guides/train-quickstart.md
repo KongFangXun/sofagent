@@ -39,7 +39,8 @@ bash tools/train/train-env-init.sh "$SOFAGENT_HOME/data" quickstart-demo
 [sofagent] 完成。
 ```
 
-⚠️ **当前限制（如实披露）**：`@mlx-node/trl` 依赖 `@std/toml: npm:@jsr/std__toml` 在 npm registry 404——直接安装必失败（train-stack.md「已探明的坑」有完整绕过方案：本地 shim + overrides）。**此失败不阻塞本 quickstart 的其余九步**（提交/监控/eval/部署/serve 均不依赖该包——只有真跑权重计算需要）。CUDA 机器上此步装 verl，正常成功。
+⚠️ **当前限制（如实披露）**：`@mlx-node/trl` 依赖 `@std/toml: npm:@jsr/std__toml` 在 npm registry 404——直接安装必失败（train-stack.md「已探明的坑」有完整绕过方案：本地 shim + overrides）。**此失败不阻塞本 quickstart
+的其余九步**（提交/监控/eval/部署/serve 均不依赖该包——只有真跑权重计算需要）。CUDA 机器上此步装 verl，正常成功。
 
 ## 三、环境体检（train doctor）
 
@@ -77,7 +78,8 @@ const r = analyzeTrainNeed(dataDir, 'quickstart-demo', 'weekly-report');
 // submitHint: train_submit（algorithm=sft，hyperparams 含 qlora.oumi 配置——base_type=dense）
 ```
 
-报告落 `data/train/quickstart-demo/analyze/weekly-report.json`。模板库全景：`node engine/orchestrator/dist/cli.js train templates`（四场景参考模板 + RL 配方，全量配方经 `--recipes <dir>` 装载外部配方目录）。**注意**：模板要求数据 ≥500 条，quickstart 10 条仅验证链路——真训练请按 dataRequirement 补样。
+报告落 `data/train/quickstart-demo/analyze/weekly-report.json`。模板库全景：`node engine/orchestrator/dist/cli.js train templates`（四场景参考模板 + RL 配方，全量配方经 `--recipes <dir>` 装载外部配方目录）。**注意**：模板要求数据 ≥500
+条，quickstart 10 条仅验证链路——真训练请按 dataRequirement 补样。
 
 ## 六、提交（train_submit）
 
@@ -88,7 +90,8 @@ const r = createTrainJob({ dataDir, enterpriseId: 'quickstart-demo',
 // created = true | jobId = job-mtnxx5in-99e743e9 | status = queued
 ```
 
-MCP 面等价：`train_submit`（`data_path`/`base_model`/`algorithm`/`enterprise_id` 四必填）。幂等：同 `train_job_id` 重复提交返回既有任务。产物目录 `data/train/<企业>/<jobId>/`（state.json + job.json + events.jsonl）。job.json 模板见 `docs/guides/examples/quickstart-job.json`（协议 SSOT：train-protocol.ts，schemaVersion v1）。
+MCP 面等价：`train_submit`（`data_path`/`base_model`/`algorithm`/`enterprise_id` 四必填）。幂等：同 `train_job_id` 重复提交返回既有任务。产物目录 `data/train/<企业>/<jobId>/`（state.json + job.json + events.jsonl）。job.json
+模板见 `docs/guides/examples/quickstart-job.json`（协议 SSOT：train-protocol.ts，schemaVersion v1）。
 
 **排查**：enterprise_id 缺失被拒（企业隔离分区硬约束）；协议校验失败看返回的 issues 数组逐条修。
 

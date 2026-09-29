@@ -16,7 +16,6 @@
 > 这个项目的迭代速度本身就是产品主张的证据——AI Loop 模式下，10 天 17 版本是正常节奏，不是不稳定信号。
 
 **[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)**
-**[![GitHub contributors](https://img.shields.io/github/contributors/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/graphs/contributors)**
 
 ## 🪜 贡献者阶梯
 

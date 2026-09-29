@@ -114,7 +114,8 @@ nodes:
       prompt: "请确认以下排程方案是否可执行："
 ```
 
-第三个节点 `id: quality-check`（质量检验，`skill_ref: skills/质量检验/SKILL.md`，`entity_ref: entities/质量检验.md`，`task: "自动检验产品合格率，不合格批次自动标记并通知"`）只在差异字段上不同：`type: 🔄` · `depends_on: [production-scheduling]` · `actions: [read, write]` · `hitl: false` · `knowledge_domain` = `include: [检验标准, 合格阈值, 不合格处理流程]` + `exclude:
+第三个节点 `id: quality-check`（质量检验，`skill_ref: skills/质量检验/SKILL.md`，`entity_ref: entities/质量检验.md`，`task: "自动检验产品合格率，不合格批次自动标记并通知"`）只在差异字段上不同：`type: 🔄` · `depends_on: [production-scheduling]` ·
+`actions: [read, write]` · `hitl: false` · `knowledge_domain` = `include: [检验标准, 合格阈值, 不合格处理流程]` + `exclude:
 []`（空数组）。字段集与上面两个节点完全一致。
 
 ### activate 命令
@@ -142,7 +143,8 @@ export async function activateWorkflow(opts: {
 }): Promise<ActivateResult>
 ```
 
-内部七步（逐步幂等，dryRun 只预览不落盘）：①读 workflow.yml → ②遍历节点（👤 暂不动跳过并记录 reason）→ ③读 SKILL.md 提取 system prompt + actions → ④读 entity 提取 knowledge-domain → ⑤`buildConstrainedPrompt` 组装企业 SubAgent 定义（type 按 🔄/⚡ 映射 auto/assist，
+内部七步（逐步幂等，dryRun 只预览不落盘）：①读 workflow.yml → ②遍历节点（👤 暂不动跳过并记录 reason）→ ③读 SKILL.md 提取 system prompt + actions → ④读 entity 提取 knowledge-domain → ⑤`buildConstrainedPrompt` 组装企业 SubAgent 定义（type
+按 🔄/⚡ 映射 auto/assist，
 携带 hitl/hitlConfig）→ ⑥非 dryRun 时写 `.sofagent/subagents/<node-id>.yml`（registry.ts `loadDefinition()` 已支持读）→ ⑦`buildTopology` 生成 LangGraph 拓扑描述（供 Phase 2）。
 
 ### 企业 SubAgent YML 格式（写入 `.sofagent/subagents/`）
@@ -271,7 +273,8 @@ sofagent-orchestrator run-enterprise
 
 ### 激活链补全的闭环
 
-企业工作流运行 → 每个节点执行 → 自动审计 → think.md 回溯 → **FDE sustain** 读 think.md 趋势 → 发现「某节点反复出错」→ **evolve** 优化该节点 Skill → A/B 测试验证 → 通过则更新 `.sofagent/subagents/<node>.yml` → 下次 activate 时自动加载优化后的 Skill（**自动晋级未启用**——当前为记录+整理态，晋级走人审，见 [LIMITATIONS](../LIMITATIONS.md) 与 [v1.5.8 准入门](../changelog/v1.5/v1.5.8.md)）。
+企业工作流运行 → 每个节点执行 → 自动审计 → think.md 回溯 → **FDE sustain** 读 think.md 趋势 → 发现「某节点反复出错」→ **evolve** 优化该节点 Skill → A/B 测试验证 → 通过则更新 `.sofagent/subagents/<node>.yml` → 下次 activate 时自动加载优化后的
+Skill（**自动晋级未启用**——当前为记录+整理态，晋级走人审，见 [LIMITATIONS](../LIMITATIONS.md) 与 [v1.5.8 准入门](../changelog/v1.5/v1.5.8.md)）。
 
 **这就是自运转的蓝图**：企业工作流跑起来之后，「沉淀 → 优化 → 人审晋级」的闭环是目标形态——当前处于记录+整理态，自动优化启用前由 FDE 兜底做优化。
 
@@ -345,7 +348,8 @@ sofagent-orchestrator run-enterprise
 
 ### 依赖关系
 
-`activate.ts` → workflow-parser（解析 workflow.yml）+ registry（写入 subagents/）+ parseSkillMd（复用 SKILL.md 解析）；`enterprise-graph.ts` → activate 输出 + LangGraph StateGraph；`dag-runner.ts` 扩展支持企业 Agent 执行 + HITL 中断（细节见 Phase 1-3 正文）。
+`activate.ts` → workflow-parser（解析 workflow.yml）+ registry（写入 subagents/）+ parseSkillMd（复用 SKILL.md 解析）；`enterprise-graph.ts` → activate 输出 + LangGraph StateGraph；`dag-runner.ts` 扩展支持企业
+Agent 执行 + HITL 中断（细节见 Phase 1-3 正文）。
 
 ---
 

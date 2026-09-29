@@ -47,17 +47,17 @@
 - **[Don't Train the Model, Evolve the Harness](https://github.com/JoelNiklaus/harness-optimization)** · Joel Niklaus — 不改权重仅优化 Harness：63.4%→80.1%
 - **[AutoResearch](https://github.com/karpathy/autoresearch)** · Andrej Karpathy — 约束文档+锁定评估+自动循环
 - **[Bilevel Autoresearch](https://arxiv.org/abs/2603.23420)** — 双层循环，外层强制探索 5 倍提升
-- **[MetaRSI / RSI²](https://arxiv.org/abs/2609.06396)** + [RSI-Harness](https://github.com/CosmosMind-ai/RSI-Harness) · CosmosMind — RSI 三算子统一形式化；「保护面必须独立于所有可写面」之源
-- **[SoL-Pi](https://arxiv.org/abs/2609.20519)** — RSI 施于 harness 层的活体样本（划边界：调度器层本仓不做）
+- **[MetaRSI / RSI²](https://arxiv.org/abs/2609.06396)** + [RSI-Harness](https://github.com/CosmosMind-ai/RSI-Harness) · CosmosMind — RSI 三算子统一形式化
+- **[SoL-Pi](https://arxiv.org/abs/2609.20519)** — RSI 施于 harness 层的活体样本
 - **[DeepSeek Elastic Compute (DSec)](https://arxiv.org/abs/2609.22978)** · DeepSeek — 「自我改进卡住的从来不是 GPU，是环境供给」
-- **[Grow the Harness, Not the Context](https://arxiv.org/abs/2609.26760)** — 控制决策从上下文搬进可复用代码；held-out gate 回滚有害修复
+- **[Grow the Harness, Not the Context](https://arxiv.org/abs/2609.26760)** — 控制决策从上下文搬进可复用代码
 - **[Harness-Zero](https://arxiv.org/abs/2609.24974)** — harness 蒸馏：微调摊销层的外部实证
 - **[HackProbe](https://arxiv.org/abs/2609.04665)** — RSI 监控器与 harness 无关：监控方在被测系统之外
 - **[Calibrated Decision Models for Pentesting](https://arxiv.org/abs/2609.28940)** — 判定件在安全域的裁定落点
 - **[JEVQA](https://arxiv.org/abs/2609.24395)** — 判定件跨域零样本替代实证（音视频域）
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 长文档中段注意力衰减，500 字原则源头
 - **[A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)** · Anthropic — 「审计必须外置」的底层论证
-- **[Claude 5 上下文工程](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models)** · Anthropic — 800 词→164 词性能反升：上下文工程取代提示词工程
+- **[Claude 5 上下文工程](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models)** · Anthropic — 上下文工程取代提示词工程
 
 ### 编排与架构
 
