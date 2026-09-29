@@ -42,7 +42,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > 🏠 **当前定位：单机单用户**——sofagent 当前为单机单用户设计，多 Agent 共享同一知识库/审计历史；**多人/多部门共用需等租户隔离（查询侧 v0 已随 v1.4.7 交付；写入侧隔离尚未落地，见 [LIMITATIONS](./docs/LIMITATIONS.md)）**。企业 IT 若规划多人共用同一 `~/.sofagent/`，部署前务必评估此边界（详见 [LIMITATIONS「知识库同样全局共享」](./docs/LIMITATIONS.md#三安全与信任模型局限)）。
 
 **安装后数据目录结构**（`~/.sofagent/`）：
-```
+```text
 ~/.sofagent/
 ├── data/          ← 用户可见运行时数据（审计/知识库/反思/任务日志）
 ├── internal/      ← 约束层内部状态（checkpoint / .git-shadow / watch.yml）
@@ -700,7 +700,7 @@ FORGE fresh-eyes-loop 的 A/B sub-agent 需要 LLM API key。
 
 ### Key 加载优先级（三级回退）
 
-```
+```text
 SOFAGENT_LLM_{ROLE}_API_KEY  >  SOFAGENT_LLM_API_KEY  >  OPENAI_API_KEY
    角色专用 key（A/B 分账）     通用 key（共用一把）     OpenAI 兼容默认
 ```

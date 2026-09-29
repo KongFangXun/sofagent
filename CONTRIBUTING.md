@@ -125,7 +125,7 @@ bash install.sh && bash engine/scripts/verify.sh
 
 **Commit Message 规范**（Conventional Commits）：
 
-```
+```text
 <type>(<scope>): <subject>
 ```
 

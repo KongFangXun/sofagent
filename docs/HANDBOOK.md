@@ -224,7 +224,7 @@ sofagent-core verify                # 同样跑 verify 检查（注：没有 sof
 
 ### 安装后的目录
 
-```
+```text
 ~/.sofagent/                      Agent 平台用户目录
 ├── data/          ← 用户数据      ~/.openclaw/ 或 ~/.workbuddy/
 │   ├── think.md                  ├── skills/sofagent/   ← Skill 文件
@@ -304,7 +304,7 @@ Agent 先判断任务复杂度：
 
 只有 🔴 复杂任务进入两轮澄清：
 
-```
+```text
 第一轮 · 目标确认
   Agent 追问缺失信息（数据范围/产出形式/受众/时间限制）
   → 用户回答
@@ -681,7 +681,7 @@ sofagent 站在 6 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 不想装整套 sofagent，只想先给自己的 Agent 加一层「行为底线」？把下面这段直接丢给你的 Agent（Claude Code / Codex / WorkBuddy / OpenClaw 都行）：
 
-```
+```text
 请按 sofagent 的约束层约束自己：
 1. 遵守 4 底线——不泄露隐私、不执行危险操作、不生成有害内容、不冒充人类；
 2. 遵守 9 铁律——知行合一、目标驱动、全局视角、成本意识、存疑即问、不藏错误、有始有终、规范先行、勿增实体；

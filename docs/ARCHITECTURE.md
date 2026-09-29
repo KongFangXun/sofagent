@@ -1166,7 +1166,7 @@ sofagent 支持两种节点类型：
 
 **River = 多个 Workflow 的集合**——每段 Workflow 把模型能力（水）引到业务侧，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
 
-```
+```text
 用户 → River（统一入口）→ Workflow A/B/C（分发）→ Subagent（执行）
               ↑ 回流                                    ↑ 审计
 ```
@@ -1198,7 +1198,7 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 
 sofagent 的编排模块从 v1.3.4 起显式分为两层——**编排层不换（确定性），执行层可换（灵活性）**：
 
-```
+```text
 编排层（LangGraph StateGraph · 确定性 · 长期不动）
 ├── 图结构定义：节点 + 边 + 条件路由（enterprise-graph.ts）
 ├── 审计卡关：每个波次 git diff + decision-log（merge-gate.ts）

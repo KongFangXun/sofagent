@@ -59,7 +59,7 @@
 
 所有 sofagent Agent 在完成任务后都会自动调用审计员。这不是"建议检查"——是**合规闸门**：
 
-```
+```text
 FDE agent 部署完成 ──→ 自动调用 @sofagent-audit → 验证部署合规
 FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合规
 每次 git commit ──→ commit-msg hook → A1-A11、A14-A24 规则检查（0 token，纯正则引擎）
