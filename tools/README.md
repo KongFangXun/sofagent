@@ -2,13 +2,29 @@
 
 > **边界**：`engine/scripts/` 是 install.sh 组装调用的**用户安装链**（随 `deploy_scripts()` 到达用户目标目录的 `scripts/`）；本目录是**仓库维护链**，只在本仓运行——两者不可混放。
 
-> **目录结构**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、report/ 报告生成、dashboard/ 仪表盘、release/ 发布与签名、verify/ 独立验签器（第三方举证面）。**根目录无任何脚本与数据文件**。
+> **目录结构**：按职能分子目录（check/ · gen/ · report/ · dashboard/ · release/ · verify/，各节用途见下方目录）。**根目录无任何脚本与数据文件**。
+
+## 目录
+
+- [根目录](#根目录)
+- [一、check/](#一check) — 门禁与检查
+- [二、gen/](#二gen) — 草稿生成
+- [三、dashboard/](#三dashboard) — 仪表盘
+- [四、release/](#四release) — 发布与签名
+- [五、forge/](#五forge) — FORGE 运维
+- [六、audit/](#六audit) — 进场审计
+- [七、hooks/](#七hooks) — 共享 hook
+- [八、train/](#八train) — 训练环境
+- [九、report/](#九report) — 报告生成
+- [十、verify/](#十verify) — 独立验签器
+- [十一、不接 CI 的工具](#十一不接-ci-的工具) — 人工触发
+- [防屎山规则](#防屎山规则) — 新脚本前必读
 
 ## 根目录
 
 无脚本、无数据文件。新增脚本一律按职能进子目录（见文末防屎山规则三）。
 
-## 一、check/ — 门禁与检查
+## 一、check/
 
 | 脚本 | 用途 | 何时使用 |
 |---|---|---|
@@ -98,7 +114,7 @@
 > 注-13：**只管落盘物**：basename 不含 `prompt` 的文件 SKIP 并打印原因（沟通阶段允许多方案 + 推荐）。判据 / 失效模式分析见其文件头。
 > 注-14：排除 bin 入口与**包 tsconfig 显式 exclude 的文件**；另列「**仅验证面引用**」档，列 ◇ 候选供裁定）· **B** SECURITY 测绘数字（图标数 ↔ dashboard `::before` 去重；uses 数 ↔ workflow 面，**口径 = 正则排除注释行**）· **C** hook 信任根（hook 内变量**不得**指向被审仓 `tools/`——原病即「指纹脚本从被审仓执行」）
 
-## 二、gen/ — 草稿生成
+## 二、gen/
 
 | 脚本 | 用途 | 何时使用 |
 |---|---|---|
@@ -111,7 +127,7 @@
 | `gen/gen-api-tools.mjs` | docs/API.md 第二节生成器（从 tool-registry.ts 提取全量 tool 按域分组重写，check-docs 断言「文档数 == registry 实数」） | 新增/变更 MCP tool 后 |
 | `gen/gen-plugin-manifests.mjs` | 插件 manifest 生成器（从 `engine/dsh-plugins/plugins.json` 单一手写源生成 20 个生成物——`cordis.patch.yml` + package.json 的 sofagent/dsh 段；`--check` 逐字节对账，check-template-drift 断言五/六守护） | 新增/变更 DSH 插件或 seam 后 |
 
-## 三、dashboard/ — 仪表盘
+## 三、dashboard/
 
 | 文件 | 用途 | 何时使用 |
 |---|---|---|
@@ -120,7 +136,7 @@
 | `dashboard/dashboard.html` | Dashboard 页面 | 被 serve-dashboard 加载 |
 | `dashboard/sofagent-dashboard.test.sh` | Dashboard 冒烟测试（package.json test 集成） | npm test |
 
-## 四、release/ — 发布与签名
+## 四、release/
 
 | 脚本 | 用途 | 何时使用 |
 |---|---|---|
@@ -137,7 +153,7 @@
 > 注-16：指纹为**工作区内容树对象 sha**（临时 index + `git add -A` + `write-tree`——**内容寻址**，故 `git commit` 不使其过期）。四道防线：内容指纹 · 原始日志须在位非空 · 日志须真有绿灯摘要（`log_looks_green`）· `record --pre <指纹>` 钉住长跑**开始前**的内容（中途改文件 ⇒ 拒落凭据 exit 3）。退出码 0 可复用 / 2 失明拒绝假绿 / 3 需重跑。凭据库 `.sofagent/heavy-gate-receipts.log`（已 gitignore ⇒ 自指回避）
 > 注-17：裸名总包 `sofagent` 不在此脚本（SOP 步骤八单独发）；支持 `SOFAGENT_PUBLISH_TAG` dist-tag 分道（施工期 `--tag alpha`）
 
-## 五、forge/ — FORGE 运维
+## 五、forge/
 
 | 脚本 | 用途 | 何时使用 |
 |---|---|---|
@@ -145,7 +161,7 @@
 | `forge/forge-smoke-test.sh` | FORGE 冒烟测试 | FORGE 改动后 |
 | `forge/forge-runs-stats.mjs` | FORGE 质量循环离线统计（纯只读：视角生产力/复发热点/运行健康度三报告） | 定期复盘 |
 
-## 六、audit/ — FDE 进场审计
+## 六、audit/
 
 | 内容 | 说明 | 备注 |
 |---|---|---|
@@ -159,13 +175,13 @@
 > `engine/audit/hooks/audit-src-fingerprint.mjs`（`hooks/` 随 npm 包分发，安装时落地副本到
 > `$SOFAGENT_HOME/internal/`）。
 
-## 七、hooks/ — 共享 hook 脚本
+## 七、hooks/
 
 | 内容 | 说明 |
 |---|---|
 | `hooks/sofagent-precommit.sh` | 跨平台共享 pre-commit hook（stdin 模式——Cursor/Claude Code/Gemini CLI 等平台 commit 审计共用；v1.4.0 交付五） |
 
-## 八、train/ — 训练环境与设备打包
+## 八、train/
 
 | 脚本 | 用途 | 何时使用 |
 |---|---|---|
@@ -173,13 +189,13 @@
 | `train/package-train-runtime.sh` | 训练运行时打包（orchestrator+core dist + 模板 + 环境脚本 + 可选基座缓存 → tar.gz + setup.sh，U 盘/离线交付形态） | 设备交付时 |
 | `train/examples/hosted-channel.example.mjs` | TrainChannel 托管 API 参考适配示例（教学形态非引擎依赖——虚构 API 四动作演示状态机归一，内置 fake 轮询零真实网络；真实适配按 `docs/guides/train-channel-spec.md` 规范实现） | 对接自有托管微调云时 |
 
-## 九、report/ — 报告生成
+## 九、report/
 
 | 脚本 | 用途 | 何时使用 |
 |---|---|---|
 | `report/evolution-report.mjs` | 进化实证报告生成（Dream Cycle 持续采样 → skill-impact 台账汇总） | 进化模块周报 / 发版证据 |
 
-## 十、verify/ — 独立验签器（第三方举证面 · v1.5.2 章二）
+## 十、verify/
 
 | 脚本 | 用途 | 何时使用 |
 |---|---|---|
@@ -190,7 +206,7 @@
 
 > 与 `check/` 侧重不同：`check/` 是**仓库健康门禁**（维护者自用）；`verify/` 是**对外举证工具**（第三方独立复算，可信根是密码学而非信任维护方）。验签器**不接 pre-push**——它是给外部用的只读工具，不是本仓 CI 门禁（`--selftest` 供人工 / 按需触发）。
 
-## 十一、不接 CI 的工具（人工 / 按需触发 · v1.5.2 第2批登记）
+## 十一、不接 CI 的工具
 
 以下脚本**刻意不接 CI**——接了会永久红或本身不是门禁。此处登记用途与「不接线」理由，防「不登记的新脚本过几版就没人知道为什么存在」（对齐 `docs/changelog/releasing/07-tool-health.md` 的登记纪律）。
 
@@ -206,7 +222,7 @@
 
 ---
 
-## 防屎山规则（新增脚本前必读）
+## 防屎山规则
 
 1. **新增前置 grep**：新增检查项/生成器/脚本前，先 `grep -rn <功能关键词> tools/ engine/scripts/` 确认无同类实现；有则增量扩展，不新建；
 2. **同类即抽**：同类文件 ≥3 个时必须抽公共库（现状：gen-* 系列 6 个 → `gen/gen-draft-lib.mjs` 已抽）；

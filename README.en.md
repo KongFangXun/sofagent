@@ -23,7 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.3: Audit · Unified Rule Engine & Self-Test](#v153-audit--unified-rule-engine--self-test--released--2026-09-26)
+- [v1.5.3: Audit · Rule Engine & Self-Test](#v153-audit--rule-engine--self-test-2026-09-26)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -39,11 +39,13 @@
 > 🏢 **The organizational lens**: the bottleneck of AI adoption has shifted from "is the model smart enough" to "can the organization dare to onboard it" — does it fit the org chart, does it get an account, how is performance measured, what happens when it errs. sofagent is the onboarding system for
 >digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
 
-> 🧩 **The three-factor framing**: sofagent is **a S1M with a built-in Harness, delivered with the FDE playbook** — **FDEing** is the playbook layer (turning FDE from human labor into a reusable capability), **S1M** is the judgment layer (System One Model, a decision model that separates judgment
+> 🧩 **The three-factor framing**: sofagent is a S1M with a built-in Harness, delivered with the FDE playbook — FDEing is the playbook layer (turning FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
 >from generation; its foundation is under construction across v1.6.0–v1.9.0, with the declaration landing in v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities — today's main landing points). Each layer sits in its own place; see "Core Features".
 
-**An open-source FDE Harness layer** (FDE = Forward Deployed Engineer — see the "[What is the FDE Harness](#what-is-the-fde-harness)" section) — embedded between mature Agents (DSH / OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it
-writes the business judgment down as files (workflow, ontology data, AI-node deployment); after departure, it audits every change against those files. Five Harness capabilities (inject · audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard).
+**An open-source FDE Harness layer** (FDE = Forward Deployed Engineer — see the "[What is the FDE Harness](#what-is-the-fde-harness)" section) — embedded between mature Agents (DSH /
+OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it
+writes the business judgment down as files (workflow, ontology data, AI-node deployment); after departure, it audits every change against those files. Five Harness capabilities (inject ·
+audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard).
 sofagent does not build the Agent — it delivers the layer that keeps any Agent governed.
 
 <p align="center">
@@ -162,14 +164,16 @@ the platform:
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
 
 - **Never assume capability parity — tiers differ in injection strength, not in "supported or not"** — DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text the Agent reads on its own (advisory). "Supports platform X" means the
-  constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls into — full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
+  constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls
+into — full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
 - **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit is audited automatically (audits with the 17 default rules out of the box; the full 25 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations
-  hard-blocked. Constraints are advisory; auditing is mandatory (boundaries of that mandate: **not fail-closed by default** — `--no-verify` skips the first two defense layers, and post-commit only leaves a trace without blocking; bypassed commits do leave traces — see [LIMITATIONS
+  hard-blocked. Constraints are advisory; auditing is mandatory (boundaries of that mandate: **not fail-closed by default** — `--no-verify` skips the first two defense layers, and
+post-commit only leaves a trace without blocking; bypassed commits do leave traces — see [LIMITATIONS
   §3](./docs/LIMITATIONS.md)).
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.3: Audit · Unified Rule Engine & Self-Test (✅ Released · 2026-09-26)
+## v1.5.3: Audit · Rule Engine & Self-Test (2026-09-26)
 
 🔍 **Converge the rule engine first, then give the rules a self-test** — three things at once:
 

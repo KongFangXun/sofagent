@@ -1,8 +1,13 @@
-# COMMUNITY.md · sofagent 社区
+# sofagent 社区（FDE Harness 层）
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
+
+## 目录
+
+- [当前状态](#-当前状态) · [贡献者阶梯](#-贡献者阶梯) · [从哪开始](#-从哪开始) · [公开数据](#公开数据)
+- [第三方复现](#-第三方复现) · [重复 PR 分诊规则](#重复-pr-分诊规则) · [行为准则](#行为准则) · [联系方式](#联系方式)
 
 ## 📌 当前状态
 

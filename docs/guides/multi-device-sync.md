@@ -26,7 +26,7 @@ sofagent 做的事情：
 
 适合：全 Apple 生态、个人开发者。
 
-### 步骤
+### 步骤：挪目录 + 建符号链接
 
 1. 把 sofagent 知识目录挪到 iCloud Drive：
 ```bash
@@ -51,7 +51,7 @@ ln -s ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent/think.md ~/.sofag
 
 适合：企业内部、固定局域网、IT 配好了 NAS。
 
-### 步骤
+### 步骤：挂载 NAS + 建符号链接
 
 1. 在 NAS 上创建共享目录：
 ```bash
@@ -81,7 +81,7 @@ ln -s /mnt/sofagent-team/knowledge ~/.sofagent/data/knowledge
 
 适合：Windows + Mac 混用、非技术用户。
 
-### 步骤
+### 步骤：装客户端 + 挪目录
 
 1. 在所有设备上安装同一个云盘客户端（Dropbox / Google Drive / OneDrive）。
 
@@ -103,7 +103,7 @@ ln -s ~/Dropbox/sofagent/think.md ~/.sofagent/data/think.md
 
 适合：习惯用 git 的开发者、想保留版本历史的团队。
 
-### 步骤
+### 步骤：初始化 shared 仓库
 
 ```bash
 # 初始化 shared 仓库

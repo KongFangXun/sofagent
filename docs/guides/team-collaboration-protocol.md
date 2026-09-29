@@ -6,10 +6,11 @@
 
 ---
 
-**目录**：[0. 设计目标与边界](#0-设计目标与边界) · [1. 共享态 Schema（team-state CRDT 结构）](#1-共享态-schemateam-state-crdt-结构) · [2. 意图总线事件模型（Intent Bus）](#2-意图总线事件模型intent-bus) · [3. 冲突消解算法](#3-冲突消解算法) · [4. 反馈放大的团队级聚合路径](#4-反馈放大的团队级聚合路径) · [5. 三包依赖方向](#5-三包依赖方向) · [6. 主 Agent 编排衔接](#6-主-agent-编排衔接) · [7. Refine Agent
-与协议的衔接](#7-refine-agent-与协议的衔接) · [8. 进化闭环的约束](#8-进化闭环的约束) · [9. 安全考量](#9-安全考量) · [10. 待明确事项（实现时再定）](#10-待明确事项实现时再定)
+**目录**：[一、设计目标与边界](#一设计目标与边界) · [二、共享态 Schema（team-state CRDT 结构）](#二共享态-schemateam-state-crdt-结构) · [三、意图总线事件模型（Intent Bus）](#三意图总线事件模型intent-bus) · [四、冲突消解算法](#四冲突消解算法) · [五、
+反馈放大的团队级聚合路径](#五反馈放大的团队级聚合路径) · [六、三包依赖方向](#六三包依赖方向) · [七、主 Agent 编排衔接](#七主-agent-编排衔接) · [八、Refine Agent
+与协议的衔接](#八refine-agent-与协议的衔接) · [九、进化闭环的约束](#九进化闭环的约束) · [十、安全考量](#十安全考量) · [十一、待明确事项（实现时再定）](#十一待明确事项实现时再定)
 
-## 0. 设计目标与边界
+## 一、设计目标与边界
 
 ### 0.1 本协议解决什么问题
 
@@ -41,7 +42,7 @@ v1.3.2 交付了单 Agent 全闭环（Onboard L1-L5）+ workflow 批量生成（
 
 ---
 
-## 1. 共享态 Schema（team-state CRDT 结构）
+## 二、共享态 Schema（team-state CRDT 结构）
 
 ### 1.1 设计选择
 
@@ -126,7 +127,7 @@ interface FeedbackEntry {
 
 ---
 
-## 2. 意图总线事件模型（Intent Bus）
+## 三、意图总线事件模型（Intent Bus）
 
 ### 2.1 为什么独立文件
 
@@ -220,7 +221,7 @@ class IntentBus {
 
 ---
 
-## 3. 冲突消解算法
+## 四、冲突消解算法
 
 ### 3.1 冲突触发条件
 
@@ -401,7 +402,7 @@ export class FederatedTeamSyncChannel implements TeamSyncChannel {
 
 ---
 
-## 6. 主 Agent 编排衔接
+## 七、主 Agent 编排衔接
 
 ### 6.1 四合一角色落地
 
@@ -430,7 +431,7 @@ parseWorkflowToSubAgents()
 
 ---
 
-## 7. Refine Agent 与协议的衔接
+## 八、Refine Agent 与协议的衔接
 
 ### 7.1 复用 loop-agent
 
@@ -473,7 +474,7 @@ quality-rule-set 加载顺序：
 
 ---
 
-## 8. 进化闭环的约束
+## 九、进化闭环的约束
 
 ### 8.1 优化范围收窄（方案 D 灵魂）
 
@@ -506,7 +507,7 @@ freezeBenchmark(def)           // benchmark-designer.ts:172 冻结基线
 
 ---
 
-## 9. 安全考量
+## 十、安全考量
 
 | 攻击面 | 防护措施 |
 |--------|---------|
@@ -517,7 +518,7 @@ freezeBenchmark(def)           // benchmark-designer.ts:172 冻结基线
 
 ---
 
-## 10. 待明确事项（实现时再定）
+## 十一、待明确事项（实现时再定）
 
 | # | 问题 | 当前倾向 |
 |---|------|---------|

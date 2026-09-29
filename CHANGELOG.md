@@ -2,23 +2,26 @@
 
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> **本文件是目录索引**。每个版本的完整开发日志在 [`docs/changelog/`](./docs/changelog/) 下，此处仅保留「版本能力索引（一段式）+ 链接」与「跨版本破坏性变更 / 退役公告」，不重复逐版细节。
+> **sofagent 是开源（MIT）的 FDE Harness 层**；**本文件是版本目录索引**。每个版本的完整开发日志在 [`docs/changelog/`](./docs/changelog/) 下，此处仅保留「版本能力索引（一段式）+ 链接」与「跨版本破坏性变更 / 退役公告」，不重复逐版细节。
 > 实验版（v0.x）历史日志在 [`docs/archive/changelog-experimental/`](./docs/archive/changelog-experimental/)。
 > **状态标注约定**：正式版条目一律带发布日期；近期版本另附「已发版 / 待发版」状态标注，历史版本以日期为准。
 
+## 目录
+
+- [正式版](#正式版v100) · [实验版](#实验版v0x) · [早期开发期](#v047v080--早期开发期摘要)
 
 ## 正式版（v1.0.0+）
 
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
-> 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/` 下对应版本目录中（如 `v1.5/`、`v1.6/`–`v1.9/`、`v2.0/`），**不纳入本索引**；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。规划版本的完整排期见 [ROADMAP](./docs/ROADMAP.md)。
+> 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/` 下对应版本目录中（如 `v1.5/`、`v1.6/`–`v1.9/`、`v2.0/`），**不纳入本索引**；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。
 
-- **v1.5.3** — 🔍 审计模块·规则引擎统一与自测：双规则引擎统一（tool-level + git-diff 合为单一引擎）· 规则自测 schema（正负样例 fail-closed）· A24 交付物落点规则（24→25）· doctor 修复闭环 · 测试 5296→**5408**（+112，13 包 workspace（模块包）口径，
-  包数统计标准见 [WIKI §六](./docs/WIKI.md#六当前状态)）· acceptance 373→**377** · 2026-09-26 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.3.md)
-- **v1.5.2** — 🔍 审计模块·对外开放面与判定语义：MCP audit 数据对外（`audit_query` 只读 + 事件订阅）· 约束导出外部可验（`ruleset_export`）· should-run 判定链 · 审计结论失效语义 · 网络出口治理面 · 事前授权补环 · DSH 插件 npm 首发面 · 测试 5083→**5296**（+213，13 包 workspace（模块包）口径，
-  包数统计标准见 [WIKI §六](./docs/WIKI.md#六当前状态)）· acceptance 367→**373** · MCP 新增 `audit_query`/`ruleset_export`（总数 107） · 2026-09-24 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.2.md)
+- **v1.5.3** — 🔍 审计模块·规则引擎统一与自测：双规则引擎统一（tool-level + git-diff 合为单一引擎）· 规则自测 schema（正负样例 fail-closed）· A24 交付物落点规则（24→25）· doctor 修复闭环 · 测试 5296→**5408**（+112，13 包 workspace（模块包）口径）
+  · acceptance 373→**377** · 2026-09-26 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.3.md)
+- **v1.5.2** — 🔍 审计模块·对外开放面与判定语义：MCP audit 数据对外（`audit_query` 只读 + 事件订阅）· 约束导出外部可验（`ruleset_export`）· should-run 判定链 · 审计结论失效语义 · 网络出口治理面 · 事前授权补环 · DSH 插件 npm 首发面
+· 测试 5083→**5296**（+213，13 包 workspace（模块包）口径）· acceptance 367→**373** · MCP 新增 `audit_query`/`ruleset_export`（总数 107） · 2026-09-24 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.2.md)
 > 📌 **当前口径**：MCP tool 总数 **104**（v1.5.4 章二 新增 `router_slots`（本地槽位态观测 + 路由预览，103→104）；2026-09-26 浏览器四件套（`playwright_*`）退役，[v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md)；上方 107 为 v1.5.2 发版时点读数）
 - **v1.5.1** — 编排模块·事件驱动（业务事件触发/设备 OTA/审计输入双通道/`sofagent demo`）· 测试 4903→**5083**（13 包 workspace 口径）· acceptance 357→**367** · 2026-09-22 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.1.md)
-- **v1.5.0** — 治理模块·可见性与本体成熟（治理 KPI 面板/本体双时态/Validation Engine/trace 对账/FDE 陪跑期/DSH 插件事件接线）· MCP 104→**105** tools · 测试 4805→**4903**（+98，13 包口径）· acceptance 352→**357** · 2026-09-19 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
+- **v1.5.0** — 治理模块·可见性与本体成熟（治理 KPI 面板/本体双时态/Validation Engine/trace 对账/FDE 陪跑期/DSH 插件事件接线）· MCP 104→105 tools · 测试 4805→**4903**（+98，13 包口径）· acceptance 352→**357** · 2026-09-19 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
 
 
 > ⚠️ **API 退役公告（v1.4.3 · 提前一版公告，移除归 v1.5.0）**

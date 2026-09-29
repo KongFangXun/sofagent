@@ -6,8 +6,11 @@
 
 > v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
 >
-> 收录纪律（doc-slim 批起）：一条一行——名字 · 链接 · 它启发了什么（≤25 字）；读数/风险/边界/价值分析全文见 [`archive/validation-deep/thanks-extended.md`](./archive/validation-deep/thanks-extended.md)。
+> 收录纪律：一条一行——名字 · 链接 · 启发（≤25 字）；全文分析见 [`archive/validation-deep/thanks-extended.md`](./archive/validation-deep/thanks-extended.md)。
 
+## 目录
+
+- [基石](#基石) · [生成伙伴](#生成伙伴) · [思想之源](#思想之源) · [工具与实践](#工具与实践) · [社区](#社区) · [关于作者](#关于作者)
 
 ## 基石
 
