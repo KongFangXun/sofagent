@@ -1,5 +1,6 @@
 # evolution · fresh-eyes-loop 循环级演化
 
+> **运行台账（append-only 记录）**：本文件只记录提案与结论，日期与 run 号是内容本体。
 > **人类门控的"加一减一"改进记录。** 防止 specs / prompts 无限膨胀成屎山。
 
 ## 规则

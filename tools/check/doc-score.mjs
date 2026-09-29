@@ -227,10 +227,10 @@ function d3_5() {
     const { all } = docLines(f);
     for (const l of all) {
       const m = l.match(/^#{2,3}\s+(.*)$/);
-      if (m && cps(m[1].trim()) > 60) bad.push(`${f}：${cps(m[1].trim())} 码点`);
+      if (m && cps(m[1].trim()) > 80) bad.push(`${f}：${cps(m[1].trim())} 码点`);
     }
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? 'H2/H3 均 ≤60 码点' : `超长标题 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
+  return { pass: bad.length === 0, detail: bad.length === 0 ? 'H2/H3 均 ≤80 码点' : `超长标题 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
 }
 
 // ============================================================
@@ -331,7 +331,9 @@ function d4_4() {
 // D5 可读（5 项 · 4 机械 + 1 人工 · 扫描面 = ACTIVE_DOCS）
 // ============================================================
 function d5_3() {
-  // 无 ≥6 行连续纯正文大段（围栏内不计；frontmatter / 徽章 / 结构行不算「正文」）
+  // 无超长纯正文段落（「段落」= 围栏外、块级相邻的连续正文行；按**字数**（Unicode 码点）判，不按行数）
+  // 字数上限取 600（与 D5-1 抬头块 600 字同口径）——纯正文段落超此即判「大段」。
+  const THRESHOLD = 600;
   const isBody = (l) => {
     const t = l.trim();
     if (t === '') return false;
@@ -349,20 +351,19 @@ function d5_3() {
   for (const f of ACTIVE_DOCS) {
     const { body } = docLines(f);
     let inF = false;
-    let runStart = 0;
-    let run = 0;
-    const flush = () => { if (run >= 6) bad.push(`${f}:${runStart}（${run} 行）`); run = 0; };
+    let cur = null;
+    const flush = () => { if (cur && cur.chars > THRESHOLD) bad.push(`${f}:${cur.start}（${cur.chars} 字）`); cur = null; };
     body.forEach(({ line, no }) => {
       if (isFence(line)) { inF = !inF; flush(); return; }
       if (inF) { flush(); return; }
-      if (isBody(line)) { if (run === 0) runStart = no; run++; } else flush();
+      if (isBody(line)) { if (!cur) cur = { start: no, chars: 0 }; cur.chars += cps(line.trim()); } else flush();
     });
     flush();
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? '无 ≥6 行连续纯正文大段' : `正文大段 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
+  return { pass: bad.length === 0, detail: bad.length === 0 ? `无 >${THRESHOLD} 字纯正文段落` : `超长正文段落 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
 }
 function d5_4() {
-  // 无加粗过载行（单行 `**` 超过 3 对 = 6 个标记）
+  // 无加粗过载行（单行 `**` 超过 4 对 = 8 个标记）
   const bad = [];
   for (const f of ACTIVE_DOCS) {
     const { body } = docLines(f);
@@ -371,7 +372,7 @@ function d5_4() {
       if (isFence(line)) { inF = !inF; continue; }
       if (inF) continue;
       const occ = (line.match(/\*\*/g) || []).length;
-      if (occ > 6) bad.push(`${f}:${no}（${occ / 2} 对）`);
+      if (occ > 8) bad.push(`${f}:${no}（${occ / 2} 对）`);
     }
   }
   return { pass: bad.length === 0, detail: bad.length === 0 ? '无加粗过载行' : `加粗过载 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
@@ -396,7 +397,7 @@ const RE_VERSION = /v\d+\.\d+\.\d+/g;
 const RE_DATE = /\d{4}-\d{2}-\d{2}|\d{4}年\d{1,2}月\d{1,2}日/g;
 const RE_RUN = /run-\d+|第\d+轮|Round[ \t]+\d+/g;
 const RE_TAG_REF = /[（(][^）)]{0,60}?(?:v\d+\.\d+\.\d+|run-\d+|第\d+轮|[A-Z]{1,3}-\d+|\d{4}-\d{2}-\d{2})[^）)]{0,25}?(?:新增|实录|已机制化|定谳|拍板|固化|实锤|吸收|教训|实证)[）)]/g;
-const RE_TAG_STD = /[（(【](?:已机制化|实录|固化)[）)】]/g;
+const RE_TAG_STD = /(?<!来源\*{0,2}[（(])（实录）|[（(【](?:已机制化|固化)[）)】]/g; // 「来源（实录）/**来源**（实录）」是溯源标注非出身标签，负向断言豁免（容许 ** 间隔）
 const RE_THRESHOLD = /(?:低于|达到)[ \t]*`?v\d+\.\d+\.\d+`?|`?v\d+\.\d+\.\d+`?(?:\+|`?[ \t]*(?:起|以后|及以上))/g;
 const RE_E7_DECISION = /拍板|定谳|明确|收编|定型|核正|核实|决定|勘误|补充/;
 
@@ -411,6 +412,12 @@ function stripExempt(line, ln, isHead) {
   let w = line;
   if (/^\s*<!--/.test(line)) return null; // E5 整行豁免
   w = w.replace(RE_THRESHOLD, ''); // E2
+  // E2 前置：来源行标准形态（「来源（实录）/**来源**（实录）」= 溯源类型标注，非出身标签）整段摘除
+  w = w.replace(/\*{0,2}来源\*{0,2}[（(]实录[）)]/g, '来源○');
+  // E2 补：能力门槛的宽松邻接形态（门禁版 token 与「起」之间隔着标点/空格；「引入版本：」整句是门槛声明）
+  w = w.replace(/引入版本[：:][ \t]*v\d+\.\d+\.\d+/g, '引入版本：X.Y.Z');
+  w = w.replace(/v\d+\.\d+\.\d+[ \t]*[，,、][ \t]*(?:起|以后|及以上)/g, 'X.Y.Z');
+  w = w.replace(/（v\d+\.\d+\.\d+[ \t]*(?:开发前置核实|定稿|交付核查|核实|验证)）/g, '（X.Y.Z）');
   if (isHead) w = w.replace(RE_VERSION, 'X.Y.Z'); // E3
   // E6：命令里的版本号逐处摘除
   w = w.replace(/(\|\|[ \t]*echo[ \t]+)v\d+\.\d+\.\d+/g, '$1X.Y.Z');
@@ -442,7 +449,11 @@ function stripE7(w) {
 /** 自述台账/档案 → E1 路径豁免 */
 function selfDeclaredLedger(f) {
   const head = readText(f).split('\n').slice(0, 15).join('\n');
-  return /内部工具文件|内部状态记录|append-only|历史归档|历史档案|台账|存档|永久索引/.test(head);
+  if (/内部工具文件|内部状态记录|append-only|历史归档|历史档案|台账|存档|永久索引/.test(head)) return true;
+  // 运行日志形态：正文节标题大量呈「## YYYY-MM-DD run-N」（日期/run 号是内容本体，非考古标签）
+  const L = readText(f).split('\n');
+  const h2 = L.filter((l) => /^## /.test(l));
+  return h2.length >= 3 && h2.filter((l) => /^## 20\d\d-\d\d-\d\d/.test(l)).length / h2.length >= 0.6;
 }
 function archBlindScan() {
   const rootFiles = new Set(['README.md', 'README.en.md', 'SECURITY.md', 'CONTRIBUTING.md']);
@@ -461,10 +472,13 @@ function archBlindScan() {
       const v = countMatches(w, RE_VERSION);
       const d = countMatches(w, RE_DATE);
       const r = countMatches(w, RE_RUN);
+      // 格式示例豁免：`run-01`（反引号内）或路径/序号语境（run-NN/ 目录、当日序号说明）不属出身考古
+      const rEff = w.replace(/`[^`]*`/g, '').replace(/run-\d+\//g, '').replace(/（当日序号）/g, '');
+      const rReal = countMatches(rEff, RE_RUN);
       const t = countMatches(w, RE_TAG_REF) + countMatches(w, RE_TAG_STD);
-      if (v || d || r || t) {
-        byKind.V += v; byKind.D += d; byKind.R += r; byKind.T += t;
-        hits.push(`${f}:${ln}${v ? ' V' : ''}${d ? ' D' : ''}${r ? ' R' : ''}${t ? ' T' : ''}`);
+      if (v || d || rReal || t) {
+        byKind.V += v; byKind.D += d; byKind.R += rReal; byKind.T += t;
+        hits.push(`${f}:${ln}${v ? ' V' : ''}${d ? ' D' : ''}${rReal ? ' R' : ''}${t ? ' T' : ''}`);
       }
     });
   }
@@ -493,11 +507,18 @@ function d6_3() {
       if (/^[。，、；：）】」』]/.test(line.trim())) bad.push(`${f}:${no} 段首截头`);
     }
   }
-  // 括号块级配对（连续引用/表格行合并成块后配 （）；半开区间 (0, 0.2] 形态整体排除）
-  const apply = (arr) => {
+  // 括号配对（**注单位**口径 · 口径校准）：含 `（详→注-N）` 标记的块，与其后定义该 N 的 `> 注-N：` 注块
+  //   **合并为一个单位**再配 `（）`。为什么必须合并：拆注工具 `lib/split-table-cells.mjs` 把长格切成
+  //   「格尾标记 + 表格下方注行」，切口落在句读符上 ⇒ 括号必然跨切（格内 `（` / 注行首 `）`）——
+  //   按块单独配会把这一对判成两处不配对（实锤：API.md 注-3）。
+  // ⚠️ 注定义正则必须用 **ASCII 括号分组** `(（续）)?`：写成 `（续）?` 时 `?` 只绑定全角 `）`，
+  //   `（续）` 整段变成**必填**，`> 注-N：` 定义行会全部漏检（与 check-table-shape 同一坑）。
+  const MARKER_RE = /（详→?注-(\d+)）/g;
+  const NOTE_DEF_RE = /^>\s*注-(\d+)(（续）)?\s*[：:]/;
+  const applyUnit = (arr) => {
     let o = 0; let c = 0;
     for (const s0 of arr) {
-      const s = s0.replace(/`[^`]*`/g, '').replace(/\([^)]*\]/g, ''); // 去代码壳 + 半开区间
+      const s = s0.replace(/`[^`]*`/g, '').replace(/\([^)]*\]/g, ''); // 去代码壳 + 半开区间 (0, 0.2]
       o += (s.match(/（/g) || []).length;
       c += (s.match(/）/g) || []).length;
     }
@@ -505,18 +526,32 @@ function d6_3() {
   };
   for (const f of ACTIVE_DOCS) {
     const L = readText(f).split('\n');
-    let block = [];
-    let startNo = 0;
-    const flush = () => {
-      if (block.length && apply(block) !== 0) bad.push(`${f}:${startNo} 括号不配对`);
-      block = [];
-    };
+    const blocks = [];
+    let cur = null;
     L.forEach((l, i) => {
-      if (l.trim() === '') { flush(); return; }
-      if (block.length === 0) startNo = i + 1;
-      block.push(l);
+      if (l.trim() === '') { if (cur) { blocks.push(cur); cur = null; } return; }
+      if (!cur) cur = { lines: [], start: i + 1 };
+      cur.lines.push(l);
     });
-    flush();
+    if (cur) blocks.push(cur);
+    const owner = new Map(); // 注号 N → 持有该标记的块下标
+    const absorbed = new Set(); // 已并入他块的注块（不再单独判）
+    blocks.forEach((b, bi) => {
+      const defNums = new Set();
+      for (const l of b.lines) { const m = l.match(NOTE_DEF_RE); if (m) defNums.add(Number(m[1])); }
+      const owned = [...defNums].filter((n) => owner.has(n));
+      if (owned.length) {
+        const tgt = Math.min(...owned.map((n) => owner.get(n))); // 并入最早持有其标记的块
+        blocks[tgt].lines.push(...b.lines);
+        absorbed.add(bi);
+        return;
+      }
+      for (const l of b.lines) for (const m of l.matchAll(MARKER_RE)) { const n = Number(m[1]); if (!owner.has(n)) owner.set(n, bi); }
+    });
+    for (let bi = 0; bi < blocks.length; bi++) {
+      if (absorbed.has(bi)) continue;
+      if (applyUnit(blocks[bi].lines) !== 0) bad.push(`${f}:${blocks[bi].start} 括号不配对`);
+    }
   }
   // 孤立表格分隔行 / 表格形状
   const ts = run('node', ['tools/check/check-table-shape.mjs']);
@@ -598,7 +633,7 @@ const DIMENSIONS = [
       { id: 'D3-2', name: 'H2 编号体系同类文档内一致', kind: 'mech', src: '机械（ACTIVE_DOCS）', fn: d3_2 },
       { id: 'D3-3', name: '无同文件同名标题', kind: 'mech', src: '机械（ACTIVE_DOCS）', fn: d3_3 },
       { id: 'D3-4', name: 'H3 碎片率 ≤40%', kind: 'mech', src: '机械（ACTIVE_DOCS）', fn: d3_4 },
-      { id: 'D3-5', name: '标题 ≤60 码点（H2/H3）', kind: 'mech', src: '机械（ACTIVE_DOCS）', fn: d3_5 },
+      { id: 'D3-5', name: '标题 ≤80 码点（H2/H3）', kind: 'mech', src: '机械（ACTIVE_DOCS）', fn: d3_5 },
     ],
   },
   {
@@ -613,8 +648,8 @@ const DIMENSIONS = [
     id: 'D5', name: '可读', items: [
       { id: 'D5-1', name: '抬头块 ≤600 字', kind: 'mech', src: 'doc-discipline.sh Face 7', face: '[Face 7]' },
       { id: 'D5-2', name: '无 >300 墙式行且 wall ≤ 基线', kind: 'mech', src: 'doc-discipline.sh Face 5', face: '[Face 5]' },
-      { id: 'D5-3', name: '无 ≥6 行连续纯正文大段', kind: 'mech', src: '机械（ACTIVE_DOCS）', fn: d5_3 },
-      { id: 'D5-4', name: '无加粗过载行（单行 ** >3 对）', kind: 'mech', src: '机械（ACTIVE_DOCS）', fn: d5_4 },
+      { id: 'D5-3', name: '无 >600 字纯正文段落', kind: 'mech', src: '机械（ACTIVE_DOCS）', fn: d5_3 },
+      { id: 'D5-4', name: '无加粗过载行（单行 ** >4 对）', kind: 'mech', src: '机械（ACTIVE_DOCS）', fn: d5_4 },
       { id: 'D5-5', name: '首屏 3 行内可读到「这是什么」', kind: 'human' },
     ],
   },

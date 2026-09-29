@@ -54,7 +54,6 @@
 | **v1.1.x** | **编排模块从 ao → LangGraph + 多设备联邦 + Dream Cycle 知识进化**：v1.1.0 包结构纯度重构 → v1.1.3 LangGraph StateGraph 直接编排 → v1.1.7 Dream Cycle 6 阶段 + 知识健康巡检 → v1.1.8 安全层加密 + 联邦查询 → v1.1.9 产品叙事收敛 + USB 完整运行时 | [CHANGELOG](../CHANGELOG.md) |
 | **v1.0.x** | **审计模块奠基 + AI 知识库实现 + 双节点架构**：v1.0.0 正式版发布（Agent 审计工具）→ v1.0.5 Ontology 统一层 + 模板市场 → v1.0.7 双节点架构 + ao 退役 → v1.0.8 FDE Agent 自进化 → v1.0.9 二进制审计 + MCP compose tool | [CHANGELOG](../CHANGELOG.md) |
 
-> 注-1：条收敛为单一规则引擎 + 两种触发时机）· 审计规则自测 schema（25 条规则强制携带 `match`/`notMatch` 正负样例，加载时断言 fail-closed）· A24 交付物落点审计规则（24→**25**）· doctor 修复闭环（`--refresh` 备份 + 一键重置 + 前后 diff）· 判决类记录成对完整 · `AuditScope` 一等公民化 · ARCHITECTURE 三域重构 · `@sofagent/skillopt` 旧包退役收尾 · 测试 5296→**5408** · acceptance 373→**377**
 
 > ℹ️ v1.4.8 / v1.4.9 两行未单列 acceptance 增量——两版合计 acceptance 328→352，逐版拆分未留档，按诚实原则留空；v1.5.0 起恢复逐版记录。
 
