@@ -39,7 +39,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
   经 `engine/daemon/src/dream-cycle/real-provider.ts` → `state-machine.ts` 接线；未配置时降级 MockLLM，零外发。
 - **例外三 · 云 VM 执行面**（v1.4.6）：`train cloud` 远程训练时，经分拣闸（sorting-gate）放行的非敏感 / 脱敏训练数据会上传云 VM（ssh 隧道加密传输，敏感档拦截留本地）；属「控制面本地、执行面云上」的 opt-in 交付模式，不配置云 VM 则纯本地训练，零外发。
 
-> 🏠 **当前定位：单机单用户**——sofagent 当前为单机单用户设计，多 Agent 共享同一知识库/审计历史；**多人/多部门共用需等租户隔离（查询侧 v0 已随 v1.4.7 交付；写入侧隔离尚未落地，见 [LIMITATIONS](./docs/LIMITATIONS.md)）**。企业 IT 若规划多人共用同一 `~/.sofagent/`，部署前务必评估此边界（详见 [LIMITATIONS「知识库同样全局共享」](./docs/LIMITATIONS.md#三安全与信任模型局限)）。
+> 🏠 **当前定位：单机单用户**——多 Agent 共享同一知识库/审计历史；**多人/多部门共用需等租户隔离（查询侧 v0 已随 v1.4.7 交付；写入侧隔离尚未落地）**。企业 IT 若规划多人共用同一 `~/.sofagent/`，部署前务必评估此边界（详见 [LIMITATIONS「知识库同样全局共享」](./docs/LIMITATIONS.md#三安全与信任模型局限)）。
 
 **安装后数据目录结构**（`~/.sofagent/`）：
 ```text
@@ -79,7 +79,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 - ✅ 静态加密已接线（daemon start 路径）：`initDataEncryption()` 已接入 daemon 启动路径（交互环境引导生成密钥 + 指纹确认 + 备份确认；非交互 WARN 不 FAIL 明文兼容；无头批量部署用 `SOFAGENT_CONFIRM_BACKUP=1` env 显式确认，SOP 见 [企业部署指南 §批量部署](./docs/guides/enterprise-deploy.md)）。
   密钥就绪后审计历史主链以 `SOFAGENT-AGE-V1` 密文落盘（AES-256-GCM，密钥 `~/.sofagent/keys/` 0600 + 指纹强制备份）；既有明文历史读侧 auto-detect 可读不回填。**降级可见性**：密钥删除/损坏后新记录回明文——写入侧首条告警 + history 落 ENCRYPTION_DEGRADED 事件留痕 + --doctor 一致性检查红（初始化标记在而 data.key 缺失）。
   附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文，见 LIMITATIONS 权威清单。激活口径：交互首启确认后生效；无头部署用 env 通道批量激活（[enterprise-deploy §④](./docs/guides/enterprise-deploy.md)），非交互 WARN 明文兼容。验证命令：启用后 `head -1 ~/.sofagent/data/audit/history.jsonl` 应见 `SOFAGENT-AGE-V1` 前缀
-- ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（静态加密已覆盖审计历史主链，但 forge-runs/checkpoint/model-registry 三目录与 task/logs/think.md 附链仍为明文，见 LIMITATIONS 权威清单）。合规审查员请注意：**强合规场景仍建议配合外部加密卷（gpg / disk encryption）覆盖附链目录**。
+- ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（静态加密已覆盖审计历史主链，附链目录仍为明文，见 LIMITATIONS 权威清单）；**强合规场景建议配合外部加密卷（gpg / disk encryption）覆盖附链目录**。
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
 
@@ -99,7 +99,6 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### 联邦查询四层防线
 
-> 引入版本：v1.1.8。
 
 | 层 | 做什么 | 谁负责 | 被攻破的后果 | 攻击者需要 |
 |---|---|---|---|---|
@@ -114,7 +113,6 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### 配对与密钥管理
 
-> 引入版本：v1.1.8。
 
 | 项 | 语义 |
 |---|---|
@@ -146,7 +144,6 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### USB federation 安全模型
 
-> 引入版本：v1.1.4。
 
 > ⚠️ **企业环境警告**：v1.1.4 的 USB federation 曾是**基础检测模式**、**无签名校验**；**自 v1.1.5 起已加入 HMAC 签名校验**。
 
@@ -157,22 +154,17 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | 注入风险 | 🔴 **任何人制作的 SOFAGENT 卷标 U 盘可注入任意 federation 配置** | ✅ 签名不匹配则拒绝导入 |
 | Schema 校验 | ❌ JSON.parse 后直接序列化写入，不校验字段 | ✅ 按 FederationConfig schema 校验（✅ v1.1.5 已落地，`validateFederationSchema()`） |
 
-**企业部署建议**：
-- 不要在共享/公共设备上启用 USB federation 自动检测
-- 如需使用，插入 U 盘前先在隔离设备上检查 `federation.json` 内容
-- 生产环境启用前请确认所选版本已含 HMAC 签名校验——**v1.1.5 起已上线，当前 v1.5.3 为全量签名**（见上方「USB 完整运行时攻防表」）
+**企业部署建议**：不要在共享/公共设备上启用 USB federation 自动检测；如需使用，插入 U 盘前先在隔离设备上检查 `federation.json` 内容；生产环境启用前请确认所选版本已含 HMAC 签名校验（v1.1.5 起上线，现为全量签名）。
 
-`detectSofagentUsb()` 源码见 `engine/daemon/src/usb-detect.ts`，错误处理完善（设备不存在/文件不存在/JSON 解析失败都 try-catch 返回明确错误）。内容安全校验自 v1.1.5 起由 HMAC 签名校验覆盖（`.sig` sidecar + `timingSafeEqual`），v1.1.9 升级为全量签名（`usb-signature.ts`：HMAC-SHA256 路径 POSIX 归一化 + 字典序 + SHA-256 内容哈希串联，详见上方「USB 完整运行时攻防表」）。
+`detectSofagentUsb()` 源码见 `engine/daemon/src/usb-detect.ts`（设备/文件缺失、JSON 解析失败均 try-catch 返回明确错误）。
 
 ### 摘要推送安全
 
-> 引入版本：v1.1.8。
 
 > 通过 `openclaw:im` 推送的知识摘要不含 restricted 内容（sensitivity 双重过滤），但 internal 内容可能含项目内部信息。`openclaw:im` 通道的安全性由 OpenClaw 保证（本地回环 ws://，摘要内容不含结构化密钥格式，redactForPrompt 管道同样适用于通知内容）。
 
 ### USB 完整运行时攻防表
 
-> 引入版本：v1.1.9。
 
 > 「Node 便携版 + 启动脚本」方案——IT 用 `sofagent-daemon create-usb-key` 写入 U 盘（Node 便携版 + sofagent dist + 三平台启动脚本 + federation.json + 空 knowledge/），员工双击 `start` 3 秒联邦在线，拔盘零残留。
 >两道防线：**HMAC-SHA256 全量签名防篡改**（`daemon/src/usb-signature.ts`，路径 POSIX 归一化 + 字典序 + 内容哈希串联，不含 mtime，确定性可复算）+ **knowledge/ AES-256-GCM 磁盘加密防失窃**（复用 v1.1.8 `core/crypto/aes-gcm.ts`，密钥 32 字节存 U 盘 `federation.json` 的 `key` 字段——U 盘本身即信任根，防的是「丢盘后 knowledge/ 被读」）。
@@ -193,25 +185,21 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### sensitivity 敏感度分级
 
-> 引入版本：v1.1.7。
 
 `core/memory-contract.ts` 定义 `Sensitivity`（public/internal/restricted），`DEFAULT_SENSITIVITY='internal'` 为 safe-by-default，restricted 绝不默认。语义是**可见性分级**而非加密——restricted 内容在 `knowledge status` 聚合时只计数不返回内容，但明文存储不变。
 
 ### trust 可信分级
 
-> 引入版本：v1.1.8。
 
 `core/src/memory-contract.ts` 的 `resolveTrust` 缺省 internal；`TRUST_ORDER` official>internal>user>web；web+restricted 组合直接丢弃；RAG 召回 sortByTrust。
 
 ### Dream Cycle LLM 安全边界
 
-> 引入版本：v1.1.7。
 
 6 阶段流水线经 `LLMProvider` 接口抽象；v1.1.7 默认使用 MockLLM（确定性、无外部调用），RealLLM 在 v1.1.8 才接入。LLM 仅读取 `think.md`/知识库内容并产出结构化事实/概念，**不回写代码、不执行命令、不访问网络**。注入隔离见 `daemon/src/dream-cycle/` 的 system-role 声明与返回 schema 校验。
 
 ### 知识摘要主动通知
 
-> 引入版本：v1.1.8。
 
 素材仅 `log.md` + `health-report.md`（restricted 在生产侧已被 sensitivity 过滤，不进通知）；通道复用 push-target（daemon:notice + openclaw:im outbox），仅本机/联邦内通知，非 v1.2.1 规划的对外 Webhook/飞书推送；失败静默不阻塞 dream-cycle / health 主流程。
 
@@ -241,8 +229,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | 7 | 高危动作强制人工确认 | entry-gate 🔴 高风险审批 | ✅ 已有 |
 | 8 | 全链路日志 + 红队测试 | 审计 history.jsonl + daemon WARN 累积；联邦查询 `federation_query` 审计条目 | ✅ 已有 |
 
-> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文「忽略类」指令、英文「ignore 类」指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），LLM 辅助检测暂未排期（跟踪于 ROADMAP）。**在 LLM 辅助检测落地前，建议对外部输入做归一化（Unicode NFC + 解码后再送检）。
->**
+> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文「忽略类」指令、英文「ignore 类」指令及 leet speak 变体（`1gn0r3` → `ignore`，normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔 `а` 替拉丁 `a`）；② Base64/hex 编码 payload。此类绕过依赖语义分析（非纯正则可覆盖），LLM 辅助检测暂未排期（跟踪于 ROADMAP）；落地前建议对外部输入做归一化（Unicode NFC + 解码后再送检）。
 
 > ℹ️ **职责边界（勿混）**：Onboard 诊断链的 L3 自动定位（LLM 推理定位「哪一步做错了」）属**诊断面**，服务的是 Onboard Agent 的错误归因，**不承担 A9 的注入检测**——A9 的语义级覆盖仍以本节的「未排期」状态为准。本条为 A9 编码绕过局限的**单一真相源**，其余文档一律指向此处。
 
@@ -252,19 +239,16 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### Sub Agent 工具集零重叠
 
-> 引入版本：v1.1.0。
 
 每个 Sub Agent 的工具集按职责域划分，无重叠。详见各 Sub Agent 配置。
 
 ### 编排模块 Sub Agent 委派
 
-> 引入版本：v1.1.8。
 
 每个 Sub Agent 的 systemPrompt 前置四层约束加载链（SKILL.md 宪法层不可被 workflow YAML 覆盖）；同文件冲突检测 WARN（filesValue 文件级 LWW 合并的提醒，不阻塞）；SubAgent 继承 LangGraph createReactAgent 默认工具集（read_file/write_file/edit_file/glob/grep/execute），主 Agent 仅保留 task 委派工具（`tools: []`）。
 
 ### 联邦查询离线降级
 
-> 引入版本：v1.1.8。
 
 单 peer 5s 超时按离线跳过不阻塞；全部 peer 离线 / federation 整块失败 → 退化纯本地查，不影响 MCP server 运行（best-effort）。
 
@@ -293,7 +277,6 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### ActionGovernance 审计溯源
 
-> 引入版本：v1.1.7。
 
 审计记录升级为可问责的动作凭证：`ActionGovernance`（actor/timestamp/targetEntity/context）+ `DecisionProvenance` 决策溯源组，写入 `history.jsonl`。提供**事后可追溯性**，但不在运行时阻断——Agent 仍可伪造 actor 字段（信任模型同 §审计模块信任模型）。防篡改 HMAC 签名详见下方「HMAC 签名（v1.1.8+ 已落地）」。
 
@@ -326,7 +309,8 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 > ⚠️ **A14/A15 是 commit 时审计，不是运行时阻断。** Agent 在 commit 前仍可能访问受限数据——审计只能事后发现。这不是运行时沙箱。
 
-**沙箱验收双断言：边界逃逸 ≠ 出口绕过**。VM 边界守住不代表出口守住，两维须独立断言、分别举证——出口只能靠确定性白名单收口。Perplexity SPACE 沙箱红队实测（CEO 亲自发布）：9 个模型在 root 权限下 108 次运行**零 VM 逃逸**，但 **4 个模型借网络访问绕过出口封锁**——源文将此归因于多家沙箱平台共用的基础设施存在 IP 共享问题（归因为源文自述，本仓未复算）。对验收口径的落点：沙箱能力断言写「边界未逃逸」，出口断言写「外发通道白名单外全拒」，两断言缺一即验收不完整；被约束方可能拿到最高权限应作默认威胁模型。与既有 SubAgent 网络白名单（v1.3.7）的分工：彼是出口控制的能力本体，本条补的是「两项都须独立验收」的口径。
+**沙箱验收双断言：边界逃逸 ≠ 出口绕过**。VM 边界守住不代表出口守住，两维须独立断言、分别举证——出口只能靠确定性白名单收口。Perplexity SPACE 沙箱红队实测（CEO 亲自发布）：9 个模型 root 权限下 108 次运行**零 VM 逃逸**，但 **4 个模型借网络访问绕过出口封锁**——源文将此归因于多家沙箱平台共用的基础设施存在 IP 共享问题（归因为源文自述，本仓未复算）。
+对验收口径的落点：沙箱能力断言写「边界未逃逸」，出口断言写「外发通道白名单外全拒」，两断言缺一即验收不完整；被约束方可能拿到最高权限应作默认威胁模型。与既有 SubAgent 网络白名单（v1.3.7）的分工：彼是出口控制的能力本体，本条补的是「两项都须独立验收」的口径。
 
 > 来源：Perplexity（CEO Aravind Srinivas · X 原帖）｜Simon Willison ·〈Agent 致命三要素〉（simonwillison.net）
 
@@ -442,7 +426,6 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 ### history.jsonl 访问控制
 
-> 引入版本：v1.1.3。
 
 history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下为当前访问模型：
 
@@ -476,7 +459,6 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 
 #### history.jsonl 存储
 
-> 引入版本：v1.1.3。
 
 审计拦截记录以 JSONL 明文存储在 `data/audit/history.jsonl`，目录权限 0o700、文件权限 0o600（v1.1.3 起收紧）。仅追加写入（`appendFileSync`），不覆盖、不删除。历史记录供编排模块和进化模块本地读取。
 
