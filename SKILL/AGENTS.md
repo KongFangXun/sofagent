@@ -99,7 +99,9 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 ## MCP 全量工具表（104 tools · 12 类）
 
-> ⚠️ **工具名与 [API.md](../docs/API.md) 同源**（同一 `engine/mcp/src/tool-registry.ts` 注册表，合计 104）——逐条释义 / roles / 参数 / 全量清单以 [API.md](../docs/API.md) 为准，此处**不复述释义**、只留**工具名索引**（供 `tools/check/check-docs.sh` 第 12 节与 registry 双向对账）。⚠️ **两套分组口径**：本表按 AGENTS 视角归 **12 类**，与 API.md 的 **10 个产品能力域**不同（同一 registry、合计均 104；域数差异见 [API.md 分组口径注](../docs/API.md)）。🔴 = 破坏性操作（强制人审/confirmed）。
+> ⚠️ **工具名与 [API.md](../docs/API.md) 同源**（同一 `engine/mcp/src/tool-registry.ts` 注册表，合计 104）——逐条释义 / roles / 参数 / 全量清单以 [API.md](../docs/API.md) 为准，此处**不复述释义**、只留**工具名索引**（供 `tools/check/check-docs.sh` 第 12 节与 registry 双向对账）。
+> ⚠️ **两套分组口径**：本表按 AGENTS 视角归 **12 类**，与 API.md 的 **10 个产品能力域**不同（同一 registry、合计均 104；域数差异见 [API.md 分组口径注](../docs/API.md)）。
+> 🔴 = 破坏性操作（强制人审/confirmed）。
 
 - **审计合规（11）**：`run_audit` `audit_file` `audit_data_change` `audit_trail` `audit_query` `ruleset_export` `list_rules` `data_sovereignty_report` `notify_session` `hitl_resolve` `data_push`
 - **反思沉淀（3）**：`get_think` `write_think` `read_think_md`
