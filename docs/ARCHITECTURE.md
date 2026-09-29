@@ -47,7 +47,7 @@ graph TD
 **三域视角**（产品身份口径，v1.5.3）：导读层「双层架构」是**治理域（harness 治理层）**的架构展开；场景域首句=「**万物皆可 FDEing 的场景框架**」（打法层 FDEing 进场把判断写成文件——业务图谱/本体数据/激活链，详见 [§一 激活链](#一激活链架构v125-phase-1-4-已交付)）；判定域（S1M 判定层，判据/留痕/举证——25 条规则 × 判定层接管见 [§三 审计规则面的判定化边界](#审计规则面的判定化边界25-条规则--判定层接管)）。
 三因子↔本架构对位（打法/判定/治理 ↔ 场景/判定/治理域）与五域→三域映射表：[v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)（本档只留指针；架构术语 SSOT 仍是本档 + PHILOSOPHY，见 [WIKI 术语声明](./WIKI.md)）。
 
-**这是理解 sofagent 最关键的一张图**——之前只有「约束层五种能力」（那是**能力视角**：怎么保证做对）。激活链（Activation Chain：FDE 诊断交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流自动跑，四阶段 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）引入后，产品在「治理」之外多了一条**流程视角**（企业 AI 从诊断到自动运行怎么走）：
+**这是理解 sofagent 最关键的一张图**——之前只有「约束层五种能力」（**能力视角**：怎么保证做对）。激活链（四阶段 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）引入后，产品在「治理」之外多了一条**流程视角**（企业 AI 从诊断到自动运行怎么走）：
 
 | 层 | 是什么 | 视角 | 回答什么问题 |
 |---|---|---|---|
@@ -169,12 +169,12 @@ graph TB
 > 注-3：叙事句用「**判断**」（动词 · 动作面——S1M 执行判断 · 判断被治理）。不互换：「决策」含行动意志指向应用面，「判定」是机制实体，「判断」是动作——混用会把治理面读成应用面
 > 注-4：sofagent = **System One For Agents**（名字 backronym，谐音彩蛋保留）
 
-> ⚠️ **旧名兼容**：五能力（注入/审计/回溯/沉淀/进化）中，前四能力即原约束底座/审计模块/回溯引擎/进化模块（v1.2.9 统一为「约束层四种能力」），「沉淀」承接原「进化」表述中的「经验沉淀」语义与知识蒸馏管线（knowledge/）。历史文档中的四能力与「引擎」表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
+> ⚠️ **旧名兼容**：五能力（注入/审计/回溯/沉淀/进化）中，前四能力即原约束底座/审计模块/回溯引擎/进化模块（v1.2.9 统一为「约束层四种能力」），「沉淀」承接原「进化」表述中的经验沉淀语义与知识蒸馏管线。历史文档中的四能力与「引擎」表述保留不动（archive/changelog 是历史快照不改）；代码层 `AuditEngine`/`runAuditGate`/`engine/audit` 全是 API，保持不动。
 
 > ⚠️ **「三档 / 五态」术语导航**（三套档位名各自独立，勿混）：FDE 诊断侧 **🔄 自动执行 / ⚡ 强化岗位 / 👤 暂不动** = **业务节点分类**——答「这个环节上不上 AI」，属诊断期，只看该节点本身；判定底座 **高自动 / 中复核 / 低转人工** = 判定结果的分流门槛——按错误率区间分段，属运行期，只看这一次判定的概率；审计结论 `ALLOW` / `ASK` / `ABSTAIN` / `DENY` / `SKIP` = 审计判定的五态输出——答「这次变更怎么处置」。
 >三者对象不同（业务节点 / 判定分流 / 审计结论），**不是同一套枚举的三种叫法**，也不得为求字面统一而互相改写。
 
-> 💬 **交互范式**：sofagent 的核心交互是语言（MCP / IM / CLI），无操作型 GUI——所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作：说一句话，它做完告诉你结果在哪。dashboard 是只读监控视图（localhost:3780，详见下文），不承担操作职能。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
+> 💬 **交互范式**：核心交互是语言（MCP / IM / CLI），无操作型 GUI——所有能力经 MCP 协议暴露，用户经 Agent 对话（LUI）操作：说一句话，它做完告诉你结果在哪。dashboard 是只读监控视图，不承担操作职能。根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
 
 ### 相位模型对位表（同一套流程的四种切法）
 
@@ -216,8 +216,8 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 ### 27 个 workspace 源码包
 
-构成以根 `package.json` 的 `workspaces` 为准：13 个 `@sofagent/*` 模块包 + 1 个工具包 `load-chain` + 1 个插件适配层基座包 `dsh-plugin-kit`（v1.5.2 章九二轮起转 npm 发布物 `@sofagent/dsh-plugin-kit`）+ 7 个 DSH 插件包（`cordis-plugin-sofagent*`，v1.4.9 P2 合并批 10→7：ontology/commons 并入 fde、
-gate 并入 audit）+ 4 个 OpenClaw 插件包（`engine/openclaw-plugins/`）+ 1 个 npm 裸名总包 `engine/umbrella`（包名 `sofagent`，聚合安装入口——不属模块包也不属插件，故两个旧口径都不计）。其中 15 个发布为 `@sofagent` npm 包（13 模块包 + `load-chain` + `dsh-plugin-kit`），DSH 插件 7 款经 SkillHub + npm 双通道分发（v1.5.2 章九起摘 `private` 上 npm）。统计口径与包数构成见 [WIKI](./WIKI.md)。
+构成以根 `package.json` 的 `workspaces` 为准：13 个 `@sofagent/*` 模块包 + 工具包 `load-chain` + 基座包 `dsh-plugin-kit`（已转 npm 发布物）+ 7 个 DSH 插件包（`cordis-plugin-sofagent*`，v1.4.9 P2 合并批 10→7）+ 4 个 OpenClaw 插件包 + 1 个 npm 裸名总包 `engine/umbrella`（包名 `sofagent`，聚合安装入口——不属模块包也不属插件）。
+其中 15 个发布为 `@sofagent` npm 包（13 模块包 + `load-chain` + `dsh-plugin-kit`），DSH 插件 7 款经 SkillHub + npm 双通道分发。统计口径与包数构成见 [WIKI](./WIKI.md)。
 
 | 包 | 职责 | 状态 |
 |---|---|---|
@@ -243,10 +243,14 @@ gate 并入 audit）+ 4 个 OpenClaw 插件包（`engine/openclaw-plugins/`）+ 
 v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
 
 **为什么是这个粒度**：
-- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包 live 提取共 **2652 个 @public 导出**（磁盘基线快照 2549 符号，见下行）（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.5.2 增量 +21：rules 出口治理面 11 符号（egress-policy 契约类型 + 裁决函数）+ daemon 审计事件流订阅桥 4 符号 + 并行批 4 + 章八口述沉淀回执 2；
-  v1.5.1 增量 +84：orchestrator 900→963（+63，章一事件总线与三类事件源适配器 + 章三异常三分类路由与死信重放 + 章二 PR 决策解释面；同版修复批复核处置 4 符号——B1 **删除** `sortEventsByTime`（全仓含测试面零引用，死导出除根）+ 收窄 `setDefaultAnomalyBus`（测试缝），F2 同法收窄 `createWebhookAdapter` + `createTimerAdapter`（宿主装配不在本版落点、零生产调用点）——被删者原即不计入 @public，故不影响本行计数）、
-  daemon 274→295（+21，章四 OTA 升级执行器与升级策略 + 章五任务下发推送与订阅登记；平台侧签名器 `signDelivery` 按「本版只出执行侧」降 `@internal`，设备上线钩子 `onDeviceOnline` 按「宿主装配不在本版落点、零生产调用点」同法降 `@internal`，故 23 项中 2 项不计入）；v1.5.0 时点值 2547（双向变动：存量清扫退役 3 符号——composeWithDeepAgents 与 checkHistoryChainIntegrity 双导出，2494→2491；
-  新功能新增 56——章一治理面 16 + 章二双时态 9 + 章八 trace 对账 24 + 章五数据集审阅 4 + 章五陪跑期 3，两段不重叠故 56 即净值）；v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364（更早时点值）。本行口径以 live 提取为准；磁盘基线随发版重建对齐（当前基线 2549，v1.4.9 时代生成——发版时以 --update-baseline 重建后此处回填终值））。
+- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包 live 提取共 **2652 个 @public 导出**（磁盘基线快照 2549 符号，见下行；以 `public-api.mjs` AST 解析为权威口径，非 grep 计数）。
+  版本增量沿革：v1.5.2 +21（rules 出口治理面 11 符号：egress-policy 契约类型+裁决函数；daemon 事件流订阅桥 4；并行批 4；口述沉淀回执 2）；
+  v1.5.1 +84：orchestrator 900→963（+63：章一事件总线与三类事件源适配器 / 章三异常三分类路由与死信重放 / 章二 PR 决策解释面；同版修复批复核处置 4 符号——删除 `sortEventsByTime` 死导出、收窄 `setDefaultAnomalyBus`/`createWebhookAdapter`/`createTimerAdapter` 测试缝，被删收窄者原即不计入 @public）；
+  daemon 274→295（+21：章四 OTA 升级执行器与升级策略 + 章五任务下发推送与订阅登记；`signDelivery`/`onDeviceOnline` 2 项降 `@internal` 不计入）；
+
+  v1.5.0 时点值 2547（双向变动：存量清扫退役 3 符号，新功能新增 56——章一治理面 16 + 章二双时态 9 + 章八 trace 对账 24 + 章五数据集审阅 4 + 章五陪跑期 3，两段不重叠故 56 即净值）；
+
+  时点沿革：v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364。本行口径以 live 提取为准；磁盘基线随发版重建对齐（当前基线 2549，v1.4.9 时代生成——发版时以 --update-baseline 重建后此处回填终值）。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：
@@ -259,7 +263,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 > 累计能力表（按版本归组，全部 ✅ 已发布可用；规划中/排期项见下方「已排期」）：
 >
-> **控制的两层**（读能力表前的一个定位）：平台（Agents API / guardrail 类）治**动作**——Agent 能不能删库、能不能调这个工具，答案写在平台文档里，generic；sofagent 治**判据**——交期改得对不对、报价能不能发，答案在这家企业的本体数据里。两层互补不互替：平台拦得住越权动作，拦不住业务对错。104 个 tool、25 条审计规则裁的都是后者——这是「嵌在 Agent 与模型之间」的确切含义。
+> **控制的两层**（读能力表前的定位）：平台（Agents API / guardrail 类）治**动作**——能不能删库、能不能调这个工具，答案在平台文档，generic；sofagent 治**判据**——交期改得对不对、报价能不能发，答案在这家企业的本体数据里。两层互补：平台拦得住越权动作，拦不住业务对错。104 tool、25 条审计规则裁的都是后者。
 
 > 🗺️ **MCP 工具五域一环（104 tools）**（工具数逐版沿革见 [CHANGELOG](../CHANGELOG.md)）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 25 条审计规则。
 >
@@ -308,8 +312,7 @@ graph TB
 
 > 闭环读法：实线 = 主循环（执行→审计→沉淀→晋升→更强的执行面）；虚线 = 晋升回写与语料飞轮。
 >
-> ⚠️ **数字口径（五域重算）**：五域条目数之和 **27 + 16 + 30 + 16 + 15 = 104**（按域序 D1→D5），与图题 104 及 registry 实数**三处自洽**（2026-09-26 浏览器四件套退役：D2 执行与模型 19→15；v1.5.4 章二 `router_slots` 归 D2 B3 +1 至 104）——以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶（分桶依据是**业务职能**，不是 registry 的 `roles` 标签，见上方「三套标签不要混用」）。
->**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。
+> ⚠️ **数字口径（五域重算）**：五域条目数之和 **27 + 16 + 30 + 16 + 15 = 104**，与图题及 registry 实数**三处自洽**——权威源 = `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组，逐工具名分桶（依据**业务职能**，非 `roles` 标签，见「三套标签不要混用」）。自洽由 `check-docs.sh` §20 断言（提取求和比对；提取为空 ⇒ 判红）。
 >
 > **增量化简记**（记号：域 +N = 该域条目数变化）：五域条目的逐版归域变化（v1.4.9 设备/连接器/模板/router 承接面扩面与 2 枚回填、v1.5.0 `trace_reconcile`、v1.5.2 `audit_query`/`ruleset_export`、v1.5.4 `router_slots`，及 2026-09-26 浏览器四件套退役）见 [CHANGELOG](../CHANGELOG.md)。
 
@@ -328,14 +331,14 @@ graph TB
 | **v1.3.7** | SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 虚拟 key / 独立进程 / A-B 双跑）· 场景驱动权限 · AgentShield 五类扫描 · 行业 overlay 四套 · 断路器行为监控 · ontology 生命周期 |
 | **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固 |
 
-> **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。
+> **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（`checkHistoryChainDetailed`）· HMAC key 强校验 · 签名基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` CLI）· CLI 版本一致性自检。
 >详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 
 ### 安装包边界与部署架构（v1.3.2 定位校准）
 
 > **核心定位**：sofagent 装在**企业跑 AI 节点的设备**上，是 Agent 的监控约束层。FDE 自己的电脑不该跑 install.sh——FDE 的工具是 Skill（方法论）+ 未来商业模型。
 >
-> **行业坐标**：红杉说「所有 AI 应用公司终将成为 Neo-Lab」——竞争主战场从应用层转向智能层，**产品即智能**。sofagent 的差异化立场不在智能层而在约束层：**智能是模型厂商的，管住智能的约束层才是企业的护城河**。Sovereign AI 要的是「对关键智能链路的控制权」，而控制权的一半（数据主权、审计、审批、回滚、灰度）正是约束层的职责——红杉说智能是护城河，sofagent 说「管住智能」才是护城河，两者互补不冲突：企业掌控智能（Neo-Lab 的活），sofagent 提供管控（约束层的活）。
+> **行业坐标**：红杉说「所有 AI 应用公司终将成为 Neo-Lab」——竞争主战场从应用层转向智能层，**产品即智能**。sofagent 的差异化立场不在智能层而在约束层：**智能是模型厂商的，管住智能的约束层才是企业的护城河**。Sovereign AI 要的「对关键智能链路的控制权」，其一半（数据主权/审计/审批/回滚/灰度）正是约束层职责——红杉说智能是护城河，sofagent 说「管住智能」才是护城河，互补不冲突：企业掌控智能（Neo-Lab 的活），sofagent 提供管控（约束层的活）。
 
 **谁装什么——三个位置各归各位**：
 
@@ -370,7 +373,7 @@ graph TB
 >
 > ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走商业侧平台（不在开源范围）。
 >
-> **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`node tools/dashboard/serve-dashboard.mjs` 起服务——与服务器同目录）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两种产品入口（README 三入口表）：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。二者职责不同，勿混用/勿删其一。
+> **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`serve-dashboard.mjs` 起服务）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，零依赖 bash）是同一 Dashboard 的两种产品入口：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。职责不同，勿混用/勿删其一。
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（25 条规则，17 默认启用 + 8 扩展 opt-in + 快照 + 回滚）；全量形态为 27 个 workspace（包数构成权威表述见 [WIKI](./WIKI.md)），全装才是完整约束层。
 
@@ -777,9 +780,11 @@ graph LR
 **蒸馏的精度门槛：合理而粗糙的建议，不如不给**。S³Gym 对 Summary Memory 的逐对比较给出一个蒸馏纪律的硬边界：经验能压缩成可复用策略规则的场景（博弈结构、可总结流程），蒸馏优于原始历史；依赖局部精确细节的场景（几何导航、状态敏感操作），「方向全对但缺精度」的总结反而有害（逐对实验数字见 [VALIDATION](./VALIDATION.md)）。
 对 think.md → knowledge/ 的启示：**蒸馏前先判经验的可压缩性**——能提炼为「条件 → 动作」规则的才进 knowledge/，依赖具体上下文细节的留在 think.md 原始轨迹层，宁可不清蒸馏，不可清错。
 
-**裁决记录是一等知识资产，拒绝路径须显式沉淀**。被拒绝的路径/裁决与被采纳的同等值钱：大淘宝 decision_function 设 `reject_routes` 字段——明确哪些路径看似合理但必须拒绝，「哪些路不能走」既不在模型权重里也不在编排里，只在一等结构化字段里；电网项目本体护照模型把「裁决记录」列为十要素之一（字段级溯源要素：冲突交人裁决、裁决记录留痕）；hugozhu 的判语「GitHub 上被丢掉的代码才是最值钱的资产」是同一哲学的工程面——负样本与偏好是资产，Eval 是过程数据的生产设备。对进化闭环的落点：think.md 反思与 dream-cycle 蒸馏**须为拒绝路径设一等结构化落位**（如 reject case / 负样本条目），而非任其散落在对话历史里。
+**裁决记录是一等知识资产，拒绝路径须显式沉淀**。被拒绝的路径/裁决与被采纳的同等值钱：大淘宝 decision_function 设 `reject_routes` 字段——「哪些路不能走」既不在模型权重里也不在编排里，只在一等结构化字段里；电网项目本体护照模型把「裁决记录」列为十要素之一（冲突交人裁决、裁决记录留痕）；hugozhu 的判语「GitHub 上被丢掉的代码才是最值钱的资产」是同一哲学的工程面——负样本与偏好是资产，Eval 是过程数据的生产设备。
+对进化闭环的落点：think.md 反思与 dream-cycle 蒸馏**须为拒绝路径设一等结构化落位**（如 reject case / 负样本条目），而非任其散落在对话历史里。
 
-> 📖 [ByteDance Seed · HarnessDev](https://arxiv.org/abs/2609.01437) · [Aspire](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100) · [self-developing-agents](https://self-developing-agents.github.io)｜裁决记录条：大淘宝技术〈Ontology 决策结构化实践〉（自述，本仓未复算）· 华力江海〈电网项目管理护照模型〉（微信公众号转述，未复算）· hugozhu.site〈被丢掉的代码〉
+> 📖 [ByteDance Seed · HarnessDev](https://arxiv.org/abs/2609.01437) · [Aspire](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100) · [self-developing-agents](https://self-developing-agents.github.io)
+> 裁决记录条：大淘宝技术〈Ontology 决策结构化实践〉（自述，未复算）· 华力江海〈电网项目管理护照模型〉（微信公众号转述，未复算）· hugozhu.site〈被丢掉的代码〉
 
 ### 运行时数据层：引擎间数据流全景
 
