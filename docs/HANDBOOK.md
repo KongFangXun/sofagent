@@ -135,7 +135,7 @@
 
 > 💬 **sofagent 没有界面。** 装完之后，你不会看到任何窗口或网页。你通过你的 Agent（WorkBuddy / Codex / Claude Code）和 sofagent 对话——说一句话，它做完了告诉你结果在哪。语言就是界面，MCP 就是入口。详见 [设计哲学](./PHILOSOPHY.md)。
 
-> 📊 **部署后可自动收到这些**：**审计守护日报**（今天拦了多少次违规）——由引擎自动生成推送，不需要人工干预（配好 `data/config/audit-report.json` 的 `target` + `schedule` 即生效）。**周报 / 月报 / 季度无 FDE 对照报告仍在排期中**——配置项的 `weekly` / `monthly` 是预留值，实现侧目前**仅 daily 实装**（自陈见 `engine/daemon` 的 audit-report-push 模块）；**扩容预警尚未实现**。
+> 📊 **部署后可自动收到这些**：**审计守护日报**（今天拦了多少次违规）——由引擎自动生成推送，不需要人工干预（配好 `data/config/audit-report.json` 的 `target` + `schedule` 即生效）。**周报 / 月报 / 季度无 FDE 对照报告仍在排期中**——配置项的 `weekly` / `monthly` 是预留值，实现侧目前**仅 daily 实装**（自陈见 `engine/daemon` 的 audit-report-push 模块）；扩容预警尚未实现。
 >详见 [FDE/GUIDE.md §5.10 离场](../FDE/GUIDE.md#510-离场五大能力)。
 
 ### 两种装法（v1.2.0）
@@ -177,7 +177,7 @@ cd sofagent && bash install.sh
 
 #### 装之前：只认官方通道
 
-> ⚠️ **别从镜像装。**官方发布渠道只有三处——**GitHub 仓库**、**npm**（带 scope 的 `@sofagent/*`；裸名总包 `sofagent` 已标注弃用——见下节警示）、**插件市场**（ClawHub 与 SkillHub 双生态），全部安装方式见 [README](../README.md)。第三方镜像、聚合仓库、二次打包的「一键脚本」不在发布链内：它们可能钉在已撤销的历史版本上，或改写了安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，**被改写等于交出宿主控制权**。
+> ⚠️ **别从镜像装。**官方发布渠道只有三处——**GitHub 仓库**、**npm**（带 scope 的 `@sofagent/*`；裸名总包 `sofagent` 已标注弃用——见下节警示）、**插件市场**（ClawHub 与 SkillHub 双生态），全部安装方式见 [README](../README.md)。第三方镜像、聚合仓库、二次打包的「一键脚本」不在发布链内：它们可能钉在已撤销的历史版本上，或改写了安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，被改写等于交出宿主控制权。
 >
 > 另有一类**同名陷阱**：npm 裸名包 `sofagent-audit` 是本项目的旧代理包（已 deprecated、长期滞后），正式包名是带 scope 的 `@sofagent/audit`——别按名字猜，见 README 的同名警示。
 

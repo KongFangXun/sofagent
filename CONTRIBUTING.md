@@ -231,7 +231,7 @@ git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 
 | 写法 | 何时用 | 例 |
 |---|---|---|
-| **`Skill`（大写 S）** | 作为**产品概念**——加载链的一层形态、`SKILL.md` 体系、能力市场里的技能实体、`evolve` 的优化对象 | 「五种形态分发（FDE 插件 / **Skill** / MCP / CLI / Dashboard）」「执行时 **Skill** 快照」「**Skill** 陈旧度」 |
+| **`Skill`（大写 S）** | 作为**产品概念**——加载链的一层形态、`SKILL.md` 体系、能力市场里的技能实体、`evolve` 的优化对象 | 「五种形态分发（FDE 插件 / **Skill** / MCP / CLI / Dashboard）」「执行时 **Skill** 快照」「Skill 陈旧度」 |
 | **`skill`（小写）** | 只出现在**标识符语境**——目录 / 文件路径、包名或工具名、规则 id、YAML 字段名、锚点片段、外部体系自身的槽位命名 | 路径 `SKILL/skills/05-exit.md`、工具名 `skillopt`、规则 id `skill-staleness`、字段 `skill_ref:`、锚点 `#四件事的分工mcp--skills--ontology--harness` |
 
 > 📌 **同族的既定先例**：`plugin` 小写（通用名词）、`MCP`/`CLI`/`FDE`/`Agent` 大写（专有名词/缩写）——`Skill` 归入「大写」一侧，判据是「它指 sofagent 的一个具体产品实体，不是一个泛化的英文名词」。**改大小写时务必排除路径 / 包名 / 锚点**（改了会断链或失配门禁正则）。
