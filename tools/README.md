@@ -72,6 +72,7 @@
 | `check/public-api.mjs` | public API 变更检测门禁（@public 符号集 vs 基线，未 bump 即 FAIL；v1.3.9 四） | CI / 发版前 |
 | `check/public-api-baseline.json` | @public 符号集基线（12 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
+| `check/doc-postcheck.mjs` | **文档落盘后自检（单文件秒级 · 排障工具非门禁）**：五项机械判据聚合既有口径——U+FFFD（check-docs §2b 同判据）/ 墙式行格（readability-count 同口径，**按 doc-ratchet 台账只拦新增**）/ 字符数棘轮与抬头块（doc-char-ratchet 同判据）/ 标题粘连（「正文。## 标题」同行——行内代码剥离 + 格式说明豁免，正负样本 `--selftest`）。`--fix` 调 `lib/reflow-walls.mjs` 折行；`--changed` 只查 git 变更中的 .md | 文档落盘后即时快检（全量防线仍归 doc-discipline / check-docs / check-anchors / check-table-shape / doc-score，不替代） |
 | `check/vitest-setup.mjs` | 全局测试隔离（预置 SOFAGENT_DATA 到 tmp，防测试污染真实 HOME——被 5 个 engine/*/vitest.config.ts setupFiles 引用） | vitest 自动挂载 |
 | `check/check-cross-package-relative.mjs` | 越包相对引用守卫（相对 import/require 解析后越出**包根**即 FAIL；现存 6 条豁免 = 6 处清单 SSOT 对账测试读 `plugins.json`，登记在 `cross-package-relative-exempt.json`。（详→注-6） | CI（pre-push 步骤 2e）/ 改 dsh-plugins 后 / `--selftest` |
 | `check/cross-package-relative-exempt.json` | 越包相对引用存量豁免台账（被 `check-cross-package-relative.mjs` 消费；集合相等判定——新增/漂移/陈旧均红） | 被 check-cross-package-relative.mjs 消费 |
@@ -216,6 +217,7 @@
 | `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（引用路径/函数是否真实存在；历史档案漂移单列 🕘 不计失败） | **参数化按需工具**：必须传 `<file.md>`，可加 `--strict` 强制历史档案按严格口径判；无参数时报用法错并 exit 1——CI 无处传参。生成 prompt 后手动跑 |
 | `check/sync-test-count.sh` | 测试数多文档一键同步（实测值回写各文档声称位） | **写文档的收口工具**，不是检查器——发版 SOP 数字收口阶段人工触发 |
 | `check/resolve-section.sh` | 行号 → markdown 段落归属解析器（防「行号冒充归属」） | **排障工具非门禁**：自动化版在扫描面为 0 时会静默通过（死分支形态），故刻意不接 check-guards/CI。挂载于 `docs/changelog/releasing/03-quality-loop.md` / `04-review-system.md` |
+| `check/doc-postcheck.mjs` | 文档落盘后自检（五项机械判据：U+FFFD / 墙式行格按台账拦新增 / 字符数棘轮 / 抬头块 / 标题粘连；`--fix` 折行 · `--changed` 查变更面 · `--selftest` 正负样本） | **排障工具非门禁**：判定面按参数收敛，扫描面为 0 时静默通过是预期形态（同 resolve-section 口径），全量防线由宿主门禁承担。挂载于 `docs/changelog/releasing/06-doc-finalize.md`〈三道闸〉 |
 | `check/check-forge-branches.sh` | FORGE 分支收编标记对账（未标记的 `forge/*` 分支四要素列出） | 输出为 **INFO 级**（未标记分支需人工确认后补标记），由 `playbook/acceptance-test.sh` 人工链调用 |
 | `check/check-interface-roadmap.mjs` | 接口编号承载对账（G1-G14 接口编号 ↔ ROADMAP/开发日志的真实承载版本；C1-C5 FAIL + C6 WARN，防「编号标了版本、版本却没承载它」） | **需 `--spec <商业机制文档>` 参数**：无参数时打印 SKIP 并 exit 0（SKIP 不算通过）。spec 属商业侧文档、不进开源仓——CI 无处传参，只在商业侧对账时人工跑 |
 | `maintenance/prune-spill.mjs` | spill 临时文件 TTL 回收（>5MB diff 落盘的密钥类内容按保留期清理） | 独立工具（cron/手动） |
