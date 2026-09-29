@@ -603,10 +603,8 @@ graph LR
 | **决策即节点** | 决策记录是一等审计对象不是日志行：与「看到什么/考虑过什么/为何选这个/执行后如何」四层绑定入库，复核状态随决策本体走——查决策 = 查审计链 | Semantica 源码导览（2026-09-20）等三源，与 [VALIDATION](./VALIDATION.md) 互证 |
 | **自评判警示** | 自评判与环境真值一致率 0.88 但价值估计误差同样 0.88，评判准确度与下一步改进几乎零相关（r=-0.23）——自我评分可保留（think.md），保留/晋升判定必须交给模型外信号 | [S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed，2026-08） |
 
-**行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 A15 约束验证同源；Palantir OAG 的「确定性与概率性分离」与 sofagent 审计完全同构（20/25 条纯 git-diff 即其工程实现）。完整行业对标见 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型) 和 [VALIDATION](./VALIDATION.md)。
-
-**行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 A15 约束验证同源（同 §三审计外置原则）。Palantir OAG 的「确定性与概率性分离」与 sofagent 审计完全同构——sofagent 的 20/25 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。
-完整的行业对标分析（Palantir OAG 五层映射、Ledger-Views-Policy 对照、DeerFlow/Omnigent/DataFlow 等）见 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型) 和 [VALIDATION](./VALIDATION.md)。
+**行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 A15 约束验证同源（同 §三审计外置原则）；Palantir OAG 的「确定性与概率性分离」与 sofagent 审计完全同构（20/25 条纯 git-diff、不依赖 Agent 配合即其工程实现）。
+完整的行业对标（Palantir OAG 五层映射、Ledger-Views-Policy 对照、DeerFlow / Omnigent / DataFlow 等）见 [VALIDATION](./VALIDATION.md)（**行业印证 SSOT**）与 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型)。
 
 > 💡 **规则编号说明**：A1–A11 + A18–A23 为默认规则（17 条），A14–A17 + A24 + E1/E2/E4 为扩展规则（8 条，需 opt-in），全量 25 条（17 默认 + 8 扩展）。**25 条规则完整清单（文档级 SSOT）见 [SECURITY.md → 25 条审计规则完整清单](../SECURITY.md#25-条审计规则完整清单文档级-ssot)**，逐条行为表见 `engine/audit/README.md`。A12/A13 已在 v0.99.4 合并入 A11，E3 已在 v1.2.5 并入 A11，编号不再使用。
 
@@ -775,6 +773,8 @@ graph LR
 > 📖 来源：[HarnessDev: Can LLMs Create and Evolve Their Own Agent Harness?](https://arxiv.org/abs/2609.01437) · [Aspire: Can Models Self-Evolve from Vague Goals?](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed 自进化系列，self-developing-agents.github.io，2026-09-09 检索）
 
 ### 运行时数据层：引擎间数据流全景
+
+> 📌 **本节为「运行时数据流全景」SSOT**——WIKI / DEVELOPMENT / HANDBOOK 等其它文档引用运行时数据流时**指向本节、不复述**本节的速览表。
 
 约束层（审计/回溯/沉淀/进化）运行时共同往 `data/` 目录读写（编排模块为内部实现，也读写此目录）。生产者→数据文件→消费者的完整单向数据流全景图（v1.2.1 补全 eval + ab-test 后的全景，ASCII 大图）**已归档**：[archive/validation-deep/architecture-dataflow.md](./archive/validation-deep/architecture-dataflow.md)。
 
@@ -997,7 +997,7 @@ SHACL（W3C 形状约束作本体提交时守门）参照已归档——多 Agen
 
 | # | 反模式 | 表现 | sofagent 的应对 |
 |---|---|---|---|
-| 1 | **不了解工作就先画巨型 Graph** | 在稳定路径出现之前就设计复杂的 DAG/编排 | 编排模块先做串行版（v1.1），完整 DAG 并行规划在 v1.3+（见 [LIMITATIONS §八](./LIMITATIONS.md#八包依赖与编排局限)） |
+| 1 | **不了解工作就先画巨型 Graph** | 在稳定路径出现之前就设计复杂的 DAG/编排 | 编排模块先做串行版，完整 DAG 并行调度仍规划中（排期见 [LIMITATIONS §八](./LIMITATIONS.md#八包依赖与编排局限)） |
 | 2 | **让同一个模型既写又评** | 执行者和审查者用同一个 LLM，自评不客观 | FORGE fresh-eyes-loop 要求 A/B 用不同厂商模型（异构） |
 | 3 | **把「继续尝试」当作 Loop** | 无限重试无新证据，只是费用泄漏 | Loop 围绕「证据」设计——sustain 的 eval 反馈闭环需要明确 passRate 阈值 |
 | 4 | **把 Harness 变成工具垃圾场** | 工具过多增加选择错误，宽泛权限扩大事故范围 | ToolGate 限定了 Agent 工具调用的前置门禁，不是所有工具都能随便调用 |
@@ -1313,13 +1313,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 ### 反认知投降的制度设计
 
-当 AI 能力过强时，人类会不自觉进入「认知自动驾驶」。sofagent 的三道制度护栏：
-
-| 护栏 | 防什么 | 怎么防 |
-|---|---|---|
-| fde.md 规则可随时覆盖 | AI 判断替代人类意志 | 人类写一条规则，AI 必须遵守 |
-| 编排方案可回滚 | AI 方案先斩后奏 | 人类不确认，编排不执行 |
-| 审计独立于 Agent | AI 自己验收自己 | git diff 硬证据，Agent 无法篡改 |
+当 AI 能力过强时，人类会不自觉进入「认知自动驾驶」。「判断权不可外包」的论证主体与三道制度护栏（fde.md 规则可随时覆盖 / 编排方案可回滚 / 审计独立于 Agent）的逐条「防什么 · 怎么防」见 [PHILOSOPHY · 主体性护栏](./PHILOSOPHY.md#主体性护栏执行可外包判断不可外包)（**论证 SSOT**），此处不复述。
 
 ### 文件系统架构
 

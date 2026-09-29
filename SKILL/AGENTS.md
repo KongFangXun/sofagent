@@ -99,167 +99,21 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 ## MCP 全量工具表（104 tools · 12 类）
 
-> 与 `engine/mcp/src/tool-registry.ts` 一一对应（check-docs 第 12 节门禁校验双向差集为空）。主入口 `SKILL.md` 只列每类代表工具，本表为全量。🔴 = 破坏性操作（强制人审/confirmed）。
+> ⚠️ **本表与 [API.md](../docs/API.md) 同源**（同一 `engine/mcp/src/tool-registry.ts` 注册表）——逐条释义 / roles / 参数 / 全量清单以 [API.md](../docs/API.md) 为准，此处**不复述释义**，只保留**类名 + 工具数骨架**与**工具名索引**（索引供 `tools/check/check-docs.sh` 第 12 节与 registry 双向对账）。🔴 = 破坏性操作（强制人审/confirmed）。
 
-### 审计合规（11）
-
-| 工具 | 说明 |
-|---|---|
-| `run_audit` | 对 git diff 运行全量审计（25 条规则），返回结构化审计报告 |
-| `audit_file` | 单文件变更即时审计（不阻断） |
-| `audit_data_change` | 知识库结构化数据变更跑数据审计（D1-D5） |
-| `audit_trail` | 跨设备审计轨迹查询（HMAC 验签） |
-| `audit_query` | 审计数据只读查询——history 三维过滤（时间/规则/exitCode）+ decision-log 因果链（严格只读，不写链） |
-| `ruleset_export` | 规则集导出——默认规则 + 已加载扩展 → 标准 JSON（导出即加载格式，双向可逆 + 内容指纹 + 审计留痕） |
-| `list_rules` | 列出所有审计规则清单（只读） |
-| `data_sovereignty_report` | 数据主权审计报告摘要（云端调用/本地执行/数据流出率） |
-| `notify_session` | 向当前 session 推送审计结果摘要 |
-| `hitl_resolve` | 对挂起等人工确认的 checkpoint 提交决策（approve/reject/aborted） |
-| `data_push` | 标准数据推送入口——schema 校验 + 分拣/合规双闸（gateDataPush）；拒绝留痕进决策日志 |
-
-### 反思沉淀（3）
-
-| 工具 | 说明 |
-|---|---|
-| `get_think` | 读取 think.md 最新反思条目 |
-| `write_think` | 向 think.md 追加手动反思记录 |
-| `read_think_md` | 读取 think.md 完整内容 |
-
-### 知识库（7）
-
-| 工具 | 说明 |
-|---|---|
-| `search_knowledge` | 跨 entities/concepts 模糊搜索 |
-| `read_entity` / `read_concept` | 读取单个 entity / concept 页 |
-| `list_entities` / `list_concepts` | 列出全部（entities 可按 domain 过滤） |
-| `read_lessons` | 读取踩坑记录（lessons-missteps.md） |
-| `stats` | 知识库统计（entities/concepts 数 + 最后更新时间） |
-
-### 本体数据（7）
-
-| 工具 | 说明 |
-|---|---|
-| `create_entity` / `create_concept` | 创建/更新页（写入前跑数据审计，FAIL 拒绝） |
-| `update_entity` | 字段级更新 entity（只改传入字段） |
-| `delete_entity` / `delete_concept` | 🔴 删除页，必须 confirmed:true |
-| `validate_ontology` | 检查本体数据完整性（断裂/孤儿/死链） |
-| `ontology_import` | 提交 entity/concept/relations（JSON），校验+审计后注册 |
-
-### 评估优化（8）
-
-| 工具 | 说明 |
-|---|---|
-| `evaluate_output` | golden set 评估 Agent 产出质量 |
-| `run_ab_test` | A/B 对比实验（current vs candidate） |
-| `promote_ab` | 🔴 晋升 candidate，必须 human_confirmed:true |
-| `evaluate` | Benchmark 隔离评测（评分 0..100） |
-| `eval_suite` | 企业专属 eval 套件（模板/基线冻结/运行） |
-| `optimize_skill` | 优化指定 Skill 文件，生成优化建议 |
-| `refine` | Refine 质量优化循环 |
-| `loop_debug` | Onboard Agent 调试循环（activate→run→judge→fix） |
-
-### FDE 编排（11）
-
-| 工具 | 说明 |
-|---|---|
-| `fde_compose` | FDE 梳理辅助——五要素引导生成 workflow 或 ontology 草稿 |
-| `fde_interview` | FDE 访谈——五要素结构化落盘 data/fde/，企业画像自动生成 |
-| `fde_classify` | FDE 判定——三问判定（🔄自动/⚡强化/👤暂不动）+ 六步分解→nodes.json |
-| `fde_quantify` | FDE 量化——年节省=岗位年薪×接管工时占比，ROI 排序→quantification.json |
-| `fde_derive` | FDE 本体推导——五要素+访谈→ontology YAML 草稿（可导入 ontology_import） |
-| `fde_distill` | FDE 沉淀能力——三层交付物（文档/Skill/运行层）自动生成 |
-| `fde_deploy` | FDE 部署——交付物→workflow.yml 部署工件（提交/激活走人审闸门） |
-| `compose` | 编排模块——任务描述返回 Sub Agent 编排方案（YAML）。前名 sofagent_compose（别名兼容一版，见 API.md 工具命名策略） |
-| `activate_workflow` | 读取 FDE 交付物，注册企业 SubAgent |
-| `create_agent` | 一句话需求自动推导 Agent 配置（角色+域规则+think+knowledge） |
-| `onboard_prompt` | 上岗 prompt 生成器——岗位描述→职责/边界/工具面三段，产物可经 workflow_node_add 落节点 |
-
-### Workflow / Agent（12）
-
-| 工具 | 说明 |
-|---|---|
-| `workflow_submit` | Workflow 提交（schema 校验 + 解析执行） |
-| `workflow_create` | Workflow 对象化创建（schema-gate 校验；owner 建 trunk、非 owner 开 branch） |
-| `workflow_update` | Workflow 版本化更新（version+1 + 审计留痕） |
-| `workflow_node_add` | 节点追加（可挂 trigger.schedule 定时触发，非法 cron 拒绝） |
-| `workflow_diff_preview` | 变更 diff 预览（零副作用，不入版本） |
-| `workflow_gaps` | 能力缺口查询——缺人/缺能力/待升级三类，缺口清单可转悬赏 PR |
-| `route_workflow` | 入口路由——task + workflow 返回命中节点或 fallback |
-| `agent_identity` | 查询 Agent 身份码（不含私钥） |
-| `team_create` / `team_broadcast` | 创建团队 / 意图广播到团队意图总线 |
-| `list_agents` | 列出已注册 Agent（内置 + 企业 SubAgent） |
-| `list_capabilities` | MCP 能力清单 |
-
-### PR 协同（3）
-
-| 工具 | 说明 |
-|---|---|
-| `pr_submit` | 提交 PR（open → reviewed → merged/rejected 状态机入口；审计留痕） |
-| `pr_review` | 审阅 PR（approve/reject；suggested 置信态启发式产物，显式决策不被启发式覆盖） |
-| `pr_merge` | 🔴 合并 PR（merge_criteria 全过自动合并，未过走 HITL；branch→trunk 联动写回基线） |
-
-### 能力公地（6）
-
-| 工具 | 说明 |
-|---|---|
-| `commons_publish` | 能力发布（SkillScan 安全门） |
-| `commons_search` | 能力检索（标签/关键词/类型） |
-| `commons_invoke` | 能力调用（SkillScan 拦截 + HITL 确认） |
-| `commons_rate` | 调用后累积评分（0.0~1.0，防刷） |
-| `commons_retire` | 能力退役/恢复（强制 owner 确认） |
-| `commons_harvest_rule` | 从调用日志 + Refine 循环提炼质量规则候选 |
-
-### 后训流水线（17）
-
-> 📌 **能力边界**：本仓负责后训流水线的**编排与治理**（任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务）；**训练本身在外部执行环境进行，本仓不实现训练器**。
-
-| 工具 | 说明 |
-|---|---|
-| `model_register` | 注册训练后模型 endpoint |
-| `model_switch` | 灰度切换（percent<100 灰度，100 强制人审） |
-| `model_unregister` | 模型退役（可恢复，强制人审） |
-| `train_budget` | 训练预算控制（超预算人审续跑或终止） |
-| `train_submit` | 训练任务提交，数据+基座+算法+超参+预算→trainJobId |
-| `train_doctor` | 训练环境体检——CUDA/显存/框架/基座缓存四项报告 |
-| `corpus_export` | 训练语料导出三件套——规则（28 编号位 + reward_hint）+ 方法论锚点 + 六源样本（脱敏），带 HMAC 签名 |
-| `train_dryrun` | 训练 dry-run 预检——管线连通+显存估算+数据抽样+算力外推 |
-| `train_report` | 训练报告生成——数据/超参/曲线/eval 对比/量化四字段，归档可追溯 |
-| `train_status` | 训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询） |
-| `train_list` | 训练任务列表——按时间/状态/模型过滤（历史复盘与多任务管理） |
-| `train_diagnose` | 训练失败诊断——七类分类 + 上下文四源 + 修复处方，报告落盘 diagnose.json |
-| `train_serve` | 推理服务生命周期——从权重目录拉起 vLLM/Ollama/OpenAI 兼容端点（/health 探测 + 指数退避），启停重启状态四操作，启停记 train_serve 审计 |
-| `train_compliance` | 训练数据合规扫描——PII（手机号/身份证）+ 敏感字段（健康/财务）+ 企业专有名词（复用 redactor 红名单）；报告写训练集版本；严重级阻断提交；来源标记三分类 |
-| `train_deliverable` | FDE 训练交付包——五件聚合（配置模板+管道配置+eval 基线+运维手册+权重清单）打 zip + manifest + HMAC 签名；verify 校验完整性 + 环境兼容 |
-| `train_cloud` | 云 VM 执行面——注册云 VM（endpoint + 凭据引用走虚拟 key 边界，真实凭据不落明文）/ 列出 / 查状态 / 注销；远程 spawn 训练走 ssh 通道 + 分拣闸（敏感档拦上云）+ 失联止损 + 成本入预算 |
-| `router_slots` | 本地推理槽位态查询（占用 / 排队深度 / 各请求等待时长）+ 路由预览（任务×敏感度 → 去向决策 + routeReason）——运维可见，数据本地不出门 |
-
-### 验收（2）
-
-| 工具 | 说明 |
-|---|---|
-| `define_acceptance` | 任务附机器可判定验收条件（test/build/grep-absent/schema） |
-| `check_acceptance` | 跑登记的条件，返回结构化结果 |
-
-### 运维观测（17）
-
-| 工具 | 说明 |
-|---|---|
-| `health_check` | 运行环境健康检查（环境/配置/Hook/依赖） |
-| `snapshot_list` / `snapshot_restore` | 快照时间线 / 🔴 恢复（强制人审） |
-| `worklog_query` | 按 Agent/Workflow/周趋势查 AI 工作明细 + 进化四维趋势 |
-| `cost_query` | 成本审计——预算/各 Agent 实际消耗/超限记录 |
-| `daemon_status` | daemon 运行状态（PID/心跳，只读） |
-| `contribution_query` | 绩效数据导出——PR 权重 + 决策留痕 + 审计变更三源聚合，人/数字员工同标准，按 org 过滤（租户隔离） |
-| `device_register` | 设备上线注册（G9）：Ed25519 身份码验签 fail-closed + 设备类型 + 能力声明 |
-| `device_list` | 设备清单查询（G9）：租户/类型/能力过滤，在线态实时判定，只含已验签设备 |
-| `device_data_query` | 设备数据面授权读取（G10）：目录白名单（默认空=全拒 opt-in）→ 读取 → 脱敏管线 → 审计计量 |
-| `device_data_push` | 数据上行通道（G11）：采集声明校验（默认空=不上行）→ 脱敏 → AES-256-GCM 加密 WAL 暂存 + 游标续传 |
-| `connector_register` | 注册第三方连接器（G5b）：来源白名单准入（fail-closed）→ 注册表租户隔离落库 |
-| `connector_list` | 连接器发现（G5b）：类型/主机/能力过滤，与工具清单分列 |
-| `workflow_export` | workflow 模板导出（G1）：五件套 + 血缘元数据，跨租户剥离私域节点 |
-| `workflow_import` | 模板导入（G1）：三闸校验 + 血缘回流 + 本体合并（本地优先） |
-| `router_session_push` | router 过站 session 承接（T7）：exporter schema 校验（fail-closed）→ 多轮展开切窗/角色映射 → 脱敏本地落盘（幂等）→ usage 入 cost 台账 → key 维度 HMAC 挂链 |
-| `trace_reconcile` | 跨层证据对账——DSH session trace（Agent 自述）vs git diff（独立事实）vs logs 声明集三源比对，产出漏报/幻觉动作/瞒报四态差异清单 + 一致率；可选模型层回溯链（推理 → 模型版本 → train_job → datasetHash）。结果入 decision-log（kind=COVERAGE） |
+- **审计合规（11）**：`run_audit` `audit_file` `audit_data_change` `audit_trail` `audit_query` `ruleset_export` `list_rules` `data_sovereignty_report` `notify_session` `hitl_resolve` `data_push`
+- **反思沉淀（3）**：`get_think` `write_think` `read_think_md`
+- **知识库（7）**：`search_knowledge` `read_entity` `read_concept` `list_entities` `list_concepts` `read_lessons` `stats`
+- **本体数据（7）**：`create_entity` `create_concept` `update_entity` `delete_entity` `delete_concept` `validate_ontology` `ontology_import`
+- **评估优化（8）**：`evaluate_output` `run_ab_test` `promote_ab` `evaluate` `eval_suite` `optimize_skill` `refine` `loop_debug`
+- **FDE 编排（11）**：`fde_compose` `fde_interview` `fde_classify` `fde_quantify` `fde_derive` `fde_distill` `fde_deploy` `compose` `activate_workflow` `create_agent` `onboard_prompt`
+- **Workflow / Agent（12）**：`workflow_submit` `workflow_create` `workflow_update` `workflow_node_add` `workflow_diff_preview` `workflow_gaps` `route_workflow` `agent_identity` `team_create` `team_broadcast` `list_agents` `list_capabilities`
+- **PR 协同（3）**：`pr_submit` `pr_review` `pr_merge`
+- **能力公地（6）**：`commons_publish` `commons_search` `commons_invoke` `commons_rate` `commons_retire` `commons_harvest_rule`
+- **后训流水线（17）**：`model_register` `model_switch` `model_unregister` `train_budget` `train_submit` `train_doctor` `corpus_export` `train_dryrun` `train_report` `train_status` `train_list` `train_diagnose` `train_serve` `train_compliance` `train_deliverable` `train_cloud` `router_slots`
+- **验收（2）**：`define_acceptance` `check_acceptance`
+- **运维观测（17）**：`health_check` `snapshot_list` `snapshot_restore` `worklog_query` `cost_query` `daemon_status` `contribution_query` `device_register` `device_list`
+- （续）`device_data_query` `device_data_push` `connector_register` `connector_list` `workflow_export` `workflow_import` `router_session_push` `trace_reconcile`
 
 
 ## 参考
