@@ -27,13 +27,13 @@
 > | 产品结论 / 设计哲学 / 论证 | [PHILOSOPHY](./PHILOSOPHY.md) | 叙事·论证 | 结论自带的最小论证可以，行业案例展开留给 VALIDATION | ≤617 行 |
 > | 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 25 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 | （SECURITY 面） |
 > | 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 | ≤241 行 |
-> | 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 | CHANGELOG ≤156 行 |
+> | 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 | CHANGELOG ≤158 行 |
 > | 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP | ≤1444 行 |
 > | 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 七大接口面 + 104 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） | ≤231 行 |
 > | 已知限制 / 诚实边界 | [LIMITATIONS](./LIMITATIONS.md) | 参考 | 各文档披露「已知风险」时引用 LIMITATIONS，不展开重复 | （LIMITATIONS 面） |
 > | 任务流程 / 操作步骤 / 发版 SOP | [SKILL/](../SKILL/) · [changelog/releasing/](./changelog/releasing/) | 任务流程 | 「干什么用什么步骤」——写给执行者（人/Agent）照着做；深度参考链接 docs/，不复制 | （任务面） |
 > | 面向使用者的操作说明 | [README](../README.md) · [HANDBOOK](./HANDBOOK.md) | 用户手册 | 永不含代码库内部细节；开发者向操作说明进 DEVELOPMENT/guides | HANDBOOK ≤754 行 |
-> | 全局导航 / 文档间分工 | [WIKI](./WIKI.md)（本表） | 导航 | 只做索引与分工声明；内容本体仅「三层嵌套架构图 / 运行时数据流」两处为已声明例外（见 §四） | ≤383 行 |
+> | 全局导航 / 文档间分工 | [WIKI](./WIKI.md)（本表） | 导航 | 只做索引与分工声明；内容本体仅「三层嵌套架构图 / 运行时数据流」两处为已声明例外（见 §四） | ≤385 行 |
 > | 致谢 / 外部出处（基石 · 生成伙伴 · 思想之源） | [THANKS](./THANKS.md) | 参考 | 只记「谁在哪个设计决策上留下痕迹」，不写能力声称（能力声称的唯一真相源是实现面）；一行制收录 | ≤159 行 |
 > | FDE 方法论（四阶段十二步） | [FDE/GUIDE.md](../FDE/GUIDE.md) | 用户手册 | 交付物本体（模板/清单/话术）优先保留，论证段归档 | ≤1177 行 |
 > | 开发者内部机制 | [DEVELOPMENT](./DEVELOPMENT.md) | 参考 | 内部实现与数据架构；维护者对账数据归档不进正文 | ≤734 行 |
