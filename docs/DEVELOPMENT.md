@@ -674,7 +674,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 - daemon 巡检可检测「同一 target 被两个节点同时 acting_on」→ 告警
 - 此模式不需要额外基础设施——一个约定 + 一个 Markdown 表就够
 
-> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md)（+ Memory / State 条目）/ [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)（Collision detection 条目）
+> 📖 [cobusgreyling · loop-engineering](https://github.com/cobusgreyling/loop-engineering) — [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md) / [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)
 
 
 ## 十三、激活链扩展指南

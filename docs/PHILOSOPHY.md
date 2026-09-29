@@ -266,7 +266,7 @@ sofagent 用三条制度把「判断权不可外包」落成防线，与「反�
 
 sofagent 的审计能力 Gate + 硬规则正是这类锚点：审计只信 git diff 一手证据（不容争辩），fde.md 业务底线不可被 Agent 覆盖（冻结节点），问题定义与验收终裁权留在人类（图谱外的判断）。人类终裁因此不只是一句宣言，而是一组**写死在优化器碰不到之处的锚点**。
 
-> 📖 来源：Goodhart, C.A.E. (1975). *Problems of Monetary Management: The U.K. Experience*. Reserve Bank of Australia；Perez, C.E. (2026). *From Loop Engineering to Graph Engineering?* IntuitionMachine. https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c
+> 📖 [C.A.E. Goodhart · Problems of Monetary Management: The U.K. Experience](https://www.rba.gov.au/publications/confs/1975/goodhart.html) · [C.E. Perez · From Loop Engineering to Graph Engineering?](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)
 
 ### 拒绝权——不确定就不输出
 
@@ -282,7 +282,7 @@ sofagent 的审计能力 Gate + 硬规则正是这类锚点：审计只信 git d
 
 **边界**：拒绝权只对 Agent 自己的产出生效，不构成对人类提问的推辞；且拒绝必须连带「缺什么 + 谁来补」的补齐路径，否则退化为不作为。
 
-> 📖 来源：Databricks《Genie One》发布新闻稿（2026-06-16）——"When context is missing, AI fills the gap with guesses. And in finance, operations, or sales, a confident wrong answer is often worse than no answer at all."（CEO Ali Ghodsi：「今天的多数企业 AI 只是带着虚假自信在猜。」）
+> 📖 [Databricks · Genie One 发布](https://www.databricks.com/blog) —— "When context is missing, AI fills the gap with guesses."（CEO Ali Ghodsi）
 
 ### 中立性——运动员不能兼任裁判
 
@@ -353,7 +353,7 @@ sofagent 的三条中立性原则：
 
 ### 为什么世界模型优先于语言模型
 
-> 📖 来源：Palantir 操作型本体论系列研报（2026-07）。
+> 📖 [Palantir · Operational Ontology 系列](https://www.palantir.com/docs/foundry/ontology/overview)
 
 RAG（检索增强生成）检索的是文本片段，不是业务语义。「订单」在 CRM、ERP、物流系统中指向完全不同的对象，文本检索无法消解这种冲突——这是 LLM 在企业场景中「知道但做不到」的根源。
 
@@ -374,7 +374,7 @@ RAG（检索增强生成）检索的是文本片段，不是业务语义。「�
 
 一句话：**对象和链接是企业的名词，动作是企业的动词——光有名词不算建模，能对名词做什么才算。** 这正是 sofagent v1.3.1 Ontology 本体数据的设计原则——Action Type 作为一等公民，与审计规则对齐，Agent 调用必经 Ontology 定义。
 
-> 📖 来源：Palantir Foundry 官方 Ontology 建模指引（建模重心从名词转向动词）
+> 📖 [Palantir · Foundry Ontology 建模指引](https://www.palantir.com/docs/foundry/ontology/objects)
 
 ### 约束层也是「成功共识」的容器
 
@@ -385,7 +385,7 @@ FDE 一线观察指出：AI 项目失败的最根因往往不是技术，而是�
 
 对约束层的含义两条：① **注入的输入源在业务侧**——约束应由业务口径沉淀而来，而非工程师拍脑袋写死在代码里（FDE 进场梳理正是这条的工程实现）；② **争议的正解通常是拆分而非统一**——「一个概念被迫服务两个目的」时拆成两个标签，双方的定义就都对。与上文合读即得**定义权双面**：系统侧管「什么算成功」（可验证、可审计、可复核），业务侧管「语义是什么」（业务裁决、IT 不越位）。
 
-> 📖 来源：企业本体落地系列④ 本体治理：业务部门深度参与（老李说数，2026-09-18）
+> 📖 [老李说数 · 企业本体落地系列④：本体治理](https://mp.weixin.qq.com)
 
 ### 飞轮闭环——从一次交付到下一代模型
 
@@ -506,7 +506,7 @@ FDE 的核心是三个能力：
 **FDE 的双重身份——「人肉反向传播」**。Palantir 把 FDE 在内部定位为 "human equivalent of backpropagation"（产品研发的人肉反向传播）——既是客户现场的交付工程师，也是产品研发的反馈源。客户同时在为交付与产品研发买单。这一判断解释了为什么 FDE 天然是双向的：每次现场交付都是对产品的一次梯度信号——「这里缺什么原语」「那个口径有分歧」「这个动作没人能定义清楚」。
 sofagent 把这条双向职责**机制化**——进化能力（daemon 巡检 + think.md 反思 + Dream Cycle 知识提取）让经验回流不依赖个人自觉，FDE 离场后梯度信号仍在跑。
 
-> 📖 来源：Palantir 官方博客（Deployment Strategist 系列）
+> 📖 [Palantir Blog · Deployment Strategist 系列](https://blog.palantir.com)
 
 FDE 入场时，不搭交互页面。做的事是：梳理 workflow 节点 → 定义输出终点 → 注入 AI 知识库。但产品化之后，**用户自己也能做**——这份文档就是教你怎么做。
 

@@ -705,7 +705,7 @@ FDE 部署不是「装完就全自动」。loop-engineering 社区建立了一�
 
 **核心原则**：自动化程度越高，需要的工程判断越强。L1 是必修课——在让 Agent 动手之前，先学会读它写的报告。
 
-> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [loop-design-checklist.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/loop-design-checklist.md)
+> 📖 [cobusgreyling · loop-engineering](https://github.com/cobusgreyling/loop-engineering) — [loop-design-checklist.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/loop-design-checklist.md)
 
 ## FDE 部署反模式
 
@@ -718,6 +718,6 @@ loop-engineering 社区总结了 10 个生产反模式，以下 4 个直接适�
 | 4 | L3 之前没有 L1 质量 | 第一天就自动 PR，理解债务爆炸 | 强制 L1 观察期 |
 | 7 | 无 kill switch | 周末告警疲劳、预算超支 | `loop-pause-all` 标签或 `STATE.md` 标志位 |
 
-> 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [anti-patterns.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/anti-patterns.md)
+> 📖 [cobusgreyling · loop-engineering](https://github.com/cobusgreyling/loop-engineering) — [anti-patterns.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/anti-patterns.md)
 
 > 大半年 Agent 平台实战笔记（OpenClaw / WorkBuddy / Claude Code / Codex）。如有更好的用法，欢迎开 Issue。
