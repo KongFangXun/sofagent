@@ -29,7 +29,7 @@ bash tools/train/train-env-init.sh "$SOFAGENT_HOME/data" quickstart-demo
 
 实测输出（Mac 无 CUDA → Metal 降级分支）：
 
-```
+```text
 [sofagent] 训练环境一键安装（train env init）→ /tmp/sofagent-qs/home/data/train/quickstart-demo/train-env.json
   ✓ python-detect: Python 3.13.12
   ✓ gpu-detect: Apple A18 Pro · Metal 4（降级分支）

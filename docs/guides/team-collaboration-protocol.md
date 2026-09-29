@@ -232,7 +232,7 @@ class IntentBus {
 
 ### 3.2 裁决顺序（trust → 时间戳 → 显式优先级）
 
-```
+```text
 裁决优先级（从高到低）：
   1. trust 值高者胜（team.yml 声明的 0.0–1.0）
   2. trust 相同时，时间戳早者胜（先到先得——避免活锁）
@@ -280,13 +280,13 @@ function resolveConflict(parties: ConflictParty[]): ConflictParty {
 
 ---
 
-## 4. 反馈放大的团队级聚合路径
+## 五、反馈放大的团队级聚合路径
 
 ### 4.1 核心链路
 
 一次人工纠正（或 Agent 自主确认）→ 团队级 think.md / knowledge 写入：
 
-```
+```text
 单 Agent 纠正
   → 写入该 Agent 的 think.md（单 Agent 学习，v1.3.2 已有能力）
   → 判定为「团队可复用经验」？(quality_rule / domain_rule)
@@ -308,7 +308,7 @@ function resolveConflict(parties: ConflictParty[]): ConflictParty {
 
 Refine Agent 的质量规则集有三来源（见交付 4）。其中「团队反馈放大」来源的链路：
 
-```
+```text
 Agent A 跑 Refine → 发现质量缺陷 → L4 修复 → 审计通过
   → Agent A 广播 intent.share.quality_rule { rule: "工具描述必须带 example" }
   → team-manager 聚合 → 写入 team-state.feedback[]
@@ -318,11 +318,11 @@ Agent A 跑 Refine → 发现质量缺陷 → L4 修复 → 审计通过
 
 ---
 
-## 5. 三包依赖方向
+## 六、三包依赖方向
 
 ### 5.1 当前依赖拓扑（v1.3.2）
 
-```
+```text
                         ┌─────────────┐
                         │   @core     │  (automerge, atomic-write, federation)
                         └──────┬──────┘
@@ -419,7 +419,7 @@ export class FederatedTeamSyncChannel implements TeamSyncChannel {
 
 v1.3.2 workflow 批量生成的 sub-agent 需要自动加入团队。挂点在 `workflow-parser.ts` 的 `resolveAgent` 之后：
 
-```
+```text
 parseWorkflowToSubAgents()
   → toSubAgentConfigs()
     → resolveAgent()
@@ -465,7 +465,7 @@ if (consecutivePassCount >= l5Config.convergeThreshold) {
 
 ### 7.3 质量规则集三来源
 
-```
+```text
 quality-rule-set 加载顺序：
   1. 内置模板（硬编码——工具描述必须带 example / 输出不超 500 字 / few-shot ≥ 2 条）
   2. 客户 FDE 回写（delivery-report.md → 规则化解析）
@@ -494,7 +494,7 @@ quality-rule-set 加载顺序：
 
 进化闭环的 evaluation 步骤复用 v1.3.1 Benchmark 三件套：
 
-```
+```text
 freezeBenchmark(def)           // benchmark-designer.ts:172 冻结基线
   → Candidate 应用后 evaluateCase()  // case-evaluator.ts 重跑评分
     → appendEvaluationRecord(input)  // evaluation-log.ts:133 HMAC 链落盘

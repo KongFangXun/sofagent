@@ -46,7 +46,7 @@ deepagents 早期启发了编排模块设计，后因三个**不可逆硬伤**�
 
 ### 3.1 整体架构：Driver + Worker
 
-```
+```text
 driver（主进程）          worker（子进程，每步一个）
   ├─ 解析 CLI 参数          ├─ 读 prompt 模板
   ├─ 建 run 目录            ├─ buildSystemPrompt
@@ -310,7 +310,7 @@ export SOFAGENT_LLM_B="deepseek-v4-pro"
 
 ### 完整链路（5 步）
 
-```
+```text
 ① a-check       (A 新 session)    独立跑 12 视角审查     → check-a.md
 ② b-check       (B 新 session)    独立跑 12 视角审查     → check-b.md    [与①并行]
 ③ a-consolidate (A session)       合并 A/B 报告          → findings.md + result.md
@@ -322,7 +322,7 @@ export SOFAGENT_LLM_B="deepseek-v4-pro"
 
 ### 目录结构
 
-```
+```text
 FORGE/SKILL/fresh-eyes-loop/
 ├── SKILL.md              # loop 定义（frontmatter + 概述）
 ├── loop.md               # 循环 SOP（角色/轮次协议/产物 schema/停止条件）
@@ -500,7 +500,7 @@ sofagent 的编排模块天然就是一张**控制图（Control Graph）**——
 
 **Work Graph 示例**（行业调研任务，v1.2.3 Planner 落地后自动生成）：
 
-```
+```text
 START → plan（拆解："调研 AI 笔记产品"）
      → engineer-search（并行：竞品 A）
      → engineer-search（并行：竞品 B）

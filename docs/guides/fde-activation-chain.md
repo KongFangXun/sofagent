@@ -54,7 +54,7 @@ FDE 诊断完成（交付物就绪）后，四阶段依次推进：
 
 FDE 诊断完成后，以下文件就绪：
 
-```
+```text
 .sofagent/
 ├── data/
 │   ├── knowledge/

@@ -38,7 +38,7 @@
 
 ## 轮询状态机
 
-```
+```text
 pending ──→ running ──→ succeeded
    │           │    └──→ failed
    │           └────────→ cancelled
