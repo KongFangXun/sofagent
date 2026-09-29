@@ -335,7 +335,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 > 本表是全部 25 条规则的文档级单一事实源（v1.3.8 口径，复核规则未变；代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已于 v0.99.4 合并入 A11、E3 已于 v1.2.5 并入 A11，编号不再使用。
 
-**默认规则 17 条（始终生效；A18 自 v1.1.5 提升、A20-A23 自 v1.2.5 新增）**：
+**默认规则 17 条（始终生效）**：
 
 | 编号 | 名称 | 检测什么 | 判定 |
 |------|------|---------|:--:|
@@ -559,7 +559,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。
 >**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent-audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。
 
-> ⚠️ **超大 diff 的 spill 落盘面（v1.3.9 能力 · v1.5.6 补口 · 如实披露）**：单文件 diff 超 5MB 时引擎溢出到磁盘再分块读回（`engine/core/src/diff-parser.ts`）。落盘位置经 `getDataDir()` SSOT 解析链（显式 `SOFAGENT_DATA` > 环境变量 > `~/.sofagent/data/`），**恒在引擎数据目录而非被审仓库内**——v1.4.3 已修复旧实现「spill 落 CWD 会被对方仓库 commit 卷入」的跨仓泄漏面；
+> ⚠️ **超大 diff 的 spill 落盘面（v1.3.9 能力 · 补齐计划见 ROADMAP · 如实披露）**：单文件 diff 超 5MB 时引擎溢出到磁盘再分块读回（`engine/core/src/diff-parser.ts`）。落盘位置经 `getDataDir()` SSOT 解析链（显式 `SOFAGENT_DATA` > 环境变量 > `~/.sofagent/data/`），**恒在引擎数据目录而非被审仓库内**——v1.4.3 已修复旧实现「spill 落 CWD 会被对方仓库 commit 卷入」的跨仓泄漏面；
 >目录权限 0700（spill 可能含密钥类 diff 内容）。读回上限 64MB：以内全量扫描（oversized 不置位，无审计盲区），超限截断置位并注入 WARN，落盘件保留供按需取回。**残余面**：spill 文件含明文 diff 内容（sanitize 管道不覆盖 spill 原文），强合规场景建议将 `~/.sofagent/data/spill/` 纳入加密卷覆盖范围并定期清理。
 
 > ⚠️ **Webhook SSRF——DNS 解析复验与残余 TOCTOU（v1.4.5 披露）**：webhook 推送 URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped IPv4 全段拒绝）之外，新增**DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，实际解析到的 A/AAAA 记录任一落在私网段仍拒绝——堵「域名看着公共、解析结果内网」的 DNS rebinding 式 SSRF。

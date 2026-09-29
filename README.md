@@ -129,7 +129,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 - **企业 AI 落地的瓶颈不是模型，是部署**——MIT NANDA《生成式人工智能的鸿沟》：95% 的企业 GenAI 项目没能产生能写进财务报表的价值，而 FDE 岗位发布量一年涨了 729%（核验见 [VALIDATION](./docs/VALIDATION.md)）
 - **完整来自组合**——DSH 解决「能干活」，sofagent 解决「持续干」，两者合起来才是完整的 FDE Harness（见下一章「多平台挂载」的 DSH 档）
-- **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3，**能力型 harness 数据**——提升的是任务得分与 token 效率，与治理型约束层的可靠性收益非同一量纲）：同一模型仅优化外层 Harness 可显著提升任务完成率。核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)（写面审计覆盖：权重面与 skill 面已交付；prompt / memory 两面排期 v1.5.9）
+- **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3，**能力型 harness 数据**——提升的是任务得分与 token 效率，与治理型约束层的可靠性收益非同一量纲）：同一模型仅优化外层 Harness 可显著提升任务完成率。核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
 - **能力可迁移，绝不绑死单一平台**——约束层平台无关（可迁移的是约束资产与审计兜底，注入强度仍按宿主分档：DSH/OpenClaw 硬注入，其余建议性注入 + git hook 兜底——见〈多平台挂载〉档位表），方法论跟着业务走、不跟着平台走
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 工作流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
@@ -192,7 +192,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **版本阶段（装前必读）**：sofagent 处于**阿尔法施工期**（v1.x）——功能面快速变动，**不承诺接口稳定**，跨版本升级前先读 [CHANGELOG](./CHANGELOG.md)。自 **v2.0.0** 起进入**贝塔阶段**。
 
-对应的 npm 发布通道策略：**npm 不做 dist-tag 分道，`latest` 即最新版**——`npx @sofagent/audit` 默认拉到当前最新版本，无需指定标签（版本号承载阶段语义：v1.x 阿尔法施工期 / v2.0.0 起贝塔期）。v1.5.2 曾试行施工期 alpha 分道、同日经作者拍板撤策（复杂度大于收益），`alpha` tag 保留为历史发布痕迹不维护。
+对应的 npm 发布通道策略：**npm 不做 dist-tag 分道，`latest` 即最新版**——`npx @sofagent/audit` 默认拉到当前最新版本，无需指定标签（版本号承载阶段语义：v1.x 阿尔法施工期 / v2.0.0 起贝塔期）。`alpha` tag 保留为历史发布痕迹不维护。
 
 > ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户**写入侧**隔离尚未落地（v0 已交付查询侧隔离：orgId 过滤 + data/<tenant>/ 路径地基，见 LIMITATIONS）。
 >强合规场景建议 CI 兜底 + 文件权限锁（`chmod 400 .sofagent/config.yml`——辅助层，对同用户进程无效，见 [LIMITATIONS §三](./docs/LIMITATIONS.md)），不要用单机默认配置直接上生产。

@@ -215,8 +215,8 @@ writes promotion and distilled reflection back into the deliverable.
 
 **Release stage (read before installing)**: sofagent is in its **Alpha construction period** (**v1.x**) — the feature surface moves fast and **no interface stability is promised**; read the [CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
 
-The matching npm release-channel policy: **no dist-tag split — `latest` is the newest version** — `npx @sofagent/audit` pulls the current latest by default, no tag needed (version numbers carry the stage semantics: v1.x alpha construction period / beta from v2.0.0). A construction-period alpha split
-was trialed in v1.5.2 and reverted by author decision the same day (complexity outweighed the benefit); the `alpha` tag remains as a historical release trace and is not maintained.
+The matching npm release-channel policy: **no dist-tag split — `latest` is the newest version** — `npx @sofagent/audit` pulls the current latest by default, no tag needed (version numbers carry the stage semantics: v1.x alpha construction period / beta from v2.0.0).
+The `alpha` tag remains as a historical release trace and is not maintained.
 
 > ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the
 >data/<tenant>/ path foundation — see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 400 .sofagent/config.yml` — an auxiliary layer, ineffective against same-user processes; see [LIMITATIONS §3](./docs/LIMITATIONS.md)); do not put the single-machine
