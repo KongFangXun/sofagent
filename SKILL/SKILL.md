@@ -192,7 +192,7 @@ solves:
 | Workflow/Agent（12） | `workflow_submit` `workflow_create` `workflow_node_add`（定时触发）`workflow_diff_preview` `workflow_gaps`（缺口查询）`route_workflow` `agent_identity` |
 | 能力公地（6） | `commons_publish` `commons_search` `commons_invoke` |
 | PR 协同（3） | `pr_submit` `pr_review` `pr_merge`（合并强制 merge_criteria，未过走 HITL） |
-| 后训流水线（17） | `model_register` `model_switch`（灰度）`train_submit` `train_budget`（超预算等人审）`train_status` `train_diagnose`（失败诊断）`train_compliance`（合规闸门）`train_deliverable`（FDE 交付包）…（全 17 个见 [API](../docs/API.md)） |
+| 后训流水线（17） | `model_register` `model_switch`（灰度）`train_submit` `train_budget`（超预算等人审）`train_status` `train_list` `train_diagnose`（失败诊断）`corpus_export`（语料导出）`train_compliance`（合规闸门）`train_deliverable`（FDE 交付包）…（全 17 个见 [API](../docs/API.md)） |
 | 验收（2） | `define_acceptance` `check_acceptance` |
 | 运维观测（17） | `health_check` `snapshot_restore`（强制人审）`worklog_query` `cost_query` `daemon_status` `device_register` `connector_register` `trace_reconcile`（跨层证据对账）…（全 17 个见 [API](../docs/API.md)） |
 
