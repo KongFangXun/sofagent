@@ -58,7 +58,7 @@
 - ❌ Views → Ledger：禁止反向写回（代码级强制）
 - ❌ 任何层 → 历史条目覆写：禁止（append-only 不变量）
 
-> 📖 此图的 v1.2.1 原始出处及交付细节见 [changelog v1.2.1 §P0b](./changelog/v1.2/v1.2.1.md)。
+> 📖 此图的 v1.2.1 原始出处及交付细节见 [changelog v1.2.1 §P0b](../../changelog/v1.2/v1.2.1.md)。
 
 ---
 

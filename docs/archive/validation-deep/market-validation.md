@@ -78,7 +78,7 @@ Roadmap 含 AgentTeams（协调者自动调度多专家）与「Self-evolution �
 1. **赛道验证（最强）**：腾讯云亲自下场做「多用户 + 多 Agent + 自托管 + 专家体系」同形态产品（第三方评述直接称「开源版 WorkBuddy」——官方未如此宣称），且两个月 5k Star——多用户多 Agent 自托管助手的市场真实性被大厂背书；MIT + 腾讯云 org 的组合被评述认为「license 是战略变更后存活的部分」。
 2. **治理空白实证（价值从「竞争差异化」修正为「集成价值」）**：GitHub 实证 Octop **无 append-only 审计链、无决策留痕、无 HMAC/防篡改日志、无 RBAC 矩阵（仅 admin 两级）、无 SSRF 专项、无置信度/校准概念**——其唯一「决策治理」是 **tool approval（风险工具人工审批）**+ shell guardrail allow/deny 规则 + PII 出 workspace 前脱敏。
   因为层位不同，这不是竞争劣势而是**sofagent 治理面的接入价值实证**：此类平台跑企业数字员工时，审计链/决策留痕/判定底座恰是其缺失的治理层——与 WeKnora（进料件）同构，Octop 类平台是治理面的**潜在宿主/被治理对象**，集成叙事成立而竞品叙事不成立。
-3. **功能对照与 Roadmap 警示**：Octop 的 IM 九通道、ACP 双向、远程桌面、NAS 桌面端是本仓可对照的功能面清单；其 Roadmap「Self-evolution（自动从日常对话蒸馏可复用 skill）」**无准入门**——对照本仓 [v1.5.8](./changelog/v1.5/v1.5.8.md) 来源真实性门与晋级判据，自动蒸馏无门控正是本仓治理面要防的形态。**对外叙事纪律**：不与 Octop 比功能清单（层位不同，比了就是降维到助手赛道）；
+3. **功能对照与 Roadmap 警示**：Octop 的 IM 九通道、ACP 双向、远程桌面、NAS 桌面端是本仓可对照的功能面清单；其 Roadmap「Self-evolution（自动从日常对话蒸馏可复用 skill）」**无准入门**——对照本仓 [v1.5.8](../../changelog/v1.5/v1.5.8.md) 来源真实性门与晋级判据，自动蒸馏无门控正是本仓治理面要防的形态。**对外叙事纪律**：不与 Octop 比功能清单（层位不同，比了就是降维到助手赛道）；
   sofagent 的叙事锚点是「数字员工被治理」，Octop 们的存在恰恰论证「数字员工需要被治理」这一前提的市场规模。**架构可学习两处**：单进程重启安全设计（无外部 broker、状态全量 DB 重建——一体机单机形态的同款取舍）与 connectors OAuth+MCP 双通道（降级链路：无 OAuth 回调环境自动降级为授权页取 Key）。
 
 > 📖 来源：[TencentCloud/Octop（GitHub，MIT）](https://github.com/TencentCloud/Octop)（README + 提交记录 + Roadmap，2026-09-27 取证）；[第三方评测](https://clauday.com/zh/article/4148535f-8555-4e7f-a8b5-a1112a805c1f)（「multi-user plus self-hosted plus PII redaction means somebody thought about what happens when six
@@ -102,7 +102,7 @@ OpenAI FDE 负责人 Colin Jarvis 总结过四件「反人性」的事，用来�
   ——多数项目停在 catalog 或 KG 底座」。
 这印证 sofagent 的两件不可外包资产：本体建模方法论（FDE 六引擎）+ Action 治理（审计模块）。
 
-**混合检索实测参考**：Semantica 公开基准——同任务上下文 token 38k→12k（省约 60%）、HotpotQA 准确率 82.1%→89.2%——「向量召回候选 + 图谱遍历精化」两路合一的价值有实测背书。已登记为 sofagent 本体层升级候选（[v1.4.4 第七章](./changelog/v1.4/v1.4.4.md)第十四项，v1.5.0 双时态联动评估）。
+**混合检索实测参考**：Semantica 公开基准——同任务上下文 token 38k→12k（省约 60%）、HotpotQA 准确率 82.1%→89.2%——「向量召回候选 + 图谱遍历精化」两路合一的价值有实测背书。已登记为 sofagent 本体层升级候选（[v1.4.4 第七章](../../changelog/v1.4/v1.4.4.md)第十四项，v1.5.0 双时态联动评估）。
 
 **Harness 工程赛道补充（首轮扫描收尾）**：AutoHarness（北卡 UNC AIMING Lab，6/8/14 步治理管线三档 + shadow mode 观察期模式）验证「决策引擎跑在模型上下文之外——提示注入无法覆盖 deny」的工程共识，其 shadow mode（只观察不阻断的灰度上线）与 sofagent「只提示不阻断」审计哲学同源；harness-kit（约束 YAML + doom loop 检测 + 上下文预算 <40% 利用率）的循环检测与 FORGE 重复率熔断同源。两者均为轻量 CLI 形态，与企业级 FDE 部署面无正面重叠。
 

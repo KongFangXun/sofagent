@@ -41,7 +41,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 行业一派主张「去掉人」（L4 Hill-Climbing 去人化）。sofagent 反其道——human-in-the-loop 不是能力缺陷，而是**可靠优先于自主**的差异化优势。
 
-人在 loop 中可尽量简单（高风险才人工确认，常规受信自动执行，见 [FORGE 四节点状态机](./guides/loop-development.md#四节点状态机v113)），但**必须存在**——主体性护栏不可外包（PHILOSOPHY §四）。这与「约束层永远在线 + 审计硬证据」同源：可靠不是靠更聪明的模型，靠「人在关键处 + 机器在每处」。
+人在 loop 中可尽量简单（高风险才人工确认，常规受信自动执行，见 [FORGE 四节点状态机](../../guides/loop-development.md#四节点状态机v113)），但**必须存在**——主体性护栏不可外包（PHILOSOPHY §四）。这与「约束层永远在线 + 审计硬证据」同源：可靠不是靠更聪明的模型，靠「人在关键处 + 机器在每处」。
 
 ### 90/10 价值分层 → 知行合一框架
 
@@ -63,14 +63,14 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 a16z「人比软件便宜」判断与 90/10 分层同频；七法则中 Loops（guard edge retryCount<3）/ Evals（25 条规则=Reality Anchor）/ 冗员（审计拦改测试）五条本仓原生具备。十项完整映射表见归档。
 
-> 📚 完整映射表：[归档](./archive/validation-digest/README.md)
+> 📚 完整映射表：[归档](../validation-digest/README.md)
 
 ### 红杉 Neo-Lab / Sovereign AI 四层主权
 
 - **「主权是光谱不是开关」**——红杉说绝大多数公司该待在中间档（开源基座微调 + 核心场景自有模型 + 长尾外调），别一上来就搞最重的全量训练。这与 sofagent 的「通用模型路由不自研——企业挂第三方 model router，只保留数据主权路由 + 注册/灰度/退役」（v1.3.6 已定）完全同构。
 - **「先建评测集，再谈微调」**——红杉的落地顺序与 sofagent 的 Benchmark 先行 + `define_acceptance` 机器可判定验收一致：没有业务评测的微调全是瞎调。
 
-**四层主权 → sofagent 落点**（商业侧定位详见 [v1.4.0](./changelog/v1.4/v1.4.0.md) / [v1.4.7](./changelog/v1.4/v1.4.7.md)）：数据主权 = ontology + 审计（已具备）；模型适配 = 后训模块 v1.4.x；评测迭代 = Benchmark + MLflow；部署 = 本地权重 + 灰度切换 + 审计 + 回滚——「权重 ≠ 主权」，「能跑模型」不等于「能管住模型」。
+**四层主权 → sofagent 落点**（商业侧定位详见 [v1.4.0](../../changelog/v1.4/v1.4.0.md) / [v1.4.7](../../changelog/v1.4/v1.4.7.md)）：数据主权 = ontology + 审计（已具备）；模型适配 = 后训模块 v1.4.x；评测迭代 = Benchmark + MLflow；部署 = 本地权重 + 灰度切换 + 审计 + 回滚——「权重 ≠ 主权」，「能跑模型」不等于「能管住模型」。
 
 ### 硅基员工论：Org Graph 与 Ontology Runtime
 

@@ -10,7 +10,7 @@
 
 Ontology 的本质是「**翻译而非统一**」——在多个异构 Agent / 系统之上建立共同参照系，让彼此能对话，同时保留各系统内部语境独立；它 ≠ 数据模型 / ≠ ER 图 / ≠ 知识图谱（知识图谱只能查不能操作，Ontology 还能在对象上**触发操作**）。核心关键词是「操作」而非「数据」。「本体 = 运行时语义层」——它是在 Agent 跑任务时实时提供「谁依赖谁、谁能看什么、能触发什么」的语义上下文，是介于模型与业务系统之间的**活的中间层**。
 
-> sofagent 设计决策（本体数据 = GitHub 生长树）见 [ARCHITECTURE §三](./ARCHITECTURE.md#本体数据--github-生长树核心设计原则)
+> sofagent 设计决策（本体数据 = GitHub 生长树）见 [ARCHITECTURE §三](../../ARCHITECTURE.md#本体数据--github-生长树核心设计原则)
 
 ### 语义层交换标准：Apache Ossie
 
@@ -35,7 +35,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 
 > 💡 **协议 Adapter 封装**：中间件应在底层封装 MCP / A2A / ACP 协议差异，上层语义层（Ontology / Action Type）不感知底层协议——对齐 sofagent「合的框架」定位：企业换 Agent 平台，约束与审计不动。
 
-> 💡 **产品化视角（控制平面）**：上面「企业换 Agent 平台，约束与审计不动」就是产品化时**控制平面打法**的技术根——底层 Agent 智能随便换，治理与真相永远在 sofagent 一侧。产品化的完整展开（dashboard 只读视图 + MCP 作桥）见 [设计哲学 §六 产品化哲学](./PHILOSOPHY.md#产品化哲学控制平面与-mcp--dashboard)。
+> 💡 **产品化视角（控制平面）**：上面「企业换 Agent 平台，约束与审计不动」就是产品化时**控制平面打法**的技术根——底层 Agent 智能随便换，治理与真相永远在 sofagent 一侧。产品化的完整展开（dashboard 只读视图 + MCP 作桥）见 [设计哲学 §六 产品化哲学](../../PHILOSOPHY.md#产品化哲学控制平面与-mcp--dashboard)。
 
 > 💡 **实现参考**：指令层用 Jinja2 变量槽渲染 `prompts/`（把企业规则注入为可填充模板）；校验层用 JSON Schema 三步校验（格式 → 完整性 → 约束）；经验法则——首次因 AI 格式问题排查超 1 小时，就该上校验层（把概率性输出收口到确定性 schema）。
 
@@ -43,7 +43,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 
 行业五层（配置/知识/指令/校验/编排）映射本仓三层（约束层/知识层/编排层）；关键同构=五层里仅指令层直接调 AI，本仓同样只有知识/指令承载概率性、校验编排全在确定性引擎。逐层映射表与消歧说明见归档。
 
-> 📚 完整映射表：[归档](./archive/validation-digest/README.md)
+> 📚 完整映射表：[归档](../validation-digest/README.md)
 
 ### AI 原生操作系统（AOS）四大基础设施映射
 
@@ -69,7 +69,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 
 ### 综合行业对标
 
-> 完整行业对标（a16z 七法则 / Ontology Runtime 六组件 / 工具网关 / MoA 四层 / AI to B 三层基建 / 自主级别 L1-L3 / 贝恩控制面）统一见本文件 §一~§四及 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
+> 完整行业对标（a16z 七法则 / Ontology Runtime 六组件 / 工具网关 / MoA 四层 / AI to B 三层基建 / 自主级别 L1-L3 / 贝恩控制面）统一见本文件 §一~§四及 [ROADMAP · 行业印证](../../ROADMAP.md#行业印证)。
 
 ### 企业级 Agent 的确定性执行底线
 
@@ -86,14 +86,14 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 **Loop 是 Graph 的特例**（包含关系，非替代）。边界有两个方向——先判**该不该建**（入场判据），再判**该不该升**（升级判据）：
 
 **入场判据——三适合条件**（任务同时满足三条才值得建 Loop，否则一次性 Agent 调用就够）：一、**重复发生**——同一任务会反复出现（fresh-eyes 审查每版发版都跑；只跑一次的一次性分析不建 Loop）；二、**完成标准清晰**——「做完」能被独立判定（exit 0 / 测试数对账 / verdict PASS；「把文档写好点」这类主观目标先定义 Rubric 或二元清单，定义不出来不建 Loop）；
-三、**token 成本可扛**——单轮成本 × 预期轮数在预算内（FORGE 三层熔断 + [预算三维度声明](../FORGE/lessons/index.md)就是这条的工程化）。
+三、**token 成本可扛**——单轮成本 × 预期轮数在预算内（FORGE 三层熔断 + [预算三维度声明](../../../FORGE/lessons/index.md)就是这条的工程化）。
 
 单 Loop 有四种典型失败，sofagent 的审计节点（★Reality Anchor）逐一对应解法；当任务复杂度触及任一升级信号时，才从 Loop 升级到 Graph（满足其一才升级，否则 Loop 就够，避免过度设计）：
 
 **单 Loop 四类失败 → sofagent 解法**：指标异化（优化解决率→流失率翻倍）→ audit 节点看 git diff 硬证据不信自报；目标僵化（Agent 不质疑目标本身）→ human_confirm 节点 + 危险操作前人工批准钩子；多目标冲突（两个 loop 打架）→ ★Reality Anchor guard edge 统一裁决；测量衰退（测试数据老化假象）→ audit 规则不可篡改 + acceptance-test 冻结验收标准。
 
 **升级六信号 → sofagent 落点**：任务需交接（dag-runner 单任务 vs 并行编排波次）/ 需散出汇合（Send API 并行 + MergeQueue，v1.3.1）/ 每步不同模型工具（model-router 路由）/ 需显式可审计角色（StateGraph 四节点）/ 节点失败需隔离（git worktree，v1.2.3）/ 需独立 reviewer（audit + fresh-eyes）。
-完整对照见 [FORGE §Graph Engineering 视角](./guides/loop-development.md#graph-engineering-视角控制图--stategraph)。
+完整对照见 [FORGE §Graph Engineering 视角](../../guides/loop-development.md#graph-engineering-视角控制图--stategraph)。
 
 ### Loop 四层循环：从 Agent Demo 到可交付 AI 产品
 
@@ -133,7 +133,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 
 OLAF-I（Object/Link/Action/Function/Interface）= 数字孪生最小够用集，五块任意两块不可无损合并；sofagent 五能力同构（各自独立职责不可合并）。Palantir「Action 默认 staged 等人审」= human_confirm 同构。映射表与合并检验法见归档。
 
-> 📚 全文与读数：[归档](./archive/validation-digest/README.md)——本节 2026-09-28 台账化压缩。
+> 📚 全文与读数：[归档](../validation-digest/README.md)——本节 2026-09-28 台账化压缩。
 
 ### Palantir 落地路径：Red Loop、KLM 范式与「能换模型的对象层」
 

@@ -6,7 +6,7 @@
 
 > 要理解 sofagent 在整个 Agent 生态中的位置，先看清这个生态的三层结构。sofagent 不是开发者框架的竞争者，也不是大厂 Agent 平台的替代品——它占据的是一个被三层夹击后依然空出来的生态位：**约束基础设施**。
 >
-> ⚠️ **「几层」术语导航**（三处「层」各自独立，勿混淆）：本节「三层」= Agent **生态位**三层（大厂平台/开发者框架/约束基础设施）；[ARCHITECTURE 心智模型](./ARCHITECTURE.md#心智模型先读这个) 的「双层」= sofagent **产品组织**（约束层 × 生命周期）；[ARCHITECTURE 四层运行形态](./ARCHITECTURE.md#四层运行形态企业-ai-从梳理到专属模型) 的「四层」= 企业 AI **运行形态**（梳理→编排→插件→模型）。三者是「生态怎么看 / 产品怎么组织 / 客户看到什么」三个维度。
+> ⚠️ **「几层」术语导航**（三处「层」各自独立，勿混淆）：本节「三层」= Agent **生态位**三层（大厂平台/开发者框架/约束基础设施）；[ARCHITECTURE 心智模型](../../ARCHITECTURE.md#心智模型先读这个) 的「双层」= sofagent **产品组织**（约束层 × 生命周期）；[ARCHITECTURE 四层运行形态](../../ARCHITECTURE.md#四层运行形态企业-ai-从梳理到专属模型) 的「四层」= 企业 AI **运行形态**（梳理→编排→插件→模型）。三者是「生态怎么看 / 产品怎么组织 / 客户看到什么」三个维度。
 
 ### 三层架构——从终端用户到开发者到约束层
 
@@ -27,7 +27,7 @@ deepagents 在 v1.0.1-v1.1.x 阶段启发了 sofagent 的 DAG 编排设计（Har
 - **往上看——简单任务大厂平台够了**。WorkBuddy / OpenClaw 免费好用、开箱即用、带 UI + 会话 + 记忆 + 插件生态。当一个终端用户只需要「帮我写段代码」或「帮我分析数据」，直接在大厂平台里说一句话就行——不需要 deepagents 这层抽象。
 - **往下看——精细控制只能上 LangGraph**。deepagents 把编排逻辑封装在黑盒里（FilesystemMiddleware 硬编码注入、wrapToolCall 并行调用崩溃、REQUIRED_MIDDLEWARE_NAMES 白名单禁止排除），当你需要并行 SubAgent、自定义工具注入、精细控制循环路由时，黑盒成了枷锁。LangGraph 的 StateGraph + createReactAgent 把每个节点、每条边都暴露给开发者——黑盒 vs 白盒，精细控制只能选后者。
 
-deepagents 的处境像极了 jQuery：它教会了一代人用更优雅的方式做 DOM 操作和 AJAX，但今天没人用它做生产了——因为浏览器原生 API 追上来了（Layer 1 大厂平台成熟），而需要精细控制的场景有了更好的框架（Layer 2 的 React / Vue / LangGraph）。deepagents 的历史贡献值得感谢（详见 [THANKS](./THANKS.md)），但它的使命已经结束——sofagent 的编排能力已全面迁移到 LangGraph createReactAgent（v1.2.0 起），不再是独立引擎。
+deepagents 的处境像极了 jQuery：它教会了一代人用更优雅的方式做 DOM 操作和 AJAX，但今天没人用它做生产了——因为浏览器原生 API 追上来了（Layer 1 大厂平台成熟），而需要精细控制的场景有了更好的框架（Layer 2 的 React / Vue / LangGraph）。deepagents 的历史贡献值得感谢（详见 [THANKS](../../THANKS.md)），但它的使命已经结束——sofagent 的编排能力已全面迁移到 LangGraph createReactAgent（v1.2.0 起），不再是独立引擎。
 
 ### sofagent 不是开发者框架的竞争者
 
@@ -40,7 +40,7 @@ sofagent 是**跨层约束**——不管企业用 WorkBuddy（L1）还是 LangGr
 - **堤坝（约束注入链）**：四层约束注入链注入行为红线，Agent 启动前就知道哪些事不能碰。
 - **水表（审计能力）**：每次变更都用 git diff 硬证据审计——不信任 Agent 自报，只看文件系统真相。
 - **蓄水池（知识库）**：Dream Cycle 把每次任务的经验沉淀为结构化知识，跨任务、跨设备复用。
-- **蓄水池的复利纪律（产品化阈值 / 四类沉淀物）**：OpenFDE 给"沉淀"立了硬护栏——前 1-3 客户高度定制、第 4 起定制度递减、每单 Day90 前必须沉淀≥1 能力回产品；四类沉淀物 = ①连接器/集成 playbook ②模板/加速器/框架 ③Eval 框架 ④产品需求。sofagent 的蓄水池不应只被动攒经验，而要按这四类资产形态主动归库、按阈值强制回流产品——这是"组织复利"而非"项目复购"的分水岭（详见 [ROADMAP · OpenFDE 主仓对标借鉴](./ROADMAP.md)）。
+- **蓄水池的复利纪律（产品化阈值 / 四类沉淀物）**：OpenFDE 给"沉淀"立了硬护栏——前 1-3 客户高度定制、第 4 起定制度递减、每单 Day90 前必须沉淀≥1 能力回产品；四类沉淀物 = ①连接器/集成 playbook ②模板/加速器/框架 ③Eval 框架 ④产品需求。sofagent 的蓄水池不应只被动攒经验，而要按这四类资产形态主动归库、按阈值强制回流产品——这是"组织复利"而非"项目复购"的分水岭（详见 [ROADMAP · OpenFDE 主仓对标借鉴](../../ROADMAP.md)）。
 
 这三件事，LangGraph 不做（它是编排框架，不是约束层），WorkBuddy 不做（它是 Agent 平台，利益冲突——平台不会自己审自己），deepagents 也不做（它聚焦 Agent 编排，不管审计和沉淀）。**这个生态位空着，sofagent 填它。**
 
@@ -48,7 +48,7 @@ sofagent 是**跨层约束**——不管企业用 WorkBuddy（L1）还是 LangGr
 
 一句话：现有工具查代码，sofagent 查 AI 的行为——密钥泄漏、越界改文件、盲目修改是 AI 特有闯祸方式。完整速查表（detect-secrets/gitleaks/Cursor Rules/云厂商三短板）见归档。
 
-> 📚 全文与读数：[归档](./archive/validation-digest/README.md)——本节 2026-09-28 台账化压缩。
+> 📚 全文与读数：[归档](../validation-digest/README.md)——本节 2026-09-28 台账化压缩。
 
 ### 技术选型原则——用什么、不用什么
 
@@ -61,7 +61,7 @@ sofagent 的技术选型有明确的边界纪律：
 | **LangChain 全家桶**（Document Loader / Vector Store / RAG pipeline） | ❌ 不使用 | RAG / 向量检索 / Document Loader 是 LangChain 全家桶的事，sofagent 不做——知识管理用干净 Markdown + YAML + Git，不需要向量数据库 |
 | **LangSmith** | ? 开发者可选 | 可观测性平台——开发调试工具，不是产品组成部分（SDK MIT 开源，平台闭源收费） |
 
-**不做 RAG、不做向量检索、不做 Document Loader**——这是设计禁区（详见 PHILOSOPHY [§八 不做什么——设计禁区](./PHILOSOPHY.md#八不做什么设计禁区)），不是能力不足。sofagent 的知识管理哲学是 [Don't Do RAG](https://arxiv.org/abs/2412.15605) 论文验证的 CAG（编译式 RAG）方向：干净 Markdown 就够了，知识格式标准化 + 加载链按需注入比向量检索更可审计、更透明。
+**不做 RAG、不做向量检索、不做 Document Loader**——这是设计禁区（详见 PHILOSOPHY [§八 不做什么——设计禁区](../../PHILOSOPHY.md#八不做什么设计禁区)），不是能力不足。sofagent 的知识管理哲学是 [Don't Do RAG](https://arxiv.org/abs/2412.15605) 论文验证的 CAG（编译式 RAG）方向：干净 Markdown 就够了，知识格式标准化 + 加载链按需注入比向量检索更可审计、更透明。
 
 FORGE loop 的技术栈极其克制：LangChain Core（LLM 调用底座）+ LangGraph（createReactAgent DAG 编排）——不多不少。这种克制不是偷懒，是设计哲学——sofagent 的核心价值不在「用了多少技术」，而在「管住了多少行为」。
 
@@ -91,10 +91,10 @@ sofagent 的审计模块已经覆盖了「做了什么」——每次变更都�
 
 > 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [concepts.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/concepts.md) / [failure-modes.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/failure-modes.md)（Comprehension Debt Spiral 条目）
 
-> 📖 deepagents 弃用决策的完整踩坑记录（FilesystemMiddleware 硬编码注入 / wrapToolCall 并行崩溃 / REQUIRED_MIDDLEWARE_NAMES 白名单）详见 [FORGE/lessons/index.md](../FORGE/lessons/index.md)。
+> 📖 deepagents 弃用决策的完整踩坑记录（FilesystemMiddleware 硬编码注入 / wrapToolCall 并行崩溃 / REQUIRED_MIDDLEWARE_NAMES 白名单）详见 [FORGE/lessons/index.md](../../../FORGE/lessons/index.md)。
 
 ### 2026 年的新一代对标：Agent 运行时治理内核
 
 2026 年治理从合规文档类分化为运行时内核类（概率模型外做确定性裁决）：ArbiterOS / Cordum / 《Reason Less Verify More》（78% 失败是静默错误状态、门自身精度必须被审计）/ 风控三层——本仓占「运行时治理内核」格，差异在判定面多出校准概率+弃权+档位。对标表与数据见归档。
 
-> 📚 完整映射表：[归档](./archive/validation-digest/README.md)
+> 📚 完整映射表：[归档](../validation-digest/README.md)
