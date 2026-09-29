@@ -5,7 +5,6 @@
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场把业务判断写成文件，离场后替你执行它：梳理工作流、部署 AI 节点、7×24 审计每次变更。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
 > v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
 
----
 
 ## 目录
 
@@ -24,12 +23,11 @@
 - [分阶段上线（L1→L2→L3）](#分阶段上线l1l2l3)
 - [FDE 部署反模式](#fde-部署反模式)
 
----
 
 ## 阅读指南
 
 | 你是谁 | 先读哪 |
-|------|------|
+|---|---|
 | 刚装上 | 落地 → 运行 |
 | 日常干活 | 运行 → 排查与自定义 |
 | 想改规矩 | 排查与自定义 ·「改写 fde.md」节（模板 `SKILL/harness/fde-template.md`，约 2.6 KB） |
@@ -41,12 +39,11 @@
 > 📁 **项目文件导航**：根目录 8 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）、
 >[AGENTS.md](../AGENTS.md)（Codex 适配薄挂载，四层加载链入口）、[GEMINI.md](../GEMINI.md)（Gemini CLI 适配薄挂载）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。
 
----
 
 ## 5 分钟速览
 
 | 你想知道的 | 一句话 | 详见 |
-|------|------|------|
+|---|---|---|
 | 这是什么 | sofagent——一套 FDE 能力，装进你的 Agent：进场把业务判断写成文件（梳理工作流、构建本体图谱、部署 AI 节点），离场后按文件 7×24 执行与审计 | [FDE Harness 能替你干什么](#fde-harness-能替你干什么) |
 | 怎么装 | `bash install.sh`（企业设备安装器，装底座 + Agent Skill）· `bash install.sh --base-only`（仅底座） | [落地：装好就能派活](#落地装好就能派活) |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | [运行：每次变更都被管住](#运行每次变更都被管住) |
@@ -56,7 +53,6 @@
 | AI 成熟度 | 三级台阶（替换→增强→重构），FDE 帮企业从第二级跨到第三级——不只装 AI，还装上责任机制 | [FDE/GUIDE.md](../FDE/GUIDE.md#19-企业-ai-成熟度三级台阶) |
 | 已知局限 | 核心效果见 [evidence.md](./evidence/evidence.md)；复盘 LLM 自评；明文存储 | [LIMITATIONS.md](./LIMITATIONS.md) |
 
----
 
 ## FDE Harness 能替你干什么
 
@@ -93,7 +89,6 @@
 
 **现在还干不了的事（已排期）**：判定底座四阶段施工（v1.6.0-v1.9.0：判据 schema → 训练校准 → 接线分发 → 消费收口，详见 [ROADMAP](./ROADMAP.md)）；多租户深化（租户级鉴权 / 配额 / 跨租户策略——数据路径与身份归属隔离已随 v1.4.7 交付）。活文档不落具体版本承诺，当前排期一律以 [ROADMAP](./ROADMAP.md) 为准。
 
----
 
 ## 心智模型：约束层与生命周期
 
@@ -113,14 +108,14 @@
 落到代码就是 **约束层 × 生命周期** 双层架构：
 
 | 层 | 是什么 | 一句话 | 状态 |
-|:--:|------|------|:--:|
+|:---|---|---|:---|
 | **层 1 · 约束层** | 约束层五种能力（注入·审计·回溯·沉淀·进化） | 怎么保证每次执行都做对 | ✅ 已交付 |
 | **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 进化（激活链四阶段 = 激活→编排→执行→进化 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环；第五段命名与五种能力之「进化」同词，SUSTAIN 英文不变） | 企业 AI 从诊断到自运转怎么走 | 🔗 Phase 1-4 已交付 |
 
 **层 1 · 约束层（五种能力）**：
 
 | 角色 | 模块 | 管什么 | 触发方式 |
-|------|------|------|------|
+|---|---|---|---|
 | 🧱 底座 | **约束层**（harness） | 四层加载链注入规则，Agent 启动即生效 | 平台 Hook（OpenClaw）/ DSH 插件 / Sub Agent 自加载 |
 | 🔍 模块① | **审计模块**（audit） | git diff → 25 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
 | ⚡ 模块④ | **编排模块**（orchestrator） | 工作流 DAG 调度 + 事件驱动触发（v1.5.1：四类事件源 + `on:` 订阅 + 死信重放）+ 异常三分类路由 | 业务事件到达 / 显式指令 |
@@ -131,7 +126,7 @@
 **层 2 · 生命周期（激活链，v1.2.5+ Phase 1-4 已交付）**：
 
 | 环 | 阶段 | 做什么 |
-|:--:|------|--------|
+|:---|---|---|
 | ① | **诊断**（FDE 四阶段） | 进场生成判断：梳理工作流、构建本体图谱、判定 AI 节点、交付三层实体（✅ 已交付） |
 | ② | **激活** ACTIVATE（v1.2.5） | 读交付物 → 注册企业 SubAgent |
 | ③ | **编排** ORCHESTRATE（v1.2.6-7） | 多 Agent → StateGraph 工作流 |
@@ -140,7 +135,6 @@
 
 > 约束层（注入）＋ 审计 / 回溯 / 沉淀 / 进化 ＝ 全生命周期**可审计、可回滚、可积累、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
 
----
 
 ## 落地：装好就能派活
 
@@ -165,7 +159,7 @@ cd sofagent && bash install.sh
 **前置依赖**：
 
 | 依赖 | 版本 | 为什么 | 检查 |
-|------|------|------|------|
+|---|---|---|---|
 | bash | ≥3.2 | install.sh / task-record.sh | `bash --version` |
 | git | 任意 | clone + task/logs 追溯 | `git --version` |
 | node | ≥18 | 编排模块 + 审计 CLI | `node --version` |
@@ -174,7 +168,7 @@ cd sofagent && bash install.sh
 > 只用宪法层约束（不跑编排模块/审计）可不带 node/npm。
 
 | 平台 | install.sh 行为 |
-|------|------|
+|---|---|
 | `openclaw` | 完整部署——宪法 + Hook + 配套脚本 + 断路器 → `~/.openclaw/` |
 | `workbuddy` | Skill symlink → `~/.workbuddy/skills/sofagent/` + 校验数据目录 |
 | `claude` | Skill symlink + 工具调用拦截配置 `~/.claude/settings.json` |
@@ -206,7 +200,7 @@ cd sofagent && bash install.sh
 #### 三种装法粒度（同一约束层，按场景选）
 
 | 装法 | 命令 | 生命周期 | 适合 |
-|------|------|---------|------|
+|---|---|---|---|
 | npx 临时 | `npx -y -p @sofagent/audit sofagent-audit` | 用完即走 | 任意仓库快速审计、一次性检查 |
 | npm 项目内 | `npm install @sofagent/audit` | 随项目，版本锁进 package-lock | 固定依赖的团队项目 |
 | npm 全局 | `npm install -g @sofagent/audit` | 装一次到处用 | 跨仓库日常审计、daemon 常驻 |
@@ -214,7 +208,7 @@ cd sofagent && bash install.sh
 #### 安装常见问题
 
 | 问题 | 原因 | 解决 |
-|------|------|------|
+|---|---|---|
 | `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
 | commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
@@ -274,7 +268,6 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 
 > ⚠️ **npm 安装态**：`npm uninstall -g @sofagent/audit` **不会**回收已装进仓库的 git hook——请在执行前后各跑一次上面的 uninstall 脚本（或手动删除 `.git/hooks/` 下含 `sofagent` 字样的三个文件）。
 
----
 
 ## 运行：每次变更都被管住
 
@@ -285,7 +278,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 每次对话启动时先加载 4 层常驻地基：
 
 | 层 | 文件 | 干什么 | 能改吗 |
-|:--:|------|------|:--:|
+|:---|---|---|:---|
 | 1 | `SKILL.md`（宪法内联） | 4 底线 + 9 铁律 | ❌ |
 | 2 | `fde.md` | 你的运行规范，优先级最高 | ✅ 随便改 |
 | 3 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用。→ [反思工程](./DEVELOPMENT.md#六反思工程) |
@@ -304,7 +297,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 **铁律**：
 
 | # | 铁律 | 一句话 | 做错时的表现 |
-|:--:|------|------|------|
+|:---|---|---|---|
 | 0 | 知行合一 | 说和做一致，声称必有证据 | 说读了文件实际没读 |
 | 1 | 目标驱动 | 回到原始意图，不跑偏 | 做着做着跑偏了 |
 | 2 | 全局视角 | 先找现有代码和工具，不重复造轮子 | 有现成库不用自己写 |
@@ -324,7 +317,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 Agent 先判断任务复杂度：
 
 | 级别 | 特征 | Agent 行为 |
-|:--:|------|------|
+|:---|---|---|
 | 🟢 简单 | 单步指令，说得明确 | 直接干活 |
 | 🟡 中等 | 多步但方向清楚 | 先干，说一句「中间需要随时叫我」 |
 | 🔴 复杂 | 模糊、多模块 | 问「需要拆解吗？」→ 用户同意才启动 |
@@ -348,7 +341,7 @@ Agent 先判断任务复杂度：
 ### 能力边界
 
 | ✅ 能做 | ❌ 做不了 |
-|------|------|
+|---|---|
 | 数据：分析、报表、图表、格式转换 | 物理世界：动手操作 |
 | 文字：撰写、翻译、校对、摘要 | 图像视频：剪辑、特效 |
 | 代码：生成、审查、测试、重构 | 人际：面对面沟通 |
@@ -367,7 +360,7 @@ Agent 先判断任务复杂度：
 **「从 70 分开始」采用原则**：不要等 Agent 到 100 分再用。新员工第一周不让他独立做架构决策，先让他做确定性高的事——Agent 同理。能力上限不是采用门槛，行为模式才是。
 
 | 谁 | 负责什么 | 典型事项 |
-|----|---------|---------|
+|---|---|---|
 | Agent | 确定性工作（做对约 70 分，做错立刻可发现）| 格式转换 / 数据清洗 / 代码生成 / 日志分析 / 定时播报 |
 | 人 | 判断与决策（不可下放）| 方案选型 / 优先级 / 异常处理 / 对外沟通 |
 
@@ -378,7 +371,7 @@ Agent 先判断任务复杂度：
 不是所有岗位都适合交给数字员工。在派活之前，用以下五个问题做准入判定：
 
 | # | 判定问题 | 放心交给 Agent 的信号 | 该留给人的信号 |
-|---|---------|---------------------|---------------|
+|---|---|---|---|
 | 1 | 这个岗位的"做对了"能量化吗？ | 有明确的验收标准（格式、数值、规则） | 好不好看品味，没有标准答案 |
 | 2 | 做错了能回滚吗？ | 变更有 git 快照、退得回 | 不可逆操作（发邮件、拨付款） |
 | 3 | 输入输出结构化吗？ | 数据进、数据出（报表、转换、校验） | 模糊输入（情绪、语境、人际） |
@@ -410,7 +403,7 @@ exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规（含用法错误）/ 3 =
 审计结果按严重级别处理：
 
 | 结果 | 用户看到什么 | 自动动作 |
-|------|------------|---------|
+|---|---|---|
 | ✅ PASS | 静默 | 自动快照存档 |
 | ⚠️ WARN | daemon-health.json 告警 + 可选 Webhook | 存档 + 标记 |
 | ❌ FAIL | Webhook 推送 + 终端标红 | 存档 + 建议回滚 |
@@ -433,7 +426,7 @@ sofagent-dashboard --full    # 展开：编排控制图 + FORGE 审查进度 + �
 ```
 
 | 面板 | 看什么 | 数据来源 |
-|------|--------|---------|
+|---|---|---|
 | **数据去哪了**（数据主权） | 敏感数据有没有偷偷发给云端？ | 4 维审计日志（模型/操作/流向/任务） |
 | **AI 犯规了吗**（规则审计） | AI 有没有越权改文件、存数据？ | 审计模块 25 条规则结果 |
 | **任务跑到哪了**（工作状态） | 后台 daemon 和 sub-agent 是活的还是挂了？ | daemon-health.json |
@@ -481,7 +474,7 @@ jobs:
 #### 模式对照表
 
 | 模式 | 标志 | 说明 | 退出码 |
-|------|------|------|:--:|
+|---|---|---|:---|
 | 默认 | *(无)* | 全部规则（含 Agent 日志） | 0/1/2 |
 | 静默 | `--silent` | 只跑 git-diff 规则（零 Agent 依赖） | 0/1/2 |
 | 严格 | `--strict` | 任何警告都 exit 2 | 0/2 |
@@ -489,7 +482,6 @@ jobs:
 
 模式可叠加——CI 流水线需零容忍时用 `--diff HEAD --ci --strict`（v1.0.5 起 `--ci` 不再隐含 `--strict`）。未知参数处置：可能承载安全语义的拼错形态（如 `--rulesets` 复数、`--ruleset=security` 等号写法）会 **exit 2 直接中断**（用法错误，非审计发现——2 同时承载「有违规」与「用法错误」，环境异常另有专用码 3/4，见上文「提交后自动审计」节）；纯未知 flag 仅告警不中断，合法参数表见 `--help`。
 
----
 
 ## 进化：知识自动沉淀
 
@@ -500,7 +492,7 @@ jobs:
 > 各版本能力沿革的完整清单见 [CHANGELOG 索引](../CHANGELOG.md) 与各版[开发日志](./changelog/)——此处只保留最近两版速览，旧版内容按「新能力段只留最新」纪律归档至 CHANGELOG。
 
 | 能力 | 版本 | 一句话 | 明细 |
-|------|------|--------|------|
+|---|---|---|---|
 | 审计模块·规则引擎统一与自测 | v1.5.3 | 双规则引擎统一（一套定义、两种触发时机）· 规则自测 schema（每条规则强制 match/notMatch 正负样例，加载 fail-closed + FAIL 报文附替代建议 + 多规则取最严）· A24 交付物落点规则（24→25）· doctor 修复闭环（`--refresh` 备份 + 一键重置 + 前后 diff）· ARCHITECTURE 三域重构 · 判决类记录成对完整 · AuditScope 一等公民化 | [v1.5.3 开发日志](./changelog/v1.5/v1.5.3.md) |
 | 审计模块·对外面与判定语义 | v1.5.2 | MCP audit 数据对外（audit_query 只读查询 + 事件订阅推送）· 约束导出与证据链外部可验（ruleset_export 双向可逆 + verify-chain 独立验签器——获取路径：npm 包内 verify/verify-chain.mjs 或安装态 ~/.sofagent/verify/）· should-run 五问判定链 · 结论失效语义 · 出口治理（host 白名单 + 出站裁决挂链）· 事前授权 mandate | [v1.5.2 开发日志](./changelog/v1.5/v1.5.2.md) |
 
@@ -510,7 +502,7 @@ jobs:
 > 多条新产品线同版落地后，新人最常见的问题是「我知道有这功能，但从哪进」。本表按「是什么 / 从哪进 / 前置要求」三列导览——逐条命令真实可跑（v1.4.3 第九章 onboarding 走查对账口径）。
 
 | 产品线 | 是什么 | 从哪进 | 前置要求 |
-|------|------|------|------|
+|---|---|---|---|
 | **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor`（环境体检）→ `fde_interview`（五要素）→ `train_submit`（提交）；CLI：`sofagent-orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`（模板库一览）；监控：`train_status` / `train_list` / 失败走 `train_diagnose` | GPU 环境（CUDA/显存/框架）——`bash tools/train/train-env-init.sh` 一键装；基座模型手动放置或推理服务拉取；反作弊双防线随 install 默认落盘 |
 | **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行模块：访谈结构化 → 三问判定 → 量化 ROI → 本体推导 → 三层沉淀 → 组装部署 | MCP：`fde_interview`（先跑——五要素采集，`prompts_only: true` 拿访谈话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`；产物落 `data/fde/<企业>/` | 无环境硬依赖（纯规则引擎——LLM 可选辅助）；企业标识必填（`enterprise_id`） |
 | **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent-daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent-daemon start`） |
@@ -548,7 +540,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 
 > 📋 **部署文档导航**：sofagent 的部署文档按场景分散在三处，各归各位，按需选读：
 > | 文档 | 定位 | 给谁 |
-> |------|------|------|
+> |---|---|---|
 > | **本文档（HANDBOOK）** | 操作手册——部署规模参考、资源消耗、数据存储、USB 烧录、持续维护 | 所有人（先看这个） |
 > | [guides/enterprise-deploy.md](./guides/enterprise-deploy.md) | 单机详细部署——企业设备安装全流程、config 配置、daemon 常驻 | 企业 IT / FDE 驻场 |
 > | [guides/team-deploy.md](./guides/team-deploy.md) | 团队批量部署——多台机器批量安装、统一 config 分发 | 企业 IT（20 台+ 规模） |
@@ -557,7 +549,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 ### 部署规模参考（企业 IT）
 
 | 部署规模 | 并发 Agent | CPU | 内存 | 磁盘 | 适用场景 |
-|---------|:---:|:---:|:---:|:---:|---------|
+|---|:---|:---|:---|:---|---|
 | 个人 / 小团队 | 1-3 | 1 核 | 512 MB | 500 MB | 单人开发，git commit hook 审计 |
 | 中型团队 | 5-10 | 2 核 | 1 GB | 2 GB | 多人协作，daemon 常驻 + webhook 推送 |
 | 企业级 | 10+ | 4 核 | 2 GB | 5 GB+ | 多仓库联邦，A/B 审查 + 知识库 + Dashboard |
@@ -580,7 +572,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 **三种场景，一种方式**——sofagent 用 USB key 覆盖全部部署需求：
 
 | 场景 | 用户 | 方式 |
-|------|------|------|
+|---|---|---|
 | 装电脑 | 技术人员 | 正常安装流程，部署到电脑上就能用 |
 | U 盘 | 普通员工 | sofagent + 联邦密钥 + knowledge 全在盘上，插上即用 |
 | 无头设备 | 服务器/工控机 | U 盘插上别拔，Agent 一直在联邦里跑 |
@@ -603,7 +595,7 @@ U 盘包含：Node.js 便携版 + sofagent 约束层 + knowledge/ 加密落盘 +
 ### 离场后：企业留下什么 + 谁来管
 
 | 产物 | 说明 |
-|------|------|
+|---|---|
 | **交付手册** | 企业画像 + 部署方案 + 运行规范 + 上手文档 |
 | **AI 节点** | 文档层（.md）+ Skill 层（企业专属）+ 运行层（在跑的 session） |
 | **AI 知识库** | `data/knowledge/` — daemon 自动 Ingest，零手动维护 |
@@ -628,7 +620,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 激活链解决的就是这个断裂带——**让交付物自己变成可运行的系统**：
 
 | 阶段 | 做什么 | 什么时候 |
-|------|--------|---------|
+|---|---|---|
 | ACTIVATE 激活 | 读交付物（ontology + workflow.yml + skills/）→ 写 `.sofagent/subagents/*.yml` → 注册企业 SubAgent | v1.2.5 |
 | ORCHESTRATE 编排 | 把多个企业 Agent 串联成 LangGraph StateGraph 工作流 | v1.2.6-v1.2.7 |
 | EXECUTE 执行 | DAG 运行 + 人工审批节点（HITL）+ 每步审计集成 + 异常兜底 | v1.2.8-v1.2.9 |
@@ -636,14 +628,13 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 > 简单说：没有激活链，FDE 离场后你拿到的是"图纸"；激活链交付后你拿到的是"按图纸自动造好且自己跑着的工厂"。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
----
 
 ## 排查与自定义
 
 ### 排查问题
 
 | 问题 | 怎么办 |
-|------|------|
+|---|---|
 | Agent 不遵守铁律 | 检查文件位置；关键规则写 fde.md；非 Hook 平台手动 `@skill:sofagent` |
 | think.md 出现错误记忆 | 直接编辑删掉；对照 task/logs 核实。→ [反思工程 三道防线](./DEVELOPMENT.md#六反思工程) |
 | 编排结果不稳定 | 同类任务跑够 3 次用模板；没模板时少拆子任务 |
@@ -656,7 +647,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 ### Osmani 三盆冷水
 
 | 冷水 | 意思 | sofagent 的应对 |
-|------|------|------|
+|---|---|---|
 | 验证责任不可替代 | Agent 说「做完了」是声明不是证明 | 审计 A8 要求可观测证据（测试通过/lint/API 200） |
 | 理解债 | AI 替你写的代码越多，理解鸿沟越大（理解债） | task/logs 只追加不修改，永远可回溯；think.md 每步记录决策日志 |
 | 认知投降 | 最舒服的状态是不再有自己观点 | fde.md 随时加规则覆盖；编排可回滚；审计独立于 Agent |
@@ -689,14 +680,13 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 上述术语（Harness 中间件、约束层 × 生命周期双层架构、约束层五种能力（注入·审计·回溯·沉淀·进化）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。
 核心 = **约束层（五种能力）× 生命周期（诊断→激活→编排→执行→进化）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
----
 
 ## 相关技术栈
 
 sofagent 不是孤立的——它构建于以下成熟项目之上，各司其职：
 
 | 技术 | 在 sofagent 中的角色 | 引入版本 |
-|------|------|:--:|
+|---|---|:---|
 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) | 编排模块——状态图、条件路由、HITL、持久化 | v1.0.1 |
 | [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | Sub Agent 系统（createReactAgent）——FDE Sub Agent + Audit Sub Agent | v1.0.1（v1.2.0 从 deepagents 迁移） |
 | [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.0.3 |
@@ -722,7 +712,6 @@ sofagent 站在 6 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 
 要完整能力（审计每次变更 + 知识自动沉淀 + 7×24 常驻），回到开头 `bash install.sh`。
 
----
 
 ## 分阶段上线（L1→L2→L3）
 

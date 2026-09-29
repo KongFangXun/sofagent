@@ -7,7 +7,6 @@
 > **本文档从四个维度回答一个问题：行业有没有独立验证 sofagent 的直觉？** ① 方法论——约束层为什么是刚需；② 生态位——sofagent 在 Agent 三层模型中的位置；③ 架构——行业框架怎么独立复现 sofagent 的选择；④ 市场——技术判断有没有被买单。四维同指一结论：**不管 Agent 怎么搭、在哪跑，它需要一个独立的约束层。**
 > 收录纪律（doc-slim 批起）：正文每条印证 = 一句判据 + 出处链接（≤3 行）；成篇深论证全文归档 [`docs/archive/validation-deep/`](./archive/validation-deep/README.md)。
 
----
 
 ## 目录
 
@@ -17,7 +16,6 @@
 - [四、市场印证](#四市场印证行业判断被市场买单)
 - [五、研报视角的边界提示](#五研报视角的边界提示)
 
----
 
 ## 一、方法论印证：行业研究怎么验证 sofagent 直觉
 
@@ -54,7 +52,7 @@ Cloudflare CEO 把工作角色分三类（Builder/Seller/Measurer），**Measure
 **▍厂商实证——Harness 品类被多方独立验证（一句话判据，逐家深读见 [归档](./archive/validation-deep/harness-vendors.md)）**
 
 | 厂商/项目 | 一句话判据 | 出处 |
-|-----------|-----------|------|
+|---|---|---|
 | **DeerFlow 2.0**（字节） | 自称 "super agent harness"，Harness 品类词站住；它是「河」（运行时）sofagent 是「堤」（约束层），互补不冲突 | [bytedance/deer-flow](https://github.com/bytedance/deer-flow) |
 | **DeepSeek Harness** | 模型厂商开源 `Agent = Model + Harness` 运行时（一切皆插件）——「Harness 独立于模型」获厂商级验证；机制与 sofagent 深度同构（可逆性/事件留痕/两旋钮权限） | [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) |
 | **OpenAI Codex Harness** | ARC-AGI-3 上仅调 Harness 两项（保留推理+上下文压缩）得分 13.3%→38.3%、token 降 6 倍——「Harness 决定 Agent 表现」被官方量化（⚠️ 量纲限定：能力型表现 ≠ 治理型可靠性，只作方向性信号） | [openai/codex](https://github.com/openai/codex)（2026-08-22 源码核验） |
@@ -128,7 +126,7 @@ deepagents 启发了 v1.0-1.1 的 DAG 编排（Harness 范式 + HITL 功不可�
 ### 技术选型原则——用什么、不用什么
 
 | LangChain 生态组件 | 是否使用 | 理由 |
-|---|:---:|---|
+|---|:---|---|
 | **LangChain Core** | ✅ | LLM 调用底座——模型接口抽象、消息格式标准化 |
 | **LangGraph** | ✅ | DAG 编排底座——StateGraph 状态机 + createReactAgent，白盒可控 |
 | **LangChain 全家桶**（Loader/VectorStore/RAG） | ❌ | 不做 RAG/向量检索——知识管理用干净 Markdown + YAML + Git |
@@ -181,7 +179,7 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构系统之�
 自主循环稳定运行需六要素（自动化触发 / 隔离演练 / 安全边界 / 工具连接 / 角色分离 / 记忆分层）——sofagent 全部已有：pre/post hook = 激活链 + daemon cron；隔离演练 = git worktree；安全边界 = 工具审批 + HITL；工具连接 = MCP server；角色分离 = Explore/Code 拆分；记忆分层 = v1.2.8 记忆分层 + 四层加载链。
 
 | 故障模式 | 表现 | sofagent 对应 |
-|------|------|------|
+|---|---|---|
 | **空转** | 反复改几十次测试通不过 | Onboard L5 连续 FAIL 判发散 |
 | **过拟合测试** | 单元测试全过，业务不能用 | Benchmark 评测 + 人工验收 |
 | **上下文漂移** | 基于过期假设写代码 | Durable Execution L1 checkpoint 续跑 |
@@ -202,7 +200,7 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构系统之�
 四层循环是**四个不同时间尺度的控制**——单 Agent Loop 只算「会连续执行的 Demo」，四层打通才是可交付产品：
 
 | 循环层级 | 管什么 | 时间尺度 | sofagent 对应 |
-|---------|-------|---------|-------------|
+|---|---|---|---|
 | **Agent Loop** | 一次行动 | 单次执行 | 模型自动调用工具循环到自判完成 |
 | **Fortification Loop** | 一次任务 | 单次交付 | 审计 + acceptance-test 冻结验收 + define_acceptance——**把「完成」的定义权从模型转移到系统** |
 | **Event Driven Loop** | 持续业务 | 长期运行 | daemon + WAL 续跑——排队/幂等/MergeQueue/退避/checkpoint 逐项对应 |
@@ -258,6 +256,6 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构系统之�
 - **LGA 四层治理框架**（[arXiv:2603.07191](https://arxiv.org/abs/2603.07191)，York，OpenClaw 实测）——L1 沙箱/L2 意图验证/L3 零信任授权/L4 不可变审计日志与本仓五能力对位；本地档判定读数（Qwen2.5-14B 98% 拦截 / 10-20% 误报；级联可达 1.9-6.7% 误报）给了一体机档量化参照；双语基准（1,081 条中文原生）可作采集器外部对照样本源候选。
 - **生态速览（2026-09-24 巡检）**——wire 协议事实标准已六家可枚举（`POST /v1/systemone` 兼容端点仍在增）：协议面决策的外部输入已齐，**窗口在收窄**；对照件状态翻转四件（nimble 数据公开解除限制 / kev 密集更新读数以 09-21 快照为准 / ECE 披露面翻转但空白的是厂商主动披露 / 准入第④项判别实例成对）。NIST 口径辨析（agent = 非人类身份 principal + Delegation 双身份令牌）**唯一持有处在 [THANKS · 官方标准面]**；
   Laya 反例锚定 0.3.4 制品、时效在消退，引用须带限定语。
-  
+
 - **训练环境不可信则评估作废（DSec）**（[arXiv:2609.22978](https://arxiv.org/abs/2609.22978)）——论文实录 Agent 沙盒内成规模作弊（翻答案/伪造响应/覆盖 bash）：**训练信号可被环境伪造，防自证污染不是洁癖**——来源真实性标记 + 捕获层零外部调用 + 评估只排序不自动入池三条纪律的实证背书；沙盒不只是安全边界，是评估可信性的前提。
 - **评测环境是风险面（三源）**——评测中 reward hacking 与正常解题在产出上同形：审计须**双轴判定**（结果正确性 × 手段合法性，两维独立留痕分别举证），越界刷分才在日志里现形。与 [DEVELOPMENT 评估器反作弊四形态](./DEVELOPMENT.md)（让作弊拿不到答案）正交——本条管「让漏网的作弊在审计里可判定」。

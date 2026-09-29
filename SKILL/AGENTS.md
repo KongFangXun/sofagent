@@ -7,7 +7,7 @@
 > 📂 Sub Agent 定义集中在 [`agents/`](./agents/) 子目录，每个目录含 `SKILL.md`（单文件承载调用入口 + 角色定义）。下表列出 4 个预装 Sub Agent：
 
 | Sub Agent | 目录 | 职责 |
-|-----------|------|------|
+|---|---|---|
 | `@sofagent-audit` | [`agents/audit/`](./agents/audit/) | 合规审计员——工作流巡检、铁律覆盖验证、知识库健康度检查 |
 | `@sofagent-engineer` | [`agents/engineer/`](./agents/engineer/) | 最小变更工程师——读代码 + 写代码 + 跑测试 + git commit |
 | `@sofagent-fde` | [`agents/fde/`](./agents/fde/) | 前线部署工程师——梳理工作流、识别 AI 节点、构建知识库、交付离场 |
@@ -18,32 +18,30 @@
 ## Agent 列表
 
 | Agent | Skill | CLI 命令 | 职责 |
-|------|------|------|------|
+|---|---|---|---|
 | 部署工程师 | `@sofagent-fde` · `SKILL/agents/fde/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
 | 合规审计员 | `@sofagent-audit` · `SKILL/agents/audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | 工作流巡检、铁律覆盖验证、知识库健康度检查 |
 | 最小变更工程师 | `@sofagent-engineer` · `SKILL/agents/engineer/SKILL.md` | `sofagent-orchestrator subagent run engineer --task "..."` | 读代码 + 写代码 + 跑测试 + git commit |
 | 代码审查员 | `@sofagent-reviewer` · `SKILL/agents/reviewer/SKILL.md` | `sofagent-orchestrator subagent run reviewer --task "..."` | 语义审查 + 影响分析 + 铁律合规 |
 
----
 
 ## 如何使用（第三方 Agent 调用）
 
 | 方式 | 场景 | 操作 |
-|------|------|------|
+|---|---|---|
 | 装 Skill → @ | WorkBuddy/OpenClaw | `bash install.sh`（自动装），然后 `@sofagent-fde` |
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 | DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用；**一次装全套**用裸名 `skillhub install cordis-plugin-sofagent`） |
 | MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 104 tools |
 
----
 
 ## DSH 插件家族（7 款 cordis-plugin）
 
 > sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 104 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
 | 插件 | 职责（桥接实况） | seam |
-|------|----------------|------|
+|---|---|---|
 | `cordis-plugin-sofagent-audit` | 变更机器审阅 + 验收硬门禁（25 规则 + git diff 硬证据 + Turn 停止验收判定——吸收原 gate 验收面，开关独立）——桥接 `@sofagent/audit runRules` | tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping |
 | `cordis-plugin-sofagent-rollback` | 出错逆序撤销（git snapshot → effect disposer）——桥接 `@sofagent/core getHistoryFilePath` | effect 注册/卸载 |
 | `cordis-plugin-sofagent-inject` | 启动注入企业约束（四层加载链）——桥接 `@sofagent/inject buildConstrainedSystemPrompt` | apply(ctx) |
@@ -52,7 +50,6 @@
 | `cordis-plugin-sofagent-fde` | FDE 进场与能力流通——本体 / FDE / 公地三域工具面（合并原 ontology / commons 两款，settings 三档分域可关）——桥接 `@sofagent/orchestrator publishCapability / @sofagent/ontology generateOntologyView / @sofagent/core restoreSnapshot` | ontology_* / fde_* / commons_* tools |
 | `cordis-plugin-sofagent` | **整装入口**——一次挂载以上 6 款原子插件（聚合编排层，只编排不重实现；缺哪款只降级哪款，不整挂失败） | non-seam:plugin-suite |
 
----
 
 ## 合规审计员的价值
 
@@ -74,7 +71,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### 它给你什么？
 
 | 场景 | 什么时候 @ 它 | 它给你什么 |
-|------|------|------|
+|---|---|---|
 | **发版前** | 准备发布新版本时 | 全量合规扫描——铁律是否覆盖所有 AI 节点、工作流有没有漏洞、版本号对齐没有 |
 | **事故后** | Agent 操作出了问题 | 根因分析——是约束没覆盖到，还是 Agent 绕过了审计，还是配置有漏洞 |
 | **定期巡检** | 每周一次 | 知识库健康度报告——哪些 entity 死链了、think.md 反思质量趋势 |
@@ -84,7 +81,6 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 每次运行产生的报告写入 `.sofagent/` 下，FDE 定期读报告趋势做优化决策。
 
----
 
 ## Agent 格式
 
@@ -93,14 +89,13 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 **类型 A — Skill 格式（第三方平台调用入口）**：`SKILL/` 与 `SKILL/agents/audit/`，每个目录下的 `SKILL.md` 同时承载**调用指令 + 角色定义**（frontmatter 定义触发条件，正文定义角色/使命/规则/交付物）：
 
 | 文件 | 格式 | 作用 | 谁读 |
-|------|------|------|------|
+|---|---|---|---|
 | `SKILL.md` | Skill 格式（frontmatter + 调用指令 + 角色定义） | **调用入口 + 角色定义**——frontmatter 告诉第三方 Agent 何时触发、用 Bash 跑 `sofagent-orchestrator subagent run <name>`；正文是 Agent 的完整行为规范 | 第三方 Agent 平台（WorkBuddy/Codex）+ LangGraph `createReactAgent` 编排模块 |
 
 > 注：早期设计曾计划「SKILL.md（调用）+ {role}.md（定义）」双文件分离，当前实现为单文件承载两者（frontmatter = 调用层，正文 = 定义层）。岗位级注入约束见 [`rules/`](./rules/)（core-rules.md + role-*.md，由加载链按 task type 注入主 Agent，与 Sub Agent 定义是两套机制）。
 
 **类型 B — 内层角色（Skill 格式，第三方平台亦可用）**：`SKILL/agents/engineer/SKILL.md`（`@sofagent-engineer`）、`SKILL/agents/reviewer/SKILL.md`（`@sofagent-reviewer`）除作调用入口外，其角色定义由 FORGE 内层循环调度，亦可供第三方 Agent 平台调用。
 
----
 
 ## MCP 全量工具表（104 tools · 12 类）
 
@@ -109,7 +104,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### 审计合规（11）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `run_audit` | 对 git diff 运行全量审计（25 条规则），返回结构化审计报告 |
 | `audit_file` | 单文件变更即时审计（不阻断） |
 | `audit_data_change` | 知识库结构化数据变更跑数据审计（D1-D5） |
@@ -125,7 +120,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### 反思沉淀（3）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `get_think` | 读取 think.md 最新反思条目 |
 | `write_think` | 向 think.md 追加手动反思记录 |
 | `read_think_md` | 读取 think.md 完整内容 |
@@ -133,7 +128,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### 知识库（7）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `search_knowledge` | 跨 entities/concepts 模糊搜索 |
 | `read_entity` / `read_concept` | 读取单个 entity / concept 页 |
 | `list_entities` / `list_concepts` | 列出全部（entities 可按 domain 过滤） |
@@ -143,7 +138,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### 本体数据（7）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `create_entity` / `create_concept` | 创建/更新页（写入前跑数据审计，FAIL 拒绝） |
 | `update_entity` | 字段级更新 entity（只改传入字段） |
 | `delete_entity` / `delete_concept` | 🔴 删除页，必须 confirmed:true |
@@ -153,7 +148,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### 评估优化（8）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `evaluate_output` | golden set 评估 Agent 产出质量 |
 | `run_ab_test` | A/B 对比实验（current vs candidate） |
 | `promote_ab` | 🔴 晋升 candidate，必须 human_confirmed:true |
@@ -166,7 +161,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### FDE 编排（11）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `fde_compose` | FDE 梳理辅助——五要素引导生成 workflow 或 ontology 草稿 |
 | `fde_interview` | FDE 访谈——五要素结构化落盘 data/fde/，企业画像自动生成 |
 | `fde_classify` | FDE 判定——三问判定（🔄自动/⚡强化/👤暂不动）+ 六步分解→nodes.json |
@@ -182,7 +177,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### Workflow / Agent（12）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `workflow_submit` | Workflow 提交（schema 校验 + 解析执行） |
 | `workflow_create` | Workflow 对象化创建（schema-gate 校验；owner 建 trunk、非 owner 开 branch） |
 | `workflow_update` | Workflow 版本化更新（version+1 + 审计留痕） |
@@ -198,7 +193,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### PR 协同（3）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `pr_submit` | 提交 PR（open → reviewed → merged/rejected 状态机入口；审计留痕） |
 | `pr_review` | 审阅 PR（approve/reject；suggested 置信态启发式产物，显式决策不被启发式覆盖） |
 | `pr_merge` | 🔴 合并 PR（merge_criteria 全过自动合并，未过走 HITL；branch→trunk 联动写回基线） |
@@ -206,7 +201,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### 能力公地（6）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `commons_publish` | 能力发布（SkillScan 安全门） |
 | `commons_search` | 能力检索（标签/关键词/类型） |
 | `commons_invoke` | 能力调用（SkillScan 拦截 + HITL 确认） |
@@ -219,7 +214,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 > 📌 **能力边界**：本仓负责后训流水线的**编排与治理**（任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务）；**训练本身在外部执行环境进行，本仓不实现训练器**。
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `model_register` | 注册训练后模型 endpoint |
 | `model_switch` | 灰度切换（percent<100 灰度，100 强制人审） |
 | `model_unregister` | 模型退役（可恢复，强制人审） |
@@ -241,14 +236,14 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 ### 验收（2）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `define_acceptance` | 任务附机器可判定验收条件（test/build/grep-absent/schema） |
 | `check_acceptance` | 跑登记的条件，返回结构化结果 |
 
 ### 运维观测（17）
 
 | 工具 | 说明 |
-|------|------|
+|---|---|
 | `health_check` | 运行环境健康检查（环境/配置/Hook/依赖） |
 | `snapshot_list` / `snapshot_restore` | 快照时间线 / 🔴 恢复（强制人审） |
 | `worklog_query` | 按 Agent/Workflow/周趋势查 AI 工作明细 + 进化四维趋势 |
@@ -266,7 +261,6 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `router_session_push` | router 过站 session 承接（T7）：exporter schema 校验（fail-closed）→ 多轮展开切窗/角色映射 → 脱敏本地落盘（幂等）→ usage 入 cost 台账 → key 维度 HMAC 挂链 |
 | `trace_reconcile` | 跨层证据对账——DSH session trace（Agent 自述）vs git diff（独立事实）vs logs 声明集三源比对，产出漏报/幻觉动作/瞒报四态差异清单 + 一致率；可选模型层回溯链（推理 → 模型版本 → train_job → datasetHash）。结果入 decision-log（kind=COVERAGE） |
 
----
 
 ## 参考
 

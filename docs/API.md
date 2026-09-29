@@ -5,7 +5,6 @@
 > sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 104 tools 按域分组。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 > 版本：v1.5.3（✅ 已发版 · 2026-09-26）· 104 tools / 7 面——**104 = v1.5.2 的 107 − 2026-09-26 浏览器四件套退役 4 + v1.5.4 新增 `router_slots` 1**（逐版工具数沿革见 [CHANGELOG](../CHANGELOG.md)；状态见 [ROADMAP](./ROADMAP.md)）
 
----
 
 ## 目录
 
@@ -14,12 +13,11 @@
 - [三、防漂移机制](#三防漂移机制)
 - [四、变更日志](#四变更日志)
 
----
 
 ## 一、七大接口面
 
 | # | 接口面 | 入口 | 认证 | 典型用途 |
-|---|--------|------|------|---------|
+|---|---|---|---|---|
 | 1 | **MCP tools** | stdio MCP server（install.sh 自动配置） | 本地进程（无需凭证） | Agent 调用审计/编排/训练/治理全部能力 |
 | 2 | **npm CLI** | `sofagent-audit` 等二进制 | 本地 | git hook / CI / 人工调用审计 |
 | 3 | **git hook** | `sofagent-audit --install-hook` | git 本地 | 提交前自动审计（25 条规则 + HMAC 链） |
@@ -31,7 +29,6 @@
 各面详细配置见对应文档：MCP 见 [engine/mcp/README.md](../engine/mcp/README.md) · CLI/hook 见 [SECURITY.md](../SECURITY.md) · 平台挂载见 [AGENTS.md](../AGENTS.md) · Skill 分发见 [SKILL/SKILL.md](../SKILL/SKILL.md) · Webhook 见 [SECURITY §五·Daemon 监控边界](../SECURITY.md)（表内「审计结果推送」行）。
 标准数据推送接口（第七面）`data_push` 入口已接线（v1.4.8），详见 [v1.4.8 开发日志](./changelog/v1.4/v1.4.8.md)。
 
----
 
 ## 二、MCP 工具清单（104 · 按产品能力域分组）
 
@@ -201,7 +198,6 @@
 | `connector_register` | ops | 注册第三方连接器（G5b 准入面）：来源过 plugin-gate 白名单校验（Git URL / 主机 / 本地路径，白名单外拒绝）→ 注册表落库（config/connectors.json，租户隔离 + 同租户重名拒绝）→ 审计留痕。与工具注册分列——连接器清单见 connector_list。 |
 | `connector_list` | ops | 连接器发现（G5b 目录面）：按类型（db/rest/saas）/ 主机 / 能力标签过滤，租户隔离（只返回请求租户条目）。清单只含连接器——与 MCP 工具清单（TOOLS）分列，绝不混列。只读。 |
 
----
 
 ## 三、防漂移机制
 
@@ -214,12 +210,11 @@
 - 风险声明：MCP tool 名是宿主级命名空间。多 server 共存挂载（README「多平台挂载」场景）下，通用词 tool 名可能与其他 server 撞名——宿主侧去重改名（如 `run_audit_2`）后用户无法归因。
 - 整体前缀化（如全量加 `sofagent_` 前缀）属**破坏性变更**，不在常规迭代内做；评估与决策登记见 ROADMAP 既有章。
 
----
 
 ## 四、变更日志
 
 | 日期 | 变更 |
-|------|------|
+|---|---|
 | 2026-09-03 | 建档——80 tools 首次成清单，六大接口面总表 |
 | 2026-09-05 | v1.4.5 三件并入（train_serve/train_compliance/train_deliverable）80→83 |
 | 2026-09-07 | v1.4.6 新增 train_cloud 83→84（云 VM 执行面控制工具）；接口面六→七：新增「标准数据推送接口」第七面（v1.4.6 交付，验收标准转勾） |

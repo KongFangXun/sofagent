@@ -13,7 +13,6 @@
 
 <p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
 
----
 
 ## 目录
 
@@ -29,7 +28,6 @@
 - [常见问题](#常见问题)
 - [生态与文档索引](#生态与文档索引)
 
----
 
 ## 这是什么
 
@@ -68,7 +66,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 ## 该不该装？
 
 | 如果你是… | 建议 |
-|----------|------|
+|---|---|
 | **给现有 Agent 加纪律**——已有 DSH / OpenClaw / WorkBuddy，想让 AI 干活时守规矩、留痕、出事能回溯 | ✅ **现在装**。核心价值就是约束层（注入 · 审计 · 回溯 · 沉淀 · 进化），装完即用 |
 | **一人公司 / 小企业想落地 AI**——没有专职工程师，需要一个"不离职的 FDE"帮你梳理工作流、部署 AI 节点 | ✅ **现在装**。FDE Harness 层就是干这个的——进场把判断写成文件，离场按文件执行与审计，全链路 |
 | **要开箱即用的企业级 Agent 平台**——期待完整商业产品（多租户、权限管理、计费、SLA） | ⏸️ **暂缓**。sofagent 是 FDE Harness 层，不是平台产品——平台级能力不在本开源仓库范围内。有集成能力的团队仍可把约束层接入自有平台，作为其中的治理模块；纯开箱需求建议另选平台产品 |
@@ -139,7 +137,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 横跨你已有的 Agent、纵贯模型层，不替代模型，只补可靠执行——**FDE Harness 层平台无关**（插件 / Skill / MCP / CLI / Dashboard 五种形态按宿主能力分发），方法论跟着业务走，不跟着平台走：
 
 | 档位 | 平台 | 约束注入 | 挂载方式 |
-|------|------|---------|---------|
+|---|---|---|---|
 | **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 6 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合插件可选，见「上游与插件入口」）——`tools/pre-execute` 等 7 个生命周期事件（以 `engine/dsh-plugins/SEAMS.md` 词汇表为准） |
 | **完整挂载** | OpenClaw | ✅ **每会话注入一次** | Hook 注入四层约束 + 断路器 + 4 款 OpenClaw 插件 |
 | **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 25 规则，非调用级拦截） |
@@ -156,7 +154,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 🔍 **规则引擎先收敛、再给规则装上自测**——三件事一次到位：
 
 | 能力 | 一句话 |
-|------|--------|
+|---|---|
 | **双规则引擎统一** | 两处规则引擎（tool-level 与 git-diff）合并为单一引擎——一套定义、两种触发时机（调用前拦截 / commit 后审计），消除并行维护的行为不一致风险 |
 | **规则自测 schema** | 每条规则强制携带 `match` / `notMatch` 正负样例，加载时断言 fail-closed——规则写错立刻爆，不靠人记；FAIL 报文强制附替代建议、多规则命中取最严 |
 | **A24 交付物落点规则** | 白名单 opt-in 事前拦截，**出生即带正负样例**（规则 24→25 条），不留旧账 |
@@ -173,7 +171,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 **组织管理学视角**——两阶段对应给数字员工办入职的全流程：
 
 | 组织动作 | sofagent 对应 |
-|----------|--------------|
+|---|---|
 | 岗位职责说明书 | 进场冻结的交付物（merge_criteria / approver / trigger） |
 | 绩效考核 | 审计留痕 + 治理 KPI 面板（v1.5.0） |
 | 组织记忆 | 知识沉淀（think.md 反思 + knowledge/） |
@@ -182,7 +180,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | 劳动合同边界 | 可拔契约与主干能力清单（v1.5.7 排期） |
 
 | 想深入 | 看哪里 |
-|--------|--------|
+|---|---|
 | 方法论四阶段十二步（半天精读） | [FDE/GUIDE.md](./FDE/GUIDE.md) |
 | 约束层五种能力 · 模块编制 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 为什么必须一体 · 设计禁区 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
@@ -247,7 +245,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 > 📊 **Dashboard 有三个入口，各归各位**：
 >
 > | 入口 | 命令 | 形态 | 给谁看 |
-> |------|------|------|--------|
+> |---|---|---|---|
 > | **终端版** | `sofagent-dashboard --full` | 终端 ASCII 三栏（零前端依赖） | 开发者 / FDE 快速看 |
 > | **Web 版** | `sofagent web`（install.sh 安装态可用）· 仓库态 `node tools/dashboard/serve-dashboard.mjs` | 浏览器可视化（localhost:3780） | 老板 / IT 可视化看 |
 > | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式（仅 macOS 双击入口） | macOS 用户 |
@@ -257,7 +255,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 <p align="center"><img src="docs/assets/usage-path.svg" alt="使用路径：试用 → 团队 → 企业 → 自运转" width="85%" /></p>
 
 | 入口 | 做什么 | 装在哪 | 花多久 |
-|------|--------|--------|:----:|
+|---|---|---|:---|
 | **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，秒级出结果（首次 npx 约 30 秒） | 任意 git 仓库（临时） | 30 秒 |
 | **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 同上 | 1 分钟 |
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
@@ -309,7 +307,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 - 7 款 `cordis-plugin-sofagent*` 插件源码（6 款原子 + 1 款聚合）：[`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | 你想了解 | 看哪里 |
-|:---------|:--------|
+|:---|:---|
 | **全部文档索引**（按意图选路） | [WIKI](./docs/WIKI.md) |
 | 怎么装、怎么用、排查 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 架构设计与 25 条规则 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |

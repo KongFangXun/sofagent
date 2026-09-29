@@ -8,7 +8,6 @@
 
 欢迎参与 sofagent！这个项目的代码由 AI 模型辅助生成（详见[致谢](./docs/THANKS.md#生成伙伴)），作者做产品决策和终审。你看到的任何技术问题，请直接指出来，不必客气。
 
----
 
 ## 文档收录纪律（THANKS 一行制 / VALIDATION 三行制 / 归档分层）
 
@@ -29,13 +28,12 @@
 ### 归档分层（archive 是显式出口，不是垃圾场）
 
 | 出口 | 收什么 | 形态要求 |
-|------|--------|---------|
+|---|---|---|
 | `docs/archive/validation-deep/` | 成篇深论证 / 判定件谱系 / 方法论长文 | 一主题一文件；头部「搬出原因 + 原位置」；保留完整可查（归档件一字不减） |
 | `docs/archive/validation-digest/` | 早期台账化归档（既有先例） | 同上 |
 | `docs/archive/design/` 等 | 历史设计过程记录 | 同上 |
 | 正文回指 | 每处搬出留「1-3 行摘要 + 链接」 | 🔴 只归档不减正文 = 假扫除——归档净增与核心净减两数须写进开发日志文档治理行 |
 
----
 
 ## 目录
 
@@ -51,12 +49,11 @@
 - [License](#license)
 - [成为维护者](#成为维护者)
 
----
 
 ## 新人 30 秒快速开始
 
 | 你想... | 怎么做 |
-|------|------|
+|---|---|
 | 报 Bug / 提想法 | → [开 Issue](https://github.com/KongFangXun/sofagent/issues/new/choose) |
 | 不知道怎么用 | → [Discussions 去问](https://github.com/KongFangXun/sofagent/discussions) |
 | 不知道怎么测 | → 看 [testing.md](./docs/guides/testing.md) 的 9 个标准化用例 |
@@ -69,7 +66,7 @@
 **只看 3 个文件**：
 
 | 顺序 | 文件 | 看什么 | 约几分钟 |
-|:--:|------|------|:--:|
+|:---|---|---|:---|
 | 1 | [SKILL.md](./SKILL/SKILL.md) | 4 底线 + 9 则铁律 | 3 min |
 | 2 | [CHANGELOG.md](./CHANGELOG.md) | 最新版本的变更 | 5 min |
 | 3 | [LIMITATIONS.md](./docs/LIMITATIONS.md) | 已知局限 | 2 min |
@@ -77,7 +74,7 @@
 **先改 3 个文件（最低门槛）**：
 
 | 脚本 | 改什么 | 难度 |
-|------|------|:--:|
+|---|---|:---|
 | `install.sh` | BSD/macOS 兼容性修复 | ⭐⭐ |
 | `engine/scripts/verify.sh` | 新增检查项（bash 版，安装流程内调用） | ⭐ |
 | `engine/audit/src/verify.ts` | TS 版验证（命令为 `sofagent-core verify`；无 `sofagent-verify` 这个 bin） | ⭐ |
@@ -96,7 +93,7 @@ bash install.sh && bash engine/scripts/verify.sh
 ### 仓库目录结构（新贡献者先看文件放哪）
 
 | 目录 | 内容 |
-|------|------|
+|---|---|
 | `engine/` | 13 个 @sofagent/* 模块包（audit/core/orchestrator/train/mcp/rules/eval/think/evolve/ontology/inject/ab-test/daemon，13 个均含 test script）+ hooks/sofagent-load-chain 工具包 + umbrella/ 裸名总包——模块包全发布到 npm |
 另有 2 个插件族：`engine/dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `engine/openclaw-plugins/`（OpenClaw code-plugin 4 款） |
 | `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A24 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
@@ -114,14 +111,13 @@ bash install.sh && bash engine/scripts/verify.sh
 ### 微任务清单（5-15 分钟）
 
 | # | 任务 | 文件 | 难度 | 时间 |
-|:--:|------|------|:--:|:--:|
+|:---|---|---|:---|:---|
 | 1 | 改一条审计规则的正则 | `engine/audit/src/rules/rule-a*.ts` | ⭐ | 5 min |
 | 2 | 给 install.sh lib 模块加参数校验 | `engine/scripts/lib/*.sh` | ⭐ | 10 min |
 | 3 | 修复一个 ShellCheck 警告 | 见 ShellCheck Action 报告 | ⭐⭐ | 10 min |
 | 4 | 补一条审计规则 + 测试 | `engine/audit/src/rules/rule-a*.ts` + `.test.ts` | ⭐ | 15 min |
 | 5 | 翻译一段 HANDBOOK 到英文 | `docs/HANDBOOK.md` → 英文版 | ⭐⭐ | 15 min |
 
----
 
 ## 怎么参与
 
@@ -134,7 +130,7 @@ bash install.sh && bash engine/scripts/verify.sh
 ```
 
 | type | 用于 |
-|------|------|
+|---|---|
 | `feat` | 新功能 |
 | `fix` | Bug 修复 |
 | `docs` | 文档变更 |
@@ -156,7 +152,7 @@ bash install.sh && bash engine/scripts/verify.sh
 > 📋 **文档措辞规范（v1.3.4 起）**：sofagent 对「对外文档」和「内部文档」的措辞要求不同，避免审查者反复误报：
 >
 > | 文档类型 | 代表文件 | 「开发中 / WIP / draft」类措辞 | 说明 |
-> |---------|---------|------|------|
+> |---|---|---|---|
 > | **对外文档** | `README.md`、badge、`README.en.md` | ❌ **禁止** | 面向陌生读者和潜在用户，「开发中/WIP/draft」降低可信度。只允许发布版本号或「规划中」（指向明确路线） |
 > | **内部文档** | `docs/ROADMAP.md`、`CHANGELOG.md`、`docs/changelog/` | ✅ **允许** | 面向贡献者，标注「开发中/已排期/尚未实现」是正常的项目状态披露，不违反铁律 |
 >
@@ -213,7 +209,6 @@ git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 - 🔴 **共享文件必须逐 hunk 核对（2026-09-28 实测代价）**：`git add -- <path>` 的 pathspec 精确**挡不住「同一文件被两方改过」**——`git add <file>` 会把对方改动**一起暂存**（实测：一行的「承接 v1.5.4 待补清单 #6」被误带进我的提交，`git log -S` 归属错位，只能靠提交信息事后披露）。⇒ 并发场景下凡「共享文件」（两人都可能改的 SOP / 清单 / 台账）：**先 `git diff <file>` 逐 hunk 核对**，或用 `git add -p` / 临时 worktree 错峰；
   **禁直接 `git add <共享文件>`**。
 
----
 
 ## 文档体例（H1 语言 / 术语大小写）
 
@@ -224,7 +219,7 @@ git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 **规则**：H1 的推荐形式是「**英文识别名 · 中文主题词**」（如 `# 路线图 · Roadmap`）——识别名给外链引用与全文检索（稳定），中文主题词给中文读者（可读）。**省略中文主题词是允许的例外，但必须在本清单登记**，新增文档不得默认走例外。
 
 | 类别 | 规则 | 已登记文档 |
-|:--:|------|-----------|
+|:---|---|---|
 | **A · 中文 H1** | 面向中文读者的首读 / 规范文档，用纯中文（品牌名 `sofagent` 视为语言中立，可单独作 H1） | `README.md`·`README.en.md`（均为 `# sofagent`）·`SECURITY.md`·`CONTRIBUTING.md`·`docs/COMMUNITY.md`·`docs/THANKS.md`·`docs/WIKI.md` |
 | **B · 英文元文件 H1** | 沿用 GitHub / 开源生态约定俗成的英文名，**刻意不改**（改了反而不被工具与读者识别） | `CHANGELOG.md`·`CODE_OF_CONDUCT.md` |
 | **C · 中英混排 H1**（推荐形态） | 「英文识别名 · 中文主题词」 | `docs/API.md`·`docs/PHILOSOPHY.md`·`docs/ROADMAP.md`·`docs/VALIDATION.md`·`AGENTS.md`·`GEMINI.md` |
@@ -235,32 +230,30 @@ git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 ### 术语大小写（`Skill` / `skill`）
 
 | 写法 | 何时用 | 例 |
-|------|--------|-----|
+|---|---|---|
 | **`Skill`（大写 S）** | 作为**产品概念**——加载链的一层形态、`SKILL.md` 体系、能力市场里的技能实体、`evolve` 的优化对象 | 「五种形态分发（FDE 插件 / **Skill** / MCP / CLI / Dashboard）」「执行时 **Skill** 快照」「**Skill** 陈旧度」 |
 | **`skill`（小写）** | 只出现在**标识符语境**——目录 / 文件路径、包名或工具名、规则 id、YAML 字段名、锚点片段、外部体系自身的槽位命名 | 路径 `SKILL/skills/05-exit.md`、工具名 `skillopt`、规则 id `skill-staleness`、字段 `skill_ref:`、锚点 `#四件事的分工mcp--skills--ontology--harness` |
 
 > 📌 **同族的既定先例**：`plugin` 小写（通用名词）、`MCP`/`CLI`/`FDE`/`Agent` 大写（专有名词/缩写）——`Skill` 归入「大写」一侧，判据是「它指 sofagent 的一个具体产品实体，不是一个泛化的英文名词」。**改大小写时务必排除路径 / 包名 / 锚点**（改了会断链或失配门禁正则）。
 
----
 
 ## 目前最需要的帮助
 
 | 优先级 | 需要什么 | 你能得到什么 |
-|:--:|------|------|
+|:---|---|---|
 | 🔴 | **真实使用数据** | 在 docs/evidence/evidence.md 留名 |
 | 🟡 | **跨平台测试** | Codex / Hermes / Claude Code 运行报告 |
 | 🟡 | **英文翻译** | Handbook 目前只有中文 |
 
 > 你不需要会写代码。跑一周 sofagent，回来告诉我们发生了什么——不管好坏。
 
----
 
 ## Seeking Co-maintainers
 
 sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然累积，作者主动邀请：
 
 | 级别 | 条件 | 能做什么 |
-|------|------|---------|
+|---|---|---|
 | **Contributor** | 无门槛 | 提 Issue / 发 PR |
 | **Triage** | 合并 PR ≥1 或有效 Issue ≥3 | 分流 Issue / 打标签 |
 | **Co-maintainer** | 合并 PR ≥5 + 持续 ≥2 月 + 作者邀请 | review 和合并 PR |
@@ -268,7 +261,7 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 **急需的技能方向**：
 
 | 方向 | 具体做什么 | 每周时间 |
-|------|------|:--:|
+|---|---|:---|
 | **bash BSD/macOS 兼容** | install/verify/uninstall 跨平台修复 | 2-4 小时 |
 | **安全审计** | 审查 SECURITY.md + 企业合规缺口 | 不限 |
 | **OpenClaw hook (TS)** | handler.ts 回归测试 + 升级适配 | 2-3 小时 |
@@ -276,7 +269,6 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 
 > 🔴 如果你是 bash 方向开发者，先开 Discussion 与维护者聊聊方向（早期接触不算正式申请，正式标准见下方「Seeking Co-maintainers」）。
 
----
 
 ## 行为准则
 
@@ -284,13 +276,11 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 
 完整行为准则基于 [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html)，详见 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。
 
----
 
 ## License
 
 本项目采用 MIT 许可证。你贡献的代码和文档默认跟随 MIT。详见 [LICENSE](./LICENSE)。
 
----
 
 ## 成为维护者
 

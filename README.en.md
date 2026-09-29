@@ -15,7 +15,6 @@
 
 <p align="center"><sub><a href="./README.md">简体中文</a> | English</sub></p>
 
----
 
 ## Table of Contents
 
@@ -31,7 +30,6 @@
 - [FAQ](#faq)
 - [Ecosystem & Docs Index](#ecosystem--docs-index)
 
----
 
 ## What is this
 
@@ -68,7 +66,7 @@ sofagent does not build the Agent — it delivers the layer that keeps any Agent
 ## Should you install it?
 
 | If you are... | Recommendation |
-|---------------|----------------|
+|---|---|
 | **Adding discipline to an existing Agent** — you already run DSH / OpenClaw / WorkBuddy and want your AI to behave, leave traces, and stay roll-backable when things go wrong | ✅ **Install now**. The core value is exactly the constraint layer (inject · audit · rollback · distill · evolve) — works right after installation |
 | **A one-person company / SMB landing AI** — no dedicated engineer, you need a "never-quitting FDE" to map your workflow and deploy AI nodes | ✅ **Install now**. The FDE Harness layer is built for this — the full journey from mapping to deployment to post-departure audit |
 | **Looking for a turnkey enterprise Agent platform** — you expect a complete commercial product (multi-tenancy, permission management, billing, SLA) | ⏸️ **Hold off**. sofagent is an FDE Harness layer, not a platform product — platform-grade capabilities are out of this open-source repository's scope. Teams with integration capacity can still embed the constraint layer into their own platform as its governance module; if you need pure turnkey, look at platform products elsewhere |
@@ -157,7 +155,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 the platform:
 
 | Tier | Platform | Constraint injection | Mounting method |
-|------|----------|---------------------|-----------------|
+|---|---|---|---|
 | **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; see "Upstream & plugin entries" below) — 7 lifecycle events incl. `tools/pre-execute` (per the vocabulary table in `engine/dsh-plugins/SEAMS.md`) |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
 | **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 25 rules, not call-level interception) |
@@ -176,7 +174,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 🔍 **Converge the rule engine first, then give the rules a self-test** — three things at once:
 
 | Capability | In one line |
-|------|--------|
+|---|---|
 | **Unified rule engine** | The two rule engines (tool-level and git-diff) merge into a single engine — one definition, two trigger points (pre-call interception / post-commit audit), removing the risk of divergent behaviour from parallel maintenance |
 | **Rule self-test schema** | Every rule must carry `match` / `notMatch` positive/negative examples, asserted fail-closed at load time — a mis-written rule fails loudly instead of relying on memory; FAIL messages attach a suggested fix, and multi-rule hits take the strictest |
 | **A24 deliverable-location rule** | Allowlist opt-in, intercepted before the act, **born with positive/negative examples** (rules 24 → 25) — no legacy debt |
@@ -196,7 +194,7 @@ writes promotion and distilled reflection back into the deliverable.
 **The organizational-management lens** — the two phases map onto onboarding a digital employee:
 
 | Organizational act | sofagent equivalent |
-|--------------------|---------------------|
+|---|---|
 | Job description | Frozen deliverables from the entry phase (merge_criteria / approver / trigger) |
 | Performance review | Audit evidence + governance KPI dashboard (v1.5.0) |
 | Organizational memory | Knowledge distillation (think.md reflection + knowledge/) |
@@ -205,7 +203,7 @@ writes promotion and distilled reflection back into the deliverable.
 | Employment contract boundary | Pluggable contracts & core capability registry (scheduled v1.5.7) |
 
 | Go deeper | Where |
-|--------|--------|
+|---|---|
 | Four-phase twelve-step methodology (half-day read) | [FDE/GUIDE.md](./FDE/GUIDE.md) |
 | Constraint layer's five capabilities · module layout | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | Why they must be one · design no-go zones | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
@@ -279,7 +277,7 @@ the installed UI is the source of truth.)</sub></p>
 > 📊 **The Dashboard has three entries, each in its place**:
 >
 > | Entry | Command | Form | Who it's for |
-> |------|------|------|--------|
+> |---|---|---|---|
 > | **Terminal** | `sofagent-dashboard --full` | Terminal ASCII three-pane (zero frontend dependencies) | Developers / FDE quick check |
 > | **Web** | `sofagent web` (available in the install.sh-installed state) · repo-mode `node tools/dashboard/serve-dashboard.mjs` | Browser visualization (localhost:3780) | Boss / IT visual review |
 > | **macOS double-click** | Double-click `start-dashboard.command` | macOS shortcut to the Web version (macOS double-click entry only) | macOS users |
@@ -290,7 +288,7 @@ the installed UI is the source of truth.)</sub></p>
 <p align="center"><img src="docs/assets/usage-path-en.svg" alt="Usage path: trial → team → enterprise → self-running" width="85%" /></p>
 
 | Entry | What it does | Where installed | Time needed |
-|------|--------|--------|:----:|
+|---|---|---|:---|
 | **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | Any git repo (temporary) | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or custom JSON rules | Same as above | 1 min |
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | CI/CD | Set up once |
@@ -345,7 +343,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 - 7 `cordis-plugin-sofagent*` plugin sources (6 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | What you want to know | Where |
-|:---------|:--------|
+|:---|:---|
 | **Full doc index** (by intent) | [WIKI](./docs/WIKI.md) |
 | Install, use, troubleshoot | [HANDBOOK](./docs/HANDBOOK.md) |
 | Architecture & the 25 rules | [ARCHITECTURE](./docs/ARCHITECTURE.md) |

@@ -8,7 +8,6 @@
 >
 > 收录纪律（doc-slim 批起）：一条一行——名字 · 链接 · 它启发了什么（≤25 字）；读数/风险/边界/价值分析全文见 [`archive/validation-deep/thanks-extended.md`](./archive/validation-deep/thanks-extended.md)。
 
----
 
 ## 基石
 
@@ -21,7 +20,6 @@
 - **[DeepSeek V4 Pro](https://api-docs.deepseek.com/zh-cn/)** · 深度求索
 - **[GLM-5.2](https://z.ai/)** · 智谱 AI
 
----
 
 ## 思想之源
 
@@ -123,7 +121,6 @@
 - **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化参考（v1.4.8 起由自研 gate 验证器替代）
 - **[Satya Nadella at Microsoft Build](https://pod.wave.co/podcast/latent-space-the-ai-engineer-podcast/satya-nadella-no-priors-x-latent-space-crossover-special-at-microsoft-build)** · Satya Nadella —「Every company will have its own private eval」
 
----
 
 ## 工具与实践
 
@@ -144,7 +141,6 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[GBrain](https://github.com/garrytan/gbrain)** · Gary Tan — LLM Wiki 工业级落地，与 knowledge/ 同构
 - **[skills](https://github.com/mattpocock/skills)** · Matt Pocock — 深模块受控词汇表与设计熵勘测
 
----
 
 ## 社区
 
@@ -152,7 +148,6 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[/goal 命令](https://docs.anthropic.com/en/docs/claude-code/goal)** · Claude Code — 自主执行循环，启发用户确认设计
 - **[OpenFDE](https://open-fde.com)** — FDE 开源社区
 
----
 
 ## 关于作者
 

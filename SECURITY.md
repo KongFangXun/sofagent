@@ -27,7 +27,6 @@
 - [适用范围](#适用范围)
 - [免责声明](#免责声明)
 
----
 
 ## 已知风险（明文存储）
 
@@ -57,7 +56,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 企业 IT 采购视角的单页速查：哪些数据按什么粒度隔离、防线发生在事前还是事后。内容取自本文件与 [LIMITATIONS](./docs/LIMITATIONS.md) 的既有披露，不引入新口径。
 
 | 数据面 | 存储位置 | 隔离粒度 | 防线时序 | 边界与排期 |
-|------|------|------|------|------|
+|---|---|---|---|---|
 | `runtime-audit.jsonl`（运行时审计日志） | `data/audit/runtime/<repo-hash>/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash） | 事中（审计中间件随每次工具调用落盘） | FORGE（**项目内部自迭代工具链，非产品能力**）自托管路径已交付；约束层侧同构隔离已落地（§四详述） |
 | data-sovereignty 审计日志 | `data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash；旧版无段历史读侧 fallback 原地可读） | 事后可追溯 | 约束层侧 repo-hash 隔离已落地（复用 FORGE 方案）；多项目仍需 `SOFAGENT_HOME` 按项目分目录时可用 |
 | `history.jsonl`（commit 级审计历史） | `~/.sofagent/data/audit/`（全局） | 全局 append-only（HMAC 签名链要求全量连续，跨仓查询是运维刚需） | 事后（HMAC 链 + `--doctor` 校验；锚点防尾部截断） | 全局共享是设计决策；无密钥时退化为弱校验 hash chain（同用户进程可重算，见 §四 HMAC 段） |
@@ -67,7 +66,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > 排期项详见 [docs/ROADMAP.md](./docs/ROADMAP.md)；各数据面的攻击面与信任模型细节见 [docs/LIMITATIONS.md](./docs/LIMITATIONS.md)。
 
 | 文件 | 位置 | 可能含 |
-|------|------|------|
+|---|---|---|
 | `task/logs/` | `data/task/logs/YYYY-MM/YYYY-MM-DD.md` | 任务摘要、代码片段、API 响应摘要、对话摘要 |
 | `think.md` | `data/think.md` | 反思记录，可能含踩坑细节、失败模式、决策推理 |
 | `knowledge/` | `data/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
@@ -95,7 +94,6 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 - 对 `data/` 目录做 gpg 加密或放在加密卷上
 - 脱敏/保留/审计能力已落地，详见 [企业部署指南](./docs/guides/enterprise-deploy.md)
 
----
 
 ## 一、传输安全
 
@@ -104,7 +102,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > 引入版本：v1.1.8。
 
 | 层 | 做什么 | 谁负责 | 被攻破的后果 | 攻击者需要 |
-|:--:|------|:--:|------|------|
+|:---|---|:---|---|---|
 | 1 | MCP 走 stdio 本地进程通信（无网络监听面） | sofagent | 无法从网络直接访问 MCP | 先攻破本机 |
 | 2 | OpenClaw channel 路由 | OpenClaw | 无法接入联邦 channel | OpenClaw device token |
 | 3 | AES-256-GCM 加密 payload（`core/src/crypto/aes-gcm.ts`） | sofagent | channel 被窃听但内容不可读 | 256-bit 密钥（2^256 暴力不可行） |
@@ -119,7 +117,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > 引入版本：v1.1.8。
 
 | 项 | 语义 |
-|------|------|
+|---|---|
 | **三条配对路径** | A：6 位码 + 公钥指纹 y/N 人工确认（防中间人）· B：`~/.sofagent/federation.token` 文件带外交换（权限 600，v1.2.3 起，原环境变量方式已废弃）+ token-HMAC 公钥认证（CI/无人值守）· C：复用 v1.1.5 federation.json + HMAC `.sig` sidecar 验签（timingSafeEqual 恒定时间比较，缺失/篡改拒绝） |
 | **key 存储** | ECDH(prime256v1) + HKDF-SHA256 派生的 32 字节 AES key **只存内存**，不落盘明文；持久化（OS keychain / age）留 v1.1.9 |
 | **IV/nonce 管理** | 每条消息随机 12 字节 IV，绝不复用；GCM 16 字节认证标签校验失败即拒绝 |
@@ -153,7 +151,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > ⚠️ **企业环境警告**：v1.1.4 的 USB federation 曾是**基础检测模式**、**无签名校验**；**自 v1.1.5 起已加入 HMAC 签名校验**。
 
 | 维度 | v1.1.4（基础检测，无签名） | v1.1.5+（HMAC 签名，当前） |
-|------|:--|:--|
+|---|:---|:---|
 | 检测条件 | USB 卷标 = `SOFAGENT` + 存在 `federation.json` | 同左 + HMAC 签名校验（`.sig` sidecar） |
 | 配置应用 | 写入 `~/.sofagent/federation.json`，**不自动分发到各目录**（applyFederation 未实现） | 自动 nodes → orchestrator/nodes/、policies → audit/policies/（✅ v1.1.5 已落地，`applyFederation()`） |
 | 注入风险 | 🔴 **任何人制作的 SOFAGENT 卷标 U 盘可注入任意 federation 配置** | ✅ 签名不匹配则拒绝导入 |
@@ -180,7 +178,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 >两道防线：**HMAC-SHA256 全量签名防篡改**（`daemon/src/usb-signature.ts`，路径 POSIX 归一化 + 字典序 + 内容哈希串联，不含 mtime，确定性可复算）+ **knowledge/ AES-256-GCM 磁盘加密防失窃**（复用 v1.1.8 `core/crypto/aes-gcm.ts`，密钥 32 字节存 U 盘 `federation.json` 的 `key` 字段——U 盘本身即信任根，防的是「丢盘后 knowledge/ 被读」）。
 
 | 攻击场景 | 防线 | 结果 |
-|------|------|------|
+|---|---|---|
 | 偷 U 盘插自己电脑看文件 | knowledge/ 全盘 AES-256-GCM 密文（`knowledge/*.enc`，iv‖tag‖ciphertext 帧）；明文只在 daemon 内存 `Map<string, Buffer>`，退出 `Buffer.fill(0)` 清零 | 无密钥不可读；文件系统上永远只有密文 |
 | 删掉 federation.json 试图重置身份 | HMAC 全量签名：federation.json 在受保护文件清单内，删除即签名不匹配 | daemon 验签失败 → 写 `security-events.jsonl` → `process.exit(1)`（fail-closed 拒绝启动） |
 | 往 U 盘拖入恶意文件 | `verifyUsbSignature()` 双向校验：签名内文件被改/被删 → mismatch；签名外新增文件 → `file-added` | 验签失败拒绝启动并记录安全事件 |
@@ -190,7 +188,6 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > ⚠️ **签名排除项**：`runtime/`（Node 便携版二进制，各平台不同）不纳入 HMAC 签名——被替换的 runtime 二进制在签名保护之外，企业 IT 应通过官方渠道制作 U 盘并核对 Node 版本。`.sofagent-signature` 自身亦排除。
 > ⚠️ **HMAC 密钥双轨制**（U3 决策）：本机场景复用 `~/.sofagent/usb-secret.key`；U 盘运行时从 U 盘 `federation.json` 的 `hmacKey` 字段读取（便携化要求）。两个密钥源按 `startUsbRuntime` vs 本机 daemon 场景切换，v1.2.x 再评估统一。
 
----
 
 ## 二、知识安全
 
@@ -226,7 +223,6 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 - **受控 Action + 全链路审计**：「模型提建议、审计模块控执行」——Action 经权限·副作用·审计后才落地（见 DEVELOPMENT §八）。
 - **权限隔离（Entity Resolution）**：多源知识先解析实体归属再授权，避免越权拼接——对应 knowledge/ 实体归属与 A15 约束验证。
 
----
 
 ## 三、编排安全
 
@@ -235,7 +231,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > 引入版本：v1.1.8（补齐层 1/4/5）。
 
 | 层 | 防护内容 | sofagent 落点 | 状态 |
-|:--:|------|------|:---:|
+|:---|---|---|:---|
 | 1 | 指令分层隔离——外部内容 `<untrusted>` 标签包裹 | `core/src/security/prompt-sanitizer.ts` `wrapUntrusted()`（闭合标签转义防逃逸；harness 加载链联邦知识强制包裹） | ✅ v1.1.8 补齐 |
 | 2 | 工具动态最小权限 | Sub Agent 工具集零重叠设计 | ✅ 已有 |
 | 3 | 工具参数后端强制校验 | 审计模块 git diff 硬证据 | ✅ 已有 |
@@ -287,7 +283,6 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > ③ **「外部无法触达」的射程声明（穷尽性交代）**：该断言的对象是**三条下发面**，不是 daemon 的全部网络面——daemon 进程本身**确有一个在监听的 HTTP 端点**：`startHealthEndpoint`（`engine/daemon/src/health-endpoint.ts:191`，由 `engine/daemon/src/cli.ts:248` 在生产路径调用）执行 `http.createServer`（`:195`）+ `server.listen(port, host)`（`:213`），
 >但其 URL 分支只有 `GET /health` 与 `/health/`（`:196`）两支，只回健康三态、不接收下发内容、不写盘。⇒ 它是**只读探针面**，与三条下发面的入站路径无交集；三条下发面的事件入站仍是注入端口。
 
----
 
 ## 四、审计与存储安全
 
@@ -338,7 +333,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 **默认规则 17 条（始终生效）**：
 
 | 编号 | 名称 | 检测什么 | 判定 |
-|------|------|---------|:--:|
+|---|---|---|:---|
 | A1 | 不碰敏感 | `.env` / `*.pem` / `id_rsa` 等敏感文件被修改 | FAIL |
 | A2 | 不泄密钥 | API Key（AWS、OpenAI、Anthropic、DeepSeek、GitHub、Stripe、Google、Slack）/ Token / JWT / 私钥模式泄漏 | FAIL |
 | A3 | 不改越界 | 修改文件路径与任务描述不匹配 | WARN |
@@ -360,7 +355,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 **扩展规则 8 条（默认关闭，`extendedRulesEnabled: true` 启用）**：
 
 | 编号 | 名称 | 检测什么 | 判定 |
-|------|------|---------|:--:|
+|---|---|---|:---|
 | A14 | 知识库越权 | 访问超出工作流声明范围的知识库页面（事后审计） | WARN |
 | A15 | 不盲动 | workflow 节点未声明 actions | FAIL |
 | A16 | 非授权文件变更 | 非声明范围文件被修改（行为级） | FAIL |
@@ -378,7 +373,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 **阈值须校准** = 确定性骨架保留、**语义型**常数换成带校准依据的概率阈值；**留代码** = 体内常数是**结构化输入的纯函数**（长度 / 行数 / 文件数 / 注释率），**保持确定性判定、不判定化**——改概率是白增一层不可审计的间接，其真实缺陷是「系数来源不可追溯」，修法是**记来源**而非改成概率；**否** = 判定层承担主判定。
 
 | 编号 | 名称 | `ruleClass` | 判定化后触发方式 | 仍需确定性？ |
-|------|------|-----------|-----------------|:--:|
+|---|---|---|---|:---|
 | A1 | 不碰敏感 | 业务底线 | 文件身份匹配（确定性 FAIL），判定层不介入 | 刚性 |
 | A2 | 不泄密钥 | 业务底线 | 模式扫描（确定性 FAIL），判定层不介入 | 刚性 |
 | A3 | 不改越界 | 能力拐杖 | Score：变更路径与任务声明的语义越界度 | 否 |
@@ -429,7 +424,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 > 官方 AST 规则引擎（`sofagent-ruleset-ast`，v1.3.9 交付）——10 条示范规则（8 条代码 AST + 2 条 OWASP 语义），与上面 25 条 git-diff 规则同管线。规则代码在 `engine/rules/src/ast/rules/`（注册表 `engine/rules/src/ast/rules/index.ts` 的 `builtinAstRules`），触发条件以各文件 `description` 字段为准。
 
 | 编号 | 名称 | 触发条件 | 代码位置 |
-|------|------|---------|---------|
+|---|---|---|---|
 | no-eval | 禁止动态代码执行 | `eval()` / `new Function()` 执行任意字符串代码（prompt 注入 / 供应链攻击放大器） | `ast/rules/no-eval.ts` |
 | no-hardcoded-secret | 禁止硬编码密钥（AST 语义级） | `secret`/`token`/`apiKey` 等密钥类变量赋长字符串字面量（比正则扫行误报率低） | `ast/rules/no-hardcoded-secret.ts` |
 | no-dynamic-require | 禁止动态 require | `require(非字面量)` 模块来源静态不可见（供应链投毒隐藏通道，ASI04 关联） | `ast/rules/no-dynamic-require.ts` |
@@ -448,7 +443,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下为当前访问模型：
 
 | 操作 | Agent 能否？ | 说明 |
-|------|:--:|------|
+|---|:---|---|
 | 读取 | ✅ 能（以当前用户身份） | Agent 和审计模块共享同一文件系统权限 |
 | 写入 | ✅ 能 | Agent 可以追加/删除/篡改 history.jsonl |
 | 检测篡改 | ⚠️ --doctor 第 8 项检查 | 通过 hash chain 验证——但 Agent 可以在篡改后重新计算整条链 |
@@ -513,7 +508,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 **信任边界与风险分级**：能设置目标进程环境变量的攻击者，可将审计历史重定向到任意路径——「写到别处 + 校验读别处」使篡改表面看起来正常。该风险**完全取决于部署场景**：
 
 | 部署场景 | 风险等级 | 说明 |
-|---------|:--:|------|
+|---|:---|---|
 | 本地开发机 | 🟢 低 | 攻击者已能在本机设置环境变量 = 已拥有本机用户权限，游戏结束，审计重定向不构成额外提权 |
 | CI / 共享服务器 | 🟡 中 | 同机其他用户/作业可能注入环境变量，审计历史可被悄悄重定向 |
 
@@ -534,7 +529,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > **二级防御总述**：commit hook 是第一道防线（事前拦截），daemon 巡检 + `--doctor` 定期体检是第二道防线（事后发现），CI 侧 `--diff` 审计是兜底防线（hook 可绕 CI 不可绕）。当前 fail-closed 边界：仅 config 解析失败时走 safeDefaults（全规则启用）；config 被定向篡改不触发 fail-closed，需 CI 兜底。
 
 | 绕过方式 | 检测手段 | 缓解 |
-|----------|---------|------|
+|---|---|---|
 | `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 装三层防线（pre-commit + commit-msg + post-commit，v1.4.2）：绕过 commit-msg 的 commit 由 post-commit 对账——命中拦截记录时输出「疑似绕过」并留痕 history.jsonl，未命中输出 INFO 且可用 `--verify-commit <SHA>` 复核；定期 `--doctor` 检查未审计 commit；CI 侧 `sofagent-audit --diff` 兜底。**加密态边界（v1.5.0）**：静态加密开启后 history.jsonl 为密文（`SOFAGENT-AGE-V1` 前缀），明文对账不可用——post-commit 降级为显式提示（全密文态提示依赖 CI 兜底；混合态只对明文行对账），`--no-verify` 检测在加密态依赖 CI 兜底 |
 | `git add -f .sofagent/`（审计数据强制入库） | ✅ v1.4.2 起三层防线拦截——pre-commit 在 commit 对象生成前将 .sofagent/ 移出暂存区（主防线，对当次 commit 直接生效）；commit-msg 阶段再兜一次（护磁盘 index 防后续 commit 卷入）；post-commit 扫 HEAD tree 命中即告警 | pre-commit reset 失败（index.lock 竞态）时 fail-loud 拒绝 commit（宁可 false-retry 不可静默入库）；CI 侧 `--diff` 仍可发现已入库残留 |
 | 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中） |
@@ -600,7 +595,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 sofagent daemon 是本地文件系统监控守护进程，其行为边界如下：
 
 | 维度 | 说明 |
-|------|------|
+|---|---|
 | **监控范围** | 仅 `data/` 工作目录 + 用户显式配置的路径（`config.yml` 中的 `daemon.watchPaths`）。不扫描用户其他文件。 |
 | **数据去向** | 所有数据本地存储（`data/` 目录下），不上传云端，不向外发送网络请求——除非用户显式配置 TencentDB Memory 集成（`install.sh --with-memory`，opt-in）或模型推理端点（Dream Cycle「真实大脑」/ train_serve，`SOFAGENT_MODEL_API_KEY` 等，opt-in，见本文[「已知风险」](#已知风险明文存储)例外二）或云 VM 执行面（v1.4.6 `train cloud`，经分拣闸放行的非敏感/脱敏训练数据 ssh 隧道上传云 VM，见例外三）。 |
 | **权限** | 只读监听文件事件（hash 变化检测 + cron 定时巡检）。**不修改用户文件、不删除文件、不外传数据**。审计发现写入 `daemon-health.json` 和 `history.jsonl`。 |
@@ -611,7 +606,6 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 > daemon 源码见 `engine/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`usb-detect.ts`（USB federation 检测，v1.1.4+）、`dream-cycle/`（Dream Cycle 6 阶段管道，v1.1.7+）、`inspectors/knowledge-health.ts`（知识健康巡检，v1.1.7+）、`commands/knowledge-status.ts`（知识状态聚合命令，v1.1.7+）、`federation/`（联邦查询，v1.1.8+）、
 >`usb-signature.ts`（USB HMAC 签名，v1.1.9+）、`usb-key.ts`（USB key 创建，v1.1.9+）、`usb-runtime.ts`（USB 运行时启动，v1.1.9+）、`notify.ts`（统一通知接口，v1.1.3+）。
 
----
 
 ## 五、工程安全
 
@@ -622,7 +616,7 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 #### 脚本会做的事
 
 | 操作 | 路径 | 说明 |
-|------|------|------|
+|---|---|---|
 | 创建目录 | `~/.openclaw/skills/sofagent/` 或 `~/.workbuddy/skills/sofagent/` | 按平台部署 Skill 文件（**仅显式传 `--platform <平台>` 时**；默认安装不探测、零平台目录） |
 | 创建目录 | `~/.sofagent/data/task/logs/`（运行时产物按 `SOFAGENT_HOME` 解析，`install.sh:398 DATA_ROOT="$SOFAGENT_HOME/data"`） | 数据目录，权限 700 |
 | 复制文件 | 宪法(fde.md) + SKILL.md + 分层 rules/ + harness 约束骨架与 agents 子 Skill + 配套脚本 | 从仓库 `SKILL/` 和 `engine/scripts/` 复制到目标目录（以 `SKILL/` 目录实际清单为准） |
@@ -649,7 +643,7 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 install.sh 拆分为以下模块，便于逐模块审查：
 
 | 模块 | 职责 |
-|------|------|
+|---|---|
 | `install.sh` | 主入口（组装 + 参数解析） |
 | `lib/config.sh` | 配置加载 + 常量定义 |
 | `lib/daemon-lib.sh` | daemon 公共函数库 |
@@ -683,7 +677,6 @@ v1.3.5 交付 4b 起，CRDT 依赖已从旧包 `automerge@1.0.1-preview.7`（pre
 > **GitHub Actions 供应链面**：8 个 workflow 26 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag（@2026-09-27 实测，**口径 = 脚本正则 `^\s*(?:-\s+)?uses:\s*(\S+)` 逐文件计数、排除注释行**；逐文件：daemon-linux 1 / daemon-macos 1 / pr-check 9 / release 4 / shellcheck 2 / sofagent-audit 2 / verify 5 / windows 2。
 >⚠️ 直接 `grep "uses:"` 会多算 1 处——`pr-check.yml` 有一行含该词的注释），**另根 `action.yml` 1 处**同口径 pin（合计 27）；`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（**扫描面含根 `action.yml`**；离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
 
----
 
 ## 六、LLM API Key 透明度
 
@@ -697,7 +690,7 @@ FORGE fresh-eyes-loop 的 A/B sub-agent 需要 LLM API key。
 仅本地环境变量（用户自行配置）：
 
 | 位置 | 适用场景 |
-|------|------|
+|---|---|
 | `~/.zshrc` | macOS / Linux 默认 shell |
 | `~/.bashrc` | Linux 备选 shell |
 | 系统环境变量面板 | Windows |
@@ -722,7 +715,7 @@ SOFAGENT_LLM_{ROLE}_API_KEY  >  SOFAGENT_LLM_API_KEY  >  OPENAI_API_KEY
 key 仅用于：
 
 | 用途 | 说明 |
-|------|------|
+|---|---|
 | 调用用户配置的 LLM API | GLM（`open.bigmodel.cn`）/ DeepSeek（`api.deepseek.com`）/ OpenAI 兼容 endpoint |
 | 请求头鉴权 | `Authorization: Bearer <key>`，标准 HTTPS 请求 |
 
@@ -752,7 +745,6 @@ grep -n "\.env" .gitignore
 grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 ```
 
----
 
 ## 七、FDE 职业道德
 
@@ -766,7 +758,6 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 
 > 其余三条（把被替代的人当回事 / 对不该做的事说不 / 记住你代表技术本身）属 FDE 个人职业操守范畴，非安全工程范畴，详见 FDE/GUIDE.md。
 
----
 
 ## 八、训练安全
 
@@ -775,7 +766,6 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 后训模块开放后新增的攻击面（job.json 路径注入 / 超参命令注入 / 跨企业数据串读 / 云凭据经日志泄漏 / 训练产物篡改）由 v1.4.1 安全基线覆盖：路径白名单五重校验、spawn 元字符拒绝（拒绝而非清洗）、enterpriseId 全链路隔离 + 分区作用域读取、键名/值双轴凭据脱敏（先脱敏再签名）、权重 SHA-256 + HMAC manifest 与部署加载验签阻断（`artifact_tampered` 高危审计事件）。训练数据投毒检测与基座模型后门检测**明确不在开源版范围**（商业侧职责）。
 完整攻击面声明、模型层职责边界、系统级部署提示（Time Machine 快照 / SSD 覆写诚实边界）与红队核对清单见 [训练安全基线](./docs/guides/train-security.md)；双栈分层契约（决策面 / 计算面 / 资源面）见 [训练双栈契约](./docs/guides/train-stack.md)。
 
----
 
 ## 九、合规框架映射
 
@@ -786,7 +776,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 ### OWASP Agentic Top 10 映射表
 
 | ASI | 威胁 | sofagent 对策 | 已披露边界 |
-|:--:|------|------|------|
+|:---|---|---|---|
 | ASI01 目标劫持 | 注入指令覆盖 Agent 目标（prompt 注入） | A9 不纳注入（正则+leet 归一化）+ AST `asi01-prompt-injection`（system prompt 载体扫描）+ `<untrusted>` 包裹（§三 8 层防护层 1） | A9 不覆盖 Unicode 同形字/Base64 编码注入（§三编码绕过注）；语义级检测未排期 |
 | ASI02 工具滥用 | 越权调用工具、参数投毒 | Sub Agent 工具集零重叠（§三）+ 工具参数后端强制校验（8 层防护层 3，git diff 硬证据）+ A16 非授权文件变更（扩展） | 工具层校验是 commit 时点，非运行时阻断 |
 | ASI03 身份与权限滥用 | Agent 冒用身份、越权访问资源 | A22 不越权限（chmod/sudoers/setuid）+ A23 不逃路径（路径穿越/symlink）+ A14 知识库越权（扩展，事后审计）+ config `--sign-config` 签名防篡改 | A14/A15 是 commit 时审计非运行时阻断（§四）；同机多 Agent 无身份隔离（LIMITATIONS） |
@@ -804,7 +794,6 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 >
 > 📌 本表是**能力对位表**而非认证声明——sofagent 未通过任何第三方安全认证，映射仅表示「对该威胁类别存在已披露的对策与边界」，不构成合规背书。
 
----
 
 ## 报告漏洞
 
@@ -828,7 +817,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 **支持版本与补丁策略**：
 
 | 项 | 口径 |
-|----|------|
+|---|---|
 | 支持区间 | 仅最新 minor 线（当前 `v1.5.x`）获得安全修复；更早版本不承诺安全回填（阿尔法施工期口径——见 [ROADMAP](./docs/ROADMAP.md) 版本阶段说明） |
 | 补丁发布 | 高危问题优先发补丁版本（同 minor 内 patch 位）；修复内容记入 [CHANGELOG](./CHANGELOG.md) 对应版本条目 |
 | 报告响应 | 见上「响应承诺」节（72 小时确认 / 7 天初步评估） |

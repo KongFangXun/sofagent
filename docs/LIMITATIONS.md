@@ -8,7 +8,6 @@
 
 > 🧭 **阅读引导**：本文档按主题分节——**安全/合规局限见第三节**（强合规选型先读），**能力边界**（其余各节）多为设计取舍而非缺陷。通读一遍即可建立心智模型：**大多数局限有明确版本路线（见 ROADMAP），不是「永远做不到」**。首次阅读建议先看目录 + 每节第一段，无需逐条读完。
 
----
 
 ## 目录
 
@@ -22,14 +21,13 @@
 - [七、历史遗留与迁移说明](#七历史遗留与迁移说明)
 - [八、包依赖与编排局限](#八包依赖与编排局限)
 
----
 
 ## Key Limitations
 
 > 最关键 5 条局限，快速了解 sofagent 的边界：
 
 | # | 局限 | 详见 |
-|:--:|------|------|
+|:---|---|---|
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
@@ -68,7 +66,6 @@
 
 > 📌 data 目录整体权限加固（chmod 700）见 [SECURITY.md](../SECURITY.md) 「纵深防御」节。
 
----
 
 ## 一、架构设计局限
 
@@ -78,26 +75,23 @@
 
 返回能力元数据与调用计划，不真实执行（真实执行由 Agent runtime 注入 executor）——MCP 层默认占位是有意设计（防未审计代码执行），非缺陷。
 
----
 
 ### 💡 Harness 层自身在上下文里
 
 核心机制是 MD 文件注入 Agent 上下文。约束力 = Agent 的注意力 × 平台的加载可靠性。上下文窗口太小约束可能被截断；选择性忽略长文本（Lost in the Middle），中间铁律可能漏掉；约束机制依赖 Agent 配合——它必须「愿意读」。代价换来了：不依赖外部服务、不需要额外进程管理、一份代码到处能跑、配置都是纯文本可直接审计。
 
----
 
 ### 加载链步进脆弱性（仍有平台差异）
 
 **v1.0.1 四层加载链**将宪法内联进 SKILL.md（第 1 层所有平台强制生效），新增 knowledge/index.md 被动注入（第 4 层）。第 2、3 层（think.md + fde.md）仍靠 Agent 自觉读取——OpenClaw 通过 `sofagent-load-chain` Hook 强制注入，非 OpenClaw 平台仅靠 Agent 注意力，无法保证 100% 命中。
 
----
 
 ### 复盘评分是 LLM 自评：评审者与执行者不分离
 
 闭环复盘让执行任务的同一个 Agent 对自己打分——评估者和被评估者是同一个人。上海 AI Lab 的 Self Harness 论文给出方向性证据：**Agent 可以提议修改，但不能自己批准**。一旦自评，Agent 会收敛于「让验证变容易」而非「让结果变好」。
 
 | 平台 | 实现方式 | 隔离级别 |
-|------|------|------|
+|---|---|---|
 | OpenClaw | `session.spawn` 创建独立子 Agent，只传 task/logs 不传执行上下文 | 工程隔离 |
 | 非 OpenClaw | 主 Agent 重新 Read task/logs 作为评审主依据 | prompt 级约束，无机制保障，效果未实测 |
 
@@ -106,14 +100,13 @@
 **判据要分层，且刻意不合分**：上游判「喂对了没」（检索命中、权限单测——纯函数、可离线、毫秒级）、下游判「说对了没」（产出有没有破领域规则）、真机判「通没通」（端到端链路）。三层**不合并成一个总分**——合了以后分数掉了，分不清是检索退化还是措辞退化，也定位不到该修哪层。实践复盘里出现过完整反例：上游判据全绿（离线单测全绿 + 检索命中 100% + 工具调用零报错 + 配置干跑干净），真实对话仍违反多条领域规则，**整条验收链一条都没红**——根因是没有任何一道判据在看「模型最后说出来的那段话」。
 对应本仓：`evaluate_output` / `eval_suite` / `run_ab_test` 是下游判据面，**上游门禁全绿不能替代它**。
 
----
 
 ### 🌱 Skill 自动优化：从经验记录走向结构化知识库
 
 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把自动优化从「纯经验记录」推进一步。但仍处于**记录 + 整理**阶段——尚未到「自动改进」（多轨迹归纳）阶段：
 
 | 阶段 | 机制 | sofagent 现状 |
-|------|------|------|
+|---|---|---|
 | **经验记录** | 记录单次成功/失败，调整评分 | ✅ v1.0.1 起 |
 | **多轨迹归纳**（TRACE2SKILL） | 并行分析大量轨迹 → 提出补丁 → 合并去重 | ❌ 缺：前 5 次冷启动保护仅缓冲，未真正归因 |
 | **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑）——现行 A/B 走 LangGraph 编排；**v1.0.7 曾升级的「方案 C（DeepAgents 完整 Agent）」路径 v1.2.0 起已弃用** |
@@ -129,7 +122,6 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 
 **风险**：单次失败 → 降分 → 下次不用该 Skill。但失败可能只是模型波动——长期会把噪声写成规则。**现有防御**：冷启动保护（前 5 次只记录不判断）+ LLM 自评权重 ×0.3。根治需要独立验证环（见 ROADMAP v1.x）。
 
----
 
 ## 二、平台与兼容性局限
 
@@ -145,7 +137,6 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 
 SKILL.md B1 步用 bash heredoc 创建 `~/.sofagent/data/` 数据目录。Windows 或受限沙盒环境可能没有 bash。降级路径已内置：bash 不可用时 Agent 降级为逐条 `mkdir` + Write 工具创建。
 
----
 
 ### 🪟 Windows 支持是实验性的
 
@@ -154,7 +145,7 @@ SKILL.md B1 步用 bash heredoc 创建 `~/.sofagent/data/` 数据目录。Window
 PowerShell 脚本（`.ps1`）作为 bash 脚本的平行实现存在，但**功能覆盖不全**：
 
 | 脚本 | .sh 行数 | .ps1 行数 | 覆盖度 |
-|------|:---:|:---:|------|
+|---|:---|:---|---|
 | verify | 955 | 230 | ~25%（按行数比，缺 §4 Hook 检查、§8 断路器配置、§10 企业合规验证、§11 daemon 状态） |
 | install | 1638 | 559 | 实现路径完全不同：ps1 含 Windows 注册表逻辑，但覆盖面窄于 sh（sh 走完整安装流程） |
 | daemon | 349 | 131 | ~38%（按行数比） |
@@ -171,19 +162,16 @@ PowerShell 脚本（`.ps1`）作为 bash 脚本的平行实现存在，但**功�
 
 **建议**：Windows 用户优先用 `npx @sofagent/audit`（npm 包，全功能），bash 脚本用 Git Bash / WSL 运行。PowerShell 脚本作为后备，不作为主路径。
 
----
 
 ### ⏸️ 中间检查点挂起
 
 设计：子 Agent 超标 → 暂停 → 主 Agent 三问评估。「暂停」需要 OpenClaw `before_tool` Hook 拦截工具调用，当前不支持。现阶段靠 `tools.loopDetection` 兜底——能检测死循环并硬停止，做不到「暂停→三问→继续」的精细控制。
 
----
 
 ### Skill 级动态 Hook 做不到
 
 sofagent 无法在运行时动态注册安全护栏。Hook 是 OpenClaw 配置层的静态设置。现阶段安全约束靠静态 fde.md + OpenClaw `tools.loopDetection` 兜底。
 
----
 
 ### 🧩 不是分布式系统 / 不是多用户系统
 
@@ -194,14 +182,12 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 如果你**只用一家 Agent 平台**（如只用 OpenAI、只用 Anthropic、只用豆包），且**接受审计日志存在云端**——那么该平台的内置治理能力可能比 sofagent 更顺滑（无需额外安装、无需学习曲线）。sofagent 的核心价值在多供应商混用 + 本地留证场景：当你同时用 OpenAI + Anthropic + 国内模型，需要一份统一的、跨平台的、留在本地的审计证据时——平台内置方案做不到这一点。
 
----
 
 ### sudo 权限边界
 
 > **sudo 权限边界**：sofagent 的 `install.sh` 通常无需 sudo（所有操作在用户目录 + npm global）；仅当 symlink 目标目录（如 `/usr/local/bin`）不可写时，会以非交互 sudo（`sudo -n`）尝试注册 CLI 命令，失败时给出手动命令提示。`--init` 安装 git hook 时，如 `.git/hooks/` 目录权限为 root（罕见，通常是当前用户），需要 `sudo chown` 修正目录权限后再运行。daemon plist 安装到 `~/Library/LaunchAgents/`，不需要 sudo。
 >如用户以 root 运行 sofagent，审计日志和 knowledge/ 的文件 owner 会变为 root，后续非 root 运行时可能因权限不足报错——不建议以 root 运行。
 
----
 
 ### 🧩 依赖方向架构测试只覆盖 build 序列包
 
@@ -340,7 +326,6 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 > - **写链两处「降级继续」是设计取舍（v1.4.4 披露）**：① 上一行解密/JSON 解析失败时 prevHash 置 `'unknown'` 继续写入（条目带 `chainStatus:'broken'` 显式标记，连续 ≥2 条断裂升级告警）；② chmod 0o600 失败时读回实际权限验证——真实宽松才告警，写入照常。两处均**不阻断审计写入**：审计写入被阻断 = 审计本身失效，比链断或权限宽更危险（fail-open 取舍，审计可用性 > 链完整性严格性）。
 >攻防注意：能反复损坏 history.jsonl 最后一行的攻击者可让链持续断裂而不被写入侧拦截——发现连续断裂告警时应立即 `--doctor` 全链校验并排查文件篡改来源。
 
----
 
 ### A9 注入检测局限
 
@@ -377,7 +362,6 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 > ⚠️ **边界：审计模块超时降级是「收敛重跑」不是「抢占中断」（v1.4.5 接线披露）**——审计整轮耗时超阈值（`SOFAGENT_AUDIT_TIMEOUT_MS`，缺省 30s）后自动降一级（full→rules-only→minimal）并用更少规则集**重跑一轮**（minimal 级只保留 A1-A11 核心安全规则）。语义要点：① 超时判定作用于「整轮完成后」，第一轮的结果**已完整产出**（降级不丢首轮证据，报告以降级重跑轮为准并注入 DEGRADATION_NOTICE）；② 已在 minimal 级还超时则不再降级重跑，返回首轮结果并标注；
 >③ 扩展/拐杖规则在降级轮**不执行**——SKIPPED ≠ 通过，事后取证不能把「N 条跳过」读成「N 条无问题」。降级记录供 daemon/orchestrator 消费（audit-timeout 触发器）。
 
----
 
 ### A2 密钥检测局限——编码与格式绕过（v1.2.5 披露）
 
@@ -398,13 +382,11 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 审计溢出文件（`~/.sofagent/data/spill/diff-*.diff`，可能含密钥类 diff 内容）保留 30 天后可用 `node tools/maintenance/prune-spill.mjs` 回收；保留期经 `SOFAGENT_SPILL_TTL_DAYS` 调整。
 
----
 
 ### Skill 层 Slop：经验漂移
 
 eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**——某次偶然成功被当成经验写进 think.md，三个月后经验库里一半是不可复现的噪声。应对：think.md 的置信度渐进（0.3→0.5→0.7）和 30 天无触发衰减。更根本的解法是定期人工审计。
 
----
 
 ### 平台依赖
 
@@ -419,13 +401,12 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 > 以下表格说的是「哪些能力在哪个层生效」——不是「哪些 Agent 被支持」。审计层对所有 Agent 一视同仁（只看 git diff），编排层全平台可用（LangGraph createReactAgent 驱动）。
 
 | 能力 | OpenClaw | WorkBuddy | Codex / Hermes / Claude Code |
-|------|:--:|:--:|:--:|
+|---|:---|:---|:---|
 | 核心约束 | ✅ Hook注入 | ✅ SKILL加载 | ⚠️ 种子指令 |
 | Skill 自启 | ✅ | ✅ | ❌ |
 | 加载链脚本 | ✅ 内部 hook | ❌ Agent Read替代 | ❌ |
 | 断路器 | ✅ loopDetection | ❌ | ❌ |
 
----
 
 ### 🔓 快照恢复的人审门禁是约定级，不是机制（v1.5.0 披露）
 
@@ -433,7 +414,6 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 与 ROADMAP「管控能力不得静默降级」的既定纪律存在落差。三个整改方向（① 快照自身完整性校验；② 把 `human_confirmed` 改为复用仓内既有 HITL 机制的带外确认通道；③ 判定为设计取舍并保留本披露）**待维护者裁定**；裁定前请勿把该门禁当作安全边界。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
 
----
 
 ### 🔓 静态加密在非交互环境默认跳过（v1.5.0 披露）
 
@@ -441,7 +421,6 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 这是「默认安全 vs 可用性」的**显式设计取舍**（避免无头部署因缺密钥而拒绝启动），交互首启或走 env 通道（`SOFAGENT_CONFIRM_BACKUP=1`）可正常激活。**「当前是否处于明文态」可否被外部查询（`doctor` / `--stats` 显式标注）尚待裁定**；裁定前请以启动日志 + `head -1 ~/.sofagent/data/audit/history.jsonl` 是否含 `SOFAGENT-AGE-V1` 前缀自行核验。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
 
----
 
 ### 🔓 设备远程下发面：验签无可信根 + 任务通道零验签（v1.5.1 披露）
 
@@ -452,7 +431,6 @@ v1.5.1 新开三条**远程下发事件**——`device.upgrade`（设备 OTA 升
 
 **当前性质是「设计期已知缺口」而非「已暴露面」**：三条下发面尚未接真实传输通道（npm registry / 制品库 / 安装脚本均为**注入端口**，缺省只落盘内联内容），外部无法触达；**一旦接上真实传输，上述两项直接构成远程包注入面**——信任锚与任务面验签须随该批落地。详见 [SECURITY §三「G12 设备远程下发面」](../SECURITY.md)。
 
----
 
 ## 四、成熟度与测试局限
 
@@ -460,21 +438,19 @@ v1.5.1 新开三条**远程下发事件**——`device.upgrade`（设备 OTA 升
 
 SKILL.md 的回复前闸门和闭合清单由 Agent 自觉执行——没有 Hook 级的硬拦截。在连续快速操作中 Agent 注意力可能跳过检查。应对：硬层兜底（fde.md + ⛔ 硬出口）、结构加固（闸门前置）、人工审计（定期翻 task/logs）。
 
----
 
 ### 核心效果实测情况
 
 本项目核心宣称（越用越聪明、约束效果提升）已有 11 个实测 Case，但全部为一次性测试，缺乏持续使用 ≥1 周的样本和 A/B 对照数据。历史版本曾跑 5 组 A/B——约束层增量天花板低（0/16），Harness 层有 promising 信号但存在方法论局限。**v1.4.5 采样管线就位**（continuous-sampler 每日采 eval passRate/知识库增量/修正回流 + evolution-ab 对照 + `node tools/report/evolution-report.mjs` 报告——证据强度按「自测自报」三级标注如实分级），
 但 7 天样本尚未采满——「越用越好」表述在样本达标前不挂实测链接（口径见 evolution report 第七节）。
 
----
 
 ### 运行时约束 vs 提交时审计
 
 当前架构是**运行时约束**——依赖 Agent 配合读取 MD 文件。早期版本确立新方向：**提交时审计**（sofagent-audit），不依赖 Agent 运行时配合（看的是 git diff），但依赖日志真实性。
 
 | 维度 | 运行时约束 | 提交时审计 |
-|------|------|------|
+|---|---|---|
 | 依赖 Agent 配合 | ✅ 必须 | ⚠️ 不依赖运行时配合，但依赖日志真实性 |
 | 跨平台 | ⚠️ OpenClaw 全功能，其他平台仅核心约束生效 | ✅ 任何 git 仓库 |
 
@@ -488,14 +464,13 @@ A14 规则在 commit 时检查 Agent 是否访问了超出工作流声明范围�
 
 **企业建议**：将 sofagent A14 作为审计追溯工具，不要作为唯一的访问控制手段。运行时阻断需配合 Agent 平台的权限体系。
 
----
 
 ### 审计闭环成熟度
 
 sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARCHITECTURE.md](./ARCHITECTURE.md)），但各步骤的成熟度不同：
 
 | 步骤 | 成熟度 | 说明 |
-|------|:--:|------|
+|---|:---|---|
 | 1. git diff 扫描 | ✅ 生产可用 | 纯 git 操作，确定性输出 |
 | 2. 规则检查（A1-A11、A14-A24 + E1-E2/E4） | ✅ 生产可用 | 25 条规则全部有测试覆盖 |
 | 3. 审计报告生成 | ✅ 生产可用 | JSON/text/table 三种格式 |
@@ -505,14 +480,13 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 审计闭环的核心价值在步骤 1-3（硬证据 + 规则判定），步骤 4-6 是增量增强。企业用户应优先依赖 git diff 审计结果，反思和推送作为辅助参考。
 
----
 
 ### 测试覆盖范围
 
 当前审计核心 1456 个、全 workspace 5569 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
-|------|:--:|------|
+|---|:---|---|
 | install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
 | daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试。**行为边界**：daemon 监控 think.md/fde.md 文件 hash 变化 → 写 daemon-health.json，不直接审计 git commit。commit 审计由 commit-msg hook（`sofagent-audit --install-hook` 安装）负责 |
 | MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |
@@ -520,7 +494,6 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 缓解：install.sh 和 sofagent-core verify 有约 44-48 项动态检查作为 smoke test，审计模块核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
 
----
 
 ### 审计工具信任模型：Agent 自我报告
 
@@ -535,7 +508,6 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/tas
 
 ---
 
----
 
 ## 五、审计与工程局限
 
@@ -547,7 +519,6 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/tas
 - **缺少恢复路径**：think.md 记录了踩坑，但没有结构化的「失败了怎么恢复」机制，等 JSONL 落地
 - **CHANGELOG 历史遗留**：CHANGELOG 历史版（v1.0.6 及之前）含审查元信息（「审查驱动修复」等），已发布不便回改。v1.0.7 起的索引行以**产品变更**表述为主——内部工单号与审查轮次代号不再写入索引（此前的残留已随本轮文档修复批清理）；仍保留的过程性内容是**对外有披露价值的登记**（如 v1.4.8 判据偏差登记），不属审查代号。
 
----
 
 ### 网络外传检测（A20）为启发式规则
 
@@ -558,7 +529,6 @@ A20 基于域名白名单 + 动作/敏感数据双条件匹配，**非完备检�
 
 A20 定位为「审计信号」而非「安全屏障」，企业高安全场景应叠加网络层 DLP。
 
----
 
 ### 编排模块稳定性
 
@@ -568,7 +538,6 @@ A20 定位为「审计信号」而非「安全屏障」，企业高安全场景�
 
 > ℹ️ **设计取舍声明**：编排依赖模型质量是 LangGraph createReactAgent 架构选型的代价，非 bug——用「模型可插拔」（v1.3.2 client_type + v1.3.6 model_register）缓解（模型差可换），用「审计层独立」（不依赖编排）兜底。确定性编排模块是根本解但当前无排期。
 
----
 
 ### FDE 端到端验证状态
 
@@ -581,14 +550,12 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 缓解：如果你在真实环境中使用了 sofagent，欢迎提交 case study——这比任何内部测试都更有说服力。模板在 `docs/evidence/case-study-template.md`。
 
----
 
 ### 组件间集成测试
 
 **状态：v1.3.2 起有循环级集成验证，无独立 CI 集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排模块 LangGraph createReactAgent compose 通过。**v1.3.2 补全**——Onboard L2-L5 的循环机制天然跑全链路（编排→审计→定位→修复→再跑），作为验收标准补 smoke test。
 当前边界：daemon → MCP → webhook → 编排四组件串联行为依赖发版前手动验证（acceptance-test，阶段五步骤一脚本层直跑），不在日常 CI 集成测试内（见下节「端到端验收测试覆盖」）。
 
----
 
 ### 端到端验收测试覆盖
 
@@ -601,13 +568,11 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 未来版本计划将 acceptance-test.sh 纳入 CI 自动执行（当前为发版前手动）。
 
----
 
 ### acceptance-test 数字口径
 
 > **acceptance-test 数字口径**：「4 处 check-test-count 一致」指脚本**实际校验**的 4 处——CHANGELOG / 版本开发日志 / README / acceptance-test.sh 的测试数字声明一致。该数字在其它文档（本文件、WIKI、README.en 等）亦有出现，属**引用**，不在脚本校验面内；改动数字时须按「消费方清单」全量扫。
 
----
 
 ### safe-delete 环境下的测试预期失败（16 个）
 
@@ -626,7 +591,6 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 > 这份局限文档是开放的。如果你发现了我们没列出来的局限——开 Issue，直接说。
 
----
 
 ## 六、文件系统审计局限
 
@@ -636,7 +600,6 @@ A16（非授权文件变更）与 A17（异常批量变更）是**行为级**检
 
 A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daemon 模式下需 daemon 主动填充 `ctx.diffFiles`。A17 的跨审计聚合依赖 `ctx.history` 窗口数据，daemon 模式下若未传入历史数据则只能检测单次批量变更。
 
----
 
 ## 七、历史遗留与迁移说明
 
@@ -666,7 +629,6 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 >
 > ⚠️ **迁移指引（行为变更，非静默死配置）**：该开关此前在 shell 侧**真实生效**——升级后 `data_cleanup_on_record: true` 不再产生任何行为。需要写入后自动清理请显式调度 `engine/scripts/cleanup.sh`；保留策略仍由 `SOFAGENT_RETENTION_DAYS` / `SOFAGENT_RETENTION_MAX` 控制（消费点 `engine/scripts/cleanup.sh`）。
 
----
 
 ## 八、包依赖与编排局限
 

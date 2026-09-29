@@ -7,7 +7,6 @@
 > sofagent 是开源（MIT）的 **FDE Harness 层**——不造 Agent，给宿主 Agent（DSH / OpenClaw / WorkBuddy）加一层治理。本文档是项目全局索引入口。
 > 人类开发者与 AI Agent 均可阅读；**AI Agent 查实现路径请直接跳 [§五 文件地图](#五文件地图)**。English readers: [README.en.md](../README.en.md)。阅读路径（3 分钟 / 30 分钟 / 选型对照）见 [§八](#八导航按你的意图选路)；文档分工与体量纪律见 [§九](#九文档分工与体量纪律)。
 
----
 
 ## 目录
 
@@ -22,14 +21,12 @@
 - [八、导航：按你的意图选路](#八导航按你的意图选路)
 - [九、文档分工与体量纪律](#九文档分工与体量纪律)
 
----
 
 ## 一、一句话
 
 **sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场把业务判断写成文件（梳理工作流、构建本体图谱、把能自动化的环节变成 AI 节点），部署后按文件 7×24 执行与审计。底层是 **约束层**——约束 Agent 行为、审计每次变更、沉淀经验。
 **产品形态 = FDE Harness 层**：对执行体（Agent）做约束、对智力源（模型）做治理——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
 
----
 
 ## 二、产品叙事：sofagent 是 FDE Harness 层（不造 Agent，嵌在 Agent 与模型之间做治理）
 
@@ -69,14 +66,13 @@ graph TB
 
 **为什么这条 workflow 会一直跑**：企业持续需要 AI 落地 → 这条 FDE workflow 不只是 sofagent 的项目，也会成为企业的 workflow。
 
----
 
 ## 二·五、能力全景（用「你遇到的事」说 · 3 分钟版）
 
 > 模块语言（注入/审计/回溯/沉淀/进化）是给开发者的；下面这张表用**用户任务语言**回答「到底能干什么」。状态：✅ 已发版 · 📋 排期中（未发版）——逐行核对至 v1.5.3（2026-09-26）。
 
 | 你遇到的事 | sofagent 做什么 | 状态 |
-|------|------|:--:|
+|---|---|:---|
 | AI 改代码会不会把密钥/后门带上生产？ | 每次 commit 自动过 25 条安检，违规当场拦截（秒级、零配置） | ✅ |
 | AI 搞砸了怎么办？ | 每次变更自动存快照，一键回到任意时点 | ✅ |
 | 不知道该在哪些环节上 AI？ | FDE 四阶段：梳理业务流 → 三问判定 → 算清每个节点值多少钱 | ✅ |
@@ -91,12 +87,11 @@ graph TB
 
 **五分钟亲眼看**：`sofagent demo`（v1.5.1 已交付，经 npm 通道可用：`npx -y -p @sofagent/audit sofagent-audit demo`；install 态 CLI 暂无 demo 子命令）——一条命令跑完「注入 → 故意违规 → 审计拦截 → 快照回滚 → 举证导出」完整链路，看到拦截发生的那一瞬间你就懂了这个产品。
 
----
 
 ## 三、核心概念
 
 | 概念 | 一句话 | 详情 |
-|------|--------|------|
+|---|---|---|
 | **FDE Harness** | 对外的产品身份：**FDE 方法论 × Harness 工程**——同一件事的两个阶段：FDE 进场生成判断（哪里上 AI、做好标准、谁拍板），冻结成交付物（workflow.yml + 本体数据）；约束层离场驻留判断（按交付物 7×24 执行、进化时写回），装进成熟 Agent（DSH / OpenClaw / WorkBuddy）；装上它的 Agent 即以 FDE 方式作业，离场后留一套能持续维护的 AI 化资产 | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
 | **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层五种能力（注入·审计·回溯·沉淀·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——五种能力各自覆盖其中哪些维度 | [ARCHITECTURE 导读层 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；五种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
@@ -112,7 +107,6 @@ graph TB
 | **激活链** | FDE 交付物→企业工作流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
 | **data/** | ~/.sofagent/data/ SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/；用户配置入口为项目级 `.sofagent/config.yml`（data/config/ 是 daemon 运行时产物，非用户配置面） | [DEVELOPMENT §数据文件架构](./DEVELOPMENT.md) |
 
----
 
 ## 四、架构全景
 
@@ -174,7 +168,6 @@ graph TB
 
 > **一句话记忆**：环境、流程、反馈。约束层给 Agent 一个工作间，Graph 告诉它任务流向哪，Loop 让它出错后能自己改。
 
----
 
 ## 五、文件地图
 
@@ -183,7 +176,7 @@ graph TB
 ### 根目录（重要性排序）
 
 | 文件 | 看什么的 |
-|------|---------|
+|---|---|
 | `README.md` | 项目介绍、安装、部署（给人看） |
 | `FDE/GUIDE.md` | FDE 诊断方法论四阶段十二步（独立产品入口，见 [FDE/README.md](../FDE/README.md) 总览） |
 | `CHANGELOG.md` | 纯目录索引——每版本一行，细节见 `docs/changelog/` |
@@ -197,7 +190,7 @@ graph TB
 ### docs/ 目录
 
 | 文件 | 看什么的 |
-|------|---------|
+|---|---|
 | `docs/WIKI.md` | **你正在读的这个**——项目导航索引 |
 | `docs/PHILOSOPHY.md` | 产品哲学九节：为什么做、三层治理、FDE 定义 |
 | `docs/VALIDATION.md` | 行业印证与生态定位：31 篇行业方法论印证、a16z 七法则、Agent 三层模型、架构框架映射 |
@@ -219,7 +212,7 @@ graph TB
 ### engine/（13 个 @sofagent/* 模块包（13 个均含 test script）+ @sofagent/load-chain 工具包 + sofagent 裸名总包 umbrella + 2 个插件族 + hooks/scripts 运维件）
 
 | 包 | 职责 |
-|----|------|
+|---|---|
 | `engine/audit/` | @sofagent/audit — 审计模块（git diff + 25 条规则） |
 | `engine/core/` | @sofagent/core — 核心类型、HMAC 工具、memory-contract |
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
@@ -237,17 +230,16 @@ graph TB
 ### 关键数据路径（`data/`）
 
 | 路径 | 内容 |
-|------|------|
+|---|---|
 | `data/audit/history.jsonl` | 审计历史（HMAC 哈希链，append-only） |
 | `data/knowledge/` | 知识库（entities / concepts / comparisons / summaries） |
 | `data/config/` | daemon 运行时产物（audit-report.json webhook 推送配置等，未配置相关功能时目录不生成）——**不是用户配置入口**；用户配置走项目级 `.sofagent/config.yml` + `watch.yml`（config-loader 三级 fallback，见 [LIMITATIONS §三](./LIMITATIONS.md)） |
 
----
 
 ## 六、当前状态
 
 | 项 | 值 |
-|----|-----|
+|---|---|
 | 当前版本 | **v1.5.3**（2026-09-26，✅ 已发版 · 审计模块 · 规则引擎统一与自测）· 上一版 v1.5.2（2026-09-24，✅ 已发版） |
 | 下一版 | **v1.5.4**（⏳ 未开发——以 [ROADMAP](./ROADMAP.md) 规划表为准） |
 | 测试覆盖 | 5569 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
@@ -258,7 +250,6 @@ graph TB
 > 📦 **包数口径**：全仓共 **27 个 workspace**——13 个 `@sofagent/*` 模块包 + 1 个工具包 `load-chain` + 1 个插件适配层基座包 `dsh-plugin-kit` + 7 个 DSH 插件（v1.5.2 章九起摘 `private` 转 npm 发布物）+ 4 个 OpenClaw 插件 + 1 个 npm 裸名总包 umbrella；
 >其中 15 个发布为 `@sofagent` scope（13 模块包 + `load-chain` + `dsh-plugin-kit`）+ 7 个 DSH 插件 + 1 个裸名总包，共 **23 个 npm 发布物**。OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。
 
----
 
 ## 七、术语表
 
@@ -268,7 +259,7 @@ graph TB
 > **术语标准表述（SSOT）**：对外中文「约束层」、英文「Harness」；「Constraint Layer」「约束底座」为同义归并，统一写作「约束层」，不再单列。
 
 | 术语 | 简释 | 精确定义 |
-|------|------|---------|
+|---|---|---|
 | FDE | Forward Deployed Engineer——进场生成判断、部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
 | FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理 → 判定 → 交付 → 养护」。名词位（岗位）/ 动词位（能力）禁混用 | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
 | 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
@@ -287,7 +278,6 @@ graph TB
 | ToolGate | Agent 工具调用的前置门禁（A2 密钥/A9 注入/A14 越权等规则） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | data/ | v1.2.1 SSOT 运行时数据目录（安装后实际位于 ~/.sofagent/data/），替换旧 .sofagent/ | [DEVELOPMENT §数据文件架构](./DEVELOPMENT.md) |
 
----
 
 ## 八、导航：按你的意图选路
 
@@ -306,7 +296,7 @@ graph TB
 ### 了解 FDE Harness（产品 → 理念 → 路线）
 
 | 你想…… | 读这个 |
-|---------|--------|
+|---|---|
 | 3 分钟搞懂它是什么、能干什么 | [README.md](../README.md) |
 | 理解设计哲学（为什么这么做） | [PHILOSOPHY.md](./PHILOSOPHY.md) |
 | 看行业印证与生态定位 | [VALIDATION.md](./VALIDATION.md) |
@@ -320,7 +310,7 @@ graph TB
 > 📦 **两条分发通道互斥，别都装。**①**托管只读订阅**——从 ClawHub / SkillHub 装 Skill 或插件，文件由平台管理、随包更新、本地只读，适合「按原样用」；②**拷进项目可改**——把 Skill 文件复制进你自己的项目或工作目录，可自由改，适合「按自己团队改」。**两个都装 = 同一份技能存在两份副本**：改了一份另一份不知道，Agent 可能加载到旧的那份。选一条通道，别混用。
 
 | 你想…… | 读这个 |
-|---------|--------|
+|---|---|
 | 用治理面板 / 查 trace 对账（v1.5.0+） | [HANDBOOK 治理面](./HANDBOOK.md) · [devlog v1.5.0](./changelog/v1.5/v1.5.0.md) |
 | 查接口总览（104 MCP tools） | [API.md](./API.md) |
 | 了解系统怎么设计的 | [ARCHITECTURE.md](./ARCHITECTURE.md) |
@@ -351,20 +341,19 @@ graph TB
 ### 贡献 / 审查 / 发版（内部工程）
 
 | 你想…… | 读这个 |
-|---------|--------|
+|---|---|
 | 了解 FORGE 自迭代工具链 | [FORGE/README.md](../FORGE/README.md) |
 | 给 FORGE 加新 Loop | [guides/loop-development.md](./guides/loop-development.md) |
 | 走发版流程（十一阶段 SOP） | [docs/changelog/releasing.md](./changelog/releasing.md) |
 | 跑独立审查 | [playbook/fresh-eyes-review.md](../playbook/fresh-eyes-review.md) |
 | 贡献代码 | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 
----
 ## 九、文档分工与体量纪律
 
 **📋 文档分工一页表**（写内容前先看——什么内容往哪个文档写，防止交叉重复；**体量纪律列** = 该文档的**字数**带上限（不是行数），`doc-char-ratchet.json` 门禁兜底；另有全文档**抬头块 ≤600 字**闸（首个 H2 之前的正文）——新写内容先看带内有没有位置，没有先砍旧的）：
 
 | 内容类型 | 落点文档 | 文体 | 纪律 | 体量纪律 |
-|---------|---------|------|------|---------|
+|---|---|---|---|---|
 | 行业案例 / 研报数据 / 外部印证 | [VALIDATION](./VALIDATION.md) | 叙事·印证 | 案例不进 PHILOSOPHY——PHILOSOPHY 只引用结论（如「Harvey 筑起垂直壁垒」），数据与来源全在 VALIDATION | ≤19027 字（三行制收录） |
 | 产品结论 / 设计哲学 / 论证 | [PHILOSOPHY](./PHILOSOPHY.md) | 叙事·论证 | 结论自带的最小论证可以，行业案例展开留给 VALIDATION | ≤33514 字 |
 | 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 25 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 | （SECURITY 面） |

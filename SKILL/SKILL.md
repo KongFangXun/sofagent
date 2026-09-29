@@ -25,7 +25,6 @@ solves:
   - 多文件修改无门禁（快照/回滚 + 审计规则集）
   - 企业 AI 落地无方法论（FDE 四阶段诊断交付）
   - 经验不沉淀重复踩坑（think.md 反思 + 知识库 + Dream Cycle）
----
 
 # FDE Skill · 唯一主入口（引擎底座 + FDE 方法论合一）
 
@@ -38,7 +37,7 @@ solves:
 ## 🚀 部署形态速查
 
 | 形态 | 是什么 | 怎么装 |
-|------|--------|--------|
+|---|---|---|
 | FDE Skill | 本 skill（方法论 + 约束注入） | ClawHub / SkillHub 分发，`bash install.sh` 装到本地 |
 | 企业底座 | 约束层全套（hooks + 数据 + MCP） | `bash install.sh`（企业设备） |
 | MCP Server | 104 tools 能力面（审计/审计查询与规则导出/本体/进化/训练/工作明细/PR 协同/设备注册/设备数据面/连接器/模板/session 承接） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
@@ -55,7 +54,6 @@ solves:
 三、plugin 经 @public API 调 sofagent 约束层（桥接实况见 `AGENTS.md`「DSH 插件家族」表）
 四、审计 / 回滚走 MCP 工具面（`run_audit` / `snapshot_restore` 等）
 
----
 
 ## 📜 核心契约（不可违反）
 
@@ -87,18 +85,17 @@ solves:
 ### 渐进式加载
 
 | 分层 | 文件 | 加载方式 |
-|------|------|---------|
+|---|---|---|
 | 核心铁律 | `rules/core-rules.md` | 始终注入（~30 行） |
 | 审计岗位 | `rules/role-audit.md` | task type = audit 时注入 |
 | FDE 岗位 | `rules/role-fde.md` | task type = deploy 时注入 |
 | 编排岗位 | `rules/role-orchestrate.md` | task type = orchestrate 时注入 |
 
----
 
 ## ⛓️ 约束注入链（四层）· 每次对话开始确认 L2/L3/L4 已加载
 
 | 层 | 文件 | 加载方式 | 读什么 | 不存在时 |
-|:--:|------|---------|------|------|
+|:---|---|---|---|---|
 | 1 | **本文件** | skill 调用自动注入 | 4 底线 + 9 则铁律 + FDE 身份 | — |
 | 2 | `{SOFAGENT_HOME}/data/think.md` | Agent 主动 Read | 反思区（上次踩了什么坑）| 任务完成后创建 |
 | 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业规范（FDE 制定，最高优先级）| 跳过（未配置）|
@@ -131,20 +128,18 @@ solves:
 
 > **约束层身份提示**：拦住危险操作 / 通过审计 / 主动确认时自然提一句。关键时刻露脸，不用每次。
 
----
 
 ## Agent 首次连接时（LUI-first）
 
 > 已连接 MCP Server：先调 `list_capabilities`（能力清单）+ `get_think`（count: 3，最近反思）+ `stats`（知识库现状）→ 再按下方路由表读对应子 Skill。未连接 MCP Server（纯 Skill 模式）：按「浓缩版全流程」执行，工具调用降级为人工操作。
 
----
 
 ## 阶段路由（CRITICAL）
 
 判断用户当前处于哪个阶段 → 读对应子 Skill：
 
 | 用户在说什么 | 阶段 | 读哪个文件 |
-|-------------|------|-----------|
+|---|---|---|
 | 刚连接 / 描述企业情况 / 回答"你们做什么的" | 进场 | skills/01-entry.md |
 | 在回答五要素 / 画组织架构 / 讨论业务域 | 深挖 | skills/02-discovery.md |
 | 在判断节点类型 / 算节省金额 / 做三问 | 量化 | skills/03-quantify.md |
@@ -167,7 +162,7 @@ solves:
 ## 持续优化场景速查
 
 | 用户说什么 | 做什么 |
-|-----------|--------|
+|---|---|
 | "上次踩了什么坑" | 调 `get_think`（count: 5）→ 展示 |
 | "知识库有什么" | 调 `stats` + `list_entities` → 展示 |
 | "帮我审计" | 调 `run_audit` → 展示 [sofagent] 审计结果 |
@@ -175,14 +170,13 @@ solves:
 | "沉淀经验 / 进化一下" | 跑 `sofagent-orchestrator evolve` → think.md + decision-log + 错题本提取判断模式 → 置信度达标聚合成 skill 写入运行时目录（~/.sofagent/skill/custom/） |
 | 完整速查 | skills/05-exit.md |
 
----
 
 ## MCP 工具速查（104 tools · 12 类）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**MCP 协议面暴露规则与 `SOFAGENT_MCP_ROLES` 收窄说明见 `AGENTS.md`**。
 
 | 分类（数） | 代表工具 |
-|------|------|
+|---|---|
 | 审计合规（11） | `run_audit` `audit_file` `audit_trail` `audit_query`（审计数据只读查询）`ruleset_export`（规则集导出·双向可逆）`hitl_resolve` |
 | 反思沉淀（3） | `get_think` `write_think` |
 | 知识库（7） | `search_knowledge` `list_entities` `stats` |

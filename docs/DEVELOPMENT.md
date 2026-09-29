@@ -5,7 +5,6 @@
 > v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
 
 > 给开发者的内部机制文档——本文讲 sofagent 内部怎么跑：Skill 结构、编排模块、反思闭环、数据架构。普通用户看 [Handbook](./HANDBOOK.md)，设计决策看 [Architecture](./ARCHITECTURE.md)。
----
 
 ## 目录
 
@@ -24,7 +23,6 @@
 - [十二、STATE.md 持久化外部记忆模式](#十二statemd-持久化外部记忆模式)
 - [十三、激活链扩展指南](#十三激活链扩展指南)
 
----
 
 
 ### 行业背景
@@ -40,7 +38,7 @@
 > 开发前先确认标准安装通过——[HANDBOOK §安装](./HANDBOOK.md#安装)。
 
 | 依赖 | 用途 | 版本 |
-|------|------|:--:|
+|---|---|:---|
 | Node.js + TypeScript | 审计模块、CLI、MCP Server | ≥18（v1.1.0 起纳入） |
 | [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | 编排模块（createReactAgent）+ Sub Agent 系统 | v1.2.0+（编排模块迁移史：ao→v1.0.6 DeepAgents→v1.2.0 LangGraph createReactAgent；deepagents 已弃用） |
 | [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.0.1+ |
@@ -51,12 +49,11 @@
 
 > 来源：Windows 11 + PowerShell 5.1 实地勘察（2026-06）。核心 8 坑：UTF-8 BOM / 控制台编码 / .gitattributes 换行 / if-表达式 / switch-break / 数组摊平 / WSLENV / BSD sed。详见 [PS5兼容踩坑清单](https://github.com/KongFangXun/sofagent/issues?q=label%3Awindows)。
 
----
 
 ### 概念 → 文件速查
 
 | 你想找什么 | 文件/目录 |
-|-----------|---------|
+|---|---|
 | 审计规则代码 | `engine/audit/src/rules/` |
 | 审计 CLI 入口 | `engine/audit/src/index.ts` |
 | 审计快速 CLI（npx 零配置入口） | `engine/audit/src/cli-quick.ts` |
@@ -76,7 +73,6 @@
 | FDE 部署知识文档 | `FDE/GUIDE.md`（完整方法论 + 案例，人读学习手册） |
 | 加载链 Hook | `engine/hooks/sofagent-load-chain/` |
 
----
 
 ## 一、工作原理
 
@@ -91,7 +87,7 @@
 > 💡 **信息架构设计**：Skill 的 `description` 字段只写触发场景（「何时用这个 Skill」），绝不写执行步骤。实测发现如果步骤写进描述，AI 会照着摘要偷懒跳过正文——改为纯触发条件后，AI 才老老实实读完全文。措辞心理学管「强度」，信息架构管「结构」——两者是对称维度。（来源：Superpowers 2.8 万次对话实测）
 
 | 文件 | 何时加载 | 干什么 |
-|------|------|------|
+|---|---|---|
 | engage | 🔴 复杂任务确认后 | 入口流程：平台检测→安装→加载链→种子指令 |
 | engage-fde | FDE 部署场景检测到后 | FDE 场景引导，与 FDE/GUIDE.md 互补 |
 | entry-gate | 入口流程结束后 | 硬出口检查：加载链确认 + 能力注册 |
@@ -113,7 +109,7 @@ sofagent **约束层（五种能力）** 各有分工。**审计**只看 git dif
 Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 Skill 回答三个问题：
 
 | 问题 | 写法 | 反例 |
-|------|------|------|
+|---|---|---|
 | 什么时候启动 | 纯触发条件（场景/关键词/前置状态） | 把执行步骤写进 description——AI 会偷懒不读正文 |
 | 什么时候绝对不能调用 | 硬排除条件——依赖未就绪/数据过期/权限不足 | 「建议不调用」——弱语气 AI 会忽视 |
 | 怎样算完成 | 显式 exit 条件——产出物/验证标准/交付动作 | 「任务完成」——太模糊，AI 不知道什么时候停 |
@@ -131,7 +127,7 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 每一次大模型迭代都会吞噬一批通用垂直 Skills（通用角色扮演、泛化流程、纯提示词教模型成专家类最易被下一代模型原生能力吃掉）。具备长期生命力的 5 类：
 
 | 类别 | 核心定义 | 与 sofagent 对应 |
-|------|------|------|
+|---|---|---|
 | 工具操作型 | 模型知目标但不懂本地工具调用规则，打通可靠工作流 | MCP / Hook（外部系统对接层） |
 | 专有方法论型 | 非通用公开知识的自定义判断体系（如七成产业链评估） | fde.md 业务四问 + Ontology 约束（企业专属判断） |
 | 高风险强约束工作流型 | 错误代价极高，严格限定执行规则 | 4 底线 + 9 则铁律 + entry-gate 风险分级（🟢🟡🔴） |
@@ -145,7 +141,7 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 优质 Skill 的未来形态 = **轻量操作系统入口**，彻底摒弃「用超长提示词教模型成为专家」的重模式。五要素：
 
 | 要素 | 作用 |
-|------|------|
+|---|---|
 | 短路由 | 入口 MD 只放核心流程，快速命中 |
 | 少量边界规则 | 划定决策边界，不做重约束堆砌 |
 | 按需参考资料 | 重内容外化到 references/，按需加载 |
@@ -169,7 +165,7 @@ FDE 部署 SOP 应遵循此顺序：
 质量三维度（可补入 evolve 评分框架）：
 
 | 维度 | 含义 |
-|------|------|
+|---|---|
 | 专业知识标尺 | 能判断「好/坏」的标准 |
 | AI 边界认知 + 代码兜底 | 知道 AI 哪里会出错，用确定性代码兜底 |
 | 产品化思维 | 把经验封装成他人能用的产物 |
@@ -199,7 +195,7 @@ FDE 部署 SOP 应遵循此顺序：
 本仓文档按 **Architecture / Handover / Delivery / Evidence** 四域归属，当前文件映射：
 
 | 域 | 文档 | 说明 |
-|----|------|------|
+|---|---|---|
 | **Architecture**（架构） | `ARCHITECTURE.md` | 系统设计、技术选型、能力清单 |
 | **Handover**（交接/上手） | `HANDBOOK.md`、`DEVELOPMENT.md`、`COMMUNITY.md`、`THANKS.md`、`guides/` | 开发者上手、贡献指南 |
 | **Delivery**（交付/发版） | `changelog/`、`docs/ROADMAP.md`、根 `CHANGELOG.md` | 版本记录、路线图 |
@@ -210,7 +206,7 @@ FDE 部署 SOP 应遵循此顺序：
 > npm 包 @sofagent/audit 当前仅暴露 `sofagent-audit` 一个 bin（v1.1.0 拆包后 verify / orchestrate-compare / env-check / skill-safety-check 等已迁至对应独立包，实际 bin 以各包 `package.json` 为准）。
 
 | 脚本 | 干什么 | 什么时候跑 |
-|------|------|------|
+|---|---|---|
 | `install.sh` | 多平台一键安装（7 步） | 手动跑 |
 | `uninstall.sh` | 删约束文件，保留 `.sofagent/` | 手动跑 |
 | `verify.sh` | 装后验证 9 类 ~48 项动态检查 | 安装完自动跑，也可手动 |
@@ -224,7 +220,7 @@ FDE 部署 SOP 应遵循此顺序：
 USB key 不是简单的文件复制——它是一个完整的便携式运行时。三个模块协作：
 
 | 模块 | 源码 | 职责 |
-|------|------|------|
+|---|---|---|
 | 写入侧 | `daemon/src/usb-key.ts` | `createUsbKey()` 主入口——复制 Node 便携版 + sofagent dist + 三平台启动脚本 → 写 federation.json（AES key + HMAC key，缺字段自动生成随机密钥）→ knowledge/ 用 `core/crypto/aes-gcm.ts` 加密落盘（只存密文）→ 全量 HMAC 签名 |
 | 签名 | `daemon/src/usb-signature.ts` | HMAC-SHA256 全量签名：路径 POSIX 归一化 + 字典序 + SHA-256 内容哈希串联，不含 mtime（确定性可复算） |
 | 运行侧 | `daemon/src/usb-runtime.ts` | `startUsbRuntime()` 主入口——启动验签 fail-closed（失败写 `security-events.jsonl` + exit 1）→ 内存解密 knowledge/（明文不落盘）→ `SOFAGENT_DATA`/`OPENCLAW_HOME` 便携化 env → daemon 主循环 → 退出 `Buffer.fill(0)` 清内存密钥 |
@@ -233,7 +229,6 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 > 💡 USB 功能的用户侧使用见 [HANDBOOK §USB 烧录](./HANDBOOK.md#usb-烧录三种部署场景全覆盖v118) 和 [FDE/GUIDE.md](../FDE/GUIDE.md)。这里只讲代码层架构。
 
----
 
 ## 二、编排哲学
 
@@ -261,7 +256,7 @@ StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runE
 compose 生成的编排方案 YAML 怎么真正跑起来——`dag-runner.ts`（LangGraph `createReactAgent` 真委派）负责调度，`workflow-parser.ts` 负责把 YAML 映射为 SubAgent 配置。v1.2.0 前用 `createDeepAgent`，已弃用。
 
 | 模块 | 源码 | 职责 |
-|------|------|------|
+|---|---|---|
 | dag-runner | `orchestrator/src/dag-runner.ts` | 接收 SubAgent[] 配置 → LangGraph `createReactAgent` 真委派 → 主 Agent 自主决定何时调哪个 Sub Agent（串行）。每个 Sub Agent 注入四层约束加载链 |
 | workflow-parser | `orchestrator/src/workflow-parser.ts` | YAML→SubAgent 映射（developer→ENGINEER / qa-engineer→REVIEWER / researcher→FDE sustain / technical-writer→内置）。DAG 悬空 / 自依赖 / 环校验 |
 | composer 改造 | `orchestrator/src/composer.ts` | `ComposeResult{ yaml, subagents }`——接 `enterpriseWorkflowYaml` + `variant` A/B/C/D 拆解策略 |
@@ -273,7 +268,7 @@ compose 生成的编排方案 YAML 怎么真正跑起来——`dag-runner.ts`（
 v1.1.8 手动 A/B 对比的自动化升级——daemon cron 在后台跑探索-利用循环：
 
 | 阶段 | 做什么 |
-|------|--------|
+|---|---|
 | 利用 | 当前方案跑真实任务攒 N 次数据 |
 | 探索 | exploreCandidates 队首候选方案跑 N 次 |
 | 判定 | `aggregateRecent` 对比 avgPassRate，候选连续 2 轮更好 → promote |
@@ -290,7 +285,7 @@ Loop 工程核心是收敛——目标必须满足：① 可验证（测试覆�
 MCP tools（当前数量以 `engine/mcp/src/tool-registry.ts` 的 TOOLS 数组为准）是 Agent 的手脚，工具设计是返工重灾区——Agent 表现差，多数时候不是模型不行，是工具设计有问题。四条纪律：
 
 | 原则 | 要求 | 反例 |
-|------|------|------|
+|---|---|---|
 | **职责单一** | 一个工具只干一件事 | 一个 tool 又查知识库又建 workflow 又推 webhook |
 | **描述精确** | 模型完全靠 description 理解工具——写清「查哪个库的什么数据、支持什么筛选」 | 「查一查相关内容」——模型会在不该调用时调用 |
 | **错误信息清晰** | 返回「某某参数不能为空/超限范围」而非「执行失败」——模型看得懂错误才能自己改参数重试 | 只返回 `failed`——模型要么瞎猜要么放弃 |
@@ -301,7 +296,7 @@ MCP tools（当前数量以 `engine/mcp/src/tool-registry.ts` 的 TOOLS 数组�
 Agent 的执行路径由模型现场决定，`while` 循环跑几遍代码无法预知——没有停止条件的 Agent 会无限烧 Token。四条防线（已实现）：
 
 | 停止条件 | 实现 | 位置 |
-|---------|------|------|
+|---|---|---|
 | 模型自判完成 | 模型判断任务完成自然收尾 | createReactAgent 原生 |
 | 轮次上限 | maxGoalRounds 防刷轮（验收不过不放行 + 失败原因注入） | v1.4.0 DSH 插件 turn-stopping |
 | Token/预算上限 | 训练预算控制超预算暂停 + 成本审计 WARN | v1.3.6 train_budget / v1.4.0 cost-audit |
@@ -312,7 +307,7 @@ Agent 的执行路径由模型现场决定，`while` 循环跑几遍代码无法
 ### 主 Agent / 子 Agent
 
 | 类型 | 干什么 |
-|------|------|
+|---|---|
 | 主 Agent | 拆任务、派活、收尾 |
 | 子 Agent | 干具体活，干完销毁，无状态无包袱 |
 
@@ -339,7 +334,6 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 > 一句话锚点：**「翻译官不应该有决策权。」** 模型负责理解（翻译模糊需求→结构化意图），系统负责控制（确认、权限、状态流转）。sofagent 的确定性与概率性分离，就是这条原则的工程落地——审计规则不看模型说什么，只看 diff 改了什么。
 
----
 
 ## 三、模型最优选择
 
@@ -350,7 +344,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 ### Flash vs Pro 分配
 
 | 任务类型 | 用什么模型 |
-|------|------|
+|---|---|
 | 简单任务（查天气） | Flash，便宜够用 |
 | 中等任务（写文章） | Flash 查资料，Pro 写文章 |
 | 复杂任务（数据分析报表） | Pro 为主，4-6 个子任务混合调度 |
@@ -379,7 +373,6 @@ LangGraph createReactAgent 拆完任务
 
 编排开销经济学见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
----
 
 ## 四、模板与验证
 
@@ -392,7 +385,7 @@ LangGraph createReactAgent 拆完任务
 ### 谁来实现
 
 | 产物 | 谁写的 | 怎么写的 |
-|------|------|------|
+|---|---|---|
 | `orchestrator/{任务}.md` | loop-check closure 模式 | A/B 对比 → 胜出模板写入 |
 | `eval/{skill}.md` | loop-check closure 模式 | 闭环时评分 → 写入叶子 |
 | `task/logs/` | 主 Agent | 每次执行自动生成，只追加不修改 |
@@ -406,7 +399,6 @@ LangGraph createReactAgent 拆完任务
 
 规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
----
 
 ## 五、自进化机制
 
@@ -479,7 +471,6 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 **SKILL.md 的强制约定**（v1.0.8）：所有 Agent 的 SKILL.md 必须引用 `@sofagent-audit` 和 `@sofagent-fde` 作为基础设施 Agent。缺少引用的 Agent 视为未完成。
 
----
 
 ## 六、反思工程
 
@@ -494,7 +485,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 ### 反思什么
 
 | 来源 | 提取什么 | 写不写 |
-|------|------|:--:|
+|---|---|:---|
 | task/logs 当天文件 | 做了什么任务、拆了几个子任务、结果如何 | ✅ 必写 |
 | think.md 新增反思 | 反思标题 + 标签 + 置信度 | ✅ 有则写 |
 | data/eval/ | 哪个 Skill 使用次数变化、社区评分更新 | ✅ 有变化则写 |
@@ -510,14 +501,13 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 三道防线：只存经验不存指令 → 反思区 2K token 硬上限 → 人工可清除。写入前扫指令性关键词 ≥3 处提醒拆到 fde.md。
 
----
 
 ### 记忆 ≠ RAG：分层状态管理
 
 行业参考区分：多数 Agent 的「记忆」只是当前对话上下文窗口，关掉归零——这是金鱼不是记忆。真记忆应分层：
 
 | 层 | 内容 | 生命周期 | sofagent 落点 |
-|----|------|------|------|
+|---|---|---|---|
 | 工作记忆 | 当前任务上下文 | 单次会话 | 会话上下文 |
 | 短期记忆 | 近期工作笔记 | 天到周 | think.md（反思）|
 | 长期记忆 | 团队知识 / 历史决策 / 业务规则 | 持久化 | knowledge/ |
@@ -530,7 +520,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 ### 按模块归属
 
 | 文件 | 归属模块 | 干什么 | 加载 |
-|------|---------|------|:--:|
+|---|---|---|:---|
 | `think.md` | **多写入方 / 只追加（Ledger）** | 反思摘要（Ledger 原始数据）。写入方：①审计模块 git diff 自动反思 ②主 Agent 按模板手动 write_think ③FDE/loop 陪跑期写入；读取方：编排模块、daemon(Dream Cycle/lessons-extract)、harness 加载链、人类。**只追加，绝不整体覆写/截断**。代码契约见 `@sofagent/core` 的 `getThinkPath()` / `appendThinkEntry()` | 全文 |
 | `task/logs/` | **审计模块读 / 编排模块写** | 执行日志。审计 A7/A8 读它；编排模块闭环时写入 | 日期目录树 |
 | `fde.md` | **编排模块读** | 企业运行规范，含项目目标、验收标准、风险边界 | 全文 |
@@ -569,7 +559,6 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 > 文档行数预算的现行口径与各层上限以 `tools/check/check-docs.sh` 的 LIMIT_A/LIMIT_B/LIMIT_E 为准（A 层用户文档 / B 层参考文档 / E 层 guides，超标须按铁律归并或登记上调）。**不计入硬预算但必须有读数的面**（F 家族软警戒：索引与台账 / 技能源树 / FDE 手册与模板 / 经验沉淀 / 包级 README）同在该脚本 §4 尾部打印——「不进预算」不等于「不进视线」。计账归属本身由 §22 对账（每条排除项命中的文件必须落在某个计量桶内，否则判红）。
 
----
 
 ## 八、提交时审计 + 文件系统审计
 
@@ -578,7 +567,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 
 | 模式 | 版本 | 触发 | 适用 | 需要 git |
-|------|:--:|------|------|:--:|
+|---|:---|---|---|:---|
 | git commit 审计 | v0.92+ | `git commit` → commit-msg hook | 开发者 | ✅ |
 | 文件系统审计 | v1.0.8+ | daemon 监控文件变更 | 开发者 + 非开发者 | ❌（自研 git-shadow diff） |
 
@@ -595,7 +584,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 `sofagent-audit --stats` 输出近 N 天（`--days` 可调，缺省 30）治理 KPI。指标口径以本节为准（CLI 实现 `engine/audit/src/stats.ts` 与此处同源——改口径先改本节）：
 
 | 指标 | 定义 | 分母 |
-|------|------|------|
+|---|---|---|
 | **变更总数** | 统计窗口内 history.jsonl 的审计记录条数（每次 commit 审计一条） | — |
 | **判定分布** | PASS（exitCode=0）/ WARN（exitCode=1）/ FAIL（exitCode=2）三档计数 | — |
 | **安全边界触发率** | (WARN 条数 + FAIL 条数) ÷ 变更总数 | 变更总数 |
@@ -621,7 +610,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 ### 状态账本
 
 | 字段 | 内容 |
-|------|------|
+|---|---|
 | 看到 | 读了哪些文件 |
 | 改了 | 改了哪些文件，每个改了什么 |
 | 验证了 | 跑了什么命令，结果 |
@@ -629,7 +618,6 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 `task/logs` 模板参照这个四字段结构。状态外化到文件——Agent 失忆，文件不失忆。设计文档见 [audit-design.md](./archive/design/audit-design.md)。
 
----
 
 ## 九、验证方法论
 
@@ -655,7 +643,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 2026 年 6 月硅谷一周内涌现一批「harness 之上的 harness」（Databricks 开源 Omnigent 时正式造词，类比 K8s 之于容器）——多 agent 统一接入/调度/治理层。行业评估这类产品已收敛出五维检查清单，与 sofagent 已交付能力对照：
 
 | 五维（行业共识） | sofagent 对应 |
-|------|------|
+|---|---|
 | 统一接入（异构 agent 一套接口） | 多 harness 统一编排（多命名实例 + 轮转调度） |
 | 安全隔离（沙箱 + 策略管权限） | SubAgent 沙箱 + PolicyLayer 四内置策略（file-lock/concurrency-cap/profile-allowlist/sensitive-tool） |
 | 调度编排（多 agent 协作收敛） | 协作阵型库（规划中：commander&crews/cross-review/bake-off 等六阵型） |
@@ -688,7 +676,6 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 > 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md)（+ Memory / State 条目）/ [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)（Collision detection 条目）
 
----
 
 ## 十三、激活链扩展指南
 
@@ -701,7 +688,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 ### 扩展点
 
 | 扩展什么 | 在哪 | 怎么做 |
-|---------|------|--------|
+|---|---|---|
 | 新增 activate 步骤 | `engine/orchestrator/src/activate.ts`（新建） | 在 `activateWorkflow()` 的 7 步流程中插入新的处理逻辑 |
 | 新增节点类型 | `engine/orchestrator/src/workflow-parser.ts` | 扩展映射表：workflow.yml 的节点 type → StateGraph node |
 | 写一个 HITL 节点 | `engine/orchestrator/src/node-executor.ts`（v1.2.8 新建） | 用 LangGraph `interrupt_before` 在高风险节点前暂停（v1.2.9 hitl-handler.ts 承接） |
@@ -710,7 +697,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 ### 文件清单（按版本）
 
 | 文件 | 版本 | 说明 |
-|------|------|------|
+|---|---|---|
 | `engine/orchestrator/src/activate.ts` | v1.2.5 | 激活链入口：读交付物 → 注册企业 SubAgent |
 | `engine/orchestrator/src/workflow-parser.ts` | v1.2.6 | 扩展：支持企业 workflow.yml 的 HITL/审计字段 |
 | `engine/orchestrator/src/enterprise-graph.ts` | v1.2.7 | `composeEnterpriseWorkflow()`：多 Agent → StateGraph |
@@ -720,7 +707,6 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 > 详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
----
 
 ## 维护者口径
 
