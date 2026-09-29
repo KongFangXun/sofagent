@@ -19,7 +19,7 @@
 
 ## 一、方法论印证：行业研究怎么验证 sofagent 直觉
 
-> 不是新理论，是跨批行业研读里反复出现、能直接印证 sofagent 已有直觉的结论落纸。概念层与厂商实证的成篇论证见 [归档 · concept-layer](./archive/validation-deep/concept-layer.md) / [归档 · harness-vendors](./archive/validation-deep/harness-vendors.md)。
+> 不是新理论，是跨批行业研读里反复出现、能直接印证 sofagent 已有直觉的结论落纸。概念层与厂商实证的成篇论证见 [归档 · concept-layer](./archive/validation-deep/concept-layer.md)/[归档 · harness-vendors](./archive/validation-deep/harness-vendors.md)。
 
 **▍概念层（一句话判据）**
 
@@ -32,7 +32,7 @@
 - **反去人化命题**——human-in-the-loop 不是能力缺陷，是「可靠优先于自主」的差异化优势（主体性护栏不可外包）。
 - **90/10 价值分层 → 知行合一框架**——模型给 90% 智力（知），sofagent 补 10% 可靠执行（行），关键在「合一」；模型越强那 10% 越值钱。
 - **治理缺口的代价（三项联网核验）**——Gartner 2026-05：到 2027 年 40% 企业自主 Agent 将因治理缺口被降级/停用；MIT NANDA：95% gen-AI 部署零可衡量 ROI；Governance Decay：运行时约束被上下文压缩擦除后违规率 0%→38%。约束/治理是投产前提，非加分项。
-- **a16z 七法则映射**——「人比软件便宜」与 90/10 同频；Loops / Evals / 冗员等五条本仓原生具备，[完整映射表见归档](./archive/validation-digest/README.md)。
+- **a16z 七法则映射**——「人比软件便宜」与 90/10 同频；Loops/Evals/冗员等五条本仓原生具备，[完整映射表见归档](./archive/validation-digest/README.md)。
 - **红杉 Neo-Lab / Sovereign AI**——「主权是光谱不是开关」「先建评测集再谈微调」与本仓模型路由不自研、Benchmark 先行完全同构。
 - **硅基员工论（Org Graph / Ontology Runtime）**——「长期存活、固定领域、进组织编制」的 Agent 称为 Org Graph 节点，与常驻 Agent 定位字面对应；Ontology Runtime 是企业底座而非 API 网关。
 - **数字员工操作性定义**——四跨越（组织身份/岗位职责/事件驱动/结果负责）+ 结果负责三要素（可观测/可归因/可回滚），与审计/回溯能力对齐。
@@ -198,7 +198,9 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构系统之�
 
 一句话判据：Palantir 官方把 Ontology 定义为「**可运行的业务契约**」（Data+Logic+Action+Security 四合一，「表达企业彼此关联的复杂**决定**，而不是数据」）；KLM 范式（不用什么智能都压在大模型上）= 智能/控制分离 + 把规则动作边界放模型外；Red Loop 写回必备五机制（幂等/回执/补偿/审计/人工接管）与 Durable Execution + WAL + HITL + 审计逐一对位；
 双 MCP 体系把「改结构」（proposal 人工门）与「改数据」（受控 Action）拆成两条治理通道——每个 action type 独立暴露为 MCP 工具 = **审计粒度到单个业务动作**，与「25 条规则按变更类型切分」同构（粒度即治理面）。Snowflake 反向「自下而上」路径（数仓长出本体栈，Cortex Sense 47%→83%）与 Palantir 互为外部佐证——**本体 = 运行时 context 层被多家独立复现**；其 Action 语义缺失恰是审计 + HITL + 审计链的主场。
+
 纳德拉「学习循环」（Token 资本复利，2800 万浏览）四要素与 sofagent 能力面逐项对齐：「可以外包一项任务甚至一份工作，但永远无法外包学习过程」——模型可换、平台可换，企业积累的约束规则与审计历史不动。深读全文见 [归档](./archive/validation-deep/architecture-mapping.md)。
+
 
 > 📖 [Palantir Foundation · Ontology MCP](https://palantirfoundation.org/docs/foundry/ontology-mcp/sample-architecture) · [Snowflake · Cortex Sense](https://www.snowflake.com/en/blog/enterprise-ai-agents-grounded-context/) · [Satya Nadella ·
 A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/frontier-without-ecosystem-stable-satya-nadella)

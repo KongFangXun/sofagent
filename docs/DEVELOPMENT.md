@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.3·2026-09-26（UTC）· ✅ 已发版·孔放勋
 
 > 给开发者的内部机制文档——本文讲 sofagent 内部怎么跑：Skill 结构、编排模块、反思闭环、数据架构。普通用户看 [Handbook](./HANDBOOK.md)，设计决策看 [Architecture](./ARCHITECTURE.md)。
 
@@ -50,7 +50,7 @@
 > 来源：Windows 11 + PowerShell 5.1 实地勘察（2026-06）。核心 8 坑：UTF-8 BOM / 控制台编码 / .gitattributes 换行 / if-表达式 / switch-break / 数组摊平 / WSLENV / BSD sed。详见 [PS5兼容踩坑清单](https://github.com/KongFangXun/sofagent/issues?q=label%3Awindows)。
 
 
-### 概念 → 文件速查
+### 概念→文件速查
 
 | 你想找什么 | 文件/目录 |
 |---|---|
@@ -92,17 +92,17 @@
 | engage-fde | FDE 部署场景检测到后 | FDE 场景引导，与 FDE/GUIDE.md 互补 |
 | entry-gate | 入口流程结束后 | 硬出口检查：加载链确认 + 能力注册 |
 | task-aware | 收到任何用户任务时 | 每任务闸门：边界→语义→健康度→判级→澄清 |
-| task-closure | 闭环信号出现时 | 离境闸门：调 Loop Agent → 反思/评分/A/B/汇报 |
+| task-closure | 闭环信号出现时 | 离境闸门：调 Loop Agent→反思/评分/A/B/汇报 |
 | loop-check | 检查点/失败/闭环 | 顾问 Agent：读数据→做判断→给建议 |
 | loop-evaluate | loop-check closure 模式触发 | 复盘/评分/沉淀，评审者与执行者分离 |
 | loop-exit | 循环终止信号出现时 | 循环终止条件与收尾 |
 | fde | FDE 部署时按需加载 | 企业约束层：合规要求/脱敏规则/审计频率 |
 
-> 三层闸门 + 一条回环：入境 → 每任务 → Loop → 离境。四个全走才能保证 `.sofagent/` 数据层被激活。
+> 三层闸门 + 一条回环：入境→每任务→Loop→离境。四个全走才能保证 `.sofagent/` 数据层被激活。
 
 sofagent **约束层（五种能力）** 各有分工。**审计**只看 git diff（提交时），不依赖 Agent 配合。**编排模块**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：支持 Hook 的平台节点走内部 API，其他节点走 CLI。两者通过 think.md 交汇——审计基于 diff 硬证据自动生成反思，编排模块读取优化策略。
 
-主 Agent 的日常：接活 → 看 `data/eval/` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
+主 Agent 的日常：接活→看 `data/eval/`→看 think.md 反思区→看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
 ### Skill 设计哲学
 
@@ -154,7 +154,7 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 
 FDE 部署 SOP 应遵循此顺序：
 
-```
+```text
 现场跑通客户工作流  →  沉淀为 fde.md 规则  →  抽象为 SkillHub 模板
 ```
 
@@ -355,7 +355,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 模型选择靠 OpenClaw 的 `sessions_spawn.model` 参数——API 级别的硬约束：
 
-```
+```text
 LangGraph createReactAgent 拆完任务
   → 先查 fde.md：有没有写模型偏好？
   → 有 → 按你写的来（fde.md 优先级最高）
@@ -436,7 +436,7 @@ LangGraph createReactAgent 拆完任务
 
 ### orchestrator/ 怎么决策
 
-```
+```text
 任务来了 → 主 Agent 先查 orchestrator/
   → 有同类最优配置？直接用
   → 没记录？createReactAgent 生成新方案
@@ -459,7 +459,7 @@ orchestrator/ 记「这类任务怎么配最优」，think.md 记「上次做了
 
 v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Agent**——所有 workflow 节点完成任务后强制调用：
 
-```
+```text
 每个节点完成任务：
   → Audit Agent    "你做得合规吗？"
   → FDE Harness sustain  "你能做得更好吗？"
@@ -674,7 +674,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 - daemon 巡检可检测「同一 target 被两个节点同时 acting_on」→ 告警
 - 此模式不需要额外基础设施——一个约定 + 一个 Markdown 表就够
 
-> 📖 [cobusgreyling · loop-engineering](https://github.com/cobusgreyling/loop-engineering) — [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md) / [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)
+> 📖 [cobusgreyling·loop-engineering](https://github.com/cobusgreyling/loop-engineering) — [primitives.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/primitives.md) / [multi-loop.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/multi-loop.md)
 
 
 ## 十三、激活链扩展指南
@@ -713,7 +713,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 ### 场景数 SSOT 口径
 
 > **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 388（最大场景号 S464）。
-> 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账（v1.5.0–v1.5.4 各批 +N 明细）见 [归档](./archive/validation-deep/development-maintainer.md) 与 [v1.5.0 开发日志 · 附录](./changelog/v1.5/v1.5.0.md)。
+> 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账（v1.5.0–v1.5.4 各批 +N 明细）见 [归档](./archive/validation-deep/development-maintainer.md) 与 [v1.5.0 开发日志·附录](./changelog/v1.5/v1.5.0.md)。
 
 ### 加载链预算目标跟踪
 

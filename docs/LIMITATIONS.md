@@ -208,7 +208,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 阵型库提供六种**内置**阵型（`orchestrator/src/formations/`：schema 校验 + 模板兜底实例化 + 交接留痕与边生命周期，v1.4.8 交付）。它不提供「自定义阵型的图形编排」——自定义需直接写阵型配置。
 
-> ⚠️ **边界（如实披露 · 2026-09-27 复核）**：当前交付的是**库面**——`validateFormation` / `parseFormation` / `instantiateFormation` 三个函数（外加六阵型模板常量）。**调度接线尚未落地**：orchestrator 的多 Agent 派发路径还没有消费它，因此「写了 formation.yml 就被框架实例化」目前**不成立**，需**程序内直接引用**这些函数（或等待调度接线排期）。图形编排、自动调度两者均未接线。
+> ⚠️ **边界（如实披露 · 2026-09-27 复核）**：当前交付的是库面——`validateFormation` / `parseFormation` / `instantiateFormation` 三个函数（外加六阵型模板常量）。调度接线尚未落地：orchestrator 的多 Agent 派发路径还没有消费它，因此「写了 formation.yml 就被框架实例化」目前不成立，需程序内直接引用这些函数（或等待调度接线排期）。图形编排、自动调度两者均未接线。
 > 缓解：交接留痕与边生命周期由框架托管；阵型结构错误在实例化前被 schema 拦下（`validateFormation` fail-closed：未识别阵型名列出六合法值）。
 
 ### 🔗 workflow 模型偏好绑定需注册表同步
@@ -238,7 +238,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 审计规则的检查对象是**变更产物 / 动作形态 / 声明清单比对**三类——`A15`（节点未声明 actions）与 `A16`（非声明范围变更）比对的是**事前静态配置**，不是**运行时授权过程**（谁批的 / 何时批的 / 批的范围）。**声明 ≠ 授权**：workflow 里写了 actions，不代表每个动作都走过该走的审批；审批链事实不在审计输入里。
 
-**缺口的确切形态是「记录不全」而非「无通道」**：门禁判决记录 `TOOL_GATE` 的类型声明写的是「拦截 / 放行 / 告警」三态，实现**只落「告警」一态**——放行与拦截不留痕；人审支路的 `hitl/resolved/*.json`（`approved` / `rejected` + 起止时间）已在落盘、且已被治理报表消费，但**审计规则面尚未消费它**。因此「这个动作有没有走过该走的授权」目前**无法正向对账**：**无记录既可能是「合法放行」，也可能是「绕过门禁」，两者不可区分**。
+**缺口的确切形态是「记录不全」而非「无通道」**：门禁判决记录 `TOOL_GATE` 的类型声明写的是「拦截 / 放行 / 告警」三态，实现只落「告警」一态——放行与拦截不留痕；人审支路的 `hitl/resolved/*.json`（`approved` / `rejected` + 起止时间）已在落盘、且已被治理报表消费，但审计规则面尚未消费它。因此「这个动作有没有走过该走的授权」目前无法正向对账：无记录既可能是「合法放行」，也可能是「绕过门禁」，两者不可区分。
 
 **闭合路径（已排期，不是无解）**：`TOOL_GATE` 补齐三态并与调用意图流对账——**有动作、无放行、无批准 ⇒ 未授权执行**，这是一条可判定的发现（证据面归审计输入面，判定折进 `A16` 语义层）。与企业级「事前授权（mandate）补环」是**两件事**：后者是「先批后干」流程，本处要的是**记录完整性**。
 
@@ -410,7 +410,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 ### 🔓 快照恢复的人审门禁是约定级，不是机制（v1.5.0 披露）
 
-回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面**无带外确认通道**，快照文件也**无 HMAC / 指纹可验**（全链路无完整性校验）。即：**Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限**——该门禁是**约定不是机制**。
+回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道，快照文件也无 HMAC / 指纹可验（全链路无完整性校验）。即：Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限——该门禁是约定不是机制。
 
 与 ROADMAP「管控能力不得静默降级」的既定纪律存在落差。三个整改方向（① 快照自身完整性校验；② 把 `human_confirmed` 改为复用仓内既有 HITL 机制的带外确认通道；③ 判定为设计取舍并保留本披露）**待维护者裁定**；裁定前请勿把该门禁当作安全边界。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
 
@@ -426,7 +426,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 v1.5.1 新开三条**远程下发事件**——`device.upgrade`（设备 OTA 升级）/ `device.deploy`（平台→设备模板包下发）/ `device.task.dispatch`（任务推送），类型登记在 `engine/orchestrator/src/events/types.ts`，设备侧消费在 `engine/daemon/src/ota/`。两条边界如实披露：
 
-- **设备侧验签无可信根**：`verifyDeliverySignature`（`engine/daemon/src/ota/upgrade-executor.ts`）只证明「摘要是由**信封自带的那把公钥**签出」这一**自洽性**——全链**无平台公钥 pin / 无 principal 白名单 / 无设备注册表绑定**（该目录 `trusted|allowlist|pinned` 零命中）。⇒ 挡得住**篡改与传输损坏**，**挡不住**持有自洽密钥对的外来伪造签名者。
+- **设备侧验签无可信根**：`verifyDeliverySignature`（`engine/daemon/src/ota/upgrade-executor.ts`）只证明「摘要是由信封自带的那把公钥签出」这一自洽性——全链无平台公钥 pin / 无 principal 白名单 / 无设备注册表绑定（该目录 `trusted|allowlist|pinned` 零命中）。⇒ 挡得住篡改与传输损坏，挡不住持有自洽密钥对的外来伪造签名者。
 - **`device.task.dispatch` 零验签**：`deliverTaskDispatch`（`engine/daemon/src/ota/subscriptions.ts`）**全路径无 `verifyDeliverySignature` 调用**——该调用只出现在 `device.deploy` 分支（:257）。任务下发通道目前**没有签名校验面**。
 
 **当前性质是「设计期已知缺口」而非「已暴露面」**：三条下发面尚未接真实传输通道（npm registry / 制品库 / 安装脚本均为**注入端口**，缺省只落盘内联内容），外部无法触达；**一旦接上真实传输，上述两项直接构成远程包注入面**——信任锚与任务面验签须随该批落地。详见 [SECURITY §三「G12 设备远程下发面」](../SECURITY.md)。
