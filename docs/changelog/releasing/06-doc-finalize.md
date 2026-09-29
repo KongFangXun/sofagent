@@ -259,6 +259,8 @@ node tools/check/doc-score.mjs --json   # 机读输出（供本版 devlog「文�
 
 ### 格式规范（对照范本逐要素）
 
+> **最新范本快照（最近发版实际发布物实证要素）**：H2 五节（⚡ Install / 🔨 核心变更 / ✅ 质量验证 / ⚠️ 破坏性变更 / 🔗 深入了解）+ 定位句（≤220）+ TL;DR (EN)（≤650）+ 质量验证恰 7 项表 + 深入了解四行**绝对 URL** 表 + 📖 详细开发日志尾链**绝对 URL** 独立行。🔴 三条硬口径（本版发布实测固化的新律）：链接零相对（release 页相对 = 404）；数字 gh release create 前当轮重算；body 与 devlog RN 段双向同步。
+
 **① Title（release name）**：`vX.Y.Z — {emoji 主题短语}`
 - 1-2 个核心交付的 emoji + 名词短语（示例：`vX.Y.Z — 🏰 SubAgent 完整沙箱与场景驱动权限`）
 - 主题短语与 body 首行定位句呼应（title「沙箱与权限」↔ 首行「第一次在真正隔离的环境里」）
