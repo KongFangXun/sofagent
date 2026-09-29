@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.3 · 2026-09-26（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.4 · 2026-09-30（UTC）· ✅ 已发版 · 孔放勋
 >
 > 设计决策记录——从为什么存在、约束层五种能力如何协作，到每个关键决策的工程理由。
 >
@@ -1443,4 +1443,3 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 ## 八、数据层路线建议
 
 > 数据层路线建议（设计过程记录，非现态——不修改任何既有引擎行为）已归档。**一句话结论**：语义层/本体采用混合路线——Policy 层（人工认证）永远压顶、Views 层（自动派生）只补全不推翻、权威排序显式化为「命中次数 × 来源可信度」；`certified` 语义尚未落地（引擎源码零实现）。全文（两条路线对照 / 三条待硬化设计决策 / 落版下一步 / 待办问题）见 [归档](./archive/validation-deep/architecture-datalayer-roadmap.md)。
-
