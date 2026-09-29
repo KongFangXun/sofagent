@@ -1,0 +1,16 @@
+{
+  "$schema": "文档质量六维评分基线（tools/check/doc-score.mjs 消费）——只许升不许降；阈值 8 为绝对下限",
+  "usage": "node tools/check/doc-score.mjs [--json|--write-baseline]",
+  "rule": "实测分 < 基线 = 红（回退）；任一维 < 8 = 红（绝对下限）。基线只许上调：清理/补留痕后请改大本台账，让 diff 记录「分上升」。",
+  "floor": 8,
+  "counter": "score = 通过项 / 总项 × 10；机械项机器判，人工项读本版 devlog「文档质量评分」留痕（未确认即按不通过计，fail-closed）",
+  "date": "2026-09-29",
+  "dimensions": {
+    "D1": 10,
+    "D2": 0,
+    "D3": 6,
+    "D4": 7.5,
+    "D5": 2,
+    "D6": 0
+  }
+}
