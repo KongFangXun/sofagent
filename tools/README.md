@@ -77,7 +77,7 @@
 | `check/prompt-fork-baseline.json` | 任务书零分支 lint 的**豁免台账**（被 `prompt-fork-lint.mjs` 消费；签名 = 行内容归一化后 sha256 前 16 位——**不用行号**（行号漂移即静默放行，同 table-shape-baseline 理据）；每条须带理由，变更进 review）。 |
 | `check/claims-sdk-ledger.json` | check-claims A 组「新增件零消费阻断」的豁免台账（SDK 面登记：刻意保留的新增件逐条带理由；签名 = 文件路径；变更进 review）。 |
 | `check/doc-ratchet.json` | 核心文档**可读性棘轮台账**（被 `doc-discipline.sh` Face 5 消费：墙式行/墙式格实测值**只许降不许升**——治「内容只进不出」；键 = 逐文档实测计数，`_meta` 记口径，与 `lib/readability-count.mjs` 注释同源）。 |
-| `check/doc-lines-ratchet.json` | 核心文档**行数棘轮台账**（被 `doc-discipline.sh` Face 6 消费：11 份核心文档行数上限锁死，超基线即 CI 红——防单文件无限膨胀；净增须先同文档移出等量行。与 WIKI 分工表「体量纪律」列同口径，两处数字须一致）。 |
+| `check/doc-char-ratchet.json` | 核心文档**字数棘轮台账 + 抬头块上限**（被 `doc-discipline.sh` Face 6/7 消费：20 份活文档**字符数**上限锁死 + 抬头块 ≤600 字；超基线即 CI 红。**口径是字数不是行数**——折行让行数 ×6 而字数仅 +1.7%，行数会把排版优化记成膨胀事故。净增须先同文档移出等量字）。 |
 | `check/lib/readability-count.mjs` | **可读性计数器（单一口径）**（被 doc-discipline Face 5 / reflow-walls 共用：墙式行/墙式格的定义与计数实现；改口径先改本文件头注释再同步 `doc-ratchet.json` `_meta`）。 |
 | `check/lib/reflow-walls.mjs` | **墙式行折行器**（一次性治理工具，非门禁：把超长段落/表格格折行，产出供 doc-ratchet 重新基线；治理批 261→17 的执行器）。 |
 | `check/lib/split-table-cells.mjs` | **超长表格格拆注工具**（一次性治理工具，非门禁：把超长表格内的墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线）。产出契约受 `check-table-shape.mjs` ③④ 两条断言机械对账——标记形态 `（详→注-N）`、同文件必有 `> 注-N：` 定义、**切口必落句读符**（找不到切口就整格不拆，留长格交棘轮报人裁定，不硬切） | 拆注治理时 |

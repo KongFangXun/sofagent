@@ -12,7 +12,7 @@
 
 ## 文档收录纪律（THANKS 一行制 / VALIDATION 三行制 / 归档分层）
 
-> 这一节回答「内容往核心文档里写时按什么形态收录」——防的是「读数/风险/边界小论文」 creeping 进致谢与印证文档。机械面由门禁兜底：行数上限 `tools/check/doc-lines-ratchet.json`（doc-discipline Face 6）+ 墙式棘轮 Face 5；发版窗口全量体检见 [06-doc-finalize · 每版文档大扫除清单](./docs/changelog/releasing/06-doc-finalize.md)。
+> 这一节回答「内容往核心文档里写时按什么形态收录」——防的是「读数/风险/边界小论文」 creeping 进致谢与印证文档。机械面由门禁兜底：字数上限 `tools/check/doc-char-ratchet.json`（doc-discipline Face 6）+ 抬头块闸 Face 7 + 墙式棘轮 Face 5；发版窗口全量体检见 [06-doc-finalize · 每版文档大扫除清单](./docs/changelog/releasing/06-doc-finalize.md)。
 
 ### THANKS 一行制
 

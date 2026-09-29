@@ -228,36 +228,80 @@ else
   fi
 fi
 
-# ── Face 6 行数棘轮（doc-slim 批 2026-09-28）─────────────────────────
-# 11 份核心文档的**物理行数上限** = tools/check/doc-lines-ratchet.json 基线（本批精简后实测值锁死）。
-# 与 Face 5（可读性棘轮：wall/cell）正交——Face 5 管「每行有多挤」，Face 6 管「总共有多少行」。
-# 纪律：只许降不许升；净增需求必须先「同文档移出等量行」（与 06 三道闸闸一对价同源），
-#       把它从纪律变成 CI 红。例外见台账 _meta.exception（发版窗口版本号行 / CHANGELOG 目录索引正当增长）。
-LINES_RATCHET="tools/check/doc-lines-ratchet.json"
-echo "[Face 6] 核心文档行数棘轮（物理行数 ≤ doc-lines-ratchet.json 基线）"
-if [ ! -f "$LINES_RATCHET" ]; then
-  echo "  ❌ 台账缺失：${LINES_RATCHET}——行数棘轮无基线可依，拒绝假绿"
+# ── Face 6 字数棘轮（2026-09-29 口径换算批：由「物理行数」换成「字符数」）──────
+# 口径 = Unicode 码点数（见 tools/check/doc-char-ratchet.json 的 _meta.counter）。
+# 换口径的判据：折行（墙式→多行）让**行数 ×6** 而**字符数只 +1.7%**——行数会把
+#   「排版优化」记成「膨胀事故」（本仓 LIMIT_A 注释实录 20+ 次折行撞预算后上调上限）。
+# 与 Face 5（可读性棘轮：wall/cell）正交——Face 5 管「每行有多挤」，Face 6 管「总共多少字」。
+# 纪律：只许降不许升；净增需求必须先「同文档移出等量字」（与 06 三道闸闸一对价同源）。
+CHAR_RATCHET="tools/check/doc-char-ratchet.json"
+echo "[Face 6] 核心文档字数棘轮（字符数 ≤ doc-char-ratchet.json 基线）"
+if [ ! -f "$CHAR_RATCHET" ]; then
+  echo "  ❌ 台账缺失：${CHAR_RATCHET}——字数棘轮无基线可依，拒绝假绿"
   HITS=$((HITS + 1))
 else
-  OVER=$(node -e "
-    const fs=require('fs');
-    const base=JSON.parse(fs.readFileSync('$LINES_RATCHET','utf8'));
+  OVER=$(node -e '
+    const fs=require("fs");
+    const base=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
     const out=[];
     for(const [f,lim] of Object.entries(base)){
-      if(f==='_meta') continue;
-      if(!fs.existsSync(f)){ out.push(f+'  (文件不存在——台账条目陈旧)'); continue; }
-      const n=fs.readFileSync(f,'utf8').split('\n').length-1;  // wc -l 口径（末行换行）
-      if(n>lim) out.push(f+'  '+n+' > 基线 '+lim+'（+'+(n-lim)+'）');
+      if(f==="_meta") continue;
+      if(!fs.existsSync(f)){ out.push(f+"  (文件不存在——台账条目陈旧)"); continue; }
+      const n=[...fs.readFileSync(f,"utf8")].length;
+      if(n>lim) out.push(f+"  "+n+" > 基线 "+lim+"（+"+(n-lim)+" 字）");
     }
-    if(out.length) console.log(out.join('\n'));" 2>/dev/null || true)
+    if(out.length) console.log(out.join("\n"));
+  ' "$CHAR_RATCHET" 2>/dev/null || true)
   if [ -n "$OVER" ]; then
     printf '%s\n' "$OVER" | sed 's|^|    |'
     OVER_N=$(printf '%s\n' "$OVER" | grep -c .)
     HITS=$((HITS + OVER_N))
-    echo "  ❌ ${OVER_N} 处超基线——内容只许降不许升；净增须先同文档移出等量行（06 · 三道闸闸一），再动基线"
+    echo "  ❌ ${OVER_N} 处超基线——内容只许降不许升；净增须先同文档移出等量字（06 · 三道闸闸一），再动基线"
   else
-    REG_N=$(node -e "const b=require('./$LINES_RATCHET'); console.log(Object.keys(b).filter(k=>k!=='_meta').length);" 2>/dev/null || echo '?')
+    REG_N=$(node -e 'const fs=require("fs");const o=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log(Object.keys(o).filter(k=>k!=="_meta").length)' "$CHAR_RATCHET" 2>/dev/null || echo '?')
     echo "  ✓ 全部 ≤ 基线（${REG_N} 份核心文档；精简后请改小台账让 diff 记录）"
+  fi
+fi
+
+# ── Face 7 抬头块闸（2026-09-29 抬头块限流批）─────────────────────────
+# 抬头块 = H1 到首个 '## ' 之间的正文；字数只计文本字符，剔装饰行与 YAML front matter
+# （口径与处置见 doc-char-ratchet.json 的 _meta.opening_rule）。
+# 治的是「文档开头堆一大段说明/为什么，读者翻不到正文」。
+OPENING_CAP=600
+echo "[Face 7] 抬头块闸（首个 H2 之前的正文字数 ≤ ${OPENING_CAP} 字）"
+if [ ! -f "$CHAR_RATCHET" ]; then
+  echo "  ❌ 台账缺失：${CHAR_RATCHET}——抬头块闸无判定面，拒绝假绿"
+  HITS=$((HITS + 1))
+else
+  OVERO=$(node -e '
+    const fs=require("fs");
+    const base=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
+    const cap=parseInt(process.argv[2],10);
+    const deco=/^(<[^>]+>|!\[[^\]]*\]\([^)]*\)|\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)|<!--.*-->|-{3,})$/;
+    const opening=(t)=>{
+      const L=t.split("\n");
+      let start=0;
+      if(L[0]&&L[0].trim()==="---"){let j=1;while(j<L.length&&L[j].trim()!=="---")j++;start=j+1;}
+      let i=start;
+      for(;i<L.length;i++) if(/^## /.test(L[i])) break;
+      return [...L.slice(start,i).filter(l=>l.trim()!==""&&!deco.test(l.trim())).join("\n")].length;
+    };
+    const out=[];
+    for(const f of Object.keys(base)){
+      if(f==="_meta") continue;
+      if(!fs.existsSync(f)) continue;
+      const n=opening(fs.readFileSync(f,"utf8"));
+      if(n>cap) out.push(f+"  抬头块 "+n+" > "+cap+" 字（超 "+(n-cap)+"）");
+    }
+    if(out.length) console.log(out.join("\n"));
+  ' "$CHAR_RATCHET" "$OPENING_CAP" 2>/dev/null || true)
+  if [ -n "$OVERO" ]; then
+    printf '%s\n' "$OVERO" | sed 's|^|    |'
+    OVERO_N=$(printf '%s\n' "$OVERO" | grep -c .)
+    HITS=$((HITS + OVERO_N))
+    echo "  ❌ ${OVERO_N} 处抬头块超限——下沉正文 / 精简 / 淘汰，三选一"
+  else
+    echo "  ✓ 全部 ≤ ${OPENING_CAP} 字"
   fi
 fi
 
@@ -266,5 +310,5 @@ if [ "$HITS" -gt 0 ]; then
   echo "发现 ${HITS} 处违规"
   exit 1
 fi
-echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 / 可读性棘轮 / 行数棘轮 五面）"
+echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 / 可读性棘轮 / 字数棘轮 / 抬头块 六面）"
 exit 0
