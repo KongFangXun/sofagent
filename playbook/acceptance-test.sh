@@ -4535,7 +4535,7 @@ if [ "$SEC_OK" = 1 ]; then pass "S456 章节对照表机器断言：归一化对
 # 依据：v1.5.4 devlog §二〈模型路由层〉/§三·七 显式顺延登记「新增 acceptance 场景/回归清单维度」——原标注
 #   「⏭️ 顺延 v1.5.5」，本批落位（v1.5.5〈承接 v1.5.4 章级验收资产顺延〉块随之作废）。
 # 交叉登记：维度面 = checklist #144 子项 t（ch3/7 Vault 回归）——场景抓行为、维度抓回归，双向指认。
-scenario 457 "v1.5.4 第二章·本地槽位排队行为锁（B-3 落位）——槽位上限可配 / 超限排队（位置 + 预估等待）/ 超时升级留痕 routeReason（escalate-cloud vs 信创全封 wait）/ 🔒 判定链不占本地主模型槽（行为锁：mainModelGrants 恒 0）/ 非法槽位上限 fail-closed（回归面 = checklist #144·t）"
+scenario 457 "v1.5.4 第二章·本地槽位排队与判定分层·行为锁（B-3 落位）——槽位上限可配 / 超限排队（位置 + 预估等待）/ 超时升级留痕 routeReason（escalate-cloud vs 信创全封 wait）/ 🔒 判定链不占本地主模型槽（行为锁：mainModelGrants 恒 0）/ 非法槽位上限 fail-closed（回归面 = checklist #144·t）"
 probe_assert s457 "S457 槽位上限可配 + 超限排队位置/预估等待 + 超时升级留痕 + 判定链不占主模型槽（行为锁）+ 非法上限 fail-closed" "槽位排队/判定链行为锁回潮——见上方 ✗ 行"
 scenario 458 "v1.5.4 第二章·判定链三层与门控行为锁（B-3 落位）——L0 声明式映射零模型调用（judge 不被调）/ L1 语义分类命中且 🔒 不占本地主模型槽 / evidenceReadiness 未就绪 fail-closed 拒绝启用（非静默降级）/ 校准门控未达阈拒绝分流 + 已校准放行（正反双向）/ 通道不可用降 L0 规则面兜底（回归面 = checklist #144·t）"
 probe_assert s458 "S458 L0 零模型调用 + L1 不占主模型槽 + 证据就绪度 fail-closed 门禁 + 校准门控拒绝分流（正反双向）+ 通道不可用降 L0 兜底" "判定三层链/门控 fail-closed 回潮——见上方 ✗ 行"
