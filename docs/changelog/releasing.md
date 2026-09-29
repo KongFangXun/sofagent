@@ -50,7 +50,7 @@
 - [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)
 - [x] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)　✅ PASS with conditions（终轮 run · 0 P0/5 P1 转阶段九刚性门禁/4 P2 · acceptance 470/470 EXIT=0 · 凭据落盘 · 修复批补 S463 章一路由锁 + S464 章六结构锁（出处见 git 演进史） · 两轮环境冲突停手经主 session 裁决续跑）
 - [ ] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
-- [ ] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)
+- [x] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)　✅ 全八步过：工具健康 10 项 ✅ · rebuild+dist 基线重置（聚合 1dd70a9c…）· 锚点 509 · hook 端到端双链路（拦真密钥阻断/干净放行）· cjk-var 136 文件零违规 · fail-loud 6 注入全红 · bump dry-run 448 处纯只读
 - [ ] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)
 - [ ] 九 · 发布流水线（本机自装→检查→push→tag→release→npm publish · 项目负责人或授权 AI）→ [09-publish.md](./releasing/09-publish.md)
 - [ ] 十 · 分发（Skill / DSH plugin / OpenClaw plugin / 设备端安装 · 项目负责人或授权 AI）→ [10-distribute.md](./releasing/10-distribute.md)
