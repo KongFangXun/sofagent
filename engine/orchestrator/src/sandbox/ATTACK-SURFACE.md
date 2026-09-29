@@ -29,7 +29,7 @@ v1.3.7: createReactAgent → wrapToolCall middleware → 沙箱层（allow/deny 
 
 middleware 不删除——它是沙箱的「审计记录层」，沙箱是「执行隔离层」。两者叠加。
 
-## 四、证据流边契约（v1.2.5 P6 拆入）
+## 四、证据流边契约
 
 `write → virtual → audit → approve → physical`，每步输出留不可篡改审计记录（vfs-events.jsonl append-only + HMAC 链，`verifyChain()` 可重放验证）。
 

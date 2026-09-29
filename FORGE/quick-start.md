@@ -53,7 +53,7 @@ cp FORGE/env.local.template ~/.sofagent/env.local
 source ~/.sofagent/env.local
 ```
 
-> key 文件刻意放在**仓库目录之外**（`~/.sofagent/env.local`）——不只靠 .gitignore 挡，而是让它根本不在仓库里（2026-09-12 收面批迁移）。
+> key 文件刻意放在**仓库目录之外**（`~/.sofagent/env.local`）——不只靠 .gitignore 挡，而是让它根本不在仓库里（收面批迁移）。
 
 ### 模型参数
 
