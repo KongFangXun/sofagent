@@ -44,8 +44,8 @@
 
 **An open-source FDE Harness layer** (FDE = Forward Deployed Engineer — see the "[What is the FDE Harness](#what-is-the-fde-harness)" section) — embedded between mature Agents (DSH /
 OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it
-writes the business judgment down as files (workflow, ontology data, AI-node deployment); after departure, it audits every change against those files. Five Harness capabilities (inject ·
-audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard).
+writes the business judgment down as files (workflow, ontology data, AI-node deployment); after departure, it audits every change against those files.
+Five Harness capabilities (inject · audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard).
 sofagent does not build the Agent — it delivers the layer that keeps any Agent governed.
 
 <p align="center">
@@ -194,11 +194,9 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 | **Rule self-test schema** | Every rule must carry `match` / `notMatch` positive/negative examples, asserted fail-closed at load time — a mis-written rule fails loudly instead of relying on memory; FAIL messages attach a suggested fix, and multi-rule hits take the strictest |
 | **A24 deliverable-location rule** | Allowlist opt-in, intercepted before the act, **born with positive/negative examples** (rules 24 → 25) — no legacy debt |
 
-Also in this release: doctor repair loop (`--refresh` backup + one-click reset to defaults + before/after diff) · `@sofagent/skillopt` legacy package retirement · ARCHITECTURE three-domain
-rewrite (FDE scenario layer → S1M decision layer → harness governance layer + five-domain/three-domain mapping)
-· paired completeness for verdict records (a one-sided record alone now raises red, closing the "no record" blind spot) · audit-scope semantics as a first-class citizen (`AuditScope`
-explicit object; rules no longer each call git). **Tests 5296 → 5408 · acceptance 373 → 377 · 85 regression
-dimensions · rules 24 → 25** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.3.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+Also in this release: doctor repair loop (`--refresh` backup + one-click reset to defaults + before/after diff) · `@sofagent/skillopt` legacy package retirement · ARCHITECTURE three-domain rewrite (FDE scenario layer → S1M decision layer → harness governance layer + five-domain/three-domain mapping) · paired completeness for verdict records (a one-sided record alone now raises red, closing the "no record" blind spot) · audit-scope semantics as a first-class citizen (`AuditScope` explicit object; rules no longer each call git).
+
+**Tests 5296 → 5408 · acceptance 373 → 377 · 85 regression dimensions · rules 24 → 25** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.3.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
@@ -288,11 +286,9 @@ sofagent-audit --doctor    # verify the environment (optional)
 
 **To uninstall**: `bash ~/.sofagent/scripts/uninstall.sh` (installed layout) or `bash engine/scripts/uninstall.sh` (clone layout) — removes the Skill/constitution files, hook registrations
 and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data.
-Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the two channels both named `sofagent` apart (npm bare-name
-umbrella `sofagent` = sub-package forwarder, see the package-name warning in Usage; the install.sh state exposes
-`status` / `web` / `dashboard`) → [HANDBOOK · Installation](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see
-[FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest
-path" section).
+Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the two channels both named `sofagent` apart (npm bare-name umbrella = sub-package forwarder, see the package-name warning in Usage; the install.sh state exposes `status` / `web` / `dashboard`) → [HANDBOOK · Installation](./docs/HANDBOOK.md).
+
+Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
 
 ## Usage
 
