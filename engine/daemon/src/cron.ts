@@ -533,6 +533,19 @@ export function startCron(projectDir: string): number {
             // 健康文件自身写失败也要可见（否则「零告警」的病根又回来了）
             console.error('[cron] daemon-health.json 写入失败:', (healthErr as Error).message);
           }
+          // v1.5.5 批 18：失败流喂 FatigueTracker——cron 任务的成败即「工具调用结果」
+          // 语义（task.name 为工具名、exitCode!==0 为失败）。此前 fatigue.ts 的
+          // writeFatigueReport 仅被 barrel 再导出，零生产调用（文件头自述「不成立」）。
+          // 评估后的写入口 = 每轮调度收尾：失败逐条 recordToolCall(name,false)、
+          // 成功任务 recordToolCall(name,true) 归零计数——随后 assess() 写 daemon-health。
+          try {
+            const { FatigueTracker, writeFatigueReport } = require('./fatigue') as typeof import('./fatigue');
+            const tracker = new FatigueTracker();
+            for (const f of failures) tracker.recordToolCall(f.name, false);
+            writeFatigueReport(tracker.assess());
+          } catch {
+            // 疲劳度是观测增强，不是调度依赖——写失败只留日志，不影响调度主流程
+          }
         }
       } catch (err) {
         console.error('[cron] scheduler-consume 失败:', (err as Error).message);
