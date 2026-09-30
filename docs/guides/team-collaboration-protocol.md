@@ -42,6 +42,22 @@ v1.3.2 交付了单 Agent 全闭环（Onboard L1-L5）+ workflow 批量生成（
 
 ---
 
+### 0.4 `formation` 字段——阵型声明（v1.5.5 章四）
+
+`team.yml` 可选新增 `formation: <name>` 字段（不声明则行为零变化——走既有全量成员路径）：
+
+```yaml
+name: 审查小队
+team_id: review-team-1
+formation: cross-review   # 六阵型之一；声明后 members 可缺省（走模板兜底）
+```
+
+- **合法值**（六阵型，fail-closed——非法名建队被拒并列全部合法值）：`commander-crews` / `driver-advisor` / `cross-review` / `bake-off` / `research-triangulation` / `cost-pyramid`。
+- **模板兜底**：声明 `formation` 且 `members` 缺省 ⇒ 按阵型模板装配成员拓扑（agent_id 按 `<team_id>-<role>` 生成，trust 缺省 0.5）。
+- **显式覆盖**：显式 `members` 与模板并存 ⇒ 以显式为准，偏离记录进 `data/teams/<team-id>/formation.json` 的 `template_deviation`（不静默覆盖）。
+- **产物落盘**：建队时成员拓扑与交接边写 `data/teams/<team-id>/formation.json`；交接事件经 `recordHandoff` 挂 decision-log（可按 team-id 查询——「阵型是否照跑」的可查证据）。
+- **与 CLI 的关系**：`sofagent-orchestrator formation` 子命令为作者自验面（v1.5.4 交付）；纳入 `sofagent <域> <动作>` 单入口映射属 v1.5.6，本版不提前。
+
 ## 二、共享态 Schema（team-state CRDT 结构）
 
 ### 1.1 设计选择
