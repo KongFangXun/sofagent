@@ -21,7 +21,7 @@
   · acceptance 373→**377** · 2026-09-26 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.3.md)
 - **v1.5.2** — 🔍 审计模块·对外开放面与判定语义：MCP audit 数据对外（`audit_query` 只读 + 事件订阅）· 约束导出外部可验（`ruleset_export`）· should-run 判定链 · 审计结论失效语义 · 网络出口治理面 · 事前授权补环 · DSH 插件 npm 首发面
 · 测试 5083→**5296**（+213，13 包 workspace（模块包）口径）· acceptance 367→**373** · MCP 新增 `audit_query`/`ruleset_export`（总数 107） · 2026-09-24 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.2.md)
-> 📌 **当前口径**：MCP tool 总数 **104**（v1.5.4 章二 新增 `router_slots`（本地槽位态观测 + 路由预览，103→104）；2026-09-26 浏览器四件套（`playwright_*`）退役，[v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md)；上方 107 为 v1.5.2 发版时点读数）
+> 📌 **当前口径**：MCP tool 总数 **104**（v1.5.4 章二 新增 `router_slots`（本地槽位态观测 + 路由预览，103→104）；2026-09-26 浏览器四件套的 **MCP 面**（`playwright_*`）退役——registry 107→103，实现底座（orchestrator `browser-tools.ts` 的 @public 导出）保留待 v1.5.7 处置，裁定与残余清单见 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md)；上方 107 为 v1.5.2 发版时点读数）
 - **v1.5.1** — 编排模块·事件驱动（业务事件触发/设备 OTA/审计输入双通道/`sofagent demo`）· 测试 4903→**5083**（13 包 workspace 口径）· acceptance 357→**367** · 2026-09-22 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.1.md)
 - **v1.5.0** — 治理模块·可见性与本体成熟（治理 KPI 面板/本体双时态/Validation Engine/trace 对账/FDE 陪跑期/DSH 插件事件接线）· MCP 104→105 tools · 测试 4805→**4903**（+98，13 包口径）· acceptance 352→**357** · 2026-09-19 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
 
