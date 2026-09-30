@@ -401,3 +401,4 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 2026-09-29     | 20260929-03    | release-gate | 3    | SKIP       | SKIP       | FAIL     | ERROR   | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-29/run-03
 
 2026-09-29     | 20260929-04    | release-gate | 4    | SKIP       | PASS       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-29/run-04
+2026-09-30     | 20260926-02-勘误④  | release-gate | 终产物错位勘误 | — | — | — | — | 主 session 勘误：本 run 收编行⑦「产物完整落盘」系误判——正主位置 fix-summary.md 实为 398B 截断残文（末句「现在写终产物 fix-summary.md：」戛然而止），完整版 5.9KB 被 f-fix 以相对路径写到了 ~/dotfiles/ 孤本目录（写盘窗口耗尽时双路径落笔，只有错位那份完整）。根因三层：prompt 裸文件名零路径锚定 + driver 校验只查 size>0（残文通过）+ 收编复核被同一弱判定骗过。已收口：完整版归位正主（残文留档 partial-origin）、~/dotfiles 移 Trash、教训入 lessons/driver.md F 链章④、两把防复发锁（f-fix.md 绝对路径铁律 + driver ≥500B+##结构校验）、完整时序与机制分析见 run 目录 post-run-audit.md。 | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-26/run-02

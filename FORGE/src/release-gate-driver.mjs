@@ -3647,6 +3647,21 @@ async function main() {
       if (missingOutputs.length > 0) {
         throw new Error(`产物缺失或空文件: ${missingOutputs.join(', ')}（worker exit 0 但未落盘——agent 层吞错）`);
       }
+      // v1.5.5（run-02 收编补锁）：截断残文拦截——size>0 挡不住"写了个开头就断"的
+      // 残文（实录：fix-summary.md 正主位置只留 398B、以"现在写终产物"戛然而止，
+      // 完整版被 cwd 相对路径写到 ~/dotfiles/ 下）。最小结构校验：>= 500 字节且含
+      // 至少一个 ## 标题行——两者任一不满足按步骤失败记账（宁可重跑不可静默收编）。
+      const truncatedOutputs = (stepDef?.outputs || []).filter(f => {
+        const p = join(runDir, f);
+        if (!existsSync(p)) return false;
+        const size = statSync(p).size;
+        if (size < 500) return true;
+        const head = fs.readFileSync(p, 'utf-8').slice(0, 4000);
+        return !/^## /m.test(head);
+      });
+      if (truncatedOutputs.length > 0) {
+        throw new Error(`产物疑似截断残文（<500B 或无 ## 结构）: ${truncatedOutputs.join(', ')}——写盘窗口耗尽或写错位置的典型形态，禁止静默收编`);
+      }
 
       visibility.emit(EVENTS.STEP_DONE, {
         step,
