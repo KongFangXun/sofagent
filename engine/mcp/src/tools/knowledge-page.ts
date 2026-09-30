@@ -20,16 +20,9 @@ import type { DataChange, DataAuditResult } from '@sofagent/core';
  * 从 Markdown 内容中解析 frontmatter。
  * （逐字迁移自 create-entity.ts——BOM 剥离 + CRLF 归一 + yaml 解析失败返 null）
  */
-export function parseFrontmatter(content: string): Record<string, unknown> | null {
-  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
-  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
-  if (!match || !match[1]) return null;
-  try {
-    return yamlLoad(match[1]) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
+// v1.5.5 批 19：本地实现已删——改从 @sofagent/ontology 复用单源实现（本文件继续 re-export，
+//   保持 validate-ontology.ts / delete-entity.ts 等既有导入点不变）。
+export { parseFrontmatter } from '@sofagent/ontology';
 
 /**
  * 追加数据变更日志到 data/audit/data-change-log.jsonl。

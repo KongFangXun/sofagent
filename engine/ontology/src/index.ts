@@ -19,6 +19,7 @@
 /* @public */ export { mergeOntology, checkOntologyStatus, migrateToTrunk, LIFECYCLE_TO_MARKET_RING, getLastMergeSkipLog } from './merge-engine';
 /* @public */ export type { LifecycleMigrationRequest, LifecycleMigrationResult, OntologySkipEntry, OntologySkipLog } from './merge-engine';
 /* @public */ export { mergeSharedOntology } from './shared-merge';
+/* @internal */ export { parseFrontmatter } from './frontmatter';
 /* @public */ export { generateOntologyView } from './ontology-view';
 
 // ── v1.5.0 第二章：双时态时点快照 + 渐进加载三层 ──

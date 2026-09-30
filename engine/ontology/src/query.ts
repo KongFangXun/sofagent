@@ -1,3 +1,4 @@
+import { parseFrontmatter } from './frontmatter';
 // ============================================================
 // ontology/query.ts · 双时态时点快照 + 渐进加载三层
 // v1.5.0 第二章交付：本体数据双时态事实
@@ -90,7 +91,7 @@ export function stateAt(knowledgeDir: string, at: string): EntityDigest[] {
   }
   const out: EntityDigest[] = [];
   for (const file of files) {
-    const fm = parseFrontmatterSafe(readFileSync(join(entitiesDir, file), 'utf-8'));
+    const fm = parseFrontmatter(readFileSync(join(entitiesDir, file), 'utf-8'));
     if (!fm) continue;
     // js-yaml 可能把 ISO 时间串解析为 Date——归一为 ISO 字符串再判定
     const toIso = (v: unknown): string | undefined =>
@@ -139,7 +140,7 @@ export function progressiveLoad(
     const filePath = join(entitiesDir, `${name}.md`);
     if (!existsSync(filePath)) continue;
     const content = readFileSync(filePath, 'utf-8');
-    const fm = parseFrontmatterSafe(content) ?? {};
+    const fm = parseFrontmatter(content) ?? {};
 
     const digest: EntityDigest = {
       name,
@@ -190,15 +191,4 @@ export function progressiveLoad(
 }
 
 /** frontmatter 安全解析（坏文件返回 null，不抛） */
-function parseFrontmatterSafe(content: string): Record<string, unknown> | null {
-  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
-  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
-  if (!match || !match[1]) return null;
-  try {
-    // 延迟 require 避免 js-yaml 成为 query 层硬依赖面（与 merge-engine 同款加载）
-    const { load } = require('js-yaml') as typeof import('js-yaml');
-    return load(match[1]) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
+// v1.5.5 批 19：近名实现 parseFrontmatterSafe 已删——统一用 ./frontmatter 的 parseFrontmatter。

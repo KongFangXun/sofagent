@@ -140,6 +140,7 @@
 
 // ── 原子写入 ──
 /* @public */ export { atomicWriteSync, atomicAppendSync, atomicWriteWithMergeSync, mergeAppendMissing } from './shared/atomic-write';
+/* @internal */ export { sleepSync } from './shared/atomic-write';
 
 // ── Git Diff 解析 ──
 /* @public */ export {
