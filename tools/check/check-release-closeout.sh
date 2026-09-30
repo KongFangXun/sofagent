@@ -130,8 +130,12 @@ fi
 
 # ── ⑤ Release workflow 幂等豁免分支在位（本脚本新增）──
 echo "=== ⑤ Release 重复发布幂等豁免分支 ==="
+# 🔴 grep -c 在「零命中」时**既打印 0 又返回退出码 1**——写成 `|| echo 0` 会得到 "0\n0"
+#   让 `-ge` 比较失真（本仓 check-guards 的「grep -c 双零地雷」规则即为此设，已实测拦下本行初版）。
+#   正确形态：`|| true` 忽略退出码，保留 grep 自己打印的那个 0。
+CLOSE_PUBLISH_HITS=$(grep -c 'registry 二次确认' .github/workflows/release.yml 2>/dev/null) || true
 if grep -q 'is not in this registry' .github/workflows/release.yml 2>/dev/null \
-   && [ "$(grep -c 'registry 二次确认' .github/workflows/release.yml 2>/dev/null || echo 0)" -ge 2 ]; then
+   && [ "${CLOSE_PUBLISH_HITS:-0}" -ge 2 ]; then
   _say_pass "release.yml 两处 publish 均带 E404 形态豁免 + registry 二次确认"
 else
   _say_fail "release.yml 缺 E404 形态豁免分支（重复发布会被判红）"
