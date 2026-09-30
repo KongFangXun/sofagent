@@ -130,15 +130,23 @@ fi
 
 # ── ⑤ Release workflow 幂等豁免分支在位（本脚本新增）──
 echo "=== ⑤ Release 重复发布幂等豁免分支 ==="
+# v1.5.5 阶段三 F 项：豁免判定收口到 tools/release/npm-publish-with-retry.sh 单一定义处，
+# release.yml 两处 Publish step 改为 bash 调用——判据随之改为「脚本在位 + 两处调用在位 +
+# workflow 内不再内联豁免词表（判定逻辑只在一处定义）」。
 # 🔴 grep -c 在「零命中」时**既打印 0 又返回退出码 1**——写成 `|| echo 0` 会得到 "0\n0"
 #   让 `-ge` 比较失真（本仓 check-guards 的「grep -c 双零地雷」规则即为此设，已实测拦下本行初版）。
 #   正确形态：`|| true` 忽略退出码，保留 grep 自己打印的那个 0。
-CLOSE_PUBLISH_HITS=$(grep -c 'registry 二次确认' .github/workflows/release.yml 2>/dev/null) || true
-if grep -q 'is not in this registry' .github/workflows/release.yml 2>/dev/null \
-   && [ "${CLOSE_PUBLISH_HITS:-0}" -ge 2 ]; then
-  _say_pass "release.yml 两处 publish 均带 E404 形态豁免 + registry 二次确认"
+NPM_RETRY_SCRIPT="tools/release/npm-publish-with-retry.sh"
+CLOSE_RETRY_HITS=$(grep -c 'npm-publish-with-retry.sh' .github/workflows/release.yml 2>/dev/null) || true
+CLOSE_INLINE_E404=$(grep -c 'is not in this registry' .github/workflows/release.yml 2>/dev/null) || true
+if [ -f "$NPM_RETRY_SCRIPT" ] \
+   && grep -q 'is not in this registry' "$NPM_RETRY_SCRIPT" 2>/dev/null \
+   && grep -q 'registry 二次确认' "$NPM_RETRY_SCRIPT" 2>/dev/null \
+   && [ "${CLOSE_RETRY_HITS:-0}" -ge 2 ] \
+   && [ "${CLOSE_INLINE_E404:-0}" -eq 0 ]; then
+  _say_pass "release.yml 两处 publish 经 npm-publish-with-retry.sh 调用（豁免判定单点定义，无内联副本）"
 else
-  _say_fail "release.yml 缺 E404 形态豁免分支（重复发布会被判红）"
+  _say_fail "release.yml 豁免判定断链：需 $NPM_RETRY_SCRIPT 在位（含 E404+二次确认）且两处调用引用、workflow 内零内联词表"
 fi
 
 echo "═══════════════════════════════════════════════════════════"
