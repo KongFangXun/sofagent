@@ -102,6 +102,44 @@ describe('v1.5.5 章一 · ΔΣt 代码合并（fail-closed）', () => {
     expect(applyPatch('long-task', s, [{ op: 'remove', path: 'goal' }]).ok).toBe(false);
   });
 
+  it('remove 无 value 必须被拒（领域数组字段缺 value = 静默 no-op 缺口，fail-closed）', () => {
+    const s = initialState('engineer', 'g');
+    const seeded = applyPatch('engineer', s, [
+      { op: 'update', path: 'reviewComments', value: [{ file: 'a.ts', line: 1, status: 'open' }] },
+    ]);
+    expect(seeded.ok).toBe(true);
+    if (seeded.ok) {
+      const r = applyPatch('engineer', seeded.state, [
+        { op: 'remove', path: 'reviewComments' }, // 领域数组字段、无 value → 两分支均不命中
+      ]);
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.reason).toContain('remove 需合法 value');
+        expect(r.rejectedPath).toBe('reviewComments');
+      }
+    }
+  });
+
+  it('remove 合法形态仍生效（string[] 领域数组按值剔除）；对象 value 非 string 同样拒绝', () => {
+    const s = initialState('checker', 'g');
+    const seeded = applyPatch('checker', s, [
+      { op: 'update', path: 'falsePositives', value: ['a-rule', 'b-rule'] },
+    ]);
+    expect(seeded.ok).toBe(true);
+    if (seeded.ok) {
+      const r = applyPatch('checker', seeded.state, [
+        { op: 'remove', path: 'falsePositives', value: 'a-rule' },
+      ]);
+      expect(r.ok).toBe(true);
+      if (r.ok) expect(r.state['falsePositives']).toEqual(['b-rule']);
+    }
+    // 对象字段 + 非 string value → 同一 fail-closed 分支
+    const es = initialState('engineer', 'g');
+    const et = applyPatch('engineer', es, [{ op: 'remove', path: 'tests', value: 42 }]);
+    expect(et.ok).toBe(false);
+    if (!et.ok) expect(et.reason).toContain('remove 需合法 value');
+  });
+
   it('领域字段 validator 生效（engineer.tests 形状校验）', () => {
     const s = initialState('engineer', 'g');
     const bad = applyPatch('engineer', s, [{ op: 'update', path: 'tests', value: { pass: 'x' } }]);

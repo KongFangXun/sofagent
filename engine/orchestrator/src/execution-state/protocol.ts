@@ -84,6 +84,10 @@ export function applyPatch(
       } else if (cur && typeof cur === 'object' && typeof p.value === 'string') {
         const { [p.value]: _drop, ...rest } = cur as Record<string, unknown>;
         next[p.path] = rest;
+      } else {
+        // 两个分支都不命中 = 非法 remove 形态（数组无 value / 对象 value 非 string / 当前值既非数组非对象）
+        // 静默跳过会让「模型以为删了」与「实际没删」分叉——fail-closed 拒绝整批
+        return { ok: false, reason: 'remove 需合法 value（数组按值剔除/对象按键剔除）', rejectedPath: p.path };
       }
       continue;
     }
