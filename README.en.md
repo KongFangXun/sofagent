@@ -59,7 +59,7 @@ sofagent does not build the Agent — it delivers the layer that keeps any Agent
 <p align="center">
   <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training /
 governance / execution modules" width="860" /><br/>
-  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure: governance module released in v1.5.0 · execution module planned for v1.5.4; full interactive
+  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure: governance module released in v1.5.0 · execution module released in v1.5.4; full interactive
 version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 </p>
 
@@ -88,7 +88,7 @@ evolve) — works right after installation |
 | Maintenance burden | Low — rules track upstream | Medium — custom scripts are yours to maintain | Medium — rules and hooks ship with this repo, but each version needs the hook reinstalled and config re-aligned |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both — focused on Agent governance |
 
-**10-minute lightweight trial** (covers package fetch and environment checks end to end; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p
+**30-second lightweight trial** (first run includes the npx package fetch, reruns finish in seconds; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p
 @sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
 
 > 💡 For the trial, keep commit messages **at least 6 characters** (e.g. `initial audit test`) — A19 flags ultra-short messages (`init`/`add`) by design (it guards against meaningless commit messages), not a malfunction.
@@ -185,7 +185,7 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.4: Execution · Model Routing & Credential Verification (2026-09-30)
+## v1.5.4: Execution · Model Routing & Credential Verification (✅ Released · 2026-09-30)
 
 🎯 **A routing decision chain and credential isolation for Agents** — three things at once:
 

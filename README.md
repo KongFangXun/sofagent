@@ -49,12 +49,12 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 <p align="center">
   <img src="docs/assets/architecture-diagram.png" alt="sofagent 系统架构" width="860" /><br/>
-  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制：治理模块 v1.5.0 已发版 · 执行模块规划中（v1.5.4）；完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
+  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制：治理模块 v1.5.0 已发版 · 执行模块 v1.5.4 已发版；完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
 </p>
 
 </details>
 
-**10 分钟轻量试用**（含拉包与环境检查的完整走查；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
+**30 秒轻量试用**（首次含 npx 拉包，复跑秒级；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
 > 💡 试用时提交消息请写 **≥6 字符**（如 `initial audit test`）——A19 质量规则对超短消息（`init`/`add`）判红属设计意图（防无意义提交信息），不是故障。
 
