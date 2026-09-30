@@ -47,10 +47,13 @@ describe('v1.5.5 章四 · 六阵型模板兜底（验收 ①）', () => {
       expect(y.formation).toBe(name);
       const tpl = FORMATION_TEMPLATES[name];
       expect(y.members).toHaveLength(tpl.members.length);
-      // 角色序列一致（leader 在模板的承担位）
-      expect(y.members.map((m) => m.role)).toEqual(
-        tpl.members.map((m) => (m.role === 'leader' ? 'leader' : 'member')),
-      );
+      // v1.5.5 阶段三 F9：兜底态**首个成员设 leader**（模板位序即指挥链），
+      // 其余 member——此前仅字面 === 'leader' 才设，六阵型（commander/driver/…）
+      // 全被磨平，兜底团队零 leader。断言：leader 恰 1 名且在首位。
+      const roles = y.members.map((m) => m.role);
+      expect(roles.filter((r) => r === 'leader')).toHaveLength(1);
+      expect(roles[0]).toBe('leader');
+      expect(roles.slice(1).every((r) => r === 'member')).toBe(true);
       // agent_id 按约定生成 + trust 缺省 0.5
       expect(y.members.every((m) => m.agent_id.startsWith('t1-'))).toBe(true);
       expect(y.members.every((m) => m.trust === 0.5)).toBe(true);
@@ -121,6 +124,18 @@ describe('v1.5.5 章四 · 落盘与交接留痕（验收 ⑤⑥）', () => {
     expect(rec.instantiated_at).toBeTruthy();
     expect(Array.isArray(rec.members)).toBe(true);
     expect(rec.members.length).toBeGreaterThan(0);
+  });
+
+  it('handoffs 非空：recordHandoff 先于 exportFormationAudit（F10b——落盘面可见每条模板边）', () => {
+    const mgr = createTeam(BASE('commander-crews'), { dataDir: dir });
+    void mgr;
+    const rec = JSON.parse(readFileSync(join(dir, 'teams', 't1', 'formation.json'), 'utf-8')) as {
+      handoffs: Array<{ from: string; to: string; protocol: string }>;
+    };
+    // commander-crews 模板 2 条边——此前 audit 在 handoff 循环前取快照，恒空数组
+    expect(Array.isArray(rec.handoffs)).toBe(true);
+    expect(rec.handoffs.length).toBe(2);
+    expect(rec.handoffs.every((h) => typeof h.from === 'string' && typeof h.to === 'string')).toBe(true);
   });
 
   it('交接事件经 recordHandoff 可查（instantiateFormation 审计面）', () => {
