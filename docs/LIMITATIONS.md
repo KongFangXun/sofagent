@@ -412,6 +412,8 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道，快照文件也无 HMAC / 指纹可验（全链路无完整性校验）。即：Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限——该门禁是约定不是机制。
 
+> **v1.5.5 补充（CLI 侧已对齐）**：CLI 路径 `sofagent-audit --revert <sha>` 的确认函数（`engine/audit/src/index.ts` 的 `confirm()`）此前在**非 TTY 下自动确认**（Agent / CI / 管道等非交互环境下静默放行），强度**弱于**常规路径与 MCP 侧硬门控；现改为非 TTY 下**拒绝执行**并打印显式放行方式，仅显式传 `--yes` 才放行。两侧现同为「无显式授权即不放行」——**CLI 侧是机制（默认拒绝），MCP 侧仍是约定（调用方自报）**，落差只在 MCP 侧。
+
 与 ROADMAP「管控能力不得静默降级」的既定纪律存在落差。三个整改方向（① 快照自身完整性校验；② 把 `human_confirmed` 改为复用仓内既有 HITL 机制的带外确认通道；③ 判定为设计取舍并保留本披露）**待维护者裁定**；裁定前请勿把该门禁当作安全边界。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
 
 

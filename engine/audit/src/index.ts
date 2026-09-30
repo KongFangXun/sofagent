@@ -436,7 +436,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --verify-commit <hash>           检查 commit 审计记录');
       console.log('  sofagent-audit --regression <dir>               回归验证');
       console.log('  sofagent-audit --install-hook                   安装 pre-commit + commit-msg + post-commit hook');
-      console.log('  sofagent-audit --revert <snapshot-sha>           恢复到指定快照');
+      console.log('  sofagent-audit --revert <snapshot-sha>           恢复到指定快照（非交互环境须加 --yes 显式放行）');
       console.log('  sofagent-audit --timeline [N]                   查看快照时间线');
       console.log('  sofagent-audit ontology view                    本体人类可读视图');
       console.log('  子命令自有参数见各自 --help 说明：');
@@ -694,9 +694,21 @@ function awaitLoadSnapshot(): typeof import('@sofagent/core') {
   }
 }
 
-// v1.0.9: confirm 辅助函数（非 TTY 自动确认，不挂起）
-function confirm(question: string): Promise<boolean> {
-  if (!process.stdin.isTTY) return Promise.resolve(true);
+// v1.0.9: confirm 辅助函数
+// v1.5.5（止损路径校验强度对齐）：非 TTY 下原为「自动确认（返回 true）」——Agent / CI / 管道等
+//   非交互环境下，破坏性操作（--revert 覆盖工作区文件）会**静默放行**，强度弱于常规路径与
+//   MCP 侧同功能 tool（`snapshot_restore` 是硬门控：human_confirmed !== true 即挂起不执行）。
+//   现改为：非 TTY 下**拒绝执行**并打印显式放行方式（--yes）；仅显式传 --yes 才放行。
+function confirm(question: string, allowNonTty = false): Promise<boolean> {
+  if (!process.stdin.isTTY) {
+    if (!allowNonTty) {
+      console.error('🚫 非交互环境（stdin 非 TTY）——破坏性操作已拒绝执行（校验强度对齐 MCP 侧硬门控）。');
+      console.error('   确认要执行时请显式加 --yes，例如：sofagent-audit --revert <sha> --yes');
+      return Promise.resolve(false);
+    }
+    console.error('⚠️  非交互环境 + 显式 --yes——按显式授权执行破坏性操作。');
+    return Promise.resolve(true);
+  }
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => {
     rl.question(`${question} [y/N] `, (ans) => {
@@ -1072,9 +1084,16 @@ async function main(): Promise<void> {
       }
       console.log('');
 
-      // v1.0.9: 使用 confirm() 辅助函数（非 TTY 自动确认）
-      const confirmed = await confirm(`⚠️  即将恢复到快照 ${args.revertSha}。此操作将覆盖当前文件。确认？`);
+      // v1.5.5: 非 TTY 下拒绝执行，显式 --yes 才放行（原为「非 TTY 自动确认」——止损路径弱于常规路径）
+      const confirmed = await confirm(`⚠️  即将恢复到快照 ${args.revertSha}。此操作将覆盖当前文件。确认？`, args.yes === true);
       if (!confirmed) {
+        // v1.5.5：区分「非交互环境策略拒绝」与「交互中用户取消」——前者 fail-closed 退出非 0
+        //   （自动化里被拒的破坏性操作必须让调用方感知失败，而非静默 exit 0 被当成已处理）。
+        const policyRefused = !process.stdin.isTTY && args.yes !== true;
+        if (policyRefused) {
+          console.error('🚫 已拒绝：非交互环境未显式授权（--yes）——未执行任何变更。');
+          exit(1);
+        }
         console.log('已取消恢复操作。');
         exit(0);
       }
