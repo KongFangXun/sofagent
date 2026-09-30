@@ -1,4 +1,12 @@
 {
   "_doc": "check-claims A 组「新增件零消费阻断」的豁免台账（SDK 面登记）：新增件（上一 tag 后有改动）若属刻意 SDK 面保留，在此登记并逐条带理由；变更进 review。",
-  "exempt": {}
+  "exempt": {
+    "engine/audit/src/audit-trail.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
+    "engine/audit/src/protocol-neutrality.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
+    "engine/orchestrator/src/exec/git-capability.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
+    "engine/orchestrator/src/exec/skill-snapshot.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
+    "engine/orchestrator/src/loop/engineer-execute.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
+    "engine/orchestrator/src/worklog/attribution.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
+    "engine/orchestrator/src/worklog/dream-sandbox.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）"
+  }
 }

@@ -108,6 +108,11 @@ runDreamCycle:engine/daemon/src/dream-cycle/state-machine.ts
 registerBuiltinSlashCommands:engine/core/src/slash-commands/index.ts
 gateDataPush:engine/train/src/data-push.ts
 createSshTrainChannel:engine/daemon/src/cloud-exec.ts
+initialNodeState:engine/orchestrator/src/index.ts:via=initialState
+executionStep:engine/orchestrator/src/index.ts:via=step
+listNodeKinds:engine/orchestrator/src/index.ts:via=getSchema
+setExecutionAuditSink:engine/orchestrator/src/index.ts:via=setAuditSink
+statefulMetricsFileSink:engine/orchestrator/src/index.ts:via=fileSink
 chainDualChannelEvent:engine/daemon/src/cloud-events.ts
 compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 
@@ -138,7 +143,11 @@ compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 #     不把它硬接到既有出站路径（webhook / cloud-exec）的原因：白名单默认空 = 全拒，
 #     接上去会让默认态打断全部出站推送——比登记债务更差。
 #     到期（v1.5.4 ≤ SSOT）未接线即自动转红，本条目即声明「此处有据可查的接线债」。
-SDK_FACE_WAIVER=""  # decideEgress 白名单已摘除——v1.5.4 第五章 ai-node 治理落地生产调用点（S461），不再是面外形态
+SDK_FACE_WAIVER="initialNodeState:SDK 面易名重导出（initialState 的稳定别名）——底层符号生产实调于 node-executor:v1.6.0
+executionStep:SDK 面易名重导出（step 的稳定别名）——底层符号为协议核心生产实调:v1.6.0
+listNodeKinds:SDK 面枚举器（与 getSchema 同文件同消费面）——schema 注册表对外自描述 API:v1.6.0
+setExecutionAuditSink:SDK 面易名重导出（setAuditSink 的稳定别名）——audit-digest 接线保留口:v1.6.0
+statefulMetricsFileSink:SDK 面易名重导出（fileSink 的稳定别名）——度量落盘外部注入保留口:v1.6.0"
 
 # ── --since <prev-tag>：版本 diff 驱动模式 ──
 # 用 git diff <prev-tag>..HEAD 提取 engine/**/src/*.ts 新增的 @public 导出
