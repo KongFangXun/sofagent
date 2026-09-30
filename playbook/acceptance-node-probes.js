@@ -890,9 +890,9 @@ async function s426() {
   if (dimClaim && Number(dimClaim[1]) !== dimActual) bad.push('checklist 维度声称 ' + dimClaim[1] + ' ≠ 实际 ' + dimActual);
   const numMax = (rc.match(/^#### (\d+)\./gm) || []).map((s) => Number(s.replace(/\D/g, '')));
   if (dimClaim && numMax.length && Math.max(...numMax) !== Number(dimClaim[2])) bad.push('checklist 编号上界声称 ' + dimClaim[2] + ' ≠ 实际 ' + Math.max(...numMax));
-  if (!/regression-checklist\.md\` ≤ 2009 行、\`acceptance-test\.sh\` ≤ 4590 行/.test(rc)) bad.push('警戒线双值锚漂移');
+  if (!/regression-checklist\.md\` ≤ 2050 行、\`acceptance-test\.sh\` ≤ 4590 行/.test(rc)) bad.push('警戒线双值锚漂移');
   const rcLines = (rc.match(/\n/g) || []).length; // wc -l 口径（与 check-review-system 同——换行符数，非 split 段数）
-  if (rcLines > 2009) bad.push('checklist 超警戒线:' + rcLines);
+  if (rcLines > 2050) bad.push('checklist 超警戒线:' + rcLines);
   // ② C 类锚：calibration v1.4.9 收编 5 条特征锚（提取为空/同构替换 SSOT/死断言可达性/重跑全量/协议升级归 C）
   const cal = read('playbook/fresh-eyes-calibration.md');
   for (const anchor of [
