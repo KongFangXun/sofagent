@@ -49,17 +49,21 @@ fi
 
 # ── ② README 双语版本行 vs registry 真值（复用 check-npm-claims.mjs）──
 echo "=== ② 版本行 vs registry 真值（check-npm-claims.mjs） ==="
-if node tools/check/check-npm-claims.mjs >/tmp/closeout-npm.log 2>&1; then
+# v1.5.5 阶段三 F24：显式落 rc 再判——原「if node...; then...else rc=$?」形态里
+# rc 取值依赖「else 首句恰好是 rc=$?」这一脆弱时序（else 内任何前置命令都会覆盖 $?，
+# 分支文案随即选错——rc=2 的「registry 不可达」与普通不一致共用错文案）。
+# 显式 `cmd; rc=$?` 与判分支解耦，退出码语义稳定可测。
+node tools/check/check-npm-claims.mjs >/tmp/closeout-npm.log 2>&1
+rc=$?
+if [ "$rc" -eq 0 ]; then
   _say_pass "npm 实测声称与 registry 一致（含双语文档声称）"
+elif [ "$rc" -eq 2 ]; then
+  _say_fail "registry 不可达 / 豁免台账已落地 —— 收口须在可联网环境补跑（不静默跳过）"
 else
-  rc=$?
-  if [ "$rc" -eq 2 ]; then
-    _say_fail "registry 不可达 / 豁免台账已落地 —— 收口须在可联网环境补跑（不静默跳过）"
-  else
-    _say_fail "npm 声称与 registry 真值不一致"
-  fi
-  grep -E "❌" /tmp/closeout-npm.log | head -6 | sed 's/^/      /'
+  _say_fail "npm 声称与 registry 真值不一致"
 fi
+# 失败时附证据行（rc=0 时日志无 ❌，grep 自然为空——不另设开关）
+grep -E "❌" /tmp/closeout-npm.log | head -6 | sed 's/^/      /'
 
 # ── ③ 架构图注状态 vs 章节状态（本脚本新增）──
 echo "=== ③ 版本状态一致性：不得把已发版版本标成「规划中」 ==="
