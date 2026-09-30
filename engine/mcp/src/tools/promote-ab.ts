@@ -211,20 +211,24 @@ export async function promoteAb(args: PromoteAbArgs): Promise<PromoteAbResult> {
   // 审计留痕（kind=EVOLUTION——与 commons rule-promote 同款）
   let decisionLogged = false;
   try {
-    const audit = (await import('@sofagent/audit')) as unknown as {
-      emitDecision: (input: {
-        agentId: string;
-        sessionId: string;
-        kind: string;
-        moment: string;
-        why: string;
-        specRef?: string;
-        artifactRef?: string;
-        evidence?: string[];
-        category?: string;
-      }) => unknown;
+    // v1.5.5 批 19：同上——`as unknown as` 硬断言改为运行时签名校验，形状漂移即可观测
+    type EmitDecisionInput = {
+      agentId: string;
+      sessionId: string;
+      kind: string;
+      moment: string;
+      why: string;
+      specRef?: string;
+      artifactRef?: string;
+      evidence?: string[];
+      category?: string;
     };
-    audit.emitDecision({
+    const audit = (await import('@sofagent/audit')) as {
+      emitDecision?: (input: EmitDecisionInput) => unknown;
+    };
+    if (typeof audit.emitDecision !== 'function') {
+      console.warn('[sofagent] promote_ab 留痕降级：@sofagent/audit 未导出 emitDecision（签名漂移）——本次决策未落 decision-log');
+    } else audit.emitDecision({
       agentId: 'sofagent-mcp-promote-ab',
       sessionId: `promote-ab-${Date.now()}`,
       kind: 'EVOLUTION',
