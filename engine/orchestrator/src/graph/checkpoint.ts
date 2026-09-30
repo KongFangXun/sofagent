@@ -35,7 +35,7 @@ import {
 } from 'fs';
 import { join, dirname } from 'path';
 import { randomBytes } from 'crypto';
-import { atomicWriteSync } from '@sofagent/core';
+import { atomicWriteSync, sleepSync } from '@sofagent/core';
 
 /** checkpoint 中保存的最小状态接口——与 CheckpointState 兼容 */
 export interface CheckpointState {
@@ -81,11 +81,8 @@ export interface CheckpointRecord {
 }
 
 /** 同步 sleep——锁等待用（checkpoint 写入是同步链路，无 event loop 可让出） */
-function sleepSync(ms: number): void {
-  const sab = new SharedArrayBuffer(4);
-  const arr = new Int32Array(sab);
-  Atomics.wait(arr, 0, 0, ms);
-}
+// v1.5.5 批 19：本地 sleepSync 已删——改用 @sofagent/core 的单源实现（带 try/catch 回落，
+//   本处原版无回落：主线程 Atomics.wait 抛错时会直接崩）。
 
 /**
  * 原子写入——先写临时文件，再 rename 覆盖目标（launcher.ts 同款范式）。

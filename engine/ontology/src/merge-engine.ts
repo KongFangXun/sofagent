@@ -1,3 +1,5 @@
+import { parseFrontmatter } from './frontmatter';
+import { load as yamlLoad } from 'js-yaml';
 // ============================================================
 // ontology/merge-engine.ts · Ontology 合并逻辑
 // v1.5.4 从 sofagent/audit/src/ontology/merge-engine.ts 迁出
@@ -16,7 +18,6 @@
 
 import { existsSync, readFileSync, mkdirSync, readdirSync, writeFileSync, renameSync, copyFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
-import { load as yamlLoad } from 'js-yaml';
 import { atomicWriteSync } from '@sofagent/core';
 import {
   type OntologyObject,
@@ -40,18 +41,7 @@ import {
 /**
  * 解析 Markdown 文件的 YAML frontmatter
  */
-function parseFrontmatter(content: string): Record<string, unknown> | null {
-  // 去除 BOM + 统一 CRLF → LF，防止 Windows 创建的文件解析失败
-  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
-  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
-  if (!match || !match[1]) return null;
-
-  try {
-    return yamlLoad(match[1]) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
+// v1.5.5 批 19：本地 parseFrontmatter 已删——改用 ./frontmatter 的单源实现。
 
 // ============================================================
 // v1.4.3 十三：解析失败实体跳过清单（静默跳过 → 可对账信号）

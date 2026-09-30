@@ -40,7 +40,12 @@ const LOCK_RETRY_MS = 20;
 const LOCK_TIMEOUT_MS = 5_000;
 
 /** 同步休眠（Atomics.wait 真休眠；主线程不可用则退化极短微休眠） */
-function sleepSync(ms: number): void {
+/**
+ * 同步睡眠（Atomics.wait 真休眠，非 CPU 自旋）。
+ * v1.5.5 批 19：由私有改为导出（@internal）——orchestrator 的 checkpoint.ts 原有一份
+ * **同名同职能但失败语义不同**的实现（无 try/catch 回落），两处已分叉，现单源化。
+ */
+export function sleepSync(ms: number): void {
   try {
     const sab = new Int32Array(new SharedArrayBuffer(4));
     Atomics.wait(sab, 0, 0, ms);
