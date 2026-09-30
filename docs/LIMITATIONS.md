@@ -24,7 +24,7 @@
 
 ## Key Limitations
 
-> 最关键 5 条局限，快速了解 sofagent 的边界：
+> 最关键 6 条局限，快速了解 sofagent 的边界：
 
 | # | 局限 | 详见 |
 |---|---|---|
@@ -33,10 +33,11 @@
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
 | 4 | **静态加密只覆盖 `history.jsonl`**——`decision-log.jsonl` / `intent.jsonl` / `intent-skips.jsonl` 及附链目录（forge-runs / checkpoint / model-registry / task/logs / think.md / knowledge/）仍明文。<br>（边界：密钥删除/损坏后新记录回明文——doctor 可检出、ENCRYPTION_DEGRADED 事件留痕） | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#-单平台用户建议) |
+| 6 | **联邦 USB 路径的 HMAC 密钥分发有同介质风险**——密钥若与 `federation.json` 同放 USB 等可移动介质，攻击者取得介质即可伪造 `.sig` 验签。**建议**：密钥走独立渠道（密码管理器 / 加密邮件）分发，不与 federation.json 同介质。 | [SECURITY §一 → HMAC key 分发安全](../SECURITY.md) |
 
 > ✅ **已解决的历史问题**（v1.3.2 移出 Key Limitations，不再计入当前边界）：
 > - ~~audit ↔ daemon 循环依赖~~（v1.2.3 消除：snapshot helpers 迁移至 `@sofagent/core`，依赖图恢复单向 `daemon → audit → core`，详见 §八）
-> - ~~FDE 交付物激活断裂带~~（v1.2.5-v1.3.0 消除：激活链 Phase 1-4 全部交付，详见 §十）
+> - ~~FDE 交付物激活断裂带~~（v1.2.5-v1.3.0 消除：激活链 Phase 1-4 全部交付；原 §十「FDE 交付物激活断裂带」已退役归档，见 [archive/limitations-v1.1-v1.3-archived.md](./archive/limitations-v1.1-v1.3-archived.md) 与现役指南 [guides/fde-activation-chain](./guides/fde-activation-chain.md)）
 > - ~~定时触发做不到~~（v1.2.8 消除：daemon 内置 scheduler，v1.3.5 扩展 cron 表达式，详见 §二）
 
 > ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；
