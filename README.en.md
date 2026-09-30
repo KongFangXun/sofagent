@@ -23,6 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
+- [v1.5.4: Execution · Model Routing & Credential Verification (✅ Released · 2026-09-30)](#v154-execution--model-routing--credential-verification--released--2026-09-30)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -216,7 +217,7 @@ every commit triggers the 25 audit rules (including **AgentShield static scannin
 | Organizational memory | Knowledge distillation (think.md reflection + knowledge/) |
 | Training pipeline | Experience → exam → promotion self-evolution chain (scheduled v1.5.8) |
 | Fault tolerance | Snapshot rollback + capability baseline timeline (scheduled v1.5.9) |
-| Employment contract boundary | Pluggable contracts & core capability registry (scheduled v1.5.7) |
+| Employment contract boundary | Pluggable contracts & core capability registry (**not yet scheduled** — no matching version entry in the roadmap) |
 
 | Go deeper | Where |
 |---|---|
