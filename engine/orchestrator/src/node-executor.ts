@@ -622,11 +622,29 @@ async function runStatefulExecution(args: {
 
     if (parsed === null) {
       // 未能解析补丁——按「模型选择直接回答」处理：若含终止信号则完成
+      // 🔴 v1.5.5 阶段三 F17：完成词不再单独生效——无补丁时还须 Σt.todo 已收敛
+      //    （空数组）才判 success，否则继续循环并落「完成信号但 todo 未收敛」
+      //    审计摘要（模型嘴上说完成、状态面未完成 = 假完成信号，不能放行）。
       if (/TASK_COMPLETE|任务完成|\bDONE\b/i.test(text)) {
-        return finishStateful({
-          ctx, sigma, stepTokens, patchRejections, autoDegraded, success: true,
-          output: text, startTime, sink, kind,
-        });
+        const curTodo = sigma['todo'];
+        const todoConverged = Array.isArray(curTodo) && curTodo.length === 0;
+        if (todoConverged) {
+          return finishStateful({
+            ctx, sigma, stepTokens, patchRejections, autoDegraded, success: true,
+            output: text, startTime, sink, kind,
+          });
+        }
+        // 完成信号但 todo 未收敛——落审计摘要后继续循环（让模型基于「还没完成」的 Σt 继续干活）
+        emitAuditDigest({
+          kind,
+          action: '(完成信号但 todo 未收敛——不采納 TASK_COMPLETE，继续执行)',
+          patch: [],
+          causalEdges: [],
+          step: i,
+          timestamp: new Date().toISOString(),
+        }, ctx.agentName, ctx.node.id);
+        ot = text;
+        continue;
       }
       // 非终止且无补丁：观察更新后继续（防死循环：计入拒绝）
       patchRejections++;
@@ -707,12 +725,16 @@ function parseStatePatchLine(text: string): { patches: StatePatch[]; action: str
   try {
     const obj = JSON.parse(m[1]!) as { patches?: unknown; action?: unknown };
     if (!Array.isArray(obj.patches)) return null;
-    const patches = obj.patches.filter(
-      (p): p is StatePatch =>
-        !!p && typeof p === 'object' &&
-        ['add', 'remove', 'update'].includes((p as Record<string, unknown>)['op'] as string) &&
-        typeof (p as Record<string, unknown>)['path'] === 'string',
-    );
+    // 🔴 v1.5.5 阶段三 F16：含任何非法项时**整批拒绝**（return null → 走调用方
+    //    patchRejections++ / 自动降级路径）——此前 filter 静默丢弃非法项，只要剩
+    //    一个合法就过，「模型以为整批生效」与「实际只生效一部分」分叉，与
+    //    applyPatch 的整批 fail-closed 语义不一致。
+    const isValidPatch = (p: unknown): p is StatePatch =>
+      !!p && typeof p === 'object' &&
+      ['add', 'remove', 'update'].includes((p as Record<string, unknown>)['op'] as string) &&
+      typeof (p as Record<string, unknown>)['path'] === 'string';
+    if (!obj.patches.every(isValidPatch)) return null;
+    const patches = obj.patches as StatePatch[];
     if (patches.length === 0) return null;
     return { patches, action: typeof obj.action === 'string' ? obj.action : '' };
   } catch {

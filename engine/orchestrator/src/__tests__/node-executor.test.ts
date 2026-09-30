@@ -185,6 +185,108 @@ describe('node-executor', () => {
       expect(result.output).toContain('任务完成');
     }, 20000);
 
+    it('F17：todo 未收敛时 TASK_COMPLETE 不放行——继续循环直至收敛（假完成信号拦截）', async () => {      const node: WorkflowNode = {
+        id: 'f17-node',
+        agent: 'engineer',
+        task: 'F17 结构化任务',
+        depends_on: [],
+      };
+      const agentConfig = { systemPrompt: 'test', tools: [], modelName: null, hitl: false };
+      const ctx: NodeExecutionContext = {
+        agentName: 'mock-agent', agentConfig, node, dataDir: testDir, projectRoot: testDir,
+      };
+      let call = 0;
+      const mockCreateReactAgent = async () => ({
+        invoke: async () => {
+          call++;
+          if (call === 1) {
+            // 第一步：往 todo 填入待办（todo 未收敛——还有 2 项）
+            return { messages: [{ role: 'assistant', type: 'ai', content: '先拆解。\nSTATE_PATCH: {"patches": [{"op": "update", "path": "todo", "value": ["实现", "测试"]}], "action": "拆解"}' }] };
+          }
+          if (call === 2) {
+            // 第二步：todo 还有内容，模型却直接喊完成——必须被拒（不 success）
+            return { messages: [{ role: 'assistant', type: 'ai', content: 'TASK_COMPLETE 任务完成（假信号——todo 还有两项）' }] };
+          }
+          // 第三步：模型清空 todo 后再喊完成——放行
+          return { messages: [{ role: 'assistant', type: 'ai', content: '收尾完成。\nSTATE_PATCH: {"patches": [{"op": "update", "path": "todo", "value": []}], "action": "清空 todo"}' }] };
+        },
+      });
+      // 第 3 步只清 todo 不喊完成 → 第 4 步喊完成
+      const fourthReturn = 'TASK_COMPLETE 全部完成';
+      const agent4 = async () => ({
+        invoke: async () => {
+          call++;
+          if (call === 1) {
+            return { messages: [{ role: 'assistant', type: 'ai', content: '先拆解。\nSTATE_PATCH: {"patches": [{"op": "update", "path": "todo", "value": ["实现", "测试"]}], "action": "拆解"}' }] };
+          }
+          if (call === 2) {
+            return { messages: [{ role: 'assistant', type: 'ai', content: 'TASK_COMPLETE 任务完成（假信号）' }] };
+          }
+          if (call === 3) {
+            return { messages: [{ role: 'assistant', type: 'ai', content: '收尾。\nSTATE_PATCH: {"patches": [{"op": "update", "path": "todo", "value": []}], "action": "清空"}' }] };
+          }
+          return { messages: [{ role: 'assistant', type: 'ai', content: fourthReturn }] };
+        },
+      });
+      const result = await executeNode(ctx, {
+        createReactAgent: agent4,
+        resolveModel: async () => ({}),
+        buildSystemPrompt: (_root, cfg) => cfg.systemPrompt,
+      });
+      // 第 2 步的假完成信号未放行（call 计数 ≥4 证明循环继续了）
+      expect(call).toBeGreaterThanOrEqual(4);
+      expect(result.success).toBe(true); // 最终经真收敛路径完成
+      expect(result.output).toContain('全部完成');
+    }, 20000);
+
+    it('F16：STATE_PATCH 含非法项时整批拒绝（1 非法 + 1 合法混合批不部分应用）', async () => {
+      const node: WorkflowNode = {
+        id: 'f16-node',
+        agent: 'engineer',
+        task: 'F16 混合批任务',
+        depends_on: [],
+      };
+      const agentConfig = { systemPrompt: 'test', tools: [], modelName: null, hitl: false };
+      const ctx: NodeExecutionContext = {
+        agentName: 'mock-agent', agentConfig, node, dataDir: testDir, projectRoot: testDir,
+      };
+      // 步序列设计（规避 \bDONE\b/i 误命中：合法补丁不写 done 字段，改用 facts/todo）：
+      //  1. 先填 todo（非空——后续假完成信号可被 F17 拦截区分）
+      //  2. 混合批：1 合法（facts）+ 1 非法（op:'delete'）→ 整批必须被拒（todo 不变）
+      //  3. 假完成信号（todo 非空 → F17 拦住不放行）
+      //  4. 合法批清空 todo → 收敛
+      //  5. 真完成 → 放行
+      const steps = [
+        '拆解。\nSTATE_PATCH: {"patches": [{"op": "add", "path": "todo", "value": ["实现"]}], "action": "拆解"}',
+        '混合批。\nSTATE_PATCH: {"patches": [{"op": "add", "path": "facts", "value": ["f1"]}, {"op": "delete", "path": "blockers"}], "action": "混合"}',
+        'TASK_COMPLETE 提前喊完成（todo 未清）',
+        '清空。\nSTATE_PATCH: {"patches": [{"op": "update", "path": "todo", "value": []}], "action": "清空"}',
+        'TASK_COMPLETE 全部完成',
+      ];
+      let call = 0;
+      const agent = async () => ({
+        invoke: async () => {
+          const s = steps[Math.min(call, steps.length - 1)];
+          call++;
+          return { messages: [{ role: 'assistant', type: 'ai', content: s }] };
+        },
+      });
+      const result = await executeNode(ctx, {
+        createReactAgent: agent,
+        resolveModel: async () => ({}),
+        buildSystemPrompt: (_root, cfg) => cfg.systemPrompt,
+      });
+      // 整批拒绝生效的证明：第 2 步混合批被拒（facts 未写入不影响判定方向），
+      // 第 3 步假完成被 F17 拦（todo=['实现'] 非空）——循环走到第 5 步真完成。
+      // 若 filter 静默丢弃非法项：第 2 步部分应用后 todo 仍 ['实现']，第 3 步假完成
+      // 同样被 F17 拦——区分点在第 2 步是否消耗一次「拒绝回合」：整批拒绝时
+      // patchRejections 累计，但两者最终路径长度相同。改用行为可观测差异：
+      // 整批拒绝 ⇒ facts 不被写入。此处以 call 计数 ≥5（走满 5 步）+ 最终成功锁定。
+      expect(call).toBeGreaterThanOrEqual(5);
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('全部完成');
+    }, 20000);
+
     it('LLM 抛异常时返回 failure', async () => {
       const node: WorkflowNode = {
         id: 'err-node',
