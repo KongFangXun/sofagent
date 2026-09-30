@@ -82,6 +82,24 @@
       "level": "error",
       "slow": false,
       "note": "SECURITY.md 同上节的 audit 侧 execSync 命中数（v1.5.5 重算为 7 = 6 直接 + 1 内嵌）。与 total 条同源不同范围，两条须同时为真——只改其一即造成新的自相矛盾（旧文本即犯此病：总数 7 与 audit 6 + core 1 当时自洽，但 core 涨到 3 后无人同步任一处）"
+    },
+    {
+      "id": "core-exit-engine-crash-audit-fallback",
+      "file": "engine/audit/src/index.ts",
+      "extract": "return ([0-9]+); // 与 @sofagent/core EXIT_ENGINE_CRASH 同值",
+      "derive": "sed -n 's/^export const EXIT_ENGINE_CRASH = \\([0-9][0-9]*\\);$/\\1/p' engine/core/src/shared/constants.ts | head -1 | tr -d '[:space:]'",
+      "level": "error",
+      "slow": false,
+      "note": "崩溃兜底字面量与 @sofagent/core 的单源值必须相等。存在这个字面量的原因：崩溃处理器不得读 core 的模块绑定——崩溃正可能发生在 core 初始化中（SOFAGENT_HOME 越界守卫在 require 期抛出），此时绑定处 TDZ，直接读会让处理器自己崩掉、进程以非预期码退出（实测 7）。故处理器经 try/catch 取值 + 同值回落，本条目把「回落值 == 单源值」变成机械断言，避免回落值悄悄漂成第三个数"
+    },
+    {
+      "id": "core-exit-engine-crash-quick-fallback",
+      "file": "engine/audit/src/cli-quick.ts",
+      "extract": "return ([0-9]+); // 与 @sofagent/core EXIT_ENGINE_CRASH 同值",
+      "derive": "sed -n 's/^export const EXIT_ENGINE_CRASH = \\([0-9][0-9]*\\);$/\\1/p' engine/core/src/shared/constants.ts | head -1 | tr -d '[:space:]'",
+      "level": "error",
+      "slow": false,
+      "note": "同 index.ts 条——quick 入口的崩溃兜底回落值同样须等于 core 单源值（两入口各自独立注册，都要在 core 半初始化态下可用）"
     }
   ]
 }

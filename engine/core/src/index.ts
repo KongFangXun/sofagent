@@ -36,6 +36,9 @@
 /* @internal */ export { sanitizeThinkText, MAX_THINK_LESSON_LENGTH } from './shared/think-sanitize';
 /* @internal */ export type { ThinkSanitizeOptions } from './shared/think-sanitize';
 
+// ── v1.5.5 批 10：引擎崩溃退出码单源（audit 的 index.ts / cli-quick.ts 两处引用）──
+/* @internal */ export { EXIT_ENGINE_CRASH } from './shared/constants';
+
 // ── v1.2.5 §3.1: Agent 身份码轻量版 → v1.3.1 交付 6 Ed25519 完整版 ──
 /* @public */ export {
   generateAgentIdentity,

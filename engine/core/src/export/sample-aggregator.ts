@@ -74,14 +74,22 @@ export interface AggregationResult {
   artifactGatedCount: number;
 }
 
-/** 安全解析 JSONL（坏行跳过计数） */
+/** 安全解析 JSONL（坏行跳过计数 + 留痕） */
 function parseJsonl(path: string): Array<Record<string, unknown>> {
   if (!existsSync(path)) return [];
   const out: Array<Record<string, unknown>> = [];
+  let badLines = 0;
   for (const line of readFileSync(path, 'utf-8').split('\n')) {
     const t = line.trim();
     if (!t) continue;
-    try { out.push(JSON.parse(t) as Record<string, unknown>); } catch { /* 坏行跳过 */ }
+    try { out.push(JSON.parse(t) as Record<string, unknown>); } catch { badLines++; }
+  }
+  // v1.5.5 批 10：坏行不再静默丢弃——原实现 catch 空转（函数注释声称「坏行跳过计数」但从未计数），
+  //   聚合样本会因坏行静默少计，导出方拿到的条数偏低却无从察觉。现计数并留一条带产品前缀的告警。
+  if (badLines > 0) {
+    process.stderr.write(
+      `[sofagent] corpus_export 采样告警：${path} 有 ${badLines} 行无法解析（已跳过）——本次聚合样本可能少计。\n`,
+    );
   }
   return out;
 }

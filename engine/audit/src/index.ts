@@ -3,17 +3,28 @@
 // 使 hook 的「非 0/1/2 ⇒ fail-loud 阻断」分支能识别崩溃，避免 fail-open 静默放行。
 // v1.5.4 P1-15：**3 → 4**。原用 3 与 cli-quick 的「非 git 仓库 ⇒ exit 3」撞码（实测两义并存），
 // 独立为 4 后「引擎崩溃」与「用错目录」可由退出码单义区分。
-// ⚠️ 与 cli-quick.ts 顶部的同名处理块**手同步**——漂移由
-// `src/__tests__/cli-crash-exit-code.test.ts` 双侧行为锁兜住，不靠注释自律。
-const EXIT_ENGINE_CRASH = 4;
+// v1.5.5 批 10：常量下沉 @sofagent/core 单源（原与 cli-quick.ts 各定义一份、靠注释+测试手同步）。
+//
+// 🔴 崩溃处理器**不得直接读该绑定**：崩溃可能发生在 core 模块尚未完成初始化时
+//    （典型：core 的 SOFAGENT_HOME 越界 fail-loud 守卫在 require 期抛出），此时 core 的
+//    导出仍处 TDZ——处理器内直接读取会抛 ReferenceError，让处理器自己崩掉、进程以
+//    非预期码退出（实测 7），把「引擎崩溃」伪装成它码。故经下方取值函数读取，
+//    取不到时回落到同值字面量，保证崩溃兜底在最坏情况下仍给出专属码。
+function engineCrashExitCode(): number {
+  try {
+    return EXIT_ENGINE_CRASH;
+  } catch {
+    return 4; // 与 @sofagent/core EXIT_ENGINE_CRASH 同值（由 tools/check/literals.json 锁定）
+  }
+}
 
 process.on('uncaughtException', (err) => {
   console.error(`\u274c sofagent-audit 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(EXIT_ENGINE_CRASH);
+  process.exit(engineCrashExitCode());
 });
 process.on('unhandledRejection', (reason) => {
   console.error(`\u274c sofagent-audit 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
-  process.exit(EXIT_ENGINE_CRASH);
+  process.exit(engineCrashExitCode());
 });
 
 // ============================================================
@@ -51,7 +62,7 @@ import { createInterface } from 'readline';
 import {
   isDiffFileHeader, parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
 import { loadConfig, ConfigLoadError, ConfigParseError, ConfigSignatureError } from '@sofagent/core';
-import { VERSION } from '@sofagent/core';
+import { VERSION, EXIT_ENGINE_CRASH } from '@sofagent/core';
 import { BASELINE_RULE_KEYS } from '@sofagent/core';
 import { checkConflict, mergeFederationResults } from '@sofagent/core';
 import { verifyEvidence } from '@sofagent/core';

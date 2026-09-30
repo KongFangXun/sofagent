@@ -248,6 +248,8 @@ sofagent-audit --doctor    # 验证环境（可选）
 > | **终端版** | `sofagent-dashboard --full` | 终端 ASCII 三栏（零前端依赖） | 开发者 / FDE 快速看 |
 > | **Web 版** | `sofagent web`（install.sh 安装态可用）· 仓库态 `node tools/dashboard/serve-dashboard.mjs` | 浏览器可视化（localhost:3780） | 老板 / IT 可视化看 |
 > | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式（仅 macOS 双击入口） | macOS 用户 |
+>
+> ⚠️ **Dashboard 可得性边界**：三入口均**随 `install.sh` 安装态提供**；`npm i @sofagent/audit` 直装的包内**不含 dashboard 静态资产**（`tools/dashboard/` 未随包分发，根 `files` 只收根级必要文件）——走 npm 直装的用户得到的是 CLI + MCP 能力面，**要 Dashboard 请走完整安装**（bootstrap.sh / install.sh）。
 
 > 👁️ **Agent 视角**：装完 hook 后每次 commit 触发审计——PASS 输出简短回声后放行（自动快照），违规直接打进终端输出并按配置推送 Webhook / IM，Agent 侧无独立图形界面（详见 [PHILOSOPHY §二](./docs/PHILOSOPHY.md#系统暴露的能力agent-视角)）。
 
