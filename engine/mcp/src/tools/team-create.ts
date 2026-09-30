@@ -99,6 +99,34 @@ export function teamCreate(args: TeamCreateArgs): TeamCreateResult {
     };
   }
 
+  // ── v1.5.5 阶段三 F8：真实建队（TeamManager + 阵型落盘）──
+  // 此前只写 team.yml 就宣告 formationFile 成功——createTeam() 从未被调用，
+  // formation.json（成员拓扑/交接边/偏离记录）从未生成，formationFile 是纸面承诺。
+  // 现改为真实调用；建队失败时如实报告（不吞错、不再假成功）。
+  let formationFile: string | undefined;
+  if (parsed.formation) {
+    try {
+      const mod = require('@sofagent/orchestrator') as {
+        createTeam: (yamlText: string, options?: { dataDir?: string }) => unknown;
+      };
+      if (typeof mod.createTeam !== 'function') {
+        return {
+          text: '[sofagent] 建队失败：@sofagent/orchestrator 未导出 createTeam（签名漂移）——formation.json 未生成',
+          data: { ok: false, error: 'createTeam 不可用', teamId: parsed.team_id, filePath },
+          isError: true,
+        };
+      }
+      mod.createTeam(teamYaml, { dataDir: dir });
+      formationFile = join(teamDir, 'formation.json');
+    } catch (err) {
+      return {
+        text: `[sofagent] 建队失败：阵型实例化失败：${err instanceof Error ? err.message : String(err)}（team.yml 已写入 ${filePath}）`,
+        data: { ok: false, error: err instanceof Error ? err.message : String(err), teamId: parsed.team_id, filePath },
+        isError: true,
+      };
+    }
+  }
+
   // 建队决策记审计（kind=TEAM, moment=ACT）
   try {
     emitDecision({
@@ -115,11 +143,13 @@ export function teamCreate(args: TeamCreateArgs): TeamCreateResult {
   }
 
   // v1.5.5 章四：响应体带阵型拓扑摘要（声明 formation 时）
+  // v1.5.5 阶段三 F8：formationFile 现在是真实落盘路径（createTeam 已生成），
+  // 未声明 formation 时不出现该字段（如实——没有阵型就没有阵型文件）。
   const formationSummary = parsed.formation
     ? {
         formation: parsed.formation,
         topology: (parsed.members as Array<{ role?: string }>).map((m) => m.role ?? 'member'),
-        formationFile: join(teamDir, 'formation.json'),
+        ...(formationFile ? { formationFile } : {}),
       }
     : undefined;
 

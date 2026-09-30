@@ -25,6 +25,18 @@ export interface HandoffEvent {
   dispatchedBy?: string;
 }
 
+/**
+ * recordHandoff 的决策留痕选项（v1.5.5 阶段三 F10c）。
+ * 传入时交接事件同步挂 decision-log（kind=TEAM, moment=ACT）；
+ * 缺省不挂（instantiateFormation 的纯拓扑用法零变化）。
+ */
+export interface HandoffAuditOptions {
+  /** 团队 ID（decision-log 按 team 可查） */
+  teamId: string;
+  /** 数据目录（缺省走 loadEnvConfig） */
+  dataDir?: string;
+}
+
 /** 阵型实例 */
 export interface FormationInstance {
   formation: FormationName;
@@ -33,8 +45,13 @@ export interface FormationInstance {
   handoffs: HandoffEvent[];
   /** 关闭成员（边生命周期收口） */
   closeMember(role: string): void;
-  /** 记录交接（同步阻塞 / 异步通知 / 审阅回传） */
-  recordHandoff(edge: Pick<HandoffEvent, 'from' | 'to' | 'protocol'>, dispatchedBy?: string): void;
+  /**
+   * 记录交接（同步阻塞 / 异步通知 / 审阅回传）。
+   * v1.5.5 阶段三 F10c：传 auditOpts 时同步挂 decision-log（kind=TEAM, moment=ACT）——
+   * 此前仅内存 push，交接发生了但 decision-log 零留痕（「阵型是否照跑」不可查）。
+   * 留痕失败降级 stderr 告警不阻塞（audit 包缺位/签名漂移时不拦拓扑装配）。
+   */
+  recordHandoff(edge: Pick<HandoffEvent, 'from' | 'to' | 'protocol'>, dispatchedBy?: string, auditOpts?: HandoffAuditOptions): void;
   /** 导出审计面 */
   exportFormationAudit(): { formation: FormationName; members: Array<{ role: string; agentType: string; state: string }>; handoffs: HandoffEvent[] };
 }
@@ -128,8 +145,37 @@ export function instantiateFormation(config: FormationConfig): FormationInstance
       const m = members.find((x) => x.role === role);
       if (m) m.state = 'closed';
     },
-    recordHandoff(edge, dispatchedBy) {
-      handoffs.push({ ts: new Date().toISOString(), ...edge, ...(dispatchedBy ? { dispatchedBy } : {}) });
+    recordHandoff(edge, dispatchedBy, auditOpts) {
+      const ts = new Date().toISOString();
+      handoffs.push({ ts, ...edge, ...(dispatchedBy ? { dispatchedBy } : {}) });
+      // v1.5.5 阶段三 F10c：交接事件挂 decision-log（动态 import + 运行时签名校验，
+      // 同 model-unregister.ts 的既有降级模式——缺包/签名漂移降级 stderr 告警，不阻塞）
+      if (auditOpts) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const audit = require('@sofagent/audit') as unknown as {
+            emitDecision?: (input: Record<string, unknown>, dataDir?: string) => unknown;
+          };
+          if (typeof audit.emitDecision !== 'function') {
+            process.stderr.write(
+              `[formations] 交接留痕降级：@sofagent/audit 未导出 emitDecision（签名漂移）——team ${auditOpts.teamId} 的交接 ${edge.from}→${edge.to} 未落 decision-log\n`,
+            );
+          } else {
+            audit.emitDecision({
+              agentId: `formation-${auditOpts.teamId}`,
+              sessionId: `formation-${auditOpts.teamId}-${ts}`,
+              kind: 'TEAM',
+              moment: 'ACT',
+              why: `阵型交接：${edge.from} → ${edge.to}（协议 ${edge.protocol}）`,
+              evidence: [`team=${auditOpts.teamId} edge=${edge.from}->${edge.to} protocol=${edge.protocol}`],
+            }, auditOpts.dataDir);
+          }
+        } catch (err) {
+          process.stderr.write(
+            `[formations] 交接留痕失败（不阻塞拓扑装配）: ${err instanceof Error ? err.message : String(err)}\n`,
+          );
+        }
+      }
     },
     exportFormationAudit() {
       return {

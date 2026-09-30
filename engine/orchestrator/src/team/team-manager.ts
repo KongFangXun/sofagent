@@ -124,14 +124,17 @@ export function parseTeamYaml(yamlText: string): TeamYaml {
   }
   if (!Array.isArray(root.members) || root.members.length === 0) {
     if (formation !== undefined) {
-      // 阵型模板兜底：按模板成员生成（trust 缺省 0.5；首个角色 leader 由模板承担）
-      // 动态 require 防循环依赖（formations 不依赖 team）。
+      // 阵型模板兜底：按模板成员生成（trust 缺省 0.5）。
+      // 🔴 v1.5.5 阶段三 F9 修正：**首个成员设 leader**（拓扑语义：模板位序即指挥链），
+      //   其余按模板 role 保留为 agentType 语义的 member——此前仅字面 === 'leader' 才设
+      //   leader，commander/driver/judge 等模板角色全被磨成 member，兜底态团队零 leader
+      //   （dispatchTask 的 findLeader 落空、意图广播署名退化为 'leader' 占位串）。
       const { FORMATION_TEMPLATES } = formationsRegistry;
       const tpl = FORMATION_TEMPLATES[formation as keyof typeof FORMATION_TEMPLATES];
       const generated: Array<{ agent_id: string; role: 'leader' | 'member'; trust: number }> =
-        tpl.members.map((m) => ({
+        tpl.members.map((m, i) => ({
           agent_id: `${root.team_id}-${m.role}`,
-          role: m.role === 'leader' ? 'leader' : 'member',
+          role: i === 0 ? 'leader' : 'member',
           trust: 0.5,
         }));
       (root as Record<string, unknown>)['members'] = generated;
@@ -557,7 +560,6 @@ export function createTeam(yamlText: string, options?: TeamManagerOptions): Team
         })),
         edges: [],
       });
-      const audit = instance.exportFormationAudit();
       const dir = join(manager['dataDir'] ?? loadEnvConfig().dataDir, 'teams', teamYaml.team_id);
       if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
       // 偏离记录：模板拓扑 vs 实际 members（显式为准）
@@ -565,6 +567,18 @@ export function createTeam(yamlText: string, options?: TeamManagerOptions): Team
       const tpl = FORMATION_TEMPLATES[teamYaml.formation as keyof typeof FORMATION_TEMPLATES];
       const templateRoles = tpl.members.map((m) => m.role).sort().join(',');
       const actualRoles = teamYaml.members.map((m) => m.role).sort().join(',');
+
+      // 派发留痕：模板交接边逐条挂 decision-log（recordHandoff——「阵型是否照跑」可查）。
+      // 🔴 v1.5.5 阶段三 F10 修正：必须**先**跑完 recordHandoff **再** exportFormationAudit——
+      //   此前 audit 在循环前取走快照，写进 formation.json 的 handoffs 恒为空数组
+      //   （留痕发生了但落盘面看不到）。
+      for (const edge of tpl.edges) {
+        try {
+          instance.recordHandoff(edge, undefined, { teamId: teamYaml.team_id, dataDir: manager['dataDir'] });
+        } catch { /* 单条留痕失败不阻塞建队 */ }
+      }
+
+      const audit = instance.exportFormationAudit();
       writeFileSync(join(dir, 'formation.json'), JSON.stringify({
         team_id: teamYaml.team_id,
         formation: teamYaml.formation,
@@ -575,11 +589,6 @@ export function createTeam(yamlText: string, options?: TeamManagerOptions): Team
           ? null
           : { template: templateRoles, actual: actualRoles, note: '显式 members 与模板并存——以显式为准' },
       }, null, 2));
-
-      // 派发留痕：模板交接边逐条挂 decision-log（recordHandoff——「阵型是否照跑」可查）
-      for (const edge of tpl.edges) {
-        try { instance.recordHandoff(edge); } catch { /* 单条留痕失败不阻塞建队 */ }
-      }
     } catch (err) {
       // 阵型落盘失败不阻塞建队本体（TeamManager 已建），但显式告警——不静默
       console.warn(
