@@ -224,7 +224,7 @@ export function runHealthReport(projectDir: string): DaemonHealth | null {
     overallStatus = 'degraded';
   }
 
-  const health: DaemonHealth = {
+  const health: DaemonHealth & { process?: Record<string, unknown>; fatigue?: unknown } = {
     lastRun: now,
     status: overallStatus,
     uptime,
@@ -232,6 +232,29 @@ export function runHealthReport(projectDir: string): DaemonHealth | null {
     ...(lastPromote ? { lastPromote } : {}),
     inspectors,
   };
+
+  // v1.5.5 批 19：单源化收口——报告并入进程心跳侧的关键字段（dashboard 一处读全）。
+  // 此前双事实源：心跳写 {SOFAGENT_DATA}/daemon-health.json、报告写
+  // {SOFAGENT_DATA}/dashboard/daemon-health.json，dashboard 只读后者 ⇒ pid/版本/
+  // lastHeartbeat/fatigue 对 dashboard 不可见。并入不改心跳文件本体（双写方各司其
+  // 职：心跳管进程活性、报告管巡检聚合），dashboard 侧自此单点可读。
+  try {
+    const { resolveHealthFilePath } = require('../daemon-health') as typeof import('../daemon-health');
+    const heartbeatPath = resolveHealthFilePath();
+    if (fs.existsSync(heartbeatPath)) {
+      const hb = JSON.parse(fs.readFileSync(heartbeatPath, 'utf-8')) as Record<string, unknown>;
+      health.process = {
+        pid: hb.pid,
+        version: hb.version,
+        startTime: hb.startTime,
+        lastHeartbeat: hb.lastHeartbeat,
+        lastError: hb.lastError ?? null,
+      };
+      if (hb.fatigue !== null && typeof hb.fatigue === 'object') health.fatigue = hb.fatigue;
+    }
+  } catch {
+    // 心跳文件缺失/损坏——报告照常落盘，process 字段缺省（可观测性增强，不阻塞）
+  }
 
   // 写入 data/dashboard/daemon-health.json
   try {
