@@ -53,6 +53,7 @@
 - **[Grow the Harness, Not the Context](https://arxiv.org/abs/2609.26760)** — 控制决策从上下文搬进可复用代码
 - **[Harness-Zero](https://arxiv.org/abs/2609.24974)** — harness 蒸馏：微调摊销层的外部实证
 - **[HackProbe](https://arxiv.org/abs/2609.04665)** — RSI 监控器与 harness 无关：监控方在被测系统之外
+- **[RSI Claim-Testing Checklist](https://github.com/sunghunkwag/recursive-self-improvement)** · Intelligence Research Project — RSI 主张的**检验清单**：逐项列出「某混淆项能伪造什么 + 用哪个对照消除它」，并公开**已撤回与被拒结果**；其判据与治理定位同向——**改进必须递归**（改进者本身要变，且变化后的改进者须产出比原版更好的改进），故「逐轮分数上升」必要而不充分
 - **[Calibrated Decision Models for Pentesting](https://arxiv.org/abs/2609.28940)** — 判定件在安全域的裁定落点
 - **[JEVQA](https://arxiv.org/abs/2609.24395)** — 判定件跨域零样本替代实证（音视频域）
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 长文档中段注意力衰减，500 字原则源头
@@ -95,11 +96,11 @@
 - **[Confidence-Aware Routing](https://arxiv.org/abs/2510.01237)** · Nandakishor M — 统一置信度驱动四路径路由，与 L0/L1/L2+第三态同构
 - **[DeepRAG](https://arxiv.org/abs/2503.08213)** · Nandakishor M — 从零自建 embedding 模型参考
 - **[System One Models & Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** · TypeSafe AI — RLCD、三原语提出方；「校准优先于偏好」；ECE 空白起步处
-- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线（「有判定头≠有判定力」）
+- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线（「有判定头≠有判定力」）；@2026-09-30 实测 **v0.3.22**（tag=release=PyPI 三面同步），部署面新增 ONNX 推理路径接受**校准文件**
 - **[kev](https://github.com/jaredpalmer/kev)** · Jared Palmer — Jev 架构型开源复刻（0.8B/4B/9B 全尺寸）
 - **[Bespoke Nimble](https://github.com/bespokelabsai/nimble)** · Bespoke Labs — 2,676 条对比式样本构造法（「数据质量 > 参数量」）
 - **Jev 接口复刻族**（SemIf / NanoJev / Jevlike / LocalJev / JEV-mini）— 对照件候选与路线对照
-- **[decider](https://github.com/Mapika/decider)** · Mapika — 校准工程最深的复现家族（ECE 0.288→0.071）
+- **[decider](https://github.com/Mapika/decider)** · Mapika — 校准工程最深的复现家族（ECE 0.288→0.071）；@2026-09-30 实测 **decider-ai 1.8.1**，新增**选项数依赖温度重标定**（`temperature_by_options`，T(n)=max(min, a+b·ln n)）与共享前缀 fork 有界化——直击「选项越多校准越差」
 - **[CLM](https://github.com/Contrastive-LM/CLM)** · Contrastive-LM — 双塔对比式路线对照（公开 scaling-law 拟合）
 - **[JevK5](https://github.com/allebee/jevk5)** · allebee — 独立开源替代；蒸馏 LoRA 合并权重同批开源
 - **[OpenThai-SystemOne](https://github.com/iapp-technology/openthai-systemone)** · iApp — 泰/英双语 0.8B，契约兼容成本品类默认
@@ -116,6 +117,11 @@
 - **[JevAdvBench](https://arxiv.org/abs/2609.31142)** — 判定件对抗基准（被攻击决策对干净决策打分）
 - **[LAVOIR](https://arxiv.org/abs/2609.30706)** — 判定件「该问什么」扩展（VOI 槽位）；已开源（[code](https://github.com/moganai/lavoir) / [权重](https://huggingface.co/moganai/lavoir)），其问句策略与 greedy oracle VOI 策略打平（AUC 0.799 对 0.797，论文自报）
 - **严格适当评分规则** · Gneiting & Raftery 等 — RLCD 数学正确性依据：诚实报告校准概率才取最大期望奖励
+- **[Sys1Cal-v1](https://arxiv.org/abs/2609.35342)** — 判定件概率**数值含义**专用数据集：$P(A)$ 由构造已知的真/假题经三原语查询，按**全变差距离**评分；指出既有外部基准只测「置信度校准」、不测「每个返回概率是否具有正确数值含义」
+- **[PACT](https://arxiv.org/abs/2609.35865)** — 单 token 判定的**校准感知训练**：对比对儿＋机器校验证书 → 四项免新标注训练项（差分中的差分边距 / 置换一致性 / 证据必要性 / 序数传输）
+- **[COGNIT-Guard](https://arxiv.org/abs/2609.33671)** — 校准**直判护栏**的部署形态：CPU 守门员＋置信门控升级到 NPU 常驻 322M 双向直判模型（Laya-322M），在延迟 SLO 与非对称假阳约束下做异构级联
+- **[Jeeves](https://github.com/PostHog/jeeves)** · PostHog — 判定件**推理增强**形态：Qwen3.5-9B＋LoRA＋指针头＋block-4 扩散草稿器，SFT+CISPO 训「先想后判」（受 kev 启发；MIT，权重 `PostHog/jeeves`）。对方自报超 Kev-9B / Jev（0.889 对 0.822 / 0.857），**本仓未复算**
+- **[Your-LM-Is-Already-a-Decision-Model](https://github.com/ntlm1686/Your-language-model-is-already-a-decision-model)** · ntlm1686 — **训练必要性对照**：未微调 Qwen3.5-9B（仅读 next-token 选项概率、无 SFT/LoRA/判定头）对 Jev 1.13.0 六基准——Jev 胜 4（JevBench 86.1 对 80.5 · Typed Decisions 73.9 对 62.1）、Qwen 胜 2（PhishNChips 73.9 对 62.5）；单作者自测、**本仓未复算**
 
 ### 认知与反馈
 
