@@ -13,10 +13,10 @@
 
 | # | 完成 | 步骤 |
 |:--:|:--:|------|
-| 一 | | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health + check-dashboard（dashboard.html 结构门禁）依次跑，全绿才进判断层；红项由执行 session 按「修复批协议」修复后复跑复绿。长跑门禁…|
+| 一 | | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health + check-dashboard（dashboard.html 结构门禁）依次跑，全绿才进判断层；红项由执行 session 按「修复批协议」修复后复跑复绿。长跑门禁（acceptance）**先查凭据复用**——见 ② |
 | 二 | | 同 session 跑**判断层**：driver `--judgment-only` 一次启动四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核**（不再 --step 四步手工编排） |
 | 三 | | verdict=PASS → 主 session 过「零信任复验三件套」→ 全过才进阶段六。**PASS 轮的 LEDGER 行由主 session 复验后收编——执行 session 禁止预写**（预写账会在复验推翻 PASS 时账实不符） |
-| 四 | | verdict=FAIL → 执行 session 按「修复批协议」分诊修复 → 复绿 + 单次 commit 收编 → 归档断点重跑（自动收敛循环，硬上限 5 轮，上限可由用户在启动时调整）。**命中停手条件**（同一 FAIL 项连续 2 轮修不掉 / 修复需 bump·tag·push / 版本口径类 P0 再现 / 5 轮到顶）→ 停手汇报，主 session 接手（回阶段四语义）…|
+| 四 | | verdict=FAIL → 执行 session 按「修复批协议」分诊修复 → 复绿 + 单次 commit 收编 → 归档断点重跑（自动收敛循环，硬上限 5 轮，上限可由用户在启动时调整）。**命中停手条件**（同一 FAIL 项连续 2 轮修不掉 / 修复需 bump·tag·push / 版本口径类 P0 再现 / 5 轮到顶）→ 停手汇报，主 session 接手（回阶段四语义）。driver 内置 `--auto-fix` 修复链仍默认关闭——session 级修复批与 F 链是两条不同机制，不混用 |
 
 
 >
