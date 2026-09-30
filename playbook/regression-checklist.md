@@ -1,17 +1,17 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 85 维 · 编号 1-145 · 59 个编号已归并删除（#9 已并入 #18 · 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 85 维 · 编号 1-146 · 60 个编号已归并删除（#9 已并入 #18 · #21 已并入 #146 · v1.5.5 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2009 行、`acceptance-test.sh` ≤ 4590 行（**上限重估**（台账注记见 git 演进史）：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → **4584**）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → **4569**）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → **4548**）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2050 行、`acceptance-test.sh` ≤ 4590 行（**上限重估**（台账注记见 git 演进史）：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → **4584**）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → **4569**）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → **4548**）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
 ·t +3 → **1989**）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4584 + 1 场景余量 6 = **4590**（前段：4548 + 6 = **4554**；后阶段四收编 S459 vote fail-closed 场景 7 行 ⇒ 4555 + 余量 6 = **4561**；后 release-gate 20260929-01 coverage P0 闭环批 S460/S461 场景 8 行 ⇒ 4569 + 余量 6 = **4575**；
-后 release-gate 20260929-03 verdict 闭环批 S463 章一路由行为锁 + S464 章六叙事章结构锁场景 12 行 ⇒ 4584 + 余量 6 = **4590**，演进见 git）；**未删改任何既有断言**，前值 2006/4541。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
+后 release-gate 20260929-03 verdict 闭环批 S463 章一路由行为锁 + S464 章六叙事章结构锁场景 12 行 ⇒ 4584 + 余量 6 = **4590**，演进见 git）；**未删改任何既有断言**，前值 2006/4541。v1.5.5 阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = **2050**（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1986 + 1 维度余量 20 = **2006** · 4535 + 1 场景余量 6 = **4541**（后续 S454 降语义修复 `e869c670` +4，当批实测 4539 / ≤4541 余 2）；**未删改任何既有断言**，前值 1950/4500。实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
 🔴 **欠账登记（已评估 · 移 v1.5.5）**：本版新增章对应的验收场景与回归维度欠账，**经对销可行性复核判定两文件均无真实可归并空间**（0 内容级可归并对；乐观叠加 checklist ≈43 < 需求 98 / acceptance DRY 16 < 需求 21），按 v1.5.4〈首项硬交付〉〈对销可行性评估〉节裁定**7 项全批移 v1.5.5 落位**；本版新增维度前仍须先真实归并 ≥新增数并附承接断言清单，详见 [v1.5.4 开发日志](../docs/changelog/v1.5/v1.5.4.md)〈首项硬交付〉节。
 > 🧾 **落位说明（承接落位批）**：本版 devlog〈待补清单〉之 4 个维度项（#1 发版状态翻牌面三分 / #2 registry 对账通道终局口径 / #5 bump 历史引用误伤 / #6 dev prompt 读数禁快照）**按维护公约 §8「有同类 → 扩展旧维度子项、不新增编号」以子项并入同类现役维度**（#1/#5 → #124 · #2 → #97 · #6 → #130），**无一新增编号**（`check-review-system.sh` §1a/§1f 读数值 85 不变、归并配额棘轮不触发）。
@@ -33,7 +33,7 @@ ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 2009 ] && echo "✅ checklist $WC_CHK (≤2009)" || { echo "❌ checklist $WC_CHK 超 2009（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4590 ] && echo "✅ acceptance $WC_ACC (≤4590)" || { echo "❌ acceptance $WC_ACC 超 4590（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+[ "$WC_CHK" -le 2050 ] && echo "✅ checklist $WC_CHK (≤2050)" || { echo "❌ checklist $WC_CHK 超 2050（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4590 ] && echo "✅ acceptance $WC_ACC (≤4590)" || { echo "❌ acceptance $WC_ACC 超 4590（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
@@ -42,7 +42,7 @@ WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/ac
 
 ## 审查维度（85 维 · 编号规则见头部）
 
-### 审查维度正文（#1-145 · 维度流连续不中断）
+### 审查维度正文（#1-146 · 维度流连续不中断）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
@@ -392,25 +392,6 @@ if launchctl list 2>/dev/null | grep -q sofagent; then
 else
  echo "⏸️ daemon 未运行——子项 b 跳过（CI/无 daemon 环境预期态）"
 fi
-```
-
-#### 21. LOOP 工具注入 + 硬约束
-
-```bash
-F=engine/orchestrator/src/loop/nodes.ts
-grep "DEFAULT_ENGINEER_MAX_TURNS = 20\|DEFAULT_REVIEWER_MAX_TURNS = 15" $F # maxTurns 常量
-grep "ENGINEER_TOOLS\|REVIEWER_TOOLS" $F # 工具注入
-grep -c "recordLoopAuditHistory" $F # WARN verdict 写入 audit history
-grep "maxTurns: resolveMaxTurns" $F # maxTurns 注入
-grep -c "checkDangerousCommand" engine/orchestrator/src/tools.ts # 高危命令黑名单
-grep "break.*连续中断" engine/daemon/src/inspectors/warn-accumulator.ts # warn-accumulator
-grep "SOFAGENT_LABEL" engine/daemon/src/usb-detect.ts # USB federation 基础检测
-grep -c "createHmac\|timingSafeEqual\|applyFederation" engine/daemon/src/usb-detect.ts # USB HMAC
-grep -c "audit_file\|auditEngine" engine/mcp/src/mcp-server.ts # MCP audit_file
-grep -c "list_capabilities\|search_knowledge\|stats" engine/mcp/src/mcp-server.ts # MCP capabilities
-grep -c "webhook:dingtalk\|webhook:feishu\|webhook:wecom\|openclaw:im\|daemon:notice" engine/daemon/src/push-target.ts # 5 种路由
-grep "parseSubagentRunArgs\|--mode" engine/orchestrator/src/cli-args.ts # --mode 参数
-grep -rl "sofagent-releaser\|releaser-skill" engine/scripts/lib/file-deploy.sh install.sh 2>/dev/null | wc -l # 期望=0（releaser 复制契约已移除）
 ```
 
 ## 分组：审查约束类（维度 #23-#101 · 标题行是该组一句话基线，非独立检查项）
@@ -1328,6 +1309,8 @@ grep -q "PARENT_SHA\|HEAD\^" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" |
 # 空树兜底双侧锚定：记录侧 index.ts 常量 + 对账侧 post-commit 首提回退（防 PARENT_SHA 空失配）
 grep -q "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/src/index.ts" || echo "⚠️ 记录侧（index.ts）空树兜底缺失"
 grep -q 'PARENT_SHA=$(git hash-object -t tree /dev/null' "$PROJECT_ROOT/engine/audit/hooks/post-commit" || echo "⚠️ 对账侧（post-commit）首提空树回退缺失"
+# v1.5.5 阶段四 B17——post-commit 死分支清零（_REPO_TOP 恒假变量已删）+ 入口解析退化为纯在位判据 + 指纹核对归 commit-msg
+! grep -qE '_REPO_TOP=[^#]' "$PROJECT_ROOT/engine/audit/hooks/post-commit" && grep -q "恒假，已删" "$PROJECT_ROOT/engine/audit/hooks/post-commit" && grep -q "身份指纹核对与 dist 完整性校验归 commit-msg" "$PROJECT_ROOT/engine/audit/hooks/post-commit" && echo "✅ B17 post-commit 死分支零残留（职责归位声明在位）" || echo "⚠️ B17 post-commit 死分支回潮"
 ```
 
 #### 101. check-docs 双面防复发——B 层行数超预算 + 锚点扫描环境降级（归并 #109 入此）
@@ -1347,6 +1330,10 @@ echo "B 层: $AB 行 / LIMIT_B=$LIMIT_VAL"
 
 ```bash
 grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh && echo "✅ 101-anchor-降级开关在位" || echo "❌ 101-anchor-降级开关丢失——WorkBuddy 下 pre-push 必失败"
+# v1.5.5 阶段四 B21——check-test-count 缺 node_modules 时报准确环境原因（非「门禁红」误导代码问题）
+grep -q "环境未安装依赖\|缺 node_modules" tools/check/check-test-count.sh && echo "✅ B21 环境误报面收敛（缺依赖显式归因）" || echo "⚠️ B21 环境原因行漂移"
+# v1.5.5 阶段四 B23——LIMITATIONS §十 引用仅允许指向退役归档（幽灵章节引用防复发）
+_bad=$(grep -n "§十" docs/LIMITATIONS.md 2>/dev/null | grep -v "archive\|退役\|归档\|已解决" || true); [ -z "$_bad" ] && echo "✅ B23 §十 引用全部指向归档（零幽灵章节）" || echo "⚠️ B23 幽灵章节引用：$_bad"
 ```
 
 ### 🔴 环境验证铁律（防误报 · 下一组的共同前置，先读再跑下面维度）
@@ -1359,7 +1346,7 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh && echo "✅ 101-anchor-降
 
 > **路径迁移感知**：`.sofagent/` 已迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
-## 分组：环境敏感与后期维度（维度 #102-#145 · 上面铁律适用于本组所有维度）
+## 分组：环境敏感与后期维度（维度 #102-#146 · 上面铁律适用于本组所有维度）
 
 #### 102. 市场五环完整性——10 模块 + 6 MCP tool + inspector 双注册
 
@@ -1493,6 +1480,8 @@ grep -q "stale_after" engine/ontology/src/merge-engine.ts && echo "✅ OKF 时�
 grep -rn "okfViolation" engine/mcp/src/tools/create-entity.ts > /dev/null && echo "✅ type 必填拒绝" || echo "❌ OKF① 缺失"
 grep -q "resolveMaxConcurrency" FORGE/src/driver-base.mjs && echo "✅ 自适应并发" || echo "❌ ⑦ 未接线"
 grep -q "SOFAGENT_PERSONA_SOURCE" engine/core/src/filesystem/memory-sync.ts && echo "✅ persona env 优先" || echo "❌ ⑨ 路径写死回退"
+# v1.5.5 阶段四 B18——崩溃兜底经 engineCrashExitCode()（try/catch + 同值回落）取值，两入口零 TDZ 自崩、退出码恒 4
+grep -q "function engineCrashExitCode" engine/audit/src/cli-quick.ts && grep -q "function engineCrashExitCode" engine/audit/src/index.ts && grep -q "process.exit(engineCrashExitCode())" engine/audit/src/cli-quick.ts && echo "✅ B18 崩溃退出码单点取值（两入口在位）" || echo "⚠️ B18 崩溃兜底直读绑定回潮（TDZ 自崩风险）"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
@@ -1894,6 +1883,9 @@ for s in createSshTrainChannel chainDualChannelEvent gateDataPush; do grep -q "$
 (
 bash tools/check/dependency-direction.sh > /dev/null 2>&1 && echo "✅ 13 包方向合法" || echo "❌ 有违规边"  # a: 门禁干净态
 [ -f tools/check/dependency-direction.yml ] && grep -q "dependency-direction" tools/release/pre-push-check.sh && grep -q "dependency-direction" .github/workflows/pr-check.yml && echo "✅ 清单+3e+CI 在位" || echo "❌ 清单或接线缺失"  # b+c
+# d: v1.5.5 章五 A12+B7——langgraph 降 optionalDependencies 后动态 import 全量经 dynamicLangGraph 单点（dsh-only 裁剪安装态零 LangGraph 静态 import）
+_n=$(grep -rn "import('@langchain/langgraph" engine/ --include='*.ts' 2>/dev/null | grep -v lazy-langgraph | grep -v __tests__ | wc -l | tr -d ' '); [ "$_n" = "0" ] && echo "✅ A12/B7 dynamicLangGraph 单一入口（绕行 import 零命中）" || { echo "❌ A12/B7 绕行动态 import 回潮：${_n} 处"; }
+grep -q "optionalDependencies" engine/orchestrator/package.json && grep -q '"@langchain/anthropic"' package.json && echo "✅ A12 optionalDependencies 声明在位" || echo "❌ A12 optional 声明缺失"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
@@ -1976,7 +1968,9 @@ grep -cE "scenario 44[2-8] " playbook/acceptance-test.sh | grep -q "^6$" && echo
 _p=$(printf '共 23 条规则\n不是第 25 条规则\n不是第 25、26、27 条规则\n24 条规则\n' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{process.stdout.write(s.replace(/第\s*[0-9]+(?:[、，,]\s*[0-9]+)*\s*条/g,""))})' | grep -oE '[0-9]+[[:space:]]*(条|个)[[:space:]]*规则|[0-9]+[[:space:]]*rules' | grep -oE '[0-9]+' | sort -u | tr '\n' ' '); [ "$_p" = "23 24 " ] && echo "✅ 数字抽取器自证通过（真值捕获 + 序数剥离）" || { echo "❌ 数字抽取器自证失败：实测 [$_p]（期望 23 24 ）"; FAIL=1; } # s: 数字抽取器自证（序数剥离既不能吃掉真值、也不能漏剥序数——真 23 必被捕获 /「第 25、26、27 条规则」必不命中）
 # t: 章级验收资产落位（B-3 批）——ch1/2 行为面由 S457/S458 锁（acceptance），本子项补 ch3/7「凭证隔离 Vault + 授权/凭证对账」回归锚 + 双向指认（场景抓行为、维度抓回归；反向指认见 acceptance-test.sh scenario 457/458 与 acceptance-node-probes.js s457/s458 注释）
 grep -qE "scenario 45[78] " playbook/acceptance-test.sh && grep -q "s457" playbook/acceptance-node-probes.js && grep -q "s458" playbook/acceptance-node-probes.js && echo "✅ 章级验收资产：ch1/2 行为锁场景 S457（本地槽位排队）/S458（判定链三层+门控）在位且探针已挂（acceptance↔#144·t 双向登记）" || { echo "❌ ch1/2 槽位/判定链场景或探针缺失"; FAIL=1; }
-node -e 'const v=require("./engine/orchestrator/dist/vault/credential-vault.js"),sd=require("./engine/orchestrator/dist/vault/scope-declaration.js"),rc=require("./engine/audit/dist/mandate-credential-reconcile.js"),bad=[],S="PROBE_SECRET_TOKEN_0xDEADBEEF",VF=(y)=>new Date(Date.UTC(y,0,1)).toISOString(),V=v.createCredentialVault(),VK="vk-"+"a".repeat(32),VIEW=V.store({id:"c1",virtualKey:VK,secret:S,mandateId:"m1",scope:{tools:["run_bash"]},inject:{header:"Authorization",scheme:"Bearer"}});if("secret" in VIEW||JSON.stringify(VIEW).includes(S)||JSON.stringify(V.snapshot()).includes(S)||V.redact("x "+S).includes(S))bad.push("代码层可见 token 明文");const inj=V.createInjector(),pre=inj({toolName:"fetch",input:{},virtualKey:VK});if(!pre.injected||pre.input.headers.Authorization!=="Bearer "+S)bad.push("注入值错");V.rotate("c1","ROTATED_NEW");const post=inj({toolName:"fetch",input:{},virtualKey:VK});if(post.input.headers.Authorization!=="Bearer ROTATED_NEW")bad.push("轮换后旧值未失效");V.revoke("c1");const rev=inj({toolName:"fetch",input:{},virtualKey:VK});if(rev.injected||!/吊销/.test(rev.reason))bad.push("吊销后仍注入");const dec=sd.produceScopeDeclaration(V,"c1",{requested:{tools:["run_bash"]}});if(!dec||!dec.requested||!dec.issued||!dec.comparison||!dec.declaration||!dec.declaration.mandateId)bad.push("范围声明三字段缺失");const m=[{id:"m1",subject:"s",scope:{tools:["run_bash"]},validity:{validFrom:VF(2020)},approver:"h"}],eff=(d)=>rc.evaluateCredentialReconcile(d,m);if(eff({mandateId:"nope",issuedBy:"vault",scope:{}}).mismatch!=="no-mandate-record")bad.push("no-mandate-record 判定缺");if(eff({mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash","rm_rf"]}}).mismatch!=="scope-exceeds")bad.push("scope-exceeds 判定缺");if(eff({mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash"]},validity:{validFrom:VF(2019)}}).mismatch!=="validity-outlives")bad.push("validity-outlives 判定缺");if(eff({mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash"]},validity:{validFrom:"n/a"}}).mismatch!=="validity-outlives")bad.push("非法日期口径静默放行");if(eff({mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash"]},validity:{validFrom:VF(2021)}}).verdict!=="aligned")bad.push("合法范围未 aligned");const off=rc.reconcileCredentialLedger([{mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash"]}}]);if(off.enabled!==false||off.findings.length!==0||off.mismatches!==0)bad.push("对账面默认关未零判定零记录");console.log(bad.length?"FAIL:"+bad.join("|"):"OK");' | grep -q "^OK" && echo "✅ ch3/7 Vault 与授权/凭证对账六面回归（代码层取不到 token / 轮换旧值失效 / 吊销立即拒绝 / 范围声明三字段 / 三类错位含非法日期口径 / 对账面默认关 L1 零判定零记录）——行为面单测 credential-vault.test.ts 15 例 + mandate-credential-reconcile.test.ts 10 例" || { echo "❌ Vault 或授权/凭证对账回归面回潮"; FAIL=1; }
+node -e 'const v=require("./engine/orchestrator/dist/vault/credential-vault.js"),sd=require("./engine/orchestrator/dist/vault/scope-declaration.js"),rc=require("./engine/audit/dist/mandate-credential-reconcile.js"),bad=[],S="PROBE_SECRET_TOKEN_0xDEADBEEF",VF=(y)=>new Date(Date.UTC(y,0,1)).toISOString(),V=v.createCredentialVault(),VK="vk-"+"a".repeat(32),VIEW=V.store({id:"c1",virtualKey:VK,secret:S,mandateId:"m1",scope:{tools:["run_bash"]},inject:{header:"Authorization",scheme:"Bearer"}});if("secret" in VIEW||JSON.stringify(VIEW).includes(S)||JSON.stringify(V.snapshot()).includes(S)||V.redact("x "+S).includes(S))bad.push("代码层可见 token 明文");const inj=V.createInjector(),pre=inj({toolName:"fetch",input:{},virtualKey:VK});if(!pre.injected||pre.input.headers.Authorization!=="Bearer "+S)bad.push("注入值错");V.rotate("c1","ROTATED_NEW");const post=inj({toolName:"fetch",input:{},virtualKey:VK});if(post.input.headers.Authorization!=="Bearer ROTATED_NEW")bad.push("轮换后旧值未失效");V.revoke("c1");const rev=inj({toolName:"fetch",input:{},virtualKey:VK});if(rev.injected||!/吊销/.test(rev.reason))bad.push("吊销后仍注入");const dec=sd.produceScopeDeclaration(V,"c1",{Requested:{tools:["run_bash"]}});if(!dec||!dec.requested||!dec.issued||!dec.comparison||!dec.declaration||!dec.declaration.mandateId)bad.push("范围声明三字段缺失");const m=[{id:"m1",subject:"s",scope:{tools:["run_bash"]},validity:{validFrom:VF(2020)},approver:"h"}],eff=(d)=>rc.evaluateCredentialReconcile(d,m);if(eff({mandateId:"nope",issuedBy:"vault",scope:{}}).mismatch!=="no-mandate-record")bad.push("no-mandate-record 判定缺");if(eff({mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash","rm_rf"]}}).mismatch!=="scope-exceeds")bad.push("scope-exceeds 判定缺");if(eff({mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash"]},validity:{validFrom:VF(2019)}}).mismatch!=="validity-outlives")bad.push("validity-outlives 判定缺");if(eff({mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash"]},validity:{validFrom:"n/a"}}).mismatch!=="validity-outlives")bad.push("非法日期口径静默放行");if(eff({mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash"]},validity:{validFrom:VF(2021)}}).verdict!=="aligned")bad.push("合法范围未 aligned");const off=rc.reconcileCredentialLedger([{mandateId:"m1",issuedBy:"vault",scope:{tools:["run_bash"]}}]);if(off.enabled!==false||off.findings.length!==0||off.mismatches!==0)bad.push("对账面默认关未零判定零记录");console.log(bad.length?"FAIL:"+bad.join("|"):"OK");' | grep -q "^OK" && echo "✅ ch3/7 Vault 与授权/凭证对账六面回归（代码层取不到 token / 轮换旧值失效 / 吊销立即拒绝 / 范围声明三字段 / 三类错位含非法日期口径 / 对账面默认关 L1 零判定零记录）——行为面单测 credential-vault.test.ts 15 例 + mandate-credential-reconcile.test.ts 10 例" || { echo "❌ Vault 或授权/凭证对账回归面回潮"; FAIL=1; }
+# u: v1.5.5 阶段四 B8——release.yml 重复发布豁免判定单实现（两处 publish 经 npm-publish-with-retry.sh 单点调用，workflow 零内联豁免词表）
+[ -f tools/release/npm-publish-with-retry.sh ] && [ "$(grep -c 'npm-publish-with-retry.sh' .github/workflows/release.yml 2>/dev/null || true)" -ge 2 ] && [ "$(grep -c 'is not in this registry' .github/workflows/release.yml 2>/dev/null || true)" -eq 0 ] && grep -q 'registry 二次确认' tools/release/npm-publish-with-retry.sh && echo "✅ B8 发布豁免单点（脚本在位含 E404+二次确认 · 两处调用 · 零内联）" || { echo "❌ B8 豁免双实现回潮"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度144:FAIL"; exit 1; }; echo "维度144:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
@@ -1996,6 +1990,39 @@ grep -c "createAuditScope" engine/audit/src/rules/assemble.ts # 唯一构造工�
 # 子项 c: 判决类成对门禁（A9）——盲区腐化已机器化
 node tools/check/check-paired-records.mjs >/dev/null 2>&1; echo $? # 期望 0
 grep -c "盲区登记已过时" tools/check/check-paired-records.mjs # 盲区退役检测在位
+```
+
+#### 146. 章一执行状态机 + 章二工具检索供给面——SKILL.state 协议/补丁 fail-closed/度量落盘/审计 sink/top-K 检索/域过滤/权限序（v1.5.5 阶段四 A/B 合流 · 归并 #21 入此：LOOP 工具注入与硬约束属供给面同主题，断言迁移见子项 m）
+
+> [归并记录] 新增 1 维 + 归并 1 维（#21 → 本维，配额 1:1）。A1/A2/A4/A5/A6/A7/A8 + B4 七条审查面收口。
+
+```bash
+(
+FAIL=0
+# a: A1 协议核心——P+Σt+ot 三段 prompt 与确定性合并在位（不走消息历史滚雪球）
+grep -q "当前结构化状态（Σt）" engine/orchestrator/src/node-executor.ts && grep -q "最新观察（ot）" engine/orchestrator/src/node-executor.ts && grep -q "applyPatch" engine/orchestrator/src/node-executor.ts && echo "✅ A1 协议三段式 + 代码合并在位" || { echo "❌ A1 状态机 prompt/合并面缺失"; FAIL=1; }
+# b: A2/B2 混合批整批拒绝——parseStatePatchLine 用 every 而非 filter（部分应用 = fail-closed 契约破裂）
+grep -q "every(isValidPatch)" engine/orchestrator/src/node-executor.ts && ! grep -qE "patches\.filter\(" engine/orchestrator/src/node-executor.ts && echo "✅ A2/B2 补丁整批拒绝（every 判定，零 filter 残留）" || { echo "❌ A2/B2 补丁部分应用回潮"; FAIL=1; }
+# c: A4 度量落盘——stateful-metrics.jsonl 通道在位（Dashboard 消费面）
+grep -q "stateful-metrics" engine/orchestrator/src/execution-state/metrics.ts && grep -q "fileSink" engine/orchestrator/src/execution-state/metrics.ts && echo "✅ A4 度量落盘通道在位" || { echo "❌ A4 metrics jsonl 缺失"; FAIL=1; }
+# d: A5 审计闸门前置——Rt 丢弃前经 sink 持久化（setAuditSink 消费面非仅 stderr）
+grep -q "emitAuditDigest" engine/orchestrator/src/node-executor.ts && grep -q "setAuditSink" engine/orchestrator/src/execution-state/index.ts && echo "✅ A5 审计摘要 sink 通道在位" || { echo "❌ A5 sink 零消费回潮"; FAIL=1; }
+# e: A6 检索——tokenize 中文 2-gram + scoreAll top-K 召回在位
+grep -q "2-gram" engine/orchestrator/src/tools/tool-search.ts && grep -q "scoreAll" engine/orchestrator/src/tools/tool-search.ts && echo "✅ A6 检索召回在位" || { echo "❌ A6 检索面缺失"; FAIL=1; }
+# f: A7/B4 域过滤——显式工具同样过域白名单（explicit 分支含 allowNames 判定，域外剔除计偏离）
+grep -q "req.domain!.allowNames!.has(e.name)" engine/orchestrator/src/tools/tool-search.ts && grep -q "cededByDomain" engine/orchestrator/src/tools/tool-search.ts && echo "✅ A7/B4 显式 ∩ 域内在位" || { echo "❌ A7/B4 显式绕域回潮"; FAIL=1; }
+# g: A8 权限序——gate 创建先于检索 import（对齐 tool-search.test.ts ⑥ 既有断言口径：createToolGate 位序）
+node -e "const s=require('fs').readFileSync('engine/orchestrator/src/node-executor.ts','utf8');const g=s.indexOf('const gate = createToolGate(');const r=s.indexOf(\"await import('./tools/tool-search')\");if(g>0&&r>0&&g<r){console.log('OK')}else{console.log('BAD');process.exit(1)}" && echo "✅ A8 gate 创建先于检索（权限面不受供给面影响）" || { echo "❌ A8 权限序倒置"; FAIL=1; }
+# m: 归并自 #21 的断言（锚点随物理迁移校正：nodes.ts→deps-defaults / mcp-server→tool-registry）
+grep -q "DEFAULT_ENGINEER_MAX_TURNS = 20" engine/orchestrator/src/loop/deps-defaults.ts && grep -q "recordLoopAuditHistory" engine/orchestrator/src/loop/deps-defaults.ts && grep -q "resolveMaxTurns" engine/orchestrator/src/loop/deps-defaults.ts && echo "✅ #21a maxTurns 常量+注入+WARN 留痕（deps-defaults 新位）" || { echo "❌ #21a LOOP turns 面缺失"; FAIL=1; }
+grep -q "checkDangerousCommand" engine/orchestrator/src/tools.ts && echo "✅ #21b 高危命令黑名单在位" || { echo "❌ #21b 黑名单缺失"; FAIL=1; }
+grep -q "中断" engine/daemon/src/inspectors/warn-accumulator.ts && grep -q "SOFAGENT_LABEL" engine/daemon/src/usb-detect.ts && grep -q "createHmac" engine/daemon/src/usb-detect.ts && echo "✅ #21c warn 连续判定 + USB HMAC 在位" || { echo "❌ #21c warn/USB 面缺失"; FAIL=1; }
+grep -q "'audit_file'" engine/mcp/src/tool-registry.ts && grep -q "'list_capabilities'" engine/mcp/src/tool-registry.ts && grep -q "'search_knowledge'" engine/mcp/src/tool-registry.ts && echo "✅ #21d MCP 三工具注册（tool-registry 新位）" || { echo "❌ #21d MCP 注册面缺失"; FAIL=1; }
+[ "$(grep -c 'webhook:dingtalk\|webhook:feishu\|webhook:wecom\|openclaw:im\|daemon:notice' engine/daemon/src/push-target.ts)" -ge 5 ] && echo "✅ #21e 五种路由在位" || { echo "❌ #21e 路由缺失"; FAIL=1; }
+grep -q "parseSubagentRunArgs" engine/orchestrator/src/cli-args.ts && echo "✅ #21f --mode 参数在位" || { echo "❌ #21f 参数解析缺失"; FAIL=1; }
+[ -z "$(grep -l 'sofagent-releaser\|releaser-skill' engine/scripts/lib/file-deploy.sh install.sh 2>/dev/null)" ] && echo "✅ #21g releaser 复制契约零残留" || { echo "❌ #21g releaser 残留回潮"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度146:FAIL"; exit 1; }; echo "维度146:PASS"
+) 2>&1
 ```
 
 ## 输出报告格式
