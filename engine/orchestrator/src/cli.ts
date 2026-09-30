@@ -162,6 +162,25 @@ async function main() {
       console.log(output);
       break;
     }
+
+/**
+ * v1.5.5 章五：加载 loop graph 运行时面——LangGraph 缺失时显式报错含指引（非 stack trace 静默）。
+ * cli 的 loop 子命令三条路径（run / resume×2）统一经此入口。
+ */
+async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
+  const { loadLoopGraphRuntime } = await import('./loop');
+  try {
+    return await loadLoopGraphRuntime();
+  } catch (err) {
+    const { isModuleMissing, LANGGRAPH_MISSING_GUIDE } = await import('./execution-state/lazy-langgraph');
+    if (isModuleMissing(err)) {
+      console.error(LANGGRAPH_MISSING_GUIDE);
+      process.exit(1);
+    }
+    throw err;
+  }
+}
+
     case 'loop': {
       const resumeMode = args.includes('--resume');
 
@@ -190,7 +209,7 @@ async function main() {
         }
         const { loadEnvConfig } = await import('@sofagent/core');
         const { writeHITLResponse } = await import('./hitl');
-        const { resumeLoopGraph } = await import('./loop/graph');
+        const { resumeLoopGraph } = await loadLoopGraphOrExit();
         const dataDir = dataDirArg ?? loadEnvConfig().dataDir;
         writeHITLResponse(dataDir, {
           checkpointId: resolveCheckpointId,
@@ -212,7 +231,7 @@ async function main() {
 
       // v1.1.3: StateGraph 路径
       if (resumeMode) {
-        const { resumeLoopGraph } = await import('./loop/graph');
+        const { resumeLoopGraph } = await loadLoopGraphOrExit();
         const result = await resumeLoopGraph({ dataDir: dataDirArg });
         if (!result) {
           console.log('ℹ️ 未找到可恢复的 checkpoint');
@@ -231,7 +250,7 @@ async function main() {
         console.error('❌ loop 需要 --task <描述> 参数（追加 --resume 从 checkpoint 恢复）');
         process.exit(1);
       }
-      const { runLoopGraph } = await import('./loop/graph');
+      const { runLoopGraph } = await loadLoopGraphOrExit();
       const result = await runLoopGraph(taskDesc, { dataDir: dataDirArg });
       console.log('');
       console.log(`终态: ${result.finalStatus}`);

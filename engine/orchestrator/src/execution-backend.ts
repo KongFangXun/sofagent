@@ -187,7 +187,9 @@ export async function createExecutionBackend(options: {
       console.log('[sofagent] 执行后端：LangGraph createReactAgent（显式指定）');
       return langgraphDirect;
     }
-    throw new Error('[sofagent] 指定 langgraph 后端但 @langchain/langgraph 未安装');
+    throw new Error(
+      '[sofagent] 指定 langgraph 后端但 @langchain/langgraph 未安装——安装：npm install @langchain/langgraph（或 unset SOFAGENT_EXECUTION_BACKEND 回到默认 dsh 后端）',
+    );
   }
 
   // 1. DSH 默认：优先尝试 DSH 执行后端（Cordis 内嵌或 CLI 桥接，失败自动降级）
