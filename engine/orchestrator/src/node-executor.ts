@@ -21,6 +21,22 @@ import { writeEntity } from './entity-store';
 // v1.5.4 第五章：AI 节点治理接入——生产接线（A-4 真接线）
 import { aiNodeRefToId } from './crud/workflow-store';
 import { getDefaultAiNodeGovernance, type AiNodeGovernance } from './ai-node-governance';
+
+// ── v1.5.5 章一：SKILL.state 执行协议（节点内部状态机）──
+// 协议六要素：P 恒定 / Σt 唯一记忆 / ot 仅最新 / ΔΣt 代码合并校验 fail-closed /
+// Rt 弃前落审计摘要（wrapToolCall 通道）/ executionMode 双模式（含全局降级开关）。
+import {
+  type NodeKind,
+  type StatePatch,
+  type AuditDigest,
+  initialState as initialSigma,
+  applyPatch,
+  resolveExecutionMode,
+  shouldAutoDegrade,
+  emitAuditDigest,
+  fileSink,
+  estimateTokens,
+} from './execution-state';
 import { declareNodeEgress } from './ai-node-egress';
 
 // ────────────────────────────────────────────────────────────
@@ -80,6 +96,11 @@ export interface NodeExecutorDeps {
    * 不构造治理面（零行为变化）。
    */
   aiNodeGovernance?: AiNodeGovernance;
+  /**
+   * v1.5.5 章一：执行模式覆盖（测试/运维面）。缺省按 resolveExecutionMode 解析
+   * （SOFAGENT_STATEFUL_EXEC=off 全局回退 legacy）。
+   */
+  executionModeOverride?: 'stateful' | 'legacy';
 }
 
 // ────────────────────────────────────────────────────────────
@@ -361,6 +382,44 @@ async function executeNodeCore(
         durationMs: Date.now() - startTime,
       };
     }
+    // ════════════════════════════════════════════════════════
+    // v1.5.5 章一：SKILL.state 协议执行器（stateful 模式）
+    // ════════════════════════════════════════════════════════
+    // P 恒定 = systemPrompt 只建一次循环外复用；Σt = 结构化状态（唯一跨步记忆）；
+    // ot = 上一步观察（截断）；每步模型输出 ΔΣt 由 applyPatch 代码合并校验，
+    // 连续拒绝 N 次自动降级 legacy（消息历史式），SOFAGENT_STATEFUL_EXEC=off 全局回退。
+    // 🔴 只做这一件事，不动 legacy 主径：stateful 就绪后仍 fallback 到下方
+    //    既有 invoke 路径产出 output（legacy 兜底与单次工具调用节点行为不变）。
+    const mode = deps?.executionModeOverride ?? resolveExecutionMode(nodeKindFor(ctx.node));
+    if (mode === 'stateful') {
+      const statefulOutcome = await runStatefulExecution({
+        ctx, deps, model, createReactAgent, tools, systemPrompt, startTime,
+      });
+      if (statefulOutcome !== null) {
+        // stateful 路径已产出结果（含自动降级时回落 legacy 的重执行）
+        try {
+          writeEntity(ctx.dataDir, {
+            name: `execution-log.${ctx.node.id}.${Date.now()}`,
+            type: 'execution-log',
+            description: `Agent ${ctx.agentName} node ${ctx.node.id}`,
+            properties: {
+              agent: ctx.agentName,
+              node: ctx.node.id,
+              output: statefulOutcome.output.slice(0, 500),
+              success: statefulOutcome.success,
+              executionMode: statefulOutcome.degraded ? 'stateful→legacy(自动降级)' : 'stateful',
+              timestamp: new Date().toISOString(),
+            },
+          });
+          entitiesWritten.push(`execution-log.${ctx.node.id}`);
+        } catch {
+          // entity 写入失败不阻塞
+        }
+        return statefulOutcome;
+      }
+      // statefulOutcome === null：LLM/agent 不可用——落入下方 legacy 降级（既有路径）
+    }
+
     const agent = await createReactAgent({ llm: model, tools, prompt: systemPrompt });
     const result = await agent.invoke(
       { messages: [{ role: 'user', content: ctx.node.task }] },
@@ -436,4 +495,236 @@ function extractText(result: unknown): string {
     }
   }
   return String(result ?? '');
+}
+
+
+// ────────────────────────────────────────────────────────────
+// v1.5.5 章一：SKILL.state 协议执行器（stateful 路径实现）
+// ────────────────────────────────────────────────────────────
+
+/** workflow 节点 → 状态机节点类型映射（refine/loop 长任务归 'refine-agent'，其余按语义归位） */
+function nodeKindFor(node: WorkflowNode): NodeKind {
+  const t = (node.type ?? 'auto') as string;
+  if (t === 'loop') return 'refine-agent';
+  const id = node.id.toLowerCase();
+  if (id.includes('review')) return 'reviewer';
+  if (id.includes('check')) return 'checker';
+  if (id.includes('eng') || id.includes('fix') || id.includes('impl')) return 'engineer';
+  return 'long-task';
+}
+
+/**
+ * stateful 执行（协议核心）。
+ *
+ * @returns 成功/失败结果；null = 前置不可用（LLM/agent 缺席）——调用方落 legacy 降级
+ */
+async function runStatefulExecution(args: {
+  ctx: NodeExecutionContext;
+  deps?: NodeExecutorDeps;
+  model: unknown | null;
+  createReactAgent: NonNullable<NodeExecutorDeps['createReactAgent']> | undefined;
+  tools: unknown[];
+  systemPrompt: string;
+  startTime: number;
+}): Promise<NodeExecutionResult | null> {
+  const { ctx, model, createReactAgent, tools, systemPrompt, startTime } = args;
+  if (!model || !createReactAgent) return null; // 前置不可用——legacy 降级
+
+  const kind = nodeKindFor(ctx.node);
+  const agent = await createReactAgent({ llm: model, tools, prompt: systemPrompt });
+  const sink = fileSink(ctx.dataDir);
+
+  // Σ0 初始化（基础六字段 + 领域字段空态）
+  let sigma = initialSigma(kind, ctx.node.task ?? '');
+  let ot = ctx.node.task ?? ''; // 首步观察 = 任务描述
+  let patchRejections = 0;
+  let autoDegraded = false;
+  const stepTokens: number[] = [];
+  const MAX_STEPS = 25; // 对齐 recursionLimit 量级（协议步=模型步+工具步）
+  const OT_BUDGET = 4000; // ot 截断预算（token 粗估）
+
+  for (let i = 0; i < MAX_STEPS; i++) {
+    // ── 构造协议 prompt：P（恒定）+ Σt + ot（仅最新，截断）──
+    const protocolPrompt = [
+      systemPrompt,
+      '',
+      '── 执行协议（SKILL.state）──',
+      '当前结构化状态（Σt）：',
+      JSON.stringify(sigma, null, 2),
+      '',
+      '最新观察（ot）：',
+      ot.slice(0, OT_BUDGET * 3), // 字符级粗截断（token 估算的 3 倍字符量）
+      '',
+      '请输出下一步：先一段简短推理，然后一行 JSON（独占一行，格式严格如下）：',
+      'STATE_PATCH: {"patches": [{"op": "add|update|remove", "path": "<状态字段名>", "value": <值>}], "action": "<本步动作描述>"}',
+      '可用状态字段以上方 Σt 的键为准；done/todo/facts/files/blockers 为字符串数组，add 追加、update 覆盖。',
+    ].join('\n');
+    stepTokens.push(estimateTokens(protocolPrompt));
+
+    let raw: unknown;
+    try {
+      raw = await agent.invoke(
+        { messages: [{ role: 'user', content: protocolPrompt }] },
+        { recursionLimit: 50 },
+      );
+    } catch (err) {
+      return {
+        agentName: ctx.agentName,
+        output: '',
+        success: false,
+        degraded: false,
+        error: `stateful 执行失败: ${err instanceof Error ? err.message : String(err)}`,
+        entitiesWritten: [],
+        durationMs: Date.now() - startTime,
+      };
+    }
+
+    const text = extractText(raw);
+    const parsed = parseStatePatchLine(text);
+
+    // Rt 已消费（text 用于本步推理）——丢弃前落审计摘要（动作 + ΔΣt + 因果边）
+    const digest: AuditDigest = {
+      kind,
+      action: parsed?.action ?? '(未解析出动作)',
+      patch: parsed?.patches ?? [],
+      causalEdges: [],
+      step: i,
+      timestamp: new Date().toISOString(),
+    };
+    emitAuditDigest(digest, ctx.agentName, ctx.node.id);
+
+    if (parsed === null) {
+      // 未能解析补丁——按「模型选择直接回答」处理：若含终止信号则完成
+      if (/TASK_COMPLETE|任务完成|\bDONE\b/i.test(text)) {
+        return finishStateful({
+          ctx, sigma, stepTokens, patchRejections, autoDegraded, success: true,
+          output: text, startTime, sink, kind,
+        });
+      }
+      // 非终止且无补丁：观察更新后继续（防死循环：计入拒绝）
+      patchRejections++;
+      ot = text;
+      if (shouldAutoDegrade(patchRejections)) {
+        autoDegraded = true;
+        break; // 自动降级 legacy
+      }
+      continue;
+    }
+
+    // ΔΣt 代码合并校验（fail-closed：不过即拒绝整个补丁）
+    const merge = applyPatch(kind, sigma, parsed.patches);
+    if (!merge.ok) {
+      patchRejections++;
+      ot = `上一步状态补丁被拒绝：${merge.reason}。请修正补丁格式后重试。`;
+      if (shouldAutoDegrade(patchRejections)) {
+        autoDegraded = true;
+        break;
+      }
+      continue;
+    }
+    sigma = merge.state;
+    patchRejections = 0; // 连续计数归零
+    ot = text;
+
+    // 终止判定：todo 清空且模型声明完成
+    const todo = sigma['todo'];
+    if (Array.isArray(todo) && todo.length === 0 && /TASK_COMPLETE|任务完成/i.test(text)) {
+      return finishStateful({
+        ctx, sigma, stepTokens, patchRejections, autoDegraded, success: true,
+        output: text, startTime, sink, kind,
+      });
+    }
+  }
+
+  // 步数耗尽或自动降级——回落 legacy 路径重执行（消息历史式，保底语义不变）
+  if (autoDegraded) {
+    sink.write({
+      timestamp: new Date().toISOString(),
+      node: ctx.node.id,
+      kind,
+      mode: 'stateful',
+      autoDegraded: true,
+      stepTokens,
+      steps: stepTokens.length,
+      patchRejections,
+      success: false,
+      durationMs: Date.now() - startTime,
+    });
+    // legacy 重执行
+    const legacy = await agent.invoke(
+      { messages: [{ role: 'user', content: ctx.node.task }] },
+      { recursionLimit: 50 },
+    );
+    const output = extractText(legacy);
+    return {
+      agentName: ctx.agentName,
+      output,
+      success: true,
+      degraded: true, // 自动降级可观测（v1.4.5 T6 语义复用）
+      entitiesWritten: [],
+      durationMs: Date.now() - startTime,
+    };
+  }
+
+  // 步数耗尽未完成
+  return finishStateful({
+    ctx, sigma, stepTokens, patchRejections, autoDegraded, success: false,
+    output: 'stateful 执行达到最大步数未完成', startTime, sink, kind,
+  });
+}
+
+/** 从模型输出解析 STATE_PATCH 行（宽松：JSON 前后允许推理文本） */
+function parseStatePatchLine(text: string): { patches: StatePatch[]; action: string } | null {
+  const m = text.match(/STATE_PATCH\s*:\s*(\{[\s\S]*?\})\s*$/m);
+  if (!m) return null;
+  try {
+    const obj = JSON.parse(m[1]!) as { patches?: unknown; action?: unknown };
+    if (!Array.isArray(obj.patches)) return null;
+    const patches = obj.patches.filter(
+      (p): p is StatePatch =>
+        !!p && typeof p === 'object' &&
+        ['add', 'remove', 'update'].includes((p as Record<string, unknown>)['op'] as string) &&
+        typeof (p as Record<string, unknown>)['path'] === 'string',
+    );
+    if (patches.length === 0) return null;
+    return { patches, action: typeof obj.action === 'string' ? obj.action : '' };
+  } catch {
+    return null;
+  }
+}
+
+/** stateful 收尾：落度量 + 返回结果 */
+function finishStateful(args: {
+  ctx: NodeExecutionContext;
+  sigma: Record<string, unknown>;
+  stepTokens: number[];
+  patchRejections: number;
+  autoDegraded: boolean;
+  success: boolean;
+  output: string;
+  startTime: number;
+  sink: ReturnType<typeof fileSink>;
+  kind: NodeKind;
+}): NodeExecutionResult {
+  const { ctx, sigma, stepTokens, patchRejections, success, output, startTime, sink, kind } = args;
+  sink.write({
+    timestamp: new Date().toISOString(),
+    node: ctx.node.id,
+    kind,
+    mode: 'stateful',
+    autoDegraded: false,
+    stepTokens,
+    steps: stepTokens.length,
+    patchRejections,
+    success,
+    durationMs: Date.now() - startTime,
+  });
+  return {
+    agentName: ctx.agentName,
+    output,
+    success,
+    degraded: false,
+    entitiesWritten: [],
+    durationMs: Date.now() - startTime,
+  };
 }

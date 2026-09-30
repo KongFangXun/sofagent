@@ -422,6 +422,8 @@ flowchart TD
     SG --> A3[③ EXECUTE 执行<br/>dag-runner + node-executor<br/>HITL + 审计集成 + 异常兜底]
     A3 -->|HITL interrupt_before| HITL[人工审批节点<br/>高风险操作暂停等人确认]
     A3 -->|审计 hook| AUDIT[审计<br/>每步变更自动审计]
+    A3 -.节点内部状态机.-> SM[SKILL.state 执行协议<br/>P+Σt+ot 三输入 · ΔΣt 代码合并<br/>Rt 弃前落审计摘要 · v1.5.5]
+    SM -.审计摘要.-> AUDIT
     A3 --> A4[④ SUSTAIN 持续<br/>wrapToolCall 联动<br/>全链路验证]
     A4 -->|think.md 回写| EVOLVE[进化模块<br/>执行→审计→反思→进化]
     EVOLVE -.->|喂下一轮诊断| FDE
@@ -787,6 +789,8 @@ graph LR
 > 裁决记录条：大淘宝技术〈Ontology 决策结构化实践〉（自述，未复算）· 华力江海〈电网项目管理护照模型〉（微信公众号转述，未复算）· hugozhu.site〈被丢掉的代码〉
 
 ### 运行时数据层：引擎间数据流全景
+
+> 🔧 **节点内部状态机（v1.5.5 章一）**：③ EXECUTE 的每个节点内部现运行 SKILL.state 执行协议——P（恒定技能说明）+ Σt（结构化状态）+ ot（最新观察）三输入，ΔΣt 状态补丁由代码确定性合并（schema 校验 fail-closed），推理轨迹合并后即弃、行为经审计摘要可溯；度量落 `data/evolution/stateful-metrics.jsonl`（token 曲线/轮次/质量对比，Dashboard 可见）。协议详见 [SKILL/state-machine-design.md](../SKILL/state-machine-design.md)。
 
 > 📌 **本节为「运行时数据流全景」SSOT**——WIKI / DEVELOPMENT / HANDBOOK 等其它文档引用运行时数据流时**指向本节、不复述**本节的速览表。
 

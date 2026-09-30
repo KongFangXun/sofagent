@@ -230,6 +230,14 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 > 💡 USB 功能的用户侧使用见 [HANDBOOK §USB 烧录](./HANDBOOK.md#usb-烧录三种部署场景全覆盖v118) 和 [FDE/GUIDE.md](../FDE/GUIDE.md)。这里只讲代码层架构。
 
 
+### SKILL.state 蒸馏——执行层状态机（v1.5.5）
+
+> **「轨迹可弃、行为可溯」**——这是 sofagent 执行层的审计原则，也是节点内部状态机的落地前提。
+
+节点执行从「消息历史滚雪球」改为「结构化状态机」（SKILL.state，[arXiv:2608.26263](https://arxiv.org/abs/2608.26263)）：每步只带 P（不可变技能说明）+ Σt（结构化状态，唯一跨步记忆）+ ot（最新观察，截断）；模型输出 ΔΣt（状态补丁）由**运行时代码确定性合并**（schema 校验 fail-closed，不靠模型自觉），推理轨迹 Rt 在验证通过后即弃——但丢弃前先落一条审计摘要（动作 + ΔΣt + 因果边）进 wrapToolCall 通道。单步 prompt O(1)、累计 token O(T)。
+
+降级兜底：`SOFAGENT_STATEFUL_EXEC=off` 一键全回退消息历史式；单节点连续补丁失败自动降级并告警。协议细节与节点 schema 见 [SKILL/state-machine-design.md](../SKILL/state-machine-design.md)。
+
 ## 二、编排哲学
 
 > 📖 FORGE 自迭代的设计哲学见 [PHILOSOPHY §七](./PHILOSOPHY.md#七怎么进化forge-自迭代)。本章只讲技术实现。
