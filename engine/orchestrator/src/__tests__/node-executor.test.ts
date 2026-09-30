@@ -128,16 +128,61 @@ describe('node-executor', () => {
         }),
       });
 
+      // v1.5.5 章一：本用例锁 legacy 主径（消息历史式）——mock 输出无 STATE_PATCH 行，
+      // 走 stateful 会在连续补丁拒绝后自动降级（degraded=true，属协议正确行为）。
+      // stateful 路径行为由下方专项用例与 execution-state.test.ts 锁定。
       const result = await executeNode(ctx, {
         createReactAgent: mockCreateReactAgent,
         resolveModel: async () => ({}),
         buildSystemPrompt: (_root, cfg) => cfg.systemPrompt,
+        executionModeOverride: 'legacy',
       });
 
       expect(result.success).toBe(true);
       expect(result.output).toBe('Mock 执行完成');
       // v1.4.5 T6：真执行成功 → degraded=false（非降级路径显式可判）
       expect(result.degraded).toBe(false);
+    }, 20000);
+
+    it('v1.5.5 章一 stateful：模型输出 STATE_PATCH 即步进合并；todo 清空+完成信号即终止（协议执行器接线）', async () => {
+      const node: WorkflowNode = {
+        id: 'stateful-node',
+        agent: 'engineer',
+        task: '结构化任务',
+        depends_on: [],
+      };
+      const agentConfig = {
+        systemPrompt: 'test',
+        tools: [],
+        modelName: null,
+        hitl: false,
+      };
+      const ctx: NodeExecutionContext = {
+        agentName: 'mock-agent',
+        agentConfig,
+        node,
+        dataDir: testDir,
+        projectRoot: testDir,
+      };
+      let call = 0;
+      const mockCreateReactAgent = async () => ({
+        invoke: async () => {
+          call++;
+          if (call === 1) {
+            return { messages: [{ role: 'assistant', type: 'ai', content: '先分析任务。\nSTATE_PATCH: {"patches": [{"op": "update", "path": "todo", "value": []}, {"op": "add", "path": "done", "value": ["分析完成"]}], "action": "分析"}' }] };
+          }
+          return { messages: [{ role: 'assistant', type: 'ai', content: 'TASK_COMPLETE 任务完成，产出报告。' }] };
+        },
+      });
+      const result = await executeNode(ctx, {
+        createReactAgent: mockCreateReactAgent,
+        resolveModel: async () => ({}),
+        buildSystemPrompt: (_root, cfg) => cfg.systemPrompt,
+        // 不指定 override——走缺省 stateful
+      });
+      expect(result.success).toBe(true);
+      expect(result.degraded).toBe(false); // 协议正常收敛（未触发自动降级）
+      expect(result.output).toContain('任务完成');
     }, 20000);
 
     it('LLM 抛异常时返回 failure', async () => {

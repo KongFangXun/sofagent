@@ -208,17 +208,19 @@ export async function composeEnterpriseWorkflow(
 | **知识数据**（客户信息、工艺标准） | ontology entity（持久化） | 重，写入磁盘 |
 | **状态标记**（处理中/已完成/异常） | State + entity 双写 | 中，State 传 + entity 留痕 |
 
-LangGraph State 三个字段：
+**节点间**仍走 LangGraph State（编排层 DAG 通道），但**节点内部**（v1.5.5 竀一起）运行 SKILL.state 执行协议——三输入形态：
 
-| 字段 | 类别 | 说明 |
+| 输入 | 类别 | 说明 |
 |------|------|------|
-| `currentOrder` / `scheduleResult` | 实时业务数据（内存传递） | 接单 → 排产传递的订单数据；排产 → 质检传递的排程结果 |
-| `nodeStatus` | 状态标记（双写） | 形如 `{ customer-intake: 'done', production-scheduling: 'running' }` |
-| `exceptions` | 异常队列 | 任何节点可以往里塞异常 |
+| **P**（技能说明，不可变） | systemPrompt / SKILL.md 注入 | 执行期只读恒定 |
+| **Σt**（结构化状态 JSON） | 实时业务数据 + 状态标记（唯一跨步记忆） | 接单 → 排产传递的订单数据入 `facts`；节点完成度入 `done`/`todo`；形如 `{ customer-intake: 'done' }` 的旧 `nodeStatus` 语义由编排层 State 承担 |
+| **ot**（最新观察） | 上一步工具返回（截断） | 只看最新一条，历史观察不进 prompt |
+
+模型每步输出 ΔΣt（状态补丁），由运行时代码确定性合并 Σt+1 = Σt ⊕ ΔΣt（schema 校验 fail-closed）；异常不再走 `exceptions` 队列而是入 `blockers` 字段（阻塞项与绕行决策）；推理轨迹合并后即弃、行为经审计摘要可溯（「轨迹可弃、行为可溯」）。协议详见 [SKILL/state-machine-design.md](../../SKILL/state-machine-design.md)。
 
 ### HITL 集成
 
-LangGraph 原生支持 `interrupt_before`——注册节点（`graph.addNode(node.id, createNodeExecutor(node, agents))`）→ 按 `depends_on` 加边 → 编译时传 HITL 中断点：
+编排层 HITL（节点间卡关）：LangGraph 原生 `interrupt_before`——注册节点 → 按 `depends_on` 加边 → 编译时传 HITL 中断点（节点内部的执行降级/重试由 SKILL.state 协议自理——`SOFAGENT_STATEFUL_EXEC=off` 一键回退消息历史式）：
 
 ```typescript
 const hitlNodes = workflow.nodes.filter(n => n.hitl).map(n => n.id);

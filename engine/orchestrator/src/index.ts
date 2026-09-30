@@ -264,6 +264,34 @@
 // （消费方 await 解析后取函数；缺失时报 LANGGRAPH_MISSING_GUIDE 含安装/切换指引）。
 // emptyArtifacts / defaultDeps 等纯函数保持静态（零 LangGraph 依赖）。
 /* @public */ export { loadLoopGraphRuntime } from './loop';
+
+// ── v1.5.5 章一：执行状态机（SKILL.state 收编——节点内部从消息历史改为结构化状态机）──
+/* @public */ export {
+  getSchema,
+  listNodeKinds,
+  initialState as initialNodeState,
+  applyPatch,
+  step as executionStep,
+  resolveExecutionMode,
+  shouldAutoDegrade,
+  estimateTokens,
+  digestToAuditLine,
+  setAuditSink as setExecutionAuditSink,
+  emitAuditDigest,
+  fileSink as statefulMetricsFileSink,
+} from './execution-state';
+/* @public */ export type {
+  NodeKind,
+  FieldSpec,
+  NodeStateSchema,
+  StatePatch,
+  StepOutput,
+  PatchResult,
+  AuditDigest,
+  StatefulMetricRecord,
+  MetricsSink,
+  AuditLine,
+} from './execution-state';
 /* @public */ export {
   emptyArtifacts,
   defaultDeps,
