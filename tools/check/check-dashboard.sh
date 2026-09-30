@@ -17,6 +17,8 @@
 #     ⑧ MCP 工具清单漂移——dashboard 内嵌 MCP_TOOLS 数组与 tool-registry.ts
 #        注册名集合不一致（实锤：trace_reconcile v1.5.0 注册后清单漏更 104/105，
 #        标题计数动态渲染只能保证「标题=数组长度」，保证不了「数组=registry」）
+#     ⑨ 体量与形态超限——单文件行数 / 内联 style 计数越过冻结上限（上限 = 本版实测
+#        2955 行 / 192 内联 + 余量；把「单文件形态冻结、新增能力走模块化」变机械拦截）
 #   共性：全部是「静默失效」形态——页面能开、不报错、功能/样式悄悄丢。
 #   本脚本把这类缺陷变成发版前机械拦截。
 #
@@ -227,13 +229,36 @@ else
   echo "  ✓ [⑧MCP清单对账] dashboard 清单与 registry 注册名集合一致"
 fi
 
+#     ⑨ 体量与形态超限——单文件行数 / 内联样式计数越过冻结上限（v1.5.5 批 20 新增）
+#        实锤背景：dashboard.html 已 2955 行、192 处内联 style——无单测兜底的主防线资产
+#        持续扩张即不可维护面。本项把「单文件形态冻结、新增能力走模块化」变成机械拦截。
+if [ -f "$HTML" ]; then
+  DASH_LINES=$(wc -l < "$HTML" | tr -d ' ')
+  DASH_INLINE=$(grep -c 'style="' "$HTML" || true)
+  MAX_LINES=3000   # 冻结上限 = 本版实测 2955 + 余量 45
+  MAX_INLINE=210   # 冻结上限 = 本版实测 192 + 余量 18
+  if [ "$DASH_LINES" -gt "$MAX_LINES" ]; then
+    echo "  ❌ [⑨体量与形态] dashboard.html 行数 ${DASH_LINES} 超冻结上限 ${MAX_LINES}——单文件形态已冻结：新增能力走模块化，不在此文件继续堆"
+    FAILS=$((FAILS + 1))
+  elif [ "$DASH_INLINE" -gt "$MAX_INLINE" ]; then
+    echo "  ❌ [⑨体量与形态] dashboard.html 内联 style 计数 ${DASH_INLINE} 超冻结上限 ${MAX_INLINE}——新样式走 CSS 类与变量（设计规范见 docs/guides/frontend-design-standard.md）"
+    FAILS=$((FAILS + 1))
+  else
+    echo "  ✓ [⑨体量与形态] 行数 ${DASH_LINES}/${MAX_LINES} · 内联 style ${DASH_INLINE}/${MAX_INLINE}（均在冻结上限内）"
+  fi
+  ASSERTS=$((ASSERTS + 1))
+else
+  echo "  ⏭️ [⑨体量与形态] dashboard.html 不存在——跳过"
+  SKIPS=$((SKIPS + 1))
+fi
+
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$FAILS" -gt 0 ]; then
   echo "  FAIL=${FAILS}——dashboard.html 存在结构性缺陷（全部为静默失效形态）"
   echo "  🔴 修复请改 dashboard.html 本体，禁止为转绿而放宽本脚本断言"
 else
-  echo "  FAIL=0——八项结构检查通过"
+  echo "  FAIL=0——九项结构检查通过"
 fi
 # ── 覆盖度行（v1.4.9 G-2② 范式）──
 # covered 口径：单文件全量扫描，covered=1
