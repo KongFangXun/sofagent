@@ -29,6 +29,9 @@
 // - 层 2（dsh-backend 能力守卫）：execute 时探测 ctx 的 agent 驱动服务面，
 //   缺失抛 DshCapabilityMissingError → execute 消费方降级。
 
+// v1.5.5 阶段三 F23：LangGraph 动态加载统一入口（本文件零静态 LangGraph import 不变）
+import { dynamicLangGraph } from './execution-state/lazy-langgraph';
+
 /**
  * 执行后端契约——编排层通过这个接口调用执行层。
  * 任何实现这个接口的后端都能挂载：DSH Cordis / LangGraph createReactAgent / 未来其他框架。
@@ -294,8 +297,8 @@ async function loadDshCliBackend(): Promise<ExecutionBackend | null> {
 async function tryLoadLangGraphBackend(): Promise<ExecutionBackend | null> {
   try {
     // 先确认 @langchain/langgraph 可加载
-    // @ts-ignore — prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
-    await import('@langchain/langgraph/prebuilt');
+    // v1.5.5 阶段三 F23：经 lazy-langgraph 统一入口（缺失语义 = LANGGRAPH_MISSING_GUIDE 指引）
+    await dynamicLangGraph('/prebuilt');
     const { createLangGraphBackend } = await import('./execution-backends/langgraph-backend.js');
     return createLangGraphBackend();
   } catch {

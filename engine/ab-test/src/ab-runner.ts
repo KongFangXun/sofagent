@@ -13,6 +13,9 @@ import type { EvalBreakdown, TestCase } from '@sofagent/eval';
 import { evalCase } from '@sofagent/eval';
 import { callModelAPI } from '@sofagent/core';
 import type { ModelMessage } from '@sofagent/core';
+// v1.5.5 阶段三 F23：LangGraph 动态加载统一入口（同 orchestrator 侧 lazy-langgraph，
+// 经 @sofagent/orchestrator 根导出面消费——深子路径会被其 exports map 拦截）
+import { dynamicLangGraph } from '@sofagent/orchestrator';
 
 /** createReactAgent 工厂函数签名（A/B 运行器） */
 interface ReactAgentConfig {
@@ -203,9 +206,9 @@ async function runReactAgent(
     );
   }
 
-  // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
-  const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
-  const reactCreate = createReactAgent as unknown as ReactAgentFactory;
+  // v1.5.5 阶段三 F23：经 lazy-langgraph 统一入口（缺失语义 = LANGGRAPH_MISSING_GUIDE 指引）
+  const prebuilt = await dynamicLangGraph<{ createReactAgent: unknown }>('/prebuilt');
+  const reactCreate = prebuilt.createReactAgent as unknown as ReactAgentFactory;
 
   // 解析 LLM 模型（从环境变量读取）
   const { resolveLLMModel } = await import('@sofagent/orchestrator');

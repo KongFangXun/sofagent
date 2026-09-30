@@ -11,6 +11,8 @@ import { join, dirname } from 'path';
 import { loadEnvConfig, getPersonaContent, atomicWriteSync } from '@sofagent/core';
 import type { SubAgentDefinition } from './registry';
 import { resolveLLMModel } from './loop/nodes';
+// v1.5.5 阶段三 F23：LangGraph 动态加载统一入口（本文件零静态 LangGraph import 不变）
+import { dynamicLangGraph } from './execution-state/lazy-langgraph';
 
 /** createReactAgent 工厂函数签名 */
 interface ReactAgentConfig {
@@ -213,8 +215,9 @@ export { buildConstrainedSystemPrompt } from '@sofagent/inject';
  */
 async function loadReactAgent(): Promise<ReactAgentFactory | null> {
   try {
-    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
-    const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+    // v1.5.5 阶段三 F23：经 lazy-langgraph 统一入口（缺失语义 = LANGGRAPH_MISSING_GUIDE 指引）
+    const prebuilt = await dynamicLangGraph<{ createReactAgent: unknown }>('/prebuilt');
+    const createReactAgent = prebuilt.createReactAgent;
     return createReactAgent as unknown as ReactAgentFactory;
   } catch {
     console.warn('@langchain/langgraph 未安装，Sub Agent 功能不可用。npm install @langchain/langgraph 启用。');

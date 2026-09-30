@@ -13,6 +13,8 @@
 // isReportText / 写报告窗口逻辑全部保留在 driver 侧，零改动、零回归风险。
 
 import type { ExecutionBackend, ExecutionTask, ExecutionResult } from '../execution-backend.js';
+// v1.5.5 阶段三 F23：LangGraph 动态加载统一入口（本文件零静态 LangGraph import 不变）
+import { dynamicLangGraph } from '../execution-state/lazy-langgraph';
 
 /**
  * 创建 LangGraph createReactAgent 执行后端。
@@ -26,8 +28,13 @@ import type { ExecutionBackend, ExecutionTask, ExecutionResult } from '../execut
  */
 export async function createLangGraphBackend(): Promise<ExecutionBackend> {
   // 动态加载 LangGraph（运行时 try-catch，失败由工厂层 fallback）
-  // @ts-ignore — prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
-  const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+  // v1.5.5 阶段三 F23：经 lazy-langgraph 统一入口（缺失语义 = LANGGRAPH_MISSING_GUIDE 指引）。
+  // TS7：原 `@ts-ignore` 对整个 import() 压类型检查（createReactAgent = any）——
+  // 统一入口后无法整表达式 ignore，改为对取出的工厂做 as any 桥接（语义等价：
+  // 参数/返回的真实类型由 resolveLLMModel 与 FORGE driver 保证，本层只管转发）。
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const prebuilt = await dynamicLangGraph<{ createReactAgent: any }>('/prebuilt');
+  const createReactAgent = prebuilt.createReactAgent;
   const { SystemMessage } = await import('@langchain/core/messages');
 
   const backend: ExecutionBackend = {
