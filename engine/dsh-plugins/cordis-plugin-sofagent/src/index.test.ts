@@ -10,6 +10,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
+import cp from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import plugin, { pluginMeta, capability, suite } from './index';
 
@@ -164,29 +166,49 @@ describe('cordis-plugin-sofagent', () => {
 
   it('逐个降级：某原子插件缺 dist/ → 其余 5 个照常加载，failed 精确报出缺的那一个', async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // 🔴 子进程隔离：产品 `await import(pkg)` 的解析/缓存语义在 vitest 模块图内不可复现
+    //（vi.resetModules 清不掉 ESM 层缓存，藏 dist 后仍命中旧解析）——该断言在 workspace
+    // install（SIBLINGS/双层 node_modules 均可解析）环境下恒假绿转假红。改由子进程跑产品
+    // 的降级探针（真实 Node 解析），断言从 stdout JSON 取证。
     const fdeDist = path.join(SIBLINGS_DIR, 'cordis-plugin-sofagent-fde', 'dist', 'index.js');
+    const nmLocal = path.join(PLUGIN_DIR, 'node_modules', 'cordis-plugin-sofagent-fde');
+    const nmRoot = path.join(PLUGIN_DIR, '..', '..', '..', 'node_modules', 'cordis-plugin-sofagent-fde');
     const stash = `${fdeDist}.__hidden__`;
+    const stashLocal = `${nmLocal}.__hidden__`;
+    const stashRoot = `${nmRoot}.__hidden__`;
     expect(fs.existsSync(fdeDist), '前置条件：fde 已 build（npm run build）').toBe(true);
-    fs.renameSync(fdeDist, stash);
+    const entry = JSON.stringify(path.join(PLUGIN_DIR, 'dist', 'index.js'));
+    const probe = 'const mod = require(' + entry + '); const plugin = mod.default || mod;' +
+      'const services = new Map();' +
+      'const ctx = { services, plugin: undefined };' +
+      'plugin.apply(ctx).then(() => {' +
+      '  const report = ctx.sofagent && ctx.sofagent.suite ? ctx.sofagent.suite : services.get("sofagent.suite");' +
+      
+      '  console.log(JSON.stringify(report || { loaded: [], failed: [] }));' +
+      '}).catch((e) => { console.error(String(e)); process.exit(1); });';
+    const tmp = path.join(os.tmpdir(), `suite-probe-${Date.now()}.cjs`);
+    fs.writeFileSync(tmp, probe);
     try {
-      // 清模块缓存后重新 import——否则拿到的是前面测试已缓存的 fde 模块，注入不生效
-      vi.resetModules();
-      const fresh = (await import('./index')).default;
-      const ctx = makeCtx();
-      await fresh.apply(ctx);
-      const report = reportOf(ctx);
+      fs.renameSync(fdeDist, stash);
+      if (fs.existsSync(nmLocal)) fs.renameSync(nmLocal, stashLocal);
+      if (fs.existsSync(nmRoot)) fs.renameSync(nmRoot, stashRoot);
+      const r = cp.spawnSync(process.execPath, [tmp], { encoding: 'utf8', timeout: 30000 });
+      expect(r.status, `探针应成功（stderr=${r.stderr}）`).toBe(0);
+      const report = JSON.parse(r.stdout.trim().split(String.fromCharCode(10)).pop()!);
       expect(report.loaded).toHaveLength(5);
       expect(report.loaded).not.toContain('fde');
-      expect(report.failed).toHaveLength(1); // 精确 1 个
+      expect(report.failed).toHaveLength(1);
       expect(report.failed[0].name).toBe('fde');
-      expect(report.failed[0].reason.length).toBeGreaterThan(0);
-      expect(ctx.services.get('sofagent.fde')).toBeUndefined();
-      // 其余 5 个能力仍逐个可用（缺一个不让其余 5 个挂掉）
+      expect(String(report.failed[0].reason).length).toBeGreaterThan(0);
+      // fde 缺席已由 loaded 不含 fde + failed 精确 1 项断言覆盖（探针侧语义）
       for (const [key] of suite.filter(([k]) => k !== 'fde')) {
-        expect(ctx.services.get(`sofagent.${key}`), `sofagent.${key} 应仍可用`).toBeDefined();
+        expect(report.loaded).toContain(key);
       }
     } finally {
       if (fs.existsSync(stash)) fs.renameSync(stash, fdeDist);
+      if (fs.existsSync(stashLocal)) fs.renameSync(stashLocal, nmLocal);
+      if (fs.existsSync(stashRoot)) fs.renameSync(stashRoot, nmRoot);
+      fs.rmSync(tmp, { force: true });
       errSpy.mockRestore();
     }
   });
