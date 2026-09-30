@@ -338,7 +338,11 @@ describe('audit-history', () => {
       // 混合格式——不应误报链断裂
       // 关键：e2→e3 这一步用 curr(e3).hashVersion === 2 决定算法（含指纹）
       //      e1→e2 这一步用 curr(e2).hashVersion === undefined 决定算法（不含指纹）
-      expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
+      // v1.5.5：写入侧现在「缺失即生成」密钥 ⇒ 本次 append 后密钥已落盘，
+      //   前两条 legacy 无签名条目落入「密钥在场但条目无签名」分支 = 不可复验（黄）。
+      //   本用例的意图是「逐条判 hashVersion、不误报**链断裂**」，故断言「非 tampered」——
+      //   黄（证据不可复验）≠ 红（判定被改），链本身没有被误报为断裂。
+      expect(checkHistoryChainDetailed(testDir).status).not.toBe('tampered');
     } finally {
       if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
       else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
@@ -411,14 +415,35 @@ describe('audit-history', () => {
       else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
     });
 
-    it('无 HMAC 密钥：降级 SHA-256，append + check 通过且不含 hmacSig', () => {
+    it('v1.5.5: 无密钥且无既有签名历史 → 首次写入自动生成密钥并签名（默认姿态收口）', () => {
+      // 🔴 行为变更（v1.5.5）：写入侧改为「缺失即生成」——默认安装开箱即为签名链。
+      // 原用例断言「无 HMAC 密钥时不含 hmacSig（降级 SHA-256）」，那是落地前的语义，
+      // 现按新语义重写；降级路径的用例见下一条（已签名历史 + 密钥丢失 → 安全门拒绝生成）。
       // P0-3: 单条不足 2 条 → insufficient（不可信）；≥2 条才能验证链
       appendHistory(makeEntry('2026-02-01T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-02-01T00:00:01Z', 0), testDir);
       expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
+      // 密钥自动落盘且权限 600
+      expect(existsSync(KEY_PATH)).toBe(true);
+      expect(statSync(KEY_PATH).mode & 0o777).toBe(0o600);
       const lines = readFileSync(getHistoryFilePath(testDir), 'utf-8').trim().split('\n');
-      const parsed = JSON.parse(lines[0]!);
-      expect(parsed.hmacSig).toBeUndefined();
+      expect(typeof JSON.parse(lines[0]!).hmacSig).toBe('string');
+    });
+
+    it('v1.5.5 安全门：历史已有签名记录 + 密钥丢失 → 拒绝自动生成密钥，判定不翻转', () => {
+      // 安全门理由：新密钥会让全部旧签名失配，而校验侧对「失配 + 环境指纹一致」判**篡改（红）**
+      //   ——不设门的话，密钥被误删后下一次写入会把一份健康历史误报成「检测到篡改痕迹」。
+      appendHistory(makeEntry('2026-02-01T00:00:00Z', 0), testDir);
+      appendHistory(makeEntry('2026-02-01T00:00:01Z', 0), testDir);
+      expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
+      rmSync(KEY_PATH, { force: true }); // 模拟密钥丢失（误删 / 换机未带备份）
+      appendHistory(makeEntry('2026-02-01T00:00:02Z', 0), testDir);
+      // 门生效：不重新生成密钥、该条不签名（退化为 hash-only，与落地前同口径）
+      expect(existsSync(KEY_PATH)).toBe(false);
+      const lines = readFileSync(getHistoryFilePath(testDir), 'utf-8').trim().split('\n');
+      expect(JSON.parse(lines[2]!).hmacSig).toBeUndefined();
+      // 判定不得翻转为「篡改」——这是本安全门存在的全部意义
+      expect(checkHistoryChainDetailed(testDir).status).not.toBe('tampered');
     });
 
     it('有 HMAC 密钥：写入 hmacSig 且 append + check 通过', () => {

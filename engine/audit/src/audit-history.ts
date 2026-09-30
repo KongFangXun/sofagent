@@ -374,7 +374,10 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // 的 details 强制脱敏覆盖；读侧 checkHistoryChainDetailed 校验的正是「脱敏后」记录。若写侧用 raw
   // ruleResults 签名，含 A2/A9 的条目 HMAC 永远与读侧不匹配，被 hmacAlgo:'stable' 判为篡改 →
   // 干净链误报链断裂（run-09 回归 false-positive）。先脱敏再签名后，写/读两侧 HMAC 输入完全一致。
-  const hmacKey = getHmacKey();
+  // v1.5.5：写入侧显式要求「缺失即生成」——默认安装首次写审计即落一枚 0600 的强密钥，
+  //   使「防篡改链」开箱成立（此前无密钥即降级无签 hash chain，声称在结构上不成立）。
+  //   读/校验侧保持原语义（不生成、无磁盘副作用），见 core getHmacKey 的 createIfMissing。
+  const hmacKey = getHmacKey({ createIfMissing: true, dataDir });
 
   // HMAC 密钥强度校验——F-48 收口：弱密钥（空/<16 字节/低熵/弱模式）fail-closed
   // 拒签。原实现「告警后继续签」：弱签名稀释整条链的举证力，且历史链将永远无法

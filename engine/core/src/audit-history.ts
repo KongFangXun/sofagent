@@ -24,9 +24,9 @@
 //   会把 audit 的规则结果域类型拖进底座，违反 core「零上层依赖」分层契约，故保持两份。
 // ============================================================
 
-import { existsSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync, renameSync, mkdirSync, chmodSync } from 'fs';
 import { join, dirname } from 'path';
-import { createHash, createHmac } from 'crypto';
+import { createHash, createHmac, randomBytes } from 'crypto';
 import { hostname, userInfo, homedir } from 'os';
 import { execSync } from 'child_process';
 import { AUDIT_HISTORY, AUDIT_DECISION_LOG } from './data-paths';
@@ -107,15 +107,96 @@ function getSofagentKeyPath(): string {
   return process.env.SOFAGENT_KEY_PATH || join(homedir(), '.sofagent-key');
 }
 
+/** 本进程内「缺失即生成」的密钥缓存——同进程同一路径只生成一次（避免并发写多个密钥文件） */
+let generatedKeyCache: { path: string; key: string } | null = null;
+
 /**
- * 读取 HMAC 密钥（v1.1.8+）。
- * 密钥来自 ~/.sofagent-key（chmod 600，Agent 默认不读取）。
- * 存在则返回密钥字符串；不存在返回 null（降级为 SHA-256，向后兼容）。
+ * 既有审计历史中是否已存在**已签名**记录（含 hmacSig 字段）。
+ *
+ * 供 getHmacKey 的「缺失即生成」做安全门。密钥丢失（误删 / 换机未带备份）而历史里已有
+ * 旧密钥签过的条目时，自动生成新密钥会让**全部旧签名失配**——而校验侧对「签名失配 +
+ * 环境指纹一致」的判定是**篡改（红）**（见本文件创世条目 / 主循环 HMAC 分支），
+ * 等于把一份健康历史误报成「检测到篡改痕迹」。故此时拒绝生成，保持原行为
+ * （无密钥 → 走 hash-only 校验，结论与「缺失即生成」落地前一致）。
  */
-export function getHmacKey(): string | null {
+function historyHasSignedEntry(dataDir?: string): boolean {
+  try {
+    const p = getHistoryFilePath(dataDir);
+    if (!existsSync(p)) return false;
+    const lines = readFileSync(p, 'utf-8').trim().split('\n').filter(Boolean);
+    return lines.some((l) => l.includes('"hmacSig"'));
+  } catch {
+    // 为何可静默：读不到历史（权限 / IO）时无法证明「有已签名记录」；返回 false 不阻断生成，
+    // 与「历史不存在」同路径——最坏情况退化为旧行为，不新增误判红的可能。
+    return false;
+  }
+}
+
+/**
+ * 生成并原子落盘一枚新 HMAC 密钥（v1.5.5 · 审计链密钥默认姿态收口）。
+ *
+ * 规格：crypto 随机 32 字节 → hex（64 字符，Shannon 熵 ≈4.0 bit/char，过 validateHmacKey
+ * 的 ≥16 字节 + 熵 ≥3.0 强度阈值，且不含弱模式词）；落盘走「临时文件 + rename」原子写，
+ * 权限 0600；Windows 等不支持 POSIX 权限位的平台忽略 chmod 失败（文件创建时已带 mode）。
+ *
+ * @param keyPath 目标密钥文件路径
+ * @returns 生成的密钥明文
+ */
+function generateHmacKeyFile(keyPath: string): string {
+  const key = randomBytes(32).toString('hex');
+  const dir = dirname(keyPath);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  const tmp = `${keyPath}.tmp.${process.pid}.${randomBytes(4).toString('hex')}`;
+  writeFileSync(tmp, key, { encoding: 'utf-8', mode: 0o600 });
+  renameSync(tmp, keyPath);
+  try {
+    chmodSync(keyPath, 0o600);
+  } catch {
+    /* 为何可静默：Windows 无 POSIX 权限位语义——文件创建时已按 mode 尽力设置，失败不影响可用性 */
+  }
+  return key;
+}
+
+/**
+ * 读取 HMAC 密钥（~/.sofagent-key，或 SOFAGENT_KEY_PATH 覆盖）。
+ *
+ * v1.5.5 · 默认姿态收口：此前密钥文件缺失时恒返回 null，审计链降级为**无密钥 hash chain**
+ * （SECURITY 自承：无密钥时手改审计历史后重算整链即可让校验通过）——即默认安装下
+ * 「防篡改链」这一声称在结构上不成立。现提供 `createIfMissing`：缺失时先生成并落盘再返回，
+ * 使默认安装开箱即是签名链。
+ *
+ * 🔴 默认 `createIfMissing: false`——**读/校验路径不产生磁盘副作用**（`--doctor` 的
+ * `validateHmacKey` / `isHmacKeyConfigured`、链校验 `checkHistoryChainDetailed` 均按原语义
+ * 在无密钥时判「未配置 / 不可复验」），避免诊断命令悄悄改判定输入；仅**写入侧签名入口**
+ * 显式传 true。这样也保证「生成之前写入的既有记录仍按原口径判定」——不会因为一次读操作
+ * 凭空多出密钥而让历史结论翻转。
+ *
+ * @param opts.createIfMissing 密钥文件缺失时是否生成（默认 false；仅写入侧传 true）
+ * @param opts.dataDir 数据目录（与写入目标同源——安全门须判**同一份**历史；缺省为默认数据目录）
+ */
+export function getHmacKey(opts: { createIfMissing?: boolean; dataDir?: string } = {}): string | null {
   try {
     const keyPath = getSofagentKeyPath();
-    if (!existsSync(keyPath)) return null;
+    if (!existsSync(keyPath)) {
+      if (!opts.createIfMissing) return null;
+      // 🔴 安全门优先于进程内缓存：只要**当前**密钥文件不在，就先判「历史里是否已有旧密钥
+      //   签过的记录」——有则一律拒绝返回密钥（含拒绝复用同进程缓存里的旧密钥），
+      //   否则该次写入会用缓存密钥签出「文件不在场却带签名」的记录，语义混乱：
+      //   新密钥会让全部旧签名失配并触发「疑似篡改」误判，保持原行为（hash-only）才安全。
+      if (historyHasSignedEntry(opts.dataDir)) {
+        console.error(
+          '[audit-history] 密钥文件缺失，但审计历史中存在已签名记录——拒绝自动生成新密钥' +
+            '（新密钥会使旧签名全部失配并触发「疑似篡改」误判）。' +
+            '请恢复原密钥（~/.sofagent-key 备份 / 保管库），或人工裁定后重建链。',
+        );
+        return null;
+      }
+      // 缓存按路径区分——同进程可能切换 SOFAGENT_KEY_PATH（测试隔离 / 多租户），
+      // 按路径缓存才不会把 A 路径的密钥当作 B 路径的返回值（且 B 路径的文件始终没落盘）。
+      if (generatedKeyCache !== null && generatedKeyCache.path === keyPath) return generatedKeyCache.key;
+      generatedKeyCache = { path: keyPath, key: generateHmacKeyFile(keyPath) };
+      return generatedKeyCache.key;
+    }
     return readFileSync(keyPath, 'utf-8').trim();
   } catch (err) {
     console.error('[audit-history] 读取 HMAC 密钥失败:', err);
