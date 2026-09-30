@@ -151,6 +151,7 @@
 | `release/publish-packages.sh` | npm 分批发布（依赖拓扑序）：`@sofagent/*` scope 包（含 `dsh-plugin-kit`——目录由根 `package.json` 的 workspaces 构建查表解析，不再按命名约定猜）+ 七款 DSH 插件（清单由 `plugins.json` 驱动、原子款在前 suite 在后）；（详→注-17） | 发版 SOP 阶段九 |
 | `release/sign-config.mjs` | config.yml HMAC-SHA256 签名颁发（读 `~/.sofagent-key`，DP-2） | 安装后 |
 | `release/gitdata-push.mjs` | Git Data API 推送备选通道（blobs→trees→commits→refs，https 断连绕行） | push 502 时 |
+| `release/npm-publish-with-retry.sh` | npm publish 单点（含重复发布豁免判定）——把 `.github/workflows/release.yml` 两个 job 各自内联的「E409 + E404 形态豁免 + registry 二次确认」逻辑收口为单点（此前逐字重复、改一处漏一处）；v1.5.5 阶段三 F 项 | 发版 SOP 阶段九 |
 
 > 注-15：检查位清单以 `tools/release/pre-push-check.sh` 头部 `#   + <脚本名>` 段为准（此处不复述，防双事实源；`check-prepush-checklist.mjs` 已对账「清单 ⊆ 实现」）；`--quick` 跳过 test/build，`--minimal` 结构性快检；v1.4.0 由根目录移入）
 > 注-16：指纹为**工作区内容树对象 sha**（临时 index + `git add -A` + `write-tree`——**内容寻址**，故 `git commit` 不使其过期）。四道防线：内容指纹 · 原始日志须在位非空 · 日志须真有绿灯摘要（`log_looks_green`）· `record --pre <指纹>` 钉住长跑**开始前**的内容（中途改文件 ⇒ 拒落凭据 exit 3）。退出码 0 可复用 / 2 失明拒绝假绿 / 3 需重跑。凭据库 `.sofagent/heavy-gate-receipts.log`（已 gitignore ⇒ 自指回避）
