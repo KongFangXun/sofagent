@@ -49,10 +49,13 @@ vi.mock('@sofagent/audit', () => ({
 
 // ── Mock @sofagent/core（记忆契约：getThinkPath / appendThinkEntry）──
 // write_think 现在经 core 的 appendThinkEntry 写入，测试应 mock 契约函数而非底层 fs。
-vi.mock('@sofagent/core', () => ({
+vi.mock('@sofagent/core', async (importOriginal) => ({
   getThinkPath: vi.fn(() => '/tmp/test-think.md'),
   appendThinkEntry: vi.fn(() => 0),
   getDataDir: vi.fn(() => require('os').tmpdir()),
+  // v1.5.5 批 7：write_think 的文本清洗下沉到 @sofagent/core——mock 需提供该符号。
+  //   取**真实实现**（非 stub），使本组测试继续验证真实清洗语义（换行剥离 / 截断 / 缺省）。
+  sanitizeThinkText: (await importOriginal<typeof import('@sofagent/core')>()).sanitizeThinkText,
 }));
 
 // ── Mock readline to prevent auto-start ──

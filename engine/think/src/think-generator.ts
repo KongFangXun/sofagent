@@ -7,7 +7,7 @@
 import { existsSync, readFileSync, mkdirSync, statSync } from 'fs';
 import { join } from 'path';
 import type { DiffFile, AuditResult } from '@sofagent/core';
-import {VERSION, getThinkPath, appendThinkEntry, DATA_DIR, EVAL_LATEST, getDataDir } from '@sofagent/core'
+import {VERSION, getThinkPath, appendThinkEntry, DATA_DIR, EVAL_LATEST, getDataDir, sanitizeThinkText } from '@sofagent/core'
 import type { DataChange, DataAuditResult } from '@sofagent/core';
 /**
  * think.md 条目生成选项
@@ -93,8 +93,7 @@ export interface ManualThinkReceipt {
   lesson: string;
 }
 
-/** 手动条目长度上限（与 @sofagent/mcp 的 write_think 同口径，防超长灌库） */
-const MAX_MANUAL_LESSON_LENGTH = 10000;
+/** 手动条目长度上限——v1.5.5 起由 @sofagent/core 的 MAX_THINK_LESSON_LENGTH 单源提供（与 write_think 同口径） */
 
 /**
  * 口述沉淀：把用户口述的 task + summary 写成一条 think.md 反思条目，并返回写入回执。
@@ -120,14 +119,10 @@ export function appendManualThinkEntry(
   summary: string,
   opts?: ThinkEntryOptions
 ): ManualThinkReceipt {
-  // 清洗 lesson：截断 → 折行 → trim（顺序与 write_think 逐字一致，勿调换）
-  let lesson = String(summary ?? '');
-  if (lesson.length > MAX_MANUAL_LESSON_LENGTH) {
-    lesson = lesson.slice(0, MAX_MANUAL_LESSON_LENGTH);
-  }
-  lesson = lesson.replace(/[\r\n]+/g, ' ').trim();
-  // task 同口径清洗（fold + trim），缺省 (手动记录)
-  const taskName = String(task ?? '').replace(/[\r\n]+/g, ' ').trim() || '(手动记录)';
+  // v1.5.5：清洗下沉到 @sofagent/core 单一实现（sanitizeThinkText）——与 write_think 共用同一函数，
+  //   lesson 与 task 同管线（原两处各写一份，MCP 侧 task 不清洗，已分叉）。
+  const lesson = sanitizeThinkText(summary);
+  const taskName = sanitizeThinkText(task, { fallback: '(手动记录)' });
 
   const now = opts?.now ?? new Date();
   const dataDir = opts?.dataDir ?? getDataDir();
