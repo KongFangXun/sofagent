@@ -99,6 +99,22 @@ describe('v1.5.5 章二 · 域过滤与显式覆盖', () => {
     expect(r.names).toEqual(['write_file', 'search_code']);
     expect(r.cededToExplicit).toContain('read_file'); // 让位记录可查
   });
+
+  it('F13：显式 + 域白名单并存 ⇒ 域外工具不进结果（显式不能绕域）', () => {
+    const idx = buildToolIndex(POOL);
+    const r = searchTools(idx, {
+      taskDescription: '读取文件',
+      topK: 3,
+      // run_bash 在域白名单外——显式指定也不能进
+      explicitTools: ['read_file', 'run_bash'],
+      domain: { allowNames: new Set(['read_file', 'write_file', 'search_code']) },
+    });
+    expect(r.explicitOverride).toBe(true);
+    expect(r.names).toEqual(['read_file']); // 域内显式保留，域外被剔除
+    expect(r.names).not.toContain('run_bash');
+    // 域外剔除计入 cededToExplicit 偏离记录（「显式让位域约束」可查）
+    expect(r.cededToExplicit).toContain('run_bash');
+  });
 });
 
 describe('v1.5.5 章二 · 分步按需加载', () => {

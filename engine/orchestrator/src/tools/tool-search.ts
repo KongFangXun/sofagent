@@ -97,17 +97,30 @@ export function searchTools(
   const poolSize = index.length;
 
   // ① 显式指定优先——检索结果让位并记录（devlog 交付项：手动指定可显式覆盖检索结果）
+  // 🔴 v1.5.5 阶段三 F13：显式工具同样过域白名单（显式 ∩ 域内）——此前本分支在
+  //    域过滤前 return，显式指定域外工具可绕过节点域约束（域过滤对显式路径失明）。
+  //    显式指定了域外工具 → 从结果剔除并计入 cededToExplicit 同款偏离记录
+  //    （偏离可查——「显式让位域约束」与「检索让位显式」共用同一留痕面）。
   if (req.explicitTools && req.explicitTools.length > 0) {
     const wanted = new Set(req.explicitTools);
-    const explicit = index.filter((e) => wanted.has(e.name));
+    const inDomain = req.domain?.allowNames
+      ? index.filter((e) => wanted.has(e.name) && req.domain!.allowNames!.has(e.name))
+      : index.filter((e) => wanted.has(e.name));
     const retrieved = scoreAll(index, req.taskDescription)
       .slice(0, req.topK ?? 5)
       .map((e) => e.name);
+    // 显式指定的域外工具 = 偏离记录（含让位语义：被域约束剔除）
+    const cededByDomain = req.domain?.allowNames
+      ? [...wanted].filter((n) => !req.domain!.allowNames!.has(n))
+      : [];
     return {
-      tools: explicit.map((e) => e.tool),
-      names: explicit.map((e) => e.name),
+      tools: inDomain.map((e) => e.tool),
+      names: inDomain.map((e) => e.name),
       explicitOverride: true,
-      cededToExplicit: retrieved.filter((n) => !wanted.has(n)),
+      cededToExplicit: [...new Set([
+        ...retrieved.filter((n) => !wanted.has(n)),
+        ...cededByDomain,
+      ])],
       poolSize,
     };
   }
