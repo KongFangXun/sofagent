@@ -289,7 +289,34 @@ async function executeNodeCore(
       taskDesc: ctx.node.task?.slice(0, 500) ?? '',
       cwd: ctx.projectRoot,
     });
-    const gatedTools = wrapToolsWithGate(ENGINEER_TOOLS, gate);
+    // ── v1.5.5 章二：Tool search 按需加载（供给面）──
+    // ToolGate（权限面：能不能用）已在 wrapToolsWithGate 先行包裹；本层管「装哪些进上下文」——
+    // 按任务描述检索 top-K 召回（默认 5），替代全量 ENGINEER_TOOLS 注入；零相关命中时
+    // 回落全量（L1 关档语义——检索失效不削弱能力面）。度量按需 vs 全量 token 对比落盘。
+    let suppliedTools = ENGINEER_TOOLS;
+    try {
+      const { buildToolIndex, searchTools, recordInjectionMetrics, estimateToolsTokens } =
+        await import('./tools/tool-search');
+      const index = buildToolIndex(ENGINEER_TOOLS);
+      const result = searchTools(index, {
+        taskDescription: ctx.node.task ?? '',
+        topK: 5,
+      });
+      if (result.tools.length > 0) {
+        suppliedTools = result.tools;
+        recordInjectionMetrics(ctx.dataDir, {
+          timestamp: new Date().toISOString(),
+          task: (ctx.node.task ?? '').slice(0, 200),
+          injected: result.tools.length,
+          fullSet: ENGINEER_TOOLS.length,
+          onDemandTokens: estimateToolsTokens(result.tools),
+          fullTokens: estimateToolsTokens(ENGINEER_TOOLS),
+        });
+      }
+    } catch {
+      // 检索面不可用——回落全量注入（L1 关档，零行为变化）
+    }
+    const gatedTools = wrapToolsWithGate(suppliedTools, gate);
     // ── v1.5.4 章三/章七：沙箱 HTTP 出口凭证注入接线（生产路径可达）──
     // 🔴 缺省关（SOFAGENT_SANDBOX_EGRESS ≠ '1'）⇒ 不装配沙箱出口，tools 与接线前
     //    逐字一致（零行为变化）。开启时：装配沙箱出口句柄（**构造 Vault 含轮换器**）
