@@ -65,7 +65,7 @@ version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 
 </details>
 
-> **Version note**: v1.5.3 has been released (2026-09-26); the latest installable npm version is `@sofagent/audit@1.5.3`.
+> **Version note**: v1.5.4 has been released (2026-09-30); the latest installable npm version is `@sofagent/audit@1.5.4`.
 
 ## Should you install it?
 
@@ -259,7 +259,7 @@ the screenshot above (first screen); not repeated here.
 **Full install** (Node.js ≥ 18, download and review before running) — **installed on the enterprise devices running the AI nodes**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.3/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.4/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh          # review the script first, confirm it's safe
 bash bootstrap.sh && rm bootstrap.sh
 ```

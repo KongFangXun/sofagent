@@ -60,7 +60,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **五分钟戏剧演示**（v1.5.1 已交付，沙箱隔离、真实文件零接触）：`npx -y -p @sofagent/audit sofagent-audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕完整链路（`--speed fast` 60 秒精简版；产物落 `$SOFAGENT_DATA/demo`（默认 `~/.sofagent/data/demo`），不触碰被审仓库与其他目录）。
 
-> 版本说明：v1.5.3 已发版（2026-09-26）；npm 可安装最新版 `@sofagent/audit@1.5.3`。
+> 版本说明：v1.5.4 已发版（2026-09-30）；npm 可安装最新版 `@sofagent/audit@1.5.4`。
 
 ## 该不该装？
 
@@ -211,7 +211,7 @@ npx -y -p @sofagent/audit sofagent-audit
 **完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.3/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.4/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh          # 先看一眼脚本内容，确认安全
 bash bootstrap.sh && rm bootstrap.sh
 ```
