@@ -27,6 +27,7 @@
 
 import glm53 from './glm-5.3.mjs';
 import glm53flash from './glm-5.3-flash.mjs';
+import dsv4flash from './deepseek-v4-flash.mjs';
 
 export default {
   // 🔵 当前口径（2026-09-14 用户拍板）：六角色 A/B/C/D/V/F **统一 glm-5.3-flash**，全链单一模型档。
@@ -52,6 +53,6 @@ export default {
   // 判断层默认「裸 LLM 直连」模式，模型取自本文件的 V/F 配置（走 DSH 桥接时才转读
   // ~/.dsh/settings.yaml）——故此处即为 release loop 的模型开关，改此两行不影响
   // fresh-eyes-loop 的 A/B/C/D。
-  V: { model: glm53flash, role: 'reviewer' },  // 验证者：glm-5.3-flash → GLM_API_KEY（Coding Plan）
-  F: { model: glm53flash, role: 'engineer' },  // 修复者：glm-5.3-flash → GLM_API_KEY（Coding Plan）
+  V: { model: dsv4flash, role: 'reviewer' },  // 验证者：deepseek-v4-flash → DEEPSEEK_API_KEY（GLM Coding Plan 资源包耗尽 code 1113 临时切换，先例 2026-09-05 同款）
+  F: { model: dsv4flash, role: 'engineer' },  // 修复者：deepseek-v4-flash → DEEPSEEK_API_KEY（同上；GLM 恢复后切回 glm53flash 即两行）
 };
