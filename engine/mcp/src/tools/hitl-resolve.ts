@@ -43,6 +43,8 @@ export interface HitlResolveResult {
     retryCount?: number;
     message?: string;
   };
+  /** v1.5.5 阶段三 F21/F22：指引透传态标错（MCP 层消费——缺失指引是可操作错误不是静默失败） */
+  isError?: boolean;
 }
 
 // ============================================================
@@ -104,7 +106,18 @@ export async function hitlResolve(args: HitlResolveArgs): Promise<HitlResolveRes
       throw new Error('resumeLoopGraph 不可用');
     }
     resumeLoopGraph = runtime.resumeLoopGraph;
-  } catch {
+  } catch (err) {
+    // v1.5.5 阶段三 F21/F22：LANGGRAPH_MISSING_GUIDE（含安装/切换指引）原样透传——
+    // 此前 catch 无 err 绑定，指引被压成「未安装或不可用」，用户拿到的是被吞掉的
+    // 半句诊断（装哪种/怎么切一概不知）。
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('LANGGRAPH_MISSING_GUIDE') || msg.includes('❌ @langchain/langgraph 未安装')) {
+      return {
+        text: `[sofagent] HITL 决议失败：${msg}`,
+        data: { ok: false, checkpointId, decision, message: msg },
+        isError: true,
+      };
+    }
     return {
       text: '[sofagent] HITL 决议失败：@sofagent/orchestrator 未安装或不可用',
       data: { ok: false, checkpointId, decision, message: 'orchestrator 不可用' },

@@ -43,10 +43,14 @@ export {
 
 // Graph & Routing（单任务 FORGE）—— v1.5.5 章五：graph.ts 静态依赖
 // @langchain/langgraph（StateGraph/Annotation），为保 dsh-only 裁剪安装态零 LangGraph
-// import，运行时函数不再静态 re-export，改为**惰性 getter**（属性访问时才动态 import）。
+// import，运行时函数不再静态 re-export。
+// 🔴 v1.5.5 阶段三 F3/F4 注释如实化（实现以本注释为准——此前「惰性 getter /
+//    属性访问语义不变」的描述与实现不符）：运行时符号经 `loadLoopGraphRuntime()`
+//    **异步解析**（返回 Promise，消费方须 await——如 mcp hitl-resolve 先
+//    `await mod.loadLoopGraphRuntime()` 再取 runLoopGraph/resumeLoopGraph）。
+//    v1.5.4 的 7 个静态导出形态已变更为异步入口＝**破坏性变更**（见 devlog 章五）。
 // 类型经 `import type` 静态导出（编译期擦除，运行时零加载）。
-// 运行时消费方（如 mcp hitl-resolve 的 `mod.resumeLoopGraph`）经本 barrel 属性访问
-// 语义不变；缺失时 getter 抛 LANGGRAPH_MISSING_GUIDE（含安装/切换指引，非静默）。
+// 缺失时加载面抛 LANGGRAPH_MISSING_GUIDE（含安装/切换指引，非静默）。
 export type { LoopGraphResult, LoopGraphOptions } from './graph';
 
 type LoopGraphModule = typeof import('./graph');
