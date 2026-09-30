@@ -299,10 +299,12 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 **规则集 plugin 类规则的供应链边界**：`--ruleset-path` 加载的 JSON 规则集中 `type: "plugin"` 的条目会触发模块加载——**默认拒绝**（plugin 规则关闭）；仅在显式设置 `SOFAGENT_ALLOW_PLUGIN_RULES=1` 时放行，且来源限定为 `@sofagent/` scope 包或本地绝对路径（裸名第三方包禁入）。**opt-in 即自担供应链风险**——加载的代码在审计进程内以当前用户权限运行。
 
-**精确边界（v1.4.5 核实）**：包内存在 7 处 `execSync`（shell 形态）调用，均为静态可信命令串——命令体零外部输入插值，插值面仅限「取回输出后 trim」：
+**精确边界（v1.5.5 重算）**：包内 `execSync`（shell 形态）调用共 **10 处命中**（audit 侧 **7** 处 + core 侧 **3** 处）；其中 **8 处为源码内直接调用**、**2 处内嵌于生成代码字符串**（不经本进程 shell——随注入的 hook 脚本 / `node -e` 子进程执行，两者同源同串）。**直接调用均为静态可信命令串**——命令体零外部输入插值，插值面仅限「取回输出后 trim」：
 
-- audit 侧 6 处：`webhook.ts`（`git rev-parse --show-toplevel` / `--short HEAD` / `git config user.name`）· `init.ts`（`which/where sofagent-daemon` / `sofagent-audit`）· `agent-shield.ts`（`ps aux`）
-- core 侧 1 处：`audit-history.ts`（`git rev-parse --git-dir`）
+- audit 侧 7 处：`webhook.ts`（3：`git rev-parse --show-toplevel` / `--short HEAD` / `git config user.name`）· `init.ts`（2：`which/where sofagent-daemon` / `sofagent-audit`——命令串取自平台判定三元式，两分支均为字面量，无插值）· `agent-shield.ts`（1：`ps aux`）· `hook-install.ts`（1：内嵌于注入 hook 脚本的字符串，`npm root -g`）
+- core 侧 3 处：`audit-history.ts`（1：`git rev-parse --git-dir`）· `repo-hash.ts`（1：`git rev-parse --show-toplevel`，可注入 `execFn` 的类型默认实现）· `dist-hash.ts`（1：内嵌于 `node -e` 字符串，`npm root -g`，与 audit 侧同串）
+
+> 两处内嵌形态随生成的 hook 脚本 / `node -e` 在子进程执行，命令串同为字面量、同样无外部输入插值；单列是因为它们不在本进程 shell 调用路径上。计数口径与复查命令见 `tools/check/literals.json` 的 `security-execsync-*` 两条（防漂移门禁，漂了即红）。
 
 审计主链（diff 解析 / 规则执行）不走这些路径。命令注入静态扫（`tools/check/check-shell-injection.sh`）持续覆盖此面。
 

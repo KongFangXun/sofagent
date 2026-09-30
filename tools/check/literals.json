@@ -64,6 +64,24 @@
       "level": "warn",
       "slow": false,
       "note": "devlog 章八 demo 行数表述（实测口径——B8 教训：文档引用行数一律 wc -l 实测禁估）。demo.ts 行数随修复批演进正常增长（交付时 1054，修复批后已 1058），漂移属「该重读」提醒而非阻断，故 warn 不 error；「~400 vs 实测 1054」的失实级漂移才升级处置。A17 符号数对账已被 public-api.mjs「文档声称符号数校验」段覆盖（ARCHITECTURE.md:256），按登记纪律③不重登"
+    },
+    {
+      "id": "security-execsync-total",
+      "file": "SECURITY.md",
+      "extract": "调用共 \\*\\*([0-9]+) 处命中",
+      "derive": "grep -rn 'execSync(' engine/audit/src engine/core/src --include='*.ts' | grep -v '__tests__' | wc -l | tr -d '[:space:]'",
+      "level": "error",
+      "slow": false,
+      "note": "SECURITY.md「精确边界」节的 execSync 命中总数（v1.5.5 重算为 10 = audit 7 + core 3）。锚定理由是原值 7 处（audit 6 + core 1）为 v1.4.5 核实值，此后 core 侧新增 repo-hash.ts 与 dist-hash.ts 两处调用而无人跟改——正是「手抄两份必然漂」的典型。derive 口径 = 全部 execSync( 调用点（含内嵌于生成代码字符串的 2 处；不含 import 行与注释，因二者都不带左括号）"
+    },
+    {
+      "id": "security-execsync-audit-side",
+      "file": "SECURITY.md",
+      "extract": "audit 侧 \\*\\*([0-9]+)\\*\\* 处",
+      "derive": "grep -rn 'execSync(' engine/audit/src --include='*.ts' | grep -v '__tests__' | wc -l | tr -d '[:space:]'",
+      "level": "error",
+      "slow": false,
+      "note": "SECURITY.md 同上节的 audit 侧 execSync 命中数（v1.5.5 重算为 7 = 6 直接 + 1 内嵌）。与 total 条同源不同范围，两条须同时为真——只改其一即造成新的自相矛盾（旧文本即犯此病：总数 7 与 audit 6 + core 1 当时自洽，但 core 涨到 3 后无人同步任一处）"
     }
   ]
 }
