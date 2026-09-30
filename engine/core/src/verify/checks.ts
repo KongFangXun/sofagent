@@ -27,6 +27,30 @@ import {
 } from './utils.js';
 
 // ════════════════════════════════════════
+// 宪法关键词期望（单一事实源）
+// ════════════════════════════════════════
+/**
+ * 宪法条数期望——以 `SKILL/SKILL.md` 实测为准（`### 4 底线` + `### 9 则铁律`）。
+ *
+ * v1.5.5：此前三处判定式各写一份（`/4.*底线|6.*铁律/` 两处 + `/4 底线|9 则铁律/` 一处），
+ *   其中 `6.*铁律` 半支**恒不命中**（SKILL.md 实为 9 则铁律）——该半支断言实质失效；
+ *   且判定式用「或」（`|`），只含「4 底线」而无铁律的内容也能通过，弱于文案声称的「含宪法」。
+ *   现收敛为本常量 + 合取（AND）判定，三处判定与文案统一引用。
+ */
+export const CONSTITUTION_KEYWORDS = {
+  bottomLines: 4,
+  ironRules: 9,
+} as const;
+
+/** 宪法关键词判定式（由 CONSTITUTION_KEYWORDS 派生——底线与铁律**两者都须在场**，且顺序在文内成立） */
+export const CONSTITUTION_PATTERN = new RegExp(
+  `${CONSTITUTION_KEYWORDS.bottomLines}\\s*则?\\s*底线[\\s\\S]*${CONSTITUTION_KEYWORDS.ironRules}\\s*则?\\s*铁律`,
+);
+
+/** 宪法条数文案（如「4底线+9则铁律」）——与判定式同源，防文案漂移 */
+export const CONSTITUTION_LABEL = `${CONSTITUTION_KEYWORDS.bottomLines}底线+${CONSTITUTION_KEYWORDS.ironRules}则铁律`;
+
+// ════════════════════════════════════════
 // quick 模式：4 项核心检查
 // ════════════════════════════════════════
 export function runQuickChecks(
@@ -48,8 +72,8 @@ export function runQuickChecks(
     if (existsSync(c)) { skillQuick = c; break; }
   }
   const skillContent = readFileContent(skillQuick);
-  if (skillQuick && existsSync(skillQuick) && (/4.*底线|6.*铁律/.test(skillContent))) {
-    v.checkPass(`SKILL.md 存在且含宪法（4底线+6则铁律）— ${skillQuick}`);
+  if (skillQuick && existsSync(skillQuick) && CONSTITUTION_PATTERN.test(skillContent)) {
+    v.checkPass(`SKILL.md 存在且含宪法（${CONSTITUTION_LABEL}）— ${skillQuick}`);
   } else {
     v.checkFail('SKILL.md 缺失或宪法关键词不全（已查找 ~/.workbuddy/skills/sofagent/ 和 ~/.openclaw/skills/sofagent/）');
   }
@@ -119,8 +143,8 @@ export function runWorkBuddyChecks(
   const wbSkill = join(HOME, '.workbuddy', 'skills', 'sofagent', 'SKILL.md');
   if (existsSync(wbSkill) && statSync(wbSkill).size > 0) {
     const content = readFileContent(wbSkill);
-    if (/4 底线|9 则铁律/.test(content)) {
-      v.checkPass('SKILL.md 已部署且含宪法（4底线+9则铁律内联）');
+    if (CONSTITUTION_PATTERN.test(content)) {
+      v.checkPass(`SKILL.md 已部署且含宪法（${CONSTITUTION_LABEL}内联）`);
     } else {
       v.checkWarn('SKILL.md 已部署但宪法内容缺失');
     }
@@ -527,8 +551,8 @@ export function runAllChecks(
     const skillFile = join(openclawDir, 'skills', 'sofagent', 'SKILL.md');
     if (existsSync(skillFile)) {
       const content = readFileContent(skillFile);
-      if (/4.*底线|6.*铁律/.test(content)) {
-        v.checkPass('契约层关键词完整（4底线+6则铁律内联在 SKILL.md）');
+      if (CONSTITUTION_PATTERN.test(content)) {
+        v.checkPass(`契约层关键词完整（${CONSTITUTION_LABEL}内联在 SKILL.md）`);
       } else {
         v.checkFail('SKILL.md 内容异常——宪法关键词缺失');
       }
