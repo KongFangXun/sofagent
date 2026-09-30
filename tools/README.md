@@ -70,7 +70,7 @@
 | `check/check-deps.sh` | 关键依赖版本检查（npm 包版本对齐） | 发版前 / 定期 |
 | `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（路径 / 函数定义 / 目录 / 快照行数 / **符号归属**——「某文件的某符号」断言该符号确定义于该文件；含「待新建·待归档·迁移目标」与「已退场」两类本就应当不存在的归类） | 发版 SOP |
 | `check/public-api.mjs` | public API 变更检测门禁（@public 符号集 vs 基线，未 bump 即 FAIL；v1.3.9 四） | CI / 发版前 |
-| `check/public-api-baseline.json` | @public 符号集基线（12 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
+| `check/public-api-baseline.json` | @public 符号集基线（13 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
 | `check/doc-postcheck.mjs` | **文档落盘后自检（排障非门禁）**：五项机械判据聚合既有口径——U+FFFD/ 墙式行格/ 字符数棘轮与抬头块（doc-char-ratchet 同判据）/ 标题粘连（「正文。## 标题」同行——行内代码剥离 + 格式说明豁免，正负样本 `--se…| 文档落盘后即时快检（全量防线仍归 doc-discipline / check-docs / check-anchors / check-table-shape / doc-score，不替代） |
 | `check/vitest-setup.mjs` | 全局测试隔离（预置 SOFAGENT_DATA 到 tmp，防测试污染真实 HOME——被 5 个 engine/*/vitest.config.ts setupFiles 引用） | vitest 自动挂载 |
