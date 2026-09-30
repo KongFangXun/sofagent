@@ -11,19 +11,15 @@
 // 疲劳度评分 0-100（加权）→ 写 daemon-health.json
 // → 超阈值给出 /compact 建议，超高位阈值给出重启建议。
 //
-// 🔴 **接线状态：本模块当前无生产调用点（E5 · v1.5.1 如实标注）**。
-//   `FatigueTracker` / `computeFatigueScore` / `writeFatigueReport` / `readFatigueReport`
-//   在 engine/ 内**仅被 `engine/daemon/src/index.ts` 的 barrel 再导出 + 测试**引用；
-//   `inspectors/registry.ts` / `cli.ts` / `cron.ts` 零引用 ⇒ **默认配置下不采集、不落盘**，
-//   daemon-health.json 里的 `fatigue` 字段实际不会由本模块写入（除非外部调用方自行接线）。
-//   v1.3.6 发版日志声称的「疲劳度评分 → 写 daemon-health.json（@hourly 采集）」**当前不成立**
-//   （发版史不改；缺口已如实披露于 docs/LIMITATIONS.md §七「历史遗留与迁移说明」）。
-//   接线前提（勿只写实现不写注册点）：需要一个真实的信号源——三信号分别来自
-//   tool-gate 调用结果（recordToolCall）/ 上下文窗口占用（setWindowOccupancy）/
-//   Agent 输出流（recordOutput），daemon 进程并不跑 Agent 主循环 ⇒ 应先由
-//   orchestrator 侧投递信号（或改为读取已有审计流回放），再在本进程挂
-//   `@hourly` 采集点；届时须在 cron.ts 的调度表 + inspectors/registry.ts 注册点
-//   同时落名，否则仍会静默不生效。
+// ✅ **接线状态（v1.5.5 批 18 更新）：已有一个生产调用点**——`cron.ts` 的
+//   scheduler-consume 失败流（每 5min 调度收尾：失败任务逐条 `recordToolCall(name,false)`
+//   后 `writeFatigueReport(assess())` 落 daemon-health.json）。当前覆盖**信号 1**
+//   （工具连续失败）；信号 2（窗口占用 setWindowOccupancy）/ 信号 3（输出相似度
+//   recordOutput）仍无生产喂入方，待编排侧（tool-gate 调用结果 / Agent 输出流）
+//   投递——daemon 进程不跑 Agent 主循环，这两路信号须由 orchestrator 侧供给。
+//   历史：v1.5.1 曾如实标注「本模块当前无生产调用点（E5）」；v1.3.6 发版日志
+//   声称的「@hourly 采集」与实际接线节奏（@5min 调度收尾）不一致——发版史不改，
+//   缺口披露见 docs/LIMITATIONS.md §七。
 //
 // ⚠️ 铁律：疲劳检测是观察层——评分失败绝不抛错阻塞 daemon 主循环。
 // ============================================================
