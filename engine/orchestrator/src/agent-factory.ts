@@ -19,6 +19,8 @@
 // 规则 + HMAC 链 + DAG 波次审计全部依赖的东西一点不动）。
 
 import type { ExecutionBackend, ExecutionTask, ExecutionResult } from './execution-backend.js';
+// v1.5.5 阶段三 F23：LangGraph 动态加载统一入口（本文件零静态 LangGraph import 不变）
+import { dynamicLangGraph } from './execution-state/lazy-langgraph';
 
 /** createReactAgent 调用参数（四调用点的公共形状） */
 export interface AgentFactoryParams {
@@ -66,8 +68,9 @@ export async function resolveAgentFactory(): Promise<ResolvedAgentFactory> {
 
   // 1. LangGraph 直连（现状路径——零行为变化）
   try {
-    // @ts-ignore — prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
-    const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+    // v1.5.5 阶段三 F23：经 lazy-langgraph 统一入口（缺失语义 = LANGGRAPH_MISSING_GUIDE 指引）
+    const prebuilt = await dynamicLangGraph<{ createReactAgent: unknown }>('/prebuilt');
+    const createReactAgent = prebuilt.createReactAgent;
     if (typeof createReactAgent === 'function') {
       cached = {
         factory: createReactAgent as unknown as AgentFactory,

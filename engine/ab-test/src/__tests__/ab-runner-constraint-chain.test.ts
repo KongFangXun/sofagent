@@ -34,8 +34,14 @@ vi.mock('@langchain/langgraph/prebuilt', () => ({
 }));
 
 // 让 LLM 解析不依赖真实环境（本测试只关心中间那条约束链）
+// v1.5.5 阶段三 F23：ab-runner 的 LangGraph 动态加载改经 dynamicLangGraph 统一入口。
+// orchestrator 以 dist（workspace symlink）解析，其**内部**的 prebuilt import 不吃
+// 本测试注册的 vi.mock——故 mock 工厂直接提供 dynamicLangGraph 假实现：在本测试
+// 模块图内 import('@langchain/langgraph/prebuilt')，正好被上方的 vi.mock 截住。
 vi.mock('@sofagent/orchestrator', () => ({
   resolveLLMModel: async () => ({ model: { mocked: true } }),
+  dynamicLangGraph: async <T>(subPath?: string) =>
+    (await import(subPath === '/prebuilt' ? '@langchain/langgraph/prebuilt' : '@langchain/langgraph')) as T,
 }));
 
 const CASES: TestCase[] = [1, 2, 3].map((i) => ({

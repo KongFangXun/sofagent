@@ -279,6 +279,12 @@
   setAuditSink as setExecutionAuditSink,
   emitAuditDigest,
   fileSink as statefulMetricsFileSink,
+  // v1.5.5 阶段三 F23：LangGraph 动态加载统一入口对根导出面开放（ab-runner 等
+  // 包内消费方经 '@sofagent/orchestrator' 根导入——包 exports 无深子路径，深路径
+  // import 会被 exports map 拦 ERR_PACKAGE_PATH_NOT_EXPORTED）
+  dynamicLangGraph,
+  LANGGRAPH_MISSING_GUIDE,
+  isModuleMissing,
 } from './execution-state';
 /* @public */ export type {
   NodeKind,
