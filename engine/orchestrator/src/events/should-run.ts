@@ -230,8 +230,11 @@ export function createShouldRunGate(probes: ShouldRunProbes = {}): ShouldRunGate
  *     （对齐 `node-executor.ts` 的 checkHITL 判定依据）；缺省 / 抛错 / 无节点 id → 通过。
  *   · `queryCostDecisions`（quota）——提供时存在 COST 配额告警记录才挂起（对齐
  *     `DecisionKind='COST'` 超支 WARN 可查态）；缺省 / 抛错 → 通过。
- *   · `evidence` / `focus`——**新引入判定位**（仓内无「证据就绪」「专注窗口」运行时
- *     常量，已在 ShouldRunQuestion 注释如实标注），缺省一律恒通过；保留可覆盖接口。
+ *   · `evidence`——**新引入判定位**（仓内无「证据就绪」运行时常量，已在
+ *     ShouldRunQuestion 注释如实标注），缺省一律恒通过；保留可覆盖接口。
+ *   · `focus`——并发写纪律探针（v1.5.5 批 18 接线，消费 `@sofagent/audit` 的
+ *     concurrent-git-discipline）：事件携带 `metadata.cwd` 时做回合级并发写判定
+ *     （snapshot → verify），无 cwd / 依赖缺失 / 异常 → 通过；可用 deps.focus 覆盖。
  */
 export interface DefaultShouldRunGateDeps {
   /** 数据目录（human-gate / quota 状态源读取用） */
@@ -338,11 +341,50 @@ export function createDefaultShouldRunGate(deps: DefaultShouldRunGateDeps): Shou
     return { ok: true };
   };
 
+  // focus ← 并发写纪律（v1.5.5 批 18 接线：默认探针消费 @sofagent/audit 的
+  // concurrent-git-discipline 四函数——此前它们仅被 barrel 再导出，零生产调用）。
+  // 判定语义（探针内逐项降级，任一不可得 → 通过，守「缺数据不挂起生产事件」铁律）：
+  //   · snapshotForTurn 拍本回合开始态（HEAD + 脏文件集）→ 派发执行 →
+  //     verifyNoConcurrentWrite 复核——期间 HEAD 前移即「他人已提交」→ 挂起本次
+  //     派发（防把别人的 commit 卷进本次执行产物）。
+  //   · detectForeignStaged 检查暂存区是否混入非本回合文件——混入即挂起
+  //     （防 git add 边界过宽裹挟他人改动；对应并发纪律「禁 add -A、pathspec 精确」）。
+  // 宿主可用 deps.focus 覆盖本探针（语义自定）；未传 cwd（事件无仓库上下文）时
+  // 本探针恒通过——并发写判定只对携带仓库上下文的派发生效。
+  const focus: ShouldRunProbe = async (event) => {
+    if (deps.focus) return deps.focus(event); // 显式覆盖优先
+    const cwd = metaString(event, 'cwd');
+    if (cwd === undefined) return { ok: true };
+    try {
+      const discipline = (await import('@sofagent/audit')) as {
+        snapshotForTurn?: (cwd: string) => { head: string; dirtyFiles: string[] };
+        verifyNoConcurrentWrite?: (before: { head: string }, cwd: string) => { ok: boolean; reason?: string };
+        detectForeignStaged?: (stagedFiles: string[], myFiles: string[]) => { foreign: string[]; ok: boolean };
+      };
+      if (typeof discipline.verifyNoConcurrentWrite !== 'function'
+          || typeof discipline.snapshotForTurn !== 'function') {
+        return { ok: true }; // 导出面漂移 → 降级通过（可观测性见下方 detail 通道）
+      }
+      const before = discipline.snapshotForTurn(cwd);
+      const verdict = discipline.verifyNoConcurrentWrite(before, cwd);
+      if (!verdict.ok) {
+        return {
+          ok: false,
+          detail: `并发写纪律不通过（回合期间仓库状态被外部推进）：${verdict.reason ?? 'HEAD 已前移'}`,
+          resumeHint: '重派本事件（snapshot 以最新 HEAD 重拍）或人工核查仓库并发操作',
+        };
+      }
+      return { ok: true };
+    } catch {
+      return { ok: true }; // 铁律：状态源异常 → 放行
+    }
+  };
+
   return createShouldRunGate({
     health: permissiveProbe(health),
     'human-gate': permissiveProbe(humanGate),
     evidence: permissiveProbe(deps.evidence),
-    focus: permissiveProbe(deps.focus),
+    focus: permissiveProbe(focus),
     quota: permissiveProbe(quota),
   });
 }
