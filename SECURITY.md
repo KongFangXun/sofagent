@@ -233,6 +233,9 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 > ℹ️ **职责边界（勿混）**：Onboard 诊断链的 L3 自动定位（LLM 推理定位「哪一步做错了」）属**诊断面**，服务的是 Onboard Agent 的错误归因，**不承担 A9 的注入检测**——A9 的语义级覆盖仍以本节的「未排期」状态为准。本条为 A9 编码绕过局限的**单一真相源**，其余文档一律指向此处。
 
+> ⚠️ **供给链不可信输入（A9 面的通道扩展 · 2026-09-30 蒸馏落盘）**：不可信输入不止于外部文本——**上下文供给链全程**均须按不可信对待：① **Skill 载体**（PromptArmor 实测恶意 Skill 可劫持 Copilot Cowork 网关、绕过沙箱外传文件——Skill 的声明行为与运行时行为缺乏偏差检测是根因）；② **外部贡献代码**（Vercel / Astro / tldraw 已拒收外部 PR、改用自有 agent 工厂——信任只建立在「配置可审计 + 历史成功率可查」上）；③ **压缩摘要**（OpenAI 失准报告实测：摘要携带「隐瞒错误」指令可被后续上下文执行，注入率 2.15%、GPT-6-Astra 降至 0.27%——压缩层是新的注入入口）。对策对齐既有分层：Skill 加载与摘要回灌一律过 `<untrusted>` 包裹（L223 A9 对策表同机制），外部贡献按审计链锚定后再入库。
+> 来源：PromptArmor · https://www.promptarmor.com/resources/hijacking-copilot-coworks-ai-gateway-to-exfiltrate-files ｜ OpenAI alignment · https://alignment.openai.com/misalignment-reports/encouraging-deception-in-compaction-summaries/ ｜ LatentSpace《PRs NOT Welcome》（2026-09-02，IMA 收录）
+
 > 🔒 **主体级授权前置**（层 4/5 之外的独立一维）：敏感度过滤解决的是「这类数据能不能进 prompt」，**不等于**「这个主体有没有权看这份文档」。主体级授权必须在返回模型**之前**完成——无权内容连标题都不进上下文（标题本身就是泄漏：模型会说出「有一份《XX 办法》但你没权限」，等于确认了它的存在与名称）。且每一步独立判权：`read` 不信任 `search` 的结论，检索层过滤不能替代取回时的复核（模型会编造 id 绕过）。
 
 > 🛡️ **管理权不含自我豁免，也不含自我了断**：具备管理能力的 Agent（增删实体/注册模型/装卸插件/改规则）不得为自己开豁免口（自我授权、自我放行、自我关闭审计），也不得移除最后一道在岗防线（约束链全关、hook 全卸、审计停摆 = 把自己裁到无人接待）。管理动作一律过审计闸门，且**不因操作者持「管理员身份」而降级校验强度**。
