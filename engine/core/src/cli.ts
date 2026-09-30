@@ -23,7 +23,7 @@ async function main() {
     console.log('  doctor        运行健康检查（环境 / 配置 / 数据目录 / Hook / 依赖）');
     console.log('  doctor --repair  自动修复可修复的问题（创建目录 / 安装依赖等）');
     console.log('  doctor --refresh 备份当前配置 → 重置默认 → 前后 diff 报告（写操作，留痕）');
-    console.log('  verify        装后验证（9 个检查类别）');
+    console.log('  verify        装后验证（11 个检查类别）');
     console.log('');
     console.log('Verify options:');
     console.log('  --json        JSON 机器可读输出');

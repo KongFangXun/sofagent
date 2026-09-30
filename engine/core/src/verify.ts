@@ -3,8 +3,8 @@
 // sofagent-verify · 装后验证脚本（TypeScript 版）——入口文件
 // v1.5.4 从 sofagent/audit/src/verify.ts 迁出
 // ============================================================
-// 验证 sofagent 安装完整性（9 个检查类别，~48 项动态）。
-// 由 verify.sh (942 行 bash) + windows/verify.ps1 合并而来，
+// 验证 sofagent 安装完整性（11 个检查类别 §1-§11，~48 项动态）。
+// 由 engine/scripts/verify.sh（bash 版，行数以 `wc -l engine/scripts/verify.sh` 实测为准）+ windows/verify.ps1 合并而来，
 // 注册为 npm 包 bin。最小运行时依赖：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块。
 //
 // 用法：
