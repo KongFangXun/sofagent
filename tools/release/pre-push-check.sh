@@ -38,6 +38,9 @@
 #   + check-npm-claims.mjs  → registry 实测声称对账（文档声称值 vs registry 在线真值；
 #                             离线 SKIP 可见不假绿 · 豁免台账 npm-claims-exempt.json · v1.5.2 A-6 接入）
 #   + npm run build         → 审计模块构建
+#   + check-release-closeout.sh → 发版收口门禁（v1.5.5 批 13：安装链三件套同源 + 版本面归零
+#                             + 版本状态无漂移 + main 三条 workflow 结论 + Release 幂等豁免；
+#                             复用 check-version --strict / check-npm-claims 既有零件，不另写第二份）
 #
 # 用法:
 #   ./tools/release/pre-push-check.sh   # 全量检查（v1.4.0 移入 release/：四门禁聚合入口）
@@ -952,6 +955,27 @@ if [ "$MINIMAL" = false ]; then
   else
     check_warn "tools/check/check-home-resolution-parity.mjs 不存在（守卫缺失）"
   fi
+fi
+
+# ════════════════════════════════════════
+# 发版收口门禁（v1.5.5 批 13）
+# ════════════════════════════════════════
+# 「发版动作做完了、门面没跟上」这一类缺陷（v1.5.4 实锤：bootstrap 钉值跨 tag 错位 /
+# README 版本行滞后 / main pr-check 红着收场 / Release workflow 因平台错误形态判失败）
+# 此前**每一处都有门禁能看见，但没有一条「收口语义」的硬判据**把它们串成可执行动作。
+if [ -f tools/check/check-release-closeout.sh ]; then
+  if bash tools/check/check-release-closeout.sh >/tmp/ppc-closeout.log 2>&1; then
+    if grep -q "降级跳过" /tmp/ppc-closeout.log; then
+      check_warn "check-release-closeout.sh 通过（含降级跳项——HEAD 未推送时 main workflow 项推后复核）"
+    else
+      check_pass "check-release-closeout.sh 全部通过（收口五项）"
+    fi
+  else
+    check_fail "check-release-closeout.sh 未过（发版收口不放行）"
+    grep -E "✗" /tmp/ppc-closeout.log | head -6 | sed 's/^/      /'
+  fi
+else
+  check_warn "tools/check/check-release-closeout.sh 不存在（守卫缺失）"
 fi
 
 # ════════════════════════════════════════
