@@ -16,43 +16,42 @@
     "noEmit": true,
     "sourceMap": true,
     "moduleResolution": "bundler",
-    "baseUrl": ".",
     "paths": {
       "@sofagent/inject": [
-        "engine/inject/src"
+        "./engine/inject/src"
       ],
       "@sofagent/ontology": [
-        "engine/ontology/src"
+        "./engine/ontology/src"
       ],
       "@sofagent/eval": [
-        "engine/eval/src"
+        "./engine/eval/src"
       ],
       "@sofagent/core": [
-        "engine/core/src"
+        "./engine/core/src"
       ],
       "@sofagent/audit": [
-        "engine/audit/src/public-api"
+        "./engine/audit/src/public-api"
       ],
       "@sofagent/mcp": [
-        "engine/mcp/src"
+        "./engine/mcp/src"
       ],
       "@sofagent/orchestrator": [
-        "engine/orchestrator/src"
+        "./engine/orchestrator/src"
       ],
       "@sofagent/daemon": [
-        "engine/daemon/src"
+        "./engine/daemon/src"
       ],
       "@sofagent/ab-test": [
-        "engine/ab-test/src"
+        "./engine/ab-test/src"
       ],
       "@sofagent/think": [
-        "engine/think/src"
+        "./engine/think/src"
       ],
       "@sofagent/evolve": [
-        "engine/evolve/src"
+        "./engine/evolve/src"
       ],
       "@sofagent/rules": [
-        "engine/rules/src"
+        "./engine/rules/src"
       ]
     },
     "types": [
