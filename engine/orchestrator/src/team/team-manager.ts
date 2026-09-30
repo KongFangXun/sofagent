@@ -16,6 +16,10 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { randomUUID } from 'crypto';
 import * as yaml from 'js-yaml';
+
+// v1.5.5 章四：阵型库面（schema 校验 + 模板实例化）——formations 不依赖 team，无循环。
+import * as formationsSchema from '../formations/schema';
+import * as formationsRegistry from '../formations/registry';
 import { change } from '@automerge/automerge';
 import type { Doc } from '@automerge/automerge';
 import { loadEnvConfig } from '@sofagent/core';
@@ -58,6 +62,12 @@ export interface TeamYamlBroadcastChannel {
 export interface TeamYaml {
   name: string;
   team_id: string;
+  /**
+   * v1.5.5 章四：可选阵型声明——声明后建队即按阵型模板装配成员拓扑（members 可缺省，
+   * 缺省走模板兜底）；显式 members 与模板并存时以显式为准并记录偏离。
+   * 校验复用 formations/schema.ts 的 validateFormation（fail-closed：非法名拒建队并列六合法值）。
+   */
+  formation?: string;
   members: TeamYamlMember[];
   shared_state: string[];
   broadcast_channels: TeamYamlBroadcastChannel[];
@@ -95,10 +105,42 @@ export function parseTeamYaml(yamlText: string): TeamYaml {
   if (typeof root.team_id !== 'string' || root.team_id.trim() === '') {
     throw new TeamYamlError('缺 team_id 字段');
   }
-  if (!Array.isArray(root.members) || root.members.length === 0) {
-    throw new TeamYamlError('members 缺失或为空数组');
+  // ── v1.5.5 章四：formation 可选声明──
+  // 声明阵型时 members 可缺省（走阵型模板兜底）；未声明阵型时 members 仍必填（存量零变化）。
+  const formation = typeof root.formation === 'string' && root.formation.trim() !== ''
+    ? root.formation.trim()
+    : undefined;
+  if (formation !== undefined) {
+    // fail-closed 校验：非法阵型名拒绝建队并列六合法值（不静默降级为无阵型）
+    const { validateFormation, FORMATION_NAMES } = formationsSchema;
+    // 最小形态契约（v1.5.4 接线批修正）：members 缺省 = 最小形态（模板兜底）——
+    // 传空数组会被判「显式写错」。此处只验阵型名合法性，members 由后续模板/显式分支处理。
+    const verdict = validateFormation({ formation });
+    if (!verdict.valid) {
+      throw new TeamYamlError(
+        `formation 非法（${formation}）——合法值：${FORMATION_NAMES.join(' / ')}`,
+      );
+    }
   }
-  const members: TeamYamlMember[] = root.members.map((m, i) => {
+  if (!Array.isArray(root.members) || root.members.length === 0) {
+    if (formation !== undefined) {
+      // 阵型模板兜底：按模板成员生成（trust 缺省 0.5；首个角色 leader 由模板承担）
+      // 动态 require 防循环依赖（formations 不依赖 team）。
+      const { FORMATION_TEMPLATES } = formationsRegistry;
+      const tpl = FORMATION_TEMPLATES[formation as keyof typeof FORMATION_TEMPLATES];
+      const generated: Array<{ agent_id: string; role: 'leader' | 'member'; trust: number }> =
+        tpl.members.map((m) => ({
+          agent_id: `${root.team_id}-${m.role}`,
+          role: m.role === 'leader' ? 'leader' : 'member',
+          trust: 0.5,
+        }));
+      (root as Record<string, unknown>)['members'] = generated;
+    } else {
+      throw new TeamYamlError('members 缺失或为空数组');
+    }
+  }
+  const membersRaw = (root as Record<string, unknown>)['members'];
+  const members: TeamYamlMember[] = (membersRaw as Array<Record<string, unknown>>).map((m, i) => {
     if (typeof m !== 'object' || m === null) throw new TeamYamlError(`members[${i}] 不是对象`);
     const mo = m as Record<string, unknown>;
     if (typeof mo.agent_id !== 'string' || mo.agent_id.trim() === '') {
@@ -130,6 +172,7 @@ export function parseTeamYaml(yamlText: string): TeamYaml {
   return {
     name: root.name,
     team_id: root.team_id,
+    formation,
     members,
     shared_state,
     broadcast_channels,
@@ -495,7 +538,56 @@ export class TeamManager {
  */
 export function createTeam(yamlText: string, options?: TeamManagerOptions): TeamManager {
   const teamYaml = parseTeamYaml(yamlText);
-  return new TeamManager(teamYaml, options);
+  const manager = new TeamManager(teamYaml, options);
+
+  // ── v1.5.5 章四：阵型实例化产物落盘 + 派发留痕 ──
+  // 声明 formation 时：instantiateFormation 实例化 → 成员拓扑与交接边写
+  // data/teams/<team-id>/formation.json；交接事件经 recordHandoff 挂 decision-log
+  // （who-派发-who，可按 team-id 查询）。显式 members 与模板并存 ⇒ 以显式为准并
+  // 记录偏离（不静默覆盖）。未声明 formation ⇒ 本段零执行（存量行为零变化）。
+  if (teamYaml.formation) {
+    try {
+      const { instantiateFormation } = formationsRegistry;
+      const instance = instantiateFormation({
+        formation: teamYaml.formation,
+        // 显式 members 并存时以显式为准（映射到 FormationMember 形态）
+        members: teamYaml.members.map((m) => ({
+          role: m.role === 'leader' ? 'leader' : m.role,
+          agentType: 'engineer',
+        })),
+        edges: [],
+      });
+      const audit = instance.exportFormationAudit();
+      const dir = join(manager['dataDir'] ?? loadEnvConfig().dataDir, 'teams', teamYaml.team_id);
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+      // 偏离记录：模板拓扑 vs 实际 members（显式为准）
+      const { FORMATION_TEMPLATES } = formationsRegistry;
+      const tpl = FORMATION_TEMPLATES[teamYaml.formation as keyof typeof FORMATION_TEMPLATES];
+      const templateRoles = tpl.members.map((m) => m.role).sort().join(',');
+      const actualRoles = teamYaml.members.map((m) => m.role).sort().join(',');
+      writeFileSync(join(dir, 'formation.json'), JSON.stringify({
+        team_id: teamYaml.team_id,
+        formation: teamYaml.formation,
+        instantiated_at: new Date().toISOString(),
+        members: audit.members,
+        handoffs: audit.handoffs,
+        template_deviation: templateRoles === actualRoles
+          ? null
+          : { template: templateRoles, actual: actualRoles, note: '显式 members 与模板并存——以显式为准' },
+      }, null, 2));
+
+      // 派发留痕：模板交接边逐条挂 decision-log（recordHandoff——「阵型是否照跑」可查）
+      for (const edge of tpl.edges) {
+        try { instance.recordHandoff(edge); } catch { /* 单条留痕失败不阻塞建队 */ }
+      }
+    } catch (err) {
+      // 阵型落盘失败不阻塞建队本体（TeamManager 已建），但显式告警——不静默
+      console.warn(
+        `[team-manager] formation 实例化落盘失败（团队本体已建）: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+  return manager;
 }
 
 /**

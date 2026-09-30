@@ -55,11 +55,11 @@ export function teamCreate(args: TeamCreateArgs): TeamCreateResult {
   }
 
   // 解析 team.yml 校验格式（延迟导入 orchestrator 的 parseTeamYaml）
-  let parseTeamYaml: (text: string) => { team_id: string; name: string; members: unknown[] };
+  let parseTeamYaml: (text: string) => { team_id: string; name: string; members: unknown[]; formation?: string };
   try {
     // 同步 require——orchestrator 是 mcp 的 dependencies（已声明）
     const mod = require('@sofagent/orchestrator') as {
-      parseTeamYaml: (text: string) => { team_id: string; name: string; members: unknown[] };
+      parseTeamYaml: (text: string) => { team_id: string; name: string; members: unknown[]; formation?: string };
     };
     parseTeamYaml = mod.parseTeamYaml;
   } catch {
@@ -70,7 +70,7 @@ export function teamCreate(args: TeamCreateArgs): TeamCreateResult {
     };
   }
 
-  let parsed: { team_id: string; name: string; members: unknown[] };
+  let parsed: { team_id: string; name: string; members: unknown[]; formation?: string };
   try {
     parsed = parseTeamYaml(teamYaml);
   } catch (err) {
@@ -114,14 +114,24 @@ export function teamCreate(args: TeamCreateArgs): TeamCreateResult {
     );
   }
 
+  // v1.5.5 章四：响应体带阵型拓扑摘要（声明 formation 时）
+  const formationSummary = parsed.formation
+    ? {
+        formation: parsed.formation,
+        topology: (parsed.members as Array<{ role?: string }>).map((m) => m.role ?? 'member'),
+        formationFile: join(teamDir, 'formation.json'),
+      }
+    : undefined;
+
   return {
-    text: `[sofagent] 团队「${parsed.name}」创建成功（${parsed.members.length} 名成员，ID: ${parsed.team_id}）`,
+    text: `[sofagent] 团队「${parsed.name}」创建成功（${parsed.members.length} 名成员，ID: ${parsed.team_id}${parsed.formation ? `，阵型 ${parsed.formation}` : ''}）`,
     data: {
       ok: true,
       teamId: parsed.team_id,
       teamName: parsed.name,
       memberCount: parsed.members.length,
       filePath,
+      ...(formationSummary ? { formationSummary } : {}),
     },
   };
 }
