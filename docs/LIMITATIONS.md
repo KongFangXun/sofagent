@@ -562,7 +562,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 端到端验收测试覆盖
 
-`playbook/acceptance-test.sh`（场景数持续扩展，当前 388 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
+`playbook/acceptance-test.sh`（场景数持续扩展，当前 392 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
 - **CI 已覆盖**：单元测试审计核心 1457 个、全 workspace 5642 个测试（口径见本文件「测试覆盖范围」节）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 392 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
