@@ -91,7 +91,7 @@ evolve) — works right after installation |
 **30-second lightweight trial** (first run includes the npx package fetch, reruns finish in seconds; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p
 @sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
 
-> 💡 For the trial, keep commit messages **at least 6 characters** (e.g. `initial audit test`) — A19 flags ultra-short messages (`init`/`add`) by design (it guards against meaningless commit messages), not a malfunction.
+> 💡 For the trial, keep commit messages **at least 6 characters** (e.g. `initial audit test`) — A19 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) flags ultra-short messages (`init`/`add`) by design (it guards against meaningless commit messages), not a malfunction.
 
 **Five-minute theatrical demo** (shipped in v1.5.1; sandboxed, zero touch on real files): `npx -y -p @sofagent/audit sofagent-audit demo` — one command runs the full five-act chain: sandbox
 build → injection → deliberate violation → audit interception → snapshot rollback → HMAC evidence export
@@ -120,7 +120,7 @@ surface):
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
 - 🧱 **25 audit rules + 104 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 20 of the 25 rules run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs, active once an Agent is connected), 1 filesystem scan;
-  log-based rules such as A7/A8 are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design);
+  log-based rules such as A7/A8 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design);
 evidence is based on local diffs; **not fail-closed by default** — the config can be tampered with and the hooks
   skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 25 = 17 default + 8 extensions)
 - 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
@@ -251,7 +251,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > ⚠️ This step is a **one-off audit** (inside a single process) — it does not install a git hook, so later commits will not be auto-blocked. For continuous protection run `sofagent-audit --init` (see Full install below).
 
-Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and
+Here's what it looks like when a known-format secret leak is blocked (real output; A2 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and
 other known formats — generic secret shapes are intentionally out of scope, a conservative design against false
 positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). This is exactly the scenario shown in
 the screenshot above (first screen); not repeated here.
