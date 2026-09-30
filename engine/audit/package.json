@@ -8,6 +8,14 @@
     ".": {
       "types": "./dist/public-api.d.ts",
       "default": "./dist/public-api.js"
+    },
+    "./public-api": {
+      "types": "./dist/public-api.d.ts",
+      "default": "./dist/public-api.js"
+    },
+    "./dist/*.js": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
     }
   },
   "bin": {
