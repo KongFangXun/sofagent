@@ -188,6 +188,51 @@ export class ConfigLoadError extends Error {
  * 配置解析错误——非法 YAML 不再静默（v1.1.3 新增）
  * 含 cause 链，便于调用方访问原始错误。
  */
+/**
+ * 关键字段运行时类型校验（v1.5.5 批 20）。
+ *
+ * 缺陷：配置合并是**纯类型断言**（`const result: Partial<AuditConfig> = { ...(audit as Partial<AuditConfig>) }`），
+ *   TypeScript 的静态类型在运行时不生效。**数值类字段**已有既有清洁器兜底
+ *   （v1.4.5 T2 `sanitizeNumericConfig`：非法值回退安全默认值 + WARN），但**开关类字段**
+ *   没有等价守卫——`extendedRulesEnabled: "true"` / `strict: "true"` 这类字符串会原样生效，
+ *   且 `if ("false")` 恒真：开关的实际行为与字面值相反，且无人察觉。
+ *
+ * 选定做法：只补**开关类与 rules 值**这两类**既有守卫未覆盖**的面
+ *   （数值类刻意不碰——由 sanitizeNumericConfig 统一处理，避免两条路径打架）；
+ *   非法即抛 ConfigParseError，报**字段名 + 期望类型 + 实际值**。
+ */
+function assertConfigFieldTypes(result: Partial<AuditConfig>, filePath: string): void {
+  const rejects: Array<{ key: string; expected: string; ok: (v: unknown) => boolean }> = [
+    // 数值类刻意不在列：v1.4.5 T2 的 sanitizeNumericConfig 已统一兜底（回退安全默认值 + WARN），
+    // 此处再抛错会抢在它前面，把「回退」语义变成「解析失败」——两条路径打架。
+    { key: 'extendedRulesEnabled', expected: 'boolean', ok: (v) => typeof v === 'boolean' },
+    { key: 'strict', expected: 'boolean', ok: (v) => typeof v === 'boolean' },
+  ];
+  const rec = result as Record<string, unknown>;
+  for (const r of rejects) {
+    if (!(r.key in rec)) continue;
+    const v = rec[r.key];
+    if (v === undefined) continue;
+    if (!r.ok(v)) {
+      throw new ConfigParseError(
+        `配置字段 ${r.key} 类型非法：期望 ${r.expected}，实际 ${typeof v}（值 ${JSON.stringify(v)}）`,
+        filePath, '-', '-',
+      );
+    }
+  }
+  // rules 的 value 必须是 boolean（写成字符串时开关语义失效：`if ("false")` 恒真）
+  if (rec['rules'] && typeof rec['rules'] === 'object') {
+    for (const [k, v] of Object.entries(rec['rules'] as Record<string, unknown>)) {
+      if (typeof v !== 'boolean') {
+        throw new ConfigParseError(
+          `配置字段 rules.${k} 类型非法：期望 boolean，实际 ${typeof v}（值 ${JSON.stringify(v)}）`,
+          filePath, '-', '-',
+        );
+      }
+    }
+  }
+}
+
 export class ConfigParseError extends Error {
   filePath: string;
   line: number | string;
@@ -447,6 +492,8 @@ function tryLoadYaml(filePath: string, strict?: boolean): Partial<AuditConfig> |
         // v1.3.4 交付 1-G（P1）：检测未知配置键 + 拼写建议（防止 extendedRules 静默失效）
         warnUnknownConfigKeys(audit as Record<string, unknown>, filePath);
         const result: Partial<AuditConfig> = { ...(audit as Partial<AuditConfig>) };
+        // v1.5.5 批 20：合并后补关键字段运行时类型校验（纯类型断言拦不住非法值）
+        assertConfigFieldTypes(result, filePath);
         if (loopSection && typeof loopSection === 'object') {
           result.loop = loopSection as AuditConfig['loop'];
         }
@@ -462,7 +509,10 @@ function tryLoadYaml(filePath: string, strict?: boolean): Partial<AuditConfig> |
       ];
       const hasAny = topLevelAuditKeys.some(k => k in parsed);
       if (hasAny) {
-        return parsed as Partial<AuditConfig>;
+        const result = parsed as Partial<AuditConfig>;
+        // v1.5.5 批 20：同款运行时类型校验（顶层无 audit 包装路径）
+        assertConfigFieldTypes(result, filePath);
+        return result;
       }
       // 既无 audit 段也无任何已知字段——确实不是有效配置
       // v1.3.8 P1-B3：[sofagent] 前缀（console.warn 走 stderr）
