@@ -10,7 +10,10 @@
 //   此字段流转，不依赖外部全局变量
 // ============================================================
 
-import { Annotation } from '@langchain/langgraph';
+// v1.5.5 章五：`import { Annotation } from '@langchain/langgraph'` 已移出本文件——
+// state.ts 现为**零 LangGraph 依赖**的纯类型 + 纯函数模块（可被 dsh-only 裁剪安装态
+// 安全静态引用）。LoopStateAnnotation（LangGraph 运行时通道定义）随迁移至 graph.ts
+// 顶部构造（graph.ts 本身只经动态 import 进入，见 execution-state/lazy-langgraph.ts）。
 
 /** 审计判定结果 */
 export type AuditVerdict = 'PASS' | 'FAIL' | 'WARN';
@@ -148,47 +151,7 @@ export function emptyArtifacts(task: string): LoopArtifacts {
   };
 }
 
-/**
- * LangGraph 状态通道定义——与 LoopGraphState 字段一一对应。
- * artifacts 用浅合并 reducer，节点可以只返回增量字段。
- */
-export const LoopStateAnnotation = Annotation.Root({
-  currentNode: Annotation<LoopGraphState['currentNode']>({
-    reducer: (_prev, next) => next,
-    default: () => 'start' as const,
-  }),
-  auditResult: Annotation<AuditVerdict | null>({
-    reducer: (_prev, next) => next,
-    default: () => null,
-  }),
-  retryCount: Annotation<number>({
-    reducer: (_prev, next) => next,
-    default: () => 0,
-  }),
-  checkpointId: Annotation<string>({
-    reducer: (_prev, next) => next,
-    default: () => '',
-  }),
-  artifacts: Annotation<LoopArtifacts, Partial<LoopArtifacts>>({
-    reducer: (prev, next) => ({ ...prev, ...next }),
-    default: () => emptyArtifacts(''),
-  }),
-  finalStatus: Annotation<LoopFinalStatus>({
-    reducer: (_prev, next) => next,
-    default: () => 'running' as const,
-  }),
-  resumeFrom: Annotation<LoopNodeName | null>({
-    reducer: (_prev, next) => next,
-    default: () => null,
-  }),
-  // v1.2.2 P4：降级等级通道（0=正常 / 1=已降级范围 / 2=低可信）
-  degradationLevel: Annotation<number>({
-    reducer: (_prev, next) => next,
-    default: () => 0,
-  }),
-  // v1.2.7: Session Goal 通道（目标驱动收敛）
-  goal: Annotation<SessionGoalState | null>({
-    reducer: (_prev, next) => next,
-    default: () => null,
-  }),
-});
+// v1.5.5 章五：LoopStateAnnotation 定义已迁至 graph.ts（见其顶部 v1.5.5 注记）——
+// 本文件保持零 LangGraph import；类型契约（LoopGraphState / LoopArtifacts 等）不变。
+
+

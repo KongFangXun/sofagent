@@ -13,9 +13,8 @@
 // 状态机均不同——三者各自独立，不合并。
 // ============================================================
 
-// State
+// State（v1.5.5 章五：纯类型 + 纯函数——state.ts 已零 LangGraph 依赖，可静态导出）
 export {
-  LoopStateAnnotation,
   emptyArtifacts,
   type LoopGraphState,
   type LoopArtifacts,
@@ -42,18 +41,39 @@ export {
   type HumanDecision,
 } from './nodes';
 
-// Graph & Routing（单任务 FORGE）
-export {
-  runLoopGraph,
-  resumeLoopGraph,
-  buildLoopGraph,
-  resolveCheckpointDir,
-  resolveResumeNode,
-  routeAfterAudit,
-  routeAfterHuman,
-  type LoopGraphResult,
-  type LoopGraphOptions,
-} from './graph';
+// Graph & Routing（单任务 FORGE）—— v1.5.5 章五：graph.ts 静态依赖
+// @langchain/langgraph（StateGraph/Annotation），为保 dsh-only 裁剪安装态零 LangGraph
+// import，运行时函数不再静态 re-export，改为**惰性 getter**（属性访问时才动态 import）。
+// 类型经 `import type` 静态导出（编译期擦除，运行时零加载）。
+// 运行时消费方（如 mcp hitl-resolve 的 `mod.resumeLoopGraph`）经本 barrel 属性访问
+// 语义不变；缺失时 getter 抛 LANGGRAPH_MISSING_GUIDE（含安装/切换指引，非静默）。
+export type { LoopGraphResult, LoopGraphOptions } from './graph';
+
+type LoopGraphModule = typeof import('./graph');
+
+let loopGraphPromise: Promise<LoopGraphModule> | null = null;
+
+/** 异步加载面（内部）：缺失时翻译为 LANGGRAPH_MISSING_GUIDE（含安装/切换指引） */
+function loadLoopGraphAsync(): Promise<LoopGraphModule> {
+  if (!loopGraphPromise) {
+    loopGraphPromise = import('./graph').catch((err) => {
+      loopGraphPromise = null; // 失败不缓存——下次访问重试
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const guard = require('../execution-state/lazy-langgraph') as
+        typeof import('../execution-state/lazy-langgraph');
+      if (guard.isModuleMissing(err)) throw new Error(guard.LANGGRAPH_MISSING_GUIDE);
+      throw err;
+    });
+  }
+  return loopGraphPromise;
+}
+
+export { loadLoopGraphAsync };
+
+/** 对外语义名：解析 loop graph 运行时面（缺失时报 LANGGRAPH_MISSING_GUIDE） */
+export function loadLoopGraphRuntime(): Promise<LoopGraphModule> {
+  return loadLoopGraphAsync();
+}
 
 // v1.2.4 P2b：Checker 节点
 export {

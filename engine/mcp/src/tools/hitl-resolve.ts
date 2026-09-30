@@ -93,11 +93,17 @@ export async function hitlResolve(args: HitlResolveArgs): Promise<HitlResolveRes
     if (typeof mod.writeHITLResponse !== 'function') {
       throw new Error('writeHITLResponse 不可用');
     }
-    if (typeof mod.resumeLoopGraph !== 'function') {
+    writeHITLResponse = mod.writeHITLResponse;
+    // v1.5.5 章五：resumeLoopGraph 等 loop graph 运行时面不再是 barrel 直接属性——
+    // 经 loadLoopGraphRuntime() 异步解析（dsh-only 裁剪安装态零 LangGraph import）。
+    if (typeof mod.loadLoopGraphRuntime !== 'function') {
+      throw new Error('loadLoopGraphRuntime 不可用');
+    }
+    const runtime = await mod.loadLoopGraphRuntime();
+    if (typeof runtime.resumeLoopGraph !== 'function') {
       throw new Error('resumeLoopGraph 不可用');
     }
-    writeHITLResponse = mod.writeHITLResponse;
-    resumeLoopGraph = mod.resumeLoopGraph;
+    resumeLoopGraph = runtime.resumeLoopGraph;
   } catch {
     return {
       text: '[sofagent] HITL 决议失败：@sofagent/orchestrator 未安装或不可用',

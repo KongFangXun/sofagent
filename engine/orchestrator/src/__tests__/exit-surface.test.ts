@@ -159,12 +159,10 @@ describe('条目 9 · orchestrator 窄出口消费面契约', () => {
     expect(pkg.exports['./*'], '@sofagent/train 缺 "./*" 通配出口').toBeTruthy();
   });
 
-  it('./loop 提供 FORGE 执行面核心导出（P0 消费面；本批暂无消费者）', async () => {
+  it('./loop 提供 FORGE 执行面核心导出（v1.5.5 章五语义更新：LangGraph 运行时面改异步入口）', async () => {
     const l = (await import('../loop')) as Record<string, unknown>;
+    // 纯函数面（零 LangGraph 依赖）——仍是直接函数属性
     for (const fn of [
-      'runLoopGraph',
-      'resumeLoopGraph',
-      'buildLoopGraph',
       'defaultDeps',
       'makeEngineerNode',
       'makeAuditNode',
@@ -172,6 +170,14 @@ describe('条目 9 · orchestrator 窄出口消费面契约', () => {
       'makeHumanConfirmNode',
     ]) {
       expect(typeof l[fn], `./loop 缺导出 ${fn}`).toBe('function');
+    }
+    // LangGraph 运行时面（runLoopGraph/resumeLoopGraph/buildLoopGraph）——v1.5.5 章五起
+    // 经 loadLoopGraphRuntime() 异步解析（dsh-only 裁剪安装态零 LangGraph import 的前提），
+    // 不再是 barrel 的直接函数属性。
+    expect(typeof l.loadLoopGraphRuntime, './loop 缺导出 loadLoopGraphRuntime').toBe('function');
+    const runtime = await (l.loadLoopGraphRuntime as () => Promise<Record<string, unknown>>)();
+    for (const fn of ['runLoopGraph', 'resumeLoopGraph', 'buildLoopGraph']) {
+      expect(typeof runtime[fn], `loop graph 运行时面缺 ${fn}`).toBe('function');
     }
   });
 

@@ -258,14 +258,13 @@
 /* @public */ export type { ToolGateOptions, ExecutableTool } from './tools';
 
 // Graph (v1.1.3 — LangGraph StateGraph 节点级流转)
+// v1.5.5 章五：LangGraph 运行时函数（runLoopGraph 等 7 个）不再静态 re-export——
+// graph.ts 静态依赖 @langchain/langgraph（已降 optionalDependencies），静态导出会让
+// dsh-only 裁剪安装态被动拉入 LangGraph。改为导出 loadLoopGraphRuntime() 异步入口
+// （消费方 await 解析后取函数；缺失时报 LANGGRAPH_MISSING_GUIDE 含安装/切换指引）。
+// emptyArtifacts / defaultDeps 等纯函数保持静态（零 LangGraph 依赖）。
+/* @public */ export { loadLoopGraphRuntime } from './loop';
 /* @public */ export {
-  runLoopGraph,
-  resumeLoopGraph,
-  buildLoopGraph,
-  resolveCheckpointDir,
-  resolveResumeNode,
-  routeAfterAudit,
-  routeAfterHuman,
   emptyArtifacts,
   defaultDeps,
   makeEngineerNode,

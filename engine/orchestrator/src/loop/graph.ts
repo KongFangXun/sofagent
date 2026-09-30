@@ -20,16 +20,68 @@
 // checkpoint + HITL 状态机闭环。
 // ============================================================
 
-import { StateGraph, START, END } from '@langchain/langgraph';
+import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
+
+
 import { join } from 'path';
 import { loadEnvConfig } from '@sofagent/core';
 import {
-  LoopStateAnnotation,
   emptyArtifacts,
   type LoopGraphState,
   type LoopNodeName,
   type SessionGoalState,
+  type AuditVerdict,
+  type LoopArtifacts,
+  type LoopFinalStatus,
 } from './state';
+
+// v1.5.5 章五：LoopStateAnnotation 自 state.ts 迁入（LangGraph 运行时通道定义与
+// StateGraph 同属 LangGraph 面，集中在本文件——state.ts 保持零 LangGraph 依赖）。
+/**
+ * LangGraph 状态通道定义——与 LoopGraphState 字段一一对应。
+ * artifacts 用浅合并 reducer，节点可以只返回增量字段。
+ * v1.5.5 章五自 state.ts 迁入（见上注记）。
+ */
+export const LoopStateAnnotation = Annotation.Root({
+  currentNode: Annotation<LoopGraphState['currentNode']>({
+    reducer: (_prev, next) => next,
+    default: () => 'start' as const,
+  }),
+  auditResult: Annotation<AuditVerdict | null>({
+    reducer: (_prev, next) => next,
+    default: () => null,
+  }),
+  retryCount: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 0,
+  }),
+  checkpointId: Annotation<string>({
+    reducer: (_prev, next) => next,
+    default: () => '',
+  }),
+  artifacts: Annotation<LoopArtifacts, Partial<LoopArtifacts>>({
+    reducer: (prev, next) => ({ ...prev, ...next }),
+    default: () => emptyArtifacts(''),
+  }),
+  finalStatus: Annotation<LoopFinalStatus>({
+    reducer: (_prev, next) => next,
+    default: () => 'running' as const,
+  }),
+  resumeFrom: Annotation<LoopNodeName | null>({
+    reducer: (_prev, next) => next,
+    default: () => null,
+  }),
+  // v1.2.2 P4：降级等级通道（0=正常 / 1=已降级范围 / 2=低可信）
+  degradationLevel: Annotation<number>({
+    reducer: (_prev, next) => next,
+    default: () => 0,
+  }),
+  // v1.2.7: Session Goal 通道（目标驱动收敛）
+  goal: Annotation<SessionGoalState | null>({
+    reducer: (_prev, next) => next,
+    default: () => null,
+  }),
+});
 import { FileCheckpointer, type CheckpointRecord } from '../graph/checkpoint';
 import { readHITLResponse, type HITLDecision } from '../hitl';
 import {
