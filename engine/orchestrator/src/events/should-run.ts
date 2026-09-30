@@ -18,6 +18,7 @@
 // ============================================================
 
 import type { SofagentEvent } from './types';
+import { execFileSync } from 'node:child_process';
 
 // ────────────────────────────────────────────────────────────
 // 类型
@@ -360,6 +361,7 @@ export function createDefaultShouldRunGate(deps: DefaultShouldRunGateDeps): Shou
         snapshotForTurn?: (cwd: string) => { head: string; dirtyFiles: string[] };
         verifyNoConcurrentWrite?: (before: { head: string }, cwd: string) => { ok: boolean; reason?: string };
         detectForeignStaged?: (stagedFiles: string[], myFiles: string[]) => { foreign: string[]; ok: boolean };
+        checkPathspecDiscipline?: (command: string) => { ok: boolean; reason?: string };
       };
       if (typeof discipline.verifyNoConcurrentWrite !== 'function'
           || typeof discipline.snapshotForTurn !== 'function') {
@@ -373,6 +375,39 @@ export function createDefaultShouldRunGate(deps: DefaultShouldRunGateDeps): Shou
           detail: `并发写纪律不通过（回合期间仓库状态被外部推进）：${verdict.reason ?? 'HEAD 已前移'}`,
           resumeHint: '重派本事件（snapshot 以最新 HEAD 重拍）或人工核查仓库并发操作',
         };
+      }
+      // 暂存区越界检测（批 18-1 补实调）：本回合计划产物之外有已暂存文件 → 挂起
+      // （防派发产出的 commit 裹挟他人改动；myFiles 口径 = 开局快照的脏文件清单）。
+      if (typeof discipline.detectForeignStaged === 'function') {
+        let stagedFiles: string[] = [];
+        try {
+          stagedFiles = execFileSync(
+            'git', ['diff', '--cached', '--name-only'], { cwd, encoding: 'utf-8' },
+          ).split('\n').map((s) => s.trim()).filter((s) => s.length > 0);
+        } catch {
+          stagedFiles = []; // git 不可用 → 无从判定越界 → 降级跳过本检测
+        }
+        const foreign = discipline.detectForeignStaged(stagedFiles, before.dirtyFiles);
+        if (!foreign.ok) {
+          return {
+            ok: false,
+            detail: `暂存区混入非本回合文件（${foreign.foreign.length} 个）——先提交/暂存归属方再派发`,
+            resumeHint: '清理暂存区（git restore --staged）后重派本事件',
+          };
+        }
+      }
+      // pathspec 纪律检测（批 18-1 补实调）：派发命令若带裸 add -A / git add . 形态 → 拒绝
+      // （对应并发纪律「禁 add -A、pathspec 精确」；命令来源 = 事件 meta 的 plan 字段）。
+      const plannedCmd = metaString(event, 'plan');
+      if (plannedCmd !== undefined && typeof discipline.checkPathspecDiscipline === 'function') {
+        const pathspecVerdict = discipline.checkPathspecDiscipline(plannedCmd);
+        if (!pathspecVerdict.ok) {
+          return {
+            ok: false,
+            detail: `派发命令违反 pathspec 纪律：${pathspecVerdict.reason ?? '疑似裸 add -A / add . 形态'}`,
+            resumeHint: '改用精确 pathspec（git add <文件列表>）后重派本事件',
+          };
+        }
       }
       return { ok: true };
     } catch {
