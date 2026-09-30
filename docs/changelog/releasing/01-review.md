@@ -12,9 +12,19 @@
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | | **单次草稿优先**：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——单次 LLM 调用生成 16 视角审查草稿（省 worker 探查循环；16 = playbook 22 视角中的静态可审子集） | 16 视角审查草稿 |
-| 二 | | **盲审兜底**：草稿中「待取证」项 / 高风险变更才启动 fresh-eyes-loop 全流程：对 harness（DSH 无头 / 新 session）注入主任务协议（`FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节，占位符替换实际值），由编排者逐角色调执行器自动收敛。run 收口仍有 P0/P1 残留按「修复批协议」接手。loop 产出的 P0/P1/P2 修复即本版本 BugFix 批次主体；修复只 commit 不 push | 审查报告 + loop 修复 → BugFix 批次 |
+| 一 | | **单次草稿优先** | 16 视角审查草稿 |
+| 二 | | **盲审兜底** | 审查报告 + loop 修复 → BugFix 批次 |
 | 三 | | **对话式多轮审查** | bugfix-prompt.md + 修复批收编 commit |
+
+#### 二 · 盲审兜底
+
+草稿中「待取证」项 / 高风险变更才启动 fresh-eyes-loop 全流程：对 harness（DSH 无头 / 新 session）注入主任务协议（`FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节，占位符替换实际值），由编排者逐角色调执行器自动收敛。run 收口仍有 P0/P1 残留按「修复批协议」接手。loop 产出的 P0/P1/P2 修复即本版本 BugFix 批次主体；修复只 commit 不 push
+
+
+#### 一 · 单次草稿优先
+
+`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——单次 LLM 调用生成 16 视角审查草稿（省 worker 探查循环；16 = playbook 22 视角中的静态可审子集）
+
 
 #### 三 · 对话式多轮审查
 

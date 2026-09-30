@@ -35,14 +35,20 @@
 
 | 四 | | **🔴 `npm run build` 重建 dist 产物**（源码改了 dist 没改 = CLI 版本号不对）。🔴 **rebuild 后必须重置 dist 基线** | `node engine/audit/dist/index.js --help` 显示正确版本 + 基线同步后 commit 放行 |
 
-#### 四 · 🔴 `npm run build` 重建 dist 产物**（源码改了 dist 没改 = CLI 版本号不对）。🔴 **rebuild 后必须重置 dist 基线
+#### 四 · 🔴 `npm run build` 重建 dist
 
+产物**（源码改了 dist 没改 = CLI 版本号不对）。🔴 **rebuild 后必须重置 dist 基线
 `bash tools/audit-baseline-sync.sh`——否则下一次 commit 被 P1-A2 影子审计器守卫拦截（dist 聚合哈希 vs 基线不匹配，属刻意防御的正常拦截非误报）。**基线语义是「多入口聚合哈希」**：`tools/audit-dist-hash.mjs` 聚合 dist 下**全部** `.js`（排序逐文件哈希再聚合），基线锚 `~/.sofagent/internal/audit-dist-hash.txt`——不是单文件 `audit-hash.txt`（后者仅作兼容锚保留，doctor 语义不同） 
 
 | 五 | | **跨文档锚点校验** | `node tools/check/check-anchors.mjs` 全绿 |
 | 六 | | **🔴 hook 端到端实测**（见下方脚本） | 拦截 exit 2 + 放行 exit 0 |
 | 七 | | **shell 变量定界守卫**（`tools/` 下全部 `.sh` 中 `$VAR` 后紧跟**非 ASCII 字符** → 变量名被吞，set -u 崩溃 / 无 set -u 时静默展开为空）。⚠️ 危害主形态是**变量静默展开为空**（无 set -u 时不报错，只在输出里丢值，常藏在仅失败分支触发的行里）——不是只有 set -u 崩溃一种形态 | `bash tools/check/check-cjk-var.sh` 全绿 |
-| 八 | | **🔴 防线失明自检**：`bash tools/check/check-guard-fail-loud.sh`——PATH 劫持假检测引擎（崩溃型 exit 3 / 空响应型 exit 0 无输出）实测守卫 fail-loud：引擎故障下守卫必须非 0 退出，仍 exit 0 = 「0 处违规但根本没在看」= 失明不自知，比没有防线更坏。覆盖判定路径依赖 perl 的守卫（check-cjk-var / check-guards） | 正常态 RC=0 且注入矩阵全报红；人为让 perl 失效重跑必须 RC≠0 |
+| 八 | | **🔴 防线失明自检** | 正常态 RC=0 且注入矩阵全报红；人为让 perl 失效重跑必须 RC≠0 |
+
+#### 八 · 🔴 防线失明自检
+
+`bash tools/check/check-guard-fail-loud.sh`——PATH 劫持假检测引擎（崩溃型 exit 3 / 空响应型 exit 0 无输出）实测守卫 fail-loud：引擎故障下守卫必须非 0 退出，仍 exit 0 = 「0 处违规但根本没在看」= 失明不自知，比没有防线更坏。覆盖判定路径依赖 perl 的守卫（check-cjk-var / check-guards）
+
 
 > 退出码语义（两个新门禁共用）：0=全绿 / 1=有 FAIL / 2=脚本自身错误——「工具死了」和「检查出问题」严格区分。
 > 🔴 **audit CLI 的退出码契约（步骤六相关）**：0=全绿 / 1=有警告（放行）/ 2=有违规（阻断）/ 3=非 git 仓库（cli-quick 口径）/ **引擎崩溃=4**——node 未捕获异常默认 exit 1 会与「警告」撞码，导致 hook 把崩溃当警告**静默放行**（fail-open 实测：含密钥的 .env 入库）。hook 侧已有 `-ne 0` 兜底分支拦截非 0/1/2 退出码。
