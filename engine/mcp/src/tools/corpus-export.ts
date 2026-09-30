@@ -57,8 +57,28 @@ export interface CorpusExportArgs {
  * 延迟 require 策略：audit/core 包经 createRequire(__filename) 解析——
  * MCP 进程内两包不一定在依赖树上，缺包时给 isError 降级提示不崩 server。
  */
+import { checkDirArg } from './dir-arg-guard';
+
 export async function corpusExport(args: CorpusExportArgs): Promise<CorpusExportResult> {
   const scope = args.scope ?? 'all';
+
+  // v1.5.5 批 20：目录类入参统一校验（类型/形态 · 存在性与可写性 · 越界）——
+  // 不合法即报错返回，不进入任何写入面（此前 outDir/dataDir 直进 fs 写入）。
+  for (const [argName, value] of [['outDir', args.outDir], ['dataDir', args.dataDir]] as const) {
+    const verdict = checkDirArg(value, argName);
+    if (!verdict.ok) {
+      return {
+        text: `[sofagent] corpus_export 参数不合法：${verdict.reason}`,
+        data: {
+          ok: false,
+          isError: true,
+          rules: { files: [], hmac: null, counts: { implemented: 0, mergedPlaceholders: 0, totalSlots: 0 } },
+          auditEvent: null,
+        },
+      };
+    }
+  }
+
   const createRequire = (await import('node:module')).createRequire;
   const req = createRequire(__filename);
 
