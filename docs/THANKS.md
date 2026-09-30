@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在某个设计决策里留下了痕迹。
+> sofagent 站在巨人肩膀上。以下每个项目与作者，都在某个设计决策里留下痕迹。
 
 > v1.5.4 · 2026-09-30（UTC）· ✅ 已发版 · 孔放勋
 >
@@ -14,7 +14,7 @@
 
 ## 基石
 
-- **[OpenClaw](https://github.com/openclaw/openclaw)** · Peter Steinberger — 四层加载链 Hook 机制之源：上下文/Hook/Skill/Session
+- **[OpenClaw](https://github.com/openclaw/openclaw)** · Peter Steinberger — 四层加载链 Hook 机制之源
 
 ## 生成伙伴
 
@@ -53,7 +53,7 @@
 - **[Grow the Harness, Not the Context](https://arxiv.org/abs/2609.26760)** — 控制决策从上下文搬进可复用代码
 - **[Harness-Zero](https://arxiv.org/abs/2609.24974)** — harness 蒸馏：微调摊销层的外部实证
 - **[HackProbe](https://arxiv.org/abs/2609.04665)** — RSI 监控器与 harness 无关：监控方在被测系统之外
-- **[RSI Claim-Testing Checklist](https://github.com/sunghunkwag/recursive-self-improvement)** · Intelligence Research Project — RSI 主张的**检验清单**：逐项列出「某混淆项能伪造什么 + 用哪个对照消除它」，并公开**已撤回与被拒结果**；其判据与治理定位同向——**改进必须递归**（改进者本身要变，且变化后的改进者须产出比原版更好的改进），故「逐轮分数上升」必要而不充分
+- **[RSI Claim-Testing Checklist](https://github.com/sunghunkwag/recursive-self-improvement)** · Intelligence Research Project — RSI 主张检验清单：改进必须递归
 - **[Calibrated Decision Models for Pentesting](https://arxiv.org/abs/2609.28940)** — 判定件在安全域的裁定落点
 - **[JEVQA](https://arxiv.org/abs/2609.24395)** — 判定件跨域零样本替代实证（音视频域）
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 长文档中段注意力衰减，500 字原则源头
@@ -63,7 +63,7 @@
 ### 编排与架构
 
 - **[Managed Agents](https://www.anthropic.com/engineering/managed-agents)** · Anthropic — 四层编排：连接+行动与深度思考分工
-- **[Deep Agents](https://github.com/langchain-ai/deepagentsjs)** · LangChain — 验证 v1.x 技术选型（v1.2.0 已迁 LangGraph）
+- **[Deep Agents](https://github.com/langchain-ai/deepagentsjs)** · LangChain — 验证 v1.x 技术选型（已迁 LangGraph）
 - **[DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness)** · DeepSeek — 一切皆插件运行时；cordis-plugin 协议基础
 - **[Cordis](https://github.com/cordiverse/cordis)** + [时空可组合性论文](https://github.com/cordiverse/paper) · cordiverse — 时间+空间可组合性，进化模块运行时视角
 - **[Claude Code Agent Loop](https://docs.anthropic.com/en/docs/claude-code/how-claude-code-works)** · Anthropic — 三阶段循环+三档权限，与 HITL 🟢🟡🔴 同构
@@ -84,9 +84,9 @@
 - **[ChatDemo](https://github.com/OpenFDEAI/ChatDemo)** · OpenFDEAI — FDE 术语同源
 - **[PenguinHarness](https://github.com/Prism-Shadow/penguin-harness)** · Yaowei Zheng — Benchmark 与工具审批四模式参考
 - **[prime-agent](https://github.com/PrimeIntellect-ai/prime-agent)** · Prime Intellect — 跨进程写保护与 RefinementEvent 证据记录
-- **[Control the Harness, Control the Cost](https://arxiv.org/abs/2609.28919)** — 未调优 harness 默认值 = 把成本与治理一并交出去
+- **[Control the Harness, Control the Cost](https://arxiv.org/abs/2609.28919)** — 未调优 harness 默认值 = 成本与治理一并交出去
 - **[Self-Healing Harness](https://arxiv.org/abs/2609.24130)** — 准入门控：提议在内、门在外、持久化由门决定
-- **[RegenHarness](https://arxiv.org/abs/2609.27612)** — evidence-gated RSI；自改进通道无权降低门的强度
+- **[RegenHarness](https://arxiv.org/abs/2609.27612)** — evidence-gated RSI；改进无权降低门强度
 
 ### 判定与校准
 
@@ -95,39 +95,37 @@
 - **[SalesRLAgent](https://arxiv.org/abs/2503.23303)** · Nandakishor M — 概率预测当序列决策训练，「只出概率不生成」之源
 - **[Confidence-Aware Routing](https://arxiv.org/abs/2510.01237)** · Nandakishor M — 统一置信度驱动四路径路由，与 L0/L1/L2+第三态同构
 - **[DeepRAG](https://arxiv.org/abs/2503.08213)** · Nandakishor M — 从零自建 embedding 模型参考
-- **[System One Models & Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** · TypeSafe AI — RLCD、三原语提出方；「校准优先于偏好」；ECE 空白起步处
-- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线（「有判定头≠有判定力」）；@2026-09-30 实测 **v0.3.22**（tag=release=PyPI 三面同步），部署面新增 ONNX 推理路径接受**校准文件**
+- **[System One Models & Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** · TypeSafe AI — RLCD、三原语提出方；「校准优先于偏好」
+- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线；@2026-09-30 v0.3.22
 - **[kev](https://github.com/jaredpalmer/kev)** · Jared Palmer — Jev 架构型开源复刻（0.8B/4B/9B 全尺寸）
 - **[Bespoke Nimble](https://github.com/bespokelabsai/nimble)** · Bespoke Labs — 2,676 条对比式样本构造法（「数据质量 > 参数量」）
 - **Jev 接口复刻族**（SemIf / NanoJev / Jevlike / LocalJev / JEV-mini）— 对照件候选与路线对照
-- **[decider](https://github.com/Mapika/decider)** · Mapika — 校准工程最深的复现家族（ECE 0.288→0.071）；@2026-09-30 实测 **decider-ai 1.8.1**，新增**选项数依赖温度重标定**（`temperature_by_options`，T(n)=max(min, a+b·ln n)）与共享前缀 fork 有界化——直击「选项越多校准越差」
+- **[decider](https://github.com/Mapika/decider)** · Mapika — 校准工程最深的复现家族（ECE 0.288→0.071）；@2026-09-30 1.8.1
 - **[CLM](https://github.com/Contrastive-LM/CLM)** · Contrastive-LM — 双塔对比式路线对照（公开 scaling-law 拟合）
 - **[JevK5](https://github.com/allebee/jevk5)** · allebee — 独立开源替代；蒸馏 LoRA 合并权重同批开源
 - **[OpenThai-SystemOne](https://github.com/iapp-technology/openthai-systemone)** · iApp — 泰/英双语 0.8B，契约兼容成本品类默认
-- **[AutoJev-27B](https://github.com/denis-pplx/autojev)** · denis-pplx —「自主 agent 全程建成」活体样本；主动披露 ECE 三列
-- **[RSI-Jev](https://github.com/Shanghua-Gao/RSI-Jev)** · Shanghua Gao — RSI 循环直接造判定件；判定头与生成面分离的同向实证。v3.0（2026-09-28）为**首个 RL 奏效版本**——奖励取多候选**排序**（逐项标签表达不出的目标），hippo R@1 0.192→0.308，此前 59 个 reward-trained arm 均未越线（对方自报、本仓未复算；release 面仍 v2.0）
+- **[AutoJev-27B](https://github.com/denis-pplx/autojev)** · denis-pplx —「自主 agent 全程建成」活体样本；披露 ECE 三列
+- **[RSI-Jev](https://github.com/Shanghua-Gao/RSI-Jev)** · Shanghua Gao — RSI 循环直接造判定件；v3.0 排序奖励首次奏效（自报）
 - **[AgentJev](https://github.com/malevrigns/agent-jev)** · malevrigns —「去 LM head」形态正例（置换等变判定头）
 - **[TensorFlow.js](https://github.com/tensorflow/tfjs)** + [tfjs-models](https://github.com/tensorflow/tfjs-models) · Google — 一套 API 四后端+模型即 npm 包的十年先例
 - **[Verdict / rlcd-modernbert-151m](https://huggingface.co/heman10x/rlcd-modernbert-151m)** · Heman10x-NGU —「编码器+判定头」最早可复算建仓时点（2026-09-17）
-- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜（密封半集须持续演进）；@2026-09-29 实测 v1.4.2.2 榜首 **Imajev-4B**（冠主 [`mohit67890/imajev`](https://github.com/mohit67890/imajev)，Apache-2.0），视觉分支 ImageJevBench v0.1.3（49 系统 / 684 题）中 **NeoHorse Jev 4B** 71.94 居第 3
+- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-09-29 榜首 Imajev-4B
 - **[AgentGovBench](https://github.com/agentic-control-plane/agentgovbench)** + **[ST-WebAgentBench](https://github.com/segev-shlomov/ST-WebAgentBench)** — 治理对照基准两件套（CuP 双轴指标）
-- **[NIST 官方标准面](https://nist.gov/caisi/ai-agent-standards-initiative)**（CAISI 三支柱 + RFI + NCCoE 四功能域 + AI 800 系列）— agent = 非人类身份 principal；Delegation 双身份令牌
-- **[Jev-Mem](https://arxiv.org/abs/2609.23986)** — System One 控制面管 agentic memory：第四类消费面候选
-- **[jev-harness-lab](https://github.com/Aitejiu/jev-harness-lab)** · Aitejiu — 判定件 harness 内可用面黑箱评测（窄判断可用/跨步因果不行）
+- **[NIST 官方标准面](https://nist.gov/caisi/ai-agent-standards-initiative)**（CAISI 三支柱 + RFI + NCCoE 四功能域 + AI 800 系列）— agent = 非人类身份 principal；双身份令牌
+- **[Jev-Mem](https://arxiv.org/abs/2609.23986)** — System One 控制面管 agentic memory
+- **[jev-harness-lab](https://github.com/Aitejiu/jev-harness-lab)** · Aitejiu — 判定件 harness 内可用面黑箱评测
 - **[JevAdvBench](https://arxiv.org/abs/2609.31142)** — 判定件对抗基准（被攻击决策对干净决策打分）
-- **[LAVOIR](https://arxiv.org/abs/2609.30706)** — 判定件「该问什么」扩展（VOI 槽位）；已开源（[code](https://github.com/moganai/lavoir) / [权重](https://huggingface.co/moganai/lavoir)），其问句策略与 greedy oracle VOI 策略打平（AUC 0.799 对 0.797，论文自报）
+- **[LAVOIR](https://arxiv.org/abs/2609.30706)** — 判定件「该问什么」扩展（VOI 槽位；已开源）
 - **严格适当评分规则** · Gneiting & Raftery 等 — RLCD 数学正确性依据：诚实报告校准概率才取最大期望奖励
-- **[Sys1Cal-v1](https://arxiv.org/abs/2609.35342)** — 判定件概率**数值含义**专用数据集：$P(A)$ 由构造已知的真/假题经三原语查询，按**全变差距离**评分；指出既有外部基准只测「置信度校准」、不测「每个返回概率是否具有正确数值含义」
-- **[PACT](https://arxiv.org/abs/2609.35865)** — 单 token 判定的**校准感知训练**：对比对儿＋机器校验证书 → 四项免新标注训练项（差分中的差分边距 / 置换一致性 / 证据必要性 / 序数传输）
-- **[COGNIT-Guard](https://arxiv.org/abs/2609.33671)** — 校准**直判护栏**的部署形态：CPU 守门员＋置信门控升级到 NPU 常驻 322M 双向直判模型（Laya-322M），在延迟 SLO 与非对称假阳约束下做异构级联
-- **[Jeeves](https://github.com/PostHog/jeeves)** · PostHog — 判定件**推理增强**形态：Qwen3.5-9B＋LoRA＋指针头＋block-4 扩散草稿器，SFT+CISPO 训「先想后判」（受 kev 启发；MIT，权重 `PostHog/jeeves`）。对方自报超 Kev-9B / Jev（0.889 对 0.822 / 0.857），**本仓未复算**
-- **[Your-LM-Is-Already-a-Decision-Model](https://github.com/ntlm1686/Your-language-model-is-already-a-decision-model)** · ntlm1686 — **训练必要性对照**：未微调 Qwen3.5-9B（仅读 next-token 选项概率、无 SFT/LoRA/判定头）对 Jev 1.13.0 六基准——Jev 胜 4（JevBench 86.1 对 80.5 · Typed Decisions 73.9 对 62.1）、Qwen 胜 2（PhishNChips 73.9 对 62.5）；单作者自测、**本仓未复算**
+- **[Sys1Cal-v1](https://arxiv.org/abs/2609.35342)** — 判定件概率**数值含义**专用数据集（全变差距离评分）
+- **[PACT](https://arxiv.org/abs/2609.35865)** — 单 token 判定的**校准感知训练**：四项免新标注训练项
+- **[Your-LM-Is-Already-a-Decision-Model](https://github.com/ntlm1686/Your-language-model-is-already-a-decision-model)** · ntlm1686 — **训练必要性对照**：未微调 9B 与 Jev 互有胜负（自测）
 
 ### 认知与反馈
 
 - **[A Field Guide to Fable](https://x.com/trq212/article/2073100352921215386)** · Thariq Shihipar — 四类未知框架；瓶颈从「能不能做」变「你能不能说清楚」
 - **[When AI builds itself](https://www.anthropic.com/institute/recursive-self-improvement)** · Anthropic — 代码生成不再是瓶颈，人工审查成新堵点
-- **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化参考（v1.4.8 起由自研 gate 验证器替代）
+- **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化参考（现由自研 gate 验证器替代）
 - **[Satya Nadella at Microsoft Build](https://pod.wave.co/podcast/latent-space-the-ai-engineer-podcast/satya-nadella-no-priors-x-latent-space-crossover-special-at-microsoft-build)** · Satya Nadella —「Every company will have its own private eval」
 
 
