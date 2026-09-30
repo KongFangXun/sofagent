@@ -31,11 +31,11 @@
 
 ## 这是什么
 
+> 🧩 **一句话（三因子口径）**：sofagent 是**自带 Harness 的 S1M，用 FDE 打法交付**——FDEing 是打法、S1M 是本体、harness 是治理环境，三层各司其职、不互替。
+
 > 💬 **一句话版本**：进场时它替你把业务摸清、写成文件；离场后你的数字员工每次改代码、动文件，都按文件过一道安检、留一份记录、存一个快照——出事能查、能回滚。
 
 > 🏢 **组织视角版本**：AI 落地的卡点已经从「模型够不够聪明」迁移到「组织敢不敢接」——能不能进组织架构、有没有账号、绩效怎么算、做错了怎么退回。sofagent 就是给数字员工办入职的那套制度：进场把岗位职责写成文件（岗位职责说明书），离场按文件做绩效考核（每次变更留证据）、组织记忆（越干越有的家底）、试错容错（做错了退得回）。给 AI 发工号之前，先装 sofagent。
-
-> 🧩 **三因子口径**：sofagent 是**自带 Harness 的 S1M，用 FDE 打法交付**——**FDEing** 是打法层（把 FDE 从人力工作做成可复用能力）、**S1M** 是判定层（System One Model，判断与生成分离的决策模型；判定底座 v1.6.0–v1.9.0 施工中、v2.0.0 宣告）、harness 是治理层（约束层五种能力，今天的主体落点）。三层各归其位，详见〈核心特性〉。
 
 **开源 FDE Harness 层**（FDE = Forward Deployed Engineer，前线部署工程师——详见〈什么是 FDE Harness〉节）——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理：进场把业务判断写成文件（工作流、本体数据、AI 节点部署），离场按文件审计每一次变更。约束层五种能力（注入 · 审计 · 回溯 · 沉淀 · 进化），五种形态分发（FDE 插件 / Skill / MCP / CLI / Dashboard）。
 sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（管住强度按宿主分档：DSH/OpenClaw 硬注入可拦截，其余档位为建议性注入 + git hook 审计兜底——见〈多平台挂载〉档位表）。
@@ -85,20 +85,28 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 ## 核心特性
 
+> ### 万物皆可 FDEing（理念）
+>
+> **从 FDE 到 FDEing——万物皆可 FDEing**：把 Forward Deployed **Engineer**（一个岗位）变成 Forward Deployed **Engineering**（一种能力）——岗位随人走，能力随交付物留。**FDEing 即 Forward Deployed Engineering 的缩写**（读作 /ef-di-i-ing/，与 engineering 同构），名词指这种能力，动词指把 FDE 从人力工作变成这种能力——万物皆可 FDEing。
+>
+> - **FDE 是名词，FDEing 是动词**——把 FDE 从一项人力工作变成一种可自动执行的能力（打法 × 判定 × 治理合成）：花更少的人力，提供更多的能力。
+> - **不限于软件**——任何业务对象、流程、节点，都可以被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」；硬件节点、机器人运动过程同样是一条条 workflow，差别在执行器、不在治理形态。
+> - **它同时是一种思维方式**——做任何事之前先想三件：① 这件事的 workflow 怎么搭；② 其中的 AI 节点是什么；③ 怎么让 AI 更好地帮你实现（详见 [PHILOSOPHY · 从 FDE 到 FDEing](./docs/PHILOSOPHY.md)）。
+
 三层各归其位：**打法层（FDEing）** 进场把判断写成文件，**判定层（S1M）** 管判断怎么形成、怎么留痕、怎么被举证，**治理层（harness）** 离场后让判断 7×24 被执行。
 
-**打法层 · FDEing**（进场 · 生成判断，FDE 相位——把「该不该上 AI、值多少钱」判断出来，冻结成交付物）：
+**打法层 · FDEing**（进场 · 生成判断——「FDE 打法」）（进场 · 生成判断，FDE 相位——把「该不该上 AI、值多少钱」判断出来，冻结成交付物）：
 
 - 🧭 **梳理工作流**——五要素深挖 + 三问判定法，把每个岗位环节摸清，算清每个 AI 节点值多少钱
 - 🤖 **部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），装进你已有的 AI 工具，从"你干活"变"你派活"
 - 📦 **判断冻结成交付物**——每个节点带「做好标准（merge_criteria）· 谁拍板（approver）」，机器可判定、跨阶段共享
 
-**判定层 · S1M**（System One Model——判断与生成分离的决策模型；**判定底座排期 v1.6.0–v1.9.0 施工、v2.0.0 宣告，尚未交付**。今天这一层已交付的落点，是既有的判定与举证面）：
+**判定层 · S1M**（System One Model——判断与生成分离的决策模型；**判定底座排期 v1.6.0–v1.9.0 施工、v2.0.0 宣告，尚未交付**——本版只声明身份与路线，不声称判定能力已实装。叙事口径锚定 [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) 与 [v2.0.0 §一](./docs/changelog/v2.0/v2.0.0.md) 规划定义。今天这一层已交付的落点，是既有的判定与举证面）：
 
 - 🔎 **判定留痕**——decision-log 因果链记录每个可问责决策（谁拍板、依据什么、为何这么做），供 auto-PR 解释块与 daemon 周报消费
 - 🔗 **判定可举证**——审计历史落 HMAC 链，`--verify-chain` 可离线复算链完整性，结论能被第三方复核
 
-**治理层 · harness**（离场 · 驻留判断，Harness 相位——按交付物 7×24 执行，进化时写回）：
+**治理层 · harness**（离场 · 驻留判断——「harness 治理」，按交付物 7×24 执行，进化时写回）：
 
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，7×24 在线守护（commit 时触发审计），人离场治理不离开
 - 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（单机实测：quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
@@ -115,11 +123,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 > 🔗 **为什么必须一体**：交付物是两个阶段共享的活状态——进场时写入、离场后执行时读、进化时写回（试验分支晋升基线、反思蒸馏回流）。没有 FDE，约束层没有判据可执行；没有约束层，FDE 的判断随人离场蒸发。这正是「FDE Harness」名字的由来——不是 FDE 功能 + Harness 功能的拼盘，是同一件事的两个阶段。
 >
-> **从 FDE 到 FDEing——万物皆可 FDEing**：两个阶段的合成效果，是把 Forward Deployed **Engineer**（一个岗位）变成 Forward Deployed **Engineering**（一种能力）——岗位随人走，能力随交付物留。**FDEing 即 Forward Deployed Engineering 的缩写**（读作 /ef-di-i-ing/，与 engineering 同构），名词指这种能力，动词指把 FDE 从人力工作变成这种能力——万物皆可 FDEing。
->
-> - **FDE 是名词，FDEing 是动词**——把 FDE 从一项人力工作变成一种可自动执行的能力（打法 × 判定 × 治理合成）：花更少的人力，提供更多的能力。
-> - **不限于软件**——任何业务对象、流程、节点，都可以被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」；硬件节点、机器人运动过程同样是一条条 workflow，差别在执行器、不在治理形态。
-> - **它同时是一种思维方式**——做任何事之前先想三件：① 这件事的 workflow 怎么搭；② 其中的 AI 节点是什么；③ 怎么让 AI 更好地帮你实现（详见 [PHILOSOPHY · 从 FDE 到 FDEing](./docs/PHILOSOPHY.md)）。
+> 两个阶段的合成效果——「从 FDE 到 FDEing」——见〈核心特性〉首段理念主线（万物皆可 FDEing）。
 
 <p align="center"><img src="docs/assets/arch-layers.svg" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
 

@@ -100,6 +100,14 @@ build → injection → deliberate violation → audit interception → snapshot
 
 ## Core Features
 
+> ### Everything can be FDEing (the idea)
+>
+> **From FDE to FDEing — everything can be FDEing**: turn Forward Deployed **Engineering** (a capability) out of Forward Deployed **Engineer** (a job title) — the job leaves with the person, the capability stays with the deliverables. **FDEing is the abbreviation of Forward Deployed Engineering** (read /ef-di-i-ing/, isomorphic with "engineering"): as a noun it names the capability; as a verb it means turning FDE from manual labor into that capability — everything can be FDEing.
+>
+> - **FDE is the noun; FDEing is the verb** — turning FDE from manual work into an automatically executable capability (playbook × judgment × governance combined): less labor, more capability.
+> - **Not limited to software** — any business object, process, or node can be FDE'ed through "map → judge → deliver → sustain"; hardware nodes and robot motions are workflows too — the difference lies in the executor, not the governance shape.
+> - **It is also a way of thinking** — before doing anything, think of three things: ① how to structure its workflow; ② what its AI nodes are; ③ how AI can help you do it better (see [PHILOSOPHY](./docs/PHILOSOPHY.md)).
+
 Three layers, each in its place: the **playbook layer (FDEing)** writes judgment down on entry, the **judgment layer (S1M)** governs how judgment forms, is traced, and is evidenced, and the
 **governance layer (harness)** keeps judgment executing 24/7 after departure.
 
@@ -109,7 +117,7 @@ Three layers, each in its place: the **playbook layer (FDEing)** writes judgment
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 📦 **Judgment frozen into deliverables** — every node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
-**Judgment layer · S1M** (System One Model — a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0 and its declaration
+**Judgment layer · S1M** (System One Model — a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0 and its declaration — narrative anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition; this version states identity and roadmap only, no claim that judgment capabilities are delivered yet:
 for v2.0.0 — not yet shipped**. What ships today in this layer is the existing judgment-and-evidence
 surface):
 
