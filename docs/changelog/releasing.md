@@ -44,14 +44,14 @@
 
 > 每次新 session 或新阶段开始时，先读这 11 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
 
-- [x] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)　✅ 完成（维护者确认 · 含治理批：可读性棘轮/墙式折行/内容压缩/尺子落地 · 台账见 git 演进史）
-- [x] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)　✅ 完成（两轮施工+补做批：43/43 验收 · 测试 5568/5568 · devlog 已翻牌——出处见 git 演进史）
-- [x] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（入口裁定一次 · A 快速直收 / B 盲审复制一次 prompt）→ [03-quality-loop.md](./releasing/03-quality-loop.md)　✅ 完成（路径 A 终态审查：P0=0/P1=0/待取证=0 · 修复批 2 commits（854edede 代码批 + 663bd991 文档批）· 零信任复验通过（F-3/F-4 行为实测 + 五门禁 + router-slot 36/36）· 草稿两轮合并留桌面 · 出处见 git 演进史）（走对话式多轮审查等价形态：22 视角分层取用 + 零信任复验通过）
+- [ ] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)　✅ 完成（维护者确认 · 含治理批：可读性棘轮/墙式折行/内容压缩/尺子落地 · 台账见 git 演进史）
+- [ ] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)　✅ 完成（两轮施工+补做批：43/43 验收 · 测试 5568/5568 · devlog 已翻牌——出处见 git 演进史）
+- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（入口裁定一次 · A 快速直收 / B 盲审复制一次 prompt）→ [03-quality-loop.md](./releasing/03-quality-loop.md)　✅ 完成（路径 A 终态审查：P0=0/P1=0/待取证=0 · 修复批 2 commits（854edede 代码批 + 663bd991 文档批）· 零信任复验通过（F-3/F-4 行为实测 + 五门禁 + router-slot 36/36）· 草稿两轮合并留桌面 · 出处见 git 演进史）（走对话式多轮审查等价形态：22 视角分层取用 + 零信任复验通过）
 - [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)
-- [x] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)　✅ PASS with conditions（终轮 run · 0 P0/5 P1 转阶段九刚性门禁/4 P2 · acceptance 470/470 EXIT=0 · 凭据落盘 · 修复批补 S463 章一路由锁 + S464 章六结构锁（出处见 git 演进史） · 两轮环境冲突停手经主 session 裁决续跑）
+- [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)　✅ PASS with conditions（终轮 run · 0 P0/5 P1 转阶段九刚性门禁/4 P2 · acceptance 470/470 EXIT=0 · 凭据落盘 · 修复批补 S463 章一路由锁 + S464 章六结构锁（出处见 git 演进史） · 两轮环境冲突停手经主 session 裁决续跑）
 - [ ] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
-- [x] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)　✅ 全八步过：工具健康 10 项 ✅ · rebuild+dist 基线重置（聚合 1dd70a9c…）· 锚点 509 · hook 端到端双链路（拦真密钥阻断/干净放行）· cjk-var 136 文件零违规 · fail-loud 6 注入全红 · bump dry-run 448 处纯只读
-- [x] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)　✅ 复核完成：冻结窗口三查过（0 文件/0 mtime）· 门禁基线全绿（storefront 12 断言补验）· devlog 检查清单 0 未勾 · 无悬置拍板项 · 作者口头放行（发布 prompt 已生成待执行）
+- [ ] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)　✅ 全八步过：工具健康 10 项 ✅ · rebuild+dist 基线重置（聚合 1dd70a9c…）· 锚点 509 · hook 端到端双链路（拦真密钥阻断/干净放行）· cjk-var 136 文件零违规 · fail-loud 6 注入全红 · bump dry-run 448 处纯只读
+- [ ] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)　✅ 复核完成：冻结窗口三查过（0 文件/0 mtime）· 门禁基线全绿（storefront 12 断言补验）· devlog 检查清单 0 未勾 · 无悬置拍板项 · 作者口头放行（发布 prompt 已生成待执行）
 - [ ] 九 · 发布流水线（本机自装→检查→push→tag→release→npm publish · 项目负责人或授权 AI）→ [09-publish.md](./releasing/09-publish.md)
 - [ ] 十 · 分发（Skill / DSH plugin / OpenClaw plugin / 设备端安装 · 项目负责人或授权 AI）→ [10-distribute.md](./releasing/10-distribute.md)
 - [ ] 十一 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [11-post-publish.md](./releasing/11-post-publish.md)
