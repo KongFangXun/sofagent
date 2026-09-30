@@ -355,5 +355,11 @@
   "tools/release/gitdata-push.mjs::#1::catch { /* HEAD 无跟踪（理论不可达——entries 全来自 HEAD diff/ls-tree） */ }",
   "tools/release/gitdata-push.mjs::#1::catch { /* 无本地 ref 记录 */ }",
   "tools/report/evolution-report.mjs::#1::catch { // 坏行跳过 }",
-  "tools/report/evolution-report.mjs::#2::catch { // 坏行跳过 }"
+  "tools/report/evolution-report.mjs::#2::catch { // 坏行跳过 }",
+  "engine/daemon/src/cron.ts::#1::catch { // 疲劳度是观测增强，不是调度依赖——写失败只留日志，不影响调度主流程 }",
+  "engine/daemon/src/inspectors/health-reporter.ts::#1::catch { // 心跳文件缺失/损坏——报告照常落盘，process 字段缺省（可观测性增强，不阻塞） }",
+  "engine/orchestrator/src/execution-state/audit-digest.ts::#1::catch { // sink 故障不阻塞执行——降级 stderr }",
+  "engine/orchestrator/src/node-executor.ts::#1::catch { // 检索面不可用——回落全量注入（L1 关档，零行为变化） }",
+  "engine/orchestrator/src/node-executor.ts::#3::catch { // entity 写入失败不阻塞 }",
+  "engine/orchestrator/src/team/team-manager.ts::#1::catch { /* 单条留痕失败不阻塞建队 */ }"
 ]

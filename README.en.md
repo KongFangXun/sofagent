@@ -42,7 +42,10 @@
 > 🧩 **The three-factor framing**: sofagent is a S1M with a built-in Harness, delivered with the FDE playbook — FDEing is the playbook layer (turning FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
 >from generation; its foundation is under construction across v1.6.0–v1.9.0, with the declaration landing in v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities — today's main landing points). Each layer sits in its own place; see "Core Features".
 
-**An open-source FDE Harness layer** (FDE = Forward Deployed Engineer, the engineer who embeds models into real enterprise operations; a *harness* is the governance layer that keeps every Agent change audited and reversible — see the "[What is the FDE Harness](#what-is-the-fde-harness)" section) — embedded between mature Agents (DSH / OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it
+**An open-source FDE Harness layer** (FDE = Forward Deployed Engineer, the engineer who embeds models into real enterprise
+operations; a *harness* is the governance layer that keeps every Agent change audited and reversible — see the
+"[What is the FDE Harness](#what-is-the-fde-harness)" section) — embedded between mature Agents (DSH / OpenClaw / WorkBuddy)
+and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it
 writes the business judgment down as files (workflow, ontology data, AI-node deployment); after departure, it audits every change against those files.
 
 Five Harness capabilities (inject · audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard).
@@ -75,7 +78,8 @@ version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 | **Adding discipline to an existing Agent** — you already run DSH / OpenClaw / WorkBuddy and want your AI to behave, leave traces, and stay roll-backable when things go wrong | ✅ **Install now**. The core value is exactly the constraint layer (inject · audit · rollback · distill ·
 evolve) — works right after installation |
 | **A one-person company / SMB landing AI** — no dedicated engineer, you need a "never-quitting FDE" to map your workflow and deploy AI nodes | ✅ **Install now**. The FDE Harness layer is built for this — the full journey from mapping to deployment to post-departure audit |
-| **Looking for a turnkey enterprise Agent platform** — you expect a complete commercial product (multi-tenancy, permission management, billing, SLA) | ⏸️ **Hold off**. sofagent is an FDE Harness layer, not a platform product — platform-grade capabilities are out of this open-source repository's scope. Teams with integration capacity can still embed the constraint layer into their own platform as its governance module; if you need pure turnkey, look at platform products elsewhere |
+| **Looking for a turnkey enterprise Agent platform** — you expect a complete commercial product (multi-tenancy, permission management, billing, SLA) | ⏸️ **Hold off**. sofagent is an FDE Harness layer, not a platform product
+ — platform-grade capabilities are out of this open-source repository's scope. Teams with integration capacity can still embed the constraint layer into their own platform as its governance module; if you need pure turnkey, look at platform products elsewhere |
 | **Researching / curious about constraint-layer design** — reading code, studying architecture, borrowing methodology | ✅ **Install now**. Full documentation ([HANDBOOK](./docs/HANDBOOK.md) / [ARCHITECTURE](./docs/ARCHITECTURE.md) / [PHILOSOPHY](./docs/PHILOSOPHY.md)), MIT licensed |
 
 **How does it relate to gitleaks / pre-commit?** (complementary, not substitutes)
@@ -102,7 +106,8 @@ build → injection → deliberate violation → audit interception → snapshot
 
 > ### Everything can be FDEing (the idea)
 >
-> **From FDE to FDEing — everything can be FDEing**: turn Forward Deployed **Engineering** (a capability) out of Forward Deployed **Engineer** (a job title) — the job leaves with the person, the capability stays with the deliverables. **FDEing is the abbreviation of Forward Deployed Engineering** (read /ef-di-i-ing/, isomorphic with "engineering"): as a noun it names the capability; as a verb it means turning FDE from manual labor into that capability — everything can be FDEing.
+> **From FDE to FDEing — everything can be FDEing**: turn Forward Deployed **Engineering** (a capability) out of Forward Deployed **Engineer** (a job title)
+ — the job leaves with the person, the capability stays with the deliverables. **FDEing is the abbreviation of Forward Deployed Engineering** (read /ef-di-i-ing/, isomorphic with "engineering"): as a noun it names the capability; as a verb it means turning FDE from manual labor into that capability — everything can be FDEing.
 >
 > - **FDE is the noun; FDEing is the verb** — turning FDE from manual work into an automatically executable capability (playbook × judgment × governance combined): less labor, more capability.
 > - **Not limited to software** — any business object, process, or node can be FDE'ed through "map → judge → deliver → sustain"; hardware nodes and robot motions are workflows too — the difference lies in the executor, not the governance shape.
@@ -117,7 +122,8 @@ Three layers, each in its place: the **playbook layer (FDEing)** writes judgment
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 📦 **Judgment frozen into deliverables** — every node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
-**Judgment layer · S1M** (System One Model — a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0 and its declaration — narrative anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition; this version states identity and roadmap only, no claim that judgment capabilities are delivered yet:
+**Judgment layer · S1M** (System One Model — a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0 and its declaration
+ — narrative anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition; this version states identity and roadmap only, no claim that judgment capabilities are delivered yet:
 for v2.0.0 — not yet shipped**. What ships today in this layer is the existing judgment-and-evidence
 surface):
 
@@ -194,7 +200,7 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.4: Execution · Model Routing & Credential Verification (✅ Released · 2026-09-30)
+## v1.5.4 · Execution: Model Routing & Credential Verification (2026-09-30)
 
 🎯 **A routing decision chain and credential isolation for Agents** — three things at once:
 
@@ -262,7 +268,9 @@ npx -y -p @sofagent/audit sofagent-audit
 
 Here's what it looks like when a known-format secret leak is blocked (real output; A2 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and
 other known formats — generic secret shapes are intentionally out of scope, a conservative design against false
-positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). This is exactly the scenario shown in
+
+
+positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). This is exactly the scenario shown in the screenshot above (first screen); not repeated here.
 the screenshot above (first screen); not repeated here.
 
 **Full install** (Node.js ≥ 18, download and review before running) — **installed on the enterprise devices running the AI nodes**:

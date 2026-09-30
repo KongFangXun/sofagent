@@ -300,7 +300,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 `history.jsonl` 自 v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）。有密钥时每条记录签名，Agent 无法在无密钥情况下伪造签名；无密钥时降级为 SHA-256 hash chain（Agent 可重算整链，仅事后可追溯非强防篡改）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainDetailed()` 校验链完整性。**自 v1.5.5 起写入侧默认生成密钥**：首次写审计历史时若 `~/.sofagent-key` 缺失，自动生成 32 字节随机密钥（hex，Shannon 熵 ≈4.0）并原子落盘 0600——默认安装开箱即为签名链，无需人工配置。
 
-> 🔑 **密钥默认姿态（v1.5.5）**：读/校验路径（`--doctor` 的 `validateHmacKey`、`--verify-chain`）**不生成**密钥、无磁盘副作用；仅写入侧签名入口生成。且当历史中已存在**已签名**记录而密钥文件丢失时，写入侧**拒绝**自动生成新密钥并在 stderr 明示——新密钥会使全部旧签名失配，而校验侧对「失配 + 环境指纹一致」判**篡改（红）**，会把自己误报成「检测到篡改痕迹」。此时请恢复原密钥（`~/.sofagent-key` 备份 / 保管库），或人工裁定后重建链。**备份密钥是运维必做项**：丢失即该段历史不可强校验。
+> 🔑 **密钥默认姿态（v1.5.5）**：读/校验路径（`--doctor` 的 `validateHmacKey`、`--verify-chain`）**不生成**密钥、无磁盘副作用；仅写入侧签名入口生成。且当历史中已存在已签名记录而密钥文件丢失时，写入侧拒绝自动生成新密钥并在 stderr 明示——新密钥会使全部旧签名失配，而校验侧对「失配 + 环境指纹一致」判篡改（红），会把自己误报成「检测到篡改痕迹」。此时请恢复原密钥（`~/.sofagent-key` 备份 / 保管库），或人工裁定后重建链。**备份密钥是运维必做项**：丢失即该段历史不可强校验。
 
 > ⚠️ **无密钥时篡改检测是「弱校验」**：篡改检测退化为 hash chain——手改 `history.jsonl` 后重算整链即可让校验通过（FAIL 抹成 PASS 在结构上可能）。**自 v1.5.5 起默认路径已自动生成密钥**（见上），故本弱校验态只在两种情形出现：① 密钥丢失且历史已有签名（写入侧按安全门拒绝再生成，退化为 hash-only 校验）；② 历史本身写于密钥生成能力落地之前（legacy 未签名条目）。**企业 SOP 应强制备份 HMAC 密钥并周期性 `--doctor` 体检**，不要依赖无密钥路径的篡改检测结论。
 
@@ -312,7 +312,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 **规则集 plugin 类规则的供应链边界**：`--ruleset-path` 加载的 JSON 规则集中 `type: "plugin"` 的条目会触发模块加载——**默认拒绝**（plugin 规则关闭）；仅在显式设置 `SOFAGENT_ALLOW_PLUGIN_RULES=1` 时放行，且来源限定为 `@sofagent/` scope 包或本地绝对路径（裸名第三方包禁入）。**opt-in 即自担供应链风险**——加载的代码在审计进程内以当前用户权限运行。
 
-**精确边界（v1.5.5 重算）**：包内 `execSync`（shell 形态）调用共 **10 处命中**（audit 侧 **7** 处 + core 侧 **3** 处）；其中 **8 处为源码内直接调用**、**2 处内嵌于生成代码字符串**（不经本进程 shell——随注入的 hook 脚本 / `node -e` 子进程执行，两者同源同串）。**直接调用均为静态可信命令串**——命令体零外部输入插值，插值面仅限「取回输出后 trim」：
+**精确边界（v1.5.5 重算）**：包内 `execSync`（shell 形态）调用共 10 处命中（audit 侧 7 处 + core 侧 3 处）；其中 8 处为源码内直接调用、2 处内嵌于生成代码字符串（不经本进程 shell——随注入的 hook 脚本 / `node -e` 子进程执行，两者同源同串）。**直接调用均为静态可信命令串**——命令体零外部输入插值，插值面仅限「取回输出后 trim」：
 
 - audit 侧 7 处：`webhook.ts`（3：`git rev-parse --show-toplevel` / `--short HEAD` / `git config user.name`）· `init.ts`（2：`which/where sofagent-daemon` / `sofagent-audit`——命令串取自平台判定三元式，两分支均为字面量，无插值）· `agent-shield.ts`（1：`ps aux`）· `hook-install.ts`（1：内嵌于注入 hook 脚本的字符串，`npm root -g`）
 - core 侧 3 处：`audit-history.ts`（1：`git rev-parse --git-dir`）· `repo-hash.ts`（1：`git rev-parse --show-toplevel`，可注入 `execFn` 的类型默认实现）· `dist-hash.ts`（1：内嵌于 `node -e` 字符串，`npm root -g`，与 audit 侧同串）

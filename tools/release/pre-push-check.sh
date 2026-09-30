@@ -17,6 +17,7 @@
 #   + check-review-system.sh → 审查体系一致性（维度数/警戒线/S 编号对账 · v1.4.8 接入）
 #   + check-silent-catch.mjs → 静默吞错门禁（只拦新增 · v1.4.8 接入）
 #   + check-table-shape.mjs  → GFM 表格形状（超列 + 孤儿行 · 存量台账豁免只拦新增 · v1.5.4 复查批接入）
+#   + check-dashboard.sh     → dashboard 体量与形态（行数/内联样式/CSS 类化 · v1.5.5 批 20 接入）
 #   + check-claims.mjs       → 声称↔实测三组（整文件零消费信息位 / SECURITY 测绘数字 / hook 信任根 · v1.5.4 #36 接入）
 #   + dependency-direction.sh → 依赖方向架构测试（13 包边界 · v1.4.8 第七章）
 #   + check-tool-health.sh  → 工具健康 9 项 ✅ = ① 审查文档路径活性 / ② 孤儿配置 / ③ bump↔check 结构对照 /
@@ -460,6 +461,20 @@ if [ "$MINIMAL" = false ]; then
   else
     check_fail "check-table-shape.mjs 发现新增表格形状违规"
     node tools/check/check-table-shape.mjs 2>&1 | grep -E "✗|存量基线" | head -12
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3d2b. dashboard 体量与形态门禁（check-dashboard.sh · v1.5.5 批 20 接入 pre-push）
+# 单文件 HTML 行数上限 + 内联样式计数上限 + CSS 类化纪律——冻结单文件形态继续扩张。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3d2b. dashboard 体量与形态检查 ──${NC}"
+  if bash tools/check/check-dashboard.sh >/dev/null 2>&1; then
+    check_pass "check-dashboard.sh 通过（体量/形态断言全过）"
+  else
+    check_fail "check-dashboard.sh 发现 dashboard 体量/形态违规"
+    bash tools/check/check-dashboard.sh 2>&1 | grep -E "✗|❌|超" | head -8
   fi
 fi
 
