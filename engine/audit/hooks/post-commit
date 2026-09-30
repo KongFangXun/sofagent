@@ -16,23 +16,26 @@ if ! command -v node &>/dev/null; then
   exit 0  # 静默退出——post-commit 不应该阻断任何操作
 fi
 
-# 检测 sofagent-audit
-# v1.4.8：与 commit-msg 同源——认显式注入（测试/CI 指定）> 本仓 dist（仓库根绝对）> **相对路径** > 全局/PATH。
-# 🔴 逐级保留"相对 CWD"这一环是**契约要求**：单测（init.test.ts）在测试仓里建"迷你 dist"，
-#    靠 `cwd: repoDir` 下的相对 `engine/audit/dist` 命中；且 CI 里 `git rev-parse --show-toplevel`
-#    可能失败（实测 CI 报 `Command failed: git rev-parse --git-dir` ⇒ `_REPO_TOP` 为空），
-#    此时必须能落到相对路径，否则静默 exit 0、回声为空（CI 5 例失败的真因）。
+# sofagent 在位检测（守卫——post-commit 永不阻断；不在位即静默退出）
+# 🔴 v1.5.5 批 17 实测纠错（原注释与代码语义不符，按实测收敛）：
+#    本节**不解析也不执行引擎入口**——post-commit 的对账由下方内联 node 直读
+#    history.jsonl 完成，引擎执行（--diff）只发生在 commit-msg 阶段。原「入口解析」
+#    块解析出的 AUDIT_CMD 在本文件**无任何消费方**：其中 `_REPO_TOP` 分支的变量
+#    全文件从未赋值（恒假，已删）；`command -v` 分支解析出的路径同样无调用点——
+#    它只是「CLI 是否可用」的在位判据，不构成执行面（故「PATH 可被前置假 binary
+#    劫持」不适用于本 hook）；入口解析、身份指纹核对与 dist 完整性校验归 commit-msg
+#    （F-28 / F-15）。
+# 🔴 保留"相对 CWD"这一环是**契约要求**：单测（init.test.ts）在测试仓里建"迷你 dist"，
+#    靠 `cwd: repoDir` 下的相对 `engine/audit/dist` 判为在位（CI 里
+#    `git rev-parse --show-toplevel` 可能失败，届时相对路径是唯一可命中的形态）。
 if [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; then
   [ -f "$SOFAGENT_AUDIT_ENTRY" ] || exit 0  # post-commit 不阻断，静默退出即可
-  AUDIT_CMD="node $SOFAGENT_AUDIT_ENTRY"
-elif [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
-  AUDIT_CMD="node $_REPO_TOP/engine/audit/dist/index.js"
 elif [ -f "engine/audit/dist/index.js" ]; then
-  AUDIT_CMD="node engine/audit/dist/index.js"
+  :  # 仓库态在位（相对 CWD——契约要求保留，下游对账照常执行）
 elif command -v sofagent-audit &>/dev/null; then
-  AUDIT_CMD="sofagent-audit"
+  :  # 全局安装态在位（纯在位判据，本 hook 不执行任何引擎入口）
 else
-  exit 0  # 静默退出
+  exit 0  # sofagent 不在位——静默退出
 fi
 
 # 获取当前 commit SHA
