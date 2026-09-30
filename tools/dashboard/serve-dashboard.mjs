@@ -503,12 +503,17 @@ function aggregateAiNodes() {
     out.deployed = out.deployed.slice(0, 12);
   }
   // 4) sustain 持续优化状态（诚实呈现：能力存在但数据可能未生成）
-  out.sustain = { mode: 'sustain', implemented: true, weeklyReport: null, active: false };
+  // v1.5.5 批 18：`implemented` 由硬编码 true 改为**按数据可得性取值**——仅当持久化面
+  // 确实产出过周报文件（weekly-*.json 在位）才声称已实现；无数据时 implemented=false
+  // 且 active=false，前端不得显示「已实现」（此前硬编码 implemented:true 配 null 数据，
+  // 属静默失效形态：能力是否存在与数据是否产出被混为一谈）。
+  out.sustain = { mode: 'sustain', implemented: false, weeklyReport: null, active: false };
   try {
     const dashDir = join(SOFAGENT_DATA, 'dashboard');
     if (fsDirExists(dashDir)) {
       const weekly = readdirSync(dashDir).filter((f) => f.startsWith('weekly-')).sort().reverse();
       if (weekly.length) {
+        out.sustain.implemented = true;  // 产出面有据：周报文件在位
         try {
           const w = JSON.parse(readFileSync(join(dashDir, weekly[0]), 'utf8'));
           out.sustain.weeklyReport = w;
