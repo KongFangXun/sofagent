@@ -69,10 +69,16 @@ export async function modelUnregister(args: ModelUnregisterArgs): Promise<ModelU
 
     // decision-log 留痕（非致命）
     try {
+      // v1.5.5 批 19：动态导入不再以 `as unknown as` 硬断言模块形状——补**运行时签名
+      // 校验**：形状漂移（audit 改 emitDecision 签名）时输出可观测告警，不得静默丢留痕。
+      // 注：audit 是可选依赖（缺包须降级不崩 server），故保留动态导入 + 类型窗口断言；
+      // 安全性由下方 typeof 探针保证（断言只是类型窗口，不再是唯一的把关）。
       const audit = (await import('@sofagent/audit')) as unknown as {
-        emitDecision: (input: Record<string, unknown>) => unknown;
+        emitDecision?: (input: Record<string, unknown>) => unknown;
       };
-      audit.emitDecision({
+      if (typeof audit.emitDecision !== 'function') {
+        console.warn('[sofagent] model_unregister 留痕降级：@sofagent/audit 未导出 emitDecision（签名漂移）——本次决策未落 decision-log');
+      } else audit.emitDecision({
         agentId: 'sofagent-mcp-model-unregister',
         sessionId: `model-unregister-${Date.now()}`,
         kind: 'CONFIG_CHANGE',
