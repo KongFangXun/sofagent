@@ -5,7 +5,7 @@
 
 import { existsSync, readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import {getThinkPath, appendThinkEntry, getDataDir } from '@sofagent/core'
+import {getThinkPath, appendThinkEntry, getDataDir, sanitizeThinkText } from '@sofagent/core'
 import type { ToolResult } from './audit-tools';
 // ============================================================
 // 辅助
@@ -53,16 +53,10 @@ export function writeThink(args: Record<string, unknown>): ToolResult | { error:
   if (typeof args.lesson !== 'string' || !args.lesson) {
     return { error: 'Missing or invalid required argument: lesson' };
   }
-  // 清洗 lesson 内容——防止注入 think.md 结构（截断 ## 标题注入 + 长度上限）
-  const MAX_LESSON_LENGTH = 10000;
-  let lesson = args.lesson;
-  if (lesson.length > MAX_LESSON_LENGTH) {
-    lesson = lesson.slice(0, MAX_LESSON_LENGTH);
-  }
-  // 去除换行——防止 lesson 内容注入新的 ## 条目标题
-  lesson = lesson.replace(/[\r\n]+/g, ' ').trim();
-
-  const task = (args.task as string) || '(手动记录)';
+  // v1.5.5：清洗下沉到 @sofagent/core 单一实现（sanitizeThinkText）——lesson 与 task 同管线。
+  //   原实现只清洗 lesson、不清洗 task，task 里的换行可注入新的 `## 时间戳 任务:` 条目标题。
+  const lesson = sanitizeThinkText(args.lesson);
+  const task = sanitizeThinkText(args.task, { fallback: '(手动记录)' });
   const dataDir = getDataDir();
   const thinkPath = getThinkPath(dataDir);
 

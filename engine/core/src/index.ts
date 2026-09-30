@@ -32,6 +32,10 @@
 /* @internal */ export type { RuleDefinition } from './shared/rule-definitions';
 /* @internal */ export { SENSITIVE_FILE_PATH_PATTERNS, TOOL_INJECTION_PATTERNS } from './shared/rule-patterns';
 
+// ── v1.5.5 批 7：think 条目文本清洗单一实现（write_think 与 appendManualThinkEntry 共用）──
+/* @internal */ export { sanitizeThinkText, MAX_THINK_LESSON_LENGTH } from './shared/think-sanitize';
+/* @internal */ export type { ThinkSanitizeOptions } from './shared/think-sanitize';
+
 // ── v1.2.5 §3.1: Agent 身份码轻量版 → v1.3.1 交付 6 Ed25519 完整版 ──
 /* @public */ export {
   generateAgentIdentity,

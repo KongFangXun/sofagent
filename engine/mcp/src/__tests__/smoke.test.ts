@@ -40,10 +40,12 @@ vi.mock('@sofagent/think', () => ({
 }));
 
 // ── Mock @sofagent/core（记忆契约：getThinkPath / appendThinkEntry）──
-vi.mock('@sofagent/core', () => ({
+vi.mock('@sofagent/core', async (importOriginal) => ({
   getThinkPath: vi.fn(() => '/tmp/test-think.md'),
   appendThinkEntry: vi.fn(() => 0),
   getDataDir: vi.fn(() => require('os').tmpdir()),
+  // v1.5.5 批 7：write_think 的文本清洗下沉到 @sofagent/core——mock 需提供该符号（取真实实现）。
+  sanitizeThinkText: (await importOriginal<typeof import('@sofagent/core')>()).sanitizeThinkText,
 }));
 
 // ── Mock child_process ──
