@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies（js-yaml 供 check-version / dependency-direction 解析）
         run: npm ci
       - name: check-version.sh
-        run: bash tools/check/check-version.sh
+        run: bash tools/check/check-version.sh --strict
       - name: check-docs.sh
         run: bash tools/check/check-docs.sh
       # v1.4.6：手填字面量对账——同一事实被手抄两份（真相源 + 文档手填数字）时

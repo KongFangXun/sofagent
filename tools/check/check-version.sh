@@ -1491,24 +1491,50 @@ echo ""
 # README.md / README.en.md / bootstrap.sh 三处 refs/tags/vX.Y.Z 必须互相一致；
 # 与 package.json version 不一致时 WARN（发版后需 bump 属预期中间态，不阻断）；
 # 三方自身不一致时 ERROR 阻断（安装入口互相打架 = 用户装到不同版本）。
-echo "=== 20. 安装入口 tag 对账（README × bootstrap） ==="
-TAG_README_CN=$(grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/README.md" 2>/dev/null | head -1 || true)
-TAG_README_EN=$(grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/README.en.md" 2>/dev/null | head -1 || true)
-TAG_BOOTSTRAP=$(grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null | head -1 || true)
-if [[ -z "$TAG_README_CN" ]] || [[ -z "$TAG_README_EN" ]] || [[ -z "$TAG_BOOTSTRAP" ]]; then
-  echo -e "  ${RED}✗${NC} 安装入口 tag 缺失：README.md=${TAG_README_CN:-无} README.en.md=${TAG_README_EN:-无} bootstrap.sh=${TAG_BOOTSTRAP:-无}"
+echo "=== 20. 安装入口 tag 对账（README × bootstrap · 全量 tag 集合） ==="
+# v1.5.5：原实现用 head -1 只取每文件首个匹配——bootstrap.sh 内第二个 tag（LIB_BASE_URL）
+#   漂移不可见；且「落后于当前版本」只计警告、pr-check 未加 --strict，门禁实际不阻断。
+#   v1.5.4 实锤：INSTALL_URL 指 v1.5.3 / LIB_BASE_URL 指 v1.5.4，而本脚本报绿。
+#   现改为「全量 tag 集合 == {refs/tags/v${SSOT_VERSION}}」硬断言，落后即 ERROR。
+ENTRY_TAG_MISSING=""
+ENTRY_TAG_SET=""
+for _ef in README.md README.en.md bootstrap.sh; do
+  _ef_tags=$(grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/${_ef}" 2>/dev/null | sort -u || true)
+  if [[ -z "$_ef_tags" ]]; then
+    ENTRY_TAG_MISSING="${ENTRY_TAG_MISSING} ${_ef}"
+  else
+    ENTRY_TAG_SET="${ENTRY_TAG_SET}"$'\n'"${_ef_tags}"
+  fi
+done
+ENTRY_TAG_UNIQ=$(printf '%s\n' "$ENTRY_TAG_SET" | grep -v '^$' | sort -u || true)
+ENTRY_TAG_COUNT=$(printf '%s\n' "$ENTRY_TAG_UNIQ" | grep -v '^$' | wc -l | tr -d ' ')
+if [[ -n "$ENTRY_TAG_MISSING" ]]; then
+  echo -e "  ${RED}✗${NC} 安装入口 tag 缺失：${ENTRY_TAG_MISSING}"
+  ERRORS=$((ERRORS + 1))
+elif [[ "$ENTRY_TAG_COUNT" != "1" || "$ENTRY_TAG_UNIQ" != "refs/tags/v${SSOT_VERSION}" ]]; then
+  echo -e "  ${RED}✗${NC} 安装入口 tag 集合 ≠ {refs/tags/v${SSOT_VERSION}}（共 ${ENTRY_TAG_COUNT} 个）："
+  printf '%s\n' "$ENTRY_TAG_UNIQ" | grep -v '^$' | sed 's/^/      /'
   ERRORS=$((ERRORS + 1))
 else
-  if [[ "$TAG_README_CN" != "$TAG_README_EN" ]] || [[ "$TAG_README_CN" != "$TAG_BOOTSTRAP" ]]; then
-    echo -e "  ${RED}✗${NC} 安装入口 tag 三方不一致：README.md=$TAG_README_CN README.en.md=$TAG_README_EN bootstrap.sh=$TAG_BOOTSTRAP"
-    ERRORS=$((ERRORS + 1))
-  elif [[ "$TAG_README_CN" != "refs/tags/v${SSOT_VERSION}" ]]; then
-    echo -e "  ${YELLOW}⚠${NC} 安装入口 tag=$TAG_README_CN 落后于当前版本 v${SSOT_VERSION}——发版后需 bump（B1 教训：tag 打完后安装入口三处随版同步，见 releasing/09-publish.md 步骤五）"
-    WARNINGS=$((WARNINGS + 1))
-  else
-    echo -e "  ${GREEN}✓${NC} 安装入口 tag 三方一致且与当前版本对齐：${TAG_README_CN}"
-    CHECKS=$((CHECKS + 1))
-  fi
+  echo -e "  ${GREEN}✓${NC} 安装入口 tag 三处全量一致且与当前版本对齐：${ENTRY_TAG_UNIQ}"
+  CHECKS=$((CHECKS + 1))
+fi
+echo ""
+
+# ── 20c. install.sh 版本字面量对账（v1.5.5 新增）──────────────────
+# install.sh 的 VERSION= 为写死字面量——经 bootstrap 下载态运行时就近取不到 package.json
+#   （v1.5.5 前提待核 #12 已实测确认），故保持字面量，由本断言强制与 SSOT 同步。
+echo "=== 20c. install.sh 版本字面量对账 ==="
+INSTALL_SH_VERSION=$(sed -n 's/^VERSION="\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)".*$/\1/p' "${PROJECT_ROOT}/install.sh" 2>/dev/null | head -1 || true)
+if [[ -z "$INSTALL_SH_VERSION" ]]; then
+  echo -e "  ${RED}✗${NC} install.sh 未解析到 VERSION=\"X.Y.Z\" 字面量（格式变化？人工确认）"
+  ERRORS=$((ERRORS + 1))
+elif [[ "$INSTALL_SH_VERSION" != "$SSOT_VERSION" ]]; then
+  echo -e "  ${RED}✗${NC} install.sh VERSION=${INSTALL_SH_VERSION} ≠ package.json ${SSOT_VERSION}——漏改安装脚本版本"
+  ERRORS=$((ERRORS + 1))
+else
+  echo -e "  ${GREEN}✓${NC} install.sh VERSION=${INSTALL_SH_VERSION} 与 SSOT 一致"
+  CHECKS=$((CHECKS + 1))
 fi
 echo ""
 
@@ -1535,6 +1561,20 @@ else
     echo -e "  ${YELLOW}⚠${NC} 本地无 tag v${SSOT_VERSION} 且 INSTALL_URL 仍指 ${B_URL_TAG:-无}（窗口态），跳过 lib 哈希对账（发版后自动生效）"
     WARNINGS=$((WARNINGS + 1))
   fi
+fi
+# v1.5.5：三处 tag 同源自洽硬断言（URL 的 tag / LIB 的 tag / 哈希对账所用 tag）——
+#   原 20b 只比「钉值哈希 vs 该 tag 的文件内容」，不看 INSTALL_URL 实际指向哪个 tag：
+#   v1.5.4 的 URL/哈希跨 tag 错位恰落此盲区（INSTALL_URL→v1.5.3 而 INSTALL_SHA256 是 v1.5.4 值，
+#   本脚本报绿，用户下载 v1.5.3 install.sh 与 v1.5.4 钉值比对 → fail-closed 装不上）。
+B_URL_TAG=$(grep -E '^INSTALL_URL=' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null | grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+B_LIB_TAG=$(grep -E '^LIB_BASE_URL=' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null | grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+B_EXPECT_TAG="refs/tags/v${SSOT_VERSION}"
+if [[ "$B_URL_TAG" == "$B_EXPECT_TAG" && "$B_LIB_TAG" == "$B_EXPECT_TAG" ]]; then
+  echo -e "  ${GREEN}✓${NC} INSTALL_URL / LIB_BASE_URL 的 tag 均与当前版本同源（${B_EXPECT_TAG}）"
+  CHECKS=$((CHECKS + 1))
+else
+  echo -e "  ${RED}✗${NC} bootstrap 内 tag 非同源：INSTALL_URL=${B_URL_TAG:-无} LIB_BASE_URL=${B_LIB_TAG:-无} 期望 ${B_EXPECT_TAG}"
+  ERRORS=$((ERRORS + 1))
 fi
 if [[ -n "$B_BASE_DESC" ]]; then
   # 内容读取：tag 态取 tag blob / tag 前取工作树文件（口径由 B_BASE_DESC 随行打印）
@@ -1621,8 +1661,14 @@ echo ""
 echo "=== 21. 构建产物版本对账（dist vs 源码） ==="
 DIST_VER=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/engine/audit/dist/index.js" 2>/dev/null | head -1 || true)
 if [[ -z "$DIST_VER" ]]; then
-  echo -e "  ${YELLOW}⚠${NC} engine/audit/dist/index.js 未构建或版本号缺失——阶段十 npm run build 后消解"
-  WARNINGS=$((WARNINGS + 1))
+  # v1.5.5：dist 缺位 = 环境态（pr-check 的 version-and-docs job 只 npm ci、不 build，
+  #   见该 workflow 内注「engine/*/dist 仍不存在」），非版本漂移 ⇒ 计「降级跳过」而非
+  #   「警告」——使 pr-check 可常开 --strict 而不假红（裁决口径见 pre-push-check：
+  #   「合法窗口态 → 应计降级跳过（⏭️）而非警告（⚠）」）。dist 时效的真信号由
+  #   build-and-test job 的 check-template-drift / check-tool-health 承接（均在其 build 之后跑）。
+  echo -e "  ${YELLOW}⏭️${NC} engine/audit/dist/index.js 未构建（环境态：本 job 不 build）——降级跳过，dist 时效由 build-and-test job 承接"
+  SKIPS=$((SKIPS + 1))
+  CHECKS=$((CHECKS + 1))
 elif [[ "$DIST_VER" != "v${SSOT_VERSION}" ]]; then
   echo -e "  ${YELLOW}⚠${NC} dist 版本=$DIST_VER 落后于 SSOT v${SSOT_VERSION}——bump 后未 rebuild（F-01 防复发：发版前必跑 npm run build）"
   WARNINGS=$((WARNINGS + 1))
