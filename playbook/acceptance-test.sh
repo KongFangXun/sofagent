@@ -2353,8 +2353,8 @@ node "$PROJECT_ROOT/tools/audit/client-audit.mjs" --industry 通用 2>/dev/null 
 $S273_OK && pass "FDE 五件齐 + 问卷 7 行业可执行" || fail "FDE 运维件缺失"
 scenario 274 "v1.3.5 交付 2 附带：doctor --reset-baseline 双形态路由"; S274_OK=true
 grep -q "reset-baseline" "$PROJECT_ROOT/engine/audit/src/index.ts" || S274_OK=false
-# 双形态各断言（场景名即「双形态路由」）：仓外 cwd 无 tools/ ⇒ 清三锚；仓内 cwd 有 tools/audit-baseline-sync.sh ⇒ 经脚本重置三锚。SOFAGENT_HOME 隔离到临时目录，不碰真实 ~/.sofagent。旧断言只认「已重置」而本场景 cwd 恒为 TMP_REPO（仓外）⇒ 断言与运行上下文错配（长期潜伏红）。
-S274_HOME=$(mktemp -d /tmp/sofagent-acc-s274-XXXX); for _p in "$TMP_REPO|三锚已清除" "$PROJECT_ROOT|三锚已重置"; do (cd "${_p%%|*}" && SOFAGENT_HOME="$S274_HOME" SOFAGENT_HOME_ALLOWED_PREFIXES="$S274_HOME" node "$PROJECT_ROOT/engine/audit/dist/index.js" --reset-baseline 2>/dev/null | grep -q "${_p##*|}") || S274_OK=false; done; rm -rf "$S274_HOME"
+# 双形态各断言：仓外 cwd 无 tools/ ⇒ 清三锚；仓内 cwd ⇒ 经脚本重置三锚（SOFAGENT_HOME 隔离）。v1.5.5 阶段五修复：doctor 有 FAIL 项（隔离 HOME 下 hook 未装等环境态）时 rc=1，pipefail 使 rc 传染整管道——grep 命中也判 FAIL；判定语义=只看输出含期望文案，行内局部豁免 pipefail（同 git_log_has 先例）。
+S274_HOME=$(mktemp -d /tmp/sofagent-acc-s274-XXXX); for _p in "$TMP_REPO|三锚已清除" "$PROJECT_ROOT|三锚已重置"; do (cd "${_p%%|*}" && SOFAGENT_HOME="$S274_HOME" SOFAGENT_HOME_ALLOWED_PREFIXES="$S274_HOME" set +o pipefail; node "$PROJECT_ROOT/engine/audit/dist/index.js" --reset-baseline 2>/dev/null | grep -q "${_p##*|}"; set -o pipefail) || S274_OK=false; done; rm -rf "$S274_HOME"
 $S274_OK && pass "--reset-baseline 独立 flag + 双形态路由（仓外清锚 / 仓内重置）" || fail "基线重置 flag 失效（rebuild 后 hook 拦截无法自愈）"
 scenario 275 "v1.3.5 交付 6：DSH MCP 互通（HANDBOOK 配置节 + rc 诚实标注）"; S275_OK=true
 grep -q "dsh-mcp-client" "$PROJECT_ROOT/docs/HANDBOOK.md" || S275_OK=false
