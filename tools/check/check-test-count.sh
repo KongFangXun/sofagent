@@ -337,6 +337,18 @@ if [ "$SCENARIOS_ONLY" = true ]; then
   exit 0
 fi
 
+# ── 前置探测：仓库根依赖（v1.5.5 批 15）──
+# 本脚本靠 test-count.sh 实跑全量测试取真值，而实跑需要仓库根 node_modules。
+# 缺失时 test-count.sh 的原始输出是「有包测试失败或脚本错误，门禁红」——把**环境问题
+# 误报成代码问题**（实测无依赖工作树 13 包全 127 command-not-found），排查方向被带偏。
+# 此处前置探测并给出准确原因，**保留非零退出**（fail-loud，不引入静默跳过）。
+if [ ! -d node_modules ]; then
+  echo "❌ [check-test-count] 仓库根缺 node_modules——环境未安装依赖，无法实跑测试取真值。"
+  echo "   修法：在仓库根执行 npm install（或 npm ci）后重跑本脚本。"
+  echo "   定性：属**环境限制**，不是测试失败、也不是文档漂移（两者另有各自判据）。"
+  exit 1
+fi
+
 # ── 跑 test-count.sh 拿 SSOT 真值 ──
 if [ "$QUIET" = false ]; then
   echo -e "\n${BOLD}── 文档测试数一致性校验 ──${NC}"
