@@ -145,7 +145,7 @@ function historyHasSignedEntry(dataDir?: string): boolean {
 function generateHmacKeyFile(keyPath: string): string {
   const key = randomBytes(32).toString('hex');
   const dir = dirname(keyPath);
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true, mode: 0o700 });
   const tmp = `${keyPath}.tmp.${process.pid}.${randomBytes(4).toString('hex')}`;
   writeFileSync(tmp, key, { encoding: 'utf-8', mode: 0o600 });
   renameSync(tmp, keyPath);
