@@ -4,3 +4,15 @@
 // 各 CLI 入口和模块从此处引用版本号和共享常量，不再各自定义。
 
 export const VERSION = '1.5.4';
+
+/**
+ * 引擎崩溃退出码（v1.5.5 批 10 · 单源收口）。
+ *
+ * 语义：0 = 全绿 / 1 = 警告 / 2 = 违规 / 3 = 用法错误（非 git 目录等）/ **4 = 引擎崩溃**。
+ * 独立为 4 是为了让 hook 的「非 0/1/2 ⇒ fail-loud 阻断」分支能单义识别崩溃，
+ * 避免与「用错目录」撞码（原两者同为 3）。
+ *
+ * 此前在 `engine/audit/src/index.ts` 与 `engine/audit/src/cli-quick.ts` 各定义一份，
+ * 靠注释 + 双侧行为测试手同步——现收敛到本常量，两处 import 引用。
+ */
+export const EXIT_ENGINE_CRASH = 4;

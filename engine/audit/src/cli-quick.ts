@@ -38,9 +38,7 @@
 // v1.4.9 P1-15：**3 → 4**。原用 3 与 cli-quick 自己的「非 git 仓库 ⇒ return 3」撞码
 // （实测两义并存：非 git 目录跑出 3，SOFAGENT_HOME 越界崩溃也跑出 3），撞码使问题定位
 // 需要靠 stderr 猜。独立为 4 后「崩溃」与「用错目录」可由退出码单义区分。
-// ⚠️ 与 index.ts 顶部同名常量/处理块**手同步**（两文件本就各自独立注册）
-// ——漂移由 `src/__tests__/cli-crash-exit-code.test.ts` 双侧行为锁兜住，不靠注释自律。
-const EXIT_ENGINE_CRASH = 4;
+// v1.5.5 批 10：常量下沉 @sofagent/core 单源（原与 index.ts 各定义一份、靠注释+测试手同步）。
 
 // v1.4.3 F-08/§：quick 模式「跳过」的解释串——**单一常量，两个输出分支共用**。
 // 缺陷（两层）：
@@ -73,20 +71,36 @@ function hasFailFastSkip(rules: AuditResult['rules']): boolean {
   );
 }
 
+/**
+ * 崩溃兜底取退出码。
+ * 🔴 不得直接写 `process.exit(EXIT_ENGINE_CRASH)`：该常量现取自 @sofagent/core，而崩溃可能
+ *    发生在 core 模块尚未完成初始化时（典型：core 的 SOFAGENT_HOME 越界 fail-loud 守卫在
+ *    require 期抛出）——此时 core 的导出仍处 TDZ，处理器内直接读取会抛 ReferenceError，
+ *    让处理器自己崩掉、进程以非预期码退出（实测 7），把「引擎崩溃」伪装成它码。
+ *    取不到时回落到同值字面量（由 tools/check/literals.json 锁定与 core 同值）。
+ */
+function engineCrashExitCode(): number {
+  try {
+    return EXIT_ENGINE_CRASH;
+  } catch {
+    return 4; // 与 @sofagent/core EXIT_ENGINE_CRASH 同值
+  }
+}
+
 process.on('uncaughtException', (err) => {
   console.error(`\u274c sofagent-audit(quick) 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(EXIT_ENGINE_CRASH);
+  process.exit(engineCrashExitCode());
 });
 process.on('unhandledRejection', (reason) => {
   console.error(`\u274c sofagent-audit(quick) 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
-  process.exit(EXIT_ENGINE_CRASH);
+  process.exit(engineCrashExitCode());
 });
 
 import { execFileSync, spawnSync } from 'child_process';
 import { FULL_ONLY_FLAGS as FULL_ONLY_FLAGS_SRC, AUDIT_SUBCOMMANDS as AUDIT_SUBCOMMANDS_SRC } from './cli/flag-table';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { parseDiff, isInGitRepo, VERSION, type DiffFile } from '@sofagent/core';
+import { parseDiff, isInGitRepo, VERSION, EXIT_ENGINE_CRASH, type DiffFile } from '@sofagent/core';
 import { runRules, type AuditResult, type RuleCheck } from './reporter';
 import { resolveDiffEndpoint } from './diff-ref';
 

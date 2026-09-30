@@ -88,6 +88,13 @@ jobs:
       # 本批统一接 pr-check.yml（PR 门禁主入口）。四个真门禁阻断，一个观察期非阻断。
       # 均依赖本 job 已 checkout 的工作树；无额外 setup-node 需求（bash + node 内置）。
 
+      # ── v1.5.5 批 10 接入：MCP 注册表接线守卫 ──
+      # 门禁目的：TOOLS 注册表与执行面之间此前无机械校验——工具登记了但没 handler
+      #   （或 handler 指向未 import 的函数）只有运行时调用才暴露。
+      # 依赖：纯 node 内置（读 tool-registry.ts 文本 + 括号配对解析）——无需 build / node_modules。
+      - name: check-mcp-registry-wiring.mjs（MCP 注册表接线）
+        run: node tools/check/check-mcp-registry-wiring.mjs
+
       # GitHub Actions SHA pin 对账（uses: 完整 commit SHA vs 行内注释 tag）。
       # 离线 / 无网络时脚本自身降级 exit 0 + 告警——门禁不被网络抖动阻断。
       - name: check-action-pins.sh
