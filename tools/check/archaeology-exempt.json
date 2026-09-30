@@ -47,11 +47,6 @@
       "reason": "同上（版本头对账表的判据行）：v1.0.0 是待改字面量的固定区间起点，属 ROADMAP 现文数据，非出身叙事。删后这一行判据失去可核对的字面形态。"
     },
     {
-      "file": "docs/changelog/releasing/06-doc-finalize.md",
-      "anchor": "全扫 `2026-09-17.*已发版`（或当前日期）",
-      "reason": "照抄可跑的 grep 模式（bump 中断恢复清单第 ⑥ 项）：日期是该模式的**字面量**，删后命令不可执行、清单第 ⑥ 项失去机械形态。判据本体（「bump 后必须跑 check-version 抓残留」）与清单其余五项均不受影响。"
-    },
-    {
       "file": "docs/changelog/releasing/09-publish.md",
       "anchor": "机制标准 = **v1.4.2 实际发布物",
       "reason": "对外发布物的**机制标准锚点**：同行对照命令 `gh release view v1.4.2 --json name,body -q '{name, body}'`（锚点）+ 上一版漂移检测——锚点版本是命令操作数，删后命令不可执行、十字素比对无对照物。锚点选哪一版是 SOP 决策（「若上一版漂移以锚点为准」），不是出身叙事。"

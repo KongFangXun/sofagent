@@ -46,7 +46,8 @@
 
 **执行步骤（两形态同构）**：
 
-1. **审查**：单次草稿优先——`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`（16 视角草稿一次成型，「待取证」项少且变更小 → 草稿 + 人工复核即收口）。API 失败 → 降级路径：`.prompt.md` 落盘交 subagent 执行出**正式草稿**（降级≠豁免，`.prompt.md` 本身不算完成）。对话式多轮审查（主会话按 playbook 视角人肉多轮）与草稿产出等价可互换（见 [01-review.md](./01-review.md) 审查分层第三层）。
+1. **审查**：单次草稿优先——`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`（16 视角草稿一次成型，「待取证」项少且变更小 → 草稿 + 人工复核即收口）。API 失败 → 降级路径：`.prompt.md` 落盘交 subagent 执行出**正式草稿**（降级≠豁免，`.prompt.md` 本身不算完成）。
+  对话式多轮审查（主会话按 playbook 视角人肉多轮）与草稿产出等价可互换（见 [01-review.md](./01-review.md) 审查分层第三层）。
 2. **定性（草稿后、动手修前）**：先读 `playbook/fresh-eyes-calibration.md`（判读者法定义务；**时序在草稿生成之后**——提前读会把审查锚定掉）。草稿 finding 是线索不是事实：逐项三定性（实锤/误报/存疑）附 grep 实证；版本中间态按下方 SKIP 口径；`file:line` 引用先跑 `bash tools/check/resolve-section.sh <file> <line>` 解析归属。
 3. **修复**：草稿 P0/P1 项由主 session 零信任复验定性（逐项 grep 实证，不采信草稿结论）→ 修复批交 subagent 或执行 session 执行（修复者≠复验者）→ 主 session 复验收编。修复批协议同引 [`auto-converge-protocol.md`](./auto-converge-protocol.md)。
 4. **升级检查**：复验后 P0≥2 或待取证>5 → 触发升级预授权，转路径 B（生成 prompt 交用户复制）。
@@ -58,7 +59,8 @@
 
 ## 路径 B：盲审路径（注入主任务协议 · harness 自动跑完全程）
 
-> **执行载体（整合归一后仅此一形）**：对一次 harness 运行（**DSH 无头 = 主载体**，无人值守多轮；Codex headless / 有头 AI session 同样可跑）注入主任务协议，由它编排轮次并逐角色调执行器（`FORGE/src/fresh-eyes-driver.mjs --worker --step`，DSH 后端）。主任务协议全文、角色三通道、注入包安全纪律、产物契约守闸（`tools/check/check-fresh-eyes-artifacts.mjs`）与编排权归属铁律见 `FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节与 `SKILL.md`——本 SOP 不复述（单一维护源）。
+> **执行载体（整合归一后仅此一形）**：对一次 harness 运行（**DSH 无头 = 主载体**，无人值守多轮；Codex headless / 有头 AI session 同样可跑）注入主任务协议，由它编排轮次并逐角色调执行器（`FORGE/src/fresh-eyes-driver.mjs --worker --step`，DSH 后端）。
+>主任务协议全文、角色三通道、注入包安全纪律、产物契约守闸（`tools/check/check-fresh-eyes-artifacts.mjs`）与编排权归属铁律见 `FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节与 `SKILL.md`——本 SOP 不复述（单一维护源）。
 
 > **防止 lost-in-the-middle**：执行 session 先读注入包骨架确认要做什么，再按序执行。
 > **主 session 并行面**：run 窗口内并行步骤三/四（代码审核 + 验收增量），不空等；窗口纪律见铁律一。
@@ -135,7 +137,7 @@
 
 | 项 | 完成判据（全满足才可打勾） |
 |---|---|
-| 审查产物（A） | `~/Desktop/fresh-eyes-draft-vX.Y.Z.md` 存在 **且** 含全部 16 个视角节（`grep -c "^## 视角" = 16`——草稿工具静态子集 1-16；动态面 17-19 由盲审 run/人工兜底取证）。若走了降级：产物为 `.prompt.md` 时 = **未完成**，必须粘贴执行出正式草稿后才算。若走对话式多轮形态（01-review.md 第三层）：产物为桌面 `vX.Y.Z-bugfix-prompt.md`（含问题总表 + 逐项修复方案 + 验证命令）**且**修复批已收编 commit——两者满足其一即可 |
+| 审查产物（A） | `~/Desktop/fresh-eyes-draft-vX.Y.Z.md` 存在 **且** 含全部 16 个视角节。若走了降级：产物为 `.prompt.md` 时 = **未完成**，必须粘贴执行出正式草稿后才算。若走对话式多轮形态（01-review.md 第三层）：产物为桌面 `vX.Y.Z-bugfix-prompt.md`（含问题总表 + 逐项修复方案 + 验证命令）**且*…|
 | 审查产物（B） | runDir 内有 `verdict`/`findings` 产物**文件**——仅 status/汇报文本不算（状态行不能替代产物实物，守闸脚本 EXIT=0 才算契约满足）。环境豁免时：汇报须含「豁免：<故障形态> + 补偿措施 a/b/c」且豁免资格前置（2 次启动尝试）可查——两种形态都须留痕，禁止静默跳过 |
 | 代码审核 | 发布检查清单逐项打勾记录（在 changelog 开发日志或汇报中可见） |
 | 验收增量 | 新场景编号与汇报区间一致（判据命令按实际区间构造，如 `grep -c "^scenario 29[4-9]\|^scenario 30[0-9]"`——**编号每版不同，勿照抄本表示例**）；全量 acceptance EXIT=0 |

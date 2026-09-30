@@ -240,7 +240,8 @@ git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
 
 > **tag 先行策略**：先 push main → 等 CI 全绿验证 → 才打 tag。tag 一定指向 CI 验证过的 commit，不会 tag 了之后才发现 CI 红。
 >
-> 🔴 **push 前置检查：workspace 包与 lock 同步**：新增 workspace 包但 lock file 未同步时，push 后多个 CI 工作流（pr-check/verify/audit/windows-ci）在 `npm ci` 严格校验上**同根因全红**（本地 `npm install` 会静默补齐所以本地全绿，CI `npm ci` 直接炸）。**push 前必跑**：`npm ci --dry-run 2>&1 | grep -c "^npm error Missing"` 期望 0——非 0 则 `npm install --package-lock-only` 补齐 lock 后随代码同 commit。
+> 🔴 **push 前置检查：workspace 包与 lock 同步**：新增 workspace 包但 lock file 未同步时，push 后多个 CI 工作流（pr-check/verify/audit/windows-ci）在 `npm ci` 严格校验上**同根因全红**（本地 `npm install` 会静默补齐所以本地全绿，CI `npm ci` 直接炸）。
+>**push 前必跑**：`npm ci --dry-run 2>&1 | grep -c "^npm error Missing"` 期望 0——非 0 则 `npm install --package-lock-only` 补齐 lock 后随代码同 commit。
 >
 > 🔴 **CI 全绿是打 tag 的硬前置**：push 之后必须**轮询等到全绿**（不是看一眼就走）——`exit 0` 之前禁止进入步骤六。CI 红着打 tag 会让用户装到坏版本（tag 是安装入口的锚点），回滚成本远高于等待 2-5 分钟。**轮询必须前台执行**：上述 while 循环在 session 前台逐轮跑（每轮一查 + sleep 60），严禁包进 run_in_background——挂后台 = session 空闲 = 界面无进展反馈。轮询脚本如下（循环跑直到 exit 0，每次间隔 60s）：
 
@@ -352,7 +353,8 @@ done
 
 > bootstrap.sh 对下载的 install.sh + 6 个 lib 文件做 sha256 校验（curl | bash 信任模型加固）。**tag 指向新版后哈希必然变化——必须同步更新 bootstrap.sh 内嵌的 7 个哈希，否则用户安装会因校验失败而 fail-closed（好陷阱：宁可不装也不装被劫持的脚本，但会让所有人装不上）。**
 
-**优选路径：预计算哈希与 URL bump 同 commit，tag 一次打自洽**——打 tag 前预计算 HEAD 的 install.sh 哈希（`git show HEAD:install.sh | shasum -a 256`）与 tag URL bump、哈希回填全部进同一个 commit，push 后打 tag——tag 内 bootstrap.sh 天然自洽，无需重打。install.sh/lib 自上版零改动时 6 lib 哈希沿用免回填（`git diff <上tag>..HEAD --stat -- engine/scripts/lib/` 输出空即零改动）。验收：`git show vX.Y.Z:bootstrap.sh` 内嵌哈希 == `git show vX.Y.Z:install.sh | shasum -a 256`。
+**优选路径：预计算哈希与 URL bump 同 commit，tag 一次打自洽**——打 tag 前预计算 HEAD 的 install.sh 哈希（`git show HEAD:install.sh | shasum -a 256`）与 tag URL bump、哈希回填全部进同一个 commit，push 后打 tag——tag 内 bootstrap.sh 天然自洽，无需重打。install.sh/lib 自上版零改动时 6 lib 哈希沿用免回填（`git diff <上tag>..HEAD --stat -- engine/scripts/lib/` 输出空即零改动）。
+验收：`git show vX.Y.Z:bootstrap.sh` 内嵌哈希 == `git show vX.Y.Z:install.sh | shasum -a 256`。
 
 > 🔴 **验收必须 7 项逐项实测，不能只验 install.sh**：6 个 lib 里任何一个在发布窗口内被改过
 > （哪怕是发布前的审查修复批顺手改的），其哈希就必须同步回填——只验 install.sh 会漏掉 lib 项，
@@ -371,7 +373,8 @@ done
 # ③ 提交后用 mock curl 篡改场景自测 fail-closed 仍生效（见 bootstrap.sh 头注释）
 ```
 
-> 🔴 **时序陷阱：回填哈希后必须重打 tag**——「先改 URL 提交 → 打 tag → 算哈希 → 回填提交」会让 tag 内 bootstrap.sh 仍持旧哈希（tag 内不自洽）。正确收口 = 回填哈希的 commit 落盘后**重打 tag**：`git tag -d vX.Y.Z && git tag -a vX.Y.Z -m ... && env -u http_proxy ... push origin :refs/tags/vX.Y.Z && push origin vX.Y.Z`（tag force 覆盖远端）。验收：`git show vX.Y.Z:bootstrap.sh | grep INSTALL_SHA256` 的哈希 == `git show vX.Y.Z:install.sh | shasum -a 256`。install.sh 本体无改动时 6 lib 哈希不变，只重算 install.sh 一项。
+> 🔴 **时序陷阱：回填哈希后必须重打 tag**——「先改 URL 提交 → 打 tag → 算哈希 → 回填提交」会让 tag 内 bootstrap.sh 仍持旧哈希（tag 内不自洽）。正确收口 = 回填哈希的 commit 落盘后**重打 tag**：`git tag -d vX.Y.Z && git tag -a vX.Y.Z -m ... && env -u http_proxy ... push origin :refs/tags/vX.Y.Z && push origin vX.Y.Z`（tag force 覆盖远端）。
+>验收：`git show vX.Y.Z:bootstrap.sh | grep INSTALL_SHA256` 的哈希 == `git show vX.Y.Z:install.sh | shasum -a 256`。install.sh 本体无改动时 6 lib 哈希不变，只重算 install.sh 一项。
 
 ### 第三拍：阶段六挂账翻牌（版本介绍触点清单）
 
@@ -416,32 +419,24 @@ else
 fi
 ```
 
-> 🔴 **tag push 失败重试**：`git tag -a` 本地打标成功但 push 可能被中断（实测 exit 137 SIGKILL / 超时）——此时**远端没有 tag，本地有**（`gh api repos/O/R/git/ref/tags/vX.Y.Z` 404 确认）。重试直接用「网络降级策略」的完整命令（剥代理 + HTTP/1.1 + 低速兜底）单独 push tag：`env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u all_proxy git -c http.proxy= -c https.proxy= -c http.version=HTTP/1.1 -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=300 push origin vX.Y.Z`——push 完成后用 `gh api repos/O/R/git/refs/tags/vX.Y.Z --jq '.object.sha'` 确认远端存在，与本地 `git rev-parse vX.Y.Z` 一致。
+> 🔴 **tag push 失败重试**：`git tag -a` 本地打标成功但 push 可能被中断（实测 exit 137 SIGKILL / 超时）——此时**远端没有 tag，本地有**（`gh api repos/O/R/git/ref/tags/vX.Y.Z` 404 确认）。
+>重试直接用「网络降级策略」的完整命令（剥代理 + HTTP/1.1 + 低速兜底）单独 push tag：`env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u all_proxy git -c http.proxy= -c https.proxy= -c http.version=HTTP/1.1 -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=300 push origin vX.Y.Z`——push 完成后用 `gh api
+>repos/O/R/git/refs/tags/vX.Y.Z --jq '.object.sha'` 确认远端存在，与本地 `git rev-parse vX.Y.Z` 一致。
 
 ---
 
 ## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp） ☐
 
-> GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 `@sofagent/*` 与裸名总包在步骤八手动 publish（13 个手动 `@sofagent/*` = 11 个引擎模块包 + `load-chain` + `dsh-plugin-kit`，加裸名总包 `sofagent` 共 **14 包**——包数口径以步骤八头部为准）；**另有七款 DSH 插件**（`cordis-plugin-sofagent-*`，裸名、目录在 `engine/dsh-plugins/`）同样在步骤八手动 publish——见「步骤八·补」。
+> GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 `@sofagent/*` 与裸名总包在步骤八手动 publish（13 个手动 `@sofagent/*` = 11 个引擎模块包 + `load-chain` + `dsh-plugin-kit`，加裸名总包 `sofagent` 共 **14 包**——包数口径以步骤八头部为准）；
+>**另有七款 DSH 插件**（`cordis-plugin-sofagent-*`，裸名、目录在 `engine/dsh-plugins/`）同样在步骤八手动 publish——见「步骤八·补」。
 
 > **触点纪律（撤策执行不完整教训 · F-8）**：策略类翻牌必须全站 grep `alpha|分道|channel|dist-tag` 后双语双段逐一翻牌（README 双语 62 区块与 188 段、LIMITATIONS、本文件）——commit message 的触点声称以 grep 结果为准，不以记忆为准。
 
-### dist-tag 分道（🔴 **已撤策**——试行一轮后撤策：版本号已承载阶段语义（一系版本=施工期、次版本位归零起=贝塔），dist-tag 分道复杂度大于收益。以下保留为历史档案，下版发布不再执行；恢复正常发布（默认 latest，无先行舞步））
+### dist-tag 分道（🔴 **已撤策**——历史档案见 git 演进史本节旧版）
 
-> 🔴 **撤策后的现行口径（生效中）**：本步骤与步骤八**全程不加 `--tag`**——全部 23 包以默认 tag（`latest`）发布；release.yml 的自动 publish（audit + mcp）与步骤八的手动 publish 同口径，**无需任何先行舞步**（release.yml 遇「版本已存在」自行 `skip=true`，该通道本就不依赖 tag）。**首发包**（首次上 npm 的包）直接落 `latest`，`npm i <pkg>` 立即可用——「验证通过后才 `dist-tag add` 顶 latest」的二段起舞随之取消（四段实装验证仍是发布前置门，只是不再有 dist-tag 动作）。
-> **为什么撤策**：版本号已承载阶段语义（一系版本 = 施工期、次版本位归零起 = 贝塔），再用 dist-tag 承载一遍是同一问题的第二种解法，复杂度大于收益——且分道会给首发包制造「`npm i` 装不上」的起舞窗口，与本仓「装上就能用」的取向相悖。
+> 撤策后现行口径：本阶段与步骤八**全程不加 `--tag`**，全部包以默认 tag（latest）发布；
+> 版本阶段语义由版本号承载。撤策始末与「alpha 分道」试行记录见本文件的 git 历史（该段 40+ 行档案已退役）。
 
-<details>
-<summary>历史存档：dist-tag 分道（试行一轮后撤策 · 以下任何一版都不再执行）</summary>
-
-> 保留原因：① 理解本仓早期版本的 registry 状态（当时 `latest` 停在更前一版，施工版只在 `alpha` 通道）；② 教训本身有价值——「用 dist-tag 承载阶段语义」与「用版本号承载阶段语义」是同一问题的两种解法，后者胜在用户无需学新命令、不存在装上装不上的窗口。
-
-- ~~判据是版本期，不是日期：施工期（本版低于贝塔线）→ 全部 23 包以 `--tag alpha` 发布、`latest` 不动；贝塔期起 → 默认 tag~~。
-- 自动通道也要管：release.yml 的 `npm publish --access public` 不带 tag ⇒ 施工期须在 `gh release create` **之前**先手动以 `alpha` 发布 audit + mcp（否则 CI 以默认 tag 发布、`latest` 当场被改写）；命令形态为 `( cd engine/<pkg> && npm publish --access public --tag alpha )` 两行。
-- 施工期逐格：判版本期 / 先行发 audit+mcp 并确认 release.yml 走「已发布即跳过」/ 步骤八每处 publish 追加 `--tag alpha` / 发布后逐包 `npm view <pkg> dist-tags` 对账（期望 `alpha` = 本版且 `latest` 不动）。
-- 首发包额外一拍：`--tag alpha` 下 `npm i <pkg>` 报 `No matching version found`，二选一——① 保持分道，对外改说 `npm i <pkg>@alpha`；② 四段实装验证通过后 `npm dist-tag add <pkg>@<版本> latest` 逐款顶 `latest`（⚠️ 顺序不可颠倒：未验证就顶 `latest` = 把未验证的空壳推给默认通道）。
-
-</details>
 
 ### 🔴 发版 artifact 四件对账（release create 后立即做，不等收尾）
 
@@ -449,12 +444,13 @@ fi
 
 | # | artifact | 核验命令 | 期望 |
 |---|----------|---------|------|
-| 1 | git tag（远端存在且指向发版 commit） | 🔴 annotated tag 对账口径：`gh api git/refs/tags` 返回的是 **tag object SHA** ≠ commit SHA，直接与 `git rev-parse vX.Y.Z^{commit}` 比必不等——正确对账二选一：① `gh api refs/tags` 的 sha == `git rev-parse vX.Y.Z`（本地 tag object SHA）② `gh api git/tags/<object-sha>` 二段查 `.object.sha` == `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致（同口径） |
+| 1 | git tag（远端存在且指向发版 commit） | 🔴 annotated tag 对账口径：`gh api git/refs/tags` 返回的是 **tag object SHA** ≠ commit SHA，直接与 `git rev-parse vX.Y.Z^{commit}` 比必不等——正确对账二选一：① `gh api refs/tags` 的 sha == `git rev-parse vX.Y.Z`（本地 tag obje…| 两 SHA 一致（同口径） |
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
-| 3 | npm 23 包（audit + mcp 自动，其余 14 手动 + 七款 DSH 插件手动后） | `for p in audit mcp core daemon eval inject ontology orchestrator train rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view @sofagent/dsh-plugin-kit version --prefer-online` + `npm view sofagent version --prefer-online` + `for p in $(node -p "require('./engine/dsh-plugins/plugins.json').plugins.map(p=>p.id).join(' ')"); do npm view "$p" version --prefer-online; done` | 23 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
+| 3 | npm 23 包（audit+mcp 自动，其余手动） | `for p in audit mcp core daemon eval inject ontology orchestrator train rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version…| 23 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
 | 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
 
-> 🔴 **对账通道的终局口径 = registry HTTP 直查**（实测补充）：`npm view --prefer-online` 在传播延迟期**仍可能长时间返回旧值**——本版 rollback 款按 `--prefer-online` 轮询 6×30s 全是旧值（被判 pending 假报），改 `curl -s https://registry.npmjs.org/<pkg>` + node 解 `dist-tags.latest` **立即见新版**。判定序：① 先查 publish 日志有无 `+ <pkg>@<ver>` 入队行（**有 = 已入发布队列，只是传播慢，不是失败**）→ ② 再用 curl 直查确认 `latest` 与版本键 → ③ CLI 查询只作辅助、不作终判。**发布终局对账一律以 ② 为准**。
+> 🔴 **对账通道的终局口径 = registry HTTP 直查**（实测补充）：`npm view --prefer-online` 在传播延迟期**仍可能长时间返回旧值**——本版 rollback 款按 `--prefer-online` 轮询 6×30s 全是旧值（被判 pending 假报），改 `curl -s https://registry.npmjs.org/<pkg>` + node 解 `dist-tags.latest` **立即见新版**。
+>判定序：① 先查 publish 日志有无 `+ <pkg>@<ver>` 入队行（**有 = 已入发布队列，只是传播慢，不是失败**）→ ② 再用 curl 直查确认 `latest` 与版本键 → ③ CLI 查询只作辅助、不作终判。**发布终局对账一律以 ② 为准**。
 
 > 任何一件不满足 = 发版未完成，当场补（重推 tag / 补 publish / 修 URL），不带病进入收尾。
 
@@ -520,42 +516,17 @@ echo "$BODY" | grep -E "^### 🔒" | grep -q "BugFix（上版遗留）" && echo 
 echo "$TITLE" | grep -qE "^🎉 v[0-9]+\.[0-9]+\.0 — " && echo "✅ 里程碑格式（X.Y.0）" || echo "$TITLE" | grep -qE "^🎉" && echo "🔴 非 X.Y.0 版误用 🎉 前缀" || echo "✅ 常规版格式"
 ```
 
-**工序三 · 上一版结构对照（取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`，里程碑 `🎉 vX.Y.0 —` 前缀规则见 N11）/ 定位句有无 + 长度（N9 ≤220 字符）/ 英文 TL;DR 有无 / Install 速查块有无 / H2 骨架 / 质量表 7 项顺序 / BugFix 节标题逐字（N10）/ 破坏性变更迁移命令 / 尾链位置，十要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = **v1.4.2 实际发布物（标准锚点：含英文 TL;DR + Install 速查 + 迁移命令 + 深入了解导航表）**——若上一版漂移，以 v1.4.2 为准重写，不追随上一版。对照命令：`gh release view v1.4.2 --json name,body -q '{name, body}'`（锚点）+ `gh release view 上一版 --json name,body`（漂移检测）。
+**工序三 · 上一版结构对照（取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`，里程碑 `🎉 vX.Y.0 —` 前缀规则见 N11）/ 定位句有无 + 长度（N9 ≤220 字符）/ 英文 TL;DR 有无 / Install 速查块有无 / H2 骨架 / 质量表 7 项顺序 / BugFix 节标题逐字（N10）/ 破坏性变更迁移命令 / 尾链位置，十要素逐一比对上一版，**结构不一致即重写，直到同构**。
+机制标准 = **v1.4.2 实际发布物（标准锚点：含英文 TL;DR + Install 速查 + 迁移命令 + 深入了解导航表）**——若上一版漂移，以 v1.4.2 为准重写，不追随上一版。对照命令：`gh release view v1.4.2 --json name,body -q '{name, body}'`（锚点）+ `gh release view 上一版 --json name,body`（漂移检测）。
 
 ```bash
 > 🔴 **发布前必做**：生成 body 后先与上一版并排对照——`gh release view v上一版 --json body -q '.body' | grep -E "^## "`——两版 H2 骨架必须同构（首行定位句/核心变更/破坏性变更/质量验证/尾链）。**changelog 内嵌的 Release Notes 段 ≠ GitHub Release body**：前者归 08 的 N1-N7 管（✨ 新功能 bullet 式），后者归本规范管（### 功能领域子标题式）——分别核对，禁止把 changelog 段直接复制当 body。
 
-gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" --notes "$(cat <<'EOF'
-{emoji 主题短语与 title 呼应}——{一句人话说明这版对用户意味着什么}
-
-## 🔨 核心变更
-
-### {功能领域 1}
-- {变更点 1}
-- {变更点 2}
-
-### {功能领域 2}
-- {变更点}
-
-### BugFix（上版本遗留）
-- {修复点}
-
-## ✅ 质量验证
-
-| 检查项 | 结果 |
-|------|:--:|
-| npm test | {N} tests 全绿 ✅ |
-| acceptance-test | {N}/{N} passed · SKIP: {N} · EXIT: {N} ✅ |
-| shellcheck | 零 error ✅ |
-| check-version | {N}/{N} 全绿（@发版时点）✅ |
-| 回归检查 | {N} 维度 ✅ |
-| release-gate | verdict=PASS ✅ |
-| fresh-eyes | {N} 视角审查闭环 ✅ |
-
-📖 [详细开发日志](./docs/changelog/v{major}.{minor}/vX.Y.Z.md)  <!-- 链接相对仓库根，在本文档内直接点击不可达；Release 页实证可点——GitHub 渲染时自动重写为 /{owner}/{repo}/blob/{tag}/... 路径（锚定发版 tag、不随 main 漂移），相对链接为推荐形态，无需改绝对链接 -->
-EOF
-)"
+gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
+  --notes-file ~/Desktop/release-note-vX.Y.Z-body.md   # body 阶段八已生成并三道工序自检（防漂移：勿现场重写）
 ```
+<!-- 完整 body 骨架示例已退役——格式 SSOT = 06「Release Notes」段 + 06 内「最新范本快照」 -->
+
 
 ### Release Notes 格式规范（→ 单一 SSOT：06-doc-finalize.md）
 
@@ -590,7 +561,8 @@ EOF
 > `engine/<pkg>`，故不在下方 `@sofagent/*` 循环里——见「步骤八·补」。`engine/openclaw-plugins/*`
 > 仍不是 npm 发布物（走 ClawHub 分发，见阶段十）。
 >
-> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 `@sofagent/*` 手动 publish（11 个 `engine/<pkg>` 模块包（13 个模块包减去 auto 发布的 audit/mcp） + `load-chain` + `dsh-plugin-kit` = 13 包），再加裸名总包 `sofagent` 共 **14 包手动发布**。**再加七款 DSH 插件，本步骤发布面 = 23 包**（= 15 个 `@sofagent/*` scope 包 + 7 款 DSH 插件 + 1 个裸名总包；审计口径见步骤七 artifact 表第 3 行）。
+> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 `@sofagent/*` 手动 publish（11 个 `engine/<pkg>` 模块包（13 个模块包减去 auto 发布的 audit/mcp） + `load-chain` + `dsh-plugin-kit` = 13 包），再加裸名总包 `sofagent` 共 **14 包手动发布**。
+>**再加七款 DSH 插件，本步骤发布面 = 23 包**（= 15 个 `@sofagent/*` scope 包 + 7 款 DSH 插件 + 1 个裸名总包；审计口径见步骤七 artifact 表第 3 行）。
 >
 > ⚠️ **`@sofagent/load-chain`（`engine/hooks/sofagent-load-chain/`）不在下方循环里**——下方循环写死 `engine/<pkg>` 布局，而它在 `engine/hooks/` 下，按「模块包」口径极易漏掉。必须把它加进循环与验证清单（仓内脚本 `publish-packages.sh` 已改为由根 workspaces 查表解析目录，不受此限）。
 >
@@ -689,7 +661,8 @@ done
 npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  ✅ 总包依赖面在位（audit/mcp/orchestrator/daemon）" || echo "  🔴 总包依赖面缺失——检查 package.json files/dependencies"
 ```
 
-> 🔴 **E409「previously staged version」处理**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**staged 版本约 5 分钟内自动 finalize**（多版实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
+> 🔴 **E409「previously staged version」处理**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**staged 版本约 5 分钟内自动 finalize**（多版实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。
+>处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
 
 ### 步骤八·补：七款 DSH 插件（`cordis-plugin-sofagent-*`） ☐
 
@@ -754,6 +727,18 @@ done
 > `SOFAGENT_PUBLISH_TAG` 开关**常规发版一律不设**（撤策后口径：不设即落默认 `latest`）——仅在需要临时指定 tag 的高级场景（如回填历史通道）才显式赋值。
 
 ---
+
+## 🔴 桌面发布物恢复预案（文件消失时）
+
+`gh release create --notes-file` 报 no such file（桌面被清理/iCloud 同步）时，**从 devlog「Release Notes」段重提取重建**：
+起于 🎯 定位行、止于「### 文档质量评分」节、滤 `> **形态归属**` 内部标注行——重建后跑工序二自检五查（结构/数字/链接全绝对）再用。
+前提纪律：**body 的修正必须同批改 devlog 源**（提取源同步），否则重提取会复活旧错。
+
+## 🔴 网络断连自动重试范式（域名级故障）
+
+github.com 域名级 443 不通而 api.github.com 通道正常时（运营商路由故障特征），挂后台循环：
+`nohup bash -c 'for i in $(seq 1 N); do git push … && { 链式下一步; break; }; sleep 600; done'`
+要点：①重试间隔 ≥10 分钟（抖动窗分钟级自愈）②成功即链式推进（push→等 CI→tag 三验→tag push→release）③日志落 /tmp 可查进度④**Git Data API 快照推禁用**（压平历史违反审计链）。
 
 ## 网络降级策略
 
@@ -869,7 +854,9 @@ gh api repos/O/R/git/refs/heads/main -X PATCH -f sha=<新commit>
 2. **`.gitattributes` 的 eol 转换**——`*.ps1 text eol=crlf` 会让 git 存 LF 规范化 blob，工作区是 CRLF。上传必须用 `git cat-file blob <本地git sha>` 拿规范内容，不能读工作区文件（否则 sha 不一致）。**验证铁证：建 tree 后远端 tree sha == 本地 `git rev-parse HEAD^{tree}` = 逐字节一致**
 3. **cat-file 必须用本地 git blob sha**——不能用「上传后 GitHub 返回的 sha」去 cat-file（本地无此对象 → 输出空 → 上传空 blob，sha 变 e69de29b）。修正时用 `git ls-tree` 重新拿本地 sha
 
-**🔴 第五坑（连续推送）——tree 参数必须 stdin JSON**：gh CLI 命令行拼 `tree[][path]=…` 数组参数，17 文件 = 68 个参数直接报 `accepts 1 arg(s), received 69`——tree 创建必须 `--input -` 从 stdin 传 `{"base_tree":…,"tree":[…]}` JSON（gitdata-push.mjs 已内置）。另：连续 API 推送时本地无上次 API commit 对象，`git diff <remoteSha>..HEAD` 炸——脚本用 compare API 兜底取变更清单（status=diverged 时拒绝盲推）。
+**🔴 第五坑（连续推送）——tree 参数必须 stdin JSON**：gh CLI 命令行拼 `tree[][path]=…` 数组参数，17 文件 = 68 个参数直接报 `accepts 1 arg(s), received 69`——tree 创建必须 `--input -` 从 stdin 传 `{"base_tree":…,"tree":[…]}` JSON（gitdata-push.mjs 已内置）。
+另：连续 API 推送时本地无上次 API commit 对象，`git diff <remoteSha>..HEAD` 炸——脚本用 compare API 兜底取变更清单（status=diverged 时拒绝盲推）。
 
-**🔴 四坑（verify CI 失败根因）——tree 条目 mode 必须用本地真实值**：tree 每一项带 mode（`100644` 普通 / `100755` 可执行），**硬编码 `100644` 会让所有 .sh/.mjs 丢失执行位**——推送前 `git ls-tree -r HEAD | grep "^100755"` 列出全部可执行文件，tree 条目逐项用本地 mode。丢失后 verify CI 报「cleanup.sh 缺失或不可执行」（find 找到文件但 `-x` 检查失败）。**恢复只需一次操作**：blob SHA 只依赖内容，同一文件的 755 与 644 版本 blob SHA 相同——建一个只含 N 个 100755 条目的新 tree（base_tree=当前远端 tree，sha 引用已存在 blob）→ 建 commit → 更新 ref，无需重传内容。**推送完成必验**：远端 tree sha == 本地 `git rev-parse HEAD^{tree}`。
+**🔴 四坑（verify CI 失败根因）——tree 条目 mode 必须用本地真实值**：tree 每一项带 mode（`100644` 普通 / `100755` 可执行），**硬编码 `100644` 会让所有 .sh/.mjs 丢失执行位**——推送前 `git ls-tree -r HEAD | grep "^100755"` 列出全部可执行文件，tree 条目逐项用本地 mode。丢失后 verify CI 报「cleanup.sh 缺失或不可执行」（find 找到文件但 `-x` 检查失败）。
+**恢复只需一次操作**：blob SHA 只依赖内容，同一文件的 755 与 644 版本 blob SHA 相同——建一个只含 N 个 100755 条目的新 tree（base_tree=当前远端 tree，sha 引用已存在 blob）→ 建 commit → 更新 ref，无需重传内容。**推送完成必验**：远端 tree sha == 本地 `git rev-parse HEAD^{tree}`。
 > 另：Git Data API 的 create-tree **无法表达删除条目**——rename（R100）在 diff 里是「新路径新增」，旧路径永远留在 base_tree；含删除/rename 的 commit 推送后必须用 Contents API（`gh api repos/O/R/contents/<path> -X DELETE -f sha=<file sha>`）逐个补删，最后同样以 tree sha 一致性收尾。

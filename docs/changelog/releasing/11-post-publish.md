@@ -15,7 +15,7 @@
 | 一 | [ ] | **发布后验证**（见下方脚本）——含**文档头发版状态翻转**（活文档头「待发版」语义族→「已发版」+ 当前版本开发日志头「⏳ 待发版」→「✅ 已发版」+ 翻转后**双零残留复核**，翻转后 `check-version` F6 全绿才过关） | 全绿 |
 | 二 | [ ] | CI 全绿检查 | CI 全绿 |
 | — | [ ] | **Release Notes 范本快照更新**：本版 gh release 发布后，把 body 的实际结构（H2 骨架/新要素）回写 [06](./06-doc-finalize.md)「Release Notes」范本段的「已知结构基线」行——上一版实际发布物是下一版生成的结构 SSOT，发版后不回写 = 下一版按旧结构生成（漂移链条的根因闭环点） | 06 范本段基线行与本版 body 一致 |
-| 三 | [ ] | **审查三文档回写**：发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——场景数改后立即拦截 DEVELOPMENT/LIMITATIONS 漂移，勿拖到 pre-push 才暴露） | 三文档更新 |
+| 三 | [ ] | **审查三文档回写**：发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数…| 三文档更新 |
 | 四 | [ ] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
 | 五 | [ ] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
 | 六 | [ ] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
@@ -23,15 +23,17 @@
 | 八 | [ ] | **下版本内容对话讲解**（三问讲稿已出；作者以「把阶段 11 全部走完」确认——未提范围增减/优先级调整 = 本版 8 章范围与顺序维持；见下「步骤八留痕」） | 项目负责人理解下版本方向 |
 | 九 | [ ] | **进度追踪清零**：把 `releasing.md` 进度追踪的 11 个 `[x]` 全部改回 `[ ]`，并同步清零本文件内部步骤表勾选（见下方步骤九说明），为下一版本新周期做准备 | 进度追踪重置 |
 | 十 | [ ] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 11 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
-| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包）。⚠️ **前置：确认 plist 指向的仓库已同步到本版**——daemon 跑的 dist 来自 plist `WorkingDirectory` 指向的那个仓库，而发版常在 **worktree** 里进行（worktree 与主仓是两个工作副本）。若 daemon 指向主仓而主仓未 pull，`kickstart` 后日志版本号仍是上一版——**版本核对会当场揭穿，勿据「state = running」判成功**。同步主仓（`git pull` + `npm install` + `npm run build`）属对另一个工作副本的写操作：有并发 session 在其中作业时**停手报告**，交作者决定，勿自行 pull。
-| 十二 | [ ] | **网络恢复收尾**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 09-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 直建 ref 的 lightweight tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight；经 git/tags 建 object 再建 ref 的通道产出直接是 annotated，免覆盖）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
-| 十三 | [ ] | **Discussions 置顶轮换**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。🔴 置顶**变更**无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion），只能网页操作（右侧齿轮 → Unpin/Pin）；**只读核查**走 GraphQL `pinnedDiscussions { discussion { number title } }` 即可，无需开网页，异常才需网页干预 | 置顶位干净 |
-| 十四 | [ ] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源）<br>⚠️ `--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除** `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好（实测：跑完 hook 版本仍未更新） | 两版本号一致 |
-| 十五 | [ ] | **核心文档内容时效巡检**（🔴 版本号对账已由 `check-version` **全项**机器化覆盖，但「文档说的能力/状态是否还是真的」缺专门步骤——发版后审查发现的已知问题须进 LIMITATIONS 如实披露，而非只留在 devlog）。三项：① **LIMITATIONS 已知问题披露**——发版期发现且未随版修复的用户可感知限制（安装入口断链 / 分发渠道异常标记 / 平台兼容缺口）逐条入册，注明「哪个版本修复」；② **WIKI「当前状态」节刷新**——当前版本 / 下一版描述 / 测试数 / 规则数对齐 ROADMAP 与 devlog 实况；③ **CHANGELOG 索引行复核**——本版条目的能力摘要与 devlog 交付一致（索引是外部用户第一入口，摘要漂移 = 对外失真）。巡检发现的漂移当场修，同批 commit。**④ 发版即移出双清单**：a) ROADMAP——本版行自「版本规划」表移入「迭代历程」表（提炼一句话行 + changelog 链接；规划表只留未发版）；b) `tools/check/check-forms.mjs`——本版自 VERSION_SOURCES/EXPECTED_COUNTS/形态白名单三处移出（该守卫只扫未发版版本，已发版回填对账无意义且假红） | LIMITATIONS/WIKI/CHANGELOG 三处时效一致 + ROADMAP/check-forms 双移出 |
+| 十一 | [ ] | **本机 daemon 重载**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包）。⚠️ **前置：确认 plist 指向的仓库已同步到本版**——daemon 跑的 dist 来自 plist `WorkingDirectory` 指向的那个仓库，而发版常在 **worktree** 里进行（worktree 与主仓是两个工作副本）。若 daemon 指向主仓而主仓未 pull，`kickstart` 后日志版…
+| 十二 | [ ] | **网络恢复收尾**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 09-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f…| 远端/桌面双干净 |
+| 十三 | [ ] | **Discussions 置顶轮换**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。🔴 置顶**变更**无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion），只能网页操作（右侧齿轮 → Unpin/Pin）；**只读核查**走 GraphQL …| 置顶位干净 |
+| 十四 | [ ] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install…| 两版本号一致 |
+| 十五 | [ ] | **核心文档内容时效巡检**。三项：① **LIMITATIONS 已知问题披露**——发版期发现且未随版修复的用户可感知限制（安装入口断链 / 分发渠道异常标记 / 平台兼容缺口）逐条入册，注明「哪个版本修复」；② **WIKI「当前状态」节刷新**——当前版本 / 下一版描述 / 测试数 / 规则数对齐 ROADMAP 与 devlog 实况；③ **CHANGELOG 索引行复核**…| LIMITATIONS/WIKI/CHANGELOG 三处时效一致 + ROADMAP/check-forms 双移出 |
 
-> 🔴 **步骤十一「本机 daemon 重载」补充①——主仓被并发长跑分支占用时的替代通道**：主仓本地领先/落后远端几十 commit（长跑分支态）时 pull 即 merge，不可行——此时**把 plist 指向交付 worktree**（发版 worktree 就是本版完整源码，dist 已 build，七依赖链全本版）：改 `ProgramArguments` 的 cli.js 路径与 `WorkingDirectory` 两处 → `bootout`+`bootstrap`（改路径 kickstart 不重读 plist）→ 日志核版本号。前置自检：① `node engine/daemon/dist/cli.js --version` = 本版（worktree 可跑性）② `doctor` 数据面兼容（读同一 `~/.sofagent/`）③ plist node 路径存在性（runtime 目录清理后失效 → exit 78 崩溃循环）。主仓回归常轨后改回主仓路径（回滚备份 `.bak-<旧版>` 随切随留）。**勿把「主仓是唯一 dist 来源」当默认**——那是本步骤的原始过窄假设，已被并发场景证伪。
+> 🔴 **步骤十一「本机 daemon 重载」补充①——主仓被并发长跑分支占用时的替代通道**：主仓本地领先/落后远端几十 commit（长跑分支态）时 pull 即 merge，不可行——此时**把 plist 指向交付 worktree**（发版 worktree 就是本版完整源码，dist 已 build，七依赖链全本版）：改 `ProgramArguments` 的 cli.js 路径与 `WorkingDirectory` 两处 → `bootout`+`bootstrap`（改路径 kickstart 不重读 plist）→ 日志核版本号。
+>前置自检：① `node engine/daemon/dist/cli.js --version` = 本版（worktree 可跑性）② `doctor` 数据面兼容（读同一 `~/.sofagent/`）③ plist node 路径存在性（runtime 目录清理后失效 → exit 78 崩溃循环）。主仓回归常轨后改回主仓路径（回滚备份 `.bak-<旧版>` 随切随留）。**勿把「主仓是唯一 dist 来源」当默认**——那是本步骤的原始过窄假设，已被并发场景证伪。
 >
-> ⚠️ **步骤十一补充②——重载前先预检 plist node 路径存在性**（`ls "$(grep -o '/[^<]*bin/node' ~/Library/LaunchAgents/local.sofagent-daemon.plist | head -1)"`——plist 写死的绝对路径在 runtime 目录升级/清理后即失效 → exit 78 EX_CONFIG 崩溃循环；手动跑 CLI 正常即证明是路径问题。改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist）。⚠️ **真假日志辨析**：launchd 真实日志在 plist `StandardOutPath` 指向的 `~/.sofagent/data/daemon-launchd.log`；`~/.sofagent/daemon.log` 可能是测试进程残留旧文件，勿据此判断重载成败。
+> ⚠️ **步骤十一补充②——重载前先预检 plist node 路径存在性**（`ls "$(grep -o '/[^<]*bin/node' ~/Library/LaunchAgents/local.sofagent-daemon.plist | head -1)"`——plist 写死的绝对路径在 runtime 目录升级/清理后即失效 → exit 78 EX_CONFIG 崩溃循环；手动跑 CLI 正常即证明是路径问题。改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist）。
+>⚠️ **真假日志辨析**：launchd 真实日志在 plist `StandardOutPath` 指向的 `~/.sofagent/data/daemon-launchd.log`；`~/.sofagent/daemon.log` 可能是测试进程残留旧文件，勿据此判断重载成败。
 
 > 🔴 **步骤十三「Discussions 置顶轮换」补充——本步骤的两个 worktree 陷阱（均在 worktree 内执行时命中）**：
 > ① **真实 hooks 路径不是 `<repo>/.git/hooks`**——worktree 里 `.git` 是**文件**（指向主仓的 gitdir），
@@ -212,7 +214,8 @@ bash tools/check/check-version.sh        # 期望全绿
 | 已完成区 | 已落盘条目显式标「仅回归验证，勿重复实现」（对照 `git log --oneline -20` 扫描）——防时间快照失真导致重复施工 | prompt 里混着「其实已做完」的条目 |
 | 开发纪律 | 中文序号 / 脱敏规范 / 术语统一 / U+FFFD 扫描 / 章节完对照 changelog 验收标准打勾 | 执行者用自己习惯的风格另起炉灶 |
 
-**生成前对账 checklist（5 条）**：① 章节完整性——prompt 章节数 == 开发日志 `## ` 章节数（漏章=漏交付）② 路径核对——开发日志「涉及文件」表逐行过一遍 `ls`，无前缀路径查真实位置 ③ 验收搬运——开发日志每章「验收标准」的 `- [ ]` 全部落进 prompt 对应章 ④ 新建文件命名——新建 `.sh`/`.mjs` 检查仓库既有同类命名风格（如 tools/ 下检查器用 `check-` 前缀），**禁中文文件名**（现有门禁无此项，靠本条兜底）⑤ **修正批回写完整性**——prompt 生成后又合入审查修正/定谳/销案合并的，修正批必须回写**同一结论的全部落点**（基线表、待拍板清单、正文交叉引用「见第 N 条」）；收尾时 grep 修正关键词扫全 prompt 逐处核对，并列出本批触碰段落清单——列不全即未收口（曾出现基线表与文末清单结论并存矛盾、清单合并后引用错位）。
+**生成前对账 checklist（5 条）**：① 章节完整性——prompt 章节数 == 开发日志 `## ` 章节数（漏章=漏交付）② 路径核对——开发日志「涉及文件」表逐行过一遍 `ls`，无前缀路径查真实位置 ③ 验收搬运——开发日志每章「验收标准」的 `- [ ]` 全部落进 prompt 对应章 ④ 新建文件命名——新建 `.sh`/`.mjs` 检查仓库既有同类命名风格（如 tools/ 下检查器用 `check-` 前缀），**禁中文文件名**（现有门禁无此项，靠本条兜底）⑤ **修正批回写完整性**——prompt 生成后又合入审查修正/定谳/销案合并的，
+修正批必须回写**同一结论的全部落点**（基线表、待拍板清单、正文交叉引用「见第 N 条」）；收尾时 grep 修正关键词扫全 prompt 逐处核对，并列出本批触碰段落清单——列不全即未收口（曾出现基线表与文末清单结论并存矛盾、清单合并后引用错位）。
 
 **若下一版本 changelog 尚未创建**：
 1. 先写新版本需求，产出 `docs/changelog/v<major>.<minor>/vX.Y.md`
@@ -246,7 +249,8 @@ bash tools/check/check-version.sh        # 期望全绿
 >
 > **① 下版本要干什么（一句话）**——把「执行侧决策链」补齐：上一版把**判得准**做完了（审计规则引擎统一 + 自测 schema），本版补**走得对**（往哪走 / 去不了怎么办 / 怎么判）。上一版留下的缺口有两个：决策链只有「承接面」（router → 引擎）没有「下达面」（引擎 → router）；判定链还没有「不占本地主模型槽」的分层方案。
 >
-> **② 增加了什么新东西（人话）**——a) **模型路由**：客户的敏感数据自动留在本地、只有通用知识走云端，省 API 成本且满足合规；b) **本地槽位排队**：一体机 GPU 就那几张卡，多请求来了排队而不是把机器打爆，等太久且合规允许就自动转云端；c) **判定分层 L0/L1/L2**：判断「这请求该走哪」不再占用本地大模型（省槽位、不被循环依赖拖死）；d) **凭证隔离 Vault**：Agent 的 token 拿不到明文（动态注入请求头），还能回答「这条凭证是不是本任务的最小授权」；e) **多实例表决**：同一个判断并发跑 N 个小实例、交叉比对、分歧交人；f) **AI 节点治理接入**：客户自己用 DeepSeek harness + LangChain 搭的 Agent 能纳入本仓的审计与出口管控，第三方插件挂上来还能白得审计、进化护栏、飞轮增值、判定服务四层好处；g) **授权 × 凭证对账**：批准了小事却发下大范围凭证——这种「两张表各自看都合法」的缝能被判成越权风险。
+> **② 增加了什么新东西（人话）**——a) **模型路由**：客户的敏感数据自动留在本地、只有通用知识走云端，省 API 成本且满足合规；b) **本地槽位排队**：一体机 GPU 就那几张卡，多请求来了排队而不是把机器打爆，等太久且合规允许就自动转云端；c) **判定分层 L0/L1/L2**：判断「这请求该走哪」不再占用本地大模型（省槽位、不被循环依赖拖死）；d) **凭证隔离 Vault**：Agent 的 token 拿不到明文（动态注入请求头），还能回答「这条凭证是不是本任务的最小授权」；e) **多实例表决**：同一个判断并发跑 N 个小实例、交叉比对、分歧交人；
+>f) **AI 节点治理接入**：客户自己用 DeepSeek harness + LangChain 搭的 Agent 能纳入本仓的审计与出口管控，第三方插件挂上来还能白得审计、进化护栏、飞轮增值、判定服务四层好处；g) **授权 × 凭证对账**：批准了小事却发下大范围凭证——这种「两张表各自看都合法」的缝能被判成越权风险。
 >
 > **③ 让产品未来怎么样**——从「审计与判定」走到「执行侧可治理」：本版把 `DecisionChannel` 契约与路由底座立起来（后续判定底座各阶段才有地方填真实判定件实现）；cordis 兼容层让生态插件挂得上来，为「一次判定多插件复用」铺路；S1M 宣告版需要的「判定件接进真实执行链」实装证据，由本版提供。
 >
@@ -341,7 +345,8 @@ sed -i '' 's/| \[x\] |/| [ ] |/g' docs/changelog/releasing/11-post-publish.md
 | 五 | **冗余/过时步骤** | 有没有阶段写了但实际从不执行（或已被工具覆盖）的步骤 | 删除或标注「工具已覆盖」 |
 | 六 | **ROADMAP 体检** | 按 [06-doc-finalize.md](./06-doc-finalize.md)「ROADMAP 同步手册」的体检清单 9 项扫一遍（重复表/散落章节/死链/已交付混入/范围过期/模糊版本号/U+FFFD/新增前未 grep 同类/同类 ≥3 未抽库） | 逐项修复 |
 
-> 📋 **发版 commit 规范（防 git log 噪音）**：发版过程中阶段一~十一的进度打勾（`releasing.md` 进度追踪 `[x]`）会产生大量「元工作 commit」。**这些打勾类 commit 应 squash 为单个 `docs(releasing): vX.Y.Z 发版流程完成`**，不要每个阶段一个 commit——否则 git log 充斥 `docs(releasing): 阶段X打勾` 噪音，外部贡献者看 commit 历史会以为项目没有产品迭代。实际产品改动（代码 fix/feat、文档内容修改）照常各自独立 commit，只有「纯进度打勾」类元工作 commit 才 squash。
+> 📋 **发版 commit 规范（防 git log 噪音）**：发版过程中阶段一~十一的进度打勾（`releasing.md` 进度追踪 `[x]`）会产生大量「元工作 commit」。**这些打勾类 commit 应 squash 为单个 `docs(releasing): vX.Y.Z 发版流程完成`**，不要每个阶段一个 commit——否则 git log 充斥 `docs(releasing): 阶段X打勾` 噪音，外部贡献者看 commit 历史会以为项目没有产品迭代。
+>实际产品改动（代码 fix/feat、文档内容修改）照常各自独立 commit，只有「纯进度打勾」类元工作 commit 才 squash。
 
 > 📏 **进度追踪防膨胀**：releasing.md 进度追踪只保留「阶段名 + 链接 + 一句职责」的极简形态——版本执行实录、耗时记录、run 编号一律不写回（过程记录归 devlog / changelog 快照）。发现进度追踪区开始堆积考古内容即回炉瘦身。
 
@@ -358,7 +363,7 @@ sed -i '' 's/| \[x\] |/| [ ] |/g' docs/changelog/releasing/11-post-publish.md
 | 五（数字核对） | 三处陈旧计数改**活口径**：`check-version 131 项`→「全项」；silent-catch 前置过滤计数与存量基线指向台账；规则口径 `A1-A23 共 26 条`→`A1-A11 + A14-A24 + E1/E2/E4 共 25 条` | `06/09/11` |
 | 四 | 新增教训形态：「**不存在**」有三态——空输出 / E404 退出码 / **空对象 packument**（`{}`），只认前两者会把「已下架终态」读成「数据缺失」 | `playbook/fresh-eyes-review.md` |
 | 六（ROADMAP 体检） | 本版行移入迭代历程表 + `check-forms.mjs` 三处移出（见步骤十五） | 步骤十五 |
-| 四 | **devlog 头翻转的措辞变体漏翻**（本轮实锤）：步骤一原 sed 只匹配 `⏳ 待发版（tag/npm 发版时同步）` 单一形态，本版 devlog 头实写「✅ **已开发完成。**」⇒ sed 锚不匹配**静默空转**；而 `check-version` §26 扫描面明确排除 `docs/changelog/` ⇒ 无机械兜底，漏翻一路留到下一轮巡检才被人工发现。修法：改**多模式 sed + 翻转后双断言**（① 头部须现带日期「✅ **已发版（…）」否则 exit 1；② 头部不得再含「已开发完成」），触点清单 #17 补明 devlog 头形态与「此处无机械兜底」 | `11-post-publish.md` · `06-doc-finalize.md` |
+| 四 | **devlog 头翻转的措辞变体漏翻**（本轮实锤）：步骤一原 sed 只匹配 `⏳ 待发版（tag/npm 发版时同步）` 单一形态，本版 devlog 头实写「✅ **已开发完成。**」⇒ sed 锚不匹配**静默空转**；而 `check-version` §26 扫描面明确排除 `docs/changelog/` ⇒ 无机械兜底，漏翻一路留到下一轮巡检才被人工发现。修法：改**多…| `11-post-publish.md` · `06-doc-finalize.md` |
 
 ---
 
@@ -398,4 +403,5 @@ sed -i '' 's/| \[x\] |/| [ ] |/g' docs/changelog/releasing/11-post-publish.md
 
 ### 计数类联动的特殊提醒
 
-工具数增删是**全仓 20 文件级联动**（五域图图题与分桶求和 / check-docs §17 §20 / check-version §12 §14 §15 §26b / API.md / 双语 README / SKILL 两件 / AGENTS / GEMINI / WIKI / mcp 与 umbrella README / dashboard 字典 / playbook 守卫锚）——增删 tool 时对照 A24（24→25）与浏览器四件套（107→103）两次先例的联动清单逐处过，跑 `node tools/gen/gen-api-tools.mjs` 重生成后必同步修 **gen 模板源**（否则下次重生成恢复旧句）。
+工具数增删是**全仓 20 文件级联动**（五域图图题与分桶求和 / check-docs §17 §20 / check-version §12 §14 §15 §26b / API.md / 双语 README / SKILL 两件 / AGENTS / GEMINI / WIKI / mcp 与 umbrella README / dashboard 字典 / playbook 守卫锚）——增删 tool 时对照 A24（24→25）与浏览器四件套（107→103）两次先例的联动清单逐处过，
+跑 `node tools/gen/gen-api-tools.mjs` 重生成后必同步修 **gen 模板源**（否则下次重生成恢复旧句）。

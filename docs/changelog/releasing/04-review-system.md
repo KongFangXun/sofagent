@@ -14,12 +14,12 @@
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | | **来源提取（A/B/C 草稿自动生成）**：`source FORGE/env.local && node tools/gen/gen-abc-draft.mjs --fresh-eyes <报告> --bugfix <清单> --features <devlog> [--recheck <复审>] --out ~/Desktop/abc-draft-vX.Y.Z.md`——单次 GLM 调用（无工具无循环，~4 分钟）产出三类清单草稿（每条带来源定位 + 「无法归类」兜底段），人工只做审核修正而非从零写。降级路径：无 key / API 失败 → 退出码 2 + prompt 落盘 `<out>.prompt.md`，粘给任意 AI session 执行。关键纪律：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 草稿（`abc-draft-vX.Y.Z.md`）→ 人工审核定稿 |
+| 一 | | **来源提取（A/B/C 草稿自动生成）**：`source FORGE/env.local && node tools/gen/gen-abc-draft.mjs --fresh-eyes <报告> --bugfix <清单> --features <devlog> [--recheck <复审>] --out ~/Desktop/abc-draft-vX.Y.Z.md`——单次 GLM…| A/B/C 草稿（`abc-draft-vX.Y.Z.md`）→ 人工审核定稿 |
 | 二 | | **四份文档分发**：A+B 类 → regression-checklist + acceptance-test + check-version.sh（加法）；C 类 → fresh-eyes-review（校准非加法） | 四份文档更新 |
-| 三 | | **覆盖率确认**：`bash tools/check/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `playbook/.coverage-exempt`（每行一个关键词）。与阶段四共用同一脚本（阶段四在分发后跑=确认更新零遗漏；阶段四在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
+| 三 | | **覆盖率确认**：`bash tools/check/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进…| 脚本⑥段全绿 + 豁免清单维护 |
 | 四 | | **防膨胀瘦身（三判据硬门槛）**：上调警戒线前必须依次过三判据，全否才允许上调。行数警戒线数值**以 regression-checklist 头部声明为唯一 SSOT**（check-review-system.sh 动态提取校验；多处写死数值必然漂移，本表不写死）。历史上调记录见 checklist 头部警戒线段 | 三判据记录 + 自校验全 PASS |
 | 五 | | **fresh-eyes-review 校准**：C 类走决策树（新视角 / 校准视角 / 历史教训），不往留白式审查里加精确检查项 | 校准完成 + 风格守护自检全 PASS |
-| 六 | | **Doc Fresh Review（大版本选做，小版本跳过）**：major/minor 发版或多文档大批量改动后，按 [playbook/doc-fresh-review.md](../../../playbook/doc-fresh-review.md) 复制 prompt 到**新 session**（fresh 纪律：参与过编写/修复的 session 不得跑）执行独立人读审查（含 dashboard.html 专项）；报告落桌面 → 零信任复核 → 修复批 → 收敛判定 GREEN 后放行。轮次策略与已知问题类型检查表见该 playbook（四轮实跑沉淀）。**与 fresh-eyes-review 的分工**：fresh-eyes 管代码，Doc Fresh Review 管文档——同一 fresh 纪律的两个审查面 | 审查报告 + 复核记录 + 收敛 GREEN |
+| 六 | | **Doc Fresh Review（大版本选做，小版本跳过）**：major/minor 发版或多文档大批量改动后，按 [playbook/doc-fresh-review.md](../../../playbook/doc-fresh-review.md) 复制 prompt 到**新 session**（fresh 纪律：参与过编写/修复的 session 不得跑）执行独立人读审查（…| 审查报告 + 复核记录 + 收敛 GREEN |
 
 > **README 新能力段核对已移至阶段六**：README 新能力段由阶段六（文档收尾）写入，本阶段执行时版本通常未 bump、README 尚无本版新能力段——核对对象不存在，强行核对只能得到「段不存在」的结论。核对必须紧贴写入时机（同一版本状态下写→核），故并入阶段六随写入执行，见 [06-doc-finalize.md](./06-doc-finalize.md)。若特殊情况下本阶段执行时 README 已有本版新能力段（如补跑/跨版执行），可当场核对后打勾。原步骤六删除。
 
@@ -54,13 +54,16 @@
 
 **编号查重纪律**：新增维度前 `grep -cE "^#### N\." ` 确认编号未占用——新编号 = 当前最大编号+1，撞号破坏维度唯一性对账。查重一行命令，先跑再加。
 
-**行号归属解析纪律（line-number-as-attribution 防御）**：瘦身/归并要判「这一行属于哪个维度」，复核审查报告要判「第 N 行的 finding 属于哪个段落」——禁止拿 grep 行号直接当段落级结论的证据：行号只证明「这一行存在」，不证明「这一段在说什么」。落笔前先解析归属：`bash tools/check/resolve-section.sh <file> <line> [--chain]`，输出该行归属的最近标题（`--chain` 给完整标题链）。排障工具非门禁：不接入 check-guards/CI——做成自动检查会变成「扫描面为 0 也不报错」的死分支。
+**行号归属解析纪律（line-number-as-attribution 防御）**：瘦身/归并要判「这一行属于哪个维度」，复核审查报告要判「第 N 行的 finding 属于哪个段落」——禁止拿 grep 行号直接当段落级结论的证据：行号只证明「这一行存在」，不证明「这一段在说什么」。落笔前先解析归属：`bash tools/check/resolve-section.sh <file> <line> [--chain]`，输出该行归属的最近标题（`--chain` 给完整标题链）。
+排障工具非门禁：不接入 check-guards/CI——做成自动检查会变成「扫描面为 0 也不报错」的死分支。
 
 **维度脚本编写三铁律**（脚本缺陷会让 driver 白跑整轮）：① 显式收尾（`echo ✅/❌`，禁「期望无输出/exit 1」退出码语义——driver 只看 exitCode，grep 无命中与循环尾判假都返回 1 必误判）② 禁写死 CLI 参数签名与计数数字（版本演进必漂——动态对账或可达性验证）③ 改 checklist 的 commit 前最后跑 check-docs（B 层预算会被净增顶破）。完整版见 regression-checklist.md 头部「维护公约」。
 
-**并行重构连带处置（阶段四实跑沉淀）**：阶段三→四之间若发生并行 session 的**架构级重构**（文件删除 / 职责迁移 / 载体重构），acceptance/checklist 既有场景的源码锚会**批量过时**——这不是阶段四的规划工作量，但「全量 acceptance EXIT=0」收口判据迫使本阶段收口。处置原则：**保护对象不变、载体换位**——场景断言从旧载体（被删文件/被移走的函数）改指新载体（承接职责的新文件/协议文档/等价机械守闸），断言语义零删减；判别三步：① 确认重构是已提交的既成方向（非工作区半成品）② 找到保护对象的新载体（grep 职责关键词）③ 改锚后逐条实跑验证。**退役语义反转**：若场景保护的对象本身被退役（如 browser 四件套），断言改锁「不回潮」（存在即红）而非删除场景。**同批全改**：同一重构的连带锚一轮全改完，禁分多轮（每轮全量 8-9 分钟，分轮 = 指数级等待）。
+**并行重构连带处置（阶段四实跑沉淀）**：阶段三→四之间若发生并行 session 的**架构级重构**（文件删除 / 职责迁移 / 载体重构），acceptance/checklist 既有场景的源码锚会**批量过时**——这不是阶段四的规划工作量，但「全量 acceptance EXIT=0」收口判据迫使本阶段收口。处置原则：**保护对象不变、载体换位**——场景断言从旧载体（被删文件/被移走的函数）改指新载体（承接职责的新文件/协议文档/等价机械守闸），断言语义零删减；
+判别三步：① 确认重构是已提交的既成方向（非工作区半成品）② 找到保护对象的新载体（grep 职责关键词）③ 改锚后逐条实跑验证。**退役语义反转**：若场景保护的对象本身被退役（如 browser 四件套），断言改锁「不回潮」（存在即红）而非删除场景。**同批全改**：同一重构的连带锚一轮全改完，禁分多轮（每轮全量 8-9 分钟，分轮 = 指数级等待）。
 
-**全量复绿轮次纪律（五轮实跑教训）**：① **一轮只修一类红**——改动会引爆新的红（新场景插错位置引爆体例守卫 / 数字改动引爆对账扇出面），一轮混修两类等于白跑；② **对账类数字改动是扇出面**——`assert_numbers_all_equal` 类断言（场景数/测试数/规则数）的改动必须同批改完 **SSOT 头 + 全部对账文档**（如场景数 = acceptance 头 + DEVELOPMENT + LIMITATIONS + ROADMAP 四处），漏一处下一轮才爆；③ **退役文案不能含被退役的关键词本身**——哨点场景 grep 关键词命中即红，写「XX 已退役」注释会自杀（改措辞规避）；④ 全量跑前先 `npm run build`（行为段吃 dist，src 改动不重建 = 白跑一轮）。
+**全量复绿轮次纪律（五轮实跑教训）**：① **一轮只修一类红**——改动会引爆新的红（新场景插错位置引爆体例守卫 / 数字改动引爆对账扇出面），一轮混修两类等于白跑；② **对账类数字改动是扇出面**——`assert_numbers_all_equal` 类断言（场景数/测试数/规则数）的改动必须同批改完 **SSOT 头 + 全部对账文档**（如场景数 = acceptance 头 + DEVELOPMENT + LIMITATIONS + ROADMAP 四处），漏一处下一轮才爆；
+③ **退役文案不能含被退役的关键词本身**——哨点场景 grep 关键词命中即红，写「XX 已退役」注释会自杀（改措辞规避）；④ 全量跑前先 `npm run build`（行为段吃 dist，src 改动不重建 = 白跑一轮）。
 
 **执行模板（每版阶段四填一次，附在步骤四 产物后）**：
 
@@ -118,7 +121,7 @@ bash tools/check/check-guards.sh --inject
 
 | # | 完成 | 步骤 | 验证方式 |
 |:--:|:--:|------|------|
-| 一 | | **跑一致性门禁**：`bash tools/check/check-review-system.sh`——脚本自动核对六组声称值 vs 实际值（checklist 头部/正文维度数、编号查重、双文档行数警戒线、checklist 自校验段警戒线同步、acceptance 场景数与编号唯一性、S 编号交叉引用闭环、fresh-eyes 行数、check-version 分母自洽）（v1.4.8 起已接入 pre-push-check 3c 与 pr-check CI，日常 push 即拦） | 脚本全绿（RC=0）；FAIL 项按输出逐条修复后重跑 |
+| 一 | | **跑一致性门禁**：`bash tools/check/check-review-system.sh`——脚本自动核对六组声称值 vs 实际值（checklist 头部/正文维度数、编号查重、双文档行数警戒线、checklist 自校验段警戒线同步、acceptance 场景数与编号唯一性、S 编号交叉引用闭环、fresh-eyes 行数、check-version 分母自洽）（v1.4…| 脚本全绿（RC=0）；FAIL 项按输出逐条修复后重跑 |
 | 二 | | **审查体系闭环确认**：regression 维度 → acceptance 场景 → fresh-eyes 5 方向（数字漂移/搬迁残留/叙事不一致/静默失效/假绿假阳性）三者形成闭环——脚本管「数字对账」，人管「语义覆盖」：三份文档读一遍，确认覆盖链完整、无维度指向已不存在的场景方向 | 对照三份文件人工确认 |
 
 > 审查文档自身也会过时——脚本管得住「声称 N ≠ 实际 N」这类数字漂移，管不住「维度内容过时」；后者靠步骤二的人工通读。`acceptance-test.sh` 的场景数和覆盖范围必须与 changelog 功能点对齐。

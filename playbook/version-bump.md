@@ -112,6 +112,20 @@ bash tools/check/check-version.sh 2>&1 | grep 'SKILL.md'
 # 期望：所有 SKILL.md 文件都出现在列表中
 ```
 
+## bump 后确定性长尾清单（check-version 红项按类处置 · 发版窗口实测沉淀）
+
+> 以下四类是 bump 十三步**替换规则不覆盖**的形态——check-version 报红后按类直修，勿逐行猜：
+
+| 类 | 形态 | 修法 |
+|---|---|---|
+| 生成器常量 | `TRAIN_DELIVERABLE_GENERATOR_VERSION = 'vX.Y.Z'`（engine/train/src/train-deliverable.ts） | 手改常量值（版本身份标识非引用） |
+| 正文「当前 v」行 | 「当前 vX.Y.Z」句式（evidence.md / WIKI 深读正文） | 手改为新版本号（现态标记） |
+| 根依赖段 | 根 package.json → `@sofagent/*` 依赖版本（rhythm.sync 精校范围之外） | 手改该依赖为新版本号 |
+| ROADMAP 版本头 | `> vX.Y.Z · 日期（UTC）· ✅ 已发版 · 孔放勋` 无主题短语 ⇒ §15 关键词全 <3 字符被跳过 = 恒红 | 版本头补「· 主题短语」（与 CHANGELOG 标题关键词对齐） |
+
+同批翻牌面（bump 窗口一次过，防 §14/§19/§27 分批报红）：CHANGELOG 索引行（⏳ 待发版→已发版+日期）/
+WIKI 当前版本行+下一版推进 / ROADMAP 规划表该版行 ✅ / API 版本头 / action.yml `@sofagent/*@新`。
+
 ## 🔴 bump 后 diff 历史语义审查（必做）
 
 bump 脚本的文档/注释替换无法区分「当前版本声明」与「历史版本引用」——**每次 bump 后必须全量审查 diff**，把历史语义误伤改回：

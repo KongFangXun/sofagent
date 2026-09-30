@@ -52,7 +52,8 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ## 步骤二：DSH plugin 分发（每版必做） ☐
 
-> **背景**：SkillHub 支持 DeepSeek Harness plugin 分发。sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent*`，**7 个**：6 款原子 audit/rollback/inject/evolve/daemon/fde + 1 款聚合 `cordis-plugin-sofagent`——款数以 glob 实测为准，曾为 10 后经归并收口）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 侧七款同为发布物，两条通道并行不互替，可用性前置见下方「DSH plugin 分发铁律」）。
+> **背景**：SkillHub 支持 DeepSeek Harness plugin 分发。sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent*`，**7 个**：6 款原子 audit/rollback/inject/evolve/daemon/fde + 1 款聚合 `cordis-plugin-sofagent`——款数以 glob 实测为准，曾为 10 后经归并收口）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 侧七款同为发布物，两条通道并行不互替，
+>可用性前置见下方「DSH plugin 分发铁律」）。
 
 ```bash
 # 发布前确认 plugin 家族清单（SSOT = engine/dsh-plugins/ 目录实数 + 各版开发日志 plugin 家族表）
@@ -87,7 +88,8 @@ done
 > - 版本号 = 与 sofagent 主线版本对齐（DSH Cordis 协议 breaking change 时 bump major）
 > - 🔴 **款数必须等于 glob 实测数**：正文枚举与下方 `PLUGIN_DIRS` 的 glob 是同一份清单的两种写法，改一个必改另一个——不一致时按文字走就会漏发（带尾横线的 glob 漏掉裸名聚合插件）
 > - 每版发版都要推，与 ClawHub/SkillHub SKILL 分发同等强制
-> - 分发通道真相源：**DSH plugin = SkillHub + npm 双通道**——`skillhub install cordis-plugin-sofagent*` 是 SkillHub 侧的安装与发现通道；**npm 侧七款同样是发布物**（逐款上 registry 见 [09-publish「步骤八·补」](./09-publish.md)），故「npm 可装」不再是禁语。⚠️ 但 npm 通道的**可用性前置**是干净 DSH 环境逐款实装四段验证（挂载 → seam 订阅 → helpers.call 引擎包解析 → 事件触发产出）——**不满足「单独可用」的不得发布**，故文档声称 npm 可装前须先有该验证留证。⚠️ 且**前置之前置**：适配层基座包 `@sofagent/dsh-plugin-kit` 须先在 npm 侧发布（六款原子插件以包名依赖它），否则四段验证的第三步「引擎包解析」必挂 `MODULE_NOT_FOUND`
+> - 分发通道真相源：**DSH plugin = SkillHub + npm 双通道**——`skillhub install cordis-plugin-sofagent*` 是 SkillHub 侧的安装与发现通道；**npm 侧七款同样是发布物**（逐款上 registry 见 [09-publish「步骤八·补」](./09-publish.md)），故「npm 可装」不再是禁语。
+>⚠️ 但 npm 通道的**可用性前置**是干净 DSH 环境逐款实装四段验证（挂载 → seam 订阅 → helpers.call 引擎包解析 → 事件触发产出）——**不满足「单独可用」的不得发布**，故文档声称 npm 可装前须先有该验证留证。⚠️ 且**前置之前置**：适配层基座包 `@sofagent/dsh-plugin-kit` 须先在 npm 侧发布（六款原子插件以包名依赖它），否则四段验证的第三步「引擎包解析」必挂 `MODULE_NOT_FOUND`
 
 ## 步骤二·a：OpenClaw plugin 分发（每版必做）
 
@@ -100,7 +102,8 @@ done
 > - **双 manifest 版本一致**：ClawHub 校验 `package.json` 与 `openclaw.plugin.json` 两层 version 必须一致且 = 目标版本——bump 后先跑 `bash tools/check/check-version.sh`（9c 段已覆盖双 manifest），漂移直接被拒
 > - 先 `--dry-run` 验证格式与 source 映射，再真实发布
 
-> **publish 输出歧义判读**：真实发布输出「Fix: Align the plugin version...」是**自动修复提示非拒收**——发布已成功。重试报「Version already exists」也是已发布证据。**定性唯一通道**：API 查证 `https://clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>`（🔴 必须 `https://` 前缀——裸 `clawhub.ai/...` 被 curl 当本地路径静默失败返回空，对账假红）的 `latestVersion` + `scanStatus` + `verification.sourceCommit`，勿据 CLI 输出盲改版本号。另两条实测补充：① **服务端内存瞬断**——Convex `512 MB out of memory (reset in 48s)` 是平台侧限流非包问题，等 ≥60s 重发即成；② **scan=suspicious 未必是问题**——包内含 `*.test.js` 会触发扫描器启发式（同批无 test 文件的包 clean），按 verify 快照纪律判「新引入 vs 历史遗留」后再处置。
+> **publish 输出歧义判读**：真实发布输出「Fix: Align the plugin version...」是**自动修复提示非拒收**——发布已成功。重试报「Version already exists」也是已发布证据。**定性唯一通道**：API 查证 `https://clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>`（🔴 必须 `https://` 前缀——裸 `clawhub.ai/...` 被 curl 当本地路径静默失败返回空，
+>对账假红）的 `latestVersion` + `scanStatus` + `verification.sourceCommit`，勿据 CLI 输出盲改版本号。另两条实测补充：① **服务端内存瞬断**——Convex `512 MB out of memory (reset in 48s)` 是平台侧限流非包问题，等 ≥60s 重发即成；② **scan=suspicious 未必是问题**——包内含 `*.test.js` 会触发扫描器启发式（同批无 test 文件的包 clean），按 verify 快照纪律判「新引入 vs 历史遗留」后再处置。
 
 ```bash
 # 发布前确认 plugin 清单（SSOT = engine/openclaw-plugins/ 目录实数 + 各版开发日志家族表）
@@ -206,5 +209,6 @@ gh repo view --json description,repositoryTopics -q '.description, .repositoryTo
 curl -sI https://sofagent.ai | head -1
 ```
 
-- **裸名状态（v1.4.6 起总包正式态）**：裸名 `sofagent` 升级为聚合安装入口（`engine/umbrella/`，bin `sofagent` 薄转发 @sofagent/audit CLI + dependencies 四功能包 audit/mcp/orchestrator/daemon）——`npm i -g sofagent` 一条命令装齐全功能，与 install.sh 等效。前态 `0.0.1` 占位包（防抢注壳）无需 unpublish，总包随主线跳版发布后 latest 自动指向本版。每版 publish 后做一次直觉安装冒烟：`npm i -g sofagent` → `sofagent --help` 可跑 → `npm r -g sofagent` 还原。
+- **裸名状态（v1.4.6 起总包正式态）**：裸名 `sofagent` 升级为聚合安装入口（`engine/umbrella/`，bin `sofagent` 薄转发 @sofagent/audit CLI + dependencies 四功能包 audit/mcp/orchestrator/daemon）——`npm i -g sofagent` 一条命令装齐全功能，与 install.sh 等效。前态 `0.0.1` 占位包（防抢注壳）无需 unpublish，总包随主线跳版发布后 latest 自动指向本版。
+  每版 publish 后做一次直觉安装冒烟：`npm i -g sofagent` → `sofagent --help` 可跑 → `npm r -g sofagent` 还原。
 - **官网改版是仓外动作**：官网源码不在本仓，本步骤只能「发现」不能「修复」——发现 404 / 口径漂移后转项目负责人处理仓外源码（短期可先下掉官网 about 中失效的描述段，止血优于留死链）。

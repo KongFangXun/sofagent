@@ -4,7 +4,8 @@
 > **适用前提**：阶段 SOP 已授权自动收敛循环（跑闸门 → FAIL 自行修复 → 重跑，直到收敛/通过或命中停手条件）。
 > **三角色分离不变量**：发现（worker/审查者）≠ 修复（b-fix 或执行 session 修复批）≠ 复验收编（主 session）。分离的对象是「行为」不是「session 实例」——同一行为主体既发现又修复、或既修复又复验收编，都是违规组合；执行 session 修复批自跑的验证 ≠ 复验收编，主 session 打勾前仍须逐项 grep 实证。
 >
-> **fresh-eyes-loop 四角色流水线**（单盲审查：A 审 → B 修 → C 验 → D 复核）：A（审查者）12 视角单盲 check → B（工程师）b-fix 修复 → C（独立验收者）c-verify 逐条实测验收 → D（对抗复核者）d-review 裁决 P0/P1（CONFIRM/DOWNGRADE/REOPEN）。角色分离升级为四角色：发现（A）≠ 修复（B）≠ 验收（C）≠ 裁决（D），A 不再兼任验证（原 a-verify 的「原告兼法官」问题消除）。**REOPEN 消耗修复批额度**：D 裁 REOPEN 的项回注 findings.md 重走 b-fix → c-verify → d-review 内循环，额度上限与修复批协议一致（2 批）——REOPEN 回环不算新轮次（check 产物仍有效），额度耗尽仍有 REOPEN 则如实记 NOT-CLEAN 交人工分诊。legacy 双盲逃生门：`FORGE_ENABLE_B_CHECK=1` 恢复 A/B 双盲 24 视角（成本翻倍，仅回归对照用）。
+> **fresh-eyes-loop 四角色流水线**（单盲审查：A 审 → B 修 → C 验 → D 复核）：A（审查者）12 视角单盲 check → B（工程师）b-fix 修复 → C（独立验收者）c-verify 逐条实测验收 → D（对抗复核者）d-review 裁决 P0/P1（CONFIRM/DOWNGRADE/REOPEN）。角色分离升级为四角色：发现（A）≠ 修复（B）≠ 验收（C）≠ 裁决（D），A 不再兼任验证（原 a-verify 的「原告兼法官」问题消除）。
+>**REOPEN 消耗修复批额度**：D 裁 REOPEN 的项回注 findings.md 重走 b-fix → c-verify → d-review 内循环，额度上限与修复批协议一致（2 批）——REOPEN 回环不算新轮次（check 产物仍有效），额度耗尽仍有 REOPEN 则如实记 NOT-CLEAN 交人工分诊。legacy 双盲逃生门：`FORGE_ENABLE_B_CHECK=1` 恢复 A/B 双盲 24 视角（成本翻倍，仅回归对照用）。
 
 ## 修复批协议
 
@@ -15,7 +16,8 @@
 - **仓库问题** → 修产品（代码/文档/脚本本体）
 - **检查器债** → 修检查器（锚词形过时/时点假设错误/`|| echo` 假绿改 fail-closed 等），对齐 checklist 既有先例
 - **环境态/待发版态** → 不修，如实记录（各阶段模板的「预期合法输出形态」清单即免修白名单；03 的版本中间态 SKIP 判别口径见 03-quality-loop.md）
-- **历史冻结区路径类** → 不修，如实记录：凡要求改写 `docs/changelog/**`、`docs/archive/**`、`docs/evidence/**` 内既有内容（典型：本机绝对路径泛化）的 finding 一律 SKIP——该三目录是 `tools/check/doc-discipline.sh` Face 4 明示的历史冻结区（判据：改之即篡改历史，纳入判定面只能靠篡改变绿），且 Face 2（本机私有路径）的扫描面本就排除这三目录 ⇒ 该类 finding 属**扫描面边界外的误报**。分诊统计须写明「冻结区政策（doc-discipline Face 4）」。预防动作在写入侧：新增 changelog 条目不得含本机绝对路径（人工 SOP + Face 2 覆盖新文件）
+- **历史冻结区路径类** → 不修，如实记录：凡要求改写 `docs/changelog/**`、`docs/archive/**`、`docs/evidence/**` 内既有内容（典型：本机绝对路径泛化）的 finding 一律 SKIP——该三目录是 `tools/check/doc-discipline.sh` Face 4 明示的历史冻结区（判据：改之即篡改历史，纳入判定面只能靠篡改变绿），且 Face 2（本机私有路径）的扫描面本就排除这三目录 ⇒ 该类 finding 属**扫描面边界外的误报**。分诊统计须写明「冻结区政策（doc-discipline Face 4）」。
+  预防动作在写入侧：新增 changelog 条目不得含本机绝对路径（人工 SOP + Face 2 覆盖新文件）
 
 ### 2. 🔴 修复红线（铁律，任何指令不得覆盖）
 

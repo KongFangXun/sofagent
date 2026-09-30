@@ -26,7 +26,7 @@
 | D5 | 文档日期（changelog 头部日期已更新） |
 | D6 | 项目文档同步清单（changelog 每个功能点 → 对应文档有覆盖） |
 | D7 | acceptance 场景对账：本版每个新功能交付都有对应 acceptance 新场景（`bash tools/check/check-test-count.sh --scenarios-only` 过 + 场景数增长与新功能数匹配）——场景「顺延」= 行为锁欠账（顺延实锤），交付时欠的账要在本阶段收口 |
-| D8 | **验收标准可执行性**（开发批不得为做不到的事勾选）：devlog 各章验收标准**不得包含需 registry 写权限 / package owner 权限 / 2FA 的动作**（如 `npm deprecate`、`npm publish`、平台分发提交）——此类动作必须**单列为「维护者手工动作」小节**（载明执行人、命令、验收方式、回滚手段），开发批不得为其勾选 `[x]`。⚠️ 反模式：把需凭证的动作混进开发批验收并直接勾掉 = 结构性逼出**勾选不实**（框勾了、对外面从未执行，且门禁无从对账） |
+| D8 | **验收标准可执行性**（开发批不得为做不到的事勾选）：devlog 各章验收标准**不得包含需 registry 写权限 / package owner 权限 / 2FA 的动作**（如 `npm deprecate`、`npm publish`、平台分发提交）——此类动作必须**单列为「维护者手工动作」小节**（载明执行人、命令、验收方式、回滚手段），开发批不得为其勾选 `[x]`。⚠…|
 
 ---
 
@@ -52,7 +52,7 @@
 
 | # | 完成 | 步骤 | 验证方式 |
 |:--:|:--:|------|------|
-| 一 | | **bump 时点（定稿：延后到阶段九步骤五）**：SSOT 版本号升级与安装入口 URL、bootstrap 哈希、状态翻牌是同一批文件，**同 commit 收口才「tag 前自洽」**（拆到两个阶段 = 同批文件改两次、全量门禁跑两次，且 tag 会指向未 bump 的 commit）。阶段二~阶段八全程 `package.json` 保持**上一版号**，这是 SOP 设计的**待发版中间态**，不是版本失控。**本步骤只做预检**：`bash tools/check/check-version.sh` 确认当前版本三态一致（预期 1 警告 = 待发版窗口态，非缺陷）；真正的 `bash tools/release/bump-version.sh <旧> <新>` 在阶段九步骤五执行（见 [09-publish](./09-publish.md)） | check-version.sh exit 0（允许 1 警告发版前中间态） |
+| 一 | | **bump 时点（定稿：延后到阶段九步骤五）**：SSOT 版本号升级与安装入口 URL、bootstrap 哈希、状态翻牌是同一批文件，**同 commit 收口才「tag 前自洽」**（拆到两个阶段 = 同批文件改两次、全量门禁跑两次，且 tag 会指向未 bump 的 commit）。阶段二~阶段八全程 `package.json` 保持**上一版号**，这是 SOP 设计的**待…| check-version.sh exit 0（允许 1 警告发版前中间态） |
 | 二 | | **changelog 状态转正**：`docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 尚未实现」+「状态：已排期」→ 改为「✅ 已开发」。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「尚未实现」残留 |
 | 三 | | `npm run build && npm test` | exit 0 + 全部通过 |
 | 四 | | **测试数文档同步门禁**：`bash tools/check/check-test-count.sh --quiet` | 输出 OK / EXIT=0。FAIL = README/WIKI/LIMITATIONS/ARCHITECTURE 测试数与 test-count.sh SSOT 不一致，必须手动同步后再继续 |
@@ -71,4 +71,5 @@
 > - ❌ **禁止自动升**：@automerge/automerge（^3.4.1 内 patch/minor 可升；跨 major 禁止——升级需先跑 team-state 回归测试 + multi-device-sync 联邦同步回归）
 > - 📋 **DSH 依赖更新**：`@deepseek-ai/dsh` + `@deepseek-ai/cordis` 已发布到 npm，走 Dependabot 自动追踪 + check-deps.sh 手动确认
 
-> ⚠️ **WorkBuddy 沙箱环境假失败**：在 WorkBuddy.app 内运行 `npm test` 时，genie-safe-delete.cjs shim 可能拦截测试清理用的 `fs.rmSync`，导致 ETIMEDOUT 假失败（测试断言本身已通过，只是 `finally` 清理块超时）。**这是环境问题，非源码 bug**——CI / 本地终端裸跑无此问题。v1.3.3 起，所有测试清理 `rmSync` 已 try-catch 包裹，WorkBuddy 下应稳定全绿；若仍偶现 FAIL，先在非 shim 环境复验（见 LIMITATIONS §四「safe-delete 环境下的测试预期失败」）。
+> ⚠️ **WorkBuddy 沙箱环境假失败**：在 WorkBuddy.app 内运行 `npm test` 时，genie-safe-delete.cjs shim 可能拦截测试清理用的 `fs.rmSync`，导致 ETIMEDOUT 假失败（测试断言本身已通过，只是 `finally` 清理块超时）。**这是环境问题，非源码 bug**——CI / 本地终端裸跑无此问题。v1.3.3 起，所有测试清理 `rmSync` 已 try-catch 包裹，WorkBuddy 下应稳定全绿；
+>若仍偶现 FAIL，先在非 shim 环境复验（见 LIMITATIONS §四「safe-delete 环境下的测试预期失败」）。

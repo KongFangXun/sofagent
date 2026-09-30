@@ -12,9 +12,9 @@
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | | **单次草稿优先**：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——单次 LLM 调用生成 16 视角审查草稿（省 worker 探查循环；16 = playbook 22 视角中的静态可审子集） | 16 视角审查草稿 |
-| 二 | | **盲审兜底**：草稿中「待取证」项 / 高风险变更才启动 fresh-eyes-loop 全流程：对 harness（DSH 无头 / 新 session）注入主任务协议（`FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节，占位符替换实际值），由编排者逐角色调执行器自动收敛。run 收口仍有 P0/P1 残留按「修复批协议」接手。loop 产出的 P0/P1/P2 修复即本版本 BugFix 批次主体；修复只 commit 不 push | 审查报告 + loop 修复 → BugFix 批次 |
-| 三 | | **对话式多轮审查**：主会话（或独立 session）按 `fresh-eyes-review.md` 视角人肉跑多轮——取用配置参照 playbook 分层表（常规发版 1-12 必跑；动态面 17-19 / 文档治理 13-14 / 通读 15-16 / 发现面 22 按版型追加；深度专项 20-21 留季度体检）。多轮编排：第一轮主会话单跑 → 第二轮并行子代理扩面 → 第三轮终审（并行+零信任复核）→ 第四轮对话式补充取证 → 第五轮对 prompt 自身零信任复核（逐项回仓库实跑，修正硬错误/过时状态）。产出桌面 `vX.Y.Z-bugfix-prompt.md`（问题总表+逐项修复方案+验证命令+执行纪律），修复批收编后进开发 | bugfix-prompt.md + 修复批收编 commit |
+| 一 | | **单次草稿优先**：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——单次 LLM 调用生成 16 视角审查草稿（省 worker 探查循环；16 = playbook 22 视角中的…| 16 视角审查草稿 |
+| 二 | | **盲审兜底**：草稿中「待取证」项 / 高风险变更才启动 fresh-eyes-loop 全流程：对 harness（DSH 无头 / 新 session）注入主任务协议（`FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节，占位符替换实际值），由编排者逐角色调执行器自动收敛。run 收口仍有 P0/P1 残留按「修复批协议」接手。loop 产出的 P…| 审查报告 + loop 修复 → BugFix 批次 |
+| 三 | | **对话式多轮审查**：主会话（或独立 session）按 `fresh-eyes-review.md` 视角人肉跑多轮——取用配置参照 playbook 分层表（常规发版 1-12 必跑；动态面 17-19 / 文档治理 13-14 / 通读 15-16 / 发现面 22 按版型追加；深度专项 20-21 留季度体检）。多轮编排：第一轮主会话单跑 → 第二轮并行子代理扩面 → 第三轮终审…| bugfix-prompt.md + 修复批收编 commit |
 | 四 | | （可选）人工补充：以 `fresh-eyes-review.md` 方法论人肉复核 loop 报告，直觉盲区发现并入清单 | 补充发现 |
 
 ---
