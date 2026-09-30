@@ -14,6 +14,8 @@
 // 工具注册（tool-registry.ts 的 TOOLS 数组）由独立任务统一做，本文件只导出纯业务函数。
 // ============================================================
 
+import { checkDirArg } from './dir-arg-guard';
+
 /** ruleset_export tool 入参（camelCase——schema 面由 tool-registry 映射） */
 export interface RulesetExportArgs {
   /** 规则集名称（缺省 'sofagent'） */
@@ -105,6 +107,18 @@ export async function rulesetExport(args: RulesetExportArgs = {}): Promise<Rules
       text: '[sofagent] ruleset_export 不可用：@sofagent/audit 包未安装或导出面缺失（安装：npm install @sofagent/audit）',
       data: { ok: false, isError: true, auditEvent: null },
     };
+  }
+
+  // v1.5.5 批 20：目录类入参统一校验（与 corpus-export 同一实现）——不合法即报错返回，
+  // 不进入写入面与审计留痕。
+  for (const [argName, value] of [['outDir', args.outDir], ['dataDir', args.dataDir]] as const) {
+    const verdict = checkDirArg(value, argName);
+    if (!verdict.ok) {
+      return {
+        text: `[sofagent] ruleset_export 参数不合法：${verdict.reason}`,
+        data: { ok: false, isError: true, auditEvent: null },
+      };
+    }
   }
 
   const result = buildRulesetExport({
