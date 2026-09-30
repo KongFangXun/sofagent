@@ -174,7 +174,7 @@ if (fix) {
   for (const f of targets) {
     try {
       execFileSync('node', [path.join(SELF_DIR, 'lib/reflow-walls.mjs'), f, '--write'], { cwd: ROOT, stdio: 'pipe' });
-    } catch { /* 折不断（无标点）的行保留，由下方检查如实报告 */ }
+    } catch (e) { /* 折不断（无标点）的行保留，由下方检查如实报告 */ if (process.env.DOC_POSTCHECK_DEBUG) console.warn('[reflow]', f, String(e).slice(0, 80)); }
   }
 }
 

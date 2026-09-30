@@ -17,9 +17,7 @@
 | 三 | | verdict=PASS → 主 session 过「零信任复验三件套」→ 全过才进阶段六。**PASS 轮的 LEDGER 行由主 session 复验后收编——执行 session 禁止预写**（预写账会在复验推翻 PASS 时账实不符） |
 | 四 | | verdict=FAIL → 执行 session 按「修复批协议」分诊修复 → 复绿 + 单次 commit 收编 → 归档断点重跑（自动收敛循环，硬上限 5 轮，上限可由用户在启动时调整）。**命中停手条件**（同一 FAIL 项连续 2 轮修不掉 / 修复需 bump·tag·push / 版本口径类 P0 再现 / 5 轮到顶）→ 停手汇报，主 session 接手（回阶段四语义）。driver 内置 `--auto-fix` 修复链仍默认关闭——session 级修复批与 F 链是两条不同机制，不混用 |
 
-> **为什么分层**：driver 全流程曾实测约 61% token 花在 acceptance 分片 LLM 复核——复核的是脚本 `exit 0 + SUMMARY`（断言数每版变化）的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁。**独立性不伤**：盲审保留在真正需要判断的环节。
 
-> **为什么开新 session**：阶段三~五在开发 session 做完后，上下文已经很长；自动收敛循环含多轮修复批，上下文消耗更大。开一个干净的执行 session 独立跑完整循环（脚本层 + 判断层 + 修复批 + 重跑），主 session 不代跑、不微观管理——只在 PASS 复验（三件套）与停手接手时介入。
 >
 > **为什么必须「持续轮询」而非「等后台通知」**：挂后台等通知时 session 处于空闲态，**用户在界面上看不到任何进展反馈**，会误以为卡死。**持续轮询的首要目的是 session 可见性**（界面一直显示「在跑」），其次才是顺带发现挂起（心跳冻结 >90s 探活）。token 成本是次要考量——20 分钟约 10 轮轻量 status.json 读取，成本可忽略。判断层与 fresh-eyes-loop 均适用此语义。
 
@@ -32,69 +30,22 @@
 > **版本口径声明**：模板第 0 步的基线描述（package.json 指向上一版、tag 未打等）随发版时点更新为当轮实际值——这是「待发版中间态」的合法描述，判断层 prompt 与 precheck 证据注入层均已内置校准（误判「版本口径错配」时按模板第 0 步口径归一）。
 
 ```
-在 sofagent 项目（{REPO_ROOT}）中，执行 {TARGET_VERSION} 的 release-gate-loop 自动收敛模式：循环「跑闸门 → verdict=FAIL 则自行修复全部发现项 → 重跑」直到 verdict=PASS（硬上限 5 轮）。用户已授权自动修复循环；修复时严格遵守下方红线与停手条件。
-
-先读 `FORGE/SKILL/release-gate-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按下面的循环骨架执行。
+在 sofagent 项目（{REPO_ROOT}）中，执行 {TARGET_VERSION} 的 release-gate-loop 自动收敛模式：循环「跑闸门 → verdict=FAIL 则自行修复全部发现项 → 重跑」直到 verdict=PASS（硬上限 5 轮）。
 
 ## 版本裁定声明（所有轮次适用）
-目标版本={TARGET_VERSION}；主仓 HEAD 以每轮启动时 git rev-parse 实测为准（记下该值，verdict 出来后核对运行窗口 HEAD 是否被动过）；package.json={上一版号} 是 SOP 设计的待发版中间态（🔴 **SSOT bump 属阶段九步骤五**——见 [`06-doc-finalize.md`](./06-doc-finalize.md) §时序说明：阶段六只做版本无关核对，在此阶段改版本号必然撞 check-version FAIL。本行原文曾写「属阶段六」，系旧口径，已更正），非版本失控；git tag 未打（INSTALL_SHA256 回填+重打 tag=阶段九动作）；CHANGELOG 已带 {TARGET_VERSION} ⏳ 待发版段。
-预期合法输出形态（均不算 FAIL、不需修复）：维度 130 输出「⏳ 待发版态」「🟡 lib 相对 tag 有改动」「🟡 网络不可达——marketplace 对照跳过」（curl 已带 10s 上限，网络不通会正常降级）；维度 7 输出「⏸️ 未配置 webhook」；coverage 非交付性章节标 EXEMPT 不计入缺口。
+目标版本={TARGET_VERSION}；HEAD 以每轮 git rev-parse 实测为准（记下并终核未被击穿）；package.json=上一版号是待发版中间态（合法）。
+预期合法输出形态（不修）：维度 130 的 ⏳/🟡 · 维度 7 ⏸️ · coverage EXEMPT。
 
-## 外层循环（轮次 N=1..5，每轮按序执行）
+## 执行序列
+① 重跑前置三查 → 按 [05-release-gate §重跑前置三查] 全文执行（断点归档 / run 定位 / 冻结确认）
+② 脚本层 → 按 [05-release-gate §步骤二] 全文执行（六门禁 + acceptance --pre 落凭据）
+③ 判断层 → 按 [05-release-gate §步骤三]（driver --judgment-only · 仓库冻结 · 独占窗口）
+④ 持续轮询 → 按 [05-release-gate §步骤四]（前台 120s · 严禁挂后台）
+⑤ verdict 分支 → 按 [05-release-gate §步骤五]（PASS 不写 LEDGER / FAIL 修复批协议 / ERROR 双查）
+修复批协议 SSOT = [auto-converge-protocol.md]；红线摘要：不改断言迁就 / 不删检查消音 / 不绕审计钩子 / 只动 FAIL 项涉及文件。
 
-### ① 重跑前置三查（首轮必做；之后每轮重跑前重做）
-- 归档上一轮断点（文件在位即必做，否则劫持新 run；不存在则跳过不算错）：
-  mv {PREV_RUN_DIR}/resume-point.json {PREV_RUN_DIR}/resume-point.json.consumed 2>/dev/null || echo "无断点可归档（正常）"
-- 正式 run 定位以 status.json 的 event=run-start + 最新 heartbeat 为准（启动过程有 DRY-RUN 残留目录）
-- 时段：工作日 14:00-18:00 GLM 3 倍价窗口内不启动新轮——等待并每 10 分钟报时一次，窗口过了再启动（周末全天平价）
-
-### ② 脚本层直跑（零 LLM，约 15 分钟，全绿才进判断层）
-🟢 **先查长跑凭据**（外层循环 N=1..5 会反复跑到**同一内容**上，凭据命中即跳过重跑，零信息损失）：
-`bash tools/release/heavy-gate-receipt.sh verify acceptance` ⇒ **0 = 可复用（跳过本段 acceptance 直跑）** ／ 3 = 需重跑（无凭据或内容已变） ／ 2 = 失明（凭据或日志不可信 ⇒ 按需重跑处置）
-需要重跑时——🔴 **先钉前指纹、后跑、跑完带 `--pre` 落凭据**（长跑期间本仓冻结，不得 commit / 改文件）：
-```bash
-FP=$(bash tools/release/heavy-gate-receipt.sh fingerprint)
-bash playbook/acceptance-test.sh > acceptance-raw.log 2>&1; EC=$?
-bash tools/release/heavy-gate-receipt.sh record acceptance "$EC" acceptance-raw.log --pre "$FP"
-```
-⚠️ `--pre` 不是可选项：不传 ⇒ 凭据只能自证「**落盘那一刻**」的内容，无法自证「**被实际测过**」的内容；传了而长跑期间工作区变过 ⇒ `record` 当场 exit 3 **拒绝落凭据**（有意如此——该次结果不对应当前内容，既不该被复用，也不该留痕为绿）。
-⚠️ 🔴 日志必须落盘到仓库根 `acceptance-raw.log`（或 export SOFAGENT_ACCEPTANCE_LOG=/path/to/log）——driver 的 --judgment-only 启动时自动注入该日志为 runDir/acceptance.md 供 consolidate/verdict 读取；落错路径（如 /tmp/）→ driver 找不到 → 注入占位符 → verdict fail-closed 判 FAIL。`acceptance-raw.log` 与 `.sofagent/` 均已被 .gitignore 忽略，故日志落仓库根**不会**进入内容指纹——这也是凭据库（写在 `.sofagent/` 内）能自指回避的原因。
-依次跑：tools/check/check-version.sh → tools/check/check-docs.sh → tools/check/check-anchors.mjs → tools/check/check-review-system.sh → tools/check/check-tool-health.sh → tools/check/check-dashboard.sh（dashboard.html 七项结构门禁：双 class/未定义 CSS 变量/重复类定义/缺 keyframes/onclick 未定义函数/div 配平/乱码）
-脚本层红项：按「修复批协议」修复后复跑该项至 EXIT=0 才进判断层
-acceptance 预跑异常处置：先单跑死点命令对比，不要改脚本；单命令健康+全量挂=上下文差异（cwd/env），如实记录后重试一次，再挂则停手汇报
-
-### ③ 判断层启动（driver --judgment-only 一次四步，跳过 acceptance 分片 LLM 复核，约 20 分钟）
-Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true：
-cd {REPO_ROOT} && source ~/.sofagent/env.local && node FORGE/src/release-gate-driver.mjs --judgment-only --target {TARGET_VERSION}
-⚠️ --judgment-only 一次进程串行四步（regression → coverage → consolidate → verdict），替代 --step 四步手工编排。runDir 由 driver 启动日志打印，全程复用。
-⚠️ 运行期间仓库冻结：driver 运行窗口内本 session 不 commit / 不改文件（其他 session 同样适用）——HEAD 变动会击穿 precheck 快照一致性，产出时间差假 FAIL。
-
-### ④ 持续轮询（必做；🔴 前台执行，严禁挂后台）
-每 120 秒一轮读 <runDir>/status.json，输出一行状态（如「[第 N 轮] step=regression · heartbeat 距今 Xs」）——session 须持续可见「在跑」。前台「短 sleep + 快查」（sleep 90~115 后立即 cat），长 sleep 会被系统杀（exit 137）。heartbeat 距今 >90s → 探活 `node FORGE/src/release-gate-driver.mjs --check-alive <runDir>`（只认心跳不认日志；alive=RC0 / dead=RC1）；dead → 立即停手汇报，不要无限等。
-带 `--watch` 守护启动时（守护 v2）：轮询顺手读 <runDir>/watcher-status.json——其 ts 超 3×interval 未更新 = watcher 也死了，人工重启 watch；发现 watcher-exit.json 且 reason ≠ verdict-done = watcher 有意退出（拉起封顶 RESUME_MAX=5 / 同 phase 快速死亡环 / spawn 失败）——读 death-audit.jsonl 定位根因，不要盲目重启。
-
-### ⑤ verdict 分支
-- **PASS** → 输出最终汇报（格式见下），立即结束，不再做任何仓库写入（含 LEDGER——PASS 轮账目由主 session 复验后收编）。本轮 runDir 的 resume-point.json 留在原处不动。
-- **FAIL** → 执行「修复批协议」，完成后回到 ① 进入下一轮。
-- **ERROR/worker 崩溃**（stepErrors 非空，或 verdict.md 缺失且 stage6-report.md 不可用）→ 先查运行窗口内 HEAD 是否被动过（对照 ③ 启动前记录的实测值），再查环境态；处置后回 ① 重跑；连续 2 轮 ERROR 停手汇报。
-- verdict.md 缺失但 stage6-report.md 可用 → 读其头部「综合判定」行作为裁决依据，如实报告产物缺失。
-
-## 修复批协议（每轮 FAIL 后、下一轮之前执行——SSOT 先读）
-
-**先读 [`auto-converge-protocol.md`](./auto-converge-protocol.md)**（修复批协议单一维护源：分诊三定性/红线/复绿/commit 收编/停手条件/汇报格式），按其执行。阶段五特化条目：
-
-- 分诊第③类免修白名单 = 模板第 0 步「预期合法输出形态」（维度 130 的 ⏳/🟡、维度 7 的 ⏸️、coverage 的 EXEMPT）
-- 红线追加：禁止改 `docs/changelog/releasing/` 下 SOP 判定语义
-- 外层硬上限 = **5 轮**（可由用户在启动时调整）
-- LEDGER 收编规则：FAIL 轮随修复批收编运行记录行；**PASS 轮不写**——账目由主 session 复验三件套后收编（禁预写）
-- ERROR/worker 崩溃分支：先查运行窗口 HEAD 是否被动过（对照启动前记录的实测值），再查环境态；连续 2 轮 ERROR 停手
-
-🔴 **红线摘要（动手前必记）**：不改断言迁就 / 不删检查消音 / 不绕审计钩子 / 只动 FAIL 项涉及文件。
-
-## 最终汇报格式（循环结束后无论 PASS/停手）
-- 终态：PASS ✅ / 停手原因
-- 轮次明细：每轮 verdict、FAIL 项清单、修复动作（文件+定性）、commit hash
-- 最终 runDir 路径 + verdict 关键行原文
+## 最终汇报
+终态 / 轮次明细（verdict·FAIL 项·修复·commit）/ runDir + verdict 原文 / PASS 附 acceptance SUMMARY + 基线 HEAD + 凭据指纹。
 ```
 
 ---
@@ -195,3 +146,12 @@ ls <runDir>/f-* 2>/dev/null && git -C <主仓> rev-list --count <基线SHA>..<F�
 4. 与当轮修复同批或紧随 commit（`docs(forge-lessons):` 前缀）
 
 **红线**：事故回写是复盘不是追责——写「什么形态的失误会产生这个事故、机制怎么防」，不写「谁在哪轮犯了错」；同一根因已沉淀过的不重复建条（合并或引用）。
+
+
+---
+
+## 设计注记（为什么这样设计——操作层无须阅读）
+
+> **为什么分层**：driver 全流程曾实测约 61% token 花在 acceptance 分片 LLM 复核——复核的是脚本 `exit 0 + SUMMARY`（断言数每版变化）的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁。**独立性不伤**：盲审保留在真正需要判断的环节。
+
+> **为什么开新 session**：阶段三~五在开发 session 做完后，上下文已经很长；自动收敛循环含多轮修复批，上下文消耗更大。开一个干净的执行 session 独立跑完整循环（脚本层 + 判断层 + 修复批 + 重跑），主 session 不代跑、不微观管理——只在 PASS 复验（三件套）与停手接手时介入。
