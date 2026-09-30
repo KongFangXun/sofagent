@@ -1969,7 +1969,7 @@ function loadFdeWorkflowData(){
   if(!box)return;
   fetch('/api/ai-nodes')
     .then(function(r){
-      if(!r.ok)throw new Error(r.status);
+      if(!r.ok)throw new Error(String(r.status));
       return r.json();
     })
     .then(function(d){
@@ -2020,8 +2020,14 @@ function loadFdeWorkflowData(){
       });
       box.innerHTML=html;
     })
-    .catch(function(){
-      box.innerHTML=emptyState('<i class="bi bi-list-check"></i>','还没有 FDE workflow 模板','部署或运行 FDE 流程后自动生成','去 FDE 引导',"goPage('fde')");
+    .catch(function(err){
+      // 加载失败与正常空态分离（批 20-6）：404 = 尚无模板（引导空态）；其余 = 真故障（标题明示失败 + 重试）。
+      var isNotFound = err && (err.message === '404' || String(err).indexOf('404') !== -1);
+      if(isNotFound){
+        box.innerHTML=emptyState('<i class="bi bi-list-check"></i>','还没有 FDE workflow 模板','部署或运行 FDE 流程后自动生成','去 FDE 引导',"goPage('fde')");
+      }else{
+        box.innerHTML=emptyState('<i class="bi bi-exclamation-triangle"></i>','模板数据加载失败','网络或服务异常，稍后自动重试','刷新页面',"location.reload()");
+      }
       if(updated)updated.textContent='加载失败';
     });
 }
@@ -2033,7 +2039,7 @@ function loadAiNodesData(){
   if(!list)return;
   fetch('/api/ai-nodes')
     .then(function(r){
-      if(!r.ok)throw new Error(r.status);
+      if(!r.ok)throw new Error(String(r.status));
       return r.json();
     })
     .then(function(d){
@@ -2068,7 +2074,7 @@ function loadPipelineGraph(){
   var updated=document.getElementById('graphUpdatedAt');
   fetch('/data/dashboard/graph-state.json')
     .then(function(r){
-      if(!r.ok)throw new Error(r.status);
+      if(!r.ok)throw new Error(String(r.status));
       return r.json();
     })
     .then(function(g){
@@ -2281,7 +2287,7 @@ function loadOntologyData(){
   }
   fetch('/api/ontology')
     .then(function(r){
-      if(!r.ok)throw new Error(r.status);
+      if(!r.ok)throw new Error(String(r.status));
       return r.json();
     })
     .then(function(d){
@@ -2324,9 +2330,15 @@ function loadOntologyData(){
         }
       }
     })
-    .catch(function(){
-      if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
-      if(srcBox)srcBox.innerHTML=emptyState('<i class="bi bi-map"></i>','还没有本体数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导',"goPage('fde')");
+    .catch(function(err){
+      // 加载失败与正常空态分离（批 20-6，对齐编排区 F12 模式）：404 = 尚无本体数据（引导空态）；
+      // 其余 = 真故障（标题明示「加载失败」+ 重试指引），不再复用空数据 emptyState。
+      var isNotFound = err && (err.message === '404' || String(err).indexOf('404') !== -1);
+      var failHtml = isNotFound
+        ? emptyState('<i class="bi bi-map"></i>','还没有本体数据','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导',"goPage('fde')")
+        : emptyState('<i class="bi bi-exclamation-triangle"></i>','本体数据加载失败','网络或服务异常，稍后自动重试','刷新页面',"location.reload()");
+      if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">'+(isNotFound?'':'—')+'</div>';
+      if(srcBox)srcBox.innerHTML=failHtml;
       if(recentBox)recentBox.innerHTML='';
       if(updated)updated.textContent='加载失败';
     });
@@ -2367,7 +2379,7 @@ function loadReleaseGateData(){
   if(!box)return;
   fetch('/api/release-gate')
     .then(function(r){
-      if(!r.ok)throw new Error(r.status);
+      if(!r.ok)throw new Error(String(r.status));
       return r.json();
     })
     .then(function(g){

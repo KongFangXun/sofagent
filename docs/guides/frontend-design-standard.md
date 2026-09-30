@@ -288,7 +288,7 @@ node tools/gen/gen-weekly-report.mjs       # 手动生成持续优化周报
 6. **emoji 正则代理对**：Node 脚本批量替换 emoji 时 `String.fromCodePoint` 在 grep 匹配不到——直接文本验证。
 7. **star-btn 边框缺失**：hover 时按钮边框缺一截——是 `a:hover` 下划线被误删成 `border-bottom:none` 所致；正确是类选择器 `text-decoration:none`。
 8. **内置模板与用户数据分离**：AI 节点页=用户业务节点（部署态）；FDE 引导页=项目内置模板（方法论），勿混。
-9. **单文件零依赖原则**：dashboard 保持单 HTML + 服务器同目录；外部依赖（除 Bootstrap Icons CDN）谨慎引入。
+9. **单文件零依赖原则**：dashboard 保持单 HTML + 服务器同目录；外部依赖（除 Bootstrap Icons CDN）谨慎引入。**形态冻结（v1.5.5 批 20）**：单文件扩张已冻结——体量与形态门禁（`tools/check/check-dashboard.sh` 第 ⑨ 项）断言行数 ≤ **3000**、内联样式计数 ≤ **210**（口径 = v1.5.5 实测 2955/192 + 余量 45/18，起值登记非写死当前值），超限即红；**新增能力一律走模块化**（新页面/新组件另起文件由 server 提供），不得继续往单文件里堆。
 10. **搬 DOM 必须搬触发逻辑**（v1.4.0）：节点移到其他页面后，goPage 事件绑定必须同步（引擎流水线移到工具箱页后曾因没触发加载而空白）。
 11. **脚本移动 DOM 后查闭合配平**（v1.4.0）：移动 section 不能只看 div 总数平衡——要逐个 section 验证自包含闭合（header+body 配平），否则后续 section 嵌套进前一个。
 12. **点位置不对先查字号统一**（v1.4.0）：小卡片"点偏了"大多是标题字号不统一（10/13/12px 混用）——先统一文字等级（12px），再微调坐标（见 4.1）。
