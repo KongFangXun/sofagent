@@ -70,7 +70,7 @@ git commit -m "fix(<scope>): <中文描述>"
 
 ## 产物
 
-写 `fix-summary.md`——**路径铁律：必须写到本 run 目录（fix-plan.md 所在目录，即 `<RUN_DIR>/fix-summary.md`），用绝对路径写盘，禁止裸文件名**（cwd 不可信——run-02 实录：cwd 异常时完整版落到了 `~/dotfiles/` 下、正主位置只留 398 字节截断残文，终产物错位静默）：
+写 `fix-summary.md`——**路径铁律：必须写到本 run 目录（fix-plan.md 所在目录，即 `<RUN_DIR>/fix-summary.md`），用绝对路径写盘，禁止裸文件名**（cwd 不可信——实录教训：cwd 异常时完整版落到了 `~/dotfiles/` 下、正主位置只留 398 字节截断残文，终产物错位静默；完整时序见 run 目录 post-run-audit.md）：
 
 ```
 ## 修复记录
