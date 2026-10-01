@@ -21,7 +21,7 @@
 - [核心特性](#核心特性)
 - [什么是 FDE Harness](#什么是-fde-harness)
 - [多平台挂载](#多平台挂载)
-- [v1.5.4：执行模块 · 模型路由与凭证验证（✅ 已发版 · 2026-09-30）](#v154执行模块--模型路由与凭证验证-已发版--2026-09-30)
+- [v1.5.5：执行模块 · 执行状态机与按需加载（✅ 已发版 · 2026-10-01）](#v155执行模块--执行状态机与按需加载-已发版--2026-10-01)
 - [FDE Harness 两阶段](#fde-harness-两阶段)
 - [安装](#安装)
 - [使用](#使用)
@@ -50,7 +50,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 <p align="center">
   <img src="docs/assets/architecture-diagram.png" alt="sofagent 系统架构" width="860" /><br/>
-  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制：治理模块 v1.5.0 已发版 · 执行模块 v1.5.4 已发版；完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
+  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制：治理模块 v1.5.0 已发版 · 执行模块 v1.5.4/v1.5.5 已发版；完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
 </p>
 
 </details>
@@ -153,18 +153,16 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.5.4：执行模块 · 模型路由与凭证验证（✅ 已发版 · 2026-09-30）
+## v1.5.5：执行模块 · 执行状态机与按需加载（✅ 已发版 · 2026-10-01）
 
-🎯 **给 Agent 装上路由决策链与凭证隔离**——三件事一次到位：
+⚡ **每个节点怎么执行、带哪些工具、跟谁协作，都由文件化的协议决定**——三件事一次到位：
 
 | 能力 | 一句话 |
 |---|---|
-| **模型路由层** | 三级任务路由 + 敏感内容强制本地 + 本地不可用即硬拒（fail-closed）；本地槽位排队可配上限，判定链不占主模型槽 |
-| **凭证隔离 Vault** | Agent 沙箱请求经 Vault 动态注入凭证——代码层取不到 token 明文；授权/凭证对账三类错位可判越权风险 |
-| **多实例自验证** | N 实例并发表决（多数决 / 全同票 / 法定人数不足 escalate / 平票 tie / N<2 拒绝）——CLI `vote` 参数非法即报错，不静默回退 |
-
-另含：AI 节点治理接入（登记/告警/出站白名单默认全拒）· MCP 工具 103→104（`router_slots`）· 门禁强化（生产可达判定 / 任务书零分支 lint / 文档六维评分）。
-
+| **全节点执行状态机** | SKILL.state 协议收编：ΔΣt 由代码确定性合并（fail-closed：非法补丁整批拒绝）、推理轨迹合并后即弃而行为可溯、`SOFAGENT_STATEFUL_EXEC=off` 一键回退 |
+| **Tool search 按需加载** | 按任务描述检索 top-5 工具注入（未命中不注入、显式工具同样过域白名单）；权限面 ToolGate 不受影响 |
+| **多 Agent 阵型调度** | `team.yml` 声明 formation 即装配六阵型（模板兜底/显式覆盖/非法拒绝三态），handoffs 落 decision-log |
+| **编排依赖治理** | LangGraph 降 optionalDependencies——dsh-only 裁剪安装态零静态传染；缺失时三入口显式报错带安装指引 |
 
 ## FDE Harness 两阶段
 

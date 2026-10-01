@@ -23,7 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.4 · Execution: Model Routing & Credential Verification](#v154--execution-model-routing--credential-verification-2026-09-30)
+- [v1.5.5 · Execution: State Machine & On-Demand Loading (2026-10-01)](#v155--execution-state-machine--on-demand-loading-2026-10-01)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -63,7 +63,7 @@ sofagent does not build the Agent — it delivers the layer that keeps any Agent
 <p align="center">
   <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training /
 governance / execution modules" width="860" /><br/>
-  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure: governance module released in v1.5.0 · execution module released in v1.5.4; full interactive
+  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure: governance module released in v1.5.0 · execution module released in v1.5.4/v1.5.5; full interactive
 version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 </p>
 
@@ -200,18 +200,16 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.4 · Execution: Model Routing & Credential Verification (2026-09-30)
+## v1.5.5 · Execution: State Machine & On-Demand Loading (2026-10-01)
 
-🎯 **A routing decision chain and credential isolation for Agents** — three things at once:
+⚡ **How each node executes, which tools it carries, and who it collaborates with — now decided by file-based protocols.** Four things land at once:
 
 | Capability | One-liner |
 |---|---|
-| **Model routing layer** | Three-tier task routing + sensitive-content forced-local + hard-block when local unavailable (fail-closed); slot queueing is cap-configurable, and the decision chain never takes a main-model slot |
-| **Credential isolation Vault** | Sandbox requests get credentials injected via the Vault — token plaintext is unreachable from code level; mandate/credential reconciliation flags three classes of scope mismatch as privilege risk |
-| **Multi-instance self-verification** | N-instance parallel voting (majority / unanimous / quorum-shortfall escalate / tie / N<2 rejected) — CLI `vote` rejects bad args instead of silently falling back |
-
-Also: AI-node governance onboarding (registry / warn / egress deny-by-default) · MCP tools 103→104 (`router_slots`) · gate hardening (production reachability / zero-branch prompt lint / six-dimension doc scoring).
-
+| **Per-node execution state machine** | SKILL.state protocol: ΔΣt merged deterministically in code (fail-closed: invalid patches rejected wholesale), reasoning traces merged-then-discarded while actions stay traceable, `SOFAGENT_STATEFUL_EXEC=off` one-switch rollback |
+| **Tool search on-demand loading** | Top-5 tools retrieved per task description (zero-score hits never injected; explicit tools still pass domain allowlists); ToolGate permission surface unaffected |
+| **Multi-Agent formation scheduling** | Declare `formation:` in team.yml to mount one of six formations (template fallback / explicit override / illegal-reject tri-state); handoffs land in decision-log |
+| **Orchestration dependency governance** | LangGraph demoted to optionalDependencies — zero static contagion in dsh-only installs; three entry points fail loudly with install guidance when missing |
 
 ## The Two FDE Harness Phases
 
