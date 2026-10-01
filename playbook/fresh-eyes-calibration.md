@@ -217,7 +217,7 @@
 - **bump 残留有五类长尾形态**：本轮实测——package-lock version 字段（需 --package-lock-only 重生成）/ 生成器常量（TRAIN_DELIVERABLE_GENERATOR_VERSION）/ 深读文档正文「当前 vX.Y」行（WIKI·evidence·SECURITY）/ docs/guides 全目录文档头日期 / root package.json 依赖段 + ROADMAP 版本头描述行（关键词与 CHANGELOG 标题重合度断言会抓错版）。
   校准：bump 后 check-version 红的每一行都按类处置，勿只改第一处就复跑（本轮五轮才清零）。
 
-## v1.5.5 阶段四校准（run-01 收编 + 阶段三修复批复盘）
+## 阶段四校准（run-01 收编 + 阶段三修复批复盘 · 本版）
 
 - **变异探针必须真正应用并核验产物**——B 角引用不存在的代码形态致 F1 P0 误报（收编方 104 次系统性探针推翻）；后续对「门禁假绿」类指控必须先在临时副本应用变异、跑出真实 rc 再定级（来源：findings F1 收编复验裁定）
 - **findings 头部计数与正文逐条对账**——round-01 头部低报 P1（20 vs 实际 23），登记须以正文逐条数为准并留更正痕（来源：findings 头部计数注）
