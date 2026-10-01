@@ -445,20 +445,15 @@ fi
 | # | artifact | 核验命令 | 期望 |
 |---|----------|---------|------|
 | 1 | | （说明见下方小节） | 两 SHA 一致（同口径） |
-
-#### 1 · tag 对账口径
-
-🔴 annotated tag 对账口径：`gh api git/refs/tags` 返回的是 **tag object SHA** ≠ commit SHA，直接与 `git rev-parse vX.Y.Z^{commit}` 比必不等——正确对账二选一：① `gh api refs/tags` 的 sha == `git rev-parse vX.Y.Z`（本地 tag object SHA）② `gh api git/tags/<object-sha>` 二段查 `.object.sha` == `git rev-parse vX.Y.Z^{commit}`
-
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
 | 3 | | （说明见下方小节） | 23 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
+| 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
 
+#### 1 · tag 对账口径
+🔴 annotated tag 对账口径：`gh api git/refs/tags` 返回的是 **tag object SHA** ≠ commit SHA，直接与 `git rev-parse vX.Y.Z^{commit}` 比必不等——正确对账二选一：① `gh api refs/tags` 的 sha == `git rev-parse vX.Y.Z`（本地 tag object SHA）② `gh api git/tags/<object-sha>` 二段查 `.object.sha` == `git rev-parse vX.Y.Z^{commit}`
 #### 3 · npm 23 包对账
-
 `for p in audit mcp core daemon eval inject ontology orchestrator train rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view @sofagent/dsh-plugin-kit version --prefer-online` + `npm view sofagent
 version --prefer-online` + `for p in $(node -p "require('./engine/dsh-plugins/plugins.json').plugins.map(p=>p.id).join(' ')"); do npm view "$p" version --prefer-online; done`
-
-| 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
 
 > 🔴 **对账通道的终局口径 = registry HTTP 直查**（实测补充）：`npm view --prefer-online` 在传播延迟期**仍可能长时间返回旧值**——本版 rollback 款按 `--prefer-online` 轮询 6×30s 全是旧值（被判 pending 假报），改 `curl -s https://registry.npmjs.org/<pkg>` + node 解 `dist-tags.latest` **立即见新版**。
 >判定序：① 先查 publish 日志有无 `+ <pkg>@<ver>` 入队行（**有 = 已入发布队列，只是传播慢，不是失败**）→ ② 再用 curl 直查确认 `latest` 与版本键 → ③ CLI 查询只作辅助、不作终判。**发布终局对账一律以 ② 为准**。

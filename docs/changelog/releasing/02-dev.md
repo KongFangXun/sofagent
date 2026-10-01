@@ -58,12 +58,6 @@ devlog 各章验收标准**不得包含需 registry 写权限 / package owner �
 | # | 完成 | 步骤 | 验证方式 |
 |:--:|:--:|------|------|
 | 一 | | **bump 时点（定稿：延后到阶段九步骤五）** | check-version.sh exit 0（允许 1 警告发版前中间态） |
-
-#### 一 · bump 时点（定稿：延后到阶段九步骤五）
-
-SSOT 版本号升级与安装入口 URL、bootstrap 哈希、状态翻牌是同一批文件，**同 commit 收口才「tag 前自洽」**（拆到两个阶段 = 同批文件改两次、全量门禁跑两次，且 tag 会指向未 bump 的 commit）。阶段二~阶段八全程 `package.json` 保持**上一版号**，这是 SOP 设计的**待发版中间态**，不是版本失控。**本步骤只做预检**：`bash tools/check/check-version.sh` 确认当前版本三态一致（预期 1 警告 = 待发版窗口态，非缺陷）；
-真正的 `bash tools/release/bump-version.sh <旧> <新>` 在阶段九步骤五执行（见 [09-publish](./09-publish.md)） 
-
 | 二 | | **changelog 状态转正**：`docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 尚未实现」+「状态：已排期」→ 改为「✅ 已开发」。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「尚未实现」残留 |
 | 三 | | `npm run build && npm test` | exit 0 + 全部通过 |
 | 四 | | **测试数文档同步门禁**：`bash tools/check/check-test-count.sh --quiet` | 输出 OK / EXIT=0。FAIL = README/WIKI/LIMITATIONS/ARCHITECTURE 测试数与 test-count.sh SSOT 不一致，必须手动同步后再继续 |
@@ -72,6 +66,11 @@ SSOT 版本号升级与安装入口 URL、bootstrap 哈希、状态翻牌是同�
 | 七 | | **工作区卫生检查**：`npx sofagent-audit --diff-range HEAD --silent` 看「A18+ 工作区垃圾残留扫描」段（或直接跑 `git status --short` + 人工扫根目录） | 扫描零残留。有残留 = 先清理再发版（rm + `git rm --cached` + 补 .gitignore）——发版不带实验垃圾出门 |
 | 八 | | **dist 与 src 同步验证**：`diff <(grep "关键命令" engine/audit/src/index.ts) <(grep "关键命令" engine/audit/dist/index.js)` | 无实质差异（排除编译格式化） |
 | 九 | | 改动清单核对 | `git diff --stat` 确认只改了 changelog 规定的文件 |
+
+#### 一 · bump 时点（定稿：延后到阶段九步骤五）
+
+SSOT 版本号升级与安装入口 URL、bootstrap 哈希、状态翻牌是同一批文件，**同 commit 收口才「tag 前自洽」**（拆到两个阶段 = 同批文件改两次、全量门禁跑两次，且 tag 会指向未 bump 的 commit）。阶段二~阶段八全程 `package.json` 保持**上一版号**，这是 SOP 设计的**待发版中间态**，不是版本失控。**本步骤只做预检**：`bash tools/check/check-version.sh` 确认当前版本三态一致（预期 1 警告 = 待发版窗口态，非缺陷）；
+真正的 `bash tools/release/bump-version.sh <旧> <新>` 在阶段九步骤五执行（见 [09-publish](./09-publish.md)） 
 
 > **编号说明**：步骤编号一律纯数字递延，禁止字母后缀（字母后缀会让「步骤 N」引用歧义、脚本提示语错位）。
 
