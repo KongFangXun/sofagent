@@ -263,7 +263,7 @@ node tools/check/doc-score.mjs --json   # 机读输出（供本版 devlog「文�
 > `<!-- …阶段八生成／阶段九… -->` 内部注记——渲染不可见但 raw 可读，且含流程黑话，**必须一并剥掉**。
 > 自检命令同步扩到注释形态：`grep -cE "阶段六定稿必备项|数字取值说明|\.\./releasing/|Release body 同源|阶段八生成|阶段九步骤七" body.md` 应为 0。
 >
-> 🔴 **补充两条 body 卫生要素**：① devlog 的 Release Notes 段**顶部与尾部各有一段元说明**（顶部「本节存在性 = 阶段六定稿必备项…」/ 尾部「🔗 尾链：本段与 GitHub Release body 同源…」）——**两段都必须剥掉**，只剥顶部会漏（实测）；② body 必须含指向本版 changelog 的**相对链接**（`](./docs/changelog/vX.Y/vX.Y.Z.md)`），SOP 步骤一以 `contains("](./docs/changelog/")` 断言——上一版有、首版漏，靠步骤一查证才发现。
+> 🔴 **补充两条 body 卫生要素**：① devlog 的 Release Notes 段**顶部与尾部各有一段元说明**（顶部「本节存在性 = 阶段六定稿必备项…」/ 尾部「🔗 尾链：本段与 GitHub Release body 同源…」）——**两段都必须剥掉**，只剥顶部会漏（实测）；② body 必须含指向本版 changelog 的**绝对链接**（`https://github.com/KongFangXun/sofagent/blob/main/docs/changelog/vX.Y/vX.Y.Z.md`），SOP 阶段十一步骤一以 `contains("blob/main/docs/changelog/")` 断言（🔴 相对形态已废——release 页解析为 404，v1.5.4 起实测固化绝对口径）。
 > 🔴 **铁律：发布时禁止把 changelog 内嵌段直接复制当 GitHub body**——本段是格式规范源头，GitHub body 由 [09-publish.md 三道工序](./09-publish.md) 生成；两处同源同构，但生成动作在阶段九，此段只定义标准。
 
 ### 格式规范（对照范本逐要素）

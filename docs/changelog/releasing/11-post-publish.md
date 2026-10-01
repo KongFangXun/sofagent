@@ -92,7 +92,7 @@ git tag -l | grep vX.Y.Z
 gh release view vX.Y.Z
 # Release Notes 完整性：body 非空 + 含 changelog markdown 链接 + 非 Draft
 gh release view vX.Y.Z --json isDraft,body -q '.body | length'  # 期望 > 100
-gh release view vX.Y.Z --json body -q '.body | contains("](./docs/changelog/")'  # 期望 true
+gh release view vX.Y.Z --json body -q '.body | contains("blob/main/docs/changelog/")'  # 期望 true（🔴 绝对形态——release 页相对链接 = 404，见 06 三条硬口径）
 
 # npm 版本验证（🔴 必加 --prefer-online——裸查询吃本地缓存，发版 session 内误报上版号）
 npm view @sofagent/audit version --prefer-online   # 期望 vX.Y.Z
