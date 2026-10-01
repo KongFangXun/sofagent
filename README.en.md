@@ -39,7 +39,7 @@
 > 🏢 **The organizational lens**: the bottleneck of AI adoption has shifted from "is the model smart enough" to "can the organization dare to onboard it" — does it fit the org chart, does it get an account, how is performance measured, what happens when it errs. sofagent is the onboarding system for
 >digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
 
-> 🧩 **The three-factor framing**: sofagent is a S1M with a built-in Harness, delivered with the FDE playbook — FDEing is the playbook layer (turning FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
+> 🧩 **The three-factor framing**: sofagent is a S1M with a built-in Harness, delivered with the FDE playbook — FDEing is the engineering layer (turning FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
 >from generation; its foundation is under construction across v1.6.0–v1.9.0, with the declaration landing in v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities — today's main landing points). Each layer sits in its own place; see "Core Features".
 
 **An open-source FDE Harness layer** (FDE = Forward Deployed Engineer, the engineer who embeds models into real enterprise
@@ -113,10 +113,10 @@ build → injection → deliberate violation → audit interception → snapshot
 > - **Not limited to software** — any business object, process, or node can be FDE'ed through "map → judge → deliver → sustain"; hardware nodes and robot motions are workflows too — the difference lies in the executor, not the governance shape.
 > - **It is also a way of thinking** — before doing anything, think of three things: ① how to structure its workflow; ② what its AI nodes are; ③ how AI can help you do it better (see [PHILOSOPHY](./docs/PHILOSOPHY.md)).
 
-Three layers, each in its place: the **playbook layer (FDEing)** writes judgment down on entry, the **judgment layer (S1M)** governs how judgment forms, is traced, and is evidenced, and the
+Three layers, each in its place: the **engineering layer (FDEing)** writes judgment down on entry, the **judgment layer (S1M)** governs how judgment forms, is traced, and is evidenced, and the
 **governance layer (harness)** keeps judgment executing 24/7 after departure.
 
-**Playbook layer · FDEing** (on entry · generate judgment, the FDE stage — deciding where AI belongs and what it's worth, frozen into deliverables):
+**Engineering layer · FDEing** (on entry · generate judgment, the FDE stage — deciding where AI belongs and what it's worth, frozen into deliverables):
 
 - 🧭 **Map the workflow** — five-element deep-dive + three-question triage, capturing every role's process steps and pricing out what each AI node is worth
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
