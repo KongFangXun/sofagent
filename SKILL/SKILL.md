@@ -26,6 +26,7 @@ solves:
   - 企业 AI 落地无方法论（FDE 四阶段诊断交付）
   - 经验不沉淀重复踩坑（think.md 反思 + 知识库 + Dream Cycle）
 
+---
 # FDE Skill · 唯一主入口（引擎底座 + FDE 方法论合一）
 
 > 本文件是 sofagent **唯一主入口**，随 skill 调用自动注入。人读方法论见 `FDE/GUIDE.md`；按阶段执行读 `skills/01-entry.md` ~ `skills/05-exit.md`。
