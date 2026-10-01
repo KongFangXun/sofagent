@@ -43,7 +43,7 @@ devlog 各章验收标准**不得包含需 registry 写权限 / package owner �
 |---------|------------|
 | **新功能交付（任意包）** | **acceptance-test.sh 新场景行为锁**——每个新功能交付当场补对应场景，**禁止「顺延到下版」**（顺延 = 行为锁欠账，顺延实锤：新功能上线时无行为锁，回归只能靠单测）+ 对应包内单测 |
 | 审计规则（engine/audit/src/rules/） | 对应测试 + acceptance-test.sh 场景 + regression-checklist 维度 |
-| MCP tool（engine/mcp/src/tools/） | SKILL.md 工具速查清单 + check-version.sh 工具数校验 |
+| MCP tool（engine/mcp/src/tools/） | SKILL.md 工具速查清单 + check-version.sh 工具数校验 + `node tools/check/check-mcp-registry-wiring.mjs`（注册名↔handler 导入与注册点双向对账——改 tool-registry 后必跑） |
 | 审计维度数 / 测试数 / 包数 | README + CHANGELOG + ROADMAP + LIMITATIONS + evidence 数字声称 |
 | bump-version / check-version / pre-push-check 脚本 | 三脚本覆盖范围一致性（check 能查的 bump 必须能改） |
 | CI workflow（.github/workflows/） | 本地 pre-push-check 覆盖范围与 CI 对齐 |
