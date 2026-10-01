@@ -860,7 +860,12 @@ if command -v sofagent-audit >/dev/null 2>&1; then
     report_ok "sofagent-audit" "v${bin_ver}"
   fi
 else
-  report_warn "sofagent-audit" "未找到全局安装的 sofagent-audit 二进制"
+  # CI runner 无全局安装属环境常态（非版本漂移）——计入 SKIPS 而非 WARNINGS：
+  # pr-check 常开 --strict 后，此 WARN 会让每次 CI 必红（strict 把 warning 升 exit 2），
+  # 与 §21 dist 缺位同款「合法环境态降级」口径（见该节注释）。
+  echo -e "  ${YELLOW}⏭️${NC} sofagent-audit"
+  echo -e "    ${YELLOW}未找到全局安装的 sofagent-audit 二进制（CI/干净环境常态——本机安装态核对归开发者侧）${NC}"
+  SKIPS=$((SKIPS + 1))
 fi
 echo ""
 
