@@ -288,7 +288,10 @@ _ledger_scanface() {
     tools/check/archaeology-exempt.json) printf '%s' "${_SF_ARCH}" ;;
     tools/check/cross-package-relative-exempt.json) printf '%s' "${_SF_XPKG}" ;;
     tools/check/knowledge-legacy-path-exempt.json) printf '%s' "${_SF_LEGACY}" ;;
-    tools/check/npm-claims-exempt.json) printf '%s' "" ;;
+    tools/check/npm-claims-exempt.json)
+      # 离线扫描面：check-npm-claims.mjs 的命中行判据（声称模式）在源码中的出现数——
+      # 不触发网络门禁本身（④c 设计），但给非全覆盖断言一个可证的静态分母。
+      grep -cE 'dist-tags|npm view' tools/check/check-npm-claims.mjs 2>/dev/null || printf '%s' "" ;;
   esac
 }
 _ledger_assert() {
