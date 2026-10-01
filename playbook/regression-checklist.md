@@ -1363,14 +1363,14 @@ grep -q "runCommonsHealth" engine/daemon/src/inspectors/registry.ts || echo "⚠
 
 #### 103. SkillScan 三态链 + 版本守卫——DANGEROUS 拦截 / rc 投产决策落点
 
-**背景**：SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本原须拦截——**拍板「DSH rc 直接投产」后语义反转**：依赖锁是刻意决策（npm 无正式版，预发布期内嵌路径已验证），守卫从「拦截预发布」改为「锁定已知可用版本 + 正式版发布后自动升级」。版本口径（当前锁定 0.1.2-rc.1 = npm latest，退出条件 = 0.1.2 正式版上架 npm）。**升级版本时须同步本 grep 锚与 package.json。**
+**背景**：SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本原须拦截——**拍板「DSH rc 直接投产」后语义反转**：依赖锁是刻意决策（npm 无正式版，预发布期内嵌路径已验证），守卫从「拦截预发布」改为「锁定已知可用版本 + 正式版发布后自动升级」。版本口径（当前锁定 0.1.5-rc.3——09a940deb 显式升级钉住；npm 已演进至 0.2.0-rc.x，按「锁定已知可用版本」纪律不追新，退出条件 = 正式版上架 npm 后评估升格）。**升级版本时须同步本 grep 锚与 package.json。**
 
 ```bash
 grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 三态枚举缺失"
 grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 双触发缺失"
 grep -q "existsSync" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 存在性前置校验缺失"
 grep -q "scanSkillSafety" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety"
-grep -q "0\.1\.2-rc\.1" engine/orchestrator/package.json || echo "⚠️ DSH 依赖锁漂移（须为 0.1.2-rc.1——npm latest，d24dc15a 显式升级；退出条件=0.1.2 正式版上架 npm）"
+grep -q "0\.1\.5-rc\.3" engine/orchestrator/package.json || echo "⚠️ DSH 依赖锁漂移（须为 0.1.5-rc.3——09a940deb 显式升级；退出条件=正式版上架 npm）"
 grep -qE "正式版发布后自动|rc 期\*\*优先内嵌" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 投产决策注释缺失（升正式版时须同步更新此处决策记录）"
 ```
 

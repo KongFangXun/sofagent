@@ -174,7 +174,6 @@ const ROOT = path.resolve(import.meta.dirname, '..', '..');
 // 🔴 扫描窗口 = **未发版**版本（与下方 OPT_OUT_NOTE 同口径）：版本一旦发版即移出本清单——
 //    已发版版本的形态标注属历史档案，回填/对账均无意义（v1.5.0 发版后按此口径移出）。
 const VERSION_SOURCES = [
-  { version: 'v1.5.4', file: 'docs/changelog/v1.5/v1.5.4.md' },
   { version: 'v1.5.5', file: 'docs/changelog/v1.5/v1.5.5.md' },
   { version: 'v1.5.6', file: 'docs/changelog/v1.5/v1.5.6.md' },
   { version: 'v1.5.7', file: 'docs/changelog/v1.5/v1.5.7.md' },
@@ -194,8 +193,8 @@ const OPT_OUT_NOTE = 'docs/changelog/v1.4/ 及更早（已发版历史档案，�
 // 数值口径（实测）：扫描面 11 文件 / 72 需标注章。**两个下界均取零余量**——
 // 任一文件路径断裂 / 任一需标注章消失即当场红（余量非零时「掉几个还算过」正是假绿温床）。
 // 维护纪律：发版时把该版移出 VERSION_SOURCES，**同批下调这两个下界**（与 EXPECTED_COUNTS 同款）。
-const MIN_FILES = 11;
-const MIN_CHAPTERS = 72;
+const MIN_FILES = 10;
+const MIN_CHAPTERS = 67;
 
 // A2 排除面（无交付面 ⇒ 不要求标注）：固定标题两个；**指针存根章由 isPointerStub
 // （章体判据）另行豁免**——这里刻意不按标题形态豁免，理由见 isPointerStub 处注释。

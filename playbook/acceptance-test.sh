@@ -4342,7 +4342,6 @@ process.stdout.write(bad.length === 0 ? 'ASSERT_OK' : 'S413_FAIL:' + bad.join('|
 " 2>&1) || S413_OUT="S413_FAIL:crash"
 [[ "$S413_OUT" == *ASSERT_OK* ]] || { echo "  ✗ S413: $S413_OUT"; S413_OK=false; }
 $S413_OK && pass "v1.4.9 G9 设备接入面：四 tool 注册 + 注册表五导出 + /health 三态（空巡检 fail-closed=dead）" || fail "设备接入面回潮——见上方 ✗ 行"
-
 scenario 414 "v1.4.9 数据承接面——G5b 连接器（fail-closed 拒注册 + 非法声明拒 + 清单形态）+ G1 血缘（事件形态 + 坏行计入 + 追溯数组，原 S415 折入）"; S414_OK=true
 S414_OUT=$(SOFAGENT_DATA="$(mktemp -d /tmp/sof-s414-XXXXXX)" PROJECT_ROOT="$PROJECT_ROOT" node -e "
 const pg = require(process.env.PROJECT_ROOT + '/engine/audit/dist/cli/plugin-gate.js');
@@ -4372,7 +4371,6 @@ process.stdout.write(bad.length === 0 ? 'ASSERT_OK' : 'S414_FAIL:' + bad.join('|
 " 2>&1) || S414_OUT="S414_FAIL:crash"
 [[ "$S414_OUT" == *ASSERT_OK* ]] || { echo "  ✗ S414: $S414_OUT"; S414_OK=false; }
 $S414_OK && pass "v1.4.9 数据承接面：连接器 fail-closed/非法声明/清单形态 + 血缘事件形态/坏行计入/追溯数组/双 tool 注册" || fail "连接器注册面回潮——见上方 ✗ 行"
-
 scenario 416 "v1.4.9 第八章 敏感识别插槽——DetectorRegistry 四方法 + tierOf 三档 + L0 检测器形态 + 分类器三档/模型档透传 + L2 NER 协议三态（dist 直调）"
 probe_assert s416 "v1.4.9 第八章 敏感识别：插槽四方法 + tierOf 三档 + 分类器三档/模型档 + NER 外挂协议三态" "敏感识别三交付面回潮——见上方 ✗ 行"
 
@@ -4383,16 +4381,12 @@ probe_assert s416 "v1.4.9 第八章 敏感识别：插槽四方法 + tierOf 三�
 # ─── v1.4.9 阶段五 P0-3 补测（S418–S424）+ v1.5.1 产任务九章（S434–S441）：断言本体均已抽入 acceptance-node-probes.js（警戒线收敛批）───
 scenario 418 "v1.4.9 第二章 G10 设备侧数据面授权读取——device_data_query fail-closed 链路（参数缺失拒 + 未注册拒 + 白名单外拒）+ 白名单内放行侧（真实身份注册→声明→读取成功/内容一致/审计留痕，run-03 C-P1-1 扩，dist 直调 HOME 隔离）"
 probe_assert s418 "v1.4.9 G10 数据面授权读取：参数缺失/未注册/门禁 fail-closed 三拒 + [sofagent] 前缀结构化返回" "G10 授权读取面回潮——见上方 ✗ 行"
-
 scenario 419 "v1.4.9 第三章 G11 数据上行通道——device_data_push 采集声明 fail-closed（参数缺失拒 + 未注册拒 + isError 形态）+ WAL 加密暂存（明文不落盘/解密回读/游标续传/无密钥拒，run-02 扩）+ tool 入口 happy-path（声明 opt-in 放行入队/声明外拒/目的地不符拒/审计计量 evidence 落盘，run-03 C-P0-1 扩，dist 直调 HOME 隔离）"
 probe_assert s419 "v1.4.9 G11 数据上行通道：参数缺失/未注册 fail-closed 两拒 + isError 结构化形态" "G11 上行通道回潮——见上方 ✗ 行"
-
 scenario 420 "v1.4.9 第四+五章 installer skill + 心跳捎带下发——installer.md 五步标题与诊断四字段 + enqueue/claim/心跳捎带往返（dist 直调 HOME 隔离）"
 probe_assert s420 "v1.4.9 installer skill 五步+诊断四字段 + 心跳捎带下发往返（入队→捎带→领取）" "installer/捎带下发面回潮——见上方 ✗ 行"
-
 scenario 421 "v1.4.9 第六章 派单语义——在线才派单 + 掉线改派/挂起（enqueue 拒离线 + reassignOrHold 双模式 + 告警回调，dist 直调 HOME 隔离）"
 probe_assert s421 "v1.4.9 派单语义：离线拒派 + 掉线改派在线备机 + hold 挂起告警回调三态" "派单语义回潮——见上方 ✗ 行"
-
 scenario 422 "v1.4.9 第七章 session 承接与 router 伴生——五元组续接判定/摘要交接三要素/router 推送幂等入账 + 蒸馏偏好对（模块七数据面）配对/择优/toRecords（dist 直调）"
 probe_assert s422 "v1.4.9 第七章双面：五元组续接/handoff 交接三要素/router 伴生幂等入账 + 蒸馏偏好对配对择优" "session 承接/router 伴生/蒸馏配对面回潮——见上方 ✗ 行"
 
