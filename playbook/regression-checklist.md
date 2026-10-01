@@ -63,7 +63,7 @@ grep -c "ARCHITECTURE.md" README.md # 期望: ≥ 1
 # 子项 e: 当前版本条目不含审查元信息（原维度 48e）
 LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+'); sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次" && echo "⚠️ CHANGELOG 当前版本含审查元信息" || true
 # 子项 f: ROADMAP 版本头描述与当前版本一致（原维度 48a）
-sed -n '4p' docs/ROADMAP.md | grep -qE "后训模块|数据与评估|FDE Harness|六引擎|IM 桥" || echo "⚠️ ROADMAP 版本头描述可能错配" # 关键词须随发版同步更新（口径）
+grep -m1 -E "^> v[0-9]+\.[0-9]+\.[0-9]+ · .*· (✅ 已发版|⏳)" docs/ROADMAP.md | grep -qE "后训模块|数据与评估|FDE Harness|六引擎|IM 桥|执行模块" || echo "⚠️ ROADMAP 版本头描述可能错配" # 关键词随发版同步（v1.5.4 起含「执行模块」族）；行号锚改内容锚——头部图区块曾使 :4 漂移
 # 子项 g: SECURITY.md 旧描述清理（原维度 48d）
 grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 推辞过时" || true
 # 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式） 防御（定谳尾判假）：`[ ] && echo ⚠️` 在健康态（相等）时 `[ ]` 返 1 → 整维度 exit=1 假红，改显式 if、健康态显式 exit 0
