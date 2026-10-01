@@ -85,6 +85,11 @@
       "file": "docs/LIMITATIONS.md",
       "anchor": "v1.5.5 补充（CLI 侧已对齐）",
       "reason": "局限披露的时点指针（该项限制在 v1.5.5 起已被修复对齐）——LIMITATIONS 的读者须知道该条目描述的是修复前的历史边界还是当前边界"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "## 阶段四校准（run-01 收编",
+      "reason": "校准笔记的 runDir 出处指针（FORGE/SKILL/fresh-eyes-loop/runs/2026/10/01/run-01）——run 编号在此是可复算定位键非跑批叙事；删它 ⇒ 校准条目无法回溯原始审查证据"
     }
   ],
   "exemptAnchors_spec": {

@@ -23,7 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.4: Execution · Model Routing & Credential Verification (✅ Released · 2026-09-30)](#v154-execution--model-routing--credential-verification--released--2026-09-30)
+- [v1.5.4 · Execution: Model Routing & Credential Verification](#v154--execution-model-routing--credential-verification-2026-09-30)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -200,7 +200,7 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.4: Execution · Model Routing & Credential Verification (✅ Released · 2026-09-30)
+## v1.5.4 · Execution: Model Routing & Credential Verification (2026-09-30)
 
 🎯 **A routing decision chain and credential isolation for Agents** — three things at once:
 
@@ -268,6 +268,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 Here's what it looks like when a known-format secret leak is blocked (real output; A2 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and
 other known formats — generic secret shapes are intentionally out of scope, a conservative design against false
+
 positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). This is exactly the scenario shown in the screenshot above (first screen); not repeated here.
 
 **Full install** (Node.js ≥ 18, download and review before running) — **installed on the enterprise devices running the AI nodes**:
