@@ -218,7 +218,7 @@ graph TB
 |---|---|
 | `engine/audit/` | @sofagent/audit — 审计模块（git diff + 25 条规则） |
 | `engine/core/` | @sofagent/core — 核心类型、HMAC 工具、memory-contract |
-| `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排（v1.5.5（已开发待发版）起节点内部将运行 SKILL.state 执行协议——P+Σt+ot 三输入结构化状态机，轨迹可弃行为可溯；@langchain/langgraph 已降 optionalDependencies，DSH 后端缺它可用） |
+| `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排（v1.5.5（已发版）起节点内部将运行 SKILL.state 执行协议——P+Σt+ot 三输入结构化状态机，轨迹可弃行为可溯；@langchain/langgraph 已降 optionalDependencies，DSH 后端缺它可用） |
 | `engine/train/` | @sofagent/train — 后训模块（数据管道/训练编排/云端执行/eval 闭环） |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/inject/` | @sofagent/inject — SKILL 加载链（上下文注入） |

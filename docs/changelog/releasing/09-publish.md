@@ -562,6 +562,12 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
 
 ---
 
+> **本版发版期新沉淀（四条实测经验）**：
+> ① release.yml 的 audit/mcp publish 可能遇 npm 服务端瞬时 E404（PUT 根路径 404，二次确认不存在）——处置：worktree 本地手动重发两包（登录态在开发者侧），入队行确认即成功，CI 侧红不阻塞。
+> ② check-npm-claims 会扫 README 双语版本声称 vs registry 真值——bump 后 publish 前必然红（窗口态），登记 npm-claims-exempt.json 锚式豁免（publish 后声称自动转真值）。
+> ③ skillhub CLI 已收紧 SKILL.md frontmatter 校验（必须有闭合 `---`）——历史文件无闭合标记的会拒收，补标记即可。
+> ④ ClawHub package publish 已收紧 dist 校验（runtimeExtensions 声明的 ./dist/index.js 必须在包内）——OpenClaw 插件发布前须 `npm run build`；openclawVersion 钉值须随 registry 当前版更新。
+
 ## 步骤八：npm 手动 publish 其余 14 包（含裸名总包）+ 七款 DSH 插件 ☐
 
 > 🔴 **dist-tag 口径（撤策后 · 现行）**：下方每处 `npm publish --access public`（含「步骤八·补」的七款插件）**一律不加 `--tag`**——落默认 `latest`。历史分道说明见步骤七「dist-tag 分道」节（已撤策存档，不再执行）。
