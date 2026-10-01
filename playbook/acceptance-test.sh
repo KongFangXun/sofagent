@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：394 个场景（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
+# 场景数：395 个场景（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
 # 编号跳号豁免：S1~S293 间 70 个空洞号（v1.2.x 瘦身既成事实）；新编号=当前最大+1 顺延禁回填；版本段 grep "─── v" 定位
 # 口径注意：底部「$PASSED 通过」是断言通过数（≠场景数，含跳过场景），勿混用
 # 用法：bash playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
@@ -4389,37 +4389,26 @@ scenario 421 "v1.4.9 第六章 派单语义——在线才派单 + 掉线改派/
 probe_assert s421 "v1.4.9 派单语义：离线拒派 + 掉线改派在线备机 + hold 挂起告警回调三态" "派单语义回潮——见上方 ✗ 行"
 scenario 422 "v1.4.9 第七章 session 承接与 router 伴生——五元组续接判定/摘要交接三要素/router 推送幂等入账 + 蒸馏偏好对（模块七数据面）配对/择优/toRecords（dist 直调）"
 probe_assert s422 "v1.4.9 第七章双面：五元组续接/handoff 交接三要素/router 伴生幂等入账 + 蒸馏偏好对配对择优" "session 承接/router 伴生/蒸馏配对面回潮——见上方 ✗ 行"
-
 scenario 423 "v1.4.9 第九章 权重灰度 AB——canaryRouteRequest 确定性分流 + judgeDeterioration 劣化判定（dist 直调纯函数）"
 probe_assert s423 "v1.4.9 权重灰度 AB：确定性分流 + 0/100 端点 + 劣化判定附原因 + 无劣化对照" "灰度 AB 面回潮——见上方 ✗ 行"
-
 scenario 424 "v1.4.9 第十章 模型清单上报 + 执行时 skill 快照——scanRegistryModels 注册表扫描/retired 过滤/降级原因 + 心跳 availableModels 捎带 + snapshotSkills 快照清单/manifest 一致/篡改可辨/清理幂等不误删/空 root 诚实空清单（run-02 扩，dist 直调 HOME 隔离）"
 probe_assert s424 "v1.4.9 模型清单上报：retired 过滤 + 降级原因 + 心跳 availableModels 捎带联动" "清单上报面回潮——见上方 ✗ 行"
-
 scenario 425 "v1.4.9 第一章 G1 workflow 模板分发——export/import dist 直调往返（导出落盘→导入回读→节点一致 + 剥离/血缘/篡改/全私/冲突/非法模板六拒）+ tool-registry 双注册"
 probe_assert s425 "v1.4.9 G1 模板分发：export→import 往返一致 + 六态拒收 + tool-registry 双注册" "G1 模板分发行为锁回潮——见上方 ✗ 行"
-
 scenario 426 "v1.4.9 第十四章 审查体系四文档分发结构锁——checklist 90 维/警戒线双值 + calibration 五校准锚 + changelog 收敛表五行 + 归并去向注释（S180-S183 文档结构锁先例）"
 probe_assert s426 "v1.4.9 第十四章审查体系分发：四文档结构锁（A 类 90 维 + B 类场景族 + C 类五校准锚 + 收敛表对账）" "审查体系四文档结构漂移——见上方 ✗ 行"
-
 scenario 427 "v1.5.0 第一章 治理 KPI 面板——governance 聚合引擎 dist 直调（六卡键 + 空目录降级 + 周报 markdown + lineage 合规报告导出面）+ Dashboard 治理 tab/api 端点三锚"
 probe_assert s427 "v1.5.0 治理 KPI 面板：六卡聚合 + 数据集审阅/lineage 合规 + 周报导出 + Dashboard 三锚" "治理面板行为锁回潮——见上方 ✗ 行"
-
 scenario 428 "v1.5.0 第二章 本体数据双时态——stateAt 时点快照（validTo 过滤/未生效过滤）+ isValidAt 边界 + progressiveLoad 三层渐进（entity 摘要→relations→全文）"
 probe_assert s428 "v1.5.0 双时态事实：时点快照两视角 + 有效期边界 + 三层渐进加载预算联动" "双时态行为锁回潮——见上方 ✗ 行"
-
 scenario 429 "v1.5.0 第三章 Ontology Validation Engine——DAG 环检测（三色 DFS + 环链定位）+ schema 兼容三态（悬空实体/字段缺失/类型错配）+ 激活前置门 fail-closed"
 probe_assert s429 "v1.5.0 Validation Engine：环链定位 + schema 三态 + 激活 fail-closed" "Validation Engine 行为锁回潮——见上方 ✗ 行"
-
 scenario 430 "v1.5.0 第八章 跨层证据对账——reconcileTraces 四态 dist 直调（一致/漏报/幻觉/瞒报 + 回滚闭环不计幻觉 + consistencyRate）+ trace_reconcile 105th tool 注册锚"
 probe_assert s430 "v1.5.0 trace 对账：三源四态判定 + 回滚闭环豁免 + 工具注册面" "跨层证据对账行为锁回潮——见上方 ✗ 行"
-
 scenario 431 "v1.5.0 第五章 FDE 陪跑期 + 第十章 DSH 插件事件接线——companion 期满总结（14 天常量 + 生成/查询函数）+ plugins.json 7 seamHandlers + audit 插件 4 事件位源码锚"
 probe_assert s431 "v1.5.0 FDE 陪跑期 + 插件事件接线：期满总结面 + 7 handler 声明面 + 4 事件位" "陪跑期/事件接线行为锁回潮——见上方 ✗ 行"
-
 scenario 432 "v1.5.0 发版态自洽：CHANGELOG 顶版索引行不同时含「待发版」与「已发版」（翻牌期矛盾锁）"
 probe_assert s432 "CHANGELOG 顶版行状态自洽 + 当前版本索引行在位" "顶版行状态矛盾或缺索引行"
-
 scenario 433 "v1.5.1 第九章 存量断链残余面：退役 flag（--legacy）无生产调用方残留——全仓扫描（含 tools/ 与所有 .sh，测试面/fixtures 豁免），退役侧唯一命中且退役判定在位"
 probe_assert s433 "退役 flag 生产调用方清零（全仓扫描含 tools/ 与 shell 脚本）+ 退役侧哨点在位" "退役 flag 仍有生产调用方残留，或退役侧判定被误删——见上方 ✗ 行"
 # 手法：dist 直调 + tmp 隔离 + 反向探针（改坏必红→还原绿），防「写了场景但断言不咬人」。
@@ -4581,6 +4570,9 @@ $S469_OK && pass "Tool search 按需加载行为锁（索引/检索/分步追加
 scenario 470 "v1.5.5 章三·README 理念主线结构锁（release-gate 20261001-01 coverage P0-3 闭环；章↔场景双向登记）——双语理念主线小节在位 / 三因子三锚（打法层 FDEing · 判定层 S1M · 治理层 harness）/ 与 PHILOSOPHY 三域三因子口径一致（各司其职不互替）/ 跨文件引用锚真实可达；对齐 S426/S447/S451/S464 文档结构锁先例"; S470_OK=true
 node -e 'const fs=require("fs"),RP=process.env.PROJECT_ROOT,bad=[],R=(p)=>fs.readFileSync(RP+p,"utf8"),zh=R("/README.md"),en=R("/README.en.md"),ph=R("/docs/PHILOSOPHY.md"),need=[[zh,"### 万物皆可 FDEing（理念）","zh 理念主线小节缺"],[zh,"三层各归其位","zh 三层归属句缺"],[zh,"三层各司其职、不互替","zh 三因子口径句缺"],[zh,"**打法层 · FDEing**","zh 打法层锚缺"],[zh,"**判定层 · S1M**","zh 判定层锚缺"],[zh,"**治理层 · harness**","zh 治理层锚缺"],[en,"### Everything can be FDEing (the idea)","en 理念主线小节缺"],[en,"Three layers, each in its place","en 三层归属句缺"],[en,"**Playbook layer · FDEing**","en playbook 层锚缺"],[en,"**Judgment layer · S1M**","en judgment 层锚缺"],[en,"**Governance layer · harness**","en governance 层锚缺"]];for(const x of need) if(!x[0].includes(x[1])) bad.push(x[2]);if(!ph.includes("各司其职、不互替")) bad.push("PHILOSOPHY 三因子口径缺（README 与 PHILOSOPHY 口径不齐）");if(!zh.includes("./docs/PHILOSOPHY.md")) bad.push("跨文件引用锚不可达");console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q "^OK" || S470_OK=false
 $S470_OK && pass "README 理念主线结构锁（双语三因子三锚 + 与 PHILOSOPHY 口径一致 + 跨文件锚可达）" || fail "README 理念主线结构漂移——见上方 ✗ 行"
+scenario 471 "v1.5.5 判断层 P1 闭环批：收编范围/重写负向/依赖面三断言（verdict 20261001-02 P1-2/P1-3/P1-4）——章一收编节点枚举与例外登记 / 章三旧理念关键词零残留 / 章五 optionalDependencies 静态面"; S471_OK=true
+node -e 'const fs=require("fs"),RP=process.env.PROJECT_ROOT,bad=[],R=(p)=>fs.readFileSync(RP+p,"utf8"),es=require(RP+"/engine/orchestrator/dist/execution-state/index.js"),kinds=es.listNodeKinds().join(","),devlog=R("/docs/changelog/v1.5/v1.5.5.md"),zh=R("/README.md"),en=R("/README.en.md"),pj=JSON.parse(R("/engine/orchestrator/package.json"));if(kinds!=="engineer,checker,reviewer,refine-agent,long-task")bad.push("收编节点枚举漂移:"+kinds);for(const k of kinds)if(!devlog.includes(k)&&k!=="refine-agent")bad.push("devlog 未登记节点:"+k);for(const old of ["六引擎","六引擎架构"])if(zh.includes(old)&&!zh.includes("六引擎架构（已退役）"))bad.push("旧理念关键词残留(zh):"+old);if(!pj.optionalDependencies||!pj.optionalDependencies["@langchain/langgraph"])bad.push("langgraph 未在 optionalDependencies");if(pj.dependencies&&pj.dependencies["@langchain/langgraph"])bad.push("langgraph 仍残 dependencies");console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q "^OK" || S471_OK=false
+$S471_OK && pass "P1 闭环三断言（收编枚举+例外/旧词零残留/optional 依赖面）" || fail "P1 闭环断言回潮——见上方 ✗ 行"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数
