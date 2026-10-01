@@ -27,12 +27,12 @@ set -uo pipefail
 OUT=$(npm publish --access public 2>&1); RC=$?
 echo "$OUT"
 
-if [ $RC -ne 0 ] && echo "$OUT" | grep -qE "E409|already published|Cannot publish over previously staged"; then
+if [ $RC -ne 0 ] && grep -qE "E409|already published|Cannot publish over previously staged" <<< "$OUT"; then
   echo "✅ 先行发布已在 registry 传播（E409 = 版本已存在）——视为已发布，跳过"
   exit 0
 fi
 
-if [ $RC -ne 0 ] && echo "$OUT" | grep -q "is not in this registry"; then
+if [ $RC -ne 0 ] && grep -q "is not in this registry" <<< "$OUT"; then
   VER=$(node -p "require('./package.json').version")
   NAME=$(node -p "require('./package.json').name")
   if npm view "${NAME}@${VER}" version >/dev/null 2>&1; then
