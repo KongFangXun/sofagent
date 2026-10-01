@@ -1,25 +1,4 @@
 {
-  "_meta": {
-    "purpose": "核心文档可读性棘轮基线（doc-discipline.sh Face 5）——实测值只许降不许升；清理后必须同步改小本台账，让 diff 记录「债减少」",
-    "counter": "node tools/check/lib/readability-count.mjs（单一口径：wall=围栏外>300字符行；cell=围栏外表格内>200字符格）",
-    "rule": "实测值 ≤ 基线 = 绿；任何文件 wall/cell 高于基线 = 红；文件清零后从本表移除；新增核心文档须先测基线再登记",
-    "scope": "核心文档面（用户必经路径）；changelog/archive/evidence 为冻结区不适用",
-    "note": "2026-09-28 文档治理批：全量折行 + THANKS 判据级压缩后首次收紧——总墙式行 261→17（-244），墙式格 34→34（下一批：表格单元格内容压缩）",
-    "updated": "2026-09-30-f",
-    "note2": "FORGE/LEDGER 为运行台账（append-only 数据面）：表格结构不可折，锁现状防恶化；tools/README、evidence 双语已清零可从台账移除",
-    "note3": "2026-09-28 内容压缩批：VALIDATION 台账化（6+3 节归档）/ ARCHITECTURE §七 10 节归位 / ROADMAP 表格拆注 / evidence 双语清零 / 新增 11 文件入册",
-    "note4": "2026-09-28-c 结构批：ARCHITECTURE 章序重排（一~八顺序）、PHILOSOPHY §一 5 节并段、GUIDE 头部 25→8、重复论证收敛",
-    "note5": "2026-09-28-d 表格批：ROADMAP 三表收敛——「规划版本」表去与各版 devlog 逐字重复的交付明细（改述为「主题 + 形态归属计数 + 归位来历」，A7 对账形态不变）、「迭代历程」表收敛为「主题 + 件名 + 快照数字」摘要（明细 SSOT = CHANGELOG）、「探索方向」表截断尾巴按原文恢复为「> 注-N：」注行；同批修 33 处悬空「（详→注-N）」标记与 15 个断句单元格、3 处墙式段落折行 ⇒ wall 17→0 / cell 16→0，本文件清零移出",
-    "note6": "2026-09-28-e 形态批：表格形态门禁扩为四断言（补「悬空注标」「断句格」）+ 在役文档存量清零（台账 64→43，余者全为冻结区）。本文件同步收紧 FORGE/LEDGER.md：其 5 行曾多带行首管道而与同文件其余行式不一致（GFM 下渲染为裸管道文本），去掉后该文件不再是表格 ⇒ cell 2→0、wall 27→26",
-    "note7": "doc-slim 批 2026-09-28：ARCHITECTURE wall 7→0（reflow + 长行收敛）/ cell 12→4（workspace 表与能力表长格收敛为「摘要 + 回指」）——基线随真实清理下调",
-    "note8": "doc-slim 批 2026-09-28（批3）：PHILOSOPHY wall 1→0 / cell 1→0（DSH 长格拆注行 + Conway 结论折行）——清零随批记录",
-    "note9": "doc-slim 批 6（2026-09-28）：WIKI 分工表加「体量纪律」列连带两处墙式行折行 ⇒ wall 2→0 / cell 4→3——基线随真实清理下调",
-    "note10": "doc-slim 批 6（2026-09-28）：CONTRIBUTING 新增「文档收录纪律」节连带表行收敛 ⇒ wall 1→0 / cell 1→0",
-    "note11": "2026-09-29 文档瘦身批：随分隔线归一/横线删除，实际 wall/cell 下降处同步收紧台账（LIMITATIONS wall 2→1）；12 个已清零文件按规则移出（含 2 个死条目 docs/evidence/*——Face 5 候选面本就排除 docs/evidence/）。**未抬任何基线**：playbook/regression-checklist.md 的 wall 1→2 是另一 session 引入，保持基线 1 不放宽。",
-    "note12": "v1.5.5 阶段二收口：README.en 理念重写墙式 6→3（3 处真实折行）；ARCHITECTURE/LIMITATIONS/SECURITY/ROADMAP 为 v1.5.5 五章施工+翻牌净增 1-3 行墙（表格行/引用段，登记=认债不放宽语义）——实测重置，diff 记录债变化",
-    "note13": "阶段六定稿：checklist wall 1→3（#146 归并注记+警戒线演进两行散文）与 CHANGELOG wall 0→1（v1.5.5 索引行）为真实交付内容——实测重置认债",
-    "note14": "阶段九 pre-push 终验：VALIDATION/ROADMAP/PHILOSOPHY/driver.md/LEDGER/SECURITY 的 wall/cell 实测上调——来源=本版交付内容（VALIDATION 四缺口登记 / ROADMAP 探索方向提入 / PHILOSOPHY 自进化谱系 / driver 事故教训 / LEDGER 勘误行 / SECURITY 数据主权与密钥姿态三批），非文件清理回归；未删任何内容"
-  },
   "docs/ARCHITECTURE.md": {
     "wall": 1,
     "cell": 4
@@ -115,5 +94,26 @@
   "docs/ROADMAP.md": {
     "wall": 2,
     "cell": 3
+  },
+  "_meta": {
+    "purpose": "核心文档可读性棘轮基线（doc-discipline.sh Face 5）——实测值只许降不许升；清理后必须同步改小本台账，让 diff 记录「债减少」",
+    "counter": "node tools/check/lib/readability-count.mjs（单一口径：wall=围栏外>300字符行；cell=围栏外表格内>200字符格）",
+    "rule": "实测值 ≤ 基线 = 绿；任何文件 wall/cell 高于基线 = 红；文件清零后从本表移除；新增核心文档须先测基线再登记",
+    "scope": "核心文档面（用户必经路径）；changelog/archive/evidence 为冻结区不适用",
+    "note": "2026-09-28 文档治理批：全量折行 + THANKS 判据级压缩后首次收紧——总墙式行 261→17（-244），墙式格 34→34（下一批：表格单元格内容压缩）",
+    "updated": "2026-09-30-f",
+    "note2": "FORGE/LEDGER 为运行台账（append-only 数据面）：表格结构不可折，锁现状防恶化；tools/README、evidence 双语已清零可从台账移除",
+    "note3": "2026-09-28 内容压缩批：VALIDATION 台账化（6+3 节归档）/ ARCHITECTURE §七 10 节归位 / ROADMAP 表格拆注 / evidence 双语清零 / 新增 11 文件入册",
+    "note4": "2026-09-28-c 结构批：ARCHITECTURE 章序重排（一~八顺序）、PHILOSOPHY §一 5 节并段、GUIDE 头部 25→8、重复论证收敛",
+    "note5": "2026-09-28-d 表格批：ROADMAP 三表收敛——「规划版本」表去与各版 devlog 逐字重复的交付明细（改述为「主题 + 形态归属计数 + 归位来历」，A7 对账形态不变）、「迭代历程」表收敛为「主题 + 件名 + 快照数字」摘要（明细 SSOT = CHANGELOG）、「探索方向」表截断尾巴按原文恢复为「> 注-N：」注行；同批修 33 处悬空「（详→注-N）」标记与 15 个断句单元格、3 处墙式段落折行 ⇒ wall 17→0 / cell 16→0，本文件清零移出",
+    "note6": "2026-09-28-e 形态批：表格形态门禁扩为四断言（补「悬空注标」「断句格」）+ 在役文档存量清零（台账 64→43，余者全为冻结区）。本文件同步收紧 FORGE/LEDGER.md：其 5 行曾多带行首管道而与同文件其余行式不一致（GFM 下渲染为裸管道文本），去掉后该文件不再是表格 ⇒ cell 2→0、wall 27→26",
+    "note7": "doc-slim 批 2026-09-28：ARCHITECTURE wall 7→0（reflow + 长行收敛）/ cell 12→4（workspace 表与能力表长格收敛为「摘要 + 回指」）——基线随真实清理下调",
+    "note8": "doc-slim 批 2026-09-28（批3）：PHILOSOPHY wall 1→0 / cell 1→0（DSH 长格拆注行 + Conway 结论折行）——清零随批记录",
+    "note9": "doc-slim 批 6（2026-09-28）：WIKI 分工表加「体量纪律」列连带两处墙式行折行 ⇒ wall 2→0 / cell 4→3——基线随真实清理下调",
+    "note10": "doc-slim 批 6（2026-09-28）：CONTRIBUTING 新增「文档收录纪律」节连带表行收敛 ⇒ wall 1→0 / cell 1→0",
+    "note11": "2026-09-29 文档瘦身批：随分隔线归一/横线删除，实际 wall/cell 下降处同步收紧台账（LIMITATIONS wall 2→1）；12 个已清零文件按规则移出（含 2 个死条目 docs/evidence/*——Face 5 候选面本就排除 docs/evidence/）。**未抬任何基线**：playbook/regression-checklist.md 的 wall 1→2 是另一 session 引入，保持基线 1 不放宽。",
+    "note12": "v1.5.5 阶段二收口：README.en 理念重写墙式 6→3（3 处真实折行）；ARCHITECTURE/LIMITATIONS/SECURITY/ROADMAP 为 v1.5.5 五章施工+翻牌净增 1-3 行墙（表格行/引用段，登记=认债不放宽语义）——实测重置，diff 记录债变化",
+    "note13": "阶段六定稿：checklist wall 1→3（#146 归并注记+警戒线演进两行散文）与 CHANGELOG wall 0→1（v1.5.5 索引行）为真实交付内容——实测重置认债",
+    "note14": "阶段九 pre-push 终验：VALIDATION/ROADMAP/PHILOSOPHY/driver.md/LEDGER/SECURITY 的 wall/cell 实测上调——来源=本版交付内容（VALIDATION 四缺口登记 / ROADMAP 探索方向提入 / PHILOSOPHY 自进化谱系 / driver 事故教训 / LEDGER 勘误行 / SECURITY 数据主权与密钥姿态三批），非文件清理回归；未删任何内容"
   }
 }

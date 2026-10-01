@@ -1,15 +1,4 @@
 {
-  "_meta": {
-    "counter": "Unicode 码点数（node [...text].length，含空白与标记符号；单一口径）。**不是行数**——实测：把 300 字墙式单行折成 6 行，行数 ×6.0 而字符数仅 +1.7%，故行数会把「排版优化」记成「膨胀事故」。",
-    "why_not_lines": "本仓 LIMIT_A 注释实录 20+ 次「折行 → 撞预算 → 上调上限」（7180→7200→7470→7520→7620→7680→7480）——可读性动作反被预算惩罚。行数只影响源文件观感，字符数才近似「读者要读多少」。",
-    "rule": "实测值 ≤ 基线 = 绿；任何文件超基线 = 红（只许降不许升）。净增需求必须先「同文档移出等量字」再进（与 06-三道闸闸一对价同源，此处为 CI 红线）。清理后请改小本台账，让 diff 记录「债减少」。",
-    "scope": "用户必经路径的核心活文档 21 份（含双语 README、FDE/SKILL 入口与 tools/README 维护者工具索引）；changelog/archive/evidence 为冻结区不适用。",
-    "opening_cap": 600,
-    "opening_rule": "抬头块 = H1 到首个 `## ` 之间的正文；字数只计文本字符，剔除装饰行（HTML 标签行 / 纯图片 / 纯徽章 / HTML 注释 / `---`）与 YAML front matter。超限处置三选一：下沉正文 / 精简 / 淘汰。",
-    "origin": "文档瘦身批（2026-09-29）：口径由「物理行数」换成「字符数」（用户裁定：行数是坏指标，控字数不控行数）。基线 = 换算时点实测值。",
-    "consumed_by": "doc-discipline.sh Face 6（字数棘轮）+ Face 7（抬头块闸）",
-    "note": "v1.5.5 阶段二收口重置：净增为五章施工真实内容（SECURITY 跨境/驻留维度、README 双语理念重写、devlog 验收打勾、ROADMAP/WIKI 翻牌）——登记=认债；下版按棘轮只降不升"
-  },
   "README.md": 19586,
   "README.en.md": 39344,
   "CHANGELOG.md": 17355,
@@ -31,7 +20,15 @@
   "SKILL/SKILL.md": 7299,
   "SKILL/AGENTS.md": 7623,
   "tools/README.md": 22100,
-  "FORGE/lessons/driver.md": 43648,
-  "playbook/regression-checklist.md": 158354,
-  "FORGE/LEDGER.md": 46042
+  "_meta": {
+    "counter": "Unicode 码点数（node [...text].length，含空白与标记符号；单一口径）。**不是行数**——实测：把 300 字墙式单行折成 6 行，行数 ×6.0 而字符数仅 +1.7%，故行数会把「排版优化」记成「膨胀事故」。",
+    "why_not_lines": "本仓 LIMIT_A 注释实录 20+ 次「折行 → 撞预算 → 上调上限」（7180→7200→7470→7520→7620→7680→7480）——可读性动作反被预算惩罚。行数只影响源文件观感，字符数才近似「读者要读多少」。",
+    "rule": "实测值 ≤ 基线 = 绿；任何文件超基线 = 红（只许降不许升）。净增需求必须先「同文档移出等量字」再进（与 06-三道闸闸一对价同源，此处为 CI 红线）。清理后请改小本台账，让 diff 记录「债减少」。",
+    "scope": "用户必经路径的核心活文档 21 份（含双语 README、FDE/SKILL 入口与 tools/README 维护者工具索引）；changelog/archive/evidence 为冻结区不适用。",
+    "opening_cap": 600,
+    "opening_rule": "抬头块 = H1 到首个 `## ` 之间的正文；字数只计文本字符，剔除装饰行（HTML 标签行 / 纯图片 / 纯徽章 / HTML 注释 / `---`）与 YAML front matter。超限处置三选一：下沉正文 / 精简 / 淘汰。",
+    "origin": "文档瘦身批（2026-09-29）：口径由「物理行数」换成「字符数」（用户裁定：行数是坏指标，控字数不控行数）。基线 = 换算时点实测值。",
+    "consumed_by": "doc-discipline.sh Face 6（字数棘轮）+ Face 7（抬头块闸）",
+    "note": "v1.5.5 阶段二收口重置：净增为五章施工真实内容（SECURITY 跨境/驻留维度、README 双语理念重写、devlog 验收打勾、ROADMAP/WIKI 翻牌）——登记=认债；下版按棘轮只降不升"
+  }
 }
