@@ -1,5 +1,5 @@
 // ============================================================
-// builtin-agents.ts · 预装 Agent 定义（v1.5.4）
+// builtin-agents.ts · 预装 Agent 定义（v1.5.5）
 //
 // 4 个内置 Agent 的 systemPrompt 一律来自 SKILL/agents/<name>/SKILL.md
 // （Agency Agents 格式）。createReactAgent 启动时读取文件、把 frontmatter

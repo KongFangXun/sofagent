@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/mcp",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "sofagent MCP Server — 暴露审计能力给 MCP Client（JSON-RPC 2.0 over stdio）",
   "main": "dist/mcp-server.js",
   "types": "dist/mcp-server.d.ts",
@@ -39,21 +39,21 @@
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "dependencies": {
-    "@sofagent/ab-test": "1.5.4",
-    "@sofagent/audit": "1.5.4",
-    "@sofagent/core": "1.5.4",
-    "@sofagent/eval": "1.5.4",
-    "@sofagent/ontology": "1.5.4",
-    "@sofagent/orchestrator": "1.5.4",
-    "@sofagent/train": "1.5.4",
-    "@sofagent/rules": "1.5.4",
-    "@sofagent/evolve": "1.5.4",
-    "@sofagent/think": "1.5.4",
+    "@sofagent/ab-test": "1.5.5",
+    "@sofagent/audit": "1.5.5",
+    "@sofagent/core": "1.5.5",
+    "@sofagent/eval": "1.5.5",
+    "@sofagent/ontology": "1.5.5",
+    "@sofagent/orchestrator": "1.5.5",
+    "@sofagent/train": "1.5.5",
+    "@sofagent/rules": "1.5.5",
+    "@sofagent/evolve": "1.5.5",
+    "@sofagent/think": "1.5.5",
     "js-yaml": "^5.4.2"
   },
   "//optionalDependencies": "@sofagent/daemon 为可选运行时（mcp 的巡检类 tool 需要时才加载，缺失时降级返回提示不阻断安装）——放 dependencies 会经 umbrella 总包（npm i -g sofagent 硬依赖 mcp）强制全装。照抄 root package.json @langchain/anthropic 的 optionalDependencies 先例。",
   "optionalDependencies": {
-    "@sofagent/daemon": "1.5.4"
+    "@sofagent/daemon": "1.5.5"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
