@@ -1678,7 +1678,7 @@ function renderTop3Trend(t){
 function renderSovereigntyBox(sov,daemonStatus,auditTotal,todayCount){
   var el=document.getElementById('sovereigntyBox');
   if(!el)return;
-  var ds=(daemonStatus==='ok'||daemonStatus==='healthy')?'运行中':(daemonStatus||'运行中');
+  var ds=(daemonStatus==='ok'||daemonStatus==='healthy')?'运行中':((daemonStatus==='unreadable'||!daemonStatus)?'状态不可读':daemonStatus);
   // 守护进程徽章：点=状态色（健康蓝/降级黄/宕机红），字=灰（标准：点蓝字灰）
   var dotCol=(daemonStatus==='degraded'||daemonStatus==='down')?(daemonStatus==='down'?'var(--red)':'var(--amber)'):'var(--brand)';
   var badge=document.getElementById('sovDaemonBadge');

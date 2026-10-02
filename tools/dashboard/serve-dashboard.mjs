@@ -394,13 +394,15 @@ function aggregateSummary() {
   }
 
   // ── daemon 健康状态 ──
+  let daemonReadFails = 0;
+  let dh = null;
   try {
-    const dh = JSON.parse(readFileSync(DAEMON_HEALTH, 'utf8'));
-    out.daemon = { status: dh.status || dh.state || 'unknown' };
-  } catch {}
+    dh = JSON.parse(readFileSync(DAEMON_HEALTH, 'utf8'));
+  } catch { daemonReadFails = 1; }
+  out.daemon = daemonReadFails ? { status: 'unreadable' } : { status: dh.status || dh.state || 'unknown' };
 
   // v1.5.2 修复（finding-19）：jq 可用性显式上报——false 时前端以告警替代 0% 数字。
-  out.environment = { jqAvailable: !jqFailed };
+  out.environment = { jqAvailable: !jqFailed, daemonHealthReadable: daemonReadFails === 0 };
 
   return out;
 }

@@ -651,10 +651,17 @@ S3_FAIL=0
 echo ""
 echo -e "${BOLD}── S3 路径常量消费门禁（@public 落点契约）──${NC}"
 
+# 已裁定清单：@public 基线在册符号，零生产消费为设计内（SDK 面），退役属破坏性变更需独立公告批次
+RULED_SDK_PATH_CONSTS="TASK_DIR TASK_PLANS_DIR"
+
 # ① 从 core 包桶文件提取 @public 路径常量（命名含 _DIR/_FILE/_PATH 的导出符号）
 PATH_CONSTS=$(grep -oE "export const [A-Z][A-Z0-9_]*_(DIR|FILE|PATH)" engine/core/src/data-paths.ts 2>/dev/null \
   | grep -oE "[A-Z][A-Z0-9_]*_(DIR|FILE|PATH)" | sort -u || true)
 for pc in $PATH_CONSTS; do
+  # 已裁定符号：直接报裁定结论，不走留删分支（判定不放宽——仅消除悬置裁定提示）
+  case " $RULED_SDK_PATH_CONSTS " in
+    *" $pc "*) echo -e "  ${GREEN}✓${NC} S3①：${pc} 已裁定 · SDK 面保留（@public 基线符号，零生产消费为设计内）"; continue ;;
+  esac
   # 生产消费 = engine/ 内 .ts 文件（非定义文件、非测试、非 dist、非 barrel）的**导入或引用**
   # F-15：barrel 文件（各包 src/index.ts）里的 import/re-export 行不再计为生产消费——
   # 此前它们掩盖了「零真实消费」（barrel 只是转发面，不是使用点）。

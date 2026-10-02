@@ -17,7 +17,6 @@
   "engine/core/src/model-client.ts",
   "engine/core/src/run-envs.ts",
   "engine/core/src/scope-names.ts",
-  "engine/core/src/shared/constants.ts",
   "engine/core/src/shared/env.ts",
   "engine/core/src/slash-commands/index.ts",
   "engine/core/src/slash-registry.ts",

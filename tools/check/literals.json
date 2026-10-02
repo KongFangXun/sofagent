@@ -100,6 +100,24 @@
       "level": "error",
       "slow": false,
       "note": "同 index.ts 条——quick 入口的崩溃兜底回落值同样须等于 core 单源值（两入口各自独立注册，都要在 core 半初始化态下可用）"
+    },
+    {
+      "id": "checklist-acceptance-lines",
+      "file": "playbook/dev-prompt-checklist.md",
+      "extract": "acceptance-test[.]sh`（[*][*]([0-9]+)/",
+      "derive": "wc -l < playbook/acceptance-test.sh | tr -d '[:space:]'",
+      "level": "error",
+      "slow": false,
+      "note": "任务书 checklist 的 acceptance 实测行数——真值由 wc -l 实算"
+    },
+    {
+      "id": "checklist-regression-lines",
+      "file": "playbook/dev-prompt-checklist.md",
+      "extract": "regression-checklist[.]md`（[*][*]([0-9]+)/",
+      "derive": "wc -l < playbook/regression-checklist.md | tr -d '[:space:]'",
+      "level": "error",
+      "slow": false,
+      "note": "同族：regression-checklist 实测行数"
     }
   ]
 }
