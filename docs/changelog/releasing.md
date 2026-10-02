@@ -30,7 +30,7 @@
 | 六 | [06-doc-finalize](./releasing/06-doc-finalize.md) | 文档定稿：devlog / Release Notes **规范源头** / 文档同步 | 🔴 |
 | 七 | [07-tool-health](./releasing/07-tool-health.md) | 工具健康：全部门禁脚本体检 + 新增目录收录 | |
 | 八 | [08-confirm](./releasing/08-confirm.md) | 确认关口：三问拍板（发版窗口 / 收口项 / 放行） | 🔴 |
-| 九 | [09-publish](./releasing/09-publish.md) | **发布流水线**：bump → 入口同步 → tag → release → npm publish | 🔴 |
+| 九 | [09-publish](./releasing/09-publish.md) | **发布流水线**：bump → 入口同步 → tag → release → npm publish（异常路径见 [troubleshooting](./releasing/troubleshooting.md)） | 🔴 |
 | 十 | [10-distribute](./releasing/10-distribute.md) | 分发：Skill（ClawHub/SkillHub）+ DSH plugin + OpenClaw plugin + Marketplace + 设备端 | |
 | 十一 | [11-post-publish](./releasing/11-post-publish.md) | 发布后：验证 + 三文档回写 + SOP 迭代 + dev-prompt + hook/daemon | |
 | （附） | [auto-converge-protocol](./releasing/auto-converge-protocol.md) | 自动收敛协议（阶段三/五通用的循环收敛规则） | |
