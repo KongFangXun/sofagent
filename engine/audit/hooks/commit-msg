@@ -100,7 +100,10 @@ resolve_global_audit() {
       if [ "$_GLOBAL_HASH" != "$_GLOBAL_RECORDED" ]; then
         echo "🔴 [sofagent] 全局审计引擎哈希不匹配（可能被投毒）: $RESOLVED_ENTRY"
         echo "   当前聚合哈希 ${_GLOBAL_HASH:0:12}... ≠ 基准 ${_GLOBAL_RECORDED:0:12}..."
-        echo "   恢复: npm install -g @sofagent/audit 后重跑 sofagent-audit --doctor --baseline"
+        echo "   恢复（按序尝试）:"
+        echo "   1. bash tools/audit-baseline-sync.sh --global   # 仓库态：同步全局安装包口径的信任锚（陈旧锚首选）"
+        echo "   2. 删除 ~/.sofagent/internal/audit-global-dist-hash.txt 后重跑 sofagent-audit --install-hook（重建锚）"
+        echo "   ⚠️ 同版本重装 npm i -g @sofagent/audit 无效（内容与哈希均不变，仍被拦）"
         exit 1
       fi
     fi

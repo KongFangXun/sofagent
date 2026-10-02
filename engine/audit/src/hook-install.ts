@@ -310,7 +310,7 @@ export function installHooks(opts: InstallHooksOptions): InstallHooksResult {
     if (globalPkg) {
       const record = join(internalDir, 'audit-global-dist-hash.txt');
       if (existsSync(record)) {
-        log('ℹ️ 全局引擎基准已存在——本次不覆盖（如需重置：sofagent-audit --doctor --baseline）');
+        log('ℹ️ 全局引擎基准已存在——本次不覆盖（如需重置：bash tools/audit-baseline-sync.sh --global，或删除该锚文件后重跑 --install-hook）');
       } else {
         const h = computeDistAggregateHash(join(globalPkg, 'dist'));
         if (h) {

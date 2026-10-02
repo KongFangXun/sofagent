@@ -511,6 +511,30 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       // @sofagent/audit 不可解析（未安装/独立安装 core）——留给下方显式 warn
     }
   }
+  // ── 全局锚刷新（独立于本地 dist——本地未 build 时仍可刷新全局安装包口径的锚）──
+  // 死锁根因：原实现把本段嵌在 existsSync(auditDistPath) 且 execFileSync(syncScript) 之后，
+  // 仓库未 build 时该调用失败提前 return，全局锚刷新分支到不了（三路恢复指引全堵）。
+  // `--doctor --baseline` = 用户显式确认「此刻全局包可信」——本地 dist 缺失不应阻断该确认。
+  if (options.resetBaseline === true) {
+    try {
+      const gHashDir = join(resolveHomeDir(), 'internal');
+      if (!existsSync(gHashDir)) mkdirSync(gHashDir, { recursive: true, mode: 0o700 });
+      const gDistRoot = resolveGlobalAuditDistRoot();
+      if (gDistRoot) {
+        const gh = computeDistAggregateHash(gDistRoot);
+        if (gh) {
+          writeFileSync(join(gHashDir, 'audit-global-dist-hash.txt'), gh + '\n', { encoding: 'utf-8', mode: 0o600 });
+          ok(`✅ 全局引擎基准已建立/刷新（audit-global-dist-hash.txt · 聚合哈希 ${gh.slice(0, 12)}...）——不依赖本地 dist`);
+        } else {
+          warn('全局包 dist 目录不可读——全局锚未刷新（确认全局安装完整后重试）');
+        }
+      } else {
+        info('未检测到全局安装的 @sofagent/audit——全局引擎基准不适用（跳过）');
+      }
+    } catch (err) {
+      warn(`全局锚刷新失败（不阻断其余检查）: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
   if (existsSync(auditDistPath)) {
     try {
       const distContent = readFileSync(auditDistPath);
