@@ -122,10 +122,10 @@ Three layers, each in its place: the **engineering layer (FDEing)** writes judgm
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 📦 **Judgment frozen into deliverables** — every node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
-**Judgment layer · S1M** (System One Model — a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0 and its declaration
- — narrative anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition; this version states identity and roadmap only, no claim that judgment capabilities are delivered yet:
-for v2.0.0 — not yet shipped**. What ships today in this layer is the existing judgment-and-evidence
-surface):
+**Judgment layer · S1M** (System One Model — a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0, with the declaration
+for v2.0.0 — not yet shipped**. This version states identity and roadmap only, no claim that judgment capabilities are
+delivered yet; the narrative is anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition.
+What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🔎 **Judgment trail** — decision-log causal chains record every accountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
 - 🔗 **Judgment made provable** — the audit history lands on an HMAC chain; `--verify-chain` recomputes chain integrity offline, so conclusions can be re-checked by a third party
