@@ -947,21 +947,66 @@ case "$COMMAND" in
       echo "$SOFAGENT_HOME/data/"
     fi
     ;;
-  help|*)
-    echo "sofagent $(cat "$SOFAGENT_HOME/VERSION" 2>/dev/null || echo 'unknown')"
+  help)
+    echo "sofagent $(cat "$SOFAGENT_HOME/VERSION" 2>/dev/null || echo 'unknown') · 单入口 CLI（<域> <动作>）"
     echo ""
-    echo "Commands:"
+    echo "保留字 / Reserved:"
     echo "  sofagent status     Show version + daemon status + data location"
     echo "  sofagent where      Show all install paths"
     echo "  sofagent version    Show version only"
-    echo "  sofagent dashboard  Open dashboard (v1.2.4)"
-    echo "  sofagent web        Open Web Dashboard in browser (v1.4.0)"
-    echo "  sofagent data       Open data directory in Finder"
+    echo "  sofagent dashboard  Open dashboard"
+    echo "  sofagent web        Open Web Dashboard in browser"
+    echo "  sofagent data       Open data directory"
     echo "  sofagent help       Show this help"
+    echo ""
+    echo "业务域 / Domains（转发到 npm 裸名 sofagent 的域路由）:"
+    echo "  sofagent audit | core | daemon | device | train | ontology | evolve |"
+    echo "  sofagent eval | think | ab-test | workflow | team | orchestrator | compare | mcp"
+    echo ""
+    echo "  例：sofagent audit · sofagent team formation --list · sofagent train doctor"
+    ;;
+  *)
+    # v1.5.6 章一 · 单入口收敛：保留字以外的命令转发到域路由（npm 裸名 sofagent）。
+    # 优先级：安装态登记的路由（install 时探测）→ 全局 npm 安装 → 明示无路由。
+    _router="$SOFAGENT_HOME/bin/sofagent-router"
+    if [ -f "$_router" ]; then
+      exec node "$_router" "$COMMAND" "$@"
+    fi
+    _gnpm="$(npm root -g 2>/dev/null)/sofagent/bin/sofagent.js"
+    if [ -f "$_gnpm" ]; then
+      exec node "$_gnpm" "$COMMAND" "$@"
+    fi
+    echo "❌ 未检测到 sofagent 域路由（未安装 npm 裸名包 sofagent）。"
+    echo "   安装：npm i -g sofagent   或在仓库根：npm install && npm run build"
+    echo "   临时：npx -y -p sofagent sofagent $COMMAND $*"
+    exit 2
     ;;
 esac
 CLIEOF
   chmod +x "$bin_dir/sofagent"
+
+  # v1.5.6 章一：登记域路由（npm 裸名 sofagent）供 wrapper 非保留字命令转发。
+  # 优先复用仓库内的 umbrella 入口（clone 态）；否则探测全局 npm 安装。
+  local router_src=""
+  if [ -f "${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js" ]; then
+    router_src="${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js"
+  else
+    local g_npm_root
+    g_npm_root="$(npm root -g 2>/dev/null || true)"
+    if [ -n "$g_npm_root" ] && [ -f "$g_npm_root/sofagent/bin/sofagent.js" ]; then
+      router_src="$g_npm_root/sofagent/bin/sofagent.js"
+    fi
+  fi
+  if [ -n "$router_src" ]; then
+    if ln -sf "$router_src" "$bin_dir/sofagent-router" 2>/dev/null; then
+      ok "  单入口域路由已登记：sofagent-router → $router_src"
+    else
+      warn "  域路由软链失败（$bin_dir/sofagent-router）；wrapper 将回退全局 npm 探测"
+    fi
+  else
+    warn "  未找到可登记的域路由（仓库 engine/umbrella/bin/sofagent.js 或全局 npm 裸名包）——"
+    warn "    wrapper 的域命令（如 sofagent audit）将回退全局 npm 探测；如需完整路由请 npm i -g sofagent"
+  fi
 
   # Dashboard 入口软链（v1.2.2 真实实现 tools/dashboard/sofagent-dashboard.sh，零前端依赖 bash+jq）
   # wrapper dashboard 分支检查 -x "$SOFAGENT_HOME/bin/sofagent-dashboard"，故软链目标不带 .sh 后缀

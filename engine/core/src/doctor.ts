@@ -310,6 +310,70 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     }
   }
 
+  // 3b. 数据目录健康度（v1.5.6 章二：容量 / 文件数健康度——**结构检查 ≠ 健康度检查**）
+  //   结构节判「目录在不在」，本节判「长得健康不健康」：单目录文件数超阈值（文件系统
+  //   性能退化区间）、总量趋势（只增不减的运行时应有归档轮转接管）。
+  console.log('\n── 数据目录健康度 [全局 ~/.sofagent/，非当前仓库] ──');
+  {
+    const HEALTH_DIRS = ['memory', 'audit', 'task/logs', 'orchestrator'];
+    const FILE_WARN = 10000; // 单目录文件数黄警阈值（v1.5.6 章二：实测 17178 个事实文件已达退化区间）
+    const SIZE_WARN_BYTES = 512 * 1024 * 1024; // 单目录总量黄警 512MB
+    let healthWarned = false;
+    let healthChecked = 0;
+    const scan = (p: string, depth: number): { files: number; bytes: number } => {
+      let files = 0;
+      let bytes = 0;
+      if (depth > 6) return { files, bytes };
+      let entries;
+      try {
+        entries = readdirSync(p, { withFileTypes: true });
+      } catch {
+        return { files, bytes };
+      }
+      for (const e of entries) {
+        if (e.name.startsWith('.')) continue;
+        const child = join(p, e.name);
+        if (e.isDirectory()) {
+          const sub = scan(child, depth + 1);
+          files += sub.files;
+          bytes += sub.bytes;
+        } else if (e.isFile()) {
+          files++;
+          try {
+            bytes += statSync(child).size;
+          } catch {
+            // 单文件 stat 失败不阻断（并发删除等）
+          }
+        }
+      }
+      return { files, bytes };
+    };
+    const mb = (b: number) => (b / 1024 / 1024).toFixed(1);
+    for (const d of HEALTH_DIRS) {
+      const dirPath = join(dataDir, d);
+      if (!existsSync(dirPath)) continue;
+      healthChecked++;
+      const { files, bytes } = scan(dirPath, 0);
+      const overFiles = files > FILE_WARN;
+      const overSize = bytes > SIZE_WARN_BYTES;
+      if (overFiles || overSize) {
+        healthWarned = true;
+        const reasons: string[] = [];
+        if (overFiles) reasons.push(`文件数 ${files} > ${FILE_WARN}`);
+        if (overSize) reasons.push(`总量 ${mb(bytes)}MB > ${Math.round(SIZE_WARN_BYTES / 1024 / 1024)}MB`);
+        warn(`data/${d}/ 接近性能退化区间（${reasons.join(' · ')}）`);
+        repairHint(`归档轮转：memory 走 memory-store 的 archive()（二级分层 + 冷热分层）；audit 走 audit-history 历史段归档`);
+      } else {
+        ok(`data/${d}/ (${files} 文件 · ${mb(bytes)}MB)`);
+      }
+    }
+    if (healthChecked === 0) {
+      info('无可检查的数据目录（运行一次审计后再看健康度）');
+    } else if (!healthWarned) {
+      ok('数据目录健康度正常（无单目录超阈值）');
+    }
+  }
+
   // 4. Hook 状态
   console.log('\n── Git Hook 状态 ──');
   let hookOk = false;

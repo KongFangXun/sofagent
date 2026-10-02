@@ -711,6 +711,11 @@ async function main() {
   }
 }
 
+// v1.5.6 章一 · 单入口收敛（兼容期 shim）：直接调用旧命令时提示新入口；
+// 被 `sofagent <域>` 路由调用时静默（路由注入 SOFAGENT_SINGLE_ENTRY=1）。
+if (process.env.SOFAGENT_SINGLE_ENTRY !== '1') {
+  process.stderr.write('[sofagent] 旧命令 `sofagent-daemon` 已收敛到单入口 `sofagent daemon`——本命令进入兼容期（仍可用，下一 minor 版本移除）。\n');
+}
 main().catch((err: Error) => {
   console.error(err.message);
   // v1.4.4 #32+47：start 路径启动失败 = 守护级致命错误，落盘 exit 78 后退出。
