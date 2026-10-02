@@ -102,15 +102,12 @@ bash install.sh && bash engine/scripts/verify.sh
 
 | 目录 | 内容 |
 |---|---|
-| `engine/` | 13 个 @sofagent/* 模块包（audit/core/orchestrator/train/mcp/rules/eval/think/evolve/ontology/inject/ab-test/daemon，13 个均含 test script）+ hooks/sofagent-load-chain 工具包 + umbrella/ 裸名总包——模块包全发布到 npm |
-另有 2 个插件族：`engine/dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `engine/openclaw-plugins/`（OpenClaw code-plugin 4 款） |
-| `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A24 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
-| `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明 |
-| `engine/audit/src/permission/` | 权限配置加载与检查 |
-| `engine/core/src/` | 底座：配置加载 / 原子写入 / 审计历史哈希链 / 联邦合并 / 安全脱敏；`agent-identity.ts` Agent 身份码 |
-| `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器；`with-retry.ts` 推送重试 + `daemon-health.ts` 健康自检 |
-| `engine/orchestrator/src/` | 编排模块：`activate.ts` 激活链 Phase 1（读 FDE 交付物 → 注册企业 SubAgent） |
-| `tools/` | 维护者工具脚本（门禁在 `tools/check/`：`check-docs.sh` / `check-test-count.sh`；发布链在 `tools/release/`：`pre-push-check.sh`；仪表盘在 `tools/dashboard/`：`sofagent-dashboard.sh`；完整清单见 `tools/README.md`） |
+| `engine/` | 13 个 @sofagent/* 模块包 + hooks/sofagent-load-chain 工具包 + umbrella/ 裸名总包——模块包全发布到 npm；另有 2 个插件族：`engine/dsh-plugins/`（7 款 DSH 插件：6 款原子 + 1 款聚合）+ `engine/openclaw-plugins/`（4 款） |
+| `engine/audit/` | 审计核心：`src/rules/`（rule-a*.ts A1-A24）、`audit-trail.ts`、`permission/` 权限配置 |
+| `engine/core/src/` | 底座：配置 / 原子写入 / 哈希链 / 联邦合并 / 脱敏；`agent-identity.ts` 身份码 |
+| `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器 |
+| `engine/orchestrator/src/` | 编排模块：`activate.ts` 激活链 Phase 1 |
+| `tools/` | 维护者工具（门禁 `tools/check/` · 发布链 `tools/release/` · 仪表盘 `tools/dashboard/`，清单见 `tools/README.md`） |
 | `FORGE/` | 项目自迭代工具链（LOOP 流水线 / playbook / fresh-eyes 审查体系） |
 | `FDE/` | 前线部署方法论（GUIDE + templates） |
 | `SKILL/` | 技能文件（SKILL.md 宪法 + harness 模板 + 子 Skill） |
@@ -210,12 +207,10 @@ cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 ```
 
-- ❌ **反例（2026-09-28 实测代价）**：两个写者在同一工作树各自提交 ⇒ 共享索引被对方宽泛 `git add` 污染（索引里残留的旧值 blob 会在提交时把已改好的数字回退），后写者不得不 `git read-tree HEAD` 复位索引；双方还会互相把对方的提交判成「外部改动」，产生数轮协调开销。
-- ✅ **确需共享树时**（应急）：提交走隔离索引——`GIT_INDEX_FILE=/tmp/idx-$$` + `git read-tree HEAD` + 精确 `git add <路径>`；提交前 `git status --short` 核对**不夹带他人文件**。🔴 **隔离索引 commit 后必须 `git reset -q HEAD` 刷新共享索引**——`GIT_INDEX_FILE` 只作用于本次提交，「提交」不会刷新 `.git/index` 这棵共享索引树；
-  不显式 `git reset -q HEAD` 则共享索引残留旧树，`git status` 对已提交文件**假报 `MM`**（2026-09-28 实测：三笔隔离索引提交后遗留 `MM`，须 `unset GIT_INDEX_FILE; git reset -q HEAD` 才回到 `index==HEAD==worktree`）。
+- ❌ **反例（实测代价）**：两个写者在同一工作树各自提交 ⇒ 共享索引被对方宽泛 `git add` 污染（索引残留旧值 blob 会把已改好的数字回退），且双方互相把对方提交判成「外部改动」，产生数轮协调开销。
+- ✅ **确需共享树时**（应急）：提交走隔离索引——`GIT_INDEX_FILE=/tmp/idx-$$` + `git read-tree HEAD` + 精确 `git add <路径>`；提交前 `git status --short` 核对**不夹带他人文件**。🔴 **隔离索引 commit 后必须 `git reset -q HEAD` 刷新共享索引**——`GIT_INDEX_FILE` 只作用于本次提交，不显式 reset 则共享索引残留旧树，`git status` 对已提交文件**假报 `MM`**。
 - ✅ **跨版本移交必须双向登记**：把某事「顺延 / 移 vX.Y.Z」写进本版时，**同一批次**在目标版 devlog 写承接块（标题或正文含「由 <源版本> 移入」）——单向登记 = 高概率丢项。机械守卫：`tools/check/check-forms.mjs` 的 **A9 顺延↔承接双向登记**。
-- 🔴 **共享文件必须逐 hunk 核对（2026-09-28 实测代价）**：`git add -- <path>` 的 pathspec 精确**挡不住「同一文件被两方改过」**——`git add <file>` 会把对方改动**一起暂存**（实测：一行的「承接 v1.5.4 待补清单 #6」被误带进我的提交，`git log -S` 归属错位，只能靠提交信息事后披露）。⇒ 并发场景下凡「共享文件」（两人都可能改的 SOP / 清单 / 台账）：**先 `git diff <file>` 逐 hunk 核对**，或用 `git add -p` / 临时 worktree 错峰；
-  **禁直接 `git add <共享文件>`**。
+- 🔴 **共享文件必须逐 hunk 核对**：`git add -- <path>` 的 pathspec 精确**挡不住「同一文件被两方改过」**——`git add <file>` 会把对方改动**一起暂存**（实测：他人一行改动被误带进我的提交，`git log -S` 归属错位，只能靠提交信息事后披露）。⇒ 并发场景下凡「共享文件」（两人都可能改的 SOP / 清单 / 台账）：**先 `git diff <file>` 逐 hunk 核对**，或用 `git add -p` / 临时 worktree 错峰；**禁直接 `git add <共享文件>`**。
 
 
 ## 文档体例（H1 语言 / 术语大小写）
