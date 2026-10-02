@@ -95,7 +95,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 三层各归其位：**工程层（FDEing）** 进场把判断写成文件，**判定层（S1M）** 管判断怎么形成、怎么留痕、怎么被举证，**治理层（harness）** 离场后让判断 7×24 被执行。
 
-**工程层 · FDEing**（进场 · 生成判断——「FDE 工程化」）（进场 · 生成判断，FDE 相位——把「该不该上 AI、值多少钱」判断出来，冻结成交付物）：
+**工程层 · FDEing**（进场 · 生成判断，FDE 相位——把「该不该上 AI、值多少钱」判断出来，冻结成交付物）：
 
 - 🧭 **梳理工作流**——五要素深挖 + 三问判定法，把每个岗位环节摸清，算清每个 AI 节点值多少钱
 - 🤖 **部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），装进你已有的 AI 工具，从"你干活"变"你派活"
@@ -267,7 +267,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 > ⚠️ **两条裸名通道都别裸装**——名字都像「sofagent 本体」，但都不是 CLI：
 >
-> - **`npm i sofagent-audit`**：npm 上的裸名包 `sofagent-audit` 是**本项目的旧代理包**（已 deprecated，长期滞后于主包）。
+> - **`npm i sofagent-audit`**：npm 上的裸名包 `sofagent-audit` 是**本项目的旧代理包**（已下架 unpublished，2026-09-26；长期滞后于主包）。
 > - **`npm i sofagent`**：裸名总包 `sofagent`（`engine/umbrella/`，把 audit / mcp / orchestrator / daemon 四个子包转发进来）**依赖树 771 包**（口径：`npm i sofagent` 安装后 npm 报告的 added 包数，2026-09-25 实测），
 >其中 5 个含原生模块与 install script（`node-pty` / `koffi` / `@google/genai` / `protobufjs` / `@deepseek-ai/dsh-subprocess-local`）——新版 npm 默认不执行未审阅的 install script，这些原生依赖的编译 / postinstall 会被**静默跳过**。只想要 CLI 就别装它。
 > - 📌 **裸名总包 `sofagent` 自本版起在 repo 侧标注弃用**——它只是转发层（`engine/umbrella/`），既非 CLI 也非推荐入口；CLI 与能力面请统一走 scoped 主通道 `@sofagent/audit`（CLI）/ `@sofagent/*`（子能力）。registry 侧 `npm deprecate` 另行处理（对外动作 + 2FA）。
