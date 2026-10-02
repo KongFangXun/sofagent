@@ -308,7 +308,7 @@ Enterprise users who just want the FDE methodology for mapping business workflow
 
 ## Usage
 
-<p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" /><br/><sub>Dashboard cockpit (single-file HTML · screenshot shows v1.4.0): rule pass
+<p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" /><br/><sub>Dashboard cockpit (single-file HTML · screenshot shows v1.5.6): rule pass
 rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>(See CHANGELOG for UI evolution;
 the installed UI is the source of truth.)</sub></p>
 
