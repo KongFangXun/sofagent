@@ -8,7 +8,7 @@ sofagent Skill 优化模块——Skill 质量分析、安全审查、优化建�
 npm install -g @sofagent/evolve
 ```
 
-安装后获得 `sofagent-evolve` 命令。Node.js 18+。
+安装后获得 `sofagent evolve` 命令。Node.js 18+。
 
 ## API
 

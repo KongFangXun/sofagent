@@ -4,7 +4,7 @@
 
 ## ⚠️ 装配说明
 
-这些脚本依赖的运行时文件**不包含在仓库中**，需要由 `sofagent-daemon create-usb-key` 命令在 U 盘上生成完整的便携目录结构：
+这些脚本依赖的运行时文件**不包含在仓库中**，需要由 `sofagent daemon create-usb-key` 命令在 U 盘上生成完整的便携目录结构：
 
 ```
 usb/
@@ -21,7 +21,7 @@ usb/
 
 ## 使用方式
 
-1. 运行 `sofagent-daemon create-usb-key /path/to/usb` 创建 U 盘便携目录
+1. 运行 `sofagent daemon create-usb-key /path/to/usb` 创建 U 盘便携目录
 2. 将 U 盘插入目标机器
 3. 根据平台运行对应的启动脚本：
    - Linux: `./start.sh` 或双击

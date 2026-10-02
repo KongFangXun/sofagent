@@ -8,7 +8,7 @@ sofagent 编排模块——多 Agent 协作、工作流调度、prompt 模板。
 npm install -g @sofagent/orchestrator
 ```
 
-安装后获得 `sofagent-orchestrator`（编排 CLI，含 `compose` / `compare` 子命令）与 `sofagent-orchestrator-compare` 命令。Node.js 18+。
+安装后获得 `sofagent orchestrator`（编排 CLI，含 `compose` / `compare` 子命令）与 `sofagent compare` 命令。Node.js 18+。
 
 ## API
 

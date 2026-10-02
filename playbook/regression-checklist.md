@@ -168,7 +168,7 @@ node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_
 if [ -f .sofagent/config.yml ]; then
  grep -q "perception" .sofagent/config.yml && grep -q "已移除" .sofagent/config.yml && echo "✅ perception 移除说明在位（防死配置回流）" || echo "⚠️ config.yml 无 perception 移除说明（可能是旧版配置残留，重跑 --init 刷新）"
 else
- echo "⏸️ .sofagent/config.yml 不存在（运行时文件，需 sofagent-audit --init 生成）——跳过配置检查"
+ echo "⏸️ .sofagent/config.yml 不存在（运行时文件，需 sofagent audit --init 生成）——跳过配置检查"
 fi
 
 # 子项 b: 推送目标（同上：config.yml 不存在时跳过）
@@ -185,8 +185,8 @@ grep -c "PASS" engine/audit/src/webhook.ts # 应 > 0
 
 # 子项 f: CLI stdout 签名一致性（教训—感知层废墟高发区）
 node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✅ --version 签名存在"
-grep -c "sofagent-audit.*v\|sofagent-audit ·" engine/audit/src/index.ts # 期望：≥ 1
-grep -c "sofagent-audit · \|sofagent-audit v" engine/audit/src/index.ts # 期望：≥ 1（词形对齐 L3 现形——旧「审计模块」注释已改版）
+grep -c "sofagent audit.*v\|sofagent audit ·" engine/audit/src/index.ts # 期望：≥ 1
+grep -c "sofagent audit · \|sofagent audit v" engine/audit/src/index.ts # 期望：≥ 1（词形对齐 L3 现形——旧「审计模块」注释已改版）
 # 人工跑一次 --doctor 和 --init，确认输出开头带 sofagent
 ```
 
@@ -374,7 +374,7 @@ grep -A20 "knownKeys = new Set" engine/core/src/config-loader.ts | grep -oE "'a[
 # 子项 a: plist 内容正确（原维度 20） 修复（定谳假绿）：plist/daemon.log 缺失时 grep 报错但脚本继续 → exit 由后续命令决定， 无 daemon 环境静默记绿。改显式守卫：缺失即 ⏸️ 跳过标记（对照维度 7 规范），有 daemon 才检查内容。
 PLIST=~/Library/LaunchAgents/com.sofagent.daemon.plist
 if [ -f "$PLIST" ]; then
- grep "sofagent-daemon" "$PLIST" # ProgramArguments
+ grep "sofagent daemon" "$PLIST" # ProgramArguments
  # WorkingDirectory 指向本仓库（路径无关，任何克隆位置可跑——B15 修复硬编码路径换机静默失效）
  REPO=$(git rev-parse --show-toplevel)
  grep -F "$REPO" "$PLIST" # WorkingDirectory
@@ -1601,7 +1601,7 @@ grep -o '~[0-9]* 行' bootstrap.sh | grep -o '[0-9]*' | awk -v n="$(wc -l < inst
 # B9/B10 结构可发现性（两断言并一行收口）
 grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing.md && head -5 docs/changelog/releasing.md | grep -q "入口" && echo "✅ FORGE/SKILL 区分 + releasing 入口指引在位" || { echo "❌ 结构可发现性缺失（FORGE/SKILL 或 releasing 入口）"; exit 1; }
 # B11 双 manifest 版本一致（阶段十一 ClawHub 拒收实录：openclaw.plugin.json 从未被 bump 覆盖 4 款全漂移）——命令体见 acceptance S331
-# B12 bump 跳过逻辑无通配误伤（阶段十一静默漏 bump 实录：通配误伤 sofagent-audit）——命令体见 acceptance S331（S332 已合族并入）
+# B12 bump 跳过逻辑无通配误伤（阶段十一静默漏 bump 实录：通配误伤 sofagent audit）——命令体见 acceptance S331（S332 已合族并入）
 # k（原 #121）：dashboard 工作明细栏在位——插件目录已由 B11/S331 锁、cost_query 已由 S347/S348 锁
 grep -q "worklog" tools/dashboard/dashboard.html && echo "✅ dashboard 工作明细栏在位" || { echo "❌ dashboard worklog 缺失"; exit 1; }
 # 原 #122 并入（发版流程防复发——新 workspace 包 lock 同步 / DSH plugin 分发包装 / npm publish staged 等待 / lock 零本地部署树路径）
@@ -1719,8 +1719,8 @@ grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 C
 (
 # a: 门禁正则跨平台健壮性——\s 是 sed 表达式的真炸弹（GNU 认、BSD 不认），POSIX 类是正解；SSOT=check-guards.sh ①（perl 引擎 + find 递归 tools/playbook/engine/scripts + 注释行与 node/perl 内嵌行豁免）。本行只断言该守卫在位且当前干净，**不自建第二套 grep 判定**——grep 自身对 \s 的解释不可靠，正是 SSOT 选用 perl 的理由
 bash tools/check/check-guards.sh 2>/dev/null | grep -q "✓ 无 BSD 不兼容正则残留" && echo "✅ 门禁 shell 无 BSD 不兼容正则残留（sed 上下文 · SSOT=check-guards ①）" || echo "❌ BSD 不兼容正则残留，或 SSOT 守卫 ① 未跑/失声（先单独跑 bash tools/check/check-guards.sh 看 ① 段）"
-# 防御：正则只锚定审计命令形态——行首（忽略缩进）npx/node 调用 sofagent-audit 且同行挂 || true，才是「退出码被清 0」真假绿 宽匹配 `sofagent-audit.*|| true` 会误中 gh label 装饰行（描述字符串含产品名）；label 写操作挂 || true 是 fork PR 只读令牌的设计降级，非假绿
-grep -rnE '^[[:space:]]*(npx|node.*)sofagent-audit.*\|\| true' .github/workflows/ 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -q . && echo "❌ CI 审计门禁残留 || true 假绿（exit_code 被清 0，FAIL 永不阻断）" || echo "✅ CI 审计无 || true 假绿"
+# 防御：正则只锚定审计命令形态——行首（忽略缩进）npx/node 调用 sofagent audit 且同行挂 || true，才是「退出码被清 0」真假绿 宽匹配 `sofagent audit.*|| true` 会误中 gh label 装饰行（描述字符串含产品名）；label 写操作挂 || true 是 fork PR 只读令牌的设计降级，非假绿
+grep -rnE '^[[:space:]]*(npx|node.*)sofagent audit.*\|\| true' .github/workflows/ 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -q . && echo "❌ CI 审计门禁残留 || true 假绿（exit_code 被清 0，FAIL 永不阻断）" || echo "✅ CI 审计无 || true 假绿"
 # b: worktree 引用丢失防线（悬挂 commit 根因 80c94f64 + LEDGER worktree 副本蒸发）——teardown 固化 tip + driver 产物主仓落盘
 grep -q "branch -f" FORGE/src/driver-base.mjs && echo "✅ teardown 固化分支 tip 在位" || echo "❌ teardown 前未固化 tip（悬挂 commit 回潮）"
 grep -n "LEDGER" FORGE/src/driver-base.mjs | grep -qE "\\\$REPO_ROOT|repoRoot|主仓" && echo "✅ LEDGER 落盘主仓路径" || echo "⚠️ 复核 LEDGER 落盘路径（须主仓非 worktree 副本）"

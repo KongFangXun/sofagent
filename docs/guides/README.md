@@ -25,7 +25,7 @@
 
 | 指南 | 讲什么 |
 |------|--------|
-| [dsh-mcp-integration.md](./dsh-mcp-integration.md) | DSH MCP 互通——在 DeepSeek Harness 中挂载 sofagent-mcp 的配置专章 |
+| [dsh-mcp-integration.md](./dsh-mcp-integration.md) | DSH MCP 互通——在 DeepSeek Harness 中挂载 sofagent mcp 的配置专章 |
 | [harness-sdk.md](./harness-sdk.md) | SubAgent 托管 SDK（`harness.wrap`）——自定义 graph 一行包装接入约束层 |
 | [testing.md](./testing.md) | 测试用例说明——怎么跑、跑什么、如何解读 |
 | [loop-development.md](./loop-development.md) | FORGE Loop 开发——给自迭代工具链加新 Loop |

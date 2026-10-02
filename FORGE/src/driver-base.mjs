@@ -617,7 +617,7 @@ export function createForgeDriverBase(config = {}) {
   // ── 15. runAuditGate（v1.2.8 功能⑥：FORGE 全 loop 接入 audit）──
 
   /**
-   * 在 FORGE loop 的代码变更步骤后自动跑 sofagent-audit。
+   * 在 FORGE loop 的代码变更步骤后自动跑完整引擎审计（`sofagent audit --full --diff`；driver 直连 dist 实现路径）。
    *
    * 流程：
    *   1. B/F 步骤执行完毕后，driver 自动 add 本轮改动文件（显式清单，非 git add -A）并 commit
@@ -683,7 +683,7 @@ export function createForgeDriverBase(config = {}) {
       }
     }
 
-    // 2. 跑 sofagent-audit
+    // 2. 跑完整引擎审计（`sofagent audit --full --diff` 等价实现路径）
     // v1.3.6 交付⑩：cwd=gitRoot（worktree 隔离时审副本的 auto-commit；审计二进制
     // 仍从主仓绝对路径加载——副本不含 node_modules，但 node_modules 不影响 audit 独立运行）
     try {

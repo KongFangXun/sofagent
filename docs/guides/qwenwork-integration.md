@@ -11,7 +11,7 @@
 
 | 能力 | 状态 | 接入方式 |
 |------|------|----------|
-| **自定义 MCP 服务** | ✅ 确定 | 支持 Streamable HTTP / SSE / STDIO；sofagent 的 `sofagent-mcp`（工具数以 `engine/mcp/src/tool-registry.ts` 为准）可直接挂入 |
+| **自定义 MCP 服务** | ✅ 确定 | 支持 Streamable HTTP / SSE / STDIO；sofagent 的 `sofagent mcp`（工具数以 `engine/mcp/src/tool-registry.ts` 为准）可直接挂入 |
 | **自定义 Hook（命令行安全防护）** | ⚠️ 能力存在，schema 未公开 | 官方确认「支持开发者自定义 Hook 拦截危险命令（如 rm -rf）」，但配置格式未公开文档 |
 
 ## 与既有架构的同构性
@@ -21,7 +21,7 @@
 ## 接入路径（建议）
 
 ### 一、MCP 接入（确定项，可先落地）
-1. 在千问办公的 MCP 配置处，按「STDIO」或「Streamable HTTP」挂载 `sofagent-mcp`。
+1. 在千问办公的 MCP 配置处，按「STDIO」或「Streamable HTTP」挂载 `sofagent mcp`。
 2. 验证 tool 可见（`run_audit` / `snapshot_restore` / `worklog_query` 等）。
 
 ### 二、Hook 拦截（待实测项，不写死）
@@ -31,7 +31,7 @@
 4. **未实测前，不在仓库写入千问办公的 hook 配置文件**（避免臆测契约）。
 
 ## 验收状态（如实标注）
-- [ ] sofagent-mcp 在千问办公内可被发现并调用——**未实测**（v1.4.0 收版时未逐项勾验，截至 v1.5.2 仍待实测）
+- [ ] sofagent mcp 在千问办公内可被发现并调用——**未实测**（v1.4.0 收版时未逐项勾验，截至 v1.5.2 仍待实测）
 - [ ] （实测后）commit 类命令被审计拦截或放行正确——**未实测**
 
 ## 反向要求（用户指令）

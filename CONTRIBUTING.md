@@ -85,7 +85,7 @@
 |---|---|---|
 | `install.sh` | BSD/macOS 兼容性修复 | ⭐⭐ |
 | `engine/scripts/verify.sh` | 新增检查项（bash 版，安装流程内调用） | ⭐ |
-| `engine/audit/src/verify.ts` | TS 版验证（命令为 `sofagent-core verify`；无 `sofagent-verify` 这个 bin） | ⭐ |
+| `engine/audit/src/verify.ts` | TS 版验证（命令为 `sofagent core verify`；无 `sofagent-verify` 这个 bin） | ⭐ |
 
 **跑 1 条命令验证**：
 
@@ -96,7 +96,7 @@ bash install.sh && bash engine/scripts/verify.sh
 
 > 💡 **首次 clone 后**：先 `npm install && npm run build`，再 `npm test`。测试依赖构建产物（`dist/`），未 build 直接跑测试会报模块找不到。
 
-> ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent-audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node engine/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
+> ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node engine/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
 
 ### 仓库目录结构（新贡献者先看文件放哪）
 

@@ -168,7 +168,7 @@ solves:
 | "知识库有什么" | 调 `stats` + `list_entities` → 展示 |
 | "帮我审计" | 调 `run_audit` → 展示 [sofagent] 审计结果 |
 | "数据安全怎么样" | 调 `data_sovereignty_report` → 展示 |
-| "沉淀经验 / 进化一下" | 跑 `sofagent-orchestrator evolve` → think.md + decision-log + 错题本提取判断模式 → 置信度达标聚合成 skill 写入运行时目录（~/.sofagent/skill/custom/） |
+| "沉淀经验 / 进化一下" | 跑 `sofagent orchestrator evolve` → think.md + decision-log + 错题本提取判断模式 → 置信度达标聚合成 skill 写入运行时目录（~/.sofagent/skill/custom/） |
 | 完整速查 | skills/05-exit.md |
 
 

@@ -53,7 +53,7 @@ Five Harness capabilities (inject · audit · rollback · distill · evolve), fi
 sofagent does not build the Agent — it delivers the layer that keeps any Agent governed.
 
 <p align="center">
-  <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /><br/>
+  <img src="docs/assets/audit-terminal.png" alt="sofagent audit blocks a .env commit" width="860" /><br/>
   <sub>Zero-config audit in action: one command audits the latest commit; leaked secrets get blocked on the spot</sub>
 </p>
 
@@ -94,11 +94,11 @@ evolve) — works right after installation |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both — focused on Agent governance |
 
 **30-second lightweight trial** (first run includes the npx package fetch, reruns finish in seconds; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p
-@sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
+@sofagent/audit sofagent audit` (any git repo; secret leaks blocked on the spot).
 
 > 💡 For the trial, keep commit messages **at least 6 characters** (e.g. `initial audit test`) — A19 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) flags ultra-short messages (`init`/`add`) by design (it guards against meaningless commit messages), not a malfunction.
 
-**Five-minute theatrical demo** (shipped in v1.5.1; sandboxed, zero touch on real files): `npx -y -p @sofagent/audit sofagent-audit demo` — one command runs the full five-act chain: sandbox
+**Five-minute theatrical demo** (shipped in v1.5.1; sandboxed, zero touch on real files): `npx -y -p sofagent sofagent audit demo` — one command runs the full five-act chain: sandbox
 build → injection → deliberate violation → audit interception → snapshot rollback → HMAC evidence export
 (`--speed fast` for a 60-second cut; artifacts land under `$SOFAGENT_DATA/demo` (default `~/.sofagent/data/demo`), touching neither the audited repository nor other directories).
 
@@ -133,7 +133,7 @@ What ships today in this layer is the existing judgment-and-evidence surface):
 **Governance layer · harness** (after departure · retain judgment, the Harness stage — executing against the deliverables 24/7, writing back as it evolves):
 
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
-- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
+- 🔍 **Zero-setup audit** — `npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
 - 🧱 **25 audit rules + 104 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 20 of the 25 rules run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs, active once an Agent is connected), 1 filesystem scan;
   log-based rules such as A7/A8 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design);
 evidence is based on local diffs; **not fail-closed by default** — the config can be tampered with and the hooks
@@ -193,7 +193,7 @@ the platform:
 - **Never assume capability parity — tiers differ in injection strength, not in "supported or not"** — DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text the Agent reads on its own (advisory). "Supports platform X" means the
   constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls
 into — full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
-- **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit is audited automatically (audits with the 17 default rules out of the box; the full 25 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations
+- **Audit fallback is platform-agnostic** — `sofagent audit --install-hook` runs as a git hook; at every tier, every commit is audited automatically (audits with the 17 default rules out of the box; the full 25 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations
   hard-blocked. Constraints are advisory; auditing is mandatory (boundaries of that mandate: **not fail-closed by default** — `--no-verify` skips the first two defense layers, and
 post-commit only leaves a trace without blocking; bypassed commits do leave traces — see [LIMITATIONS
   §3](./docs/LIMITATIONS.md)).
@@ -256,13 +256,13 @@ The `alpha` tag remains as a historical release trace and is not maintained.
 **30 seconds, zero setup** (first run includes the npx package fetch, ~30 seconds; reruns finish in seconds — the engine itself takes ~1.1s, measured basis above) — run an audit in any git repo:
 
 ```bash
-npx -y -p @sofagent/audit sofagent-audit
+npx -y -p sofagent sofagent audit
 ```
 
 > 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active — quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). `--init` installs the hook (still the same 17 default
 >rules); the full 25 additionally require `extendedRulesEnabled: true` in `.sofagent/config.yml` — see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
-> ⚠️ This step is a **one-off audit** (inside a single process) — it does not install a git hook, so later commits will not be auto-blocked. For continuous protection run `sofagent-audit --init` (see Full install below).
+> ⚠️ This step is a **one-off audit** (inside a single process) — it does not install a git hook, so later commits will not be auto-blocked. For continuous protection run `sofagent audit --init` (see Full install below).
 
 Here's what it looks like when a known-format secret leak is blocked (real output; A2 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and
 other known formats — generic secret shapes are intentionally out of scope, a conservative design against false
@@ -280,17 +280,17 @@ bash bootstrap.sh && rm bootstrap.sh
 > 🔒 Supply-chain trust: tag pinning + sha256 verification + fail-closed + self-anchored hash re-verification (see [SECURITY.md](SECURITY.md), remote-install section); ⚠️ audit logs are plaintext on disk by default — enterprise deployments should enable encryption-at-rest.
 
 ```bash
-sofagent-audit --init      # install the git hook — every commit is audited from now on
-sofagent-audit --doctor    # verify the environment (optional)
+sofagent audit --init      # install the git hook — every commit is audited from now on
+sofagent audit --doctor    # verify the environment (optional)
 ```
 
-> 🔧 **First `--doctor` on a fresh machine reports "no dist baseline"?** Run `sofagent-audit --doctor --baseline` to establish it (the trust anchor = the moment you confirm the dist is trustworthy — never auto-recorded, to defend against shadow-auditor hijacking).
+> 🔧 **First `--doctor` on a fresh machine reports "no dist baseline"?** Run `sofagent audit --doctor --baseline` to establish it (the trust anchor = the moment you confirm the dist is trustworthy — never auto-recorded, to defend against shadow-auditor hijacking).
 
 
 > 💡 The install scripts mainly write to `~/.sofagent/` (data directory) + `~/.local/bin` (CLI entry); **they write into a platform's integration directory only when `--platform <name>` is passed explicitly** (a default install probes no platform and modifies no platform config); if npm permissions
 >are insufficient, the CLI entry falls back to `/usr/local/bin`. No other system files are touched. `--init` installs the three-layer git hook defense (pre-commit blocks `.sofagent/` from entering the repo + commit-msg rule audit + post-commit reconciliation). `--no-verify` can skip **both
 >pre-commit and commit-msg** (the first two layers); **post-commit reconciliation is unaffected** (the git-native switch does not apply to post-commit) — it guards against honest Agents' carelessness, not malicious bypass; skipped commits are reconciled afterwards by the post-commit hook (flagged
->"suspected bypass") but not blocked. Personal fallbacks: CI-side `sofagent-audit --diff`, periodic `--doctor`, and reviewing the audit records. See [LIMITATIONS](./docs/LIMITATIONS.md).
+>"suspected bypass") but not blocked. Personal fallbacks: CI-side `sofagent audit --diff`, periodic `--doctor`, and reviewing the audit records. See [LIMITATIONS](./docs/LIMITATIONS.md).
 >
 > 📌 **install.sh is the enterprise device installer** — install it on the enterprise devices running the AI nodes (constraint-layer engine + daemon inspection + single-machine dashboard); FDEs do not need to run it on their own machines — the FDE's tools are the [FDE
 >Skill](https://clawhub.ai/kongfangxun/skills/sofagent) (methodology). See [deployment architecture](./docs/ARCHITECTURE.md#%E5%AE%89%E8%A3%85%E5%8C%85%E8%BE%B9%E7%95%8C%E4%B8%8E%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84v132-%E5%AE%9A%E4%BD%8D%E6%A0%A1%E5%87%86).
@@ -329,26 +329,28 @@ the installed UI is the source of truth.)</sub></p>
 
 | Entry | What it does | Where installed | Time needed |
 |---|---|---|---|
-| **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | Any git repo (temporary) | 30 sec |
+| **`npx -y -p sofagent sofagent audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | Any git repo (temporary) | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or custom JSON rules | Same as above | 1 min |
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | CI/CD | Set up once |
 | **install.sh full suite** | inject · audit · rollback · distill · evolve + daemon inspection + dashboard — the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
 
-> ⚠️ **Do not bare-install either bare name** — both look like "sofagent itself", neither is the CLI:
+> 📌 **Single-entry CLI (since v1.5.6)** — the CLI converges on **`sofagent <domain> <action>`**: `sofagent audit` (audit) · `sofagent train doctor` (training) · `sofagent team formation` (formations) · `sofagent daemon` (daemon) … run `sofagent help` for all domains.
 >
-> - **`npm i sofagent-audit`**: the bare-name package `sofagent-audit` on npm is **this project's legacy proxy package** (unpublished 2026-09-26; do not install).
-> - **`npm i sofagent`**: the bare-name umbrella `sofagent` (`engine/umbrella/`, forwarding to the audit / mcp / orchestrator / daemon sub-packages) pulls a **dependency tree of 771 packages** (measured: the `added N packages` figure npm reports after `npm i sofagent`, 2026-09-25), 5 of which carry
->native modules and install scripts (`node-pty` / `koffi` / `@google/genai` / `protobufjs` / `@deepseek-ai/dsh-subprocess-local`) — new npm versions do not run unreviewed install scripts, so those native builds / postinstalls are **silently skipped**. If you only want the CLI, do not install it.
-> - 📌 **The bare-name umbrella `sofagent` is marked deprecated repo-side as of this version** — it is merely a forwarder (`engine/umbrella/`), neither the CLI nor a recommended entry point; use the scoped main channel `@sofagent/audit` (CLI) / `@sofagent/*` (sub-capabilities) instead. The
->registry-side `npm deprecate` is handled separately (external action + 2FA).
+> | Usage | Command |
+> |---|---|
+> | Zero-install trial | `npx -y -p sofagent sofagent audit` |
+> | Global install | `npm i -g sofagent` → `sofagent audit` |
+> | Full install (daemon / dashboard) | `bootstrap.sh` / `install.sh` (above) |
 >
-> The official CLI package is the scoped `@sofagent/audit` — install the CLI via bootstrap.sh / install.sh / `@sofagent/audit` only.
+> - **Compatibility window**: the old commands (`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …) **still work** and print a pointer to the new entry — **removed one minor version later**. The 13 former bins are now carried by the single entry.
+> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator / mcp / train capability packages; 771 transitive deps measured, 5 of which carry native modules and install scripts — new npm versions do not run unreviewed install scripts, so those native builds are **silently skipped**). **For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or the scoped package `npm i -g @sofagent/audit`.
+> - **Retired legacy proxy package**: the bare-name `sofagent-audit` (no scope) on npm is the old proxy package — **unpublished on 2026-09-26**; do not install it.
 
 **Rule marketplace** — community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):
 
 ```bash
-npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # see available rulesets
-npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the security ruleset
+npx -y -p sofagent sofagent audit --list-rulesets      # see available rulesets
+npx -y -p sofagent sofagent audit --ruleset security   # load the security ruleset
 ```
 
 **FDE on-site deployment** — pick either of two paths:

@@ -40,20 +40,20 @@
 > - ~~FDE 交付物激活断裂带~~（v1.2.5-v1.3.0 消除：激活链 Phase 1-4 全部交付；原 §十「FDE 交付物激活断裂带」已退役归档，见 [archive/limitations-v1.1-v1.3-archived.md](./archive/limitations-v1.1-v1.3-archived.md) 与现役指南 [guides/fde-activation-chain](./guides/fde-activation-chain.md)）
 > - ~~定时触发做不到~~（v1.2.8 消除：daemon 内置 scheduler，v1.3.5 扩展 cron 表达式，详见 §二）
 
-> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；
+> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent audit --diff` 兜底，hook 可绕 CI 不可绕）；
 >② 文件权限锁（`chmod 400 ~/.sofagent/config.yml` 和 `chmod 400 .sofagent/config.yml`，文件只读——**对同用户进程无效**，见下方第 3 条）。与已有 `--no-verify` CI 兜底建议呼应。**v1.3.9 已落地**：SubAgent 侧 config 篡改由沙箱虚拟 FS 拦截（写入走虚拟层审批）；主 Agent 侧由 meta-harness 统一编排承接（v1.3.9 交付二）。建议仍保留 CI 兜底 + 文件权限双保险（纵深防御）。
 >
 > **建议缓解措施**（按有效性排序）：
-> 1. **CI 侧兜底（最有效）**：在 CI pipeline 中加入 `sofagent-audit --diff HEAD~1..HEAD`，
+> 1. **CI 侧兜底（最有效）**：在 CI pipeline 中加入 `sofagent audit --diff HEAD~1..HEAD`，
 >    确保即使开发者本地用了 `--no-verify`，CI 仍会拦截。CI 以独立身份运行（非当前用户），Agent 无法篡改——这是唯一能防住「Agent 以当前用户身份写入篡改 config」的手段。
 >    ```yaml
 >    # GitHub Actions 示例
 >    - name: sofagent 审计检查
 >      run: |
->        npx -y -p @sofagent/audit sofagent-audit --diff HEAD~1..HEAD --ci
+>        npx -y -p sofagent sofagent audit --diff HEAD~1..HEAD --ci
 >        # ⚠️ 若本步骤接管道（tee/grep 等），先 set -o pipefail——否则审计失败码被管道末端退出码遮蔽
 >    ```
-> 2. **定期自动 doctor**：配置 cron job 每周运行 `sofagent-core --doctor`，
+> 2. **定期自动 doctor**：配置 cron job 每周运行 `sofagent core --doctor`，
 >    并将结果发送到监控频道，检测 hooks 是否被意外移除。
 > 3. **文件权限锁（辅助，有局限）**：`chmod 400 ~/.sofagent/config.yml`（全局级）和 `chmod 400 .sofagent/config.yml`（项目级）使文件只读。
 >    ⚠️ **注意：`chmod 400` 仅防其他用户读取，不防 Agent 以当前用户身份写入篡改**——Agent 与你同身份运行，文件权限对同用户进程无效。真正能防住的是 CI 侧独立校验（见第 1 条）。chmod 是纵深防御的辅助层，不能单独依赖。
@@ -63,7 +63,7 @@
 在 CI 侧兜底尚未就绪之前，本地开发建议：
 1. **`chmod 400 ~/.sofagent/config.yml`**——降低被误改的风险，推荐安装后执行。⚠️ **它挡不住 Agent**（同用户进程可自行 chmod 回写）——本地措施不构成安全边界，真正的兜底是上方第 1 条的 CI 侧独立校验。
 2. **设置 git hooksPath**——在 `~/.gitconfig` 中设置 `[core] hooksPath = ...` 确保 hook 路径不可被 Agent 覆盖。
-3. **定期运行 doctor**——`sofagent-audit --doctor` 检查审计规则完整性，检测 hooks 是否被意外移除或 config 被篡改。注意 doctor 默认 warning 不计失败（exit 0），CI 门禁场景需加 `--strict`。
+3. **定期运行 doctor**——`sofagent audit --doctor` 检查审计规则完整性，检测 hooks 是否被意外移除或 config 被篡改。注意 doctor 默认 warning 不计失败（exit 0），CI 门禁场景需加 `--strict`。
 
 > 📌 data 目录整体权限加固（chmod 700）见 [SECURITY.md](../SECURITY.md) 「纵深防御」节。
 
@@ -72,8 +72,16 @@
 
 ---
 
-### 🧩 commons_invoke 为 dry-run 预检语义（有意设计，非缺陷）
+### 🔎 S1M 判定失灵面（占位 · 判定底座交付时补全）
 
+S1M 判定层（判据驱动的「该不该做 / 做到什么算好」判定）的已知失灵面，先登记占位、待判定底座交付时逐条实测补全：
+
+- **域外泛化未验证**——判据集在训练/校准分布内有效，分布外（新行业、新业务形态）的表现**未实测**，可能给出高置信错误判定。
+- **校准依赖数据分布**——阈值与置信度校准绑定采集时的数据分布；分布漂移（业务变化、季节因素）后需重校准，否则判定强度失真。
+
+**口径对齐**：本条目与 [v1.8.0 §六](./changelog/v1.8/v1.8.0.md) / [v1.9.0 §五](./changelog/v1.9/v1.9.0.md) 同口径（不另立第二套表述），在 [v2.0.0 §三](./changelog/v2.0/v2.0.0.md) 补全时销账。**当前不声称判定能力已实装**（判定底座排期 v1.6.0–v1.9.0、v2.0.0 宣告）。
+
+### 🧩 commons_invoke 为 dry-run 预检语义（有意设计，非缺陷）
 返回能力元数据与调用计划，不真实执行（真实执行由 Agent runtime 注入 executor）——MCP 层默认占位是有意设计（防未审计代码执行），非缺陷。
 
 
@@ -273,7 +281,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 
 > **企业 DevOps 集成路径**：当前 `history.jsonl` 为 append-only JSONL 明文，企业 IT 如需接入 SIEM / 企业日志平台，可通过 filebeat / logstash 等采集 agent 定时轮询 `~/.sofagent/data/audit/history.jsonl` 转发（见 SECURITY.md「审计结果推送」）。**本地三态 Webhook 推送 v1.1.6 已接通**（PASS/WARN/FAIL）；**企业平台推送（飞书/钉钉/企微）已在 v1.2.1 落地**（采购阻塞项已解除）。
->CI 集成方面，各包提供 `npm test` 与 `playbook/acceptance-test.sh` 可接入现有流水线做门禁；`sofagent-audit --install-hook` 提供的 commit-msg hook 可作为 pre-commit / pre-push 关卡。以下是一个完整的 GitHub Actions CI 兜底示例（在 CI 中跑 `sofagent-audit --diff`，确保 `--no-verify` 绕过 hook 后仍有防线）：
+>CI 集成方面，各包提供 `npm test` 与 `playbook/acceptance-test.sh` 可接入现有流水线做门禁；`sofagent audit --install-hook` 提供的 commit-msg hook 可作为 pre-commit / pre-push 关卡。以下是一个完整的 GitHub Actions CI 兜底示例（在 CI 中跑 `sofagent audit --diff`，确保 `--no-verify` 绕过 hook 后仍有防线）：
 >
 > ⚠️ **安全豁免开关披露**：设置环境变量 `SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1` 可豁免 webhook URL 的 localhost/内网地址校验（用于本地集成测试，实现见 `engine/audit/src/webhook.ts`）。该开关开启期间 SSRF 防护对内网地址失效——**生产环境禁止开启**。如需临时启用做本地集成测试，应遵循「export 后立即 unset」的最小暴露窗口纪律，用毕即关。
 >
@@ -288,10 +296,10 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 >         with:
 >           fetch-depth: 0  # 需要完整 git 历史用于 --diff
->       - name: 安装 sofagent-audit
+>       - name: 安装 sofagent audit
 >         run: npm install -g @sofagent/audit
 >       - name: 审计最近一次提交
->         run: sofagent-audit --diff HEAD~1..HEAD --ci
+>         run: sofagent audit --diff HEAD~1..HEAD --ci
 >         # ⚠️ 若本步骤接管道（tee/grep 等），先 set -o pipefail——否则审计失败码被管道末端退出码遮蔽
 > ```
 
@@ -335,21 +343,21 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 > ⚠️ **A9 正则层编码绕过局限**：覆盖面、不覆盖的绕过形态与缓解状态，**单一真相源见 [SECURITY §三 编排安全](../SECURITY.md#三编排安全) 的 A9 声明**（含与 Onboard L3 的职责边界），此处不重述以免两处口径分裂。
 
-> ⚠️ **A9 commit msg 检测 quick 模式已生效（v1.3.8 修复）**：quick 模式（`npx sofagent-audit`，零配置审计最近一次 commit）**自动读取最近一次 commit 的 message**（`git log -1`），A9 commit msg 注入检测生效；commit msg 取不到时（如空仓库 / git 不可用）A9 由引擎按无输入处理（标跳过）。 同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。
->A3 越界检查需 `--init` 安装 git hook 走完整引擎，或手动 `sofagent-audit --diff <range> --commit-msg <msg>`。
+> ⚠️ **A9 commit msg 检测 quick 模式已生效（v1.3.8 修复）**：quick 模式（`npx sofagent audit`，零配置审计最近一次 commit）**自动读取最近一次 commit 的 message**（`git log -1`），A9 commit msg 注入检测生效；commit msg 取不到时（如空仓库 / git 不可用）A9 由引擎按无输入处理（标跳过）。 同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。
+>A3 越界检查需 `--init` 安装 git hook 走完整引擎，或手动 `sofagent audit --diff <range> --commit-msg <msg>`。
 >
-> ℹ️ **range 模式 commitMsg 取范围终点（v1.4.4 修复）**：此前 quick 模式 range 审计（`sofagent-audit HEAD~3..HEAD` 类调用）的 commitMsg 输入面写死字面 HEAD，与被审计 range 脱钩——终点携带注入载荷漏检、HEAD 的 message 污染在审区间误报。现 commitMsg 经 `resolveDiffEndpoint()` 取 range 终点（与 diff 面同源），回归测试见 engine/audit/src/cli-quick-range.test.ts。
+> ℹ️ **range 模式 commitMsg 取范围终点（v1.4.4 修复）**：此前 quick 模式 range 审计（`sofagent audit HEAD~3..HEAD` 类调用）的 commitMsg 输入面写死字面 HEAD，与被审计 range 脱钩——终点携带注入载荷漏检、HEAD 的 message 污染在审区间误报。现 commitMsg 经 `resolveDiffEndpoint()` 取 range 终点（与 diff 面同源），回归测试见 engine/audit/src/cli-quick-range.test.ts。
 
 > ⚠️ **边界：空 commit 不审计消息**——empty commit（无文件变更）时审计直接跳过，commit message 中的注入载荷不会被 A9 扫描（A9 的证据面是 diff + 显式传入的 `--commit-msg`）。带文件变更的 commit 消息正常扫描。纯消息攻击需 `--commit-msg` 显式送检。
 
 > ⚠️ **边界：首个 commit 无基线不审计（根 commit 盲区）**——git 仓库的第一个（根）commit 之前不存在任何基线，`HEAD~1` 类 range 引用全部失效，commit hook 审计在该 commit 上不可用——**仓库历史起点的变更不经过 25 条规则扫描**。历史性含义：本仓根 commit（`git rev-list --max-parents=0 HEAD` 所指）创建时尚无审计层在位。**实测可用的补审命令**（对根 commit 做一次性追溯审计）：
 > ```bash
 > # 与 git 空树（4b825dc…）做 diff，等价于「根 commit 相对虚无的全部变更」
-> sofagent-audit --diff 4b825dc642cb6eb9a060e54bf8d69288fbee4904..$(git rev-list --max-parents=0 HEAD)
+> sofagent audit --diff 4b825dc642cb6eb9a060e54bf8d69288fbee4904..$(git rev-list --max-parents=0 HEAD)
 > ```
 > 实测记录：该 range 下引擎完整执行 17 项 quick 规则检查（A5 空 msg / A19 msg 质量 / A7 盲改 / A18 垃圾文件等均正常判定），违规照常 exit 2 拦截——根 commit 不是审计盲区，只是缺省不审。新仓库初始化后建议补跑一次该命令，把历史起点纳入审计面。
 
-> ⚠️ **commit msg 注入伪造审计标记——A9 检测为 WARN 不阻断**：commit message 中如伪造 `[sofagent-audit PASS]` 等审计通过标记，A9 会检测到该注入并报 **WARN（exit 1），但不阻断 commit**——commit 仍然成功提交。人工 review 时需注意：commit message 中的审计标记可能是伪造的，**真实审计结果以 `~/.sofagent/data/audit/` 下的审计记录为准**，不要信任 commit message 自带的审计声明。
+> ⚠️ **commit msg 注入伪造审计标记——A9 检测为 WARN 不阻断**：commit message 中如伪造 `[sofagent audit PASS]` 等审计通过标记，A9 会检测到该注入并报 **WARN（exit 1），但不阻断 commit**——commit 仍然成功提交。人工 review 时需注意：commit message 中的审计标记可能是伪造的，**真实审计结果以 `~/.sofagent/data/audit/` 下的审计记录为准**，不要信任 commit message 自带的审计声明。
 
 > ⚠️ **quick 模式二进制/超大 diff 盲区（v1.3.5 披露）**：quick 模式**没有**完整引擎对超大 diff 的 5MB 阈值兜底（完整引擎：普通文件 WARN exit 1 / 敏感文件名 FAIL exit 2）。git diff 对二进制文件只输出 `Binary files differ`（无内容行），规则无内容可扫——大体积二进制/超大 diff 在 quick 模式下会全绿通过。这是 git diff 的设计而非 sofagent bug，但对应用户意味着：quick 模式不能替代二进制敏感文件（如密钥库、私有数据集）的防泄漏审查；
 >强合规场景请用完整引擎（`--init` 装 hook）兜底。
@@ -400,7 +408,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 > 完整设计描述见 [ARCHITECTURE § 约束层的两种形态：加载链与运行时](./ARCHITECTURE.md#约束层的两种形态加载链与运行时)。此处只记录与局限相关的点。
 
-**模式 B 的关键约束**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用、不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 commit-msg hook 自动触发 sofagent-audit。不需要「控制」Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
+**模式 B 的关键约束**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用、不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 commit-msg hook 自动触发 sofagent audit。不需要「控制」Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
 
 > 以下表格说的是「哪些能力在哪个层生效」——不是「哪些 Agent 被支持」。审计层对所有 Agent 一视同仁（只看 git diff），编排层全平台可用（LangGraph createReactAgent 驱动）。
 
@@ -416,7 +424,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道，快照文件也无 HMAC / 指纹可验（全链路无完整性校验）。即：Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限——该门禁是约定不是机制。
 
-> v1.5.5 补充（CLI 侧已对齐）：CLI 路径 `sofagent-audit --revert <sha>` 的确认函数（`engine/audit/src/index.ts` 的 `confirm()`）此前在**非 TTY 下自动确认**（Agent / CI / 管道等非交互环境下静默放行），强度**弱于**常规路径与 MCP 侧硬门控；现改为非 TTY 下**拒绝执行**并打印显式放行方式，仅显式传 `--yes` 才放行。两侧现同为「无显式授权即不放行」——**CLI 侧是机制（默认拒绝），MCP 侧仍是约定（调用方自报）**，落差只在 MCP 侧。
+> v1.5.5 补充（CLI 侧已对齐）：CLI 路径 `sofagent audit --revert <sha>` 的确认函数（`engine/audit/src/index.ts` 的 `confirm()`）此前在**非 TTY 下自动确认**（Agent / CI / 管道等非交互环境下静默放行），强度**弱于**常规路径与 MCP 侧硬门控；现改为非 TTY 下**拒绝执行**并打印显式放行方式，仅显式传 `--yes` 才放行。两侧现同为「无显式授权即不放行」——**CLI 侧是机制（默认拒绝），MCP 侧仍是约定（调用方自报）**，落差只在 MCP 侧。
 
 与 ROADMAP「管控能力不得静默降级」的既定纪律存在落差。三个整改方向（① 快照自身完整性校验；② 把 `human_confirmed` 改为复用仓内既有 HITL 机制的带外确认通道；③ 判定为设计取舍并保留本披露）**待维护者裁定**；裁定前请勿把该门禁当作安全边界。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
 
@@ -453,7 +461,7 @@ SKILL.md 的回复前闸门和闭合清单由 Agent 自觉执行——没有 Hoo
 
 ### 运行时约束 vs 提交时审计
 
-当前架构是**运行时约束**——依赖 Agent 配合读取 MD 文件。早期版本确立新方向：**提交时审计**（sofagent-audit），不依赖 Agent 运行时配合（看的是 git diff），但依赖日志真实性。
+当前架构是**运行时约束**——依赖 Agent 配合读取 MD 文件。早期版本确立新方向：**提交时审计**（sofagent audit），不依赖 Agent 运行时配合（看的是 git diff），但依赖日志真实性。
 
 | 维度 | 运行时约束 | 提交时审计 |
 |---|---|---|
@@ -473,7 +481,7 @@ A14 规则在 commit 时检查 Agent 是否访问了超出工作流声明范围�
 
 ### 审计闭环成熟度
 
-sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARCHITECTURE.md](./ARCHITECTURE.md)），但各步骤的成熟度不同：
+sofagent audit 实现了完整的六步审计闭环流程（设计文档见 [ARCHITECTURE.md](./ARCHITECTURE.md)），但各步骤的成熟度不同：
 
 | 步骤 | 成熟度 | 说明 |
 |---|---|---|
@@ -494,20 +502,20 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 | 模块 | 测试状态 | 风险 |
 |---|---|---|
 | install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
-| daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试。**行为边界**：daemon 监控 think.md/fde.md 文件 hash 变化 → 写 daemon-health.json，不直接审计 git commit。commit 审计由 commit-msg hook（`sofagent-audit --install-hook` 安装）负责 |
+| daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试。**行为边界**：daemon 监控 think.md/fde.md 文件 hash 变化 → 写 daemon-health.json，不直接审计 git commit。commit 审计由 commit-msg hook（`sofagent audit --install-hook` 安装）负责 |
 | MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |
-| sofagent-core verify | 部分覆盖 | 约 44-48 项（动态，因环境条件变化）的逻辑分支未穷举 |
+| sofagent core verify | 部分覆盖 | 约 44-48 项（动态，因环境条件变化）的逻辑分支未穷举 |
 
-缓解：install.sh 和 sofagent-core verify 有约 44-48 项动态检查作为 smoke test，审计模块核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
+缓解：install.sh 和 sofagent core verify 有约 44-48 项动态检查作为 smoke test，审计模块核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
 
 
 ### 审计工具信任模型：Agent 自我报告
 
-sofagent-audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/task/logs/*.md` 文件。审计工具的可靠性上限 = Agent 日志的真实性。当前版本提供 `--silent` 模式：只跑纯 git-diff 规则，不依赖 Agent 日志。
+sofagent audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/task/logs/*.md` 文件。审计工具的可靠性上限 = Agent 日志的真实性。当前版本提供 `--silent` 模式：只跑纯 git-diff 规则，不依赖 Agent 日志。
 
 企业用户缓解措施：交叉验证（git log 与日志文件列表做时间戳对比）、人工抽查、`--strict` 模式。
 
-> ⚠️ **`--stats` 聚合口径披露（v1.4.3 交付 · v1.5.2 复核）**：`sofagent-audit --stats` 输出审计聚合指标（安全边界触发率等），口径为**触发率 = (WARN 条数 + FAIL 条数) / 变更总数**（exitCode 判定：1=WARN / 2=FAIL；`--json` 机器可读、`--days N` 时间窗口）。两条边界：① 纯聚合零新采集——数据地基是既有 history.jsonl，**只读铁律**（聚合层永不写 history.jsonl，HMAC 链完整性不受聚合影响，聚合前后文件字节级一致可校验）；
+> ⚠️ **`--stats` 聚合口径披露（v1.4.3 交付 · v1.5.2 复核）**：`sofagent audit --stats` 输出审计聚合指标（安全边界触发率等），口径为**触发率 = (WARN 条数 + FAIL 条数) / 变更总数**（exitCode 判定：1=WARN / 2=FAIL；`--json` 机器可读、`--days N` 时间窗口）。两条边界：① 纯聚合零新采集——数据地基是既有 history.jsonl，**只读铁律**（聚合层永不写 history.jsonl，HMAC 链完整性不受聚合影响，聚合前后文件字节级一致可校验）；
 >② 空历史返回 null 降级（不报 0%——避免「无数据」被误读为「零违规」）。quick 模式（`npx` 零配置路径）**不含** stats 面——聚合是完整引擎的 CLI 能力。
 >
 > ⚠️ **`--quick` 与 `--silent` 的关系（文案对齐）**：`--silent` 跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等）走 diff 启发式；`--quick` 是另一维度——verify 侧的快速模式（仅 4 项核心检查）。quick 审计模式（无参 npx 调用）默认 17 条规则、无 `--task` 输入时 A3 标跳过，与 `--silent` 的「跳过面」不同——两者同时用时取并集的保守语义。
@@ -567,7 +575,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 395 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1457 个、全 workspace 5642 个测试（口径见本文件「测试覆盖范围」节）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1457 个、全 workspace 5642 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 395 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -655,7 +663,7 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 ### daemon 通知机制为轻量版
 
-`daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口。**本地三态推送（PASS/WARN/FAIL）已接通**（`webhook.ts` + `push-target.ts`，agent 自测可用）。**企业平台完整推送（飞书/钉钉/企微）亦已落地**——但当前 daemon 的 cron 巡检和文件监听结果在企业场景仍依赖 stdout + `daemon-health.json`，企业 IT 需自行轮询 `history.jsonl` 或使用 Webhook 推送。
+`daemon/src/notify.ts` 提供 `[sofagent daemon]` 品牌包装的统一通知接口。**本地三态推送（PASS/WARN/FAIL）已接通**（`webhook.ts` + `push-target.ts`，agent 自测可用）。**企业平台完整推送（飞书/钉钉/企微）亦已落地**——但当前 daemon 的 cron 巡检和文件监听结果在企业场景仍依赖 stdout + `daemon-health.json`，企业 IT 需自行轮询 `history.jsonl` 或使用 Webhook 推送。
 
 ### DSH 插件 npm 首发（v1.5.2 章九起）的四条真实局限
 

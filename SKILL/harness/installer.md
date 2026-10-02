@@ -68,7 +68,7 @@ bash <源路径>/install.sh --platform <平台> [--policy <策略文件>] [--bas
 
 ```
 ① ~/.sofagent/ 目录结构存在（data/ + SKILL/ + install.sh 落位）
-② sofagent-audit --doctor → 退出码 0（doctor 自检：config / hook / 版本一致性）
+② sofagent audit --doctor → 退出码 0（doctor 自检：config / hook / 版本一致性）
 ③ MCP 连通：sofagent CLI 可响应（--version 或 doctor 的 MCP 段不报 unavailable）
 ```
 

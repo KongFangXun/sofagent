@@ -380,7 +380,7 @@ FORGE/SKILL/fresh-eyes-loop/
 
 > FORGE 是项目内部自迭代工具链、**非产品能力**——架构概要留在 [ARCHITECTURE · ⚙️ FORGE 自迭代工具链](../../docs/ARCHITECTURE.md#️-forge-自迭代工具链内部)，内部实现细节归本指南（Loop 开发者读）。锚点 `#四节点状态机v113` 在本文件。
 
-大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 LangGraph createReactAgent，`sofagent-orchestrator compose --task` CLI 入口——任何 Agent 平台都能用。
+大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 LangGraph createReactAgent，`sofagent orchestrator compose --task` CLI 入口——任何 Agent 平台都能用。
 
 **为什么是 Skill + 脚本 + Runtime**：
 | 什么事 | 谁来做 | 为什么 |

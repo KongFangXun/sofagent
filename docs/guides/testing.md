@@ -72,7 +72,7 @@
 ## 用例 8：编排模块（LangGraph createReactAgent）验证
 
 **目的**：验证编排模块在复杂任务中正确拆解并执行。
-**步骤**：发 🔴 复杂任务（如「扫描 sofagent 项目做文档一致性审查」）→ 观察 `sofagent-orchestrator compose` 是否生成 workflow → 按语义簇拆解子任务 → 执行 → 闭环反思写入 think.md。
+**步骤**：发 🔴 复杂任务（如「扫描 sofagent 项目做文档一致性审查」）→ 观察 `sofagent orchestrator compose` 是否生成 workflow → 按语义簇拆解子任务 → 执行 → 闭环反思写入 think.md。
 **通过标准**：编排模块全链路跑通（拆解 → 执行 → checkpoint → 闭环），无 `ao` 残留。
 
 ---

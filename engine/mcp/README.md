@@ -24,10 +24,10 @@ npm install -g @sofagent/audit
 
 ```bash
 # 直接启动 MCP Server
-sofagent-mcp
+sofagent mcp
 
 # 或通过 audit 包的 --mcp 参数
-sofagent-audit --mcp
+sofagent audit --mcp
 ```
 
 MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
@@ -73,7 +73,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 
 ```bash
 # 形态一：环境变量（进程级）
-SOFAGENT_MCP_ROLES=audit sofagent-mcp
+SOFAGENT_MCP_ROLES=audit sofagent mcp
 
 # 形态二：JSON 配置（客户端级——mcpServers 条目内）
 { "command": "npx", "args": ["-y", "@sofagent/audit", "--mcp"], "env": { "SOFAGENT_MCP_ROLES": "audit" } }

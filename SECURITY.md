@@ -30,7 +30,7 @@
 
 ## 已知风险（明文存储）
 
-sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网）。但以下数据以**明文 Markdown** 存储，请评估风险：
+sofagent 是一套 FDE 能力——**自带治理环境的 S1M**（工程层 FDEing × 判定层 S1M × 治理层 harness）：底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网）。但以下数据以**明文 Markdown** 存储，请评估风险：
 
 **「数据不出本机」的三个显式例外**（均需用户 opt-in）：
 
@@ -177,7 +177,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 ### USB 完整运行时攻防表
 
 
-> 「Node 便携版 + 启动脚本」方案——IT 用 `sofagent-daemon create-usb-key` 写入 U 盘（Node 便携版 + sofagent dist + 三平台启动脚本 + federation.json + 空 knowledge/），员工双击 `start` 3 秒联邦在线，拔盘零残留。
+> 「Node 便携版 + 启动脚本」方案——IT 用 `sofagent daemon create-usb-key` 写入 U 盘（Node 便携版 + sofagent dist + 三平台启动脚本 + federation.json + 空 knowledge/），员工双击 `start` 3 秒联邦在线，拔盘零残留。
 >两道防线：**HMAC-SHA256 全量签名防篡改**（`daemon/src/usb-signature.ts`，路径 POSIX 归一化 + 字典序 + 内容哈希串联，不含 mtime，确定性可复算）+ **knowledge/ AES-256-GCM 磁盘加密防失窃**（复用 v1.1.8 `core/crypto/aes-gcm.ts`，密钥 32 字节存 U 盘 `federation.json` 的 `key` 字段——U 盘本身即信任根，防的是「丢盘后 knowledge/ 被读」）。
 
 | 攻击场景 | 防线 | 结果 |
@@ -306,15 +306,15 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 > ⚠️ **HMAC 威胁模型边界**：HMAC 防的是「**无密钥方**伪造/篡改签名」。同机同用户场景下，密钥文件 `~/.sofagent-key`（权限 0600）可被同用户进程读取——与用户同身份运行的 Agent 可读取密钥后重签整条链，HMAC 无法阻止（同 LIMITATIONS「文件权限不防同用户进程」的既有披露）。因此 HMAC 的实际防御面是**异地/跨用户**攻击；对同用户重签，防线只剩事后 `--doctor` 体检 + CI 侧独立审计（CI 凭据与开发机隔离，不可被开发机进程重签）。
 
-### 审计模块安全性（sofagent-audit）
+### 审计模块安全性（sofagent audit）
 
-sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统的主力路径是 `execFileSync('git', ...)`（数组传参、不走 shell）。不使用 eval、不执行外部脚本；git 命令参数以数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。
+sofagent audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统的主力路径是 `execFileSync('git', ...)`（数组传参、不走 shell）。不使用 eval、不执行外部脚本；git 命令参数以数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。
 
 **规则集 plugin 类规则的供应链边界**：`--ruleset-path` 加载的 JSON 规则集中 `type: "plugin"` 的条目会触发模块加载——**默认拒绝**（plugin 规则关闭）；仅在显式设置 `SOFAGENT_ALLOW_PLUGIN_RULES=1` 时放行，且来源限定为 `@sofagent/` scope 包或本地绝对路径（裸名第三方包禁入）。**opt-in 即自担供应链风险**——加载的代码在审计进程内以当前用户权限运行。
 
 **精确边界（v1.5.5 重算）**：包内 `execSync`（shell 形态）调用共 **10 处命中**（audit 侧 **7** 处 + core 侧 3 处）；其中 8 处为源码内直接调用、2 处内嵌于生成代码字符串（不经本进程 shell——随注入的 hook 脚本 / `node -e` 子进程执行，两者同源同串）。**直接调用均为静态可信命令串**——命令体零外部输入插值，插值面仅限「取回输出后 trim」：
 
-- audit 侧 7 处：`webhook.ts`（3：`git rev-parse --show-toplevel` / `--short HEAD` / `git config user.name`）· `init.ts`（2：`which/where sofagent-daemon` / `sofagent-audit`——命令串取自平台判定三元式，两分支均为字面量，无插值）· `agent-shield.ts`（1：`ps aux`）· `hook-install.ts`（1：内嵌于注入 hook 脚本的字符串，`npm root -g`）
+- audit 侧 7 处：`webhook.ts`（3：`git rev-parse --show-toplevel` / `--short HEAD` / `git config user.name`）· `init.ts`（2：`which/where sofagent daemon` / `sofagent audit`——命令串取自平台判定三元式，两分支均为字面量，无插值）· `agent-shield.ts`（1：`ps aux`）· `hook-install.ts`（1：内嵌于注入 hook 脚本的字符串，`npm root -g`）
 - core 侧 3 处：`audit-history.ts`（1：`git rev-parse --git-dir`）· `repo-hash.ts`（1：`git rev-parse --show-toplevel`，可注入 `execFn` 的类型默认实现）· `dist-hash.ts`（1：内嵌于 `node -e` 字符串，`npm root -g`，与 audit 侧同串）
 
 > 两处内嵌形态随生成的 hook 脚本 / `node -e` 在子进程执行，命令串同为字面量、同样无外部输入插值；单列是因为它们不在本进程 shell 调用路径上。计数口径与复查命令见 `tools/check/literals.json` 的 `security-execsync-*` 两条（防漂移门禁，漂了即红）。
@@ -335,6 +335,8 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 ### 25 条审计规则完整清单（文档级 SSOT）
 
 > 本表是全部 25 条规则的文档级单一事实源（代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已合并入 A11、E3 已并入 A11，编号不再使用。
+>
+> 📎 **与判定层的关系**：本表的条数口径（**25 = 17 默认 + 8 扩展**）是当前 SSOT；S1M 判定化接管后规则如何被判定层消费（逐条去向）见下方〈25 条规则的判定化归属〉，其判据重述口径见 [v1.6.0 §二](./docs/changelog/v1.6/v1.6.0.md)。
 
 **默认规则 17 条（始终生效）**：
 
@@ -534,7 +536,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 | 绕过方式 | 检测手段 | 缓解 |
 |---|---|---|
-| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 装三层防线（pre-commit + commit-msg + post-commit，v1.4.2）：绕过 commit-msg 的 commit 由 post-commit 对账——命中拦截记录时输出「疑似绕过」并留痕 history.jsonl，未命中输出 INFO 且可用 `--verify-commit <SHA>` 复核；定期 `--doctor` 检查未审计 commit；CI 侧 `sofagent-audit --diff` 兜底。**加密态边界（v1.5.0）**：静态加密开启后 history.jsonl 为密文（`SOFAGENT-AGE-V1` 前缀），明文对账不可用——post-commit 降级为显式提示（全密文态提示依赖 CI 兜底；混合态只对明文行对账），`--no-verify` 检测在加密态依赖 CI 兜底 |
+| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 装三层防线（pre-commit + commit-msg + post-commit，v1.4.2）：绕过 commit-msg 的 commit 由 post-commit 对账——命中拦截记录时输出「疑似绕过」并留痕 history.jsonl，未命中输出 INFO 且可用 `--verify-commit <SHA>` 复核；定期 `--doctor` 检查未审计 commit；CI 侧 `sofagent audit --diff` 兜底。**加密态边界（v1.5.0）**：静态加密开启后 history.jsonl 为密文（`SOFAGENT-AGE-V1` 前缀），明文对账不可用——post-commit 降级为显式提示（全密文态提示依赖 CI 兜底；混合态只对明文行对账），`--no-verify` 检测在加密态依赖 CI 兜底 |
 | `git add -f .sofagent/`（审计数据强制入库） | ✅ v1.4.2 起三层防线拦截——pre-commit 在 commit 对象生成前将 .sofagent/ 移出暂存区（主防线，对当次 commit 直接生效）；commit-msg 阶段再兜一次（护磁盘 index 防后续 commit 卷入）；post-commit 扫 HEAD tree 命中即告警 | pre-commit reset 失败（index.lock 竞态）时 fail-loud 拒绝 commit（宁可 false-retry 不可静默入库）；CI 侧 `--diff` 仍可发现已入库残留 |
 | 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中） |
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
@@ -556,7 +558,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > 💡 **`hardenedMode` 配置项尚未实现**（代码中不存在此字段）——一键全规则基线化的便捷配置排入 ROADMAP 评估，当前需手动按上述方式逐条锁定。
 
 > ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。
->**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent-audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。**例外（v1.5.5 补披露）**：上述「基线缺失即显性报错」在**三层防线中的 commit-msg 阶段为告警 + 放行本次**（首装后未建基线属正常态，不阻断提交；pre-commit 阶段为 `exit 1` 阻断）——信任锚仍只由显式命令建立，两个阶段的差异是「阻断 vs 告警」而非「校验 vs 不校验」。
+>**CI 侧 `sofagent audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。**例外（v1.5.5 补披露）**：上述「基线缺失即显性报错」在**三层防线中的 commit-msg 阶段为告警 + 放行本次**（首装后未建基线属正常态，不阻断提交；pre-commit 阶段为 `exit 1` 阻断）——信任锚仍只由显式命令建立，两个阶段的差异是「阻断 vs 告警」而非「校验 vs 不校验」。
 
 > ⚠️ **超大 diff 的 spill 落盘面（v1.3.9 能力 · 补齐计划见 ROADMAP · 如实披露）**：单文件 diff 超 5MB 时引擎溢出到磁盘再分块读回（`engine/core/src/diff-parser.ts`）。落盘位置经 `getDataDir()` SSOT 解析链（显式 `SOFAGENT_DATA` > 环境变量 > `~/.sofagent/data/`），**恒在引擎数据目录而非被审仓库内**——v1.4.3 已修复旧实现「spill 落 CWD 会被对方仓库 commit 卷入」的跨仓泄漏面；
 >目录权限 0700（spill 可能含密钥类 diff 内容）。读回上限 64MB：以内全量扫描（oversized 不置位，无审计盲区），超限截断置位并注入 WARN，落盘件保留供按需取回。**残余面**：spill 文件含明文 diff 内容（sanitize 管道不覆盖 spill 原文），强合规场景建议将 `~/.sofagent/data/spill/` 纳入加密卷覆盖范围并定期清理。
@@ -576,23 +578,23 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 ### 详细缓解步骤
 
-1. **CI 侧兜底（推荐）**：在 CI/CD pipeline 中独立运行 `sofagent-audit --diff HEAD~1..HEAD`（审最近一次 commit；审整个分支区间用 `--diff main..HEAD`），
+1. **CI 侧兜底（推荐）**：在 CI/CD pipeline 中独立运行 `sofagent audit --diff HEAD~1..HEAD`（审最近一次 commit；审整个分支区间用 `--diff main..HEAD`），
    使用 CI 环境内受保护的 config.yml 副本，不依赖开发机上的配置文件。
    ⚠️ **边界说明**：`--diff HEAD~1..HEAD` 依赖「至少 2 个 commit」的仓库——首次提交（单 commit 仓库无 `HEAD~1`）会 `exit 2`。首次提交场景请用 `--init` 装 hook 自动审计，或改用 `--diff HEAD`（审工作树与 HEAD 的差异）。
 2. **文件权限加固**：`chmod 400 .sofagent/config.yml` 将配置设为只读。
    注意：此方法不能防止 Agent 以 root/同用户身份强制写入，
    但能防止意外修改。
 3. **完整性校验**：使用 `tools/release/sign-config.mjs` 对 config.yml 签名，
-   定期运行 `sofagent-audit --doctor` 检查配置完整性。
+   定期运行 `sofagent audit --doctor` 检查配置完整性。
 
-> ⚠️ **`--doctor` 退出码语义（CI 场景注意）**：doctor 默认只在 **error** 时返回非零，**warning（如 hook 缺失）仍 exit 0**——CI 只看 exit code 会漏掉 warning 级问题。CI 场景请用 `sofagent-audit --doctor --strict`（warning 也返回非零），人工日常体检用默认模式即可。
+> ⚠️ **`--doctor` 退出码语义（CI 场景注意）**：doctor 默认只在 **error** 时返回非零，**warning（如 hook 缺失）仍 exit 0**——CI 只看 exit code 会漏掉 warning 级问题。CI 场景请用 `sofagent audit --doctor --strict`（warning 也返回非零），人工日常体检用默认模式即可。
 
 > 💡 更多本地开发缓解措施详见 [LIMITATIONS.md → 本地开发紧急缓解措施](./docs/LIMITATIONS.md#本地开发紧急缓解措施)（chmod 400、git hooksPath、定期 doctor）。
 
 **受影响场景**：
 - 不上 CI 的小团队或个人项目（风险最高）
 - Agent 具有文件系统写入权限的任何场景
-- `sofagent-audit --init` 后未额外加固配置权限的场景
+- `sofagent audit --init` 后未额外加固配置权限的场景
 
 ### Daemon 监控边界
 
@@ -678,7 +680,7 @@ v1.3.5 交付 4b 起，CRDT 依赖已从旧包 `automerge@1.0.1-preview.7`（pre
 
 > **有网络面，已核验**：`serve-dashboard.mjs` 是真实 HTTP 服务面（非纯静态），三项核验——① 默认绑定 `127.0.0.1`（`DASHBOARD_HOST || '127.0.0.1'`，局域网共享须显式 `DASHBOARD_HOST=0.0.0.0` opt-in）；
 >② dashboard.html 零外链 CDN（38 图标 SVG 内嵌 @2026-09-27 实测，数法：`grep -oE '\.bi-[^:]+::before' tools/dashboard/dashboard.html | sort -u`，断网可用——与 v2.0.0 离线 USB 节点叙事对齐）；③ 服务无密钥/凭据面（只读 `~/.sofagent/data/` 快照文件，无写操作、无鉴权需求）。
-> **GitHub Actions 供应链面**：8 个 workflow 26 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag（@2026-09-27 实测，**口径 = 脚本正则 `^\s*(?:-\s+)?uses:\s*(\S+)` 逐文件计数、排除注释行**；逐文件：daemon-linux 1 / daemon-macos 1 / pr-check 9 / release 4 / shellcheck 2 / sofagent-audit 2 / verify 5 / windows 2。
+> **GitHub Actions 供应链面**：8 个 workflow 26 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag（@2026-09-27 实测，**口径 = 脚本正则 `^\s*(?:-\s+)?uses:\s*(\S+)` 逐文件计数、排除注释行**；逐文件：daemon-linux 1 / daemon-macos 1 / pr-check 9 / release 4 / shellcheck 2 / sofagent audit 2 / verify 5 / windows 2。
 >⚠️ 直接 `grep "uses:"` 会多算 1 处——`pr-check.yml` 有一行含该词的注释），**另根 `action.yml` 1 处**同口径 pin（合计 27）；`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（**扫描面含根 `action.yml`**；离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
 
 

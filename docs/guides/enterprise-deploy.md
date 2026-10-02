@@ -82,7 +82,7 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 bash install.sh
 
 while IFS= read -r repo; do
-  (cd "$repo" && sofagent-audit --init)
+  (cd "$repo" && sofagent audit --init)
 done < repo-list.txt
 ```
 > `--init` 是幂等的——已初始化的仓库重复执行不会重复创建文件。
@@ -129,11 +129,11 @@ echo 'export SOFAGENT_CONFIG=/etc/sofagent/template-config.yml' >> /etc/profile.
 
 ### ③ CI 集成示例
 
-GitHub Actions 中跑 `sofagent-audit --diff --ci`：
+GitHub Actions 中跑 `sofagent audit --diff --ci`：
 
 ```yaml
 # .github/workflows/sofagent-audit.yml
-name: sofagent-audit
+name: sofagent audit
 on: [pull_request]
 jobs:
   audit:
@@ -146,7 +146,7 @@ jobs:
         with:
           node-version: '18'
       - run: bash install.sh
-      - run: sofagent-audit --diff origin/main..HEAD --ci --json
+      - run: sofagent audit --diff origin/main..HEAD --ci --json
 ```
 
 > `--ci` 模式：WARN 不阻断（exit 1），FAIL 阻断（exit 2），紧凑输出。
@@ -159,9 +159,9 @@ jobs:
 
 ```bash
 # 管理机首次启动 daemon：交互引导生成密钥 + 指纹确认 + 备份确认（指纹打印在启动输出）
-sofagent-daemon start
+sofagent daemon start
 # 无头批量部署跳过交互（非交互场景）：
-#   SOFAGENT_CONFIRM_BACKUP=1 sofagent-daemon start
+#   SOFAGENT_CONFIRM_BACKUP=1 sofagent daemon start
 
 # 预共享分发到 20 台目标机（scp + 0600 权限）
 for host in $(cat hosts.txt); do
@@ -175,7 +175,7 @@ done
 
 ```bash
 # 每台目标机：env 通道确认备份后启动 daemon 即激活
-SOFAGENT_CONFIRM_BACKUP=1 sofagent-daemon start
+SOFAGENT_CONFIRM_BACKUP=1 sofagent daemon start
 # 验证：密文前缀在位即激活成功
 head -1 ~/.sofagent/data/audit/history.jsonl | grep -c "SOFAGENT-AGE-V1"   # 期望 1
 ```
@@ -189,12 +189,12 @@ set -euo pipefail
 while IFS= read -r host; do
   ssh "$host" 'mkdir -p ~/.sofagent/keys && chmod 700 ~/.sofagent/keys'
   scp -q ~/.sofagent/keys/master.key "$host":~/.sofagent/keys/master.key
-  ssh "$host" 'chmod 600 ~/.sofagent/keys/master.key && SOFAGENT_CONFIRM_BACKUP=1 sofagent-daemon start' \
+  ssh "$host" 'chmod 600 ~/.sofagent/keys/master.key && SOFAGENT_CONFIRM_BACKUP=1 sofagent daemon start' \
     && echo "✅ $host 激活" || echo "❌ $host 失败（查 daemon 日志）"
 done < hosts.txt
 ```
 
-> ⚠️ 安全边界：master.key 是全 fleet 同源密钥——单机失窃即全 fleet 密文暴露，强隔离场景应逐机生成（去掉分发步，每台各自 `sofagent-daemon start` + 本机确认）；备份指纹记录务必离线保管，密钥丢失 = 加密数据永久不可读（见 [SECURITY](../../SECURITY.md) 静态加密节）。
+> ⚠️ 安全边界：master.key 是全 fleet 同源密钥——单机失窃即全 fleet 密文暴露，强隔离场景应逐机生成（去掉分发步，每台各自 `sofagent daemon start` + 本机确认）；备份指纹记录务必离线保管，密钥丢失 = 加密数据永久不可读（见 [SECURITY](../../SECURITY.md) 静态加密节）。
 
 ### 其他方案
 
@@ -212,11 +212,11 @@ done < hosts.txt
 ```bash
 # 为财务项目单独隔离数据目录
 export SOFAGENT_HOME=/data/sofagent-finance
-sofagent-audit --init    # 数据写入 /data/sofagent-finance/data/
+sofagent audit --init    # 数据写入 /data/sofagent-finance/data/
 
 # 为人事项目单独隔离
 export SOFAGENT_HOME=/data/sofagent-hr
-sofagent-audit --init    # 数据写入 /data/sofagent-hr/data/
+sofagent audit --init    # 数据写入 /data/sofagent-hr/data/
 ```
 
 > `SOFAGENT_HOME` 影响全部数据路径：审计历史、知识库、HMAC 密钥、引擎内部状态。每个 `SOFAGENT_HOME` 实例的 HMAC 密钥互相独立，审计链条互不交叉。
@@ -231,7 +231,7 @@ sofagent-audit --init    # 数据写入 /data/sofagent-hr/data/
 ```bash
 # 方案 A：定期 doctor --json 汇总到中心
 # 每台机器的 crontab：
-0 9 * * 1 SOFAGENT_HOME=/data/sofagent sofagent-audit --doctor --json >> /shared/sofagent-reports/$(hostname)-$(date +%F).json
+0 9 * * 1 SOFAGENT_HOME=/data/sofagent sofagent audit --doctor --json >> /shared/sofagent-reports/$(hostname)-$(date +%F).json
 
 # 方案 B：dashboard 定期采集
 # 将各机器的 ~/.sofagent/data/ 通过 NFS/共享存储挂载到 dashboard 所在机器
@@ -271,7 +271,7 @@ sofagent 对 Windows 的支持是**实验性**的：
 | 能力 | macOS/Linux | Windows |
 |------|:-----------:|:-------:|
 | git hook（commit-msg / post-commit） | ✅ 完全支持 | ⚠️ 需 Git Bash（原生 cmd.exe 不支持 bash hook 脚本） |
-| 审计模块（sofagent-audit） | ✅ 完全支持 | ✅ 支持（Node.js 跨平台） |
+| 审计模块（sofagent audit） | ✅ 完全支持 | ✅ 支持（Node.js 跨平台） |
 | MCP Server | ✅ | ✅ |
 | daemon 常驻进程 | ✅ | ❌ 不支持（v1.2.9 PM2 守护面向 macOS/Linux，Windows 待排期） |
 | orchestrator 编排 | ✅ | ⚠️ 部分功能依赖 Unix signal |
@@ -287,7 +287,7 @@ sofagent 对 Windows 的支持是**实验性**的：
 > 当前 sofagent 不直接支持 AD/LDAP 认证集成。
 
 - **现状**：sofagent 的用户身份基于本地 OS 用户（`~/.sofagent/data/` 目录权限 700），没有集中用户目录概念
-- **替代方案**：通过系统级 git hook 模板部署实现组织范围策略下发——将 `sofagent-audit --install-hook` 嵌入 git 模板目录（`git config --global init.templateDir`），新 clone 的仓库自动带 hook
+- **替代方案**：通过系统级 git hook 模板部署实现组织范围策略下发——将 `sofagent audit --install-hook` 嵌入 git 模板目录（`git config --global init.templateDir`），新 clone 的仓库自动带 hook
 - **权限映射**：可通过组织级脚本控制哪些用户组有权修改 `~/.sofagent/config.yml`（文件 ACL：`chmod 640` + `chown :engineering`）
 - **路线图**：企业级 SSO/LDAP 集成当前无排期，当前建议结合 OS 级权限 + git hook 模板实现等效控制
 
@@ -295,7 +295,7 @@ sofagent 对 Windows 的支持是**实验性**的：
 
 sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，每行一个审计事件对象。
 
-> 🔐 **加密双态（v1.3.8 数据静态加密）**：`~/.sofagent/keys/` 存在激活密钥时，落盘整行为 `SOFAGENT-AGE-V1` 密文（AES-256-GCM）；无密钥时按明文 JSONL。SIEM 直读方案适用于**明文态**；密文态需先经解密管道（`sofagent-audit` 读侧自动解密）或改走 `--json` 输出通道对接——下表 Filebeat/Forwarder 直采配置在密文态不可用。
+> 🔐 **加密双态（v1.3.8 数据静态加密）**：`~/.sofagent/keys/` 存在激活密钥时，落盘整行为 `SOFAGENT-AGE-V1` 密文（AES-256-GCM）；无密钥时按明文 JSONL。SIEM 直读方案适用于**明文态**；密文态需先经解密管道（`sofagent audit` 读侧自动解密）或改走 `--json` 输出通道对接——下表 Filebeat/Forwarder 直采配置在密文态不可用。
 
 ### 日志格式（核心字段）
 
@@ -303,7 +303,7 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 
 ```jsonl
 {"timestamp":"2026-07-30T10:00:00Z","diffRange":"HEAD~1..HEAD","exitCode":0,"diffFileCount":3,"commitMsg":"feat: add login","ruleResults":[{"name":"secret-leak","number":2,"status":"PASS","details":[]},{"name":"out-of-scope","number":3,"status":"SKIPPED","details":["quick mode: no task input"]}]}
-{"timestamp":"2026-07-30T10:00:01Z","diffRange":"HEAD~2..HEAD~1","exitCode":2,"diffFileCount":5,"commitMsg":"update config","ruleResults":[{"name":"secret-leak","number":2,"status":"FAIL","details":["src/utils.ts:3 leaked AWS AKIA key"]}],"prevHash":"a1b2c3…","engine":"sofagent-audit"}
+{"timestamp":"2026-07-30T10:00:01Z","diffRange":"HEAD~2..HEAD~1","exitCode":2,"diffFileCount":5,"commitMsg":"update config","ruleResults":[{"name":"secret-leak","number":2,"status":"FAIL","details":["src/utils.ts:3 leaked AWS AKIA key"]}],"prevHash":"a1b2c3…","engine":"sofagent audit"}
 ```
 
 关键字段速查：`timestamp`（ISO 8601）/ `diffRange`（审计区间）/ `exitCode`（0=PASS / 1=WARN / 2=FAIL）/ `ruleResults[]`（逐规则 name/number/status/details）/ `diffFileCount`（变更文件数）/ `commitMsg` / `prevHash`（链完整性）/ `engine`（审计模块标识）。
@@ -318,7 +318,7 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 | **Grafana Loki** | Promtail 配置 scrape_config 指向 `history.jsonl`，label 按 `rule`/`status` 维度 |
 | **自家 SIEM** | `tail -f ~/.sofagent/data/audit/history.jsonl \| your-pipe` 实时消费 |
 
-> `--json` 输出模式可配合 jq 做实时过滤：`sofagent-audit --diff HEAD~1..HEAD --json | jq 'select(.status == "FAIL")'`
+> `--json` 输出模式可配合 jq 做实时过滤：`sofagent audit --diff HEAD~1..HEAD --json | jq 'select(.status == "FAIL")'`
 
 ## 联邦部署（多设备 Token 管理）
 
@@ -361,4 +361,4 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 2. 移除定时任务：`crontab -l` 检查并删除 sofagent 相关条目
 3. 卸载 CLI：`npm uninstall -g @sofagent/audit`
 4. 清除数据（含明文日志 / think.md，敏感）：`rm -rf ~/.sofagent ~/.sofagent-key`
-5. 核验：`command -v sofagent-audit` 与 `ls ~/.sofagent` 均应为空
+5. 核验：`command -v sofagent audit` 与 `ls ~/.sofagent` 均应为空

@@ -6,11 +6,11 @@ sofagent 质量评估模块——量化指标、评分逻辑、evals 接口。�
 
 ```bash
 # 运行 golden set 评估（使用 audit 模块作为 runner）
-sofagent-eval run [options]
+sofagent eval run [options]
 
 # 选项
-sofagent-eval run --golden-set <path>   # 指定 golden set YAML 路径
-sofagent-eval run --verbose              # 详细输出
+sofagent eval run --golden-set <path>   # 指定 golden set YAML 路径
+sofagent eval run --verbose              # 详细输出
 
 # golden set 路径解析优先级：
 #   1. --golden-set 参数

@@ -8,7 +8,7 @@ sofagent 思考链分析——推理路径追踪、决策可视化、思维审�
 npm install -g @sofagent/think
 ```
 
-安装后获得 `sofagent-think` 命令。Node.js 18+。
+安装后获得 `sofagent think` 命令。Node.js 18+。
 
 ## API
 

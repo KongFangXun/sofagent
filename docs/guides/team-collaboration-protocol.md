@@ -56,7 +56,7 @@ formation: cross-review   # 六阵型之一；声明后 members 可缺省（走�
 - **模板兜底**：声明 `formation` 且 `members` 缺省 ⇒ 按阵型模板装配成员拓扑（agent_id 按 `<team_id>-<role>` 生成，trust 缺省 0.5）。
 - **显式覆盖**：显式 `members` 与模板并存 ⇒ 以显式为准，偏离记录进 `data/teams/<team-id>/formation.json` 的 `template_deviation`（不静默覆盖）。
 - **产物落盘**：建队时成员拓扑与交接边写 `data/teams/<team-id>/formation.json`；交接事件经 `recordHandoff` 挂 decision-log（可按 team-id 查询——「阵型是否照跑」的可查证据）。
-- **与 CLI 的关系**：`sofagent-orchestrator formation` 子命令为作者自验面（v1.5.4 交付）；纳入 `sofagent <域> <动作>` 单入口映射属 v1.5.6，本版不提前。
+- **与 CLI 的关系**：`sofagent orchestrator formation` 子命令为作者自验面（v1.5.4 交付）；纳入 `sofagent <域> <动作>` 单入口映射属 v1.5.6，本版不提前。
 
 ## 二、共享态 Schema（team-state CRDT 结构）
 

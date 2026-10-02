@@ -70,7 +70,7 @@
 **离场——按文件执行与审计：**
 
 - **每次变更都被管住**：25 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
-- **规则自测、写错即曝**（v1.5.3）：审计规则统一为一套引擎（tool-level 与 git-diff 共用同一份定义、两种触发时机），**每条规则强制携带正负样例**（必须命中 / 必须不命中），加载时断言 fail-closed——规则写错当场拒载，不靠人记；多规则命中取最严，FAIL 报文附替代建议。运维侧同版补 **doctor 修复闭环**：`sofagent-audit doctor --refresh` 先备份、再一键重置到默认、出前后 diff 报告。
+- **规则自测、写错即曝**（v1.5.3）：审计规则统一为一套引擎（tool-level 与 git-diff 共用同一份定义、两种触发时机），**每条规则强制携带正负样例**（必须命中 / 必须不命中），加载时断言 fail-closed——规则写错当场拒载，不靠人记；多规则命中取最严，FAIL 报文附替代建议。运维侧同版补 **doctor 修复闭环**：`sofagent audit doctor --refresh` 先备份、再一键重置到默认、出前后 diff 报告。
 - **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN 四阶段完整交付）。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
@@ -82,7 +82,7 @@
 **全程——不分相位的底座能力：**
 
 - **平台无关、即挂即用**：嵌在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）与模型层之间，不替代模型，只补「可靠执行」——对 Agent 约束、对模型治理。（Cursor 社区验证中；完整宿主档位矩阵以 [README · 多平台挂载](../README.md) 为准）
-- **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
+- **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent audit` 双 Agent。
 - **📚 五能力叙事定稿**（v1.4.4）：注入 · 审计 · 回溯 · 沉淀 · 进化——五词定型全站落位（第五能力英文 Distill），「本体结构」全站改称「本体数据」（ontology）。
 
 > 📌 各版本演进明细见 [CHANGELOG](../CHANGELOG.md)（能力已并入当前版本，不逐版列举）。
@@ -177,26 +177,26 @@ cd sofagent && bash install.sh
 
 #### 装之前：只认官方通道
 
-> ⚠️ **别从镜像装。**官方发布渠道只有三处——**GitHub 仓库**、**npm**（带 scope 的 `@sofagent/*`；裸名总包 `sofagent` 已标注弃用——见下节警示）、**插件市场**（ClawHub 与 SkillHub 双生态），全部安装方式见 [README](../README.md)。第三方镜像、聚合仓库、二次打包的「一键脚本」不在发布链内：它们可能钉在已撤销的历史版本上，或改写了安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，被改写等于交出宿主控制权。
+> ⚠️ **别从镜像装。**官方发布渠道只有三处——**GitHub 仓库**、**npm**（带 scope 的 `@sofagent/*`；单入口裸名包 `sofagent`——见下节说明）、**插件市场**（ClawHub 与 SkillHub 双生态），全部安装方式见 [README](../README.md)。第三方镜像、聚合仓库、二次打包的「一键脚本」不在发布链内：它们可能钉在已撤销的历史版本上，或改写了安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，被改写等于交出宿主控制权。
 >
-> 另有一类**同名陷阱**：npm 裸名包 `sofagent-audit` 是本项目的旧代理包（已 deprecated、长期滞后），正式包名是带 scope 的 `@sofagent/audit`——别按名字猜，见 README 的同名警示。
+> 已下架的旧代理包：npm 裸名包 `sofagent-audit`（无 scope）是本项目的旧代理包，已于 2026-09-26 下架——正式包名是带 scope 的 `@sofagent/audit`。
 
-#### 两条通道都叫 sofagent？怎么分辨
+#### 单入口与安装态：一个 `sofagent` 的两种落点
 
-> ⚠️ **裸名总包 `sofagent` 已在 repo 侧标注弃用**（新装一律走 scoped 主通道）；本节判别法保留供存量环境排障，[v1.5.6](./changelog/v1.5/v1.5.6.md) CLI 单入口收敛后本节将随文档面收敛整节退役。
+[v1.5.6](./changelog/v1.5/v1.5.6.md) CLI 单入口收敛后，`sofagent` 只有一个命令面（`sofagent <域> <动作>` + 保留字）。两种落点共存时由 **PATH 顺序**决定谁先命中，但**行为已对齐**：
 
-| | npm 裸名总包（`npm i -g sofagent`） | `install.sh` 安装态 |
+| | npm 全局（`npm i -g sofagent`） | `install.sh` 安装态（`$SOFAGENT_HOME/bin/sofagent`） |
 |---|---|---|
-| `sofagent` 是什么 | **审计薄转发**——等价 `sofagent-audit` | **完整安装面入口**——另有 `status` / `web` / `dashboard` 等子命令 |
-| 实现位置 | `engine/umbrella/bin/sofagent.js` | `$SOFAGENT_HOME/bin/` |
+| 业务域（`sofagent audit` 等） | 由 npm 包路由到实现包 | 安装态 wrapper 转发到域路由（登记 `sofagent-router`，或回退全局 npm 探测） |
+| 保留字（`status` / `where` / `version` / `dashboard` / `web` / `data` / `help`） | 由路由直接作答（dashboard / web 转安装态资产） | 由安装态 wrapper 直接作答（dashboard / web 资产在位） |
 
-**PATH 判别法**：`command -v sofagent` 看路径落在 npm global 还是 `$SOFAGENT_HOME/bin`；再 `sofagent --help` 看首屏是审计参数表还是安装版子命令表（`sofagent web` 只在 install.sh 安装态可用）。两者同时在 PATH 时显式用全名（审计走 `sofagent-audit`），不要假设 `sofagent` 一定是完整安装面。
+**判别**：`command -v sofagent` 看落在 npm global 还是 `$SOFAGENT_HOME/bin`——两者用法一致，无需按通道区分。
 
 #### 三种装法粒度（同一约束层，按场景选）
 
 | 装法 | 命令 | 生命周期 | 适合 |
 |---|---|---|---|
-| npx 临时 | `npx -y -p @sofagent/audit sofagent-audit` | 用完即走 | 任意仓库快速审计、一次性检查 |
+| npx 临时 | `npx -y -p sofagent sofagent audit` | 用完即走 | 任意仓库快速审计、一次性检查 |
 | npm 项目内 | `npm install @sofagent/audit` | 随项目，版本锁进 package-lock | 固定依赖的团队项目 |
 | npm 全局 | `npm install -g @sofagent/audit` | 装一次到处用 | 跨仓库日常审计、daemon 常驻 |
 
@@ -204,12 +204,12 @@ cd sofagent && bash install.sh
 
 | 问题 | 原因 | 解决 |
 |---|---|---|
-| `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
-| commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
+| `sofagent audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
+| commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent audit --init` 或 `sofagent audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
 | Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计模块可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#-windows-支持是实验性的) |
-| hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
-| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 8 条（A14–A17 + A24 + E1/E2/E4）需开启，全量 25 条） |
+| hook 装了但静默跳过 | Node.js 或 sofagent audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
+| `sofagent audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 8 条（A14–A17 + A24 + E1/E2/E4）需开启，全量 25 条） |
 
 ### 验证装好了
 
@@ -217,7 +217,7 @@ cd sofagent && bash install.sh
 # 前置：fresh clone 需先 npm install && npm run build（verify.sh 依赖构建产物 dist/）
 bash engine/scripts/verify.sh    # 跑 verify 检查，通过即装好可用（--json 可进 CI）
 # 或 npm 安装后直接用
-sofagent-core verify                # 同样跑 verify 检查（注：没有 sofagent-verify 这个命令）
+sofagent core verify                # 同样跑 verify 检查（注：没有 sofagent-verify 这个命令）
 ```
 
 > ⚠️ 不要靠 Agent 回复验证——SKILL.md 闸门要求初始化过程不输出给用户。只信验证脚本的输出。
@@ -258,7 +258,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 
 **它不会动什么**：用户数据（审计记录、快照、知识库）默认保留在 `~/.sofagent/data/`——要连数据一起清，手动删 `~/.sofagent/`（**不可恢复，先确认没有要留的审计证据**）。被审计仓库根目录的 `.sofagent/` 是运行时产物，可安全删除（见下方「数据存储说明」）。
 
-> 🔴 **为什么 git hook 必须回收**：`commit-msg` 找不到 `sofagent-audit` 时会 `exit 1`，即**此后每一次 `git commit` 都被拒绝**，报错还会让你「去安装」。卸载不回收 hook，仓库反而会进入比安装前更糟的状态。
+> 🔴 **为什么 git hook 必须回收**：`commit-msg` 找不到 `sofagent audit` 时会 `exit 1`，即**此后每一次 `git commit` 都被拒绝**，报错还会让你「去安装」。卸载不回收 hook，仓库反而会进入比安装前更糟的状态。
 > 若你安装前自己写过 hook，卸载时会从 `<hook>.pre-sofagent` 备份自动还原。
 
 > ⚠️ **npm 安装态**：`npm uninstall -g @sofagent/audit` **不会**回收已装进仓库的 git hook——请在执行前后各跑一次上面的 uninstall 脚本（或手动删除 `.git/hooks/` 下含 `sofagent` 字样的三个文件）。
@@ -364,7 +364,7 @@ Agent 先判断任务复杂度：
 
 ### 提交后自动审计
 
-Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 25 条审计规则（17 默认启用：A1-A11 + A18-A23；8 扩展 opt-in：A14-A17 + A24 + E1/E2/E4）逐条判定：
+Agent 改完代码 commit 了——`sofagent audit` 扫描 git diff 对照 25 条审计规则（17 默认启用：A1-A11 + A18-A23；8 扩展 opt-in：A14-A17 + A24 + E1/E2/E4）逐条判定：
 
 ```bash
 cd engine/audit && npm ci && npm run build
@@ -389,8 +389,8 @@ exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规（含用法错误）/ 3 =
 | ❌ FAIL | Webhook 推送 + 终端标红 | 存档 + 建议回滚 |
 
 ```bash
-sofagent-audit --timeline             # 查看审计时间线快照
-sofagent-audit --revert <sha>         # 回滚到某次审计前
+sofagent audit --timeline             # 查看审计时间线快照
+sofagent audit --revert <sha>         # 回滚到某次审计前
 ```
 
 Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#-回溯能力自研同构-git-引擎--一键回滚)。
@@ -427,7 +427,7 @@ sofagent web          # 起服务 + 自动开浏览器 → http://localhost:3780
 node tools/dashboard/serve-dashboard.mjs
 ```
 
-Web 版含驾驶舱 / FDE 引导 / AI 节点 / 本体数据 / 知识库 / **工作明细**（v1.4.0：按 Agent / Workflow / 周 / 人工介入 4 视角）/ **图谱**（v1.4.0：业务图谱 + 本体图谱 + 自 FDE 工作流 + MCP 工具视图 + skill 加载链）/ 工具箱。数据源 `~/.sofagent/data/`，没跑过 `sofagent-audit` 就没数据（降级示例）。
+Web 版含驾驶舱 / FDE 引导 / AI 节点 / 本体数据 / 知识库 / **工作明细**（v1.4.0：按 Agent / Workflow / 周 / 人工介入 4 视角）/ **图谱**（v1.4.0：业务图谱 + 本体图谱 + 自 FDE 工作流 + MCP 工具视图 + skill 加载链）/ 工具箱。数据源 `~/.sofagent/data/`，没跑过 `sofagent audit` 就没数据（降级示例）。
 
 ### CI 集成
 
@@ -435,7 +435,7 @@ Web 版含驾驶舱 / FDE 引导 / AI 节点 / 本体数据 / 知识库 / **工�
 
 ```yaml
 # .github/workflows/sofagent-audit.yml
-name: sofagent-audit
+name: sofagent audit
 on: [push, pull_request]
 jobs:
   audit:
@@ -448,7 +448,7 @@ jobs:
         with:
           node-version: '22'
       - run: bash install.sh
-      - run: sofagent-audit --diff HEAD --silent --ci
+      - run: sofagent audit --diff HEAD --silent --ci
 ```
 
 #### 模式对照表
@@ -484,9 +484,9 @@ jobs:
 
 | 产品线 | 是什么 | 从哪进 | 前置要求 |
 |---|---|---|---|
-| **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor`（环境体检）→ `fde_interview`（五要素）→ `train_submit`（提交）；CLI：`sofagent-orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`（模板库一览）；监控：`train_status` / `train_list` / 失败走 `train_diagnose` | GPU 环境（CUDA/显存/框架）——`bash tools/train/train-env-init.sh` 一键装；基座模型手动放置或推理服务拉取；反作弊双防线随 install 默认落盘 |
+| **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor`（环境体检）→ `fde_interview`（五要素）→ `train_submit`（提交）；CLI：`sofagent orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`（模板库一览）；监控：`train_status` / `train_list` / 失败走 `train_diagnose` | GPU 环境（CUDA/显存/框架）——`bash tools/train/train-env-init.sh` 一键装；基座模型手动放置或推理服务拉取；反作弊双防线随 install 默认落盘 |
 | **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行模块：访谈结构化 → 三问判定 → 量化 ROI → 本体推导 → 三层沉淀 → 组装部署 | MCP：`fde_interview`（先跑——五要素采集，`prompts_only: true` 拿访谈话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`；产物落 `data/fde/<企业>/` | 无环境硬依赖（纯规则引擎——LLM 可选辅助）；企业标识必填（`enterprise_id`） |
-| **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent-daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent-daemon start`） |
+| **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent daemon start`） |
 
 > 走查口径：每条线「装 → 找到入口 → 进入第一步」应在 10 分钟内完成——入口命令逐条真实存在（本表经 v1.4.3 第九章 onboarding 断层走查对账，断点即修记录见发版检查清单）。
 
@@ -506,7 +506,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当前口径 104 个 tool——以 `engine/mcp/src/tool-registry.ts` 实数为准）。DSH 用户用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，即可在 DSH 会话里调用 sofagent 的全部能力——审计查询、知识库检索、A/B 实验、快照时间线等。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent mcp`，当前口径 104 个 tool——以 `engine/mcp/src/tool-registry.ts` 实数为准）。DSH 用户用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent mcp`，即可在 DSH 会话里调用 sofagent 的全部能力——审计查询、知识库检索、A/B 实验、快照时间线等。
 
 **配置方法、字段说明（`cordis.yml` 挂载示例）、两种 command 写法、安全边界（破坏性 tool 强制人审）与验证状态，整节见 [DSH MCP 互通指南](./guides/dsh-mcp-integration.md)。**
 
@@ -540,7 +540,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 > - **内存**：daemon 常驻进程（~50 MB）+ Node.js 运行时（~200 MB/并发 Agent）
 > - **网络**：仅 LLM API 出站，无入站端口需求
 
-> **性能口径**（README 首屏数字出处）：测量方法 = `time sofagent-audit`（quick 模式计时，含 Node.js 启动；全量模式对 5 万行 diff 计时）；环境 = 单机 macOS（Apple Silicon）。单机实测：quick 约 **1.1s**、5 万行 diff 约 **6.1s**。以上为单机参考值，非跨机器基准——跨工具横评排期 v1.5.x 与 Benchmark 集成。
+> **性能口径**（README 首屏数字出处）：测量方法 = `time sofagent audit`（quick 模式计时，含 Node.js 启动；全量模式对 5 万行 diff 计时）；环境 = 单机 macOS（Apple Silicon）。单机实测：quick 约 **1.1s**、5 万行 diff 约 **6.1s**。以上为单机参考值，非跨机器基准——跨工具横评排期 v1.5.x 与 Benchmark 集成。
 
 ⚠️ **数据存储说明**：用户级审计数据在 `~/.sofagent/data/`（明文 Markdown 为主，静态加密见 SECURITY）。**例外**：子包在仓库内运行时会在各子包根生成 `.sofagent/` 运行时目录（已 gitignore，不入库）——与用户级数据不冲突；仓库内跑 daemon 的数据根行为见 `SOFAGENT_REPO_LOCAL` 说明。
 
@@ -563,7 +563,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 一键烧录到 U 盘：
 
 ```bash
-sofagent-daemon create-usb-key \
+sofagent daemon create-usb-key \
   --role "财务审计节点" \
   --target /Volumes/SOFAGENT \
   --platform macos   # 或 linux / win
@@ -583,10 +583,10 @@ U 盘包含：Node.js 便携版 + sofagent 约束层 + knowledge/ 加密落盘 +
 | **私有化评估体系** | data/eval/ + Skill 迭代历史 + 知识库演变轨迹 |
 | **USB key**（v1.1.8+） | 烧录好的 U 盘——插上即用，换电脑身份不变 |
 
-FDE 离场后，两个内置 Agent 接手持续运维：合规审计员 `@sofagent-audit`（向下看——防退化）与 FDE 部署工程师 `@sofagent-fde`（向上看——推动进化），职责对照（双 Agent 定义详见 [ARCHITECTURE §双 Agent 定义](./ARCHITECTURE.md#agent-基础设施层v108)）。
+FDE 离场后，两个内置 Agent 接手持续运维：合规审计员 `@sofagent audit`（向下看——防退化）与 FDE 部署工程师 `@sofagent-fde`（向上看——推动进化），职责对照（双 Agent 定义详见 [ARCHITECTURE §双 Agent 定义](./ARCHITECTURE.md#agent-基础设施层v108)）。
 
 ```bash
-sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点"
+sofagent orchestrator subagent run fde --mode sustain --task "巡检所有节点"
 @sofagent-fde sustain     # WorkBuddy 中直接 @
 ```
 
@@ -654,7 +654,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 ### 审计聚合指标口径
 
-`sofagent-audit --stats` 的治理 KPI 指标定义（触发率/阻断率/Top 5 等）与口径细则见 [DEVELOPMENT · 审计聚合指标口径](./DEVELOPMENT.md#审计聚合指标口径单源防漂移)——该节与 CLI 实现 `engine/audit/src/stats.ts` 同源，改口径先改该节。
+`sofagent audit --stats` 的治理 KPI 指标定义（触发率/阻断率/Top 5 等）与口径细则见 [DEVELOPMENT · 审计聚合指标口径](./DEVELOPMENT.md#审计聚合指标口径单源防漂移)——该节与 CLI 实现 `engine/audit/src/stats.ts` 同源，改口径先改该节。
 
 ### 概念速查
 

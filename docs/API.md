@@ -17,8 +17,8 @@
 | # | 接口面 | 入口 | 认证 | 典型用途 |
 |---|---|---|---|---|
 | 1 | **MCP tools** | stdio MCP server（install.sh 自动配置） | 本地进程（无需凭证） | Agent 调用审计/编排/训练/治理全部能力 |
-| 2 | **npm CLI** | `sofagent-audit` 等二进制 | 本地 | git hook / CI / 人工调用审计 |
-| 3 | **git hook** | `sofagent-audit --install-hook` | git 本地 | 提交前自动审计（25 条规则 + HMAC 链） |
+| 2 | **npm CLI** | `sofagent audit` 等二进制 | 本地 | git hook / CI / 人工调用审计 |
+| 3 | **git hook** | `sofagent audit --install-hook` | git 本地 | 提交前自动审计（25 条规则 + HMAC 链） |
 | 4 | **平台挂载** | GEMINI.md / .cursor/rules/sofagent.mdc / AGENTS.md | 平台加载链 | 平台 AI 助手直接引用约束 |
 | 5 | **Skill 分发** | ClawHub（`clawhub skill publish`）/ SkillHub | 平台账号 | SKILL/ 目录规则资产发布更新 |
 | 6 | **Webhook 推送** | 飞书/钉钉/企微 webhook URL | 签名 | 审计结果 PASS/WARN/FAIL 三态推送 |

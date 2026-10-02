@@ -8,7 +8,7 @@ sofagent 核心运行时基础设施——常量、原子写入、git diff 解�
 npm install -g @sofagent/core
 ```
 
-安装后获得 `sofagent-core` 命令（含 `verify` / `doctor` 子命令）。Node.js 18+。
+安装后获得 `sofagent core` 命令（含 `verify` / `doctor` 子命令）。Node.js 18+。
 
 ## API
 

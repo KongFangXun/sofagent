@@ -367,7 +367,7 @@ graph TB
 |---|---|---|
 | `install.sh`（默认） | 底座 + FDE Skill + hook（全套） | **企业设备**：要常驻 Agent + 7×24 监控 |
 | `install.sh --base-only` | 仅底座（审计·回溯·daemon） | 企业 IT：只要核心监控，不装 Agent Skill |
-| `npx -y -p @sofagent/audit sofagent-audit` | 零安装，临时审计 | 开发者：30 秒体验，在任何 git 仓库跑一次 |
+| `npx -y -p sofagent sofagent audit` | 零安装，临时审计 | 开发者：30 秒体验，在任何 git 仓库跑一次 |
 
 > ⚠️ **FDE 不该在自己电脑跑 install.sh**——install.sh 是企业设备安装器，不是 FDE 工具。FDE 的工具是 Skill（ClawHub 装）+ 未来商业模型。
 >
@@ -731,8 +731,8 @@ Foundry Docs](https://www.palantir.com/docs/foundry/)
 | ❌ FAIL | 存档 + 建议回滚 | Webhook + 终端标红 |
 
 ```bash
-sofagent-audit --timeline     # 快照时间线
-sofagent-audit --revert SHA   # 回滚到任意快照
+sofagent audit --timeline     # 快照时间线
+sofagent audit --revert SHA   # 回滚到任意快照
 ```
 
 快照上限 50 份（MAX_SNAPSHOTS 滚动裁剪，超出移除最旧 + 回收孤儿 blob——v1.3.4/v2 实现）。Webhook 配置在 `.sofagent/config.yml`。
@@ -1163,7 +1163,7 @@ graph LR
 |---|---|---|---|
 | **Harness 层** | Agent 上下文 | 纯 MD 文件，Agent 读即生效 | ✅ |
 | **执行层** | 用户设备 | daemon 常驻进程——跨 session 经验不丢失 | ✅ |
-| **审计层** | git 仓库 + 文件系统 | sofagent-audit——提交时审计 + 文件变更审计 | ✅ |
+| **审计层** | git 仓库 + 文件系统 | sofagent audit——提交时审计 + 文件变更审计 | ✅ |
 | **MCP 推送层** | 设备 MCP server | @sofagent/mcp 独立包 | ✅ |
 | **协同层** | 多设备 + 云端 | Agent 独立身份、共享上下文、组织记忆 | 待裁定（无排期） |
 
@@ -1181,7 +1181,7 @@ sofagent 支持两种节点类型：
 |---|---|---|
 | **场景** | 企业无人值守设备 | 个人开发者（WorkBuddy/Codex 等） |
 | **Agent 平台** | ✅ 必须（OpenClaw 或其他企业级平台） | ❌ 不需要 |
-| **编排调用** | 平台内部 API | `sofagent-orchestrator compose --task` CLI |
+| **编排调用** | 平台内部 API | `sofagent orchestrator compose --task` CLI |
 | **约束注入** | 平台 Hook 精确注入 | Sub Agent 自加载（`buildConstrainedSystemPrompt`） |
 
 > Sub Agent 约束自加载：启动时读 `.sofagent/` 下的约束文件，拼装为 system prompt。纯文件系统操作，不依赖任何 Agent 平台的 Skill 系统。换平台约束不丢。
@@ -1259,14 +1259,14 @@ sofagent 的编排模块从 v1.3.4 起显式分为两层——**编排层不换�
 
 | Agent | 管什么 | 触发时机 |
 |---|---|---|
-| **合规审计员** `@sofagent-audit` | 管底线——P0/P1 分级 | 每次 commit / FDE 部署 / FORGE 闭环 |
+| **合规审计员** `@sofagent audit` | 管底线——P0/P1 分级 | 每次 commit / FDE 部署 / FORGE 闭环 |
 | **FDE 部署工程师** `@sofagent-fde` | 管上限——deploy/sustain | 部署时 / daemon cron @weekly |
 
 Agent 定义在 `SKILL/agents/{name}/SKILL.md`，`parseSkillMd()` 读 front matter 作为身份标签，body 注入 createReactAgent 作为 role prompt。
 
 ### Agent 平台在架构中的角色
 
-**审计层不依赖任何特定平台**——sofagent-audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 Agent 平台（OpenClaw / WorkBuddy 等），开发者也可通过 `bash install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
+**审计层不依赖任何特定平台**——sofagent audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 Agent 平台（OpenClaw / WorkBuddy 等），开发者也可通过 `bash install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
 
 **编排层当前走 LangGraph createReactAgent**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao（AutoGen）→ DeepAgents（v1.0.7）→ LangGraph createReactAgent（v1.2.0，deepagents 已弃用）。
 

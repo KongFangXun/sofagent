@@ -35,7 +35,7 @@
 
 | 层 | 形式 | 给谁读 | 创建时机 |
 |----|------|--------|---------|
-| 📄 文档层 | `nodes/[节点名].md` | 人读 + 编排模块读（注入 sofagent-orchestrator compose 拆任务） | §7 |
+| 📄 文档层 | `nodes/[节点名].md` | 人读 + 编排模块读（注入 sofagent orchestrator compose 拆任务） | §7 |
 | 🧠 Skill 层 | `skills/[节点名]/SKILL.md` | AI 读（节点的大脑） | §7-§8 |
 | 🔴 运行层 | 设备上的 session | 活的（sub-agent / AI 领航员） | §8 |
 
@@ -58,7 +58,7 @@
 
 ```
 engage-fde.md 引导 §7 → 产出 nodes/[节点名].md
-    ↓ engage.md 点火 → Agent 读 .md → 注入 sofagent-orchestrator compose 拆任务 → 逐节点执行
+    ↓ engage.md 点火 → Agent 读 .md → 注入 sofagent orchestrator compose 拆任务 → 逐节点执行
     ↓ 审计模块 → think.md 反馈 → 编排模块下次优化
 ```
 

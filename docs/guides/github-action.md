@@ -1,6 +1,6 @@
 # GitHub Action：PR 提交时自动审计
 
-> sofagent-audit 作为 GitHub Action，在每个 PR 上自动检查：AI 有没有跳过测试、有没有乱改不相关的文件、有没有引入安全风险。
+> sofagent audit 作为 GitHub Action，在每个 PR 上自动检查：AI 有没有跳过测试、有没有乱改不相关的文件、有没有引入安全风险。
 >
 > v1.5.5 · 2026-10-01（UTC）· ✅ 已发版 · 孔放勋
 
@@ -9,7 +9,7 @@
 在你的仓库根目录创建 `.github/workflows/sofagent-audit.yml`，复制以下内容：
 
 ```yaml
-name: sofagent-audit
+name: sofagent audit
 
 on:
   pull_request:
@@ -35,7 +35,7 @@ jobs:
           # 通过 npx 拉取已发布的 @sofagent/audit（与 action.yml 一致）。
           # ⚠️ 把 <LATEST> 换成当前发布版本（查 npm：npm view @sofagent/audit version）。
           #    锁定版本号可避免上游 patch 引入行为变更。
-          npx -y -p @sofagent/audit@<LATEST> sofagent-audit-full \
+          npx -y -p @sofagent/audit@<LATEST> sofagent audit --full \
             --diff origin/${{ github.base_ref }}..HEAD --ci --strict
 ```
 
@@ -49,7 +49,7 @@ jobs:
 
 ## 它检查什么
 
-sofagent-audit 检查 25 条规则（17 默认 + 8 扩展：A1-A11、A14-A24 + E1/E2/E4），覆盖安全、边界、追溯。下表为**默认规则**，扩展规则与完整清单见 [SECURITY](../../SECURITY.md)：
+sofagent audit 检查 25 条规则（17 默认 + 8 扩展：A1-A11、A14-A24 + E1/E2/E4），覆盖安全、边界、追溯。下表为**默认规则**，扩展规则与完整清单见 [SECURITY](../../SECURITY.md)：
 
 | 规则 | 内容 | 级别 |
 |------|------|:--:|
