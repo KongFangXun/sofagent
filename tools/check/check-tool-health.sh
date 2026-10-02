@@ -184,7 +184,20 @@ for _yml in "$CI_DIR"/*.yml "$CI_DIR"/*.yaml; do
   while IFS= read -r _p; do
     [ -z "$_p" ] && continue
     grep -qE '[*?{<>\$]|^\$|^https?:' <<< "$_p" && continue
-    [ -e "$_p" ] || { CI_DEAD=$((CI_DEAD + 1)); CI_LIST="${CI_LIST}  $_yml → $_p"$'\n'; }
+    # 构建产物豁免：dist/ 路径段在未 build 检出下不存在属正常态（CI 在 build 后跑本门禁）——
+    # 判定改为「对应源码入口存在」（同包 src 下同名 .ts）：源在 ⇒ 构建产物引用合法；
+    # 源不在 ⇒ 仍是死路径（如 nonexistent.js）照报。
+    case "${_p}" in
+      */dist/*)
+        _src_probe="${_p%%/dist/*}/src/${_p##*/dist/}"
+        _src_probe="${_src_probe%.js}.ts"
+        if [ -f "$_src_probe" ]; then
+          [ "$QUIET" = false ] && echo -e "  ℹ️ ${_yml} → ${_p}（构建产物引用合法，源在位：${_src_probe}；build 后复验）"
+          continue
+        fi
+        ;;
+    esac
+    [ -e "${_p}" ] || { CI_DEAD=$((CI_DEAD + 1)); CI_LIST="${CI_LIST}  ${_yml} → ${_p}"$'\n'; }
   done <<EOF
 $(grep -oE '(tools|engine|FORGE|docs)/[a-zA-Z0-9_./-]+(\*[a-zA-Z0-9_./-]*)?' "$_yml" | grep -vE '\$\{' | while IFS= read -r _raw; do
   # glob 前缀引用（daemon* / lib/daemon*）是 CI paths 过滤器合法形态——
