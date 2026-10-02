@@ -828,6 +828,19 @@ else
 fi
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 
+# ── 回归探针（bump 破坏文件头形态防护）：非 dry-run 时复跑禁考古守卫 ──
+# 根因：本脚本替换式历史上曾吞掉文件头前导标记（# / <!--），让版本号裸落进
+# archaeology 扫描面（修复后被下一轮 bump 回退的发版事故）。此处机械兜底：
+# bump 后守卫非零退出 = 文件头形态被本脚本破坏，立即红给执行者。
+if ! $DRY_RUN; then
+  if bash "$PROJECT_ROOT/tools/check/check-archaeology.sh" >/dev/null 2>&1; then
+    echo -e "  ${GREEN}✓ 回归探针: check-archaeology.sh 全绿（文件头形态未被 bump 破坏）${NC}"
+  else
+    echo -e "  ${RED}🔴 bump 破坏了文件头形态（check-archaeology.sh 报红）——检查本脚本的替换式是否吞掉了行首前导标记（# / <!--），修复后重跑${NC}"
+    exit 1
+  fi
+fi
+
 # ── 手动检查提醒（v1.0 新增，bump-version 盲区防护）────────
 if ! $DRY_RUN; then
   echo ""
