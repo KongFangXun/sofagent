@@ -10,6 +10,8 @@
 // 判据全部**引用既有口径**（不另立标准——改口径先改宿主，本工具自动跟随）：
 //   ① U+FFFD 乱码        ← check-docs.sh §2b 同判据（编码损坏）
 //   ② 墙式行 / 墙式格     ← lib/readability-count.mjs 同口径（>300 / >200）
+//                           判定面同 Face 5：冻结区（changelog/archive/evidence/vendor）
+//                           不判——其写作纪律维持人工 SOP
 //   ③ 字符数棘轮          ← doc-char-ratchet.json 台账（Unicode 码点，只许降）
 //   ④ 抬头块 >600 字      ← doc-char-ratchet.json _meta.opening_cap 同判据
 //   ⑤ 标题粘连            ← 「正文。## 标题」同行形态（今日 VALIDATION 实测事故，
@@ -39,6 +41,10 @@ const CHAR_RATCHET_PATH = path.join(ROOT, 'tools/check/doc-char-ratchet.json');
 const WALL_LIMIT = 300;   // lib/readability-count.mjs
 const CELL_LIMIT = 200;   // 同上
 const OPENING_CAP = 600;  // doc-char-ratchet.json _meta.opening_cap
+// 冻结区（判定面口径同 doc-discipline Face 5 候选面：全仓 tracked .md 减去历史
+// 冻结区与 vendored 上游；doc-ratchet.json _meta.scope：changelog/archive/evidence
+// 为冻结区不适用，写作纪律维持人工 SOP）
+const FROZEN_ZONE = /^(docs\/(changelog|archive|evidence)\/|playbook\/vendor\/)/;
 
 // ── 单文件五项检查 ────────────────────────────────────────
 function checkFile(file, ratchet) {
@@ -55,21 +61,27 @@ function checkFile(file, ratchet) {
 
   // ② 墙式行 / 墙式格（lib/readability-count 同口径；存量债在 doc-ratchet.json
   //    台账内登记的**不报**——本工具只拦新增，全量对账仍归 doc-discipline Face 5）
+  //    ⚠️ 判定面必须与宿主一致：冻结区**不判**——doc-discipline Face 5 的候选面即
+  //    「全仓 tracked .md 减去历史冻结区与 vendored 上游」，doc-ratchet.json 的
+  //    _meta.scope 亦注「changelog/archive/evidence 为冻结区不适用」，其写作纪律
+  //    维持人工 SOP。不排除则每次改冻结区都会把**历史事实行**判成新债（假红）。
   let fence = false, wall = 0, cell = 0;
   const wallLines = [], cellLines = [];
-  const debt = (ratchet && ratchet.ratchetDoc && ratchet.ratchetDoc[rel]) || { wall: 0, cell: 0 };
-  lines.forEach((l, i) => {
-    if (/^(```|~~~)/.test(l)) { fence = !fence; return; }
-    if (fence) return;
-    if (l.length > WALL_LIMIT) { wall++; wallLines.push(i + 1); }
-    if (l.trim().startsWith('|')) {
-      for (const c of l.split('|').slice(1, -1)) {
-        if (c.length > CELL_LIMIT) { cell++; cellLines.push(i + 1); break; }
+  if (!FROZEN_ZONE.test(rel)) {
+    const debt = (ratchet && ratchet.ratchetDoc && ratchet.ratchetDoc[rel]) || { wall: 0, cell: 0 };
+    lines.forEach((l, i) => {
+      if (/^(```|~~~)/.test(l)) { fence = !fence; return; }
+      if (fence) return;
+      if (l.length > WALL_LIMIT) { wall++; wallLines.push(i + 1); }
+      if (l.trim().startsWith('|')) {
+        for (const c of l.split('|').slice(1, -1)) {
+          if (c.length > CELL_LIMIT) { cell++; cellLines.push(i + 1); break; }
+        }
       }
-    }
-  });
-  if (wall > debt.wall) issues.push(`墙式行 ${wall} > 台账 ${debt.wall}（行 ${wallLines.slice(0, 5).join(',')}）——加 --fix 自动折行，或手工拆段；确属新债走 doc-ratchet.json 登记`);
-  if (cell > debt.cell) issues.push(`墙式格 ${cell} > 台账 ${debt.cell}（行 ${cellLines.slice(0, 5).join(',')}）——用 lib/split-table-cells.mjs 拆注；确属新债走 doc-ratchet.json 登记`);
+    });
+    if (wall > debt.wall) issues.push(`墙式行 ${wall} > 台账 ${debt.wall}（行 ${wallLines.slice(0, 5).join(',')}）——加 --fix 自动折行，或手工拆段；确属新债走 doc-ratchet.json 登记`);
+    if (cell > debt.cell) issues.push(`墙式格 ${cell} > 台账 ${debt.cell}（行 ${cellLines.slice(0, 5).join(',')}）——用 lib/split-table-cells.mjs 拆注；确属新债走 doc-ratchet.json 登记`);
+  }
 
   // ③ 字符数棘轮（台账内文件才判——台账外文件不受此约束）
   if (ratchet && ratchet[rel] !== undefined) {
@@ -171,11 +183,15 @@ const ratchet = ratchetRaw ? { ...ratchetRaw, ratchetDoc } : null;
 
 // --fix：先调既有 reflow-walls 折行（口径单一来源），再继续检查
 if (fix) {
+  let skipped = 0;
   for (const f of targets) {
+    // 冻结区不折行（同判据：Face 5 不判冻结区，改写历史事实行不可接受）
+    if (FROZEN_ZONE.test(path.relative(ROOT, f))) { skipped++; continue; }
     try {
       execFileSync('node', [path.join(SELF_DIR, 'lib/reflow-walls.mjs'), f, '--write'], { cwd: ROOT, stdio: 'pipe' });
     } catch (e) { /* 折不断（无标点）的行保留，由下方检查如实报告 */ if (process.env.DOC_POSTCHECK_DEBUG) console.warn('[reflow]', f, String(e).slice(0, 80)); }
   }
+  if (skipped) console.log(`⏭ 冻结区 ${skipped} 个文件跳过折行（changelog/archive/evidence/vendor）`);
 }
 
 let total = 0;

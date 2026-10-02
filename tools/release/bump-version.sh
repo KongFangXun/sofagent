@@ -539,10 +539,10 @@ while IFS= read -r md; do
     -e "s/^> > v${OLD_2SEG} · /> > v${NEW_2SEG} · /g" \
     -e "s/^> > v${OLD_3SEG}·/> > v${NEW_3SEG}·/g" \
     -e "s/^> > v${OLD_2SEG}·/> > v${NEW_2SEG}·/g" \
-    -e "s/^# \(.*\)· v${OLD_3SEG}/\1· v${NEW_3SEG}/" \
-    -e "s/^# \(.*\)· v${OLD_2SEG}/\1· v${NEW_2SEG}/" \
-    -e "s/^<!-- \(.*\)· v${OLD_3SEG}/\1· v${NEW_3SEG}/" \
-    -e "s/^<!-- \(.*\)· v${OLD_2SEG}/\1· v${NEW_2SEG}/" \
+    -e "s/^# \(.*\)· v${OLD_3SEG}/# \1· v${NEW_3SEG}/" \
+    -e "s/^# \(.*\)· v${OLD_2SEG}/# \1· v${NEW_2SEG}/" \
+    -e "s/^<!-- \(.*\)· v${OLD_3SEG}/<!-- \1· v${NEW_3SEG}/" \
+    -e "s/^<!-- \(.*\)· v${OLD_2SEG}/<!-- \1· v${NEW_2SEG}/" \
     "$md")
   # ROADMAP「现在在哪」节标题单独处理
   md_new=$(echo "$md_new" | sed \
@@ -674,7 +674,10 @@ while IFS= read -r skill; do
   skill_new=$(sed "s/^version: $OLD_3SEG$/version: $NEW_3SEG/g" <<< "$skill_new")
   # 正文标题: # SKILL.md · v0.94（锚定行首 H1，防正文历史引用误伤）
   # shellcheck disable=SC2001
-  skill_new=$(sed "s/^# \(.*\)· v$OLD_2SEG/\1· v$NEW_2SEG/" <<< "$skill_new")
+  skill_new=$(sed "s/^# \(.*\)· v$OLD_2SEG/# \1· v$NEW_2SEG/" <<< "$skill_new")
+  # 兼容 <!-- 注释头形态（v1.5.5 教训：裸文本头会让版本号落进 archaeology 扫描面）
+  # shellcheck disable=SC2001
+  skill_new=$(sed "s/^<!-- \(.*\)· v$OLD_2SEG/<!-- \1· v$NEW_2SEG/" <<< "$skill_new")
   if [[ "$skill_new" != "$skill_content" ]]; then
     echo -e "  ${GREEN}✓${NC} version/frontmatter: $OLD_2SEG → $NEW_2SEG"
     echo -e "    ${CYAN}$skill${NC}"
@@ -824,6 +827,19 @@ else
   fi
 fi
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
+
+# ── 回归探针（bump 破坏文件头形态防护）：非 dry-run 时复跑禁考古守卫 ──
+# 根因：本脚本替换式历史上曾吞掉文件头前导标记（# / <!--），让版本号裸落进
+# archaeology 扫描面（修复后被下一轮 bump 回退的发版事故）。此处机械兜底：
+# bump 后守卫非零退出 = 文件头形态被本脚本破坏，立即红给执行者。
+if ! $DRY_RUN; then
+  if bash "$PROJECT_ROOT/tools/check/check-archaeology.sh" >/dev/null 2>&1; then
+    echo -e "  ${GREEN}✓ 回归探针: check-archaeology.sh 全绿（文件头形态未被 bump 破坏）${NC}"
+  else
+    echo -e "  ${RED}🔴 bump 破坏了文件头形态（check-archaeology.sh 报红）——检查本脚本的替换式是否吞掉了行首前导标记（# / <!--），修复后重跑${NC}"
+    exit 1
+  fi
+fi
 
 # ── 手动检查提醒（v1.0 新增，bump-version 盲区防护）────────
 if ! $DRY_RUN; then

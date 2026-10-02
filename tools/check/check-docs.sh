@@ -409,8 +409,13 @@ LAYER_A=${LAYER_A:-0}
 # */playbook/*，否则 playbook/ 下的 *.md 会被 A 层二次计账。两层互斥：既无重复计账，
 # 也无覆盖盲区。
 B_ROOTS="./FORGE ./playbook ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md ./docs/API.md ./engine/dsh-plugins ./engine/orchestrator/src/sandbox"
+# 🔴 FORGE/LEDGER.md 归 F-ledger（2026-10-02 归层修正）：该文件自述「**追加 only 的跨 run
+# 永久索引**」「内部工具文件，非面向用户的文档」——长度由**跑过的循环轮数**决定，不由作者决定，
+# 与 FORGE/lessons/ 的排除同源（给 append-only 台账设硬上限 = 多跑一轮审查即撞预算墙，
+# 把「记录质量循环」变成预算事故）。移出硬预算**不移出视线**：改由下方 F-ledger 软读数兜底。
 B_EXCLUDE_PATTERNS=(
   "*/node_modules/*" "*/fresh-eyes-loop/runs/*" "*/FORGE/lessons/*" "*/playbook/vendor/*"
+  "*/FORGE/LEDGER.md"
 )
 _B_PRUNE=()
 for _p in "${B_EXCLUDE_PATTERNS[@]}"; do _B_PRUNE+=( -not -path "$_p" ); done
@@ -488,6 +493,15 @@ if [ "$IDX_LINES" -gt 900 ]; then
   echo "  ⚠️ F-idx 索引与台账 ${IDX_LINES} 行 > 900 软警戒——建议整理（索引指向实体不复述、台账归并旧条目）"
 else
   ASSERTS=$((ASSERTS + 1)); echo "  ✓ F-idx 索引与台账 ${IDX_LINES} 行（≤900 软警戒，不进 A/B 硬预算的理由见 LIMIT_A 记录）"
+fi
+# F-ledger（软提示非阻断）：FORGE 质量循环跨 run 台账（append-only · 一行一个 run）——与 F-idx
+# 同类，长度由**被索引对象（跑过的轮数）**决定。移出 B 层硬预算的理由见 B_EXCLUDE_PATTERNS 批注。
+LEDGER_LINES=$(find ./FORGE/LEDGER.md -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+LEDGER_LINES=${LEDGER_LINES:-0}
+if [ "$LEDGER_LINES" -gt 600 ]; then
+  echo "  ⚠️ F-ledger 质量循环台账 ${LEDGER_LINES} 行 > 600 软警戒——建议整理（压缩单元格措辞 / 归档已终结 run 行）"
+else
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ F-ledger 质量循环台账 ${LEDGER_LINES} 行（≤600 软警戒）"
 fi
 # F-skill / F-fde（软提示非阻断）：技能源树与 FDE 手册模板面——此前**无任何读数**。
 # 二者不进 A/B 硬预算的理由不同：SKILL/ 是 `install.sh` 复制的技能源树，行数直接决定
@@ -1343,7 +1357,7 @@ else
     find . -name "*.md" "${_A_PRUNE[@]}" -print 2>/dev/null
     find ${B_ROOTS} -name "*.md" "${_B_PRUNE[@]}" -print 2>/dev/null
     find ./docs/guides -name "*.md" -print 2>/dev/null
-    find ./FORGE/lessons ./playbook/vendor ./docs/WIKI.md ./docs/THANKS.md ./docs/assets ./docs/reports ./docs/examples -name "*.md" -print 2>/dev/null
+    find ./FORGE/lessons ./FORGE/LEDGER.md ./playbook/vendor ./docs/WIKI.md ./docs/THANKS.md ./docs/assets ./docs/reports ./docs/examples -name "*.md" -print 2>/dev/null
     find ./SKILL ./FDE -name "*.md" -print 2>/dev/null
     find ./engine ./tools -name "README.md" -not -path "*/node_modules/*" -not -path "*/dist/*" -print 2>/dev/null
   } | sed -e 's|^\./||' -e 's|^|/|' | LC_ALL=C sort -u > "${DOCSCAN_T}/buckets.txt"

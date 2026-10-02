@@ -7,18 +7,7 @@
     "登记纪律（宁缺毋滥）：只有「真实已知债、待拍板/待裁定后清理」的声称才进本表。凡能直接改成 registry 真值的，一律不进本表——那是真实待清项，改了即绿。",
     "🔴 反例纪律：禁止为了转绿把能改的声称加进来。加一条豁免 = 宣称该声称暂不改为真值，须能在理由栏里说清「为何现在不能改」。"
   ],
-  "exemptAnchors": [
-    {
-      "file": "README.md",
-      "anchor": "版本说明：v1.5.5 已发版（2026-10-01）；npm 可安装最新版 `@sofagent/audit@1.5.5`",
-      "reason": "发版窗口态：本版 publish（阶段九步骤七/八）尚未执行，registry latest 仍为 1.5.4；发布完成后本声称即为真值、锚仍命中（不改声称只等 registry 追上）——若发布后复跑仍红，说明 publish 失败须排查，不是债"
-    },
-    {
-      "file": "README.en.md",
-      "anchor": "v1.5.5 has been released (2026-10-01); the latest installable npm version is `@sofagent/audit@1.5.5`",
-      "reason": "同 README.md 窗口态：双语对称声称，publish 后即为真值"
-    }
-  ],
+  "exemptAnchors": [],
   "exemptAnchors_spec": {
     "形态": "{ file, anchor, reason } 三条——**不是**「文件+行号」",
     "为何不用行号": "行号随任何编辑漂移，漂移即静默失效或静默误放行（失明且失声）。锚串漂移可被检出，故锚定到「行内锚串」。",
