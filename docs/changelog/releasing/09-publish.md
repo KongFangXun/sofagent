@@ -391,6 +391,22 @@ git grep -n "<上一版>" -- README.md README.en.md CHANGELOG.md SECURITY.md \
 
 > 验收：反查零「介绍面/状态面」命中 + 06 触点清单挂账格全部改 `[x]`；本拍与 bump 同 commit 收口。
 
+### 🔴 第四拍：bump 后全量门禁重跑（必做——bump 是新的改动面）
+
+> **为什么**：发版链的门禁全绿发生在 pre-push 阶段（bump **之前**），bump 批本身是几十到几百文件的新改动面——此前绿的门禁对 bump 后的状态一概没验过。实测教训（v1.5.5→v1.5.6 周期）：bump 手工补漏的批量替换吃掉了 SKILL 六件头部的 H1 前缀（`# `），裸文本头让版本号落进 archaeology 扫描面（E3 判据回归），**带病出门直到发版后自查才暴露**。
+> **门禁全绿 ≠ 永远绿**：每个大改动面（bump / 翻牌 / 合并）之后都要重验一遍，这是本手册铁律的推论。
+
+```bash
+# bump 批 commit 前必跑（退出码全 0 才可收口）：
+bash tools/check/check-version.sh            # 版本一致性（含恢复清单逐项）
+bash tools/check/check-archaeology.sh        # E3 文件头版本标识形态（H1/注释形态回归检测）
+node tools/check/check-forms.mjs             # 形态归属/计数 pin（bump 翻牌动这些表）
+node tools/check/check-table-shape.mjs       # 孤儿行/超列（批量替换易产生）
+node tools/check/check-anchors.mjs           # 锚点完整性
+```
+
+> 验收：五项 exit 全 0。bump 涉及的替换规则有锚缺陷时（如本例），**先修脚本锚再重跑**——不修脚本只修产物 = 下版复发。
+
 ---
 
 ## 步骤六：git tag + push tag ☐

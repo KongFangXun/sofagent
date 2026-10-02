@@ -539,10 +539,10 @@ while IFS= read -r md; do
     -e "s/^> > v${OLD_2SEG} · /> > v${NEW_2SEG} · /g" \
     -e "s/^> > v${OLD_3SEG}·/> > v${NEW_3SEG}·/g" \
     -e "s/^> > v${OLD_2SEG}·/> > v${NEW_2SEG}·/g" \
-    -e "s/^# \(.*\)· v${OLD_3SEG}/\1· v${NEW_3SEG}/" \
-    -e "s/^# \(.*\)· v${OLD_2SEG}/\1· v${NEW_2SEG}/" \
-    -e "s/^<!-- \(.*\)· v${OLD_3SEG}/\1· v${NEW_3SEG}/" \
-    -e "s/^<!-- \(.*\)· v${OLD_2SEG}/\1· v${NEW_2SEG}/" \
+    -e "s/^# \(.*\)· v${OLD_3SEG}/# \1· v${NEW_3SEG}/" \
+    -e "s/^# \(.*\)· v${OLD_2SEG}/# \1· v${NEW_2SEG}/" \
+    -e "s/^<!-- \(.*\)· v${OLD_3SEG}/<!-- \1· v${NEW_3SEG}/" \
+    -e "s/^<!-- \(.*\)· v${OLD_2SEG}/<!-- \1· v${NEW_2SEG}/" \
     "$md")
   # ROADMAP「现在在哪」节标题单独处理
   md_new=$(echo "$md_new" | sed \
@@ -674,7 +674,10 @@ while IFS= read -r skill; do
   skill_new=$(sed "s/^version: $OLD_3SEG$/version: $NEW_3SEG/g" <<< "$skill_new")
   # 正文标题: # SKILL.md · v0.94（锚定行首 H1，防正文历史引用误伤）
   # shellcheck disable=SC2001
-  skill_new=$(sed "s/^# \(.*\)· v$OLD_2SEG/\1· v$NEW_2SEG/" <<< "$skill_new")
+  skill_new=$(sed "s/^# \(.*\)· v$OLD_2SEG/# \1· v$NEW_2SEG/" <<< "$skill_new")
+  # 兼容 <!-- 注释头形态（v1.5.5 教训：裸文本头会让版本号落进 archaeology 扫描面）
+  # shellcheck disable=SC2001
+  skill_new=$(sed "s/^<!-- \(.*\)· v$OLD_2SEG/<!-- \1· v$NEW_2SEG/" <<< "$skill_new")
   if [[ "$skill_new" != "$skill_content" ]]; then
     echo -e "  ${GREEN}✓${NC} version/frontmatter: $OLD_2SEG → $NEW_2SEG"
     echo -e "    ${CYAN}$skill${NC}"
