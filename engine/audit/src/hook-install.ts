@@ -310,7 +310,15 @@ export function installHooks(opts: InstallHooksOptions): InstallHooksResult {
     if (globalPkg) {
       const record = join(internalDir, 'audit-global-dist-hash.txt');
       if (existsSync(record)) {
-        log('ℹ️ 全局引擎基准已存在——本次不覆盖（如需重置：sofagent-audit --doctor --baseline）');
+        // F21：原「如需重置」指引指向 `--doctor --baseline`，而旧版 doctor 的全局锚刷新分支
+        // 被本地 dist 缺失短路（跑不到）⇒ 两处互相指路成闭环、三路皆不可执行。改为给出
+        // **同一可达路径**（与 commit-msg hook 的恢复指引同源）：
+        log('ℹ️ 全局引擎基准已存在——本次不覆盖');
+        log('   如需刷新（全局包升级后锚陈旧），任选其一：');
+        log('     · 仓库内：bash tools/audit-baseline-sync.sh --global（同步全局安装包口径信任锚，不污染本仓锚）');
+        log('     · 通用：rm -f ~/.sofagent/internal/audit-global-dist-hash.txt && sofagent-audit --install-hook');
+        log('     · 通用：sofagent-audit --doctor --baseline（新版已脱离本地 dist 依赖）');
+        log('   ⚠️ 同版本 npm install -g @sofagent/audit 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。');
       } else {
         const h = computeDistAggregateHash(join(globalPkg, 'dist'));
         if (h) {

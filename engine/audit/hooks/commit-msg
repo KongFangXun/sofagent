@@ -92,6 +92,7 @@ resolve_global_audit() {
       if [ ! -f "$_GLOBAL_HASH_RECORD" ]; then
         echo "🔴 [sofagent] 全局审计引擎基准缺失——本地全局包的完整性无从比对"
         echo "   建立基准（任一，均为显式确认时刻）："
+        echo "     · bash tools/audit-baseline-sync.sh --global   # 仓库内：同步全局安装包口径信任锚（最可靠）"
         echo "     · sofagent-audit --install-hook   # 重装 hook 时自动建立全局锚（v1.5.4 起）"
         echo "     · sofagent-audit --doctor --baseline"
         exit 1
@@ -100,7 +101,16 @@ resolve_global_audit() {
       if [ "$_GLOBAL_HASH" != "$_GLOBAL_RECORDED" ]; then
         echo "🔴 [sofagent] 全局审计引擎哈希不匹配（可能被投毒）: $RESOLVED_ENTRY"
         echo "   当前聚合哈希 ${_GLOBAL_HASH:0:12}... ≠ 基准 ${_GLOBAL_RECORDED:0:12}..."
-        echo "   恢复: npm install -g @sofagent/audit 后重跑 sofagent-audit --doctor --baseline"
+        # 恢复指引必须**可达**（F21）：旧文案只给「npm i -g 后重跑 --doctor --baseline」，
+        # 而 ① 同版本 npm i -g 内容不变 ⇒ 哈希不变 ⇒ 仍被拦；② 旧版 --doctor --baseline 的
+        # 全局锚刷新分支被本地 dist 缺失短路（见 engine/core/src/doctor.ts 修复），实际跑不到。
+        # 唯一始终可达的是仓内 tools/audit-baseline-sync.sh --global（同步全局包口径信任锚）。
+        echo "   恢复（按序尝试，任选其一）："
+        echo "     ① 仓库内同步信任锚（推荐）：bash tools/audit-baseline-sync.sh --global"
+        echo "        —— 该工具同步的是「全局安装包」口径的信任锚（audit-global-dist-hash.txt），"
+        echo "           不污染本仓口径的锚（audit-dist-hash.txt）；全局包升级后锚陈旧即用它刷新"
+        echo "     ② 删陈旧锚后重装 hook：rm -f \"\$HOME/.sofagent/internal/audit-global-dist-hash.txt\" && sofagent-audit --install-hook"
+        echo "   ⚠️ 同版本 npm install -g @sofagent/audit 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。"
         exit 1
       fi
     fi

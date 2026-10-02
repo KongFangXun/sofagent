@@ -539,28 +539,6 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
             }
             ok(`✅ 三锚已清除（仓外无 tools/ 同步脚本）——hook 遇「基准缺失」会 fail-closed 拦截并给出可达指引（不再声称「自动重新记录」）`);
           }
-
-          // ── v1.5.4 #14 方向 B：全局引擎基准收口 ──────────────────────────
-          // 死锁根因 = 全局锚（audit-global-dist-hash.txt）的唯一生成器在仓库 tools/
-          // （**不在 npm 分发面**）⇒ 全局安装用户在自己机器上无路可建，首次 commit 被
-          // hook 的全局分支 exit 1 阻断。此处把「建立全局锚」收口进 doctor：
-          // `--doctor --baseline` = 用户显式确认此刻全局包可信的时刻，故**允许刷新**。
-          try {
-            const gDist = resolveGlobalAuditDistRoot();
-            if (gDist) {
-              const gRecord = join(hashDir, 'audit-global-dist-hash.txt');
-              const gh = computeDistAggregateHash(gDist);
-              if (gh) {
-                writeFileSync(gRecord, gh + '\n', { encoding: 'utf-8', mode: 0o600 });
-                ok(`✅ 全局引擎基准已建立/刷新（audit-global-dist-hash.txt · 聚合哈希 ${gh.slice(0, 12)}...）——全局安装用户的 commit 不再被「基准缺失」阻断`);
-              }
-            } else {
-              ok('ℹ️ 未检测到全局安装的 @sofagent/audit——全局引擎基准不适用（跳过）');
-            }
-          } catch {
-            /* 为何可静默：全局锚建立失败不阻断基线重置——hook 仍给出可达指引；
-               且失败只会让用户多跑一次命令，不会放宽任何校验语义 */
-          }
         } catch (err) {
           fail(`基准哈希重置失败: ${err instanceof Error ? err.message : String(err)}`);
           distIntegrityOk = false;
@@ -591,6 +569,41 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     warn('audit dist/index.js 未找到——dist 完整性检查（影子审计器劫持防护）不可用');
     repairHint('npm run build --workspace=engine/audit（monorepo）或安装 @sofagent/audit');
     distIntegrityOk = false;
+  }
+
+  // 6b. 全局引擎基准收口（F21 修复：从「本地 dist 存在性 + tools/ 同步脚本」依赖链中**解耦**）
+  // ──────────────────────────────────────────────────────────────────────
+  // 死锁根因（F21）：全局锚 audit-global-dist-hash.txt 的刷新逻辑原先嵌在
+  // `if (existsSync(auditDistPath))` 内的 resetBaseline 分支，且排在
+  // `execFileSync('bash', [projectDir/tools/audit-baseline-sync.sh, '--quiet'])` **之后**：
+  //   · 本地无 engine/audit/dist（worktree / 未构建）时，仓内 sync 脚本 exit 1 →
+  //     execFileSync 抛出 → 外层 catch 提前返回 ⇒ 全局锚刷新分支根本跑不到；
+  //   · 于是 commit-msg hook 首推的「sofagent-audit --doctor --baseline」名不副实
+  //     （三路恢复指引的第 1 路不可执行）。
+  // 正解：全局锚刷新的解析/计算本就自足——resolveGlobalAuditDistRoot() 只走显式全局根
+  // （execPath 推导 + npm root -g），computeDistAggregateHash() 只读全局包 dist，**均不依赖
+  // 本地 dist 或仓内 tools/**。故移到 dist 完整性检查之外，仅由 `resetBaseline`
+  // （`--doctor --baseline` / `--reset-baseline`）门控：只要用户显式确认「此刻全局包可信」，
+  // 无论本地是否构建过，都能刷新全局锚。
+  if (options.resetBaseline === true) {
+    try {
+      const gDist = resolveGlobalAuditDistRoot();
+      if (gDist) {
+        const internalDir = join(resolveHomeDir(), 'internal');
+        if (!existsSync(internalDir)) mkdirSync(internalDir, { recursive: true, mode: 0o700 });
+        const gRecord = join(internalDir, 'audit-global-dist-hash.txt');
+        const gh = computeDistAggregateHash(gDist);
+        if (gh) {
+          writeFileSync(gRecord, gh + '\n', { encoding: 'utf-8', mode: 0o600 });
+          ok(`✅ 全局引擎基准已建立/刷新（audit-global-dist-hash.txt · 聚合哈希 ${gh.slice(0, 12)}...）——全局安装用户的 commit 不再被「基准缺失/陈旧」阻断`);
+        }
+      } else {
+        ok('ℹ️ 未检测到全局安装的 @sofagent/audit——全局引擎基准不适用（跳过）');
+      }
+    } catch {
+      /* 为何可静默：全局锚建立失败不阻断基线重置——hook 仍给出可达指引；
+         且失败只会让用户多跑一次命令，不会放宽任何校验语义 */
+    }
   }
 
   // 7. 审计日志完整性（HMAC 密钥强度 + 链完整性，v1.1.8 / v1.2.0）
