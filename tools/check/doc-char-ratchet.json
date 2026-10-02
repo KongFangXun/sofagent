@@ -3,15 +3,15 @@
   "README.en.md": 39344,
   "CHANGELOG.md": 17355,
   "SECURITY.md": 50727,
-  "CONTRIBUTING.md": 12658,
+  "CONTRIBUTING.md": 12646,
   "docs/API.md": 15456,
-  "docs/ARCHITECTURE.md": 86803,
+  "docs/ARCHITECTURE.md": 86799,
   "docs/COMMUNITY.md": 2412,
   "docs/DEVELOPMENT.md": 32020,
   "docs/HANDBOOK.md": 32778,
   "docs/LIMITATIONS.md": 41996,
   "docs/PHILOSOPHY.md": 33639,
-  "docs/ROADMAP.md": 19543,
+  "docs/ROADMAP.md": 19418,
   "docs/THANKS.md": 11653,
   "docs/VALIDATION.md": 20444,
   "docs/WIKI.md": 23165,
@@ -29,6 +29,7 @@
     "opening_rule": "抬头块 = H1 到首个 `## ` 之间的正文；字数只计文本字符，剔除装饰行（HTML 标签行 / 纯图片 / 纯徽章 / HTML 注释 / `---`）与 YAML front matter。超限处置三选一：下沉正文 / 精简 / 淘汰。",
     "origin": "文档瘦身批（2026-09-29）：口径由「物理行数」换成「字符数」（用户裁定：行数是坏指标，控字数不控行数）。基线 = 换算时点实测值。",
     "consumed_by": "doc-discipline.sh Face 6（字数棘轮）+ Face 7（抬头块闸）",
-    "note": "v1.5.5 阶段二收口重置：净增为五章施工真实内容（SECURITY 跨境/驻留维度、README 双语理念重写、devlog 验收打勾、ROADMAP/WIKI 翻牌）——登记=认债；下版按棘轮只降不升"
+    "note": "v1.5.5 阶段二收口重置：净增为五章施工真实内容（SECURITY 跨境/驻留维度、README 双语理念重写、devlog 验收打勾、ROADMAP/WIKI 翻牌）——登记=认债；下版按棘轮只降不升",
+    "note2": "文档瘦身批（2026-10-02）：三份核心文档按闸三「同文档移出等量字」对价后基线随实测收紧——CONTRIBUTING 12658→12646（删目录重复项 + 归并「成为维护者」入 Seeking Co-maintainers）/ ARCHITECTURE 86803→86799（@public 逐版沿革压为保留全部数字的一行 + 目录收敛为域分组 + 去 §二/§六 重复说明）/ ROADMAP 19543→19418（四行 x 系列「→ 逐版沿革」链收敛，SSOT=CHANGELOG）；未删任何判据/实测数字/边界声明/规则正文/来源链接"
   }
 }

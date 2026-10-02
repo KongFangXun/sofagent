@@ -1,6 +1,6 @@
 {
   "docs/ARCHITECTURE.md": {
-    "wall": 1,
+    "wall": 0,
     "cell": 4
   },
   "docs/DEVELOPMENT.md": {
@@ -114,7 +114,8 @@
     "note11": "2026-09-29 文档瘦身批：随分隔线归一/横线删除，实际 wall/cell 下降处同步收紧台账（LIMITATIONS wall 2→1）；12 个已清零文件按规则移出（含 2 个死条目 docs/evidence/*——Face 5 候选面本就排除 docs/evidence/）。**未抬任何基线**：playbook/regression-checklist.md 的 wall 1→2 是另一 session 引入，保持基线 1 不放宽。",
     "note12": "v1.5.5 阶段二收口：README.en 理念重写墙式 6→3（3 处真实折行）；ARCHITECTURE/LIMITATIONS/SECURITY/ROADMAP 为 v1.5.5 五章施工+翻牌净增 1-3 行墙（表格行/引用段，登记=认债不放宽语义）——实测重置，diff 记录债变化",
     "note13": "阶段六定稿：checklist wall 1→3（#146 归并注记+警戒线演进两行散文）与 CHANGELOG wall 0→1（v1.5.5 索引行）为真实交付内容——实测重置认债",
-    "note14": "阶段九 pre-push 终验：VALIDATION/ROADMAP/PHILOSOPHY/driver.md/LEDGER/SECURITY 的 wall/cell 实测上调——来源=本版交付内容（VALIDATION 四缺口登记 / ROADMAP 探索方向提入 / PHILOSOPHY 自进化谱系 / driver 事故教训 / LEDGER 勘误行 / SECURITY 数据主权与密钥姿态三批），非文件清理回归；未删任何内容"
+    "note14": "阶段九 pre-push 终验：VALIDATION/ROADMAP/PHILOSOPHY/driver.md/LEDGER/SECURITY 的 wall/cell 实测上调——来源=本版交付内容（VALIDATION 四缺口登记 / ROADMAP 探索方向提入 / PHILOSOPHY 自进化谱系 / driver 事故教训 / LEDGER 勘误行 / SECURITY 数据主权与密钥姿态三批），非文件清理回归；未删任何内容",
+    "note15": "文档瘦身批（2026-10-02）：ARCHITECTURE wall 1→0（reflow 折墙式行，内容零损失）；ROADMAP cell 7→4（三个超长格拆注为 注-38/39/40，切口落在句读符上、定义行同文件在位，内容零损失，cell 回到基线 4）"
   },
   "SKILL/SKILL.md": {}
 }
