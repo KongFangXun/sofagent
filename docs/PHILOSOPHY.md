@@ -571,14 +571,15 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 
 | 想法 | 为什么不 |
 |---|---|
-| 自研通用行为验证器 | 通用 Agent 行为面平台原生已覆盖；**领域专属的产出判据必须自建**——由 eval 四工具（`evaluate_output` / `eval_suite` / `run_ab_test` / `evaluate`）承载，上游门禁全绿不能替代它（判据分层见 LIMITATIONS「复盘评分是 LLM 自评」节） |
+| 自研通用行为验证器 | 通用 Agent 行为面平台原生已覆盖；**领域专属产出判据必须自建**——由 eval 四工具承载，上游门禁全绿不能替代它（判据分层与外部结构性答案见 LIMITATIONS「复盘评分是 LLM 自评」节） |
+| **另起执行面** | 自迭代/自生成的可执行定义（插件、循环体、判定件）不许有平行执行系统——必须挂进同一张执行图与同一份事件日志，与手写产物同等受审；跑在别处=治理失效 |
 | 图形界面/仪表盘 | LUI-first——语言就是界面（只读终端 Dashboard 见 §六，是「只读可见视图」不是「下令用的交互式 GUI」——禁的是后者，前者是产品化外壳）|
 | 全栈企业 Agent 平台 | 不做 扣子（Coze，字节跳动） 竞品——sofagent 是独立底线守卫层 |
 | think.md 强制 gate | 强制会导致 Agent 用垃圾内容填模板 |
 | 记忆压缩自动化 | 每个 Agent 有自己的记忆 |
 | Connector | sofagent 是约束层 + 审计能力，不是自动化流水线 |
 | **Workflow Graph → Ontology Graph 单向转换** | 转换丢访谈中的隐性知识，本体沦为工作流的副产品——workflow（流转）与 ontology（语义）必须从同一次 FDE 访谈**并行产出**、SHACL 互相校验 |
-| **把 DSH 当唯一执行层** | 企业命脉不押单一运行时——编排层 LangGraph **长期不换**（架构级取舍：确定性审计依赖显式图结构，换掉编排层 = 放弃确定性审计），执行层走 ExecutionBackend 接口（DSH 默认 / createReactAgent fallback / 三平台可选）。 |
+| **把 DSH 当唯一执行层** | 企业命脉不押单一运行时——编排层 LangGraph **长期不换**，执行层走 ExecutionBackend 接口（DSH 默认 / createReactAgent fallback / 三平台可选）。 |
 | **治理逐节点插桩** | 治理是事件域横切面，不是节点附件——挂 tools/result、turn-stopping、approval seam 一次即全域生效，逐节点插桩是把约束层降格为工具配件 |
 > 注：「长期不换」是架构级取舍**非永久承诺**（与 [ARCHITECTURE · 四层运行形态](./ARCHITECTURE.md) 同口径）——只承诺「换它 = 放弃确定性审计」这一代价显式化
 

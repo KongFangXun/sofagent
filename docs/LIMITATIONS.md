@@ -101,6 +101,8 @@
 **判据要分层，且刻意不合分**：上游判「喂对了没」（检索命中、权限单测——纯函数、可离线、毫秒级）、下游判「说对了没」（产出有没有破领域规则）、真机判「通没通」（端到端链路）。三层**不合并成一个总分**——合了以后分数掉了，分不清是检索退化还是措辞退化，也定位不到该修哪层。实践复盘里出现过完整反例：上游判据全绿（离线单测全绿 + 检索命中 100% + 工具调用零报错 + 配置干跑干净），真实对话仍违反多条领域规则，**整条验收链一条都没红**——根因是没有任何一道判据在看「模型最后说出来的那段话」。
 对应本仓：`evaluate_output` / `eval_suite` / `run_ab_test` 是下游判据面，**上游门禁全绿不能替代它**。
 
+**外部已有结构性答案**：某同题系统不靠提示词要求「客观」，而是规定结构化产出在成为结果前必须过**生产者自己编排的验证者链**——每个验证者是一个**全新实例**、判负即把原因**回抛生产者修复**。这不消除「生产者提名验证者」的立场问题，但把自评从「同一个人再想一遍」变成「另起实例按判据判、判完必须回抛」；落地机制见 [v1.5.9 §四](./changelog/v1.5/v1.5.9.md)。
+
 
 ### 🌱 Skill 自动优化：从经验记录走向结构化知识库
 
@@ -110,18 +112,19 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 |---|---|---|
 | **经验记录** | 记录单次成功/失败，调整评分 | ✅ v1.0.1 起 |
 | **多轨迹归纳**（TRACE2SKILL） | 并行分析大量轨迹 → 提出补丁 → 合并去重 | ❌ 缺：前 5 次冷启动保护仅缓冲，未真正归因 |
-| **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑）——现行 A/B 走 LangGraph 编排；**v1.0.7 曾升级的「方案 C（DeepAgents 完整 Agent）」路径 v1.2.0 起已弃用** |
+| **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑） |
 | **可训练参数**（Skill Opt） | 学习率约束/验证门控/负反馈缓冲/动量 | ✅ v1.0.4 起（SkillOpt 管道接通） |
 
 **进化管道集成状态**：管道已接通——L2 周检 inspector（`engine/daemon/src/inspectors/evolve-trigger.ts`，`@weekly`）读 failure-ledger 的**连续同类失败聚类**，达 `AUTO_TRIGGER_THRESHOLD = 3`（连续 ≥3 次）即调用 `autoTriggerAll()` → `runEvolve()`（v1.4.8 前名 `runSkillOpt()`）→ `validateCandidate()` 验证（行数 + 内容变化）→ 备份 + 替换 SKILL.md；
 不足 3 次则跳过（巡检结论为「无连续 ≥3 次的失败聚类，跳过」）。`--doctor` 展示管道状态。⚠️ **现行口径（v1.4.8+）**：子命令更名为 `evolve-run`、包更名为 `@sofagent/evolve`、默认走内置 native gate（零 Python 依赖），外部 CLI 仅为 `SOFAGENT_EVOLVE_GATE=cli` 可选兼容层——**无需任何 pip 安装**，旧版正文中的 pip 指引已摘除。外部 CLI 未安装时管道优雅降级——daemon 写提示到 daemon-health.json，不 crash。
 
-> ⚠️ **skillopt-sleep 的「生成候选」段已被真脑替代（v1.4.5 交付）**：skillopt 自进化链路原分两段——**检测/触发/验证/回滚**（纯 TypeScript，零外部依赖，核心能力）+ **生成候选 SKILL.md**（调外部 skillopt-sleep CLI）。
->v1.4.5 Dream Cycle 真脑（`engine/daemon/src/dream-cycle/real-provider.ts`，走模型注册表/DSH 通道 + callModelAPI 基建）交付后，「生成候选」可由通用模型 + prompt 工程直接完成（WikiSkill 论文实证：胜负手是结构化知识层而非模型特化）——skillopt-sleep 作为「生成候选」的临时外部依赖使命终结。检测/触发/验证/回滚段仍为纯 TypeScript 核心能力，不受影响；已安装 skillopt-sleep 的环境可继续使用（向后兼容），但不再是必需依赖。
+> ⚠️ **skillopt-sleep 已被真脑替代**：进化链路分两段——**检测/触发/验证/回滚**（纯 TypeScript，零外部依赖，核心能力）+ **生成候选 SKILL.md**（原调外部 CLI）。Dream Cycle 真脑（`engine/daemon/src/dream-cycle/real-provider.ts`，走模型注册表 / DSH 通道 + callModelAPI 基建）接入后，「生成候选」由通用模型 + prompt 工程直接完成（WikiSkill 论文实证：胜负手是结构化知识层而非模型特化）——外部 CLI 使命终结，仅作向后兼容保留。
 
-**A/B 运行器状态（v1.0.5 → v1.0.6 → v1.0.7）**：v1.0.5 `simulateAgentRun()` 是 mock（直接返回 expected，A/B 永远打平）。v1.0.6 替换为模型 API 直跑（方案 B）——自迭代闭环打通。v1.0.7 升级为 DeepAgents 完整 Agent（方案 C），支持工具调用验证——**该路径 v1.2.0 起已弃用**（编排迁移至 LangGraph `createReactAgent`，见 ROADMAP「架构演化」与 ARCHITECTURE.md「编排收敛」节）。
+**A/B 运行器**：现行走 LangGraph `createReactAgent`（方案演进史见 [CHANGELOG](../CHANGELOG.md)）。
 
 **风险**：单次失败 → 降分 → 下次不用该 Skill。但失败可能只是模型波动——长期会把噪声写成规则。**现有防御**：冷启动保护（前 5 次只记录不判断）+ LLM 自评权重 ×0.3。根治需要独立验证环（见 ROADMAP v1.x）。
+
+**负证据是知识的一半**：外部同题知识系统把「失败模式 + 触发条件」与成功路径**同格式收录**——因为「试过无效」直接决定下一次从哪起步。本仓知识沉淀（think.md / knowledge/）以经验与结论为主，**失败模式与触发条件缺一栏**：补这栏比再记十条成功经验有用（它防同一个坑被重复踩，而重复踩坑要跑一轮才发现）。
 
 
 ## 二、平台与兼容性局限
