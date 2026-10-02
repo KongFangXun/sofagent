@@ -316,6 +316,25 @@ else
   ASSERTS=$((ASSERTS + 1)); echo "  ✓ WIKI 状态表「下一版」$WIKI_NEXT_V 与 ROADMAP 一致"
 fi
 
+# 3a-bis. WIKI「当前版本」行 ↔ 根 package.json version（换版漂移机械对账）
+# 盲区收口：3a 只对账「下一版」，「当前版本」行（日期/主题/上一版）长期无机械对账，
+# 历史上曾三项全错而存活。本断言锚定其中最硬的一项——版本号本身；日期/主题属
+# 叙事面由人工核对（F10 步骤 2），版本号错位则属换版漏改，必须阻断。
+WIKI_CUR_V=$(grep -m1 "当前版本" docs/WIKI.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+ROOT_PKG_V=$(grep -m1 -oE '"version": *"[0-9]+\.[0-9]+\.[0-9]+"' package.json 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+if [ -z "$WIKI_CUR_V" ]; then
+  echo "  ${RED}✗ WIKI 状态表未找到「当前版本」版本号——换版漂移检查失效（守卫不得空转）${NC}"
+  ERRORS=$((ERRORS + 1))
+elif [ -z "$ROOT_PKG_V" ]; then
+  echo "  ${RED}✗ 根 package.json version 不可读——WIKI 当前版本对账基准缺失${NC}"
+  ERRORS=$((ERRORS + 1))
+elif [ "v$ROOT_PKG_V" != "$WIKI_CUR_V" ]; then
+  echo "  ${RED}✗ WIKI 状态表「当前版本」=$WIKI_CUR_V ≠ 根 package.json v$ROOT_PKG_V —— 换版漂移（WIKI 漏随 bump 同步）${NC}"
+  ERRORS=$((ERRORS + 1))
+else
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ WIKI 状态表「当前版本」$WIKI_CUR_V = 根 package.json v$ROOT_PKG_V"
+fi
+
 # 3b. 新能力段版本堆叠检查（2026-08-22 新增——上轮发现 HANDBOOK 堆叠 v1.3.1~v1.3.8 六段历史能力，
 #     违反「新能力段只留最新版本」铁律；README 合规但 HANDBOOK 漏网。此处扫活文档中
 #     独立的新能力段标题（列表项 + 加粗 emoji 版本号 + 「新增」，如 `- **🧠 v1.3.1 新增**：`），
