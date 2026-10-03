@@ -654,7 +654,10 @@ func_def_pat() {
 }
 
 # 函数定义搜索根——docs/ SKILL/ FDE/ 是文档面（被扫对象），不在此列
-CODE_ROOTS="engine/ tools/ FORGE/src/ playbook/"
+# ⚠️ 仓根 shell 脚本同样定义大量函数（`install_cli` 等在 `install.sh:884`），
+#    此前不在此列 ⇒ dev prompt 里任何 `install_cli()` 形态的引用恒报「未找到定义」
+#    假红（实测：函数真实存在，仅因扫描面漏了仓根）。新增仓根脚本时同批登记。
+CODE_ROOTS="engine/ tools/ FORGE/src/ playbook/ bootstrap.sh install.sh"
 
 check_prefix() {
   local clean="$1"
