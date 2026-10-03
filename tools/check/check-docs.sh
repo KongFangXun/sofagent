@@ -368,8 +368,9 @@ COMMON_EXCLUDE='node_modules .workbuddy .sofagent docs/changelog docs/evidence S
 # v1.3.9+ 分层修正（2026-08-22）：engine/*/README.md + tools/README.md 是包级开发者文档，
 # 从 A 层（用户文档）移出，不再占用户文档预算（见下方对应 -not -path 排除项）。
 # 承接约束 = 本脚本 §4 尾部的 **F 软检查**（只提示不阻断、不计 ERRORS）：
-#   「F-pkg 包级 README 合计」= find ./engine ./tools -name README.md，>1500 行软警戒——
-#   与上面移出的两个位置**逐一对上**（原注释写「由 F 软检查约束」是对的）。
+#   「F-pkg 包级 README 合计」= **git 跟踪面**的 engine/**/README.md + tools/**/README.md，>1500 行软警戒——
+#   与上面移出的两个位置**逐一对上**（原注释写「由 F 软检查约束」是对的）。口径自 find 改为
+#   git ls-files：生成副本（gitignored 的 engine/audit/verify/）不再被双计，理由见 §4 尾部实现处注释。
 # ⚠️ 收面批复核记录：本条曾被误判为「悬空承诺（写了 F 软检查却无实现）」，复核结论是
 #   **实现确实存在**（§4 尾部 F-lessons / F-pkg 两段在脚本内实跑并打印）。误判成因：按
 #   「F 层 / LAYER_F / F 软」等字样检索，而该段标题写作「F 检查」、输出前缀写作
@@ -491,7 +492,11 @@ echo "  E 运维指南:     ${LAYER_E} 行 / ${LIMIT_E} 上限"
 # 只提示不阻断（不增加 ERRORS）；超软警戒线 → 提示触发定期整理（机制见 FORGE/lessons/index.md 维护公约）
 LESSONS_LINES=$(find ./FORGE/lessons -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LESSONS_LINES=${LESSONS_LINES:-0}
-PKG_README_LINES=$(find ./engine ./tools -name "README.md" -not -path "*/node_modules/*" -not -path "*/dist/*" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+# F-pkg 只数 **git 跟踪面**：engine/audit/verify/ 是 tools/verify/ 的构建期拷贝（.gitignore 忽略、
+# 内容逐字节同源）——find 会把这份生成副本一并计入（实测虚高 102 行）⇒ 软警戒读数失真。
+# 改用 git ls-files（自带 ignore 语义，与「扫仓一律 git grep」同面）；排除面不静默：
+# 生成源 tools/verify/README.md 仍计入本项，故该面一旦增长照常触发警戒。
+PKG_README_LINES=$(git ls-files -- engine tools 2>/dev/null | awk '/\/README\.md$/' | tr '\n' '\0' | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 PKG_README_LINES=${PKG_README_LINES:-0}
 if [ "$LESSONS_LINES" -gt 3000 ]; then
   echo "  ⚠️ F-lessons 经验沉淀 ${LESSONS_LINES} 行 > 3000 软警戒——建议整理（归并重复/归档已泛化条目，见 FORGE/lessons/index.md 维护公约）"

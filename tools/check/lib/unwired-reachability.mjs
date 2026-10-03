@@ -266,6 +266,7 @@ function maskComments(line, incoming) {
 /** 判断某位置是否落在字符串字面量、行尾注释或**单行块注释**内（这些出现不构成引用）。 */
 function inStringOrComment(line, idx) {
   let st = 'code';
+  let btDepth = 0; // 模板串 `${…}` 表达式位的花括号深度（嵌套模板串另计层级）
   for (let i = 0; i < idx; i++) {
     const c = line[i];
     const n = line[i + 1];
@@ -289,6 +290,22 @@ function inStringOrComment(line, idx) {
     } else if (st === 'bt') {
       if (c === '\\') i++;
       else if (c === '`') st = 'code';
+      // 🔴 模板串的 `${…}` 是**表达式位**：其内标识符是真引用，必须按 code 位计。
+      //    此前状态机不切 `${`，整段表达式被当字符串内容丢弃 ⇒ 写在
+      //    console.log(`…${fn()}…`) 里的调用不进引用图 ⇒ 真接线被误判「一跳断链」，
+      //    诱导开发者把调用挪出模板串来迎合门禁（为门禁改代码，而非为正确性改代码）。
+      else if (c === '$' && n === '{') {
+        st = 'btx';
+        btDepth = 1;
+        i++;
+      }
+    } else if (st === 'btx') {
+      // 模板表达式位：按代码位处理（引用计入）；花括号深度归零 ⇒ 回到模板串文本位
+      if (c === '{') btDepth++;
+      else if (c === '}') {
+        btDepth--;
+        if (btDepth === 0) st = 'bt';
+      }
     } else if (st === 'blk') {
       if (c === '*' && n === '/') {
         st = 'code';
@@ -296,7 +313,8 @@ function inStringOrComment(line, idx) {
       }
     }
   }
-  return st !== 'code';
+  // `btx`（模板表达式位）属**代码**位——不排除，否则 `${…}` 内引用仍被丢弃
+  return st !== 'code' && st !== 'btx';
 }
 
 /** 判定代码行（非 import/export/注释/定义）对 sym 的引用性质：'value'|'type'|null。 */
@@ -612,7 +630,23 @@ export function selftest() {
     writeFixture(dir, 'engine/p8/app.ts', '/* @public */ export function p8Sym(): number { return 1; }\n');
     writeFixture(dir, 'engine/p8/use.ts', "import { p8Sym } from './app';\np8Sym();\n");
 
-    const S = ['p1NewSym', 'p2A', 'p2B', 'p3A', 'p3B', 'p4ATotal', 'p5AliasSym', 'p6BlkSym', 'p7Wired', 'p8Sym'];
+    // P9：正向——被**存活**代码在模板串 `${…}` 表达式位内消费 ⇒ 必须 WIRED。
+    //     锁死「模板表达式位是代码位」这条判据：此前状态机不切 `${`，
+    //     本形态恒判 ONEHOP/ZERO ⇒ 修正判据即转红。
+    writeFixture(dir, 'engine/p9/app.ts', '/* @public */ export function p9Sym(): string { return "x"; }\n');
+    writeFixture(dir, 'engine/p9/use.ts',
+      "import { p9Sym } from './app';\n" +
+        'export const p9Host = (): string => `值 ${p9Sym()} 尾`;\n');
+
+    // P10：反向——标识符只出现在模板串**文本位**（非 `${}` 内）⇒ 不算引用 ⇒ ZERO。
+    //      锁死修复的另一半：不得把整条模板串当代码位（否则文本里的名字被误计引用，
+    //      会把真零接线洗成 WIRED）。与 P9 构成一对正反探针。
+    writeFixture(dir, 'engine/p10/app.ts', '/* @public */ export function p10TextSym(): number { return 1; }\n');
+    writeFixture(dir, 'engine/p10/use.ts',
+      "import { p10TextSym } from './app';\n" +
+        'export const p10Host = (): string => `说明 p10TextSym 与 ${1 + 1}`;\n');
+
+    const S = ['p1NewSym', 'p2A', 'p2B', 'p3A', 'p3B', 'p4ATotal', 'p5AliasSym', 'p6BlkSym', 'p7Wired', 'p8Sym', 'p9Sym', 'p10TextSym'];
     const res = analyze(dir, S);
     const expect = {
       p1NewSym: 'ZERO',
@@ -625,6 +659,8 @@ export function selftest() {
       p6BlkSym: 'ZERO',
       p7Wired: 'WIRED',
       p8Sym: 'WIRED',
+      p9Sym: 'WIRED',
+      p10TextSym: 'ZERO',
     };
     for (const [sym, want] of Object.entries(expect)) {
       const got = res.get(sym)?.verdict;

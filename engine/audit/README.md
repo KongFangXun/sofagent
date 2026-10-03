@@ -1,11 +1,7 @@
 # @sofagent/audit
 
-> 命名说明：本目录是随安装分发的 engine 侧实现；维护者 SOP 脚本见同名 tools/audit
+> 命名说明：本目录是随安装分发的 engine 侧实现；维护者 SOP 脚本见同名 tools/audit；出口治理的裁决挂链在本模块 egress-audit。
 >
-> v1.5.3：规则引擎统一与自测——tool-level 与 git-diff 两套规则定义收敛为**单一引擎**（一套定义、两种触发时机）· 每条规则强制携带 `match`/`notMatch` 正负样例，加载时断言 fail-closed（规则写错当场拒载）· A24 交付物落点规则（出生即带正负样例，24→25）· `doctor --refresh` 修复闭环（备份 + 一键重置到默认 + 前后 diff）。
->
-> v1.5.2：审计对外面——`audit_query` 只读查询 / `ruleset_export` 导出与 `verify-chain` 独立验签 / 结论失效语义（invalidation 三钩子）；出口治理的裁决挂链在本模块 egress-audit。——职责边界见 tools/README.md。
-
 > v1.5.5 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > **安装后运行：`sofagent audit --init`**（一键初始化 config + hook + 冒烟测试）
@@ -177,86 +173,13 @@ sofagent audit --diff HEAD~1..HEAD --webhook feishu --webhook-url "https://open.
 
 ---
 
-## MCP Server 用法
+## MCP Server
 
-sofagent audit 内置 MCP Server（Model Context Protocol），可被 Claude Desktop / Cursor / Continue / 任何 MCP Client 调用。
+`sofagent audit --mcp` 启动内置 MCP Server（JSON-RPC 2.0 over stdio，协议版本 `2024-11-05`）：
 
-### 启动 MCP Server
-
-```bash
-# 方式一：通过 CLI 参数
-sofagent audit --mcp
-
-# 方式二：直接调用独立入口
-sofagent mcp
-```
-
-MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
-
-### MCP Client 配置
-
-通用模板（`command: sofagent audit, args: [--mcp]`），各客户端配置文件路径：
-
-| 客户端 | 配置文件 | 字段 |
-|------|------|------|
-| Claude Desktop | `claude_desktop_config.json` | `mcpServers.sofagent` |
-| Cursor | 设置 > MCP | `mcpServers.sofagent` |
-| Continue | `~/.continue/config.json` | `experimental.modelContextProtocolServers[]` |
-
-不装 npm 包直接用 `npx`：
-
-```json
-{
-  "mcpServers": {
-    "sofagent": {
-      "command": "npx",
-      "args": ["-y", "@sofagent/audit", "--mcp"]
-    }
-  }
-}
-```
-
-### 暴露的 Tools（3 个）
-
-| Tool | 说明 | 参数 |
-|------|------|------|
-| `run_audit` | 对 git diff 跑全量审计规则（A1-A11、A14-A24 + E1-E2/E4，共 25 条），返回结构化报告 | `diff`（git range）、`task`（任务描述）、`strict`（布尔）、`silent`（布尔） |
-| `get_think` | 读取 think.md 最近 N 条反思条目 | `count`（默认 1） |
-| `write_think` | 向 think.md 追加一条反思记录 | `lesson`（必填）、`task`（可选） |
-
-> 注：A12/A13 已合并入 A11（不滥资源），编号不再使用。
-
-**`run_audit` 返回示例**：
-
-```json
-{
-  "exitCode": 1,
-  "verdict": "WARN",
-  "fileCount": 3,
-  "triggeredRules": [
-    { "name": "A3 不改越界", "status": "WARN", "ruleClass": "能力拐杖" }
-  ],
-  "allRules": [
-    { "name": "A1 不碰敏感", "status": "PASS" },
-    { "name": "A2 不泄密钥", "status": "PASS" }
-  ]
-}
-```
-
-### 暴露的 Resources（3 个）
-
-| URI | 说明 | 类型 |
-|-----|------|------|
-| `think://latest` | think.md 最后一条反思条目 | text/markdown |
-| `logs://today` | 今日任务日志 | text/plain |
-| `audit://last-report` | 最近一次审计历史记录 | application/json |
-
-### 协议细节
-
-- **协议版本**：`2024-11-05`
-- **传输层**：stdio（stdin 读 JSON-RPC，stdout 写 JSON-RPC，stderr 写日志）
-- **必须先 `initialize`** 才能调用 tools/resources
-- **最小运行时依赖**：仅 js-yaml（YAML 配置解析），其余用 Node.js 内置模块
+- 工具：`run_audit`（返回 `{ exitCode, verdict, fileCount, triggeredRules[], allRules[] }`，`verdict` ∈ PASS/WARN/FAIL）/ `get_think` / `write_think`
+- 资源：`think://latest` / `logs://today` / `audit://last-report`
+- 完整说明（工具全清单 · 客户端配置 · 角色收窄 `SOFAGENT_MCP_ROLES`，含 audit 专职面）：见 [`engine/mcp/README.md`](../mcp/README.md)
 
 ---
 

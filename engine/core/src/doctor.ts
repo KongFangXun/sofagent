@@ -35,6 +35,9 @@ import { CONFIG_TEMPLATE } from './config-template';
 import { emitAuditDecision } from './audit-decision-writer';
 // v1.5.6 章二：审计目录维护入口（--repair 触发遗留备份清理 + 历史段归档）
 import { runAuditDirMaintenance } from './audit-dir-maintenance';
+// v1.5.6 章二：记忆作用域解析（doctor 披露本仓记忆钉在哪个 scope）
+import { resolveMemoryScope, createMemoryStore } from './memory-store';
+import { getHistoryAnchorFilePath } from './audit-history';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
@@ -364,7 +367,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         if (overFiles) reasons.push(`文件数 ${files} > ${FILE_WARN}`);
         if (overSize) reasons.push(`总量 ${mb(bytes)}MB > ${Math.round(SIZE_WARN_BYTES / 1024 / 1024)}MB`);
         warn(`data/${d}/ 接近性能退化区间（${reasons.join(' · ')}）`);
-        repairHint(`归档轮转：memory 走 memory-store 的 archive()（二级分层 + 冷热分层）；audit 侧历史段归档排 v1.5.7（本版未实施，见 v1.5.6 施工登记）`);
+        repairHint(`归档轮转：memory 走 memory-store 的 archive()（二级分层 + 冷热分层）；audit 侧超 50MB 由 \`doctor --repair\` 调 archiveHistoryHead() 自动归档（归档段带独立锚点）`);
       } else {
         ok(`data/${d}/ (${files} 文件 · ${mb(bytes)}MB)`);
       }
@@ -374,6 +377,17 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     } else if (!healthWarned) {
       ok('数据目录健康度正常（无单目录超阈值）');
     }
+    // v1.5.6 章二：沉淀记忆作用域提示——本仓解析出的记忆作用域（跨项目默认不共享）
+    // 生产消费者接线点①：doctor 面向用户如实披露「本仓写入的记忆钉在哪个 scope」。
+    const memScope = resolveMemoryScope(projectDir);
+    const memStore = createMemoryStore();
+    const memStats = memStore.stats();
+    console.log(
+      `  ↳ 沉淀记忆：作用域 ${memScope} · 索引事实 ${memStats.facts} 条 / 归档 ${memStats.archived} 条（跨项目默认不共享）`,
+    );
+    // 生产消费者接线点②：审计链锚点路径披露（防尾部截断的锚点文件在哪，运维可复核）
+    const anchorFile = getHistoryAnchorFilePath();
+    console.log(`  ↳ 审计链头锚点：${anchorFile}`);
   }
 
   // 4. Hook 状态
