@@ -16,6 +16,7 @@ import { existsSync, readdirSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { getDataDir } from './data-paths';
 import { emitAuditDecision } from './audit-decision-writer';
+import { archiveHistoryHead, type ArchiveHistoryHeadResult } from './audit-history';
 
 /** cleanupLegacyArtifacts 结果统计 */
 export interface LegacyCleanupResult {
@@ -125,4 +126,80 @@ export function cleanupLegacyArtifacts(options: {
   }
 
   return result;
+}
+
+/** runAuditDirMaintenance 结果（两步各自统计） */
+export interface AuditDirMaintenanceResult {
+  /** ①遗留备份清理统计 */
+  cleanup: LegacyCleanupResult;
+  /** ②历史段归档统计（未超阈值时为全 0 / null） */
+  archive: ArchiveHistoryHeadResult;
+}
+
+/**
+ * 审计目录维护编排（v1.5.6 章二）——供 doctor `--repair` 调用的**唯一入口**。
+ *
+ * 串行执行两步，**各自独立、失败不阻断**（每步独立 try，失败仅 stderr 告警）：
+ *   ① cleanupLegacyArtifacts：删 >maxAgeDays（默认 30）天的遗留备份（内部逐条留痕）；
+ *   ② archiveHistoryHead：仅当 history.jsonl 超阈值（默认 50MB）时才归档——函数本身
+ *      幂等，低于阈值即 no-op（不写任何文件）；发生归档时写一条 decision-log 留痕。
+ *
+ * @param options.dataDir 数据目录覆盖（测试隔离用）
+ * @param options.maxAgeDays 遗留备份保留期（透传 cleanupLegacyArtifacts）
+ * @param options.now 参考时刻（透传；测试固定时钟用）
+ * @param options.archiveMaxBytes 归档阈值覆盖（透传 archiveHistoryHead；缺省 50MB）
+ */
+export function runAuditDirMaintenance(options: {
+  dataDir?: string;
+  maxAgeDays?: number;
+  now?: Date;
+  archiveMaxBytes?: number;
+} = {}): AuditDirMaintenanceResult {
+  let cleanup: LegacyCleanupResult = { scanned: 0, deleted: [], kept: 0, freedBytes: 0 };
+  let archive: ArchiveHistoryHeadResult = {
+    archivedEntries: 0,
+    remainingEntries: 0,
+    archivePath: null,
+    archiveAnchorPath: null,
+  };
+
+  // ① 遗留备份清理（失败不阻断 ②）
+  try {
+    cleanup = cleanupLegacyArtifacts({
+      dataDir: options.dataDir,
+      maxAgeDays: options.maxAgeDays,
+      now: options.now,
+      dryRun: false,
+    });
+  } catch (err) {
+    console.error('[audit-dir-maintenance] 遗留备份清理失败（不阻断）：', err instanceof Error ? err.message : String(err));
+  }
+
+  // ② 历史段归档（幂等——低于阈值 no-op）
+  try {
+    archive = archiveHistoryHead({ dataDir: options.dataDir, maxBytes: options.archiveMaxBytes });
+    if (archive.archivedEntries > 0) {
+      // 归档动作也留痕（复用同一 decision-log 写入路径；kind 复用 LEGACY_CLEANUP——
+      // 二者同属「审计目录维护」动作族）。留痕失败不阻断（emitAuditDecision 内部已兜底）。
+      emitAuditDecision(
+        {
+          agentId: 'sofagent-audit-maintenance',
+          sessionId: `history-archive-${new Date().toISOString()}`,
+          kind: 'LEGACY_CLEANUP',
+          moment: 'ACT',
+          why: '审计历史段归档：头部段移入 archive',
+          evidence: [
+            `archived=${archive.archivedEntries}`,
+            `remaining=${archive.remainingEntries}`,
+            `archive=${archive.archivePath ?? 'none'}`,
+          ],
+        },
+        options.dataDir,
+      );
+    }
+  } catch (err) {
+    console.error('[audit-dir-maintenance] 历史段归档失败（不阻断）：', err instanceof Error ? err.message : String(err));
+  }
+
+  return { cleanup, archive };
 }

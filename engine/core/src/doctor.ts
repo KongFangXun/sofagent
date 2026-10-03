@@ -33,6 +33,8 @@ import { CONFIG_TEMPLATE } from './config-template';
 // v1.5.6 章二：decision-log 写入软依赖收口（core 不静态依赖 audit）——与
 // audit-dir-maintenance 共用同一实现，避免第二份链写逻辑
 import { emitAuditDecision } from './audit-decision-writer';
+// v1.5.6 章二：审计目录维护入口（--repair 触发遗留备份清理 + 历史段归档）
+import { runAuditDirMaintenance } from './audit-dir-maintenance';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
@@ -1054,6 +1056,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
  *   - commit-msg hook 缺失 → sofagent-audit --install-hook
  *   - HMAC 密钥缺失 → sofagent-audit --init
  *   - js-yaml 未安装 → npm install js-yaml
+ *   - v1.5.6 章二：审计目录维护（>30 天遗留备份清理 + history.jsonl 超 50MB 历史段归档）
  *
  * repair=false 时等价于 runDoctor()
  *
@@ -1110,6 +1113,33 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
     if (!existsSync(keyPath)) {
       info('HMAC 密钥缺失——建议运行 sofagent-audit --init 生成');
       // 不自动执行 --init（会重置审计链，需用户确认）
+    }
+
+    // 4. v1.5.6 章二：审计目录维护——遗留备份接管清理（>30 天）+ 历史段归档
+    //    （超 50MB 才归档）。串行、失败不阻断其它修复（runAuditDirMaintenance 内部
+    //    每步已独立兜底，此处再包一层 try 仅作最终防线）。
+    try {
+      const maintenance = runAuditDirMaintenance();
+      if (maintenance.cleanup.deleted.length > 0) {
+        ok(
+          `遗留备份清理：删除 ${maintenance.cleanup.deleted.length} 个超 30 天备份` +
+            `（释放 ${maintenance.cleanup.freedBytes} 字节）`,
+        );
+        repairsApplied++;
+      } else {
+        info('遗留备份清理：无超龄遗留备份');
+      }
+      if (maintenance.archive.archivedEntries > 0) {
+        ok(
+          `审计历史段归档：头部 ${maintenance.archive.archivedEntries} 条移入 ` +
+            `${maintenance.archive.archivePath ?? 'archive/'}`,
+        );
+        repairsApplied++;
+      } else {
+        info('审计历史段归档：history.jsonl 未超阈值，无需归档');
+      }
+    } catch (err) {
+      warn(`审计目录维护失败（不影响其它修复）: ${err instanceof Error ? err.message : String(err)}`);
     }
 
     console.log(`\n── 修复完成（${repairsApplied} 项自动修复）──\n`);
