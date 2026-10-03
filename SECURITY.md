@@ -30,7 +30,7 @@
 
 ## 已知风险（明文存储）
 
-sofagent 是一套 FDE 能力——**自带治理环境的 S1M**（工程层 FDEing × 判定层 S1M × 治理层 harness）：底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网）。但以下数据以**明文 Markdown** 存储，请评估风险：
+sofagent 是一套 FDE 能力——**自带治理环境的 S1M**（FDEing × S1M × harness 三层）：底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网）。但以下数据以**明文 Markdown** 存储，请评估风险：
 
 **「数据不出本机」的三个显式例外**（均需用户 opt-in）：
 
@@ -244,7 +244,7 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1M**（工程层 FDE
 
 > ℹ️ **职责边界（勿混）**：Onboard 诊断链的 L3 自动定位（LLM 推理定位「哪一步做错了」）属**诊断面**，服务的是 Onboard Agent 的错误归因，**不承担 A9 的注入检测**——A9 的语义级覆盖仍以本节的「未排期」状态为准。本条为 A9 编码绕过局限的**单一真相源**，其余文档一律指向此处。
 
-> ⚠️ 供给链不可信输入（A9 面的通道扩展 · 蒸馏落盘）：不可信输入不止于外部文本——**上下文供给链全程**均须按不可信对待：① **Skill 载体**（PromptArmor 实测恶意 Skill 可劫持 Copilot Cowork 网关、绕过沙箱外传文件——Skill 的声明行为与运行时行为缺乏偏差检测是根因）；② **外部贡献代码**（Vercel / Astro / tldraw 已拒收外部 PR、改用自有 agent 工厂——信任只建立在「配置可审计 + 历史成功率可查」上）；③ **压缩摘要**（OpenAI 失准报告实测：摘要携带「隐瞒错误」指令可被后续上下文执行，注入率 2.15%、GPT-6-Astra 降至 0.27%——压缩层是新的注入入口）。对策对齐既有分层：Skill 加载与摘要回灌一律过 `<untrusted>` 包裹（L223 A9 对策表同机制），外部贡献按审计链锚定后再入库。
+> ⚠️ 供给链不可信输入（A9 面的通道扩展 · 蒸馏落盘）：不可信输入不止外部文本——**上下文供给链全程**均按不可信对待：① **Skill 载体**（恶意 Skill 可劫持网关、绕过沙箱外传——声明行为与运行时行为缺乏偏差检测是根因）；② **外部贡献代码**（信任只建立在「配置可审计 + 历史成功率可查」上）；③ **压缩摘要**（摘要携带「隐瞒错误」指令可被后续上下文执行，注入率 2.15%、GPT-6-Astra 降至 0.27%）。对策：Skill 加载与摘要回灌一律过 `<untrusted>` 包裹（同 A9 机制），外部贡献按审计链锚定后再入库。
 > 来源：PromptArmor · https://www.promptarmor.com/resources/hijacking-copilot-coworks-ai-gateway-to-exfiltrate-files ｜ OpenAI alignment · https://alignment.openai.com/misalignment-reports/encouraging-deception-in-compaction-summaries/ ｜ LatentSpace《PRs NOT Welcome》（2026-09-02，IMA 收录）
 
 > 🔒 **主体级授权前置**（层 4/5 之外的独立一维）：敏感度过滤解决的是「这类数据能不能进 prompt」，**不等于**「这个主体有没有权看这份文档」。主体级授权必须在返回模型**之前**完成——无权内容连标题都不进上下文（标题本身就是泄漏：模型会说出「有一份《XX 办法》但你没权限」，等于确认了它的存在与名称）。且每一步独立判权：`read` 不信任 `search` 的结论，检索层过滤不能替代取回时的复核（模型会编造 id 绕过）。
@@ -336,7 +336,7 @@ sofagent audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 > 本表是全部 25 条规则的文档级单一事实源（代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已合并入 A11、E3 已并入 A11，编号不再使用。
 >
-> 📎 **与判定层的关系**：本表的条数口径（**25 = 17 默认 + 8 扩展**）是当前 SSOT；S1M 判定化接管后规则如何被判定层消费（逐条去向）见下方〈25 条规则的判定化归属〉，其判据重述口径见 [v1.6.0 §二](./docs/changelog/v1.6/v1.6.0.md)。
+> 📎 **与判定层的关系**：条数口径（**25 = 17 默认 + 8 扩展**）为当前 SSOT；判定化接管后的逐条去向见下方〈25 条规则的判定化归属〉，判据重述口径见 [v1.6.0 §二](./docs/changelog/v1.6/v1.6.0.md)。
 
 **默认规则 17 条（始终生效）**：
 
@@ -464,13 +464,11 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 - **密钥打码**：匹配 `sk-`/`Bearer`/`api_key`/`password=` 等模式 → 替换为 `***REDACTED***`
 - **手机号打码**：匹配 11 位手机号格式 → `138****1234`
 - **密码字段打码**：匹配 `password[:=]\s*\S+` → `password=***`
-- **v1.2.8 自定义业务机密脱敏**：config.yml 配置 `sanitizePatterns` 字段可添加企业业务机密正则（如合同名称/客户名单/工资表），审计记录和 webhook 推送前均过自定义脱敏管道。示例：
+- **v1.2.8 自定义业务机密脱敏**：config.yml 配置 `sanitizePatterns` 字段可添加企业业务机密正则（如合同名称/客户名单/工资表），审计记录与 webhook 推送前均过自定义脱敏管道。示例：
   ```yaml
   sanitizePatterns:
     - pattern: "合同编号[:：]\\s*\\d{6,}"
       replacement: "[合同编号:REDACTED]"
-    - pattern: "[\\u4e00-\\u9fa5]{2,4}的工资单"
-      replacement: "[工资单:REDACTED]"
   ```
 
 > 以上为**掩码（masking）非加密**——原始数据仍在 git diff 中可读。sanitize() 只保护写入 `data/` 的副本，不保护源头。

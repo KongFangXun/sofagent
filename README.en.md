@@ -107,7 +107,8 @@ build → injection → deliberate violation → audit interception → snapshot
 > ### Everything can be FDEing (the idea)
 >
 > **From FDE to FDEing — everything can be FDEing**: turn Forward Deployed **Engineering** (a capability) out of Forward Deployed **Engineer** (a job title)
- — the job leaves with the person, the capability stays with the deliverables. **FDEing is the abbreviation of Forward Deployed Engineering** (read /ef-di-i-ing/, isomorphic with "engineering"): as a noun it names the capability; as a verb it means turning FDE from manual labor into that capability — everything can be FDEing.
+ — the job leaves with the person, the capability stays with the deliverables. **FDEing is the abbreviation of Forward Deployed Engineering** (read /ef-di-i-ing/, isomorphic with "engineering"): as a noun it names the capability; as a verb it means turning FDE from manual labor into that capability
+— everything can be FDEing.
 >
 > - **FDE is the noun; FDEing is the verb** — turning FDE from manual work into an automatically executable capability (playbook × judgment × governance combined): less labor, more capability.
 > - **Not limited to software** — any business object, process, or node can be FDE'ed through "map → judge → deliver → sustain"; hardware nodes and robot motions are workflows too — the difference lies in the executor, not the governance shape.
@@ -320,7 +321,8 @@ the installed UI is the source of truth.)</sub></p>
 > | **Web** | `sofagent web` (available in the install.sh-installed state) · repo-mode `node tools/dashboard/serve-dashboard.mjs` | Browser visualization (localhost:3780) | Boss / IT visual review |
 > | **macOS double-click** | Double-click `start-dashboard.command` | macOS shortcut to the Web version (macOS double-click entry only) | macOS users |
 >
-> ⚠️ **Dashboard availability boundary**: all three entries ship with the **`install.sh`-installed state**; a package installed directly via `npm i @sofagent/audit` does **not** contain the dashboard static assets (`tools/dashboard/` is not distributed — the root `files` list keeps only root-level essentials). npm-only installs get the CLI + MCP surface; **for the Dashboard use the full install** (bootstrap.sh / install.sh).
+> ⚠️ **Dashboard availability boundary**: all three entries ship with the **`install.sh`-installed state**; a package installed directly via `npm i @sofagent/audit` does **not** contain the dashboard static assets (`tools/dashboard/` is not distributed — the root `files` list keeps only root-level
+>essentials). npm-only installs get the CLI + MCP surface; **for the Dashboard use the full install** (bootstrap.sh / install.sh).
 
 > 👁️ **Agent's view**: with hooks installed, every commit triggers an audit — PASS prints a short echo then passes (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there is no separate GUI on the Agent side (see [PHILOSOPHY
 >§2](./docs/PHILOSOPHY.md#%E7%B3%BB%E7%BB%9F%E6%9A%B4%E9%9C%B2%E7%9A%84%E8%83%BD%E5%8A%9Bagent-%E8%A7%86%E8%A7%92)).
@@ -343,7 +345,8 @@ the installed UI is the source of truth.)</sub></p>
 > | Full install (daemon / dashboard) | `bootstrap.sh` / `install.sh` (above) |
 >
 > - **Compatibility window**: the old commands (`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …) **still work** and print a pointer to the new entry — **removed one minor version later**. The 13 former bins are now carried by the single entry.
-> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator / mcp / train capability packages; 771 transitive deps measured, 5 of which carry native modules and install scripts — new npm versions do not run unreviewed install scripts, so those native builds are **silently skipped**). **For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or the scoped package `npm i -g @sofagent/audit`.
+> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator / mcp / train capability packages; 771 transitive deps measured, 5 of which carry native modules and install scripts — new npm versions do not run unreviewed install scripts, so those native builds are **silently skipped**).
+>**For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or the scoped package `npm i -g @sofagent/audit`.
 > - **Retired legacy proxy package**: the bare-name `sofagent-audit` (no scope) on npm is the old proxy package — **unpublished on 2026-09-26**; do not install it.
 
 **Rule marketplace** — community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):

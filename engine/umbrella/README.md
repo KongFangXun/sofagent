@@ -22,7 +22,9 @@ sofagent team formation --list   # 域路由：编排/阵型
 sofagent help           # 列出全部域
 ```
 
-**v1.5.6 CLI 单入口收敛**：`sofagent <域> <动作>` 统一入口（audit / train / ontology / evolve / daemon / device / workflow / team / orchestrator / compare / mcp / eval / think / ab-test / core），域路由到各实现包；旧命令（`sofagent-audit` 等）进入兼容期并提示新入口。完整能力见 [@sofagent/audit](https://www.npmjs.com/package/@sofagent/audit) 与各实现包。
+**v1.5.6 CLI 单入口收敛**：`sofagent <域> <动作>` 统一入口（15 域：audit / train / ontology / evolve / daemon / device / workflow / team / orchestrator / compare / mcp / eval / think / ab-test / core），域路由到各实现包。
+
+旧命令（`sofagent-audit` 等）进入兼容期并提示新入口。完整能力见 [@sofagent/audit](https://www.npmjs.com/package/@sofagent/audit) 与各实现包。
 
 ## 许可
 

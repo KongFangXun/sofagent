@@ -430,7 +430,7 @@ export function createMemoryStore(dataBase?: string): {
           const f = markdownToFact(readFileSync(p, 'utf-8'), factId);
           if (f) results.push(f);
         } catch {
-          // 坏文件跳过
+          // 为何可静默：归档区单条坏文件跳过——listArchived 是显式查询面，单条损坏不应中断整表返回
         }
       }
       return results;

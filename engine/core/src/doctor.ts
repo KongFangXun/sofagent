@@ -339,11 +339,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           bytes += sub.bytes;
         } else if (e.isFile()) {
           files++;
-          try {
-            bytes += statSync(child).size;
-          } catch {
-            // 单文件 stat 失败不阻断（并发删除等）
-          }
+          // throwIfNoEntry:false → 并发删除时返回 undefined 而非抛错（避免空 catch）
+          bytes += statSync(child, { throwIfNoEntry: false })?.size ?? 0;
         }
       }
       return { files, bytes };

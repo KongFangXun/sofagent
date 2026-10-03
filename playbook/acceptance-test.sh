@@ -2898,9 +2898,9 @@ chmod 755 "$S328_TARGET_HOME/data" 2>/dev/null || true
 rm -rf "$S328_TMP" "$S328_TARGET_HOME" 2>/dev/null || true
 $S328_OK && pass "迁移丢数据窗口已闭（err 叙事 + exit 1 + 源保留）" || true
 scenario 329 "v1.4.1 阶段四 B3：install.sh symlink 谎报守卫——ln -sf 全守卫 + fallback 失败 warn（源码断言）"; S329_OK=true
-# ① 全文件 ln -sf 恰 4 处且均带 if 守卫（sudo 分支 1 + 普通分支 2 + dashboard 1——多出即需人工核）
+# ① 全文件 ln -sf 恰 5 处且均带 if 守卫（sudo 分支 1 + 普通分支 2 + dashboard 1 + v1.5.6 单入口域路由登记 1——多出即需人工核）
 S329_SF=$(grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -vc 'warn\|echo\|#' || true)
-[ "$S329_SF" = "4" ] || { fail "ln -sf 计数 ${S329_SF}（预期 4）——逐处核对守卫"; S329_OK=false; }
+[ "$S329_SF" = "5" ] || { fail "ln -sf 计数 ${S329_SF}（预期 5）——逐处核对守卫"; S329_OK=false; }
 # 无守卫的 ln -sf 必须为 0（|| true + :-0 双守卫：管道中 grep -v 零匹配退出 1 × pipefail × set -e 三重雷区）
 S329_UNGUARDED=$(grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -v 'warn\|echo\|#' | grep -v 'if \|sudo ln' | wc -l | tr -d ' ' || true)
 S329_UNGUARDED="${S329_UNGUARDED:-0}"
