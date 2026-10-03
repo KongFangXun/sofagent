@@ -195,6 +195,7 @@ const NON_VERDICT_KINDS = [
   { kind: 'COMMONS', reason: '公地能力动作（能力发布/调用/评分/退役/SkillScan）过程记录。', trigger: '若公地引入放行/拒绝安装的成对判决 → 立新判决 kind。' },
   { kind: 'COVERAGE', reason: 'trace 三源对账结果入 log（说的和干的差在哪）——度量记录非判决。', trigger: '若覆盖率出现通过/未通过闸 → 立新判决 kind。' },
   { kind: 'FALLBACK_DEGRADE', reason: '降级执行（LLM 不可用等）过程记录，无裁决两侧。', trigger: '若降级引入「允许降级/拒绝降级」判决 → 立新判决 kind。' },
+  { kind: 'LEGACY_CLEANUP', reason: 'audit 目录维护动作（30 天上限清理 *.bak-*/*.broken-* 遗留备份）过程记录，无裁决两侧。', trigger: '若清理引入「批准/拒绝删除」审批闸 → 立新判决 kind。' },
 ];
 const NON_VERDICT_KIND_SET = new Set(NON_VERDICT_KINDS.map((e) => e.kind));
 
