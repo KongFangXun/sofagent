@@ -160,7 +160,7 @@ export interface DoctorReport {
  *   bugfix #18 执行遗留）。覆写后继续正常比对输出 ✅。
  * @returns DoctorReport
  */
-export function runDoctor(projectDir: string = process.cwd(), options: { resetBaseline?: boolean } = {}): DoctorReport {
+export function runDoctor(projectDir: string = process.cwd(), options: { resetBaseline?: boolean; archive?: boolean } = {}): DoctorReport {
   // v1.2.9: — 每次调用重置计数器
   _warnCount = 0;
   _failCount = 0;
@@ -385,6 +385,18 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     console.log(
       `  ↳ 沉淀记忆：作用域 ${memScope} · 索引事实 ${memStats.facts} 条 / 归档 ${memStats.archived} 条（跨项目默认不共享）`,
     );
+    // 生产消费者接线点③（v1.5.6 章二交付承诺）：归档事实**显式可查**（常规检索不可见）。
+    // 默认走索引级 stats()（零文件读）；仅 --archive 显式请求才 listArchived() 逐条读
+    // ——大库归档可能上万条，避免把本应索引级的体检拖成 O(N) 文件遍历。
+    if (options.archive) {
+      const archived = memStore.listArchived();
+      console.log(`  ↳ 归档事实 ${archived.length} 条（常规检索不可见，显式查询全量列出）：`);
+      for (const f of archived) {
+        console.log(`     · ${f.key}${f.tags.length ? ` [${f.tags.join(', ')}]` : ''}`);
+      }
+    } else {
+      console.log('  ↳ 归档事实显式可查：sofagent core doctor --archive');
+    }
     // 生产消费者接线点②：审计链锚点路径披露（防尾部截断的锚点文件在哪，运维可复核）
     const anchorFile = getHistoryAnchorFilePath();
     console.log(`  ↳ 审计链头锚点：${anchorFile}`);

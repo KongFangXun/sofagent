@@ -175,7 +175,11 @@ function resolveDomainCli(domain, rest) {
   }
   const cliPath = join(distDir, spec.file);
   if (!existsSync(cliPath)) throw new Error(`域实现入口缺失：${cliPath}（请先 npm run build）`);
-  return { cliPath, args: rest };
+  // train 域：orchestrator 以 `train <动作>` 形态分发（cli.ts `case 'train'`），
+  // 路由已把域名词剥掉，须补回前缀——否则 `sofagent train doctor` 会变成
+  // `cli.js doctor`（不识别），而直调 `cli.js train doctor` 正常。行为与直调逐条一致。
+  const args = domain === 'train' ? ['train', ...rest] : rest;
+  return { cliPath, args };
 }
 
 function main() {

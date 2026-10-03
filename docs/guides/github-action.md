@@ -9,7 +9,7 @@
 在你的仓库根目录创建 `.github/workflows/sofagent-audit.yml`，复制以下内容：
 
 ```yaml
-name: sofagent audit
+name: sofagent-audit
 
 on:
   pull_request:

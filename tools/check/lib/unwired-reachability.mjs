@@ -40,7 +40,7 @@
 //
 // 模式：
 //   node unwired-reachability.mjs --root <dir> --symbols a,b,c
-//   node unwired-reachability.mjs --selftest        # 内建 P1–P8 探针
+//   node unwired-reachability.mjs --selftest        # 内建 P1–P11 探针
 //
 // 退出码：0=分析成功 / 1=自检失败 / 2=参数或环境错误。
 // ============================================================
@@ -263,58 +263,49 @@ function maskComments(line, incoming) {
   return { masked: out, inBlk: st === 'blk' };
 }
 
-/** 判断某位置是否落在字符串字面量、行尾注释或**单行块注释**内（这些出现不构成引用）。 */
+/** 判断某位置是否落在字符串字面量、行尾注释或块注释内（这些出现不构成引用）。
+ *  模板串用**语境栈**处理嵌套：`bt`=文本位（不算引用）、`btx`=表达式位（按代码位算引用）、
+ *  `{`=表达式位内的嵌套花括号。表达式位里再遇反引号 ⇒ 压入新的 `bt`（嵌套模板串），
+ *  其 `${}` 再压 `btx`，层级随栈自然归零——**嵌套模板串的文本位不得计引用**，
+ *  而其 `${}` 表达式位仍按代码位计。旧实现只跟踪 `{`/`}`、不认嵌套反引号，
+ *  内层文本被当代码位 ⇒ 真零接线被洗成 WIRED（P11 探针锁定正反两向）。 */
 function inStringOrComment(line, idx) {
-  let st = 'code';
-  let btDepth = 0; // 模板串 `${…}` 表达式位的花括号深度（嵌套模板串另计层级）
+  const stack = []; // 语境栈：空 = code；元素 ∈ bt | btx | { | sq | dq | line | blk
+  const top = () => (stack.length ? stack[stack.length - 1] : 'code');
   for (let i = 0; i < idx; i++) {
     const c = line[i];
     const n = line[i + 1];
-    if (st === 'code') {
-      if (c === "'") st = 'sq';
-      else if (c === '"') st = 'dq';
-      else if (c === '`') st = 'bt';
-      else if (c === '/' && n === '/') st = 'line';
-      else if (c === '/' && n === '*') {
-        st = 'blk'; // 单行块注释起
-        i++;
-      }
-    } else if (st === 'line') {
-      // 行尾注释：其后全部不算引用（保持状态直至行末）
+    const st = top();
+    if (st === 'code' || st === 'btx' || st === '{') {
+      // 代码位（含模板表达式位及其内嵌套花括号）：识别串/注释/嵌套模板
+      if (c === "'") stack.push('sq');
+      else if (c === '"') stack.push('dq');
+      else if (c === '`') stack.push('bt');
+      else if (c === '/' && n === '/') stack.push('line'); // 行尾注释起，其后不再算引用
+      else if (c === '/' && n === '*') { stack.push('blk'); i++; }
+      else if (c === '{' && (st === 'btx' || st === '{')) stack.push('{');
+      // `}`：表达式位内还有嵌套花括号 ⇒ 收一层；否则收表达式位本身（回到模板文本位）
+      else if (c === '}' && (st === 'btx' || st === '{')) stack.pop();
+    } else if (st === 'bt') {
+      // 模板文本位：不算引用；`${` 进表达式位，`` ` `` 收束（含嵌套模板串）
+      if (c === '\\') i++;
+      else if (c === '`') stack.pop();
+      else if (c === '$' && n === '{') { stack.push('btx'); i++; }
     } else if (st === 'sq') {
       if (c === '\\') i++;
-      else if (c === "'") st = 'code';
+      else if (c === "'") stack.pop();
     } else if (st === 'dq') {
       if (c === '\\') i++;
-      else if (c === '"') st = 'code';
-    } else if (st === 'bt') {
-      if (c === '\\') i++;
-      else if (c === '`') st = 'code';
-      // 🔴 模板串的 `${…}` 是**表达式位**：其内标识符是真引用，必须按 code 位计。
-      //    此前状态机不切 `${`，整段表达式被当字符串内容丢弃 ⇒ 写在
-      //    console.log(`…${fn()}…`) 里的调用不进引用图 ⇒ 真接线被误判「一跳断链」，
-      //    诱导开发者把调用挪出模板串来迎合门禁（为门禁改代码，而非为正确性改代码）。
-      else if (c === '$' && n === '{') {
-        st = 'btx';
-        btDepth = 1;
-        i++;
-      }
-    } else if (st === 'btx') {
-      // 模板表达式位：按代码位处理（引用计入）；花括号深度归零 ⇒ 回到模板串文本位
-      if (c === '{') btDepth++;
-      else if (c === '}') {
-        btDepth--;
-        if (btDepth === 0) st = 'bt';
-      }
+      else if (c === '"') stack.pop();
     } else if (st === 'blk') {
-      if (c === '*' && n === '/') {
-        st = 'code';
-        i++;
-      }
+      if (c === '*' && n === '/') { stack.pop(); i++; }
     }
+    // st === 'line'：行尾注释，其后全部不算引用（保持状态直至行末）
   }
-  // `btx`（模板表达式位）属**代码**位——不排除，否则 `${…}` 内引用仍被丢弃
-  return st !== 'code' && st !== 'btx';
+  // `btx`（模板表达式位）与 `{`（其内嵌套花括号）同属**代码**位——不排除，
+  // 否则 `${…}` 内引用仍被丢弃。
+  const st = top();
+  return st !== 'code' && st !== 'btx' && st !== '{';
 }
 
 /** 判定代码行（非 import/export/注释/定义）对 sym 的引用性质：'value'|'type'|null。 */
@@ -568,7 +559,7 @@ export function analyze(root, symbols) {
 }
 
 // ────────────────────────────────────────────────────────────
-// 内建自检（P1–P8）——各条收紧判定 + 存活上下文口径 + 两条已知漏洞面
+// 内建自检（P1–P11）——各条收紧判定 + 存活上下文口径 + 两条已知漏洞面
 // （类型别名右值 / 块注释）各自探针
 // ────────────────────────────────────────────────────────────
 function writeFixture(dir, rel, content) {
@@ -646,7 +637,16 @@ export function selftest() {
       "import { p10TextSym } from './app';\n" +
         'export const p10Host = (): string => `说明 p10TextSym 与 ${1 + 1}`;\n');
 
-    const S = ['p1NewSym', 'p2A', 'p2B', 'p3A', 'p3B', 'p4ATotal', 'p5AliasSym', 'p6BlkSym', 'p7Wired', 'p8Sym', 'p9Sym', 'p10TextSym'];
+    // P11：嵌套模板串——标识符只出现在**内层模板串文本位** ⇒ 不算引用 ⇒ ZERO。
+    //      锁死 btx 分支对嵌套反引号的层级处理：旧内核只跟踪 `{`/`}`、不认嵌套
+    //      反引号，内层文本被当代码位 ⇒ 真零接线被洗成 WIRED（P9/P10 均未覆盖嵌套）。
+    //      内层 `${}` 表达式位仍须按代码位计（由 P9 同型保证）。
+    writeFixture(dir, 'engine/p11/app.ts', '/* @public */ export function p11Sym(): number { return 1; }\n');
+    writeFixture(dir, 'engine/p11/use.ts',
+      "import { p11Sym } from './app';\n" +
+        'export const p11Host = (): string => `outer ${ `inner p11Sym ${1 + 1}` } tail`;\n');
+
+    const S = ['p1NewSym', 'p2A', 'p2B', 'p3A', 'p3B', 'p4ATotal', 'p5AliasSym', 'p6BlkSym', 'p7Wired', 'p8Sym', 'p9Sym', 'p10TextSym', 'p11Sym'];
     const res = analyze(dir, S);
     const expect = {
       p1NewSym: 'ZERO',
@@ -661,6 +661,7 @@ export function selftest() {
       p8Sym: 'WIRED',
       p9Sym: 'WIRED',
       p10TextSym: 'ZERO',
+      p11Sym: 'ZERO',
     };
     for (const [sym, want] of Object.entries(expect)) {
       const got = res.get(sym)?.verdict;

@@ -142,7 +142,7 @@ sofagent audit --install-hook
 
 ```yaml
 # .github/workflows/audit.yml
-name: sofagent audit
+name: sofagent-audit
 on: [pull_request]
 jobs:
   audit:

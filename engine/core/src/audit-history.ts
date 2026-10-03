@@ -896,8 +896,10 @@ export function archiveHistoryHead(
   writeFileSync(archiveAnchorPath, JSON.stringify(archiveAnchor) + '\n', { mode: 0o600 });
 
   // ② 用剩余尾部覆盖写主链（先写 .tmp 再 renameSync 原子替换）
+  //    显式 mode 0o600：主链持 HMAC 审计记录，须与同函数的归档件/锚点保持同权限；
+  //    缺 mode 时受 umask 影响（实测 umask 022 下 600→644，权限被放宽）。
   const mainTmp = `${filePath}.tmp.${process.pid}`;
-  writeFileSync(mainTmp, remainingLines.join('\n') + '\n', 'utf-8');
+  writeFileSync(mainTmp, remainingLines.join('\n') + '\n', { encoding: 'utf-8', mode: 0o600 });
   renameSync(mainTmp, filePath);
 
   // ③ 重算主链锚点：entryCount = 剩余条数、headHash = 剩余末条、envFingerprint 沿用旧值

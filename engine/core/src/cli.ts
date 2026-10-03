@@ -23,6 +23,7 @@ async function main() {
     console.log('  doctor        运行健康检查（环境 / 配置 / 数据目录 / Hook / 依赖）');
     console.log('  doctor --repair  自动修复可修复的问题（创建目录 / 安装依赖等）');
     console.log('  doctor --refresh 备份当前配置 → 重置默认 → 前后 diff 报告（写操作，留痕）');
+    console.log('  doctor --archive 列出归档记忆事实（常规检索不可见，显式才查）');
     console.log('  verify        装后验证（11 个检查类别）');
     console.log('');
     console.log('Verify options:');
@@ -44,9 +45,12 @@ async function main() {
         process.exit(result.ok ? 0 : 1);
       }
       const isRepair = args.includes('--repair');
+      // 归档事实显式查询入口（v1.5.6 章二交付承诺「归档不进常规检索、显式可查」）：
+      // 默认体检只报归档计数（索引级）；--archive 才逐条列出归档事实。
+      const wantArchive = args.includes('--archive');
       const report = isRepair
         ? runDoctorWithRepair(projectDir, true)
-        : runDoctor(projectDir);
+        : runDoctor(projectDir, { archive: wantArchive });
       process.exit(report.allOk ? 0 : 1);
     }
     case 'verify': {
