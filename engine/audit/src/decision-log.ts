@@ -97,6 +97,10 @@ const VALID_KINDS: readonly string[] = [
   // 错位：范围超集 / 时效超期 / 无对应授权记录 + 一致结论）。判决类记录
   // （成对 N 态），已在 check-paired-records.mjs REGISTRY 登记。
   'CREDENTIAL_RECONCILE',
+  // LEGACY_CLEANUP：v1.5.6 章二——遗留备份接管清理（audit 目录 30 天上限清理动作
+  // 留痕，core/audit-dir-maintenance.ts 写入）。观测/过程记录，无判决两侧，
+  // 已在 check-paired-records.mjs 非判决豁免集登记（reason+trigger 齐备）。
+  'LEGACY_CLEANUP',
 ];
 
 /** 合法 LoopPhase 集合 */

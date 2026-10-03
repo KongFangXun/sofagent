@@ -24,7 +24,7 @@
 //   会把 audit 的规则结果域类型拖进底座，违反 core「零上层依赖」分层契约，故保持两份。
 // ============================================================
 
-import { existsSync, readFileSync, readdirSync, writeFileSync, renameSync, mkdirSync, chmodSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync, renameSync, mkdirSync, chmodSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { createHash, createHmac, randomBytes } from 'crypto';
 import { hostname, userInfo, homedir } from 'os';
@@ -754,6 +754,170 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
   }
 
   return { status: 'ok' };
+}
+
+/** archiveHistoryHead 返回值统计 */
+export interface ArchiveHistoryHeadResult {
+  /** 本次移入归档段的条目数（未触发归档时为 0） */
+  archivedEntries: number;
+  /** 归档后 history.jsonl 保留的条目数 */
+  remainingEntries: number;
+  /** 归档段文件绝对路径（未触发归档时为 null） */
+  archivePath: string | null;
+  /** 归档段独立锚点文件绝对路径（未触发归档时为 null） */
+  archiveAnchorPath: string | null;
+}
+
+/**
+ * 归档审计历史头部段（v1.5.6 章二 · 历史段归档）。
+ *
+ * 背景：审计链只追加、无轮转，长期运行后 history.jsonl 无限增长（读校验/解析成本
+ * 线性上涨）。本函数把**头部（最旧）段**移出主链，只保留尾部热段——归档段连同其
+ * 独立链头锚点单独落盘，主链锚点同步重算，做到「归档后主链仍可完整校验、防截断能力不削弱」。
+ *
+ * 关键不变量（与读侧 checkHistoryChainDetailed 对齐）：
+ *   ① **prevHash 链主循环从 i=1 开始**——移走头部段后，新首条的 prevHash 不参与校验，
+ *      剩余链天然自洽（见本文件 :638 注释）；
+ *   ② 归档段末条 / 剩余末条的链头哈希**必须用主锚点里记录的旧 envFingerprint** 重算
+ *      （`sha256(JSON.stringify({...entry, prevHash: undefined, hashVersion: undefined}) + '|' + fp).hex.slice(0,16)`），
+ *      否则下一次校验必报「被截断 / 历史重写」；
+ *   ③ 主锚点的 envFingerprint **沿用旧值**（严禁改成当前环境指纹，避免 hostname / git 路径
+ *      漂移导致归档后的健康链被误判）。
+ *
+ * 幂等：文件不存在或 `statSync().size <= maxBytes` 时原样返回（不写任何文件）。
+ *
+ * @param options.maxBytes 触发归档的字节阈值（默认 50 MiB）
+ * @param options.dataDir 数据目录覆盖（测试隔离用；解析链与 getHistoryFilePath 一致）
+ * @param options.retainRatio 保留尾部字节占比（默认 0.5；保留到「剩余 ≈ 总量 × retainRatio」，且至少保留 1 条）
+ * @returns 归档统计（见 {@link ArchiveHistoryHeadResult}）
+ */
+export function archiveHistoryHead(
+  options: { maxBytes?: number; dataDir?: string; retainRatio?: number } = {},
+): ArchiveHistoryHeadResult {
+  const maxBytes = options.maxBytes ?? 50 * 1024 * 1024;
+  const retainRatio = options.retainRatio ?? 0.5;
+  const dataDir = options.dataDir;
+  const filePath = getHistoryFilePath(dataDir);
+
+  const readLines = (): string[] => {
+    try {
+      return readFileSync(filePath, 'utf-8')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean);
+    } catch {
+      // 为何可静默：读取失败（权限 / IO）时视为「无内容」——归档是治理动作，
+      // 读不到就不动，绝不因读取异常反而截断主链。
+      return [];
+    }
+  };
+
+  if (!existsSync(filePath)) {
+    return { archivedEntries: 0, remainingEntries: 0, archivePath: null, archiveAnchorPath: null };
+  }
+
+  let size = 0;
+  try {
+    size = statSync(filePath).size;
+  } catch {
+    size = 0;
+  }
+  if (size <= maxBytes) {
+    // 未超限：幂等——不写任何文件
+    return { archivedEntries: 0, remainingEntries: readLines().length, archivePath: null, archiveAnchorPath: null };
+  }
+
+  const lines = readLines();
+  if (lines.length <= 1) {
+    // 单条无法拆分（移走即空链）——保持原样
+    return { archivedEntries: 0, remainingEntries: lines.length, archivePath: null, archiveAnchorPath: null };
+  }
+
+  // 从尾部累计字节，保留到「剩余 ≈ 总量 × retainRatio」为止
+  const lineBytes = lines.map((l) => Buffer.byteLength(l, 'utf-8') + 1);
+  const totalBytes = lineBytes.reduce((a, b) => a + b, 0);
+  const targetBytes = totalBytes * retainRatio;
+  let acc = 0;
+  let keepFrom = lines.length; // 首个保留行的下标
+  for (let i = lines.length - 1; i >= 0; i--) {
+    acc += lineBytes[i]!;
+    keepFrom = i;
+    if (acc >= targetBytes) break;
+  }
+  // 必须至少保留 1 条：keepFrom === 0 意味着「会把全部归档」——退化为不归档
+  if (keepFrom <= 0) {
+    return { archivedEntries: 0, remainingEntries: lines.length, archivePath: null, archiveAnchorPath: null };
+  }
+
+  const archivedLines = lines.slice(0, keepFrom);
+  const remainingLines = lines.slice(keepFrom);
+
+  // 指纹：沿用旧锚点原值（防环境漂移误报）；旧锚点缺失或无指纹时用当前环境指纹
+  const anchorPath = getHistoryAnchorFilePath(dataDir);
+  let oldAnchor: HistoryChainHeadAnchor | null = null;
+  if (existsSync(anchorPath)) {
+    try {
+      const parsed = JSON.parse(readFileSync(anchorPath, 'utf-8')) as HistoryChainHeadAnchor;
+      if (parsed && parsed.version === 1) oldAnchor = parsed;
+    } catch {
+      oldAnchor = null;
+    }
+  }
+  const fingerprint =
+    oldAnchor !== null && typeof oldAnchor.envFingerprint === 'string' && oldAnchor.envFingerprint.length > 0
+      ? oldAnchor.envFingerprint
+      : getEnvFingerprint(dataDir);
+
+  // 链头哈希配方——必须与写侧 appendHistory / 读侧锚点校验逐字一致（plain JSON.stringify + '|' + fp）
+  const headHashOf = (line: string): string => {
+    const entry = JSON.parse(line) as Record<string, unknown>;
+    return createHash('sha256')
+      .update(JSON.stringify({ ...entry, prevHash: undefined, hashVersion: undefined }) + '|' + fingerprint)
+      .digest('hex')
+      .slice(0, 16);
+  };
+
+  const nowIso = new Date().toISOString();
+
+  // ① 归档头部段 + 归档段独立锚点（字段同 HistoryChainHeadAnchor）
+  const archiveDir = join(dirname(filePath), 'archive');
+  mkdirSync(archiveDir, { recursive: true, mode: 0o700 });
+  const stamp = nowIso.replace(/:/g, '');
+  const archivePath = join(archiveDir, `history-${stamp}.jsonl`);
+  writeFileSync(archivePath, archivedLines.join('\n') + '\n', { mode: 0o600 });
+  const archiveAnchorPath = `${archivePath}.anchor.json`;
+  const archiveAnchor: HistoryChainHeadAnchor = {
+    version: 1,
+    entryCount: archivedLines.length,
+    headHash: headHashOf(archivedLines[archivedLines.length - 1]!),
+    envFingerprint: fingerprint,
+    updatedAt: nowIso,
+  };
+  writeFileSync(archiveAnchorPath, JSON.stringify(archiveAnchor) + '\n', { mode: 0o600 });
+
+  // ② 用剩余尾部覆盖写主链（先写 .tmp 再 renameSync 原子替换）
+  const mainTmp = `${filePath}.tmp.${process.pid}`;
+  writeFileSync(mainTmp, remainingLines.join('\n') + '\n', 'utf-8');
+  renameSync(mainTmp, filePath);
+
+  // ③ 重算主链锚点：entryCount = 剩余条数、headHash = 剩余末条、envFingerprint 沿用旧值
+  const mainAnchor: HistoryChainHeadAnchor = {
+    version: 1,
+    entryCount: remainingLines.length,
+    headHash: headHashOf(remainingLines[remainingLines.length - 1]!),
+    envFingerprint: fingerprint,
+    updatedAt: nowIso,
+  };
+  const anchorTmp = `${anchorPath}.tmp.${process.pid}`;
+  writeFileSync(anchorTmp, JSON.stringify(mainAnchor) + '\n', { mode: 0o600 });
+  renameSync(anchorTmp, anchorPath);
+
+  return {
+    archivedEntries: archivedLines.length,
+    remainingEntries: remainingLines.length,
+    archivePath,
+    archiveAnchorPath,
+  };
 }
 
 /**

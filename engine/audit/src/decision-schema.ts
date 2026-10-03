@@ -55,6 +55,11 @@ import { REDACTION_PATTERNS } from '@sofagent/core';
  *   ⚠️ 本 kind 是**判决类记录**（成对 N 态：对账通过 / 对账错位），已在
  *   `tools/check/check-paired-records.mjs` 的 REGISTRY 登记；下游读数**应计入**决策
  *   统计（它是 Agent 治理决策，非 INVALIDATION 一类元记录——二者过滤边界要分清）。
+ *
+ * v1.5.6 章二新增 LEGACY_CLEANUP（遗留备份接管清理）：
+ *   - LEGACY_CLEANUP：审计目录维护动作——按 30 天上限清理 `*.bak-*` / `*.broken-*`
+ *     遗留备份（`engine/core/src/audit-dir-maintenance.ts` 写入）。属**观测/过程记录**，
+ *     无「通过/拒绝」成对判决语义，故登记在 `check-paired-records.mjs` 的非判决豁免集内。
  */
 export type DecisionKind =
   | 'SPEC_CHANGE'       // 改变需求/规格（范围变更）
@@ -72,7 +77,8 @@ export type DecisionKind =
   | 'COST'              // 成本告警（v1.4.0 交付三 · budget 超支 WARN，queryByKind('COST') 可追溯）
   | 'COVERAGE'          // 对账覆盖动作（v1.5.0 章八 · trace 三源对账结果入 decision-log——说的和干的差在哪）
   | 'INVALIDATION'      // 结论失效标记（v1.5.2 章四 · append-only 追加的「失效是标记不是抹除」条目）
-  | 'CREDENTIAL_RECONCILE'; // 授权面 × 凭证面对账结论（v1.5.4 章七 · 台账级三类错位判定入链）
+  | 'CREDENTIAL_RECONCILE' // 授权面 × 凭证面对账结论（v1.5.4 章七 · 台账级三类错位判定入链）
+  | 'LEGACY_CLEANUP'; // 遗留备份接管清理（v1.5.6 章二 · audit 目录 30 天上限清理动作留痕）
 
 /**
  * 判断时刻分类（v1.3.6 交付⑮ · decisions.jsonl 完整版 · OpenFDE 启发）。

@@ -30,6 +30,9 @@ import { DATA_DIR, getConfigFile, resolveDataDir, resolveHomeDir, resolveKnowled
 import { computeDistAggregateHash, resolveGlobalAuditDistRoot } from './dist-hash';
 // v1.5.3 章四：refresh 重置段的默认配置 SSOT（--init 同源模板，勿另造第二份）
 import { CONFIG_TEMPLATE } from './config-template';
+// v1.5.6 章二：decision-log 写入软依赖收口（core 不静态依赖 audit）——与
+// audit-dir-maintenance 共用同一实现，避免第二份链写逻辑
+import { emitAuditDecision } from './audit-decision-writer';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
@@ -1321,30 +1324,27 @@ export function runDoctorRefresh(
       warn(`决策留痕失败（注入面，不阻断 refresh）: ${err instanceof Error ? err.message : String(err)}`);
     }
   } else {
-    try {
-      // CJS：createRequire 从 cwd 出发解析 @sofagent/audit（monorepo / 全局安装均可命中）
-      const cwdRequire = require('module').createRequire(join(projectDir, 'package.json'));
-      // package.json 缺失时 createRequire 仍可用（以该路径为基准解析 node_modules）
-      const auditMod = cwdRequire('@sofagent/audit') as {
-        emitDecision?: (input: Record<string, unknown>) => { ts: string };
-      };
-      if (typeof auditMod.emitDecision === 'function') {
-        const entry = auditMod.emitDecision({
-          agentId: 'sofagent-doctor',
-          sessionId: `refresh-${ts}`,
-          kind: 'CONFIG_CHANGE',
-          moment: 'ACT',
-          category: 'select',
-          why: { text: 'doctor --refresh 重置项目配置（备份→默认→diff 报告）', tags: ['doctor', 'refresh'] },
-          evidence: [`backup=${backupPath ?? 'none'}`, `target=${configPath}`, `diff=+${stats.added}/-${stats.removed}`, `kept=${backupsKept}`],
-        });
-        decisionTs = entry.ts;
-        ok(`审计留痕已写入 decision-log（ts=${ts}，kind=CONFIG_CHANGE）`);
-      } else {
-        warn('审计留痕面缺失（@sofagent/audit 未导出 emitDecision）——decisionTs=null');
-      }
-    } catch (err) {
-      warn(`审计留痕不可用（@sofagent/audit 不可解析——decisionTs=null）: ${err instanceof Error ? err.message : String(err)}`);
+    // 复用 core 软依赖收口（audit-decision-writer）——core 不静态依赖 audit，运行时
+    // 解析 @sofagent/audit 的 emitDecision（受控写唯一入口）；从 projectDir 解析保持
+    // doctor 旧语义。留痕失败返回 null，不阻断 refresh（decisionTs 如实置 null）。
+    const res = emitAuditDecision(
+      {
+        agentId: 'sofagent-doctor',
+        sessionId: `refresh-${ts}`,
+        kind: 'CONFIG_CHANGE',
+        moment: 'ACT',
+        category: 'select',
+        why: { text: 'doctor --refresh 重置项目配置（备份→默认→diff 报告）', tags: ['doctor', 'refresh'] },
+        evidence: [`backup=${backupPath ?? 'none'}`, `target=${configPath}`, `diff=+${stats.added}/-${stats.removed}`, `kept=${backupsKept}`],
+      },
+      undefined,
+      projectDir,
+    );
+    if (res !== null) {
+      decisionTs = res.ts;
+      ok(`审计留痕已写入 decision-log（ts=${ts}，kind=CONFIG_CHANGE）`);
+    } else {
+      warn('审计留痕不可用（@sofagent/audit 不可解析或未导出 emitDecision）——decisionTs=null');
     }
   }
 

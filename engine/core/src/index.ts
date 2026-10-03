@@ -292,8 +292,8 @@
   extractSummary,
 } from './compress-memory';
 
-// ── 事实级记忆存储（v1.2.9 功能①）──
-/* @public */ export { createMemoryStore } from './memory-store';
+// ── 事实级记忆存储（v1.2.9 功能①；v1.5.6 章二加项目作用域）──
+/* @public */ export { createMemoryStore, resolveMemoryScope } from './memory-store';
 /* @public */ export type { MemoryFact } from './memory-store';
 
 // ── 记忆契约（think.md · Ledger-Views-Policy）──
@@ -405,7 +405,8 @@
 /* @public */ export type { DoctorRefreshResult } from './doctor';
 
 // ── 审计历史链校验（v1.2.0 从 @sofagent/audit 下沉，消除 core 反向依赖） ──
-/* @public */ export { getHistoryFilePath, getHistoryAnchorFilePath, getDecisionLogPath, getEnvFingerprint, getHmacKey, checkHistoryChainDetailed, stableStringify, validateHmacKey } from './audit-history';
+/* @public */ export { getHistoryFilePath, getHistoryAnchorFilePath, getDecisionLogPath, getEnvFingerprint, getHmacKey, checkHistoryChainDetailed, stableStringify, validateHmacKey, archiveHistoryHead } from './audit-history';
+/* @public */ export type { ArchiveHistoryHeadResult } from './audit-history';
 
 // ── 装后验证 ──
 /* @public */ export { verifyEvidence } from './verify-evidence';
