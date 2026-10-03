@@ -27,6 +27,7 @@ import {
 } from 'fs';
 import { dirname, join } from 'path';
 import { createHash, randomUUID } from 'crypto';
+import { execFileSync } from 'child_process';
 import { getDataDir } from './data-paths';
 
 // ────────────────────────────────────────────────────────────
@@ -51,6 +52,11 @@ export interface MemoryFact {
   updatedAt: string;
   /** 分类标签 */
   tags: string[];
+  /**
+   * 作用域（v1.5.6 章二 · 沉淀记忆项目作用域）：形如 `project:<8位hash>` 或 `global`。
+   * 旧事实（本项落地前写入）无该字段 → 读侧一律视为可见（等价 global），零回归。
+   */
+  scope?: string;
 }
 
 /** memory.json 索引结构 */
@@ -177,7 +183,7 @@ function writeArchiveIndex(memoryRoot: string, index: ArchiveIndex): void {
  */
 function factToMarkdown(fact: MemoryFact): string {
   const tags = fact.tags.length > 0 ? `[${fact.tags.join(', ')}]` : '[]';
-  return [
+  const lines = [
     '---',
     `id: ${fact.id}`,
     `key: "${fact.key}"`,
@@ -186,11 +192,11 @@ function factToMarkdown(fact: MemoryFact): string {
     `createdAt: ${fact.createdAt}`,
     `updatedAt: ${fact.updatedAt}`,
     `tags: ${tags}`,
-    '---',
-    '',
-    fact.value,
-    '',
-  ].join('\n');
+  ];
+  // v1.5.6 章二：作用域落盘（缺省不写——旧事实无该字段，读侧按可见处理）
+  if (fact.scope !== undefined) lines.push(`scope: ${fact.scope}`);
+  lines.push('---', '', fact.value, '');
+  return lines.join('\n');
 }
 
 /**
@@ -228,6 +234,8 @@ function markdownToFact(content: string, expectedId?: string): MemoryFact | null
     createdAt: extract('createdAt'),
     updatedAt: extract('updatedAt'),
     tags: extractArray('tags'),
+    // v1.5.6 章二：作用域（缺省 → undefined → 读侧按可见处理，零回归）
+    ...(extract('scope') ? { scope: extract('scope') } : {}),
   };
 }
 
@@ -236,97 +244,202 @@ function markdownToFact(content: string, expectedId?: string): MemoryFact | null
 // ────────────────────────────────────────────────────────────
 
 /**
+ * 记忆检索作用域选项（v1.5.6 章二）。
+ * - 缺省 / `allScopes: false`：只见「当前 scope + global」两条（**不泄漏其它项目**）；
+ * - `allScopes: true`：跨项目查询（显式逃生舱）。
+ */
+interface MemoryQueryOptions {
+  allScopes?: boolean;
+}
+
+/** 跨项目导出包（{@link MemoryStore.exportFacts} 返回） */
+interface MemoryFactExportBundle {
+  version: 1;
+  /** 导出时刻（ISO 8601） */
+  exportedAt: string;
+  /** 来源作用域（导出方 store 的 scope） */
+  sourceScope: string;
+  /** 来源仓标识（导出方 resolveMemoryScope() 原值） */
+  sourceRepo: string;
+  /** 导出的可见事实 */
+  facts: MemoryFact[];
+}
+
+/** 跨项目导入选项（{@link MemoryStore.importFacts}） */
+interface MemoryImportOptions {
+  /** 审批门——**必须显式为 true** 才导入（fail-closed，未批准直接抛错） */
+  approve: boolean;
+  /** 目标作用域（缺省 = 当前 store 的 scope） */
+  targetScope?: string;
+}
+
+/** MemoryStore 实例面（createMemoryStore 返回） */
+interface MemoryStore {
+  set(fact: Omit<MemoryFact, 'id' | 'createdAt' | 'updatedAt'>): string;
+  get(key: string, opts?: MemoryQueryOptions): MemoryFact | null;
+  list(prefix?: string, opts?: MemoryQueryOptions): MemoryFact[];
+  delete(key: string): boolean;
+  search(query: string, opts?: MemoryQueryOptions): MemoryFact[];
+  archive(options?: { days?: number; now?: Date }): number;
+  listArchived(prefix?: string, opts?: MemoryQueryOptions): MemoryFact[];
+  /** 显式导出（跨项目唯一通道之一）：只导出当前 scope 可见的 keys */
+  exportFacts(keys: string[]): MemoryFactExportBundle;
+  /** 显式导入（跨项目唯一通道之二）：须 approve=true（审批门） */
+  importFacts(
+    bundle: MemoryFactExportBundle,
+    options: MemoryImportOptions,
+  ): { imported: number; rejected: number };
+}
+
+/**
+ * 解析当前记忆作用域（v1.5.6 章二 · 沉淀记忆项目作用域）。
+ *
+ * 规则：git 仓内 → `project:<repoRoot 的 sha256 前 8 位 hex>`；非 git 目录 /
+ * git 不可用 / 任何异常 → `'global'`（异常兜底也回 global，**绝不抛**）。
+ *
+ * @param cwd 工作目录（默认 process.cwd()）
+ * @returns `project:<8位hex>` 或 `global`
+ */
+export function resolveMemoryScope(cwd?: string): string {
+  try {
+    const workDir = cwd ?? process.cwd();
+    const repoRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: workDir,
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    if (!repoRoot) return 'global';
+    return `project:${createHash('sha256').update(repoRoot).digest('hex').slice(0, 8)}`;
+  } catch {
+    // 非 git 目录 / git 不可用 / 超时——统一回 global（本函数不可抛）
+    return 'global';
+  }
+}
+
+/**
  * 创建 MemoryStore 实例。
  *
+ * v1.5.6 章二：引入项目作用域（scope）——默认 scope = resolveMemoryScope()。
+ * get/list/search/listArchived 默认只见「当前 scope + global」两条，显式传
+ * `{ allScopes: true }` 可跨项目查；无 scope 字段的旧事实一律视为可见（零回归）。
+ *
  * @param dataBase 数据根目录（可选；默认 SOFAGENT_DATA → ~/.sofagent/data）
+ * @param options.scope 作用域覆盖（默认 resolveMemoryScope()；测试隔离用）
  */
-export function createMemoryStore(dataBase?: string): {
-  set: (fact: Omit<MemoryFact, 'id' | 'createdAt' | 'updatedAt'>) => string;
-  get: (key: string) => MemoryFact | null;
-  list: (prefix?: string) => MemoryFact[];
-  delete: (key: string) => boolean;
-  search: (query: string) => MemoryFact[];
-  archive: (options?: { days?: number; now?: Date }) => number;
-  listArchived: (prefix?: string) => MemoryFact[];
-} {
+export function createMemoryStore(
+  dataBase?: string,
+  options: { scope?: string } = {},
+): MemoryStore {
   const memoryRoot = getMemoryRoot(dataBase);
+  const scope = options.scope ?? resolveMemoryScope();
+
+  /** 按 key 读取一条事实（**不做作用域过滤**——过滤在 visibleFact） */
+  const readFact = (key: string): MemoryFact | null => {
+    const index = readIndex(memoryRoot);
+    const factId = index[key];
+    if (!factId) return null;
+
+    const { bucket } = extractBucket(key);
+    const factPath = resolveFactPath(memoryRoot, bucket, factId);
+    if (!factPath) return null;
+
+    return markdownToFact(readFileSync(factPath, 'utf-8'), factId);
+  };
+
+  /**
+   * 写入或更新一条事实（打上给定 scope）。
+   * set 用当前 scope；importFacts 用目标 scope。
+   * @returns 事实 ID
+   */
+  const putFact = (
+    fact: Omit<MemoryFact, 'id' | 'createdAt' | 'updatedAt'>,
+    scopeValue: string,
+  ): string => {
+    mkdirSync(memoryRoot, { recursive: true, mode: 0o700 });
+    const index = readIndex(memoryRoot);
+    const now = new Date().toISOString();
+
+    // 已存在则更新
+    let factId = index[fact.key];
+    let createdAt = now;
+    if (factId) {
+      // 读取旧事实的 createdAt
+      const { bucket } = extractBucket(fact.key);
+      const oldPath = resolveFactPath(memoryRoot, bucket, factId);
+      if (oldPath) {
+        const old = markdownToFact(readFileSync(oldPath, 'utf-8'), factId);
+        if (old) createdAt = old.createdAt;
+      }
+    } else {
+      factId = randomUUID();
+    }
+
+    const full: MemoryFact = {
+      ...fact,
+      id: factId,
+      createdAt,
+      updatedAt: now,
+      // v1.5.6 章二：写入时打上作用域
+      scope: scopeValue,
+    };
+
+    const { bucket } = extractBucket(fact.key);
+    const factPath = getFactPath(memoryRoot, bucket, factId);
+    mkdirSync(dirname(factPath), { recursive: true, mode: 0o700 });
+
+    // 写 Markdown 单文件
+    writeFileSync(factPath, factToMarkdown(full), 'utf-8');
+
+    // 更新索引
+    index[fact.key] = factId;
+    writeIndex(memoryRoot, index);
+
+    return factId;
+  };
+
+  /** 列出事实（按 key 前缀过滤，**不做作用域过滤**） */
+  const listRaw = (prefix?: string): MemoryFact[] => {
+    const index = readIndex(memoryRoot);
+    const keys = Object.keys(index).filter((k) => !prefix || k.startsWith(prefix));
+    const results: MemoryFact[] = [];
+    for (const key of keys) {
+      const fact = readFact(key);
+      if (fact) results.push(fact);
+    }
+    return results;
+  };
+
+  /**
+   * 作用域可见性过滤：默认只见「当前 scope + global」；无 scope 字段的旧事实一律可见
+   * （等价 global，保证作用域落地前的既有数据零回归）。allScopes=true 时不设限。
+   */
+  const visibleFact = (fact: MemoryFact | null, opts?: MemoryQueryOptions): MemoryFact | null => {
+    if (!fact) return null;
+    if (opts?.allScopes === true) return fact;
+    if (fact.scope === undefined || fact.scope === null) return fact;
+    if (fact.scope === scope || fact.scope === 'global') return fact;
+    return null;
+  };
 
   return {
-    /**
-     * 写入或更新一条事实。
-     * key 已存在时更新值，否则新建。
-     * @returns 事实 ID
-     */
+    /** 写入或更新一条事实（当前 scope）。@returns 事实 ID */
     set(fact: Omit<MemoryFact, 'id' | 'createdAt' | 'updatedAt'>): string {
-      mkdirSync(memoryRoot, { recursive: true, mode: 0o700 });
-      const index = readIndex(memoryRoot);
-      const now = new Date().toISOString();
+      return putFact(fact, scope);
+    },
 
-      // 已存在则更新
-      let factId = index[fact.key];
-      let createdAt = now;
-      if (factId) {
-        // 读取旧事实的 createdAt
-        const { bucket } = extractBucket(fact.key);
-        const oldPath = resolveFactPath(memoryRoot, bucket, factId);
-        if (oldPath) {
-          const old = markdownToFact(readFileSync(oldPath, 'utf-8'), factId);
-          if (old) createdAt = old.createdAt;
-        }
-      } else {
-        factId = randomUUID();
-      }
 
-      const full: MemoryFact = {
-        ...fact,
-        id: factId,
-        createdAt,
-        updatedAt: now,
-      };
-
-      const { bucket } = extractBucket(fact.key);
-      const factPath = getFactPath(memoryRoot, bucket, factId);
-      mkdirSync(dirname(factPath), { recursive: true, mode: 0o700 });
-
-      // 写 Markdown 单文件
-      writeFileSync(factPath, factToMarkdown(full), 'utf-8');
-
-      // 更新索引
-      index[fact.key] = factId;
-      writeIndex(memoryRoot, index);
-
-      return factId;
+    /** 按 key 读取一条事实（默认只见「当前 scope + global」）。@returns MemoryFact 或 null */
+    get(key: string, opts?: MemoryQueryOptions): MemoryFact | null {
+      return visibleFact(readFact(key), opts);
     },
 
     /**
-     * 按 key 读取一条事实。
-     * @returns MemoryFact 或 null（不存在时）
-     */
-    get(key: string): MemoryFact | null {
-      const index = readIndex(memoryRoot);
-      const factId = index[key];
-      if (!factId) return null;
-
-      const { bucket } = extractBucket(key);
-      const factPath = resolveFactPath(memoryRoot, bucket, factId);
-      if (!factPath) return null;
-
-      return markdownToFact(readFileSync(factPath, 'utf-8'), factId);
-    },
-
-    /**
-     * 列出所有事实（可按 key 前缀过滤）。
+     * 列出所有事实（可按 key 前缀过滤；默认只见「当前 scope + global」）。
      * @param prefix key 前缀（如 "用户偏好" 匹配 "用户偏好.xxx"）
+     * @param opts { allScopes: true } 可跨项目查
      */
-    list(prefix?: string): MemoryFact[] {
-      const index = readIndex(memoryRoot);
-      const keys = Object.keys(index).filter((k) => !prefix || k.startsWith(prefix));
-      const results: MemoryFact[] = [];
-      for (const key of keys) {
-        const fact = this.get(key);
-        if (fact) results.push(fact);
-      }
-      return results;
+    list(prefix?: string, opts?: MemoryQueryOptions): MemoryFact[] {
+      return listRaw(prefix).filter((f) => visibleFact(f, opts) !== null);
     },
 
     /**
@@ -355,11 +468,12 @@ export function createMemoryStore(dataBase?: string): {
 
     /**
      * 搜索事实（全文模糊匹配 value + tags + key）。
-     * 归档事实不参与（归档不进常规检索）。
+     * 归档事实不参与（归档不进常规检索）。默认只见「当前 scope + global」。
      * @param query 搜索关键词
+     * @param opts { allScopes: true } 可跨项目查
      */
-    search(query: string): MemoryFact[] {
-      const all = this.list();
+    search(query: string, opts?: MemoryQueryOptions): MemoryFact[] {
+      const all = listRaw().filter((f) => visibleFact(f, opts) !== null);
       const lowerQuery = query.toLowerCase();
       return all.filter((f) => {
         return (
@@ -414,8 +528,11 @@ export function createMemoryStore(dataBase?: string): {
       return moved;
     },
 
-    /** v1.5.6 章二 · 显式查归档（对应 CLI/工具面的 `--archive`）。 */
-    listArchived(prefix?: string): MemoryFact[] {
+    /**
+     * v1.5.6 章二 · 显式查归档（对应 CLI/工具面的 `--archive`）。
+     * 默认只见「当前 scope + global」；{ allScopes: true } 可跨项目查。
+     */
+    listArchived(prefix?: string, opts?: MemoryQueryOptions): MemoryFact[] {
       const archiveIndex = readArchiveIndex(memoryRoot);
       const results: MemoryFact[] = [];
       for (const key of Object.keys(archiveIndex)) {
@@ -428,12 +545,75 @@ export function createMemoryStore(dataBase?: string): {
         if (!existsSync(p)) continue;
         try {
           const f = markdownToFact(readFileSync(p, 'utf-8'), factId);
-          if (f) results.push(f);
+          if (f && visibleFact(f, opts) !== null) results.push(f);
         } catch {
           // 为何可静默：归档区单条坏文件跳过——listArchived 是显式查询面，单条损坏不应中断整表返回
         }
       }
       return results;
+    },
+
+    /**
+     * 显式导出当前 scope 可见的 keys（跨项目唯一通道之一）。
+     * sourceScope = 本 store scope；sourceRepo = resolveMemoryScope() 原值。
+     */
+    exportFacts(keys: string[]): MemoryFactExportBundle {
+      const facts: MemoryFact[] = [];
+      for (const key of keys) {
+        // 只导出当前 scope 可见（等价 get 默认口径）——不泄漏其它项目
+        const f = visibleFact(readFact(key), undefined);
+        if (f) facts.push(f);
+      }
+      return {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        sourceScope: scope,
+        sourceRepo: resolveMemoryScope(),
+        facts,
+      };
+    },
+
+    /**
+     * 显式导入（跨项目唯一通道之二）。
+     * 审批门：`approve !== true` 直接抛错（fail-closed，不得静默导入）；
+     * 通过后写入目标 scope（默认当前 scope），血缘记入 tags（必须可查）。
+     */
+    importFacts(
+      bundle: MemoryFactExportBundle,
+      importOptions: MemoryImportOptions,
+    ): { imported: number; rejected: number } {
+      if (importOptions.approve !== true) {
+        throw new Error(
+          'importFacts: 未批准导入（approve !== true）——跨项目导入须显式审批（fail-closed）',
+        );
+      }
+      const targetScope = importOptions.targetScope ?? scope;
+      let imported = 0;
+      let rejected = 0;
+      for (const fact of bundle.facts ?? []) {
+        if (!fact || typeof fact.key !== 'string' || fact.key === '') {
+          rejected += 1;
+          continue;
+        }
+        // 血缘留痕（必须可查）：来源 scope / 来源仓 / 导出时刻
+        const lineage = [
+          `imported-from:${bundle.sourceScope}`,
+          `imported-repo:${bundle.sourceRepo}`,
+          `imported-at:${bundle.exportedAt}`,
+        ];
+        putFact(
+          {
+            key: fact.key,
+            value: fact.value,
+            source: fact.source,
+            confidence: fact.confidence,
+            tags: [...(fact.tags ?? []), ...lineage],
+          },
+          targetScope,
+        );
+        imported += 1;
+      }
+      return { imported, rejected };
     },
   };
 }

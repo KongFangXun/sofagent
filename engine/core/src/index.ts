@@ -292,8 +292,8 @@
   extractSummary,
 } from './compress-memory';
 
-// ── 事实级记忆存储（v1.2.9 功能①）──
-/* @public */ export { createMemoryStore } from './memory-store';
+// ── 事实级记忆存储（v1.2.9 功能①；v1.5.6 章二加项目作用域）──
+/* @public */ export { createMemoryStore, resolveMemoryScope } from './memory-store';
 /* @public */ export type { MemoryFact } from './memory-store';
 
 // ── 记忆契约（think.md · Ledger-Views-Policy）──
