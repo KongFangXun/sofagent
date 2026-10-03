@@ -87,6 +87,25 @@ function expandConfigPath(value: string): string {
 }
 
 /**
+ * git 公共目录（**worktree 安全**）：`--git-common-dir` 是唯一同时覆盖「普通检出」
+ * 与「worktree」两种形态的口径——前者返回 `.git`，后者返回主仓的 `.git` 目录。
+ * 失败（非 git 仓库 / 旧版 git）返回 null，由调用方退回向上查找结果。
+ */
+function resolveCommonGitDir(cwd: string): string | null {
+  try {
+    const out = execFileSync('git', ['rev-parse', '--git-common-dir'], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      cwd,
+    }).trim();
+    if (!out) return null;
+    return isAbsolute(out) ? out : resolve(cwd, out);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 解析 hook 安装目录（T1 核心）：
  *   1. 从 cwd 向上找 .git（与旧 installHook 行为一致）
  *   2. 读 git config core.hooksPath（local/system/global 任一层配置都生效）
@@ -95,7 +114,11 @@ function expandConfigPath(value: string): string {
  * 非 git 仓库返回 null。
  */
 export function resolveHooksDir(cwd: string): HooksDirResolution | null {
-  const gitDir = findGitDir(cwd);
+  const walked = findGitDir(cwd);
+  // worktree 安全：`.git` 在 worktree 里是**文件指针**而非目录，向上找 `.git` 会命中一个
+  // 不可用路径 ⇒ hooksDir = `<worktree>/.git/hooks` ⇒ 安装时 ENOTDIR。`--git-common-dir`
+  // 在普通检出返回 ".git"、在 worktree 返回**主仓** .git 目录 —— 都指向 git 真正读 hook 的位置。
+  const gitDir = resolveCommonGitDir(cwd) ?? walked;
   if (!gitDir) return null;
 
   let repoRoot = dirname(gitDir);

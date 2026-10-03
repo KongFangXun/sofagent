@@ -86,6 +86,7 @@ if [ -f "$HISTORY_FILE" ]; then
   # （commit 已发生，post-commit 退出码不阻断 commit 本身，只向上游链路报红）。
   COMMIT_SHA="$CURRENT_SHA" PARENT_SHA="$PARENT_SHA" COMMIT_SUBJECT="$COMMIT_SUBJECT" COMMIT_TREE="$COMMIT_TREE" HISTORY_FILE="$HISTORY_FILE" node -e '
 const fs = require("fs");
+const { execSync } = require("child_process");
 const COMMIT_SHA = process.env.COMMIT_SHA;
 const PARENT_SHA = process.env.PARENT_SHA;
 const COMMIT_SUBJECT = (process.env.COMMIT_SUBJECT || "").trim();
@@ -171,7 +172,20 @@ try {
   // 升级为 WARN：INFO 在 hook 被删场景下是误导性安心（mv .git/hooks/commit-msg
   // 后明文密钥可落库，唯一信号只是一行可忽略的 INFO）。仍 exit 0 不阻断。
   console.log("");
-  var hookPath = ".git/hooks/commit-msg";
+  // worktree 安全：`.git` 在 worktree 中是**文件指针**（非目录），硬编码 ".git/hooks/commit-msg"
+  // 会永远读不到 ⇒ 正常安装了 hook 的 worktree 被误报「防线已卸甲」（假阴性）。
+  // 解析口径与 hook-install 的 resolveHooksDir 对齐：core.hooksPath 优先，其次
+  // `--git-common-dir`（普通检出返回 ".git"、worktree 返回**主仓** .git 目录）。
+  var hookPath = (function () {
+    var run = function (cmd) {
+      try { return execSync(cmd, { encoding: "utf-8", stdio: ["pipe", "pipe", "ignore"] }).trim(); } catch (e) { return ""; }
+    };
+    var cfg = run("git config core.hooksPath");
+    if (cfg) return cfg + "/commit-msg";
+    var common = run("git rev-parse --git-common-dir");
+    if (common) return common + "/hooks/commit-msg";
+    return ".git/hooks/commit-msg";
+  })();
   var hookMissing = false;
   try {
     fs.readFileSync(hookPath, "utf-8");
