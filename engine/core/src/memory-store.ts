@@ -531,7 +531,8 @@ export function createMemoryStore(
     },
 
     /**
-     * v1.5.6 章二 · 显式查归档（对应 CLI/工具面的 `--archive`）。
+     * v1.5.6 章二 · 显式查归档（生产入口：`sofagent core doctor --archive`，
+     * 由 doctor.ts 数据目录健康度节消费；常规 list/search 不见归档）。
      * 默认只见「当前 scope + global」；{ allScopes: true } 可跨项目查。
      */
     listArchived(prefix?: string, opts?: MemoryQueryOptions): MemoryFact[] {
