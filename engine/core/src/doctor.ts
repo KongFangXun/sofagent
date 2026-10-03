@@ -381,8 +381,10 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     // 生产消费者接线点①：doctor 面向用户如实披露「本仓写入的记忆钉在哪个 scope」。
     const memScope = resolveMemoryScope(projectDir);
     const memStore = createMemoryStore();
-    const factCount = memStore.list(undefined, { allScopes: true }).length;
-    console.log(`  ↳ 沉淀记忆：作用域 ${memScope} · 全局索引事实 ${factCount} 条（跨项目默认不共享）`);
+    const memStats = memStore.stats();
+    console.log(
+      `  ↳ 沉淀记忆：作用域 ${memScope} · 索引事实 ${memStats.facts} 条 / 归档 ${memStats.archived} 条（跨项目默认不共享）`,
+    );
     // 生产消费者接线点②：审计链锚点路径披露（防尾部截断的锚点文件在哪，运维可复核）
     const anchorFile = getHistoryAnchorFilePath();
     console.log(`  ↳ 审计链头锚点：${anchorFile}`);

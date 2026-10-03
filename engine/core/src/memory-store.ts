@@ -282,6 +282,8 @@ interface MemoryStore {
   search(query: string, opts?: MemoryQueryOptions): MemoryFact[];
   archive(options?: { days?: number; now?: Date }): number;
   listArchived(prefix?: string, opts?: MemoryQueryOptions): MemoryFact[];
+  /** v1.5.6 章二：索引级统计（**零文件读取**——面板/doctor 用，避免 O(N) 遍历事实文件） */
+  stats(): { facts: number; archived: number };
   /** 显式导出（跨项目唯一通道之一）：只导出当前 scope 可见的 keys */
   exportFacts(keys: string[]): MemoryFactExportBundle;
   /** 显式导入（跨项目唯一通道之二）：须 approve=true（审批门） */
@@ -551,6 +553,17 @@ export function createMemoryStore(
         }
       }
       return results;
+    },
+
+    /**
+     * v1.5.6 章二：索引级统计——只读 memory.json + archive-index.json 两个索引文件，
+     * **不遍历任何事实文件**（doctor 等只读面板专用；list() 会逐条读文件，大库下 O(N) 不可用）。
+     */
+    stats(): { facts: number; archived: number } {
+      return {
+        facts: Object.keys(readIndex(memoryRoot)).length,
+        archived: Object.keys(readArchiveIndex(memoryRoot)).length,
+      };
     },
 
     /**
