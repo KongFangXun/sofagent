@@ -118,6 +118,15 @@
       "level": "error",
       "slow": false,
       "note": "同族：regression-checklist 实测行数"
+    },
+    {
+      "id": "audit-pkg-bin-count",
+      "file": "docs/DEVELOPMENT.md",
+      "extract": "npm 包 @sofagent/audit 暴露 ([0-9]+) 个 bin",
+      "derive": "node -p \"Object.keys(require('./engine/audit/package.json').bin).length\"",
+      "level": "error",
+      "slow": false,
+      "note": "audit 包 bin 数声称直接数 package.json 的 bin 字段（P1-4 防回归：曾把 2 写成 1，且把路由用法误当包 bin）"
     }
   ]
 }
