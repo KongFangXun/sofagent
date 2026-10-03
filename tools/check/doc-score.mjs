@@ -217,16 +217,24 @@ function d3_4() {
   for (const f of ACTIVE_DOCS) {
     if (FRAG_EXEMPT.has(f)) continue;
     const { body } = docLines(f);
-    let inF = false;
     const h3 = [];
     let cur = null;
+    let inF = false;
     for (const { line } of body) {
-      if (isFence(line)) { inF = !inF; continue; }
-      if (inF) continue;
+      // 计数口径（对齐声明口径）：H3 下**全部非空行**计入正文——**围栏（代码块）内容计入**；
+      // 且**只截断于 H1–H3**——H4+ 子树属其父 H3 的内容，不作为截断点。
+      // 旧口径（围栏排除 + 任意标题截断）有两处**假阳性**：① 只有一段代码、没有散文的 H3 被判 thin；
+      // ② 「H3 带若干 H4 子节」被判 thin。
+      // ⚠️ 标题判定**仍须围栏感知**：围栏内的 `### …` 是代码不是标题，不得据此新起 H3。
+      if (isFence(line)) { inF = !inF; if (cur && line.trim()) cur.n++; continue; }
+      if (inF) { if (cur && line.trim()) cur.n++; continue; }
       if (isHeading(line)) {
-        if (cur) h3.push(cur);
-        cur = /^###\s/.test(line) ? { n: 0 } : null; // 非 H3 标题结束上一节且自身不计
-        continue;
+        if (/^#{1,3}\s/.test(line)) {
+          if (cur) h3.push(cur);
+          cur = /^###\s/.test(line) ? { n: 0 } : null; // 非 H3 的 H1/H2 结束上一节且自身不计
+          continue;
+        }
+        // H4+ 标题：不截断，落入下方计为父 H3 的正文
       }
       if (cur && line.trim()) cur.n++;
     }
