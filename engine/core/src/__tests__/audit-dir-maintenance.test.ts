@@ -12,7 +12,8 @@ import { mkdtempSync, mkdirSync, rmSync, existsSync, readFileSync, writeFileSync
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
-import { cleanupLegacyArtifacts } from '../audit-dir-maintenance';
+import { fileURLToPath } from 'url';
+import { cleanupLegacyArtifacts, runAuditDirMaintenance } from '../audit-dir-maintenance';
 
 const DAY_MS = 86_400_000;
 const NOW = new Date('2026-09-26T00:00:00.000Z');
@@ -107,5 +108,51 @@ describe('§v1.5.6 章二 · 遗留备份接管清理', () => {
     expect(evidence).toContain('history.jsonl.bak-old');
     expect(evidence).toContain('a.broken-1');
     expect(evidence).toContain('size=100');
+  });
+
+  it('④ 接通：runAuditDirMaintenance 清超龄遗留备份 + 留痕；doctor --repair 确有调用', () => {
+    seed('history.jsonl.bak-old', new Date(NOW.getTime() - 60 * DAY_MS), 100);
+    seed('history.jsonl.bak-new', new Date(NOW.getTime() - 1 * DAY_MS), 10);
+
+    const r = runAuditDirMaintenance({ dataDir, maxAgeDays: 30, now: NOW });
+    expect(r.cleanup.deleted.length).toBe(1);
+    expect(existsSync(join(auditDir, 'history.jsonl.bak-old'))).toBe(false);
+    expect(existsSync(join(auditDir, 'history.jsonl.bak-new'))).toBe(true);
+
+    const entries = readFileSync(join(auditDir, 'decision-log.jsonl'), 'utf-8')
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+    expect(entries.filter((e) => e.kind === 'LEGACY_CLEANUP').length).toBe(1);
+
+    // doctor --repair 分支确有对编排入口的调用（grep 级接线断言）
+    const doctorSrc = readFileSync(fileURLToPath(new URL('../doctor.ts', import.meta.url)), 'utf-8');
+    expect(doctorSrc).toContain('runAuditDirMaintenance(');
+  });
+
+  it('⑤ 接通：runAuditDirMaintenance 超阈值时归档历史段并留痕', () => {
+    // 造可被归档的 history.jsonl（archiveHistoryHead 只按字节/条数归档，不校验链）
+    const lines: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      lines.push(JSON.stringify({ timestamp: `2026-06-0${i + 1}T00:00:00.000Z`, exitCode: 0, ruleResults: [] }));
+    }
+    writeFileSync(join(auditDir, 'history.jsonl'), lines.join('\n') + '\n', 'utf-8');
+
+    const r = runAuditDirMaintenance({ dataDir, maxAgeDays: 30, now: NOW, archiveMaxBytes: 10 });
+    expect(r.archive.archivedEntries).toBeGreaterThan(0);
+    expect(r.archive.archivePath).not.toBeNull();
+    expect(existsSync(r.archive.archivePath!)).toBe(true);
+
+    const entries = readFileSync(join(auditDir, 'decision-log.jsonl'), 'utf-8')
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+    expect(
+      entries.some(
+        (e) =>
+          e.kind === 'LEGACY_CLEANUP' &&
+          ((e.evidence as string[]) ?? []).join(' ').includes('archived='),
+      ),
+    ).toBe(true);
   });
 });
