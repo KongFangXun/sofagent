@@ -96,7 +96,7 @@
 - **[Confidence-Aware Routing](https://arxiv.org/abs/2510.01237)** · Nandakishor M — 统一置信度驱动四路径路由，与 L0/L1/L2+第三态同构
 - **[DeepRAG](https://arxiv.org/abs/2503.08213)** · Nandakishor M — 从零自建 embedding 模型参考
 - **[System One Models & Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** · TypeSafe AI — RLCD、三原语提出方；「校准优先于偏好」
-- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线；@2026-09-30 v0.3.22
+- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线；@2026-10-02 v0.3.24
 - **[kev](https://github.com/jaredpalmer/kev)** · Jared Palmer — Jev 架构型开源复刻（0.8B/4B/9B 全尺寸）
 - **[Bespoke Nimble](https://github.com/bespokelabsai/nimble)** · Bespoke Labs — 2,676 条对比式样本构造法（「数据质量 > 参数量」）
 - **Jev 接口复刻族**（SemIf / NanoJev / Jevlike / LocalJev / JEV-mini）— 对照件候选与路线对照
