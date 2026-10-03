@@ -158,4 +158,20 @@ describe('§v1.5.6 章二 · audit-history 历史段归档', () => {
     expect(r.remainingEntries).toBeGreaterThanOrEqual(1);
     expect(r.remainingEntries + r.archivedEntries).toBe(2);
   });
+
+  it('⑥ 权限：归档前后主链与归档段 mode 均保持 0o600（治理动作不得放宽权限）', () => {
+    seed(6);
+    const histPath = getHistoryFilePath(dataDir);
+    // 夹具以 0o600 落盘（对齐真实 ~/.sofagent/data 口径）
+    expect(statSync(histPath).mode & 0o777).toBe(0o600);
+
+    const size = statSync(histPath).size;
+    const r = archiveHistoryHead({ dataDir, maxBytes: Math.floor(size * 0.8) });
+
+    // P2-1 回归锁：归档覆盖写主链时缺 mode 会让 umask 022 下的 600 放宽为 644。
+    // 主链持 HMAC 审计记录，权限不得因归档（治理动作）被放宽。
+    expect(statSync(histPath).mode & 0o777).toBe(0o600);
+    expect(r.archivePath).not.toBeNull();
+    expect(statSync(r.archivePath!).mode & 0o777).toBe(0o600);
+  });
 });
