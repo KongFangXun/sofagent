@@ -35,6 +35,9 @@ import { CONFIG_TEMPLATE } from './config-template';
 import { emitAuditDecision } from './audit-decision-writer';
 // v1.5.6 章二：审计目录维护入口（--repair 触发遗留备份清理 + 历史段归档）
 import { runAuditDirMaintenance } from './audit-dir-maintenance';
+// v1.5.6 章二：记忆作用域解析（doctor 披露本仓记忆钉在哪个 scope）
+import { resolveMemoryScope, createMemoryStore } from './memory-store';
+import { getHistoryAnchorFilePath } from './audit-history';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
@@ -374,6 +377,15 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     } else if (!healthWarned) {
       ok('数据目录健康度正常（无单目录超阈值）');
     }
+    // v1.5.6 章二：沉淀记忆作用域提示——本仓解析出的记忆作用域（跨项目默认不共享）
+    // 生产消费者接线点①：doctor 面向用户如实披露「本仓写入的记忆钉在哪个 scope」。
+    const memScope = resolveMemoryScope(projectDir);
+    const memStore = createMemoryStore();
+    const factCount = memStore.list(undefined, { allScopes: true }).length;
+    console.log(`  ↳ 沉淀记忆：作用域 ${memScope} · 全局索引事实 ${factCount} 条（跨项目默认不共享）`);
+    // 生产消费者接线点②：审计链锚点路径披露（防尾部截断的锚点文件在哪，运维可复核）
+    const anchorFile = getHistoryAnchorFilePath();
+    console.log(`  ↳ 审计链头锚点：${anchorFile}`);
   }
 
   // 4. Hook 状态
