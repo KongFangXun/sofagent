@@ -841,4 +841,7 @@ function main(): void {
 if (process.env.SOFAGENT_SINGLE_ENTRY !== '1') {
   process.stderr.write('[sofagent] 旧命令 `sofagent-orchestrator-compare` 已收敛到单入口 `sofagent compare`——本命令进入兼容期（仍可用，下一 minor 版本移除）。\n');
 }
-if (process.argv[1]?.includes('orchestrate-compare')) main();
+// v1.5.6 章一修正：原守卫 `process.argv[1]?.includes('orchestrate-compare')` 与实际
+// 文件名 / bin 名 `orchestrator-compare` **不匹配** ⇒ main() 从不执行（该 bin 自始不可用的
+// 既有缺陷，由单入口路由实测暴露）。两种拼写都放行。
+if (/(?:orchestrator|orchestrate)-compare/.test(process.argv[1] ?? '')) main();
