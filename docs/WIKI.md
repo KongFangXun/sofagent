@@ -245,7 +245,7 @@ graph TB
 |---|---|
 | 当前版本 | **v1.5.5**（2026-10-01，✅ 已发版 · 执行模块 · 执行状态机与按需加载）· 上一版 v1.5.4（2026-09-30，✅ 已发版） |
 | 下一版 | **v1.5.6**（⏳ 未开发——以 [ROADMAP](./ROADMAP.md) 规划表为准） |
-| 测试覆盖 | 5660 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
+| 测试覆盖 | 5661 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
 | 审计规则 | 25 条（17 默认 + 8 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#25-条审计规则完整清单文档级-ssot)） |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
