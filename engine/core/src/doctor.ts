@@ -359,7 +359,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         if (overFiles) reasons.push(`文件数 ${files} > ${FILE_WARN}`);
         if (overSize) reasons.push(`总量 ${mb(bytes)}MB > ${Math.round(SIZE_WARN_BYTES / 1024 / 1024)}MB`);
         warn(`data/${d}/ 接近性能退化区间（${reasons.join(' · ')}）`);
-        repairHint(`归档轮转：memory 走 memory-store 的 archive()（二级分层 + 冷热分层）；audit 走 audit-history 历史段归档`);
+        repairHint(`归档轮转：memory 走 memory-store 的 archive()（二级分层 + 冷热分层）；audit 侧历史段归档排 v1.5.7（本版未实施，见 v1.5.6 施工登记）`);
       } else {
         ok(`data/${d}/ (${files} 文件 · ${mb(bytes)}MB)`);
       }

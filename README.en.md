@@ -301,7 +301,7 @@ sofagent audit --doctor    # verify the environment (optional)
 **To uninstall**: `bash ~/.sofagent/scripts/uninstall.sh` (installed layout) or `bash engine/scripts/uninstall.sh` (clone layout) — removes the Skill/constitution files, hook registrations
 and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data.
 
-Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the two channels both named `sofagent` apart (npm bare-name umbrella = sub-package forwarder, see the package-name warning in Usage; the install.sh state
+Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the single entry from the install-state layout apart (npm bare-name umbrella = sub-package forwarder, see the package-name warning in Usage; the install.sh state
 exposes `status` / `web` / `dashboard`) → [HANDBOOK
 · Installation](./docs/HANDBOOK.md).
 

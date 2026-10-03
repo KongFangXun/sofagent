@@ -238,7 +238,7 @@ sofagent audit --doctor    # 验证环境（可选）
 
 **卸载**：`bash ~/.sofagent/scripts/uninstall.sh`（安装态）或 `bash engine/scripts/uninstall.sh`（clone 态）——移除 Skill/约束文件、hook 注册与三个 git hook（`pre-commit` / `commit-msg` / `post-commit`），保留你的 `~/.sofagent/` 数据。
 
-完整安装方式（clone / npx / 最小安装 / 企业部署）、卸载、以及「两条通道都叫 sofagent 怎么分辨」等消歧细节见 [HANDBOOK · 安装](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js；15 分钟最短路径见其「15 分钟最短路径」小节）。
+完整安装方式（clone / npx / 最小安装 / 企业部署）、卸载、以及「单入口与安装态怎么分辨」等消歧细节见 [HANDBOOK · 安装](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js；15 分钟最短路径见其「15 分钟最短路径」小节）。
 
 ## 使用
 
