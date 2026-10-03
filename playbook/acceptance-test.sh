@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：395 个场景（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
+# 场景数：396 个场景（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
 # 编号跳号豁免：S1~S293 间 70 个空洞号（v1.2.x 瘦身既成事实）；新编号=当前最大+1 顺延禁回填；版本段 grep "─── v" 定位
 # 口径注意：底部「$PASSED 通过」是断言通过数（≠场景数，含跳过场景），勿混用
 # 用法：bash playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
@@ -518,7 +518,7 @@ fi
 REVIEW_FILE="$PROJECT_ROOT/SKILL/agents/reviewer/SKILL.md"; SIGN_OK=true
 if [ -f "$REVIEW_FILE" ]; then
   SIGN_BEFORE=$(grep -B3 "^# 代码审查报告" "$REVIEW_FILE" || true)
-  grep -q "sofagent-audit" <<< "$SIGN_BEFORE" && [[ "$SIGN_BEFORE" == *sofagent-orchestrator* ]] && pass || { SIGN_OK=false; fail "审查报告签名模板缺少 sofagent-audit 或 sofagent-orchestrator"; }
+  grep -q "sofagent audit" <<< "$SIGN_BEFORE" && [[ "$SIGN_BEFORE" == *"sofagent orchestrator"* ]] && pass || { SIGN_OK=false; fail "审查报告签名模板缺少 sofagent audit 或 sofagent orchestrator"; }
 else SIGN_OK=false; fail "reviewer/SKILL.md 不存在"; fi
 if [ -f "$REVIEW_FILE" ]; then [ -n "$(grep -A2 "代码审查报告" "$REVIEW_FILE" 2>/dev/null | head -3 || true)" ] && pass || fail "审查报告标题行不存在"; fi
 FS_AUDIT_OK=true; grep -r "isomorphic-git\|isomorphicGit" "$PROJECT_ROOT/engine/core/src/" --include="*.ts" -l > /dev/null 2>&1 || FS_AUDIT_OK=false
