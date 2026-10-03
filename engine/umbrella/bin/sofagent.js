@@ -183,12 +183,7 @@ function main() {
 
   if (argv.length === 0) {
     // audit-first 保留：裸 `sofagent` 仍直通审计（旧行为不破——v1.5.6 前的默认入口）
-    const target0 = resolveDomainCli('audit', []);
-    const r0 = spawnSync(process.execPath, [target0.cliPath], {
-      stdio: 'inherit',
-      env: { ...process.env, SOFAGENT_SINGLE_ENTRY: '1' },
-    });
-    return r0.status === null ? 130 : r0.status;
+    return spawnDomain('audit', []);
   }
   if (argv[0] === 'help' || argv[0] === '--help' || argv[0] === '-h') {
     printHelp();
@@ -204,23 +199,23 @@ function main() {
 
   if (RESERVED.has(cmd)) return handleReserved(cmd, rest);
 
+  // audit-first 回退（v1.5.6 行为保真）：非保留字、非已知域的首参一律转 audit——
+  // 保持旧 umbrella 的「裸 sofagent 即 audit」语义，覆盖 `--doctor` / `--diff X` /
+  // `demo` / `HEAD~3..HEAD` 等 audit 参数面（收敛前它们全部直达 audit，不得回归）。
   if (!Object.prototype.hasOwnProperty.call(DOMAINS, cmd)) {
-    console.error(`[sofagent] 未知域：${cmd}`);
-    console.error('');
-    console.error('业务域：');
-    console.error(domainList());
-    console.error('');
-    console.error('保留字：status · where · version · dashboard · web · data · help');
-    console.error('');
-    console.error('提示：旧命令（sofagent-audit / sofagent-daemon / …）在兼容期内仍可用。');
-    return 2;
+    return spawnDomain('audit', argv);
   }
 
+  return spawnDomain(cmd, rest);
+}
+
+// 统一 spawn 出口（退出码原样回传；结果面注入单入口静默标记）
+function spawnDomain(domain, args) {
   let target;
   try {
-    target = resolveDomainCli(cmd, rest);
+    target = resolveDomainCli(domain, args);
   } catch (err) {
-    console.error(`[sofagent] 无法定位域「${cmd}」的实现入口：${err && err.message ? err.message : err}`);
+    console.error(`[sofagent] 无法定位域「${domain}」的实现入口：${err && err.message ? err.message : err}`);
     const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
     const inRepo = existsSync(join(repoRoot, 'engine', 'audit', 'package.json'));
     console.error(inRepo
@@ -228,13 +223,12 @@ function main() {
       : '[sofagent] 请尝试重新安装：npm i -g sofagent');
     return 127;
   }
-
   const result = spawnSync(process.execPath, [target.cliPath, ...target.args], {
     stdio: 'inherit',
     env: { ...process.env, SOFAGENT_SINGLE_ENTRY: '1' },
   });
   if (result.error) {
-    console.error(`[sofagent] 启动域「${cmd}」失败：${result.error.message}`);
+    console.error(`[sofagent] 启动域「${domain}」失败：${result.error.message}`);
     return 127;
   }
   return result.status === null ? 130 : result.status;
