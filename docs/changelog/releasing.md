@@ -44,11 +44,11 @@
 
 > 每次新 session 或新阶段开始时，先读这 11 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
 
-- [ ] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)　✅ 完成（20 批 bugfix 收编 + 对话式多轮等价形态 · 台账见 git 演进史）
-- [ ] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)　✅ 完成（五章施工 8 提交 · 测试 5569→5633 · devlog 已翻牌「已开发」）
-- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（入口裁定一次 · A 快速直收 / B 盲审复制一次 prompt）→ [03-quality-loop.md](./releasing/03-quality-loop.md)　✅ 完成（A 轮 16 视角 + 升级 B 轮盲审 30+ findings · P0 经 104 次系统性探针推翻 · 修复批 10 commits · 测试 5633→5642）
-- [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)
-- [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)　✅ PASS-WITH-CONDITIONS（首轮 BLOCK 假 PASS 经三件套拦截 → 修复批 → 复跑 PASS · P1 五条已闭环 · acceptance 474/474 EXIT=0）
+- [ ] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)　✅ 完成（v1.5.6：4 份独立审查报告覆盖 v1.5.5 发版态存量 → 20 批 bugfix 收编）
+- [ ] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)　✅ 完成（v1.5.6：修复批 F1–F21 + 功能批三章 · 测试 5642→5660 · 场景 395→396）
+- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（入口裁定一次 · A 快速直收 / B 盲审复制一次 prompt）→ [03-quality-loop.md](./releasing/03-quality-loop.md)　✅ 完成（v1.5.6：路径 A 交接形态 · 19 视角审查出 P0×1/P1×7/P2×5 → 主 session 零信任复验全部实锤 → 修复批 9 提交 → acceptance 478/478 EXIT=0 · pre-push rc=0）
+- [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)　🔄 进行中（v1.5.6：A/B/C 草稿已出 `~/Desktop/abc-draft-v1.5.6.md`；步骤一/三/五 完成 · 步骤二/四 待——卡线约束：维度棘轮 85≤85、checklist 余 20 行、acceptance 余 5 行，归并候选经内容核对全为历史锚点假信号）
+- [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)
 - [ ] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
 - [ ] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)　✅ 全八步过：工具健康 10 项 · rebuild+dist 基线重置 · 锚点校验零错 · hook 端到端双链路（拦真密钥/干净放行）· cjk-var 140 文件零违规 · fail-loud 6 注入全红 · bump dry-run 454 处纯只读 + 新门禁 SOP 挂载
 - [ ] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)　✅ 复核完成：冻结窗口三查过（0 文件/0 mtime）· 门禁基线全绿（storefront 12 断言补验）· devlog 检查清单 0 未勾 · 无悬置拍板项 · 作者口头放行（发布 prompt 已生成待执行）
