@@ -1,6 +1,6 @@
 ---
-name: sofagent audit
-slug: sofagent audit
+name: sofagent-audit
+slug: sofagent-audit
 version: 1.5.5
 displayName: 合规审计员
 description: >

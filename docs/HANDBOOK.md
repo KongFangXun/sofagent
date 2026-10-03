@@ -435,7 +435,7 @@ Web 版含驾驶舱 / FDE 引导 / AI 节点 / 本体数据 / 知识库 / **工�
 
 ```yaml
 # .github/workflows/sofagent-audit.yml
-name: sofagent audit
+name: sofagent-audit
 on: [push, pull_request]
 jobs:
   audit:

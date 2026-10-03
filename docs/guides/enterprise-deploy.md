@@ -133,7 +133,7 @@ GitHub Actions 中跑 `sofagent audit --diff --ci`：
 
 ```yaml
 # .github/workflows/sofagent-audit.yml
-name: sofagent audit
+name: sofagent-audit
 on: [pull_request]
 jobs:
   audit:
