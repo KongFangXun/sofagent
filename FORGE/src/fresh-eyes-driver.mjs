@@ -232,7 +232,7 @@ const STEPS = {
     toolHardLimit: 80,
   },
   'b-fix':         { role: 'B', prompt: 'b-fix.md',         outputs: ['summary.md'],             inputs: ['result.md','findings.md'] },
-  // v1.2.8 功能⑥：b-audit 步骤——b-fix 改完代码后 driver 自动跑 sofagent-audit
+  // v1.2.8 功能⑥：b-audit 步骤——b-fix 改完代码后 driver 自动跑完整引擎审计（sofagent audit --full --diff）
   'b-audit':       { role: null, prompt: null,              outputs: ['audit-result.md'],        inputs: [], driverFn: 'runAuditGate' },
   // 单盲改造：c-verify 取代 a-verify——A 兼任发现者+验证者是「原告兼法官」，
   // C 为独立验收者（零上下文、与 A 无信息通路），每条亲手实测不采信自报。

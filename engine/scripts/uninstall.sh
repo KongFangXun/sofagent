@@ -406,6 +406,12 @@ if [ -f "$SOFAGENT_HOME/bin/serve-dashboard.mjs" ]; then
   ok "已删除 Web Dashboard 启动脚本（$SOFAGENT_HOME/bin/serve-dashboard.mjs）"
   ((removed++)) || true
 fi
+# v1.5.6 章一：单入口域路由登记（install_cli 建立的软链）随安装产物清理
+if [ -L "$SOFAGENT_HOME/bin/sofagent-router" ] || [ -f "$SOFAGENT_HOME/bin/sofagent-router" ]; then
+  rm -f "$SOFAGENT_HOME/bin/sofagent-router"
+  ok "已删除单入口域路由登记（$SOFAGENT_HOME/bin/sofagent-router）"
+  ((removed++)) || true
+fi
 
 # ── daemon 清理 ──
 DAEMON_UNINSTALL="${SCRIPT_DIR}/daemon-uninstall.sh"

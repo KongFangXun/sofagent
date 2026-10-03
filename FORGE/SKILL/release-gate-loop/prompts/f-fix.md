@@ -97,6 +97,6 @@ git commit -m "fix(<scope>): <中文描述>"
 
 ## 注意
 
-- 改完代码后 driver 自动 `git add -A && git commit` 然后跑 `sofagent-audit --diff`
+- 改完代码后 driver 自动 `git add -A && git commit` 然后跑 `sofagent audit --full --diff`
 - 如果 audit FAIL（检测到 A1 敏感文件/A2 密钥等违规），driver 会打回让你重修
 - audit PASS 后进入新一轮 V 全量重验

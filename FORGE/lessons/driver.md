@@ -416,7 +416,7 @@ npx vitest run FORGE/src/driver-base.test.mjs   # 单文件（调试用）
 
 #### SOFAGENT_SKIP_HOOK 环境变量旁路
 
-`sofagent-audit --init` 入口设 `process.env.SOFAGENT_SKIP_HOOK = '1'`，commit-msg hook 检测到此变量 `exit 0`。防 init 内部 git 命令触发刚安装的 hook。
+`sofagent audit --init` 入口设 `process.env.SOFAGENT_SKIP_HOOK = '1'`，commit-msg hook 检测到此变量 `exit 0`。防 init 内部 git 命令触发刚安装的 hook。
 
 #### Driver --skip-acceptance
 

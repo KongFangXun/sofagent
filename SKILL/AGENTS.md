@@ -8,7 +8,7 @@
 
 | Sub Agent | 目录 | 职责 |
 |---|---|---|
-| `@sofagent-audit` | [`agents/audit/`](./agents/audit/) | 合规审计员——工作流巡检、铁律覆盖验证、知识库健康度检查 |
+| `@sofagent audit` | [`agents/audit/`](./agents/audit/) | 合规审计员——工作流巡检、铁律覆盖验证、知识库健康度检查 |
 | `@sofagent-engineer` | [`agents/engineer/`](./agents/engineer/) | 最小变更工程师——读代码 + 写代码 + 跑测试 + git commit |
 | `@sofagent-fde` | [`agents/fde/`](./agents/fde/) | 前线部署工程师——梳理工作流、识别 AI 节点、构建知识库、交付离场 |
 | `@sofagent-reviewer` | [`agents/reviewer/`](./agents/reviewer/) | 代码审查员——语义审查 + 影响分析 + 铁律合规 |
@@ -19,10 +19,10 @@
 
 | Agent | Skill | CLI 命令 | 职责 |
 |---|---|---|---|
-| 部署工程师 | `@sofagent-fde` · `SKILL/agents/fde/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
-| 合规审计员 | `@sofagent-audit` · `SKILL/agents/audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | 工作流巡检、铁律覆盖验证、知识库健康度检查 |
-| 最小变更工程师 | `@sofagent-engineer` · `SKILL/agents/engineer/SKILL.md` | `sofagent-orchestrator subagent run engineer --task "..."` | 读代码 + 写代码 + 跑测试 + git commit |
-| 代码审查员 | `@sofagent-reviewer` · `SKILL/agents/reviewer/SKILL.md` | `sofagent-orchestrator subagent run reviewer --task "..."` | 语义审查 + 影响分析 + 铁律合规 |
+| 部署工程师 | `@sofagent-fde` · `SKILL/agents/fde/SKILL.md` | `sofagent orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| 合规审计员 | `@sofagent audit` · `SKILL/agents/audit/SKILL.md` | `sofagent orchestrator subagent run audit --task "..."` | 工作流巡检、铁律覆盖验证、知识库健康度检查 |
+| 最小变更工程师 | `@sofagent-engineer` · `SKILL/agents/engineer/SKILL.md` | `sofagent orchestrator subagent run engineer --task "..."` | 读代码 + 写代码 + 跑测试 + git commit |
+| 代码审查员 | `@sofagent-reviewer` · `SKILL/agents/reviewer/SKILL.md` | `sofagent orchestrator subagent run reviewer --task "..."` | 语义审查 + 影响分析 + 铁律合规 |
 
 
 ## 如何使用（第三方 Agent 调用）
@@ -31,7 +31,7 @@
 |---|---|---|
 | 装 Skill → @ | WorkBuddy/OpenClaw | `bash install.sh`（自动装），然后 `@sofagent-fde` |
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
-| CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
+| CLI 直跑 | 任何终端 | `sofagent orchestrator subagent run fde --task "..."` |
 | DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用；**一次装全套**用裸名 `skillhub install cordis-plugin-sofagent`） |
 | MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 104 tools |
 
@@ -60,8 +60,8 @@
 所有 sofagent Agent 在完成任务后都会自动调用审计员。这不是"建议检查"——是**合规闸门**：
 
 ```text
-FDE agent 部署完成 ──→ 自动调用 @sofagent-audit → 验证部署合规
-FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合规
+FDE agent 部署完成 ──→ 自动调用 @sofagent audit → 验证部署合规
+FORGE engineer commit ──→ 自动调用 @sofagent audit → 验证变更合规
 每次 git commit ──→ commit-msg hook → A1-A11、A14-A24 规则检查（0 token，纯正则引擎）
 未来任何新 Agent ──→ SKILL.md 内置审计引用 → 合规检查
 ```
@@ -77,7 +77,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | **定期巡检** | 每周一次 | 知识库健康度报告——哪些 entity 死链了、think.md 反思质量趋势 |
 | **新节点上线** | 新增 AI 节点后 | 检查新节点的 actions 声明是否完整、knowledge-domain 是否合理 |
 
-**和 `sofagent-core doctor` 的区别**：doctor 告诉你"哪里坏了"（二进制 yes/no），审计员告诉你"为什么坏了 + 怎么修"（LLM 解释 + 修复建议）。
+**和 `sofagent core doctor` 的区别**：doctor 告诉你"哪里坏了"（二进制 yes/no），审计员告诉你"为什么坏了 + 怎么修"（LLM 解释 + 修复建议）。
 
 每次运行产生的报告写入 `.sofagent/` 下，FDE 定期读报告趋势做优化决策。
 
@@ -90,7 +90,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 | 文件 | 格式 | 作用 | 谁读 |
 |---|---|---|---|
-| `SKILL.md` | Skill 格式（frontmatter + 调用指令 + 角色定义） | **调用入口 + 角色定义**——frontmatter 告诉第三方 Agent 何时触发、用 Bash 跑 `sofagent-orchestrator subagent run <name>`；正文是 Agent 的完整行为规范 | 第三方 Agent 平台（WorkBuddy/Codex）+ LangGraph `createReactAgent` 编排模块 |
+| `SKILL.md` | Skill 格式（frontmatter + 调用指令 + 角色定义） | **调用入口 + 角色定义**——frontmatter 告诉第三方 Agent 何时触发、用 Bash 跑 `sofagent orchestrator subagent run <name>`；正文是 Agent 的完整行为规范 | 第三方 Agent 平台（WorkBuddy/Codex）+ LangGraph `createReactAgent` 编排模块 |
 
 > 注：早期设计曾计划「SKILL.md（调用）+ {role}.md（定义）」双文件分离，当前实现为单文件承载两者（frontmatter = 调用层，正文 = 定义层）。岗位级注入约束见 [`rules/`](./rules/)（core-rules.md + role-*.md，由加载链按 task type 注入主 Agent，与 Sub Agent 定义是两套机制）。
 

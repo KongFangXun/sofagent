@@ -148,7 +148,7 @@ ls ~/.sofagent/data/knowledge/shared/ | head -20
 
 3. 设备 B 等一轮知识沉淀跑完（v1.1.7 起由 daemon 的 Dream Cycle 6 阶段 pipeline 承接；原 `weekly-report` / `lessons-extract` 脚本已退役）：
 ```bash
-sofagent-daemon knowledge status
+sofagent daemon knowledge status
 # 输出的 lessons 应包含「设备 A 本周踩过的坑」
 ```
 

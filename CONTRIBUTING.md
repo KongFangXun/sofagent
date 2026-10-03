@@ -3,25 +3,13 @@
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > 📖 新贡献者？先看 [COMMUNITY.md](./docs/COMMUNITY.md) 了解社区现状和贡献路径。
+> 📌 基于当前 main 分支结构修订，目录与文件以你面前的仓库为准。
 > v1.5.5 · 2026-10-01（UTC）· ✅ 已发版 · 孔放勋
 
 欢迎参与 sofagent！这个项目的代码由 AI 模型辅助生成（详见[致谢](./docs/THANKS.md#生成伙伴)），作者做产品决策和终审。你看到的任何技术问题，请直接指出来，不必客气。
 
 
-## 目录
-
-- [文档收录纪律](#文档收录纪律)
-- [新人 30 秒快速开始](#新人-30-秒快速开始)
-- [怎么参与](#怎么参与)
-- [项目维护模型](#项目维护模型)
-- [开发环境 + 发版](#开发环境--发版)
-- [文档体例](#文档体例)
-- [目前最需要的帮助](#目前最需要的帮助)
-- [Seeking Co-maintainers](#seeking-co-maintainers)
-- [行为准则](#行为准则)
-- [License](#license)
-
-## 文档收录纪律
+## 文档收录纪律（THANKS 一行制 / VALIDATION 三行制 / 归档分层）
 
 > 这一节回答「内容往核心文档里写时按什么形态收录」——防的是「读数/风险/边界小论文」 creeping 进致谢与印证文档。机械面由门禁兜底：字数上限 `tools/check/doc-char-ratchet.json`（doc-discipline Face 6）+ 抬头块闸 Face 7 + 墙式棘轮 Face 5；发版窗口全量体检见 [06-doc-finalize · 每版文档大扫除清单](./docs/changelog/releasing/06-doc-finalize.md)。
 
@@ -50,8 +38,24 @@
 
 - **删 / 撤 / 降既有条目时，必须留三要素**：**理由**（为什么撤）+ **去向**（移到哪个版本 / 探索方向 / 显式关闭）+ **形态标注**（`已裁定` 还是 `待评估`——本节的目的是消灭后者）。
 - **典型形态**：在原节表格补一行 `**已评估 · 不立本版约束项（YYYY-MM-DD 登记）**`，行内写明理由与去向；或就地改述为「预留位 / 候选评估项」并**保留原判据**。
-- **为什么**：版本规划文档同时是本版「做什么」与「不做什么」的**单一事实源**——只删内容不留理由，等于把「已裁定」重新变成「待评估」，而模糊地带即日后的静默扩张入口（[v1.6.0 §四](./docs/changelog/v1.6/v1.6.0.md)「不做的事也要有落点」的全局化）。**与冻结区纪律的关系**：冻结管「不改读数」，本节管「改了就说明」——两者不冲突。
-- **机械面**：登记行须同时含**理由句**与**去向指针**（可 `grep` 核查，缺一即形式不完整）。⚠️ **「删了却没留痕」本身无法从最终状态检测**（需 diff-based 检查，代价高于收益）——故本条的守卫是人工核查 + 本判据：评审时逐条对账「本轮删了什么、有没有对应登记」。
+- **为什么**：版本规划文档同时是本版「做什么」与「不做什么」的**单一事实源**——只删内容不留理由，等于把「已裁定」重新变成「待评估」，而模糊地带即日后的静默扩张入口（[v1.6.0 §四](./docs/changelog/v1.6/v1.6.0.md)「不做的事也要有落点」的全局化）。与冻结区纪律的关系：历史日志的**读数与表述冻结**（不回改），但落点与指向的变更须留痕——两者不冲突（冻结管「不改读数」，本节管「改了就说明」）。
+- **机械面**：登记行须同时含理由句与去向指针（可 `grep` 核查，缺一即形式不完整）。⚠️ 「删了却没留痕」本身无法从最终状态检测（需 diff-based 检查，代价高于收益）——故本条的守卫是人工核查 + 本判据：评审时逐条对账「本轮删了什么、有没有对应登记」。
+
+
+## 目录
+
+- [新人 30 秒快速开始](#新人-30-秒快速开始)
+- [怎么参与](#怎么参与)
+- [项目维护模型](#项目维护模型)
+- [开发环境 + 发版](#开发环境--发版)
+- [文档收录纪律（THANKS 一行制 / VALIDATION 三行制 / 归档分层）](#文档收录纪律thanks-一行制--validation-三行制--归档分层)
+- [撤回与降级留痕（删除既有条目时）](#撤回与降级留痕删除既有条目时)
+- [文档体例（H1 语言 / 术语大小写）](#文档体例h1-语言--术语大小写)
+- [目前最需要的帮助](#目前最需要的帮助)
+- [Seeking Co-maintainers](#seeking-co-maintainers)
+- [行为准则](#行为准则)
+- [License](#license)
+- [成为维护者](#成为维护者)
 
 
 ## 新人 30 秒快速开始
@@ -81,7 +85,7 @@
 |---|---|---|
 | `install.sh` | BSD/macOS 兼容性修复 | ⭐⭐ |
 | `engine/scripts/verify.sh` | 新增检查项（bash 版，安装流程内调用） | ⭐ |
-| `engine/audit/src/verify.ts` | TS 版验证（命令为 `sofagent-core verify`；无 `sofagent-verify` 这个 bin） | ⭐ |
+| `engine/audit/src/verify.ts` | TS 版验证（命令为 `sofagent core verify`；无 `sofagent-verify` 这个 bin） | ⭐ |
 
 **跑 1 条命令验证**：
 
@@ -92,21 +96,18 @@ bash install.sh && bash engine/scripts/verify.sh
 
 > 💡 **首次 clone 后**：先 `npm install && npm run build`，再 `npm test`。测试依赖构建产物（`dist/`），未 build 直接跑测试会报模块找不到。
 
-> ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent-audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node engine/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
+> ⚠️ **本地测试用 `node dist/index.js` 而非全局二进制**——全局 `sofagent audit` 可能是旧版本（npm publish 后才更新）。改代码后先 `npm run build`，再用 `node engine/audit/dist/index.js --diff HEAD~1..HEAD` 测试。
 
 ### 仓库目录结构（新贡献者先看文件放哪）
 
 | 目录 | 内容 |
 |---|---|
-| `engine/` | 13 个 @sofagent/* 模块包（audit/core/orchestrator/train/mcp/rules/eval/think/evolve/ontology/inject/ab-test/daemon，13 个均含 test script）+ hooks/sofagent-load-chain 工具包 + umbrella/ 裸名总包——模块包全发布到 npm |
-另有 2 个插件族：`engine/dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `engine/openclaw-plugins/`（OpenClaw code-plugin 4 款） |
-| `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A24 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
-| `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明 |
-| `engine/audit/src/permission/` | 权限配置加载与检查 |
-| `engine/core/src/` | 底座：配置加载 / 原子写入 / 审计历史哈希链 / 联邦合并 / 安全脱敏；`agent-identity.ts` Agent 身份码 |
-| `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器；`with-retry.ts` 推送重试 + `daemon-health.ts` 健康自检 |
-| `engine/orchestrator/src/` | 编排模块：`activate.ts` 激活链 Phase 1（读 FDE 交付物 → 注册企业 SubAgent） |
-| `tools/` | 维护者工具脚本（门禁在 `tools/check/`：`check-docs.sh` / `check-test-count.sh`；发布链在 `tools/release/`：`pre-push-check.sh`；仪表盘在 `tools/dashboard/`：`sofagent-dashboard.sh`；完整清单见 `tools/README.md`） |
+| `engine/` | 13 个 @sofagent/* 模块包 + hooks/sofagent-load-chain 工具包 + umbrella/ 裸名总包——模块包全发布到 npm；另有 2 个插件族：`engine/dsh-plugins/`（7 款 DSH 插件：6 款原子 + 1 款聚合）+ `engine/openclaw-plugins/`（4 款） |
+| `engine/audit/` | 审计核心：`src/rules/`（rule-a*.ts A1-A24）、`audit-trail.ts`、`permission/` 权限配置 |
+| `engine/core/src/` | 底座：配置 / 原子写入 / 哈希链 / 联邦合并 / 脱敏；`agent-identity.ts` 身份码 |
+| `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器 |
+| `engine/orchestrator/src/` | 编排模块：`activate.ts` 激活链 Phase 1 |
+| `tools/` | 维护者工具（门禁 `tools/check/` · 发布链 `tools/release/` · 仪表盘 `tools/dashboard/`，清单见 `tools/README.md`） |
 | `FORGE/` | 项目自迭代工具链（LOOP 流水线 / playbook / fresh-eyes 审查体系） |
 | `FDE/` | 前线部署方法论（GUIDE + templates） |
 | `SKILL/` | 技能文件（SKILL.md 宪法 + harness 模板 + 子 Skill） |
@@ -160,7 +161,7 @@ bash install.sh && bash engine/scripts/verify.sh
 > | **对外文档** | `README.md`、badge、`README.en.md` | ❌ **禁止** | 面向陌生读者和潜在用户，「开发中/WIP/draft」降低可信度。只允许发布版本号或「规划中」（指向明确路线） |
 > | **内部文档** | `docs/ROADMAP.md`、`CHANGELOG.md`、`docs/changelog/` | ✅ **允许** | 面向贡献者，标注「开发中/已排期/尚未实现」是正常的项目状态披露，不违反铁律 |
 >
-> **判据**：对外文档出现「开发中/WIP/draft」要改；内部文档出现「开发中/已排期」不用改。
+> **规则**：看到 README/badge 出现「开发中/WIP/draft」→ 要改（对外文档必须显得已完成或有明确规划）；看到 ROADMAP/CHANGELOG 出现「开发中/已排期」→ 不用改（内部文档正常披露）。
 
 > 📋 **文档禁考古规范**：规则/方法论/任务类文档只写「问题 + 解决方案」，**不带日期、版本号、run 编号、「XX 新增」「X月X日教训」类出身标注**——项目迭代快，文档向前看，历史由 git log 与 CHANGELOG 承载。
 >
@@ -206,17 +207,15 @@ cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 ```
 
-- ❌ **反例（2026-09-28 实测代价）**：两个写者在同一工作树各自提交 ⇒ 共享索引被对方宽泛 `git add` 污染（索引里残留的旧值 blob 会在提交时把已改好的数字回退），后写者不得不 `git read-tree HEAD` 复位索引；双方还会互相把对方的提交判成「外部改动」，产生数轮协调开销。
-- ✅ **确需共享树时**（应急）：提交走隔离索引——`GIT_INDEX_FILE=/tmp/idx-$$` + `git read-tree HEAD` + 精确 `git add <路径>`；提交前 `git status --short` 核对**不夹带他人文件**。🔴 **隔离索引 commit 后必须 `git reset -q HEAD` 刷新共享索引**——`GIT_INDEX_FILE` 只作用于本次提交，「提交」不会刷新 `.git/index` 这棵共享索引树；
-  不显式 `git reset -q HEAD` 则共享索引残留旧树，`git status` 对已提交文件**假报 `MM`**（2026-09-28 实测：三笔隔离索引提交后遗留 `MM`，须 `unset GIT_INDEX_FILE; git reset -q HEAD` 才回到 `index==HEAD==worktree`）。
+- ❌ **反例（实测代价）**：两个写者在同一工作树各自提交 ⇒ 共享索引被对方宽泛 `git add` 污染（索引残留旧值 blob 会把已改好的数字回退），且双方互相把对方提交判成「外部改动」，产生数轮协调开销。
+- ✅ **确需共享树时**（应急）：提交走隔离索引——`GIT_INDEX_FILE=/tmp/idx-$$` + `git read-tree HEAD` + 精确 `git add <路径>`；提交前 `git status --short` 核对**不夹带他人文件**。🔴 **隔离索引 commit 后必须 `git reset -q HEAD` 刷新共享索引**——`GIT_INDEX_FILE` 只作用于本次提交，不显式 reset 则共享索引残留旧树，`git status` 对已提交文件**假报 `MM`**。
 - ✅ **跨版本移交必须双向登记**：把某事「顺延 / 移 vX.Y.Z」写进本版时，**同一批次**在目标版 devlog 写承接块（标题或正文含「由 <源版本> 移入」）——单向登记 = 高概率丢项。机械守卫：`tools/check/check-forms.mjs` 的 **A9 顺延↔承接双向登记**。
-- 🔴 **共享文件必须逐 hunk 核对（2026-09-28 实测代价）**：`git add -- <path>` 的 pathspec 精确**挡不住「同一文件被两方改过」**——`git add <file>` 会把对方改动**一起暂存**（实测：一行的「承接 v1.5.4 待补清单 #6」被误带进我的提交，`git log -S` 归属错位，只能靠提交信息事后披露）。⇒ 并发场景下凡「共享文件」（两人都可能改的 SOP / 清单 / 台账）：**先 `git diff <file>` 逐 hunk 核对**，或用 `git add -p` / 临时 worktree 错峰；
-  **禁直接 `git add <共享文件>`**。
+- 🔴 **共享文件必须逐 hunk 核对**：`git add -- <path>` 的 pathspec 精确挡不住「同一文件被两方改过」——`git add <file>` 会把对方改动一起暂存（实测：他人一行改动被误带进我的提交，`git log -S` 归属错位，只能靠提交信息事后披露）。⇒ 并发场景下凡「共享文件」（两人都可能改的 SOP / 清单 / 台账）：先 `git diff <file>` 逐 hunk 核对，或用 `git add -p` / 临时 worktree 错峰；**禁直接 `git add <共享文件>`**。
 
 
-## 文档体例
+## 文档体例（H1 语言 / 术语大小写）
 
-> 这一节回答「新增文档该长什么样」——以下是**明文规则 + 逐份登记的例外清单**；不接受「不在清单里、也不是规则允许」的第五种形态。
+> 这一节回答「新增文档该长什么样」——此前 H1 语言是三套写法并存且**无明文规则**，读者在不同文档间切换时只能靠猜。以下是**明文规则 + 逐份登记的例外清单**；不接受「不在清单里、也不是规则允许」的第五种形态。
 
 ### H1 语言规则 + 例外清单
 
@@ -229,7 +228,7 @@ git worktree add ../sofagent-<用途> -b <分支名或 --detach>
 | **C · 中英混排 H1**（推荐形态） | 「英文识别名 · 中文主题词」 | `docs/API.md`·`docs/PHILOSOPHY.md`·`docs/ROADMAP.md`·`docs/VALIDATION.md`·`AGENTS.md`·`GEMINI.md` |
 | **D · 英文主题 H1**（**登记的例外**：省略中文主题词） | 主题型长文档，H1 前缀已是稳定英文识别名 | `docs/ARCHITECTURE.md`·`docs/DEVELOPMENT.md`·`docs/HANDBOOK.md`·`docs/LIMITATIONS.md` |
 
-**D 类为什么登记为「例外」而不是统一改掉**：这四个 H1 已被仓内外链接以锚点形式引用（形如 `...#sofagent-architecture`），**改 H1 文字 = 同时破坏锚点与既有外链**，体例收益小于断链代价。因此明确**登记**。**新增文档默认按 C 类写**；若确需走 D 类，在同一 PR 里往本表补一行。
+**D 类为什么登记为「例外」而不是统一改掉**：这四个 H1 已被仓内外链接以锚点形式引用（形如 `...#sofagent-architecture`），**改 H1 文字 = 同时破坏锚点与既有外链**，体例收益小于断链代价。因此明确**登记**——「有规则的例外」与「三套并存且无规则」的区别就在这张表。**新增文档默认按 C 类写**；若确需走 D 类，在同一 PR 里往本表补一行。
 
 ### 术语大小写（`Skill` / `skill`）
 
@@ -271,7 +270,7 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 | **OpenClaw hook (TS)** | handler.ts 回归测试 + 升级适配 | 2-3 小时 |
 | **英文文档** | HANDBOOK + README 英文翻译 | 不限 |
 
-> 🔴 如果你是 bash 方向开发者，先开 Discussion 与维护者聊聊方向（早期接触不算正式申请）。**早期接触信号**（满足 ≥2 条即可先聊）：提交过 3+ 个被合并 PR / 熟悉 bash 兼容性·OpenClaw hook·安全审计·英文文档之一 / 能独立 review 他人 PR。
+> 🔴 如果你是 bash 方向开发者，先开 Discussion 与维护者聊聊方向（早期接触不算正式申请，正式标准见下方「Seeking Co-maintainers」）。
 
 
 ## 行为准则
@@ -284,3 +283,14 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 ## License
 
 本项目采用 MIT 许可证。你贡献的代码和文档默认跟随 MIT。详见 [LICENSE](./LICENSE)。
+
+
+## 成为维护者
+
+sofagent 当前 bus factor = 1（唯一维护者）。上面的「Seeking Co-maintainers」表是正式标准（合并 PR ≥5 + 持续 ≥2 月 + 作者邀请）；如果你已满足以下早期信号中的至少 2 条，可以先开 Discussion 与维护者聊聊方向——早期接触不算正式申请：
+
+- 提交过 3+ 个被合并的 PR
+- 熟悉 bash 兼容性 / OpenClaw hook / 安全审计 / 英文文档 中至少一个领域
+- 能独立 review 他人的 PR
+
+联系方式：开 [Discussion](https://github.com/KongFangXun/sofagent/discussions)

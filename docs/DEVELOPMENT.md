@@ -203,7 +203,7 @@ FDE 部署 SOP 应遵循此顺序：
 
 新增文档请归入对应域；跨文档引用保持相对路径，CI 的 `check-docs` 会校验。本仓未强制物理迁移历史文档，仅以本说明固化约定。
 
-> npm 包 @sofagent/audit 当前仅暴露 `sofagent-audit` 一个 bin（v1.1.0 拆包后 verify / orchestrate-compare / env-check / skill-safety-check 等已迁至对应独立包，实际 bin 以各包 `package.json` 为准）。
+> npm 包 @sofagent/audit 当前仅暴露 `sofagent audit` 一个 bin（v1.1.0 拆包后 verify / orchestrate-compare / env-check / skill-safety-check 等已迁至对应独立包，实际 bin 以各包 `package.json` 为准）。
 
 | 脚本 | 干什么 | 什么时候跑 |
 |---|---|---|
@@ -225,7 +225,7 @@ USB key 不是简单的文件复制——它是一个完整的便携式运行时
 | 签名 | `daemon/src/usb-signature.ts` | HMAC-SHA256 全量签名：路径 POSIX 归一化 + 字典序 + SHA-256 内容哈希串联，不含 mtime（确定性可复算） |
 | 运行侧 | `daemon/src/usb-runtime.ts` | `startUsbRuntime()` 主入口——启动验签 fail-closed（失败写 `security-events.jsonl` + exit 1）→ 内存解密 knowledge/（明文不落盘）→ `SOFAGENT_DATA`/`OPENCLAW_HOME` 便携化 env → daemon 主循环 → 退出 `Buffer.fill(0)` 清内存密钥 |
 
-CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写入侧）+ `sofagent-daemon start --usb-root`（运行侧）。启动脚本：`daemon/usb/start.command`（macOS）/ `start.sh`（Linux）/ `start.bat`（Windows）。
+CLI 入口：`sofagent daemon create-usb-key --role --target --platform`（写入侧）+ `sofagent daemon start --usb-root`（运行侧）。启动脚本：`daemon/usb/start.command`（macOS）/ `start.sh`（Linux）/ `start.bat`（Windows）。
 
 > 💡 USB 功能的用户侧使用见 [HANDBOOK §USB 烧录](./HANDBOOK.md#usb-烧录三种部署场景全覆盖v118) 和 [FDE/GUIDE.md](../FDE/GUIDE.md)。这里只讲代码层架构。
 
@@ -250,7 +250,7 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 编排模块主执行路径是 LangGraph StateGraph（历史上的 deepagents 路径已随 v1.5.0 迁移退役，`composeWithDeepAgents()` 别名同期移除）：
 
-- **主路径（v1.1.3+）**：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`——LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。源码 `engine/orchestrator/src/loop/`（state / nodes / graph）。
+- **主路径（v1.1.3+）**：入口 `runLoopGraph()` / `sofagent orchestrator loop --task`——LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。源码 `engine/orchestrator/src/loop/`（state / nodes / graph）。
 
 StateGraph 的 engineer / reviewer 节点优先走「工具注入路径」（LangGraph `createReactAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。
 
@@ -403,7 +403,7 @@ LangGraph createReactAgent 拆完任务
 
 > A/B 结果异常时的用户侧处理方法见 [HANDBOOK §排查](./HANDBOOK.md#排查问题)。
 
-`sofagent-orchestrator-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排模块定期重出 candidate 方案后与 current 对比——v1.0.7 实现连续胜出自动计数器（连续 2 次胜出 → auto promote + 原子写入），旧方案归档到 history/。
+`sofagent compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排模块定期重出 candidate 方案后与 current 对比——v1.0.7 实现连续胜出自动计数器（连续 2 次胜出 → auto promote + 原子写入），旧方案归档到 history/。
 
 规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
@@ -477,7 +477,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 **开发 Agent 的方式**：新增 Agent 只需在 `SKILL/agents/{name}/SKILL.md` 创建文件——front matter（身份标签）+ 调用方式（CLI 指令）+ Agent 角色定义（Agency Agents 格式）。`builtin-agents.ts` 的 `parseSkillMd()` 自动加载，`registry.ts` 自动合并。
 
-**SKILL.md 的强制约定**（v1.0.8）：所有 Agent 的 SKILL.md 必须引用 `@sofagent-audit` 和 `@sofagent-fde` 作为基础设施 Agent。缺少引用的 Agent 视为未完成。
+**SKILL.md 的强制约定**（v1.0.8）：所有 Agent 的 SKILL.md 必须引用 `@sofagent audit` 和 `@sofagent-fde` 作为基础设施 Agent。缺少引用的 Agent 视为未完成。
 
 
 ## 六、反思工程
@@ -572,7 +572,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 > 审计模块的 CLI 使用和 exit code 约定。用户视角见 [HANDBOOK §提交后自动审计](./HANDBOOK.md#提交后自动审计)，CI 集成例子见 [HANDBOOK §CI 集成](./HANDBOOK.md#ci-集成)。
 
-sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
+sofagent audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 
 | 模式 | 版本 | 触发 | 适用 | 需要 git |
 |---|---|---|---|---|
@@ -581,7 +581,7 @@ sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 
 两种模式共用同一套审计规则（A1-A11、A14-A24 + E1-E2/E4，共 25 条）和 exit code（0=PASS / 1=WARN / 2=FAIL）。差异在于触发时机和拦截能力：git commit 审计能阻断 commit，文件系统审计只能事后告警 + 快照回溯。
 
-v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包依赖）作为 diff 引擎——非 git 目录也能做行级 diff。daemon 用 `chokidar` 监控文件变更，5 秒防抖后触发审计。每次审计后自动做 git 快照，用户可 `sofagent-audit --revert <sha>` 回滚。
+v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包依赖）作为 diff 引擎——非 git 目录也能做行级 diff。daemon 用 `chokidar` 监控文件变更，5 秒防抖后触发审计。每次审计后自动做 git 快照，用户可 `sofagent audit --revert <sha>` 回滚。
 
 > 📖 **多设备同步**：daemon 的经验产出（knowledge/ + think.md）可跨设备共享——4 种方案见 [多设备同步指南](./guides/multi-device-sync.md)。
 
@@ -589,7 +589,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 ### 审计聚合指标口径（单源防漂移）
 
-`sofagent-audit --stats` 输出近 N 天（`--days` 可调，缺省 30）治理 KPI。指标口径以本节为准（CLI 实现 `engine/audit/src/stats.ts` 与此处同源——改口径先改本节）：
+`sofagent audit --stats` 输出近 N 天（`--days` 可调，缺省 30）治理 KPI。指标口径以本节为准（CLI 实现 `engine/audit/src/stats.ts` 与此处同源——改口径先改本节）：
 
 | 指标 | 定义 | 分母 |
 |---|---|---|
@@ -631,7 +631,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
 
-- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（85 维）+ `acceptance-test.sh`（395 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
+- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（85 维）+ `acceptance-test.sh`（396 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束层零 token 运行（25 条规则 20 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 - **保存 ≠ 生效 ≠ 变好**：三个状态分记，谁也不许冒充谁——**已保存**（配置/产物写入了）／**已生效**（接线在真实路径上，不是只存在于测试或声明里）／**已验证变好**（行为级验证通过，且对照了改前基线）。交付声明只能落在实际达到的那一档，未做行为验证的显式记「未验证」，不并进「已完成」。
 
@@ -720,7 +720,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 395（最大场景号 S471）。
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 396（最大场景号 S472）。
 > 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账（v1.5.0–v1.5.4 各批 +N 明细）见 [归档](./archive/validation-deep/development-maintainer.md) 与 [v1.5.0 开发日志·附录](./changelog/v1.5/v1.5.0.md)。
 
 ### 加载链预算目标跟踪

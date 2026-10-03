@@ -19,8 +19,8 @@ debounceMs: 5000
 ## 启动 daemon
 
 ```bash
-sofagent-daemon start   # 前台运行（v1.1.4 起，旧版用 sofagent-audit --daemon）
-sofagent-audit --init           # 注册 LaunchAgent（macOS，开机自启）
+sofagent daemon start   # 前台运行（v1.1.4 起，旧版用 sofagent audit --daemon）
+sofagent audit --init           # 注册 LaunchAgent（macOS，开机自启）
 ```
 
 ## 监控范围（v1.0.9 递归覆盖）
@@ -43,22 +43,22 @@ daemon 启动时自动遍历所有子目录并建独立 watcher，新目录创�
 
 ## 管理员配置闭环
 
-1. `sofagent-audit --init` → 安装 hook + 生成配置
+1. `sofagent audit --init` → 安装 hook + 生成配置
 2. 编辑 `.sofagent/watch.yml`
 3. 启动 daemon
 4. 团队成员无需碰 npm/git，自动被审计
-5. `sofagent-audit --timeline` 查看审计时间线
+5. `sofagent audit --timeline` 查看审计时间线
 
 ## 查看审计结果
 
 ```bash
-sofagent-audit --timeline         # 最近 20 条
-sofagent-audit --timeline 50      # 最近 50 条
-sofagent-audit --timeline --json  # JSON 格式
-sofagent-audit --revert <SHA>     # 回滚到指定快照
+sofagent audit --timeline         # 最近 20 条
+sofagent audit --timeline 50      # 最近 50 条
+sofagent audit --timeline --json  # JSON 格式
+sofagent audit --revert <SHA>     # 回滚到指定快照
 ```
 
-> **两个入口的分工**：`sofagent-audit` 是 quick 入口（只读审计，零安装即用），`sofagent-audit-full` 是完整引擎入口。时间线 / 回滚这两个 flag **只在完整引擎实现**——quick 入口识别到它们会自动转交完整引擎执行，所以上面直接用 `sofagent-audit` 即可，无需换命令名。完整引擎不可用（未装依赖、未构建）时不会静默降级：命令以非零退出码失败并给出诊断，不会拿一次错对象的审计冒充成功。
+> **两个入口的分工**：`sofagent audit` 是 quick 入口（只读审计，零安装即用），`sofagent audit --full` 是完整引擎入口。时间线 / 回滚这两个 flag **只在完整引擎实现**——quick 入口识别到它们会自动转交完整引擎执行，所以上面直接用 `sofagent audit` 即可，无需换命令名。完整引擎不可用（未装依赖、未构建）时不会静默降级：命令以非零退出码失败并给出诊断，不会拿一次错对象的审计冒充成功。
 
 ## 局限
 

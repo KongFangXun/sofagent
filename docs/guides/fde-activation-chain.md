@@ -121,7 +121,7 @@ nodes:
 ### activate 命令
 
 ```bash
-sofagent-orchestrator activate
+sofagent orchestrator activate
 ```
 
 或通过 MCP 新增的 `activate_workflow` tool（职责：读取 FDE 交付物 `workflow.yml` + `skills/` + `entities/`，注册企业 SubAgent 并构建可执行编排），两个入参：`dry_run`（只预览不真正注册，默认 false）· `node_filter`（只激活指定节点，默认全部）。
@@ -235,7 +235,7 @@ const compiled = graph.compile({ interruptBefore: hitlNodes });   // 在 ⚡ 节
 
 ```bash
 # 启动企业工作流
-sofagent-orchestrator run-enterprise
+sofagent orchestrator run-enterprise
 
 # 或通过 MCP
 调用 run_enterprise_workflow tool
@@ -245,7 +245,7 @@ sofagent-orchestrator run-enterprise
 
 四步启动：① 从 `.sofagent/subagents/` 加载所有企业 Agent（`registry.ts` 已支持）→ ② 从 `workflow.yml` 构建编排方案（`composeEnterpriseWorkflow`）→ ③ 构建 LangGraph 并编译（含 HITL 中断点）→ ④ 从入口节点开始执行。
 
-执行过程中：每个 🔄 节点**自动执行**，结果写入 State + entity · 每个 ⚡ 节点执行到此处**暂停** → 向用户展示方案 → 等待确认 → 继续 · 每个节点执行后**自动触发审计**（`@sofagent-audit`），审计 FAIL 则暂停整个工作流并通知用户 · 异常写入 `exceptions` 队列，根据节点配置决定重试 or 跳过。
+执行过程中：每个 🔄 节点**自动执行**，结果写入 State + entity · 每个 ⚡ 节点执行到此处**暂停** → 向用户展示方案 → 等待确认 → 继续 · 每个节点执行后**自动触发审计**（`@sofagent audit`），审计 FAIL 则暂停整个工作流并通知用户 · 异常写入 `exceptions` 队列，根据节点配置决定重试 or 跳过。
 
 ### 审计集成
 
@@ -312,7 +312,7 @@ Skill（**自动晋级未启用**——当前为记录+整理态，晋级走人�
 
 | 平台 | 运行方式 |
 |------|---------|
-| **CLI**（sofagent-orchestrator） | 原生支持，Phase 3 直接跑 |
+| **CLI**（sofagent orchestrator） | 原生支持，Phase 3 直接跑 |
 | **WorkBuddy** | 通过 Skill 加载 + MCP 调用 `activate_workflow` |
 | **OpenClaw** | 通过 Skill + bridge 转发 |
 | **Claude Desktop / Cursor** | 通过 MCP `activate_workflow` tool |
@@ -369,7 +369,7 @@ Agent 执行 + HITL 中断（细节见 Phase 1-3 正文）。
 | HITL 中断 | ⚡ 节点执行前暂停，等待用户确认 |
 | 审计集成 | 每个节点执行后自动审计，FAIL 时暂停工作流 |
 | MCP tool | `activate_workflow` 可从任意 MCP 平台调用 |
-| 纯 CLI | `sofagent-orchestrator activate && sofagent-orchestrator run-enterprise` 可跑通 |
+| 纯 CLI | `sofagent orchestrator activate && sofagent orchestrator run-enterprise` 可跑通 |
 | npm test | 全绿 |
 | 现有 compose 不受影响 | 通用 compose() 功能不变 |
 
@@ -388,7 +388,7 @@ Agent 执行 + HITL 中断（细节见 Phase 1-3 正文）。
 
 ## 企业 SubAgent = 引擎公民，不是独立脚本
 
-> **激活链注册的企业 SubAgent 自动继承约束层五种能力**——因为注册后与内置 4 个 SubAgent（@sofagent-fde / @sofagent-audit / engineer / reviewer）**跑在同一个运行时**：同一条四层加载链、同一个审计 hook、同一个 data/ 状态层。不是"给企业 Agent 装约束层"，是企业 Agent 本来就在约束层里。这就是"轨道从早期就铺好了"的真正含义。五能力 = 注入·审计·回溯·沉淀·进化（v1.4.4 新增沉淀）。
+> **激活链注册的企业 SubAgent 自动继承约束层五种能力**——因为注册后与内置 4 个 SubAgent（@sofagent-fde / @sofagent audit / engineer / reviewer）**跑在同一个运行时**：同一条四层加载链、同一个审计 hook、同一个 data/ 状态层。不是"给企业 Agent 装约束层"，是企业 Agent 本来就在约束层里。这就是"轨道从早期就铺好了"的真正含义。五能力 = 注入·审计·回溯·沉淀·进化（v1.4.4 新增沉淀）。
 
 ```mermaid
 flowchart TD

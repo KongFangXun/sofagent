@@ -310,6 +310,67 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     }
   }
 
+  // 3b. 数据目录健康度（v1.5.6 章二：容量 / 文件数健康度——**结构检查 ≠ 健康度检查**）
+  //   结构节判「目录在不在」，本节判「长得健康不健康」：单目录文件数超阈值（文件系统
+  //   性能退化区间）、总量趋势（只增不减的运行时应有归档轮转接管）。
+  console.log('\n── 数据目录健康度 [全局 ~/.sofagent/，非当前仓库] ──');
+  {
+    const HEALTH_DIRS = ['memory', 'audit', 'task/logs', 'orchestrator'];
+    const FILE_WARN = 10000; // 单目录文件数黄警阈值（v1.5.6 章二：实测 17178 个事实文件已达退化区间）
+    const SIZE_WARN_BYTES = 512 * 1024 * 1024; // 单目录总量黄警 512MB
+    let healthWarned = false;
+    let healthChecked = 0;
+    const scan = (p: string, depth: number): { files: number; bytes: number } => {
+      let files = 0;
+      let bytes = 0;
+      if (depth > 6) return { files, bytes };
+      let entries;
+      try {
+        entries = readdirSync(p, { withFileTypes: true });
+      } catch {
+        return { files, bytes };
+      }
+      for (const e of entries) {
+        if (e.name.startsWith('.')) continue;
+        const child = join(p, e.name);
+        if (e.isDirectory()) {
+          const sub = scan(child, depth + 1);
+          files += sub.files;
+          bytes += sub.bytes;
+        } else if (e.isFile()) {
+          files++;
+          // throwIfNoEntry:false → 并发删除时返回 undefined 而非抛错（避免空 catch）
+          bytes += statSync(child, { throwIfNoEntry: false })?.size ?? 0;
+        }
+      }
+      return { files, bytes };
+    };
+    const mb = (b: number) => (b / 1024 / 1024).toFixed(1);
+    for (const d of HEALTH_DIRS) {
+      const dirPath = join(dataDir, d);
+      if (!existsSync(dirPath)) continue;
+      healthChecked++;
+      const { files, bytes } = scan(dirPath, 0);
+      const overFiles = files > FILE_WARN;
+      const overSize = bytes > SIZE_WARN_BYTES;
+      if (overFiles || overSize) {
+        healthWarned = true;
+        const reasons: string[] = [];
+        if (overFiles) reasons.push(`文件数 ${files} > ${FILE_WARN}`);
+        if (overSize) reasons.push(`总量 ${mb(bytes)}MB > ${Math.round(SIZE_WARN_BYTES / 1024 / 1024)}MB`);
+        warn(`data/${d}/ 接近性能退化区间（${reasons.join(' · ')}）`);
+        repairHint(`归档轮转：memory 走 memory-store 的 archive()（二级分层 + 冷热分层）；audit 侧历史段归档排 v1.5.7（本版未实施，见 v1.5.6 施工登记）`);
+      } else {
+        ok(`data/${d}/ (${files} 文件 · ${mb(bytes)}MB)`);
+      }
+    }
+    if (healthChecked === 0) {
+      info('无可检查的数据目录（运行一次审计后再看健康度）');
+    } else if (!healthWarned) {
+      ok('数据目录健康度正常（无单目录超阈值）');
+    }
+  }
+
   // 4. Hook 状态
   console.log('\n── Git Hook 状态 ──');
   let hookOk = false;
@@ -509,6 +570,30 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       auditDistPath = join(dirname(dirname(require.resolve('@sofagent/audit'))), 'dist', 'index.js');
     } catch {
       // @sofagent/audit 不可解析（未安装/独立安装 core）——留给下方显式 warn
+    }
+  }
+  // ── 全局锚刷新（独立于本地 dist——本地未 build 时仍可刷新全局安装包口径的锚）──
+  // 死锁根因：原实现把本段嵌在 existsSync(auditDistPath) 且 execFileSync(syncScript) 之后，
+  // 仓库未 build 时该调用失败提前 return，全局锚刷新分支到不了（三路恢复指引全堵）。
+  // `--doctor --baseline` = 用户显式确认「此刻全局包可信」——本地 dist 缺失不应阻断该确认。
+  if (options.resetBaseline === true) {
+    try {
+      const gHashDir = join(resolveHomeDir(), 'internal');
+      if (!existsSync(gHashDir)) mkdirSync(gHashDir, { recursive: true, mode: 0o700 });
+      const gDistRoot = resolveGlobalAuditDistRoot();
+      if (gDistRoot) {
+        const gh = computeDistAggregateHash(gDistRoot);
+        if (gh) {
+          writeFileSync(join(gHashDir, 'audit-global-dist-hash.txt'), gh + '\n', { encoding: 'utf-8', mode: 0o600 });
+          ok(`✅ 全局引擎基准已建立/刷新（audit-global-dist-hash.txt · 聚合哈希 ${gh.slice(0, 12)}...）——不依赖本地 dist`);
+        } else {
+          warn('全局包 dist 目录不可读——全局锚未刷新（确认全局安装完整后重试）');
+        }
+      } else {
+        info('未检测到全局安装的 @sofagent/audit——全局引擎基准不适用（跳过）');
+      }
+    } catch (err) {
+      warn(`全局锚刷新失败（不阻断其余检查）: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
   if (existsSync(auditDistPath)) {

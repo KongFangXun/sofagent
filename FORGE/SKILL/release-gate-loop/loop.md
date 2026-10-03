@@ -31,7 +31,7 @@
 │   ├── verdict.md          ← V 裁决 FAIL
 │   ├── fix-plan.md         ← F 诊断产出的修复方案
 │   ├── fix-summary.md      ← F 修复记录
-│   └── audit-result.md     ← sofagent-audit 检查结果
+│   └── audit-result.md     ← sofagent audit --full 检查结果
 ├── round-2/
 │   ├── acceptance.md       ← V 重验
 │   └── ...
@@ -55,7 +55,7 @@
 ```
 ⑥ f-diagnose  → F 读 verdict.md → 定位根因 → 写 fix-plan.md
 ⑦ f-fix       → F 读 fix-plan.md → 改代码 → 写 fix-summary.md
-⑧ f-audit     → driver 自动跑 sofagent-audit --diff HEAD~1..HEAD
+⑧ f-audit     → driver 自动跑 sofagent audit --full --diff HEAD~1..HEAD
                 audit PASS → 进入 round N+1（新一轮 V 全量重验）
                 audit FAIL → 打回 f-fix 重修
 ```
@@ -87,7 +87,7 @@ verdict = FAIL 且 round ≥ MAX_FIX_ROUNDS → 输出"轮次耗尽"报告 ❌ �
 | `verdict.md` | ⑤ | PASS/FAIL 裁决 |
 | `fix-plan.md` | ⑥ v1.2.8 | F 诊断的修复方案 |
 | `fix-summary.md` | ⑦ v1.2.8 | F 修复记录 |
-| `audit-result.md` | ⑧ v1.2.8 | sofagent-audit 检查结果 |
+| `audit-result.md` | ⑧ v1.2.8 | sofagent audit --full 检查结果 |
 
 ## createReactAgent 实现提示
 

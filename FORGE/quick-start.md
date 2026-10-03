@@ -8,7 +8,7 @@
 
 ```bash
 # 确认 sofagent 底座已装
-sofagent-audit --version   # 应输出 v1.3.6 或更高
+sofagent audit --version   # 应输出 v1.3.6 或更高
 
 # 没用？装一下
 bash install.sh
@@ -214,7 +214,7 @@ verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
 | API key 报 401 | key 过期或额度耗尽 | 去对应厂商控制台检查 key 状态和余额 |
 | usage.jsonl 中 `price_confidence: no-pricing` | 该模型不在 `MODEL_PRICING` 表里 | 查阅厂商官方定价页，在 driver 内补上 |
 | a-consolidate 产物为空或降级 | maxTokens 截断（合并步骤输出超长） | 确认 STEPS 中 a-consolidate 的 maxTokens=32000（见 lessons/models.md） |
-| sofagent-audit 命令未找到 | 底座没装 | `bash install.sh` |
+| sofagent 命令未找到 | 底座没装 | `bash install.sh` |
 | release-gate acceptance 步骤被 kill | sandbox 限制长时间子进程 | 手动预跑 `bash playbook/acceptance-test.sh > /tmp/log 2>&1`，再 `--skip-acceptance` 启动 |
 | release-gate driver OOM | driver + worker 内存叠加（沙箱环境） | 用 `--step` 单步模式逐步调用（见上方命令） |
 | release-gate verdict 误判 PASS/FAIL | driver parseVerdict 解析 bug | 以 `verdict.md` 权威产物为准，不信 LEDGER 中间状态（v1.2.5 已修 commit a845ed8） |

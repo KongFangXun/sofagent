@@ -1,4 +1,4 @@
-# sofagent-evolve
+# sofagent evolve
 
 **自迭代变强** · sofagent 约束层五能力在 OpenClaw 生态的插件形态
 
@@ -12,7 +12,7 @@ before_prompt_build hook + sofagent_evolve 工具
 
 ```bash
 # 从 ClawHub 安装（发布后）
-openclaw plugins install sofagent-evolve
+openclaw plugins install sofagent evolve
 
 # 或本地开发
 openclaw plugins install -l ./engine/openclaw-plugins/sofagent-evolve
@@ -23,9 +23,9 @@ openclaw plugins install -l ./engine/openclaw-plugins/sofagent-evolve
 ```json
 {
   "plugins": {
-    "allow": ["sofagent-evolve"],
+    "allow": ["sofagent evolve"],
     "entries": {
-      "sofagent-evolve": {
+      "sofagent evolve": {
         "enabled": true,
         "config": { "reflectHint": false }
       }
@@ -49,7 +49,7 @@ clawhub package validate .  # Plugin Inspector 校验（0 breakage / 0 warning�
 ## 发布
 
 ```bash
-clawhub package publish . --family code-plugin --name sofagent-evolve --version "$(node -p "require('./package.json').version")"
+clawhub package publish . --family code-plugin --name sofagent evolve --version "$(node -p "require('./package.json').version")"
 ```
 
 ## 说明

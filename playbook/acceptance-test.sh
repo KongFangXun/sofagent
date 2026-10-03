@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：395 个场景（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
+# 场景数：396 个场景（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
 # 编号跳号豁免：S1~S293 间 70 个空洞号（v1.2.x 瘦身既成事实）；新编号=当前最大+1 顺延禁回填；版本段 grep "─── v" 定位
 # 口径注意：底部「$PASSED 通过」是断言通过数（≠场景数，含跳过场景），勿混用
 # 用法：bash playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
@@ -518,7 +518,7 @@ fi
 REVIEW_FILE="$PROJECT_ROOT/SKILL/agents/reviewer/SKILL.md"; SIGN_OK=true
 if [ -f "$REVIEW_FILE" ]; then
   SIGN_BEFORE=$(grep -B3 "^# 代码审查报告" "$REVIEW_FILE" || true)
-  grep -q "sofagent-audit" <<< "$SIGN_BEFORE" && [[ "$SIGN_BEFORE" == *sofagent-orchestrator* ]] && pass || { SIGN_OK=false; fail "审查报告签名模板缺少 sofagent-audit 或 sofagent-orchestrator"; }
+  grep -q "sofagent audit" <<< "$SIGN_BEFORE" && [[ "$SIGN_BEFORE" == *"sofagent orchestrator"* ]] && pass || { SIGN_OK=false; fail "审查报告签名模板缺少 sofagent audit 或 sofagent orchestrator"; }
 else SIGN_OK=false; fail "reviewer/SKILL.md 不存在"; fi
 if [ -f "$REVIEW_FILE" ]; then [ -n "$(grep -A2 "代码审查报告" "$REVIEW_FILE" 2>/dev/null | head -3 || true)" ] && pass || fail "审查报告标题行不存在"; fi
 FS_AUDIT_OK=true; grep -r "isomorphic-git\|isomorphicGit" "$PROJECT_ROOT/engine/core/src/" --include="*.ts" -l > /dev/null 2>&1 || FS_AUDIT_OK=false
@@ -2898,9 +2898,9 @@ chmod 755 "$S328_TARGET_HOME/data" 2>/dev/null || true
 rm -rf "$S328_TMP" "$S328_TARGET_HOME" 2>/dev/null || true
 $S328_OK && pass "迁移丢数据窗口已闭（err 叙事 + exit 1 + 源保留）" || true
 scenario 329 "v1.4.1 阶段四 B3：install.sh symlink 谎报守卫——ln -sf 全守卫 + fallback 失败 warn（源码断言）"; S329_OK=true
-# ① 全文件 ln -sf 恰 4 处且均带 if 守卫（sudo 分支 1 + 普通分支 2 + dashboard 1——多出即需人工核）
+# ① 全文件 ln -sf 恰 5 处且均带 if 守卫（sudo 分支 1 + 普通分支 2 + dashboard 1 + v1.5.6 单入口域路由登记 1——多出即需人工核）
 S329_SF=$(grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -vc 'warn\|echo\|#' || true)
-[ "$S329_SF" = "4" ] || { fail "ln -sf 计数 ${S329_SF}（预期 4）——逐处核对守卫"; S329_OK=false; }
+[ "$S329_SF" = "5" ] || { fail "ln -sf 计数 ${S329_SF}（预期 5）——逐处核对守卫"; S329_OK=false; }
 # 无守卫的 ln -sf 必须为 0（|| true + :-0 双守卫：管道中 grep -v 零匹配退出 1 × pipefail × set -e 三重雷区）
 S329_UNGUARDED=$(grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -v 'warn\|echo\|#' | grep -v 'if \|sudo ln' | wc -l | tr -d ' ' || true)
 S329_UNGUARDED="${S329_UNGUARDED:-0}"
@@ -4573,6 +4573,9 @@ $S470_OK && pass "README 理念主线结构锁（双语三因子三锚 + 与 PHI
 scenario 471 "v1.5.5 判断层 P1 闭环批：收编范围/重写负向/依赖面三断言（verdict 20261001-02 P1-2/P1-3/P1-4）——章一收编节点枚举与例外登记 / 章三旧理念关键词零残留 / 章五 optionalDependencies 静态面"; S471_OK=true
 node -e 'const fs=require("fs"),RP=process.env.PROJECT_ROOT,bad=[],R=(p)=>fs.readFileSync(RP+p,"utf8"),es=require(RP+"/engine/orchestrator/dist/execution-state/index.js"),kinds=es.listNodeKinds().join(","),devlog=R("/docs/changelog/v1.5/v1.5.5.md"),zh=R("/README.md"),en=R("/README.en.md"),pj=JSON.parse(R("/engine/orchestrator/package.json"));if(kinds!=="engineer,checker,reviewer,refine-agent,long-task")bad.push("收编节点枚举漂移:"+kinds);for(const k of kinds)if(!devlog.includes(k)&&k!=="refine-agent")bad.push("devlog 未登记节点:"+k);for(const old of ["六引擎","六引擎架构"])if(zh.includes(old)&&!zh.includes("六引擎架构（已退役）"))bad.push("旧理念关键词残留(zh):"+old);if(!pj.optionalDependencies||!pj.optionalDependencies["@langchain/langgraph"])bad.push("langgraph 未在 optionalDependencies");if(pj.dependencies&&pj.dependencies["@langchain/langgraph"])bad.push("langgraph 仍残 dependencies");console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q "^OK" || S471_OK=false
 $S471_OK && pass "P1 闭环三断言（收编枚举+例外/旧词零残留/optional 依赖面）" || fail "P1 闭环断言回潮——见上方 ✗ 行"
+scenario 472 "v1.5.6 章一·单入口 CLI 路由行为锁（章↔场景双向登记）——域路由到实现（非落 help）/ 保留字直答 / **audit-first 回退**（非域首参如 --doctor / demo / diff 范围一律转 audit，旧行为不破）"; S472_OK=true
+node -e 'const {execFileSync}=require("child_process");const R=process.env.PROJECT_ROOT+"/engine/umbrella/bin/sofagent.js";const run=(a)=>{try{return{out:execFileSync(process.execPath,[R,...a],{encoding:"utf8",stdio:["pipe","pipe","pipe"]}),code:0};}catch(e){return{out:String(e.stdout||"")+String(e.stderr||""),code:e.status};}};const bad=[];const h=run(["help"]);if(!/业务域/.test(h.out)||!/sofagent audit/.test(h.out))bad.push("help 未列业务域");const v=run(["audit","--version"]);if(!/sofagent-audit/.test(v.out))bad.push("域路由未到审计实现");const u=run(["--doctor"]);if(u.code!==0&&u.code!==1)bad.push("audit-first 回退失效：--doctor rc="+u.code+"（期望 0/1）");const d=run(["demo","--speed","fast"]);if(d.code!==0)bad.push("audit 子命令 demo 未回退到审计（rc="+d.code+"）");const r=run(["version"]);if(!/[0-9]+\.[0-9]+\.[0-9]+/.test(r.out))bad.push("保留字 version 未直答");console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q '^OK' || S472_OK=false
+$S472_OK && pass "单入口路由行为锁（域路由/保留字直答/audit-first 回退）" || fail "单入口路由行为漂移——见上方输出"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数

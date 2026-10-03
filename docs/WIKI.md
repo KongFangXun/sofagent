@@ -88,7 +88,7 @@ graph TB
 
 **一句话版**：进场帮你把业务摸清写成文件，离场后管住你的数字员工——干活有安检、出事能回滚、越用越懂你、老板看得见、数据不出门。
 
-**五分钟亲眼看**：`sofagent demo`（v1.5.1 已交付，经 npm 通道可用：`npx -y -p @sofagent/audit sofagent-audit demo`；install 态 CLI 暂无 demo 子命令）——一条命令跑完「注入 → 故意违规 → 审计拦截 → 快照回滚 → 举证导出」完整链路，看到拦截发生的那一瞬间你就懂了这个产品。
+**五分钟亲眼看**：`sofagent demo`（v1.5.1 已交付，经 npm 通道可用：`npx -y -p sofagent sofagent audit demo`；install 态 CLI 暂无 demo 子命令）——一条命令跑完「注入 → 故意违规 → 审计拦截 → 快照回滚 → 举证导出」完整链路，看到拦截发生的那一瞬间你就懂了这个产品。
 
 
 ## 三、核心概念
@@ -245,7 +245,7 @@ graph TB
 |---|---|
 | 当前版本 | **v1.5.5**（2026-10-01，✅ 已发版 · 执行模块 · 执行状态机与按需加载）· 上一版 v1.5.4（2026-09-30，✅ 已发版） |
 | 下一版 | **v1.5.6**（⏳ 未开发——以 [ROADMAP](./ROADMAP.md) 规划表为准） |
-| 测试覆盖 | 5642 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
+| 测试覆盖 | 5646 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
 | 审计规则 | 25 条（17 默认 + 8 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#25-条审计规则完整清单文档级-ssot)） |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |

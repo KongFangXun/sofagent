@@ -255,5 +255,10 @@ class McpServer {
 // 启动
 // ============================================================
 
+// v1.5.6 章一 · 单入口收敛（兼容期 shim）：直接调用旧命令时提示新入口；
+// 被 `sofagent <域>` 路由调用时静默（路由注入 SOFAGENT_SINGLE_ENTRY=1）。
+if (process.env.SOFAGENT_SINGLE_ENTRY !== '1') {
+  process.stderr.write('[sofagent] 旧命令 `sofagent-mcp` 已收敛到单入口 `sofagent mcp`——本命令进入兼容期（仍可用，下一 minor 版本移除）。\n');
+}
 const server = new McpServer();
 server.start();

@@ -91,7 +91,10 @@ for (let i = 0; i < hits.length; i++) {
 }
 
 console.log('=== check-mcp-registry-wiring · MCP 注册表接线守卫 ===');
-console.log(`  工具数 ${hits.length} · 导入面 ${imported.size} 个符号`);
+// 口径说明（v1.5.6 章一 · 承接 v1.5.5 阶段三登记 #9 F29）：本行「工具数」= 正则抓取的
+// **注册项命中数**，含参数 schema 中出现的噪声位（与「条目级 name 计数」同口径，非另一套计数）——
+// 与 SECURITY/README 声称的 104 同源不同粒度时以条目级为准。零行为变更，仅口径可见化。
+console.log(`  工具数 ${hits.length}（含参数 schema 噪声位；条目级 name 计数见 tool-registry）· 导入面 ${imported.size} 个符号`);
 if (failures.length === 0) {
   console.log('  ✓ 全部注册均带 handler 且执行目标在导入面内');
   console.log('✓ MCP 注册表接线守卫通过');

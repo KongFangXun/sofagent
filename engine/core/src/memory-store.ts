@@ -25,7 +25,7 @@ import {
   unlinkSync,
   renameSync,
 } from 'fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { createHash, randomUUID } from 'crypto';
 import { getDataDir } from './data-paths';
 
@@ -59,6 +59,11 @@ interface MemoryIndex {
   [key: string]: string;
 }
 
+/** archive-index.json 索引结构（v1.5.6 章二：归档事实的显式检索面） */
+interface ArchiveIndex {
+  [key: string]: { factId: string; archivedAt: string };
+}
+
 // ────────────────────────────────────────────────────────────
 // 路径解析
 // ────────────────────────────────────────────────────────────
@@ -78,9 +83,38 @@ function getBucketDir(memoryRoot: string, userId: string): string {
   return join(memoryRoot, userId);
 }
 
-/** 某条事实的 Markdown 文件路径 */
+/** 某条事实的 Markdown 文件路径（v1.5.6 章二：桶内二级分层——按 factId 前 2 字符分片） */
 function getFactPath(memoryRoot: string, userId: string, factId: string): string {
+  return join(getBucketDir(memoryRoot, userId), factId.slice(0, 2), `${factId}.md`);
+}
+
+/** 旧版扁平路径（二级分层前的布局）——读侧兼容用 */
+function getLegacyFactPath(memoryRoot: string, userId: string, factId: string): string {
   return join(getBucketDir(memoryRoot, userId), `${factId}.md`);
+}
+
+/** 归档区路径（不参与常规检索） */
+function getArchiveFactPath(memoryRoot: string, userId: string, factId: string): string {
+  return join(getBucketDir(memoryRoot, userId), 'archive', factId.slice(0, 2), `${factId}.md`);
+}
+
+/**
+ * 读侧路径解析（三态兼容）：二级分层新路径 → 旧扁平路径 → 归档区。
+ * 保证二级分层落地前写入的既有事实**零回归可读**。
+ */
+function resolveFactPath(memoryRoot: string, userId: string, factId: string): string | null {
+  const candidates = [
+    getFactPath(memoryRoot, userId, factId),
+    getLegacyFactPath(memoryRoot, userId, factId),
+    getArchiveFactPath(memoryRoot, userId, factId),
+  ];
+  for (const p of candidates) if (existsSync(p)) return p;
+  return null;
+}
+
+/** 归档索引文件路径（key → { factId, archivedAt }） */
+function getArchiveIndexPath(memoryRoot: string): string {
+  return join(memoryRoot, 'archive-index.json');
 }
 
 /** memory.json 索引文件路径 */
@@ -118,6 +152,23 @@ function readIndex(memoryRoot: string): MemoryIndex {
 function writeIndex(memoryRoot: string, index: MemoryIndex): void {
   mkdirSync(memoryRoot, { recursive: true, mode: 0o700 });
   writeFileSync(getIndexPath(memoryRoot), JSON.stringify(index, null, 2) + '\n', 'utf-8');
+}
+
+/** 读取归档索引（不存在时返回空对象） */
+function readArchiveIndex(memoryRoot: string): ArchiveIndex {
+  const p = getArchiveIndexPath(memoryRoot);
+  if (!existsSync(p)) return {};
+  try {
+    return JSON.parse(readFileSync(p, 'utf-8')) as ArchiveIndex;
+  } catch {
+    return {};
+  }
+}
+
+/** 写入归档索引 */
+function writeArchiveIndex(memoryRoot: string, index: ArchiveIndex): void {
+  mkdirSync(memoryRoot, { recursive: true, mode: 0o700 });
+  writeFileSync(getArchiveIndexPath(memoryRoot), JSON.stringify(index, null, 2) + '\n', 'utf-8');
 }
 
 /**
@@ -195,6 +246,8 @@ export function createMemoryStore(dataBase?: string): {
   list: (prefix?: string) => MemoryFact[];
   delete: (key: string) => boolean;
   search: (query: string) => MemoryFact[];
+  archive: (options?: { days?: number; now?: Date }) => number;
+  listArchived: (prefix?: string) => MemoryFact[];
 } {
   const memoryRoot = getMemoryRoot(dataBase);
 
@@ -215,8 +268,8 @@ export function createMemoryStore(dataBase?: string): {
       if (factId) {
         // 读取旧事实的 createdAt
         const { bucket } = extractBucket(fact.key);
-        const oldPath = getFactPath(memoryRoot, bucket, factId);
-        if (existsSync(oldPath)) {
+        const oldPath = resolveFactPath(memoryRoot, bucket, factId);
+        if (oldPath) {
           const old = markdownToFact(readFileSync(oldPath, 'utf-8'), factId);
           if (old) createdAt = old.createdAt;
         }
@@ -232,11 +285,11 @@ export function createMemoryStore(dataBase?: string): {
       };
 
       const { bucket } = extractBucket(fact.key);
-      const bucketDir = getBucketDir(memoryRoot, bucket);
-      mkdirSync(bucketDir, { recursive: true, mode: 0o700 });
+      const factPath = getFactPath(memoryRoot, bucket, factId);
+      mkdirSync(dirname(factPath), { recursive: true, mode: 0o700 });
 
       // 写 Markdown 单文件
-      writeFileSync(getFactPath(memoryRoot, bucket, factId), factToMarkdown(full), 'utf-8');
+      writeFileSync(factPath, factToMarkdown(full), 'utf-8');
 
       // 更新索引
       index[fact.key] = factId;
@@ -255,8 +308,8 @@ export function createMemoryStore(dataBase?: string): {
       if (!factId) return null;
 
       const { bucket } = extractBucket(key);
-      const factPath = getFactPath(memoryRoot, bucket, factId);
-      if (!existsSync(factPath)) return null;
+      const factPath = resolveFactPath(memoryRoot, bucket, factId);
+      if (!factPath) return null;
 
       return markdownToFact(readFileSync(factPath, 'utf-8'), factId);
     },
@@ -286,8 +339,8 @@ export function createMemoryStore(dataBase?: string): {
       if (!factId) return false;
 
       const { bucket } = extractBucket(key);
-      const factPath = getFactPath(memoryRoot, bucket, factId);
-      if (existsSync(factPath)) {
+      const factPath = resolveFactPath(memoryRoot, bucket, factId);
+      if (factPath) {
         try {
           unlinkSync(factPath);
         } catch {
@@ -302,6 +355,7 @@ export function createMemoryStore(dataBase?: string): {
 
     /**
      * 搜索事实（全文模糊匹配 value + tags + key）。
+     * 归档事实不参与（归档不进常规检索）。
      * @param query 搜索关键词
      */
     search(query: string): MemoryFact[] {
@@ -314,6 +368,72 @@ export function createMemoryStore(dataBase?: string): {
           f.tags.some((t) => t.toLowerCase().includes(lowerQuery))
         );
       });
+    },
+
+    /**
+     * v1.5.6 章二 · 归档轮转：把 `days` 天未更新的事实移入归档区。
+     * - 归档事实**移出主索引**（不进常规 list / search），文件移入 `<bucket>/archive/<prefix>/`；
+     * - 归档索引 `archive-index.json` 记录 key → { factId, archivedAt }，供 `listArchived` 显式查；
+     * - 幂等可重跑；返回迁移条数。
+     */
+    archive(options: { days?: number; now?: Date } = {}): number {
+      const days = options.days ?? 30;
+      const cutoff = (options.now ?? new Date()).getTime() - days * 24 * 60 * 60 * 1000;
+      const index = readIndex(memoryRoot);
+      const archiveIndex = readArchiveIndex(memoryRoot);
+      let moved = 0;
+      for (const key of Object.keys(index)) {
+        const factId = index[key];
+        if (!factId) continue;
+        const { bucket } = extractBucket(key);
+        const src = resolveFactPath(memoryRoot, bucket, factId);
+        if (!src) continue;
+        let fact: MemoryFact | null = null;
+        try {
+          fact = markdownToFact(readFileSync(src, 'utf-8'), factId);
+        } catch {
+          continue;
+        }
+        if (!fact) continue;
+        if (new Date(fact.updatedAt).getTime() > cutoff) continue; // 热数据不动
+        const dest = getArchiveFactPath(memoryRoot, bucket, factId);
+        mkdirSync(dirname(dest), { recursive: true, mode: 0o700 });
+        try {
+          renameSync(src, dest);
+        } catch {
+          continue;
+        }
+        archiveIndex[key] = { factId, archivedAt: new Date().toISOString() };
+        delete index[key];
+        moved++;
+      }
+      if (moved > 0) {
+        writeIndex(memoryRoot, index);
+        writeArchiveIndex(memoryRoot, archiveIndex);
+      }
+      return moved;
+    },
+
+    /** v1.5.6 章二 · 显式查归档（对应 CLI/工具面的 `--archive`）。 */
+    listArchived(prefix?: string): MemoryFact[] {
+      const archiveIndex = readArchiveIndex(memoryRoot);
+      const results: MemoryFact[] = [];
+      for (const key of Object.keys(archiveIndex)) {
+        if (prefix && !key.startsWith(prefix)) continue;
+        const entry = archiveIndex[key];
+        if (!entry) continue;
+        const factId = entry.factId;
+        const { bucket } = extractBucket(key);
+        const p = getArchiveFactPath(memoryRoot, bucket, factId);
+        if (!existsSync(p)) continue;
+        try {
+          const f = markdownToFact(readFileSync(p, 'utf-8'), factId);
+          if (f) results.push(f);
+        } catch {
+          // 为何可静默：归档区单条坏文件跳过——listArchived 是显式查询面，单条损坏不应中断整表返回
+        }
+      }
+      return results;
     },
   };
 }

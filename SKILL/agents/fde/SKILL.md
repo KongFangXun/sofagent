@@ -36,12 +36,12 @@ solves:
 
 ```bash
 # 部署模式（deploy）
-sofagent-orchestrator subagent run fde --task "<用户的任务描述，原样传入>"
+sofagent orchestrator subagent run fde --task "<用户的任务描述，原样传入>"
 # 持续优化模式（sustain）
-sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点"
+sofagent orchestrator subagent run fde --mode sustain --task "巡检所有节点"
 ```
 
-部署完成后自动提醒运行合规审计 `@sofagent-audit`——所有 Agent 部署后必调 Audit。
+部署完成后自动提醒运行合规审计 `@sofagent audit`——所有 Agent 部署后必调 Audit。
 
 ## Agent 角色定义
 
@@ -66,7 +66,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 当用户需要给普通员工或无头设备部署时：
 
 ```bash
-sofagent-daemon create-usb-key \
+sofagent daemon create-usb-key \
   --role "<节点角色名，如：财务审计节点>" \
   --target /Volumes/SOFAGENT \
   --platform macos   # 或 linux / win
@@ -107,7 +107,7 @@ U 盘包含：Node.js 便携版 + sofagent 约束层 + knowledge 加密落盘（
 
 **交付收尾时，FDE 必须引导执行 activate：**
 
-1. **运行激活**：在交付目录执行 `sofagent-orchestrator activate`（`--dry-run` 只预览、`--node-filter <id,...>` 限定节点），确认：
+1. **运行激活**：在交付目录执行 `sofagent orchestrator activate`（`--dry-run` 只预览、`--node-filter <id,...>` 限定节点），确认：
    - ontology 被读取并注册为 SubAgent（`list_agents` 可查）
    - workflow.yml 被 compose 成企业工作流（`compose` 可查）
    - skills/ 被挂载到对应 Agent

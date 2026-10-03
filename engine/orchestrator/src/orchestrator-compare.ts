@@ -836,4 +836,12 @@ function main(): void {
   updateAbState(compareResult, args.candidate, args.current);
 }
 
-if (process.argv[1]?.includes('orchestrate-compare')) main();
+// v1.5.6 章一 · 单入口收敛（兼容期 shim）：直接调用旧命令时提示新入口；
+// 被 `sofagent <域>` 路由调用时静默（路由注入 SOFAGENT_SINGLE_ENTRY=1）。
+if (process.env.SOFAGENT_SINGLE_ENTRY !== '1') {
+  process.stderr.write('[sofagent] 旧命令 `sofagent-orchestrator-compare` 已收敛到单入口 `sofagent compare`——本命令进入兼容期（仍可用，下一 minor 版本移除）。\n');
+}
+// v1.5.6 章一修正：原守卫 `process.argv[1]?.includes('orchestrate-compare')` 与实际
+// 文件名 / bin 名 `orchestrator-compare` **不匹配** ⇒ main() 从不执行（该 bin 自始不可用的
+// 既有缺陷，由单入口路由实测暴露）。两种拼写都放行。
+if (/(?:orchestrator|orchestrate)-compare/.test(process.argv[1] ?? '')) main();

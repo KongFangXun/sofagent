@@ -41,7 +41,7 @@
 sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（管住强度按宿主分档：DSH/OpenClaw 硬注入可拦截，其余档位为建议性注入 + git hook 审计兜底——见〈多平台挂载〉档位表）。
 
 <p align="center">
-  <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" /><br/>
+  <img src="docs/assets/audit-terminal.png" alt="sofagent audit 拦截 .env 提交" width="860" /><br/>
   <sub>零配置审计实拍：一行命令审计最近一次 commit，密钥泄漏当场拦截</sub>
 </p>
 
@@ -55,11 +55,11 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 </details>
 
-**30 秒轻量试用**（首次含 npx 拉包，复跑秒级；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
+**30 秒轻量试用**（首次含 npx 拉包，复跑秒级；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
 > 💡 试用时提交消息请写 **≥6 字符**（如 `initial audit test`）——A19 质量规则（编号对照见 [规则表](./docs/ARCHITECTURE.md)）对超短消息（`init`/`add`）判红属设计意图（防无意义提交信息），不是故障。
 
-**五分钟戏剧演示**（v1.5.1 已交付，沙箱隔离、真实文件零接触）：`npx -y -p @sofagent/audit sofagent-audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕完整链路（`--speed fast` 60 秒精简版；产物落 `$SOFAGENT_DATA/demo`（默认 `~/.sofagent/data/demo`），不触碰被审仓库与其他目录）。
+**五分钟戏剧演示**（v1.5.1 已交付，沙箱隔离、真实文件零接触）：`npx -y -p sofagent sofagent audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕完整链路（`--speed fast` 60 秒精简版；产物落 `$SOFAGENT_DATA/demo`（默认 `~/.sofagent/data/demo`），不触碰被审仓库与其他目录）。
 
 > 版本说明：v1.5.5 已发版（2026-10-01）；npm 可安装最新版 `@sofagent/audit@1.5.5`。
 
@@ -109,7 +109,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 **治理层 · harness**（离场 · 驻留判断——「harness 治理」，按交付物 7×24 执行，进化时写回）：
 
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，7×24 在线守护（commit 时触发审计），人离场治理不离开
-- 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（单机实测：quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
+- 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（单机实测：quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
 - 🧱 **25 条审计规则 + 104 个 MCP tool**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截（critical 层命中后其余规则跳过——fail-fast 设计；默认非 fail-closed——配置可被篡改、hook 可被 --no-verify 跳过，绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）。**证据两档**：25 条中 20 条基于 git diff 硬证据（本地即生效）+ 4 条混合（diff + Agent 日志，Agent 接入后生效）+ 1 条文件系统扫描；
   A7/A8 等日志规则（编号对照见 [规则表](./docs/ARCHITECTURE.md)）在无 Agent 日志时跳过（信任边界详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
@@ -148,7 +148,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
 
 - **别假设能力对齐——档位差的是注入强度，不是「有没有」**：DSH 逐工具调用可拦，OpenClaw 每会话注入一遍，其余宿主由 Agent 自觉读 Skill 文本（建议性）。「支持某平台」= 约束资产在该平台可用，**≠ 约束强度与其他平台相同**；跨宿主迁移或写集成文档前，先看目标宿主落在哪一档，完整矩阵见[加载链 HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
-- **审计兜底平台无关**——`sofagent-audit --install-hook` 走 git hook，任何档位每次 commit 都自动审计（默认启用 17 条；完整 25 条需在 `.sofagent/config.yml` 显式开启 `extendedRulesEnabled: true`），违规硬拦截。
+- **审计兜底平台无关**——`sofagent audit --install-hook` 走 git hook，任何档位每次 commit 都自动审计（默认启用 17 条；完整 25 条需在 `.sofagent/config.yml` 显式开启 `extendedRulesEnabled: true`），违规硬拦截。
   约束是建议性的，审计是强制性的（强制的边界：默认非 fail-closed，`--no-verify` 可跳过前两层防线、post-commit 只留痕不阻断——被绕过的 commit 会留痕，详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
@@ -202,12 +202,12 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 **30 秒，零配置**（首次含 npx 拉包约 30 秒，复跑秒级——引擎本体约 1.1s，实测口径见上）——在任何 git 仓库跑一次审计：
 
 ```bash
-npx -y -p @sofagent/audit sofagent-audit
+npx -y -p sofagent sofagent audit
 ```
 
 > 💡 quick 跑 17 条默认规则（A3 任务范围 / A9 commit-msg 注入检测激活——自动读最近一次 commit 消息，无消息时 A9 按无输入处理标记跳过）；`--init` 装的是 hook（默认仍跑这 17 条），完整 25 条另需在 `.sofagent/config.yml` 开启 `extendedRulesEnabled: true`——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
-> ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent-audit --init`（见下方完整安装）。
+> ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent audit --init`（见下方完整安装）。
 
 拦截特定格式密钥泄漏时是这样的（真实输出；A2（编号对照见 [规则表](./docs/ARCHITECTURE.md)）检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式，通用密钥形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）——首屏的实拍图即此场景，此处不再重复。
 
@@ -222,15 +222,15 @@ bash bootstrap.sh && rm bootstrap.sh
 > 🔒 供应链信任链：tag 钉定 + sha256 校验 + fail-closed + 自锚定哈希重入二次校验（详见 [SECURITY.md](SECURITY.md) 远程安装节）；⚠️ 审计日志默认明文落盘——企业部署建议开启静态加密。
 
 ```bash
-sofagent-audit --init      # 装 git hook，之后每次 commit 自动审计
-sofagent-audit --doctor    # 验证环境（可选）
+sofagent audit --init      # 装 git hook，之后每次 commit 自动审计
+sofagent audit --doctor    # 验证环境（可选）
 ```
 
-> 🔧 **新装机器首跑 `--doctor` 报「未建立 dist 基线」？** 运行 `sofagent-audit --doctor --baseline` 建立基线（信任锚 = 你此刻确认 dist 可信的时刻——防影子审计器劫持，故不自动记录）。
+> 🔧 **新装机器首跑 `--doctor` 报「未建立 dist 基线」？** 运行 `sofagent audit --doctor --baseline` 建立基线（信任锚 = 你此刻确认 dist 可信的时刻——防影子审计器劫持，故不自动记录）。
 
 
 > 💡 安装脚本主要写入 `~/.sofagent/`（数据目录）+ `~/.local/bin`（CLI 入口）；**仅当显式传 `--platform <平台>` 时才写入该平台的集成目录**（默认安装不探测、不修改任何平台配置）；npm 权限不足时 CLI 入口 fallback 到 `/usr/local/bin`。其余系统文件零改动。`--init` 安装三层防线 git hook（pre-commit 拦 .sofagent/ 入库 + commit-msg 规则审计 + post-commit 对账）；
->`--no-verify` 可跳过 **pre-commit 与 commit-msg 两个阶段**（即前两层防线），**post-commit 事后对账不受其影响**（git 原生开关不作用于 post-commit）——防的是诚实 Agent 的疏忽不是恶意绕过，被跳过的 commit 由 post-commit 事后对账留痕（提示「疑似绕过」）但不阻断；个人兜底三件事：CI 侧 `sofagent-audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
+>`--no-verify` 可跳过 **pre-commit 与 commit-msg 两个阶段**（即前两层防线），**post-commit 事后对账不受其影响**（git 原生开关不作用于 post-commit）——防的是诚实 Agent 的疏忽不是恶意绕过，被跳过的 commit 由 post-commit 事后对账留痕（提示「疑似绕过」）但不阻断；个人兜底三件事：CI 侧 `sofagent audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
 > 📌 **install.sh 是企业设备安装器**——装在企业跑 AI 节点的设备上（约束层 + daemon 巡检 + 单机 dashboard）；FDE 自己的电脑不需要跑，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论），详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
 >
@@ -238,11 +238,11 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 **卸载**：`bash ~/.sofagent/scripts/uninstall.sh`（安装态）或 `bash engine/scripts/uninstall.sh`（clone 态）——移除 Skill/约束文件、hook 注册与三个 git hook（`pre-commit` / `commit-msg` / `post-commit`），保留你的 `~/.sofagent/` 数据。
 
-完整安装方式（clone / npx / 最小安装 / 企业部署）、卸载、以及「两条通道都叫 sofagent 怎么分辨」等消歧细节见 [HANDBOOK · 安装](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js；15 分钟最短路径见其「15 分钟最短路径」小节）。
+完整安装方式（clone / npx / 最小安装 / 企业部署）、卸载、以及「单入口与安装态怎么分辨」等消歧细节见 [HANDBOOK · 安装](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js；15 分钟最短路径见其「15 分钟最短路径」小节）。
 
 ## 使用
 
-<p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" /><br/><sub>Dashboard 驾驶舱（单文件 HTML · 截图版本 v1.4.0）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>（界面演进见 CHANGELOG，实际以安装态为准）</sub></p>
+<p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" /><br/><sub>Dashboard 驾驶舱（单文件 HTML · 截图版本 v1.5.6）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>（界面演进见 CHANGELOG，实际以安装态为准）</sub></p>
 
 > 📊 **Dashboard 有三个入口，各归各位**：
 >
@@ -260,25 +260,28 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 | 入口 | 做什么 | 装在哪 | 花多久 |
 |---|---|---|---|
-| **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，秒级出结果（首次 npx 约 30 秒） | 任意 git 仓库（临时） | 30 秒 |
+| **`npx -y -p sofagent sofagent audit`** | 零配置审计最近一次 commit，秒级出结果（首次 npx 约 30 秒） | 任意 git 仓库（临时） | 30 秒 |
 | **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 同上 | 1 分钟 |
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
 | **install.sh 全套** | 注入·审计·回溯·沉淀·进化五能力 + daemon 巡检 + dashboard——Agent 的完整约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
 
-> ⚠️ **两条裸名通道都别裸装**——名字都像「sofagent 本体」，但都不是 CLI：
+> 📌 **单入口 CLI（v1.5.6 起）**——CLI 收敛为 **`sofagent <域> <动作>`**：`sofagent audit`（审计）· `sofagent train doctor`（训练）、`sofagent team formation`（阵型）· `sofagent daemon`（守护）… 全部域见 `sofagent help`。
 >
-> - **`npm i sofagent-audit`**：npm 上的裸名包 `sofagent-audit` 是**本项目的旧代理包**（已下架 unpublished，2026-09-26；长期滞后于主包）。
-> - **`npm i sofagent`**：裸名总包 `sofagent`（`engine/umbrella/`，把 audit / mcp / orchestrator / daemon 四个子包转发进来）**依赖树 771 包**（口径：`npm i sofagent` 安装后 npm 报告的 added 包数，2026-09-25 实测），
->其中 5 个含原生模块与 install script（`node-pty` / `koffi` / `@google/genai` / `protobufjs` / `@deepseek-ai/dsh-subprocess-local`）——新版 npm 默认不执行未审阅的 install script，这些原生依赖的编译 / postinstall 会被**静默跳过**。只想要 CLI 就别装它。
-> - 📌 **裸名总包 `sofagent` 自本版起在 repo 侧标注弃用**——它只是转发层（`engine/umbrella/`），既非 CLI 也非推荐入口；CLI 与能力面请统一走 scoped 主通道 `@sofagent/audit`（CLI）/ `@sofagent/*`（子能力）。registry 侧 `npm deprecate` 另行处理（对外动作 + 2FA）。
+> | 用法 | 命令 |
+> |---|---|
+> | 零安装试用 | `npx -y -p sofagent sofagent audit` |
+> | 全局安装 | `npm i -g sofagent` → `sofagent audit` |
+> | 完整安装（含 daemon / dashboard） | `bootstrap.sh` / `install.sh`（见上） |
 >
-> CLI 的正式包名是 `@sofagent/audit`（带 scope），CLI 安装统一走 bootstrap.sh / install.sh / `@sofagent/audit`。
+> - **兼容期**：旧命令（`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …）**仍可用**，会提示新入口——**一个 minor 版本后移除**。收敛前的 13 个 bin 现已由单入口统一承载。
+> - ⚠️ **`npm i -g sofagent` 会带来完整依赖树**（含 orchestrator / mcp / train 等能力包，实测 771 个传递依赖，其中 5 个含原生模块与 install script——新版 npm 默认不执行未审阅 install script，这些原生依赖的编译会被**静默跳过**）。**只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 scoped 包 `npm i -g @sofagent/audit`。
+> - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。
 
 **规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（plugin 类规则默认关闭，需显式 opt-in，见 SECURITY）：
 
 ```bash
-npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # 看有哪些规则集
-npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规则集
+npx -y -p sofagent sofagent audit --list-rulesets      # 看有哪些规则集
+npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 ```
 
 **FDE 进场部署**——两条路径任选：
@@ -318,7 +321,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：5642 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 25 条审计规则 · fresh-eyes 独立审查持续运行。
+> 🧪 **工程可信度**（当前口径）：5646 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 25 条审计规则 · fresh-eyes 独立审查持续运行。
 > **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 个模块包（workspace 含 test script 的包共 25 个，插件包、load-chain 与 dsh-plugin-kit 工具包不在此计数口径）——二者不是同一个集合。
 > 测试数有两个口径：**发版时点值**（见各版本章节内的 `4805→4903` 增量账）与**当前实测值**（即上方「工程可信度」行的实测值，随修复批滚动）；当前权威值以 `tools/check/check-test-count.sh` 实跑为准（`test-count.sh` 产出计数真值，`check-test-count.sh` 校验文档声称数一致性），包数统计标准见 [WIKI 包数口径](./docs/WIKI.md#六当前状态)。审查环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)；
 >性能数据为单机参考值。

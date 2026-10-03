@@ -151,10 +151,10 @@ describe('memory-store', () => {
         tags: ['test'],
       });
 
-      // Markdown 文件在 data/memory/__default__/ 或 data/memory/fmt/
+      // v1.5.6 章二：二级分层——Markdown 文件在 data/memory/<bucket>/<id 前2字符>/
       const memoryRoot = join(testDir, 'memory');
       // key "fmt.test" → bucket = "fmt"
-      const factPath = join(memoryRoot, 'fmt', `${id}.md`);
+      const factPath = join(memoryRoot, 'fmt', id.slice(0, 2), `${id}.md`);
       expect(existsSync(factPath)).toBe(true);
 
       const content = readFileSync(factPath, 'utf-8');
@@ -187,7 +187,7 @@ describe('memory-store', () => {
         tags: [],
       });
 
-      const factPath = join(testDir, 'memory', '__default__', `${id}.md`);
+      const factPath = join(testDir, 'memory', '__default__', id.slice(0, 2), `${id}.md`);
       expect(existsSync(factPath)).toBe(true);
     });
   });

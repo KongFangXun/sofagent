@@ -8,7 +8,7 @@ sofagent 守护进程——持续审计、文件监听（chokidar）、cron 定�
 npm install -g @sofagent/daemon
 ```
 
-安装后获得 `sofagent-daemon` 命令。Node.js 18+。
+安装后获得 `sofagent daemon` 命令。Node.js 18+。
 
 ## API
 

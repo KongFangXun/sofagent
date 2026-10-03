@@ -121,7 +121,7 @@ OpenClaw 的探测事件名是**下划线风格**（`before_tool_call`），与 
 | --- | --- | --- | --- | --- |
 | `before_model_resolve` | `openclaw` | `dist/hook-types-*.d.ts` | 会话消息载入前覆盖 provider / model | 暂无 |
 | `agent_turn_prepare` | `openclaw` | `dist/hook-types-*.d.ts` | 消费排队的 turn 注入、补同轮上下文 | 暂无 |
-| `before_prompt_build` | `openclaw` | `dist/hook-types-*.d.ts` | 模型调用前追加动态上下文 / 系统提示词 | `sofagent-inject` `sofagent-evolve` |
+| `before_prompt_build` | `openclaw` | `dist/hook-types-*.d.ts` | 模型调用前追加动态上下文 / 系统提示词 | `sofagent-inject` `sofagent evolve` |
 | `before_agent_start` | `openclaw` | `dist/hook-types-*.d.ts` | 兼容用的组合相位（官方建议改用上面两个） | 暂无 |
 | `before_agent_run` | `openclaw` | `dist/hook-types-*.d.ts` | 提交模型前检视最终 prompt，可拦停本轮 | 暂无 |
 | `before_agent_reply` | `openclaw` | `dist/hook-types-*.d.ts` | 用合成回复短路模型轮次 | 暂无 |
@@ -139,7 +139,7 @@ OpenClaw 的探测事件名是**下划线风格**（`before_tool_call`），与 
 | `message_sending` | `openclaw` | `dist/hook-types-*.d.ts` | 出站消息发送前 | 暂无 |
 | `reply_payload_sending` | `openclaw` | `dist/hook-types-*.d.ts` | 回复负载发送前 | 暂无 |
 | `message_sent` | `openclaw` | `dist/hook-types-*.d.ts` | 出站消息已投递 | 暂无 |
-| `before_tool_call` | `openclaw` | `dist/hook-types-*.d.ts` | 工具调用前——**可拦停 / 要求审批** | `sofagent-audit` |
+| `before_tool_call` | `openclaw` | `dist/hook-types-*.d.ts` | 工具调用前——**可拦停 / 要求审批** | `sofagent audit` |
 | `after_tool_call` | `openclaw` | `dist/hook-types-*.d.ts` | 工具调用后 | 暂无 |
 | `tool_result_persist` | `openclaw` | `dist/hook-types-*.d.ts` | 工具结果落盘时 | 暂无 |
 | `before_message_write` | `openclaw` | `dist/hook-types-*.d.ts` | 消息写入前 | 暂无 |

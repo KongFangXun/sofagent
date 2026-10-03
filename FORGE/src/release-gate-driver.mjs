@@ -17,7 +17,7 @@
 // 模型配置（V + F 双角色，v1.2.8）：
 //   V（验证者）/ F（修复者）= glm-5.3（智谱 Coding Plan 订阅制，GLM_API_KEY，v1.4.1 起）
 //   V = reviewer skill + REVIEWER_TOOLS（只读）· F = engineer skill + ENGINEER_TOOLS（可写代码）
-//   f-audit = driver 步骤（role:null，不调 LLM，driver 直接跑 sofagent-audit）
+//   f-audit = driver 步骤（role:null，不调 LLM，driver 直接跑完整引擎审计（sofagent audit --full --diff））
 //   历史选型：deepseek-v4-flash（v1.3.9 按量低成本档）→ glm-5.3（v1.4.1 切换）
 //
 // 与 fresh-eyes-driver 的差异：

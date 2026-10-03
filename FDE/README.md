@@ -58,7 +58,7 @@ FDE 支持两种使用方式——根据你的需求选择：
 
 如果你想用 sofagent 工具链辅助（自动审计 + 知识沉淀 + Dashboard）：
 
-1. **安装**：`npm install -g @sofagent/audit && sofagent-audit --init`
+1. **安装**：`npm install -g @sofagent/audit && sofagent audit --init`
 2. **连接**：在你的 AI Agent 平台加载 FDE Skill（WorkBuddy 搜 `sofagent`，或 `bash install.sh`）
 3. **对话**：跟 Agent 说"帮我做 FDE 诊断"，它会从 §1 进场开始引导你
 

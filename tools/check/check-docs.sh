@@ -316,25 +316,23 @@ else
   ASSERTS=$((ASSERTS + 1)); echo "  ✓ WIKI 状态表「下一版」$WIKI_NEXT_V 与 ROADMAP 一致"
 fi
 
-# 3a-2. WIKI 状态表「当前版本」语义声称 vs 根 package.json version（F10 残余收口，2026-10-02）
-#   背景：上方 3a 只对账「下一版」行——「当前版本」行从无任何机械对账，这正是 WIKI
-#   「当前版本」曾三项全错的存活原因（check-version 只查格式声称，语义声称是人工维护盲区）。
-#   口径：取 WIKI 含「当前版本」的行（表格行形如「| 当前版本 | **vX.Y.Z**（... ·
-#   上一版 vX.Y.Y ...）」），提取**首个** vX.Y.Z 即当前版本号，与根 package.json 的
-#   version 字段比对（根包 version 是发版 SSOT）。
+# 3a-bis. WIKI「当前版本」行 ↔ 根 package.json version（换版漂移机械对账）
+# 盲区收口：3a 只对账「下一版」，「当前版本」行（日期/主题/上一版）长期无机械对账，
+# 历史上曾三项全错而存活。本断言锚定其中最硬的一项——版本号本身；日期/主题属
+# 叙事面由人工核对（F10 步骤 2），版本号错位则属换版漏改，必须阻断。
 WIKI_CUR_V=$(grep -m1 "当前版本" docs/WIKI.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-ROOT_PKG_V=$(node -e "console.log(require('./package.json').version)" 2>/dev/null || echo "")
+ROOT_PKG_V=$(grep -m1 -oE '"version": *"[0-9]+\.[0-9]+\.[0-9]+"' package.json 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 if [ -z "$WIKI_CUR_V" ]; then
-  echo "  ${RED}✗ WIKI 状态表未找到「当前版本」版本号——人工检查项升为阻断（守卫不得空转）${NC}"
+  echo "  ${RED}✗ WIKI 状态表未找到「当前版本」版本号——换版漂移检查失效（守卫不得空转）${NC}"
   ERRORS=$((ERRORS + 1))
 elif [ -z "$ROOT_PKG_V" ]; then
-  echo "  ${RED}✗ 根 package.json 未读到 version 字段——「当前版本」语义声称对账失效${NC}"
+  echo "  ${RED}✗ 根 package.json version 不可读——WIKI 当前版本对账基准缺失${NC}"
   ERRORS=$((ERRORS + 1))
-elif [ "v${ROOT_PKG_V}" != "$WIKI_CUR_V" ]; then
-  echo "  ${RED}✗ WIKI 状态表「当前版本」=$WIKI_CUR_V ≠ 根 package.json=v${ROOT_PKG_V} —— 版本语义声称漂移${NC}"
+elif [ "v$ROOT_PKG_V" != "$WIKI_CUR_V" ]; then
+  echo "  ${RED}✗ WIKI 状态表「当前版本」=$WIKI_CUR_V ≠ 根 package.json v$ROOT_PKG_V —— 换版漂移（WIKI 漏随 bump 同步）${NC}"
   ERRORS=$((ERRORS + 1))
 else
-  ASSERTS=$((ASSERTS + 1)); echo "  ✓ WIKI 状态表「当前版本」$WIKI_CUR_V = 根 package.json v${ROOT_PKG_V}"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ WIKI 状态表「当前版本」$WIKI_CUR_V = 根 package.json v$ROOT_PKG_V"
 fi
 
 # 3b. 新能力段版本堆叠检查（2026-08-22 新增——上轮发现 HANDBOOK 堆叠 v1.3.1~v1.3.8 六段历史能力，

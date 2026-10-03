@@ -6,13 +6,13 @@ sofagent A/B 测试框架——对比实验、指标显著性分析、自动 pro
 
 ```bash
 # 运行 A/B 对比测试（从 golden-set YAML 加载测试用例）
-sofagent-ab-test run --current <skill-path> --candidate <skill-path> [options]
+sofagent ab-test run --current <skill-path> --candidate <skill-path> [options]
 
 # 选项
-sofagent-ab-test run --current <path>    # 当前版本 Agent Skill 路径
-sofagent-ab-test run --candidate <path>  # 候选版本 Agent Skill 路径
-sofagent-ab-test run --eval-set <path>   # golden-set YAML 路径（默认从 @sofagent/eval 的 golden-set.yaml 加载）
-sofagent-ab-test run --threshold <n>     # 晋升阈值（默认 2）
+sofagent ab-test run --current <path>    # 当前版本 Agent Skill 路径
+sofagent ab-test run --candidate <path>  # 候选版本 Agent Skill 路径
+sofagent ab-test run --eval-set <path>   # golden-set YAML 路径（默认从 @sofagent/eval 的 golden-set.yaml 加载）
+sofagent ab-test run --threshold <n>     # 晋升阈值（默认 2）
 
 # 测试用例不足时报错退出（不再使用硬编码默认用例）
 ```

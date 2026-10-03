@@ -20,14 +20,14 @@
 
 ## 审计强制（平台无关）
 
-约束是建议性的，审计是强制性的——提交前审计走 **git hook**（`sofagent-audit --install-hook`），与宿主平台无关：25 条 git diff 规则 + HMAC 链审计在 Gemini CLI 下同样生效。
+约束是建议性的，审计是强制性的——提交前审计走 **git hook**（`sofagent audit --install-hook`），与宿主平台无关：25 条 git diff 规则 + HMAC 链审计在 Gemini CLI 下同样生效。
 
 ## 连接 MCP Server
 
 Gemini CLI 的 MCP 配置（`settings.json`）指向 sofagent MCP Server（stdio）：
 
 ```json
-{ "mcpServers": { "sofagent": { "command": "sofagent-mcp" } } }
+{ "mcpServers": { "sofagent": { "command": "sofagent mcp" } } }
 ```
 
 104 个 tool（`run_audit` / `worklog_query` / `snapshot_restore` / `workflow_export` 等）经 MCP 协议面暴露——适配器只依赖 @public API 子集，@internal 破坏性变更不影响本挂载。

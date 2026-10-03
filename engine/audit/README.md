@@ -8,7 +8,7 @@
 
 > v1.5.5 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
-> **安装后运行：`sofagent-audit --init`**（一键初始化 config + hook + 冒烟测试）
+> **安装后运行：`sofagent audit --init`**（一键初始化 config + hook + 冒烟测试）
 >
 > 最小运行时直接依赖（js-yaml + archiver，传递依赖随 @sofagent/core 引入）。TypeScript 实现。Node.js 18+。
 
@@ -24,18 +24,18 @@ npm install -g @sofagent/audit
 npm install --save-dev @sofagent/audit
 
 # 方式三：一次性运行（不安装）
-npx -y -p @sofagent/audit sofagent-audit --diff HEAD~1..HEAD
+npx -y -p sofagent sofagent audit --diff HEAD~1..HEAD
 ```
 
 安装后获得以下命令：
 
 | 命令 | 来源 | 说明 |
 |------|------|------|
-| `sofagent-audit` | `@sofagent/audit` | 审计 CLI 主入口 |
-| `sofagent-core` | `@sofagent/core` | 核心运行时（含 `verify` / `doctor` 子命令） |
-| `sofagent-orchestrator` | `@sofagent/orchestrator` | 编排模块 CLI（含 `compose` / `compare` 子命令） |
+| `sofagent audit` | `@sofagent/audit` | 审计 CLI 主入口 |
+| `sofagent core` | `@sofagent/core` | 核心运行时（含 `verify` / `doctor` 子命令） |
+| `sofagent orchestrator` | `@sofagent/orchestrator` | 编排模块 CLI（含 `compose` / `compare` 子命令） |
 
-> 💡 其他常用命令：`sofagent-mcp`（`@sofagent/mcp`，v1.2.0 起拆分为独立包）、`sofagent-daemon`（`@sofagent/daemon`）、`sofagent-think`（`@sofagent/think`）等均为各自独立 npm 包的 bin 命令。MCP 支持请安装 `@sofagent/mcp` 独立包。
+> 💡 其他常用命令：`sofagent mcp`（`@sofagent/mcp`，v1.2.0 起拆分为独立包）、`sofagent daemon`（`@sofagent/daemon`）、`sofagent think`（`@sofagent/think`）等均为各自独立 npm 包的 bin 命令。MCP 支持请安装 `@sofagent/mcp` 独立包。
 
 ---
 
@@ -45,19 +45,19 @@ npx -y -p @sofagent/audit sofagent-audit --diff HEAD~1..HEAD
 
 ```bash
 # 审计最近一次提交
-sofagent-audit --diff HEAD~1..HEAD
+sofagent audit --diff HEAD~1..HEAD
 
 # 带任务描述（用于 A3 越界检测）
-sofagent-audit --diff HEAD~1..HEAD --task "修复登录页 bug"
+sofagent audit --diff HEAD~1..HEAD --task "修复登录页 bug"
 
 # 审计整个 PR
-sofagent-audit --diff origin/main..HEAD
+sofagent audit --diff origin/main..HEAD
 
 # JSON 输出（适合 CI/CD）
-sofagent-audit --diff HEAD~1..HEAD --json
+sofagent audit --diff HEAD~1..HEAD --json
 
 # CI 模式（= silent，紧凑输出。⚠️ 不隐含 --strict，如需严格模式请显式加 --strict）
-sofagent-audit --diff HEAD~1..HEAD --ci --json
+sofagent audit --diff HEAD~1..HEAD --ci --json
 ```
 
 ### 全部参数
@@ -96,22 +96,22 @@ sofagent-audit --diff HEAD~1..HEAD --ci --json
 
 ```bash
 # 完整检查（文件/Hook/权限/daemon/脱敏/断路器/平台兼容性）
-sofagent-core verify
+sofagent core verify
 
 # 快速模式（4 项核心检查，5 秒出结果）
-sofagent-core verify --quick
+sofagent core verify --quick
 
 # 只显示失败和警告项
-sofagent-core verify --quiet
+sofagent core verify --quiet
 
 # JSON 输出（CI/CD）
-sofagent-core verify --json
+sofagent core verify --json
 
 # 手动指定平台
-sofagent-core verify --platform workbuddy
+sofagent core verify --platform workbuddy
 
 # 运行 doctor 诊断
-sofagent-core doctor
+sofagent core doctor
 ```
 
 | 参数 | 说明 | 默认值 |
@@ -129,24 +129,24 @@ sofagent-core doctor
 - 检查数（通过/警告/违规/跳过）、引擎版本
 - 变更文件列表与状态
 
-可用 `sofagent-audit --timeline [N]` 查看历史快照时间线（默认 10 条）。
+可用 `sofagent audit --timeline [N]` 查看历史快照时间线（默认 10 条）。
 
 ### Git Hook 集成
 
 ```bash
 # 自动安装 commit-msg hook
-sofagent-audit --install-hook
+sofagent audit --install-hook
 
 # hook 会拦截违规提交（exit code 2 时阻止）
 ```
 
-> 💡 注意：sofagent-audit 进程自身 exit=2（FAIL 拦截），但经 git commit-msg hook 转发后，shell 看到的是 git 的 exit=1。测试拦截行为时以 sofagent-audit 直接调用的 exit code 为准。
+> 💡 注意：sofagent audit 进程自身 exit=2（FAIL 拦截），但经 git commit-msg hook 转发后，shell 看到的是 git 的 exit=1。测试拦截行为时以 sofagent audit 直接调用的 exit code 为准。
 
 ### CI/CD 集成（GitHub Actions 示例）
 
 ```yaml
 # .github/workflows/audit.yml
-name: sofagent-audit
+name: sofagent audit
 on: [pull_request]
 jobs:
   audit:
@@ -159,7 +159,7 @@ jobs:
         with:
           node-version: '18'
       - run: npm install -g @sofagent/audit
-      - run: sofagent-audit --diff origin/main..HEAD --ci --json
+      - run: sofagent audit --diff origin/main..HEAD --ci --json
 ```
 
 ### Webhook 推送
@@ -167,10 +167,10 @@ jobs:
 ```bash
 # 环境变量方式（推荐）
 export SOFAGENT_WEBHOOK_URL="https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN"
-sofagent-audit --diff HEAD~1..HEAD --webhook dingtalk
+sofagent audit --diff HEAD~1..HEAD --webhook dingtalk
 
 # 参数方式
-sofagent-audit --diff HEAD~1..HEAD --webhook feishu --webhook-url "https://open.feishu.cn/open-apis/bot/v2/hook/YOUR_ID"
+sofagent audit --diff HEAD~1..HEAD --webhook feishu --webhook-url "https://open.feishu.cn/open-apis/bot/v2/hook/YOUR_ID"
 ```
 
 有 WARN/FAIL 时自动推送（fire-and-forget，推送失败不影响审计结果）。
@@ -179,23 +179,23 @@ sofagent-audit --diff HEAD~1..HEAD --webhook feishu --webhook-url "https://open.
 
 ## MCP Server 用法
 
-sofagent-audit 内置 MCP Server（Model Context Protocol），可被 Claude Desktop / Cursor / Continue / 任何 MCP Client 调用。
+sofagent audit 内置 MCP Server（Model Context Protocol），可被 Claude Desktop / Cursor / Continue / 任何 MCP Client 调用。
 
 ### 启动 MCP Server
 
 ```bash
 # 方式一：通过 CLI 参数
-sofagent-audit --mcp
+sofagent audit --mcp
 
 # 方式二：直接调用独立入口
-sofagent-mcp
+sofagent mcp
 ```
 
 MCP Server 通过 stdio 通信（JSON-RPC 2.0），最小运行时依赖。
 
 ### MCP Client 配置
 
-通用模板（`command: sofagent-audit, args: [--mcp]`），各客户端配置文件路径：
+通用模板（`command: sofagent audit, args: [--mcp]`），各客户端配置文件路径：
 
 | 客户端 | 配置文件 | 字段 |
 |------|------|------|
