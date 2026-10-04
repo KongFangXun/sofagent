@@ -143,6 +143,13 @@
 - CI 与本地门禁口径差：CI 的 shellcheck action 无 ignore_paths ⇒ 按 shebang 扫**全仓**（含无扩展名 hook），本地按 `*.sh` 扫 ⇒ 本地绿 CI 红 ⇒ **CI 怎么扫，本地就该有同口径门禁**（已固化 check-shellcheck.sh）
 - 批量 publish 须 `bash <<'BSH'` 包执行：zsh 不对未加引号变量分词（已固化 10-distribute 通道说明）；INSTALL_SHA256 基准陷阱见上「bootstrap sha256 随版纪律」条
 
+- **`gh api …/git/refs/tags/<tag>`（复数 refs）返回 404 不是权威判据**——判「tag 是否已推上」以 `git ls-remote --tags origin <tag>` 或单数端点 `git/ref/tags/<tag>` 为准；据复数端点的 404 判定「push 失败」会误触发重推
+- **大文件 curl 恒 000 ≠ 不可达**——近 100KB 的 `install.sh` 在代理/网络抖动下可连续 000 而同 tag 的兄弟文件 200；勿死等重试，改用 **API 通道做内容级哈希对账闭环**（`gh api contents?ref=<tag> | base64 -d | shasum` == `git show <tag>:<file> | shasum`），一致即可达性成立
+- **批量 publish 脚本的「即时版本验证」会因 registry 传播延迟误报全失败**——判读序固定：先认发布日志的 `+ pkg@ver` **入队行**（有即已成功入队），再 `--prefer-online` 6×30s 重查，连续 ≥6 轮查不到才升级人工；据脚本即时验证的「全部 1.5.5」判定失败会触发错误处置（改版本号重发）
+- **发版产物落盘后可能被外部清理**（实测：窗口内桌面发布物被清空）——落盘即尽快消费（`gh release` 用完），收尾要么归档仓内、要么显式删除并登记；不登记则下轮无从区分「已清理」与「丢失」
+- **发布 prompt 必须携带执行面已知坑的处置处方清单**（瞬时 E404 / E409 staged / 裸查询吃缓存 / 传播延迟误报）——只给步骤不给处方，执行方在现场会把已成功的发布读成失败
+- **`check-forms` A7 对 ROADMAP 规划版本表的两条硬约束**：本版行不可删（`VERSION_SOURCES` 逐版对账，删即判「对账缺一侧」）；版本单元格必须**纯版号**（带「（日期）」即行正则失配，等同缺行）——日期放状态格
+
 ### 留档参考（未固化，按需取用）
 
 - 架构级设计顺序论证：新交付的判定链顺序、跨组件恢复顺序应附「为什么」论证页，避免审查时现场推导
