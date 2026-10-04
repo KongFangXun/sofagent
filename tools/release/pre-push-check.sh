@@ -426,6 +426,13 @@ fi
 # commit 可带着红门禁推上远端（v1.4.7+4 实锤：维度数漂移存活 4 commit）。
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 4c. SOP 阶段文件完整性 ──${NC}"
+  if node tools/check/check-sop-integrity.mjs >/dev/null 2>&1; then
+    check_pass "check-sop-integrity.mjs（SOP 阶段文件：锚链完整 · 结构 pin 三元组一致 · 无截断）"
+  else
+    check_fail "check-sop-integrity.mjs 发现阶段文件结构漂移或截断"
+    node tools/check/check-sop-integrity.mjs 2>&1 | grep "·" | head -5 | sed 's/^/    /'
+  fi
   echo -e "\n${BOLD}── 3c. 审查体系一致性 ──${NC}"
   if bash tools/check/check-review-system.sh >/dev/null 2>&1; then
     check_pass "check-review-system.sh 全部通过"

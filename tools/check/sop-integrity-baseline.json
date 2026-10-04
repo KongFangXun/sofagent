@@ -1,0 +1,69 @@
+{
+  "usage": "node tools/check/check-sop-integrity.mjs",
+  "note": "SOP 阶段文件结构基线 = 三元组（步骤表行数 / 步骤标题数 / 正文小节数）。改阶段文件结构时同批更新本台账——不是改守卫。",
+  "minFiles": 13,
+  "minStageFiles": 11,
+  "a4MinRows": 2,
+  "a4MinHeadings": 2,
+  "indexExempt": [
+    "auto-converge-protocol.md",
+    "troubleshooting.md"
+  ],
+  "files": {
+    "01-review.md": {
+      "stepRows": 4,
+      "stepHeadings": 1,
+      "bodySections": 3
+    },
+    "02-dev.md": {
+      "stepRows": 11,
+      "stepHeadings": 1,
+      "bodySections": 2
+    },
+    "03-quality-loop.md": {
+      "stepRows": 10,
+      "stepHeadings": 1,
+      "bodySections": 1
+    },
+    "04-review-system.md": {
+      "stepRows": 13,
+      "stepHeadings": 2,
+      "bodySections": 4
+    },
+    "05-release-gate.md": {
+      "stepRows": 4,
+      "stepHeadings": 1,
+      "bodySections": 2
+    },
+    "06-doc-finalize.md": {
+      "stepRows": 58,
+      "stepHeadings": 2,
+      "bodySections": 5
+    },
+    "07-tool-health.md": {
+      "stepRows": 8,
+      "stepHeadings": 1,
+      "bodySections": 5
+    },
+    "08-confirm.md": {
+      "stepRows": 6,
+      "stepHeadings": 1,
+      "bodySections": 2
+    },
+    "09-publish.md": {
+      "stepRows": 4,
+      "stepHeadings": 8,
+      "bodySections": 2
+    },
+    "10-distribute.md": {
+      "stepRows": 0,
+      "stepHeadings": 6,
+      "bodySections": 0
+    },
+    "11-post-publish.md": {
+      "stepRows": 38,
+      "stepHeadings": 2,
+      "bodySections": 6
+    }
+  }
+}
