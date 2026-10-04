@@ -1464,15 +1464,15 @@ function renderTrainBoard(board,health){
   board.running.forEach(function(j){
     rows.push([escapeHtml(j.jobId),trainStatusBadge(j.status),escapeHtml(j.baseModel||'—'),escapeHtml(j.algorithm||'—'),
       j.lastStep!==null&&j.lastStep!==undefined?('step '+j.lastStep):'—',
-      j.lastLoss!==null&&j.lastLoss!==undefined?j.lastLoss:'—',escapeHtml(j.updatedAt||'—')]);
+      j.lastLoss!==null&&j.lastLoss!==undefined?j.lastLoss:'—',escapeHtml(j.updatedAt?fmtDayTime(j.updatedAt):'—')]);
   });
   board.recentCompleted.slice(0,5).forEach(function(j){
     rows.push([escapeHtml(j.jobId),trainStatusBadge(j.status),escapeHtml(j.baseModel||'—'),escapeHtml(j.algorithm||'—'),
-      j.lastStep!==null&&j.lastStep!==undefined?('step '+j.lastStep):'—','—',escapeHtml(j.updatedAt||'—')]);
+      j.lastStep!==null&&j.lastStep!==undefined?('step '+j.lastStep):'—','—',escapeHtml(j.updatedAt?fmtDayTime(j.updatedAt):'—')]);
   });
   board.recentFailed.slice(0,5).forEach(function(j){
     rows.push([escapeHtml(j.jobId),trainStatusBadge(j.status),escapeHtml(j.baseModel||'—'),escapeHtml(j.algorithm||'—'),
-      '—','—',escapeHtml((j.reason||'').slice(0,80)||j.updatedAt||'—')]);
+      '—','—',escapeHtml((j.reason||'').slice(0,80)||(j.updatedAt?fmtDayTime(j.updatedAt):'—'))]);
   });
   if(rows.length===0){
     box.innerHTML=emptyState('<i class="bi bi-cpu"></i>','还没有训练任务','提交训练任务后自动生成（train_submit → 终态落盘 train-status.json）','查看 FDE 引导',"goPage('fde')");
