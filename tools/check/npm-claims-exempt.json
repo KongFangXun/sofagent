@@ -7,7 +7,18 @@
     "登记纪律（宁缺毋滥）：只有「真实已知债、待拍板/待裁定后清理」的声称才进本表。凡能直接改成 registry 真值的，一律不进本表——那是真实待清项，改了即绿。",
     "🔴 反例纪律：禁止为了转绿把能改的声称加进来。加一条豁免 = 宣称该声称暂不改为真值，须能在理由栏里说清「为何现在不能改」。"
   ],
-  "exemptAnchors": [],
+  "exemptAnchors": [
+    {
+      "file": "README.md",
+      "anchor": "npm 可安装最新版 `@sofagent/audit@1.5.6`。",
+      "reason": "发版窗口态（时序差，非可改债）：本行是 bump 后 SSOT 版本与 registry latest 的**时序差**——SSOT 已 1.5.6，registry latest 仍 1.5.5（publish 在阶段九步骤七/八）。此刻**无真值可改**：改回 1.5.5 与 SSOT 矛盾，留 1.5.6 与 registry 矛盾。锚串**含声称值** ⇒ 值一变即锚失效（债自动过期，不留永久口子）。移除触发点 = 本版 publish 完成后（同 v1.5.5 轮窗口态豁免随 publish 收编移除的先例）。"
+    },
+    {
+      "file": "README.en.md",
+      "anchor": "the latest installable npm version is `@sofagent/audit@1.5.6`",
+      "reason": "同上（英文侧同一行）：bump 后 SSOT 与 registry latest 的发版窗口时序差，此刻无真值可改；锚串含声称值 ⇒ 值一变即自动过期。移除触发点 = 本版 publish 完成后。"
+    }
+  ],
   "exemptAnchors_spec": {
     "形态": "{ file, anchor, reason } 三条——**不是**「文件+行号」",
     "为何不用行号": "行号随任何编辑漂移，漂移即静默失效或静默误放行（失明且失声）。锚串漂移可被检出，故锚定到「行内锚串」。",
