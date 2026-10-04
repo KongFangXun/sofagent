@@ -110,7 +110,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |---|---|---|---|
-| **v1.5.7** | 📋 规划中 | 🔍 审计模块 · 覆盖面扩展（SMB 场景审计 · 浏览器四件套实现底座处置 · OWASP 补条 · 规则语料双分类映射）（由旧 v1.5.11 / v1.5.12 撤并）<br>**形态归属**：主干 5 章 + 非功能 4 章 + 外部成分 1<br>⚠️ 措辞校准（实测现状）：`playwright_*` 的 **MCP 面已于 2026-09-26 退役**（registry 107→103，见 CHANGELOG 当前口径脚注）；本项残留的是**实现底座**（`engine/orchestrator/src/refine-agent/browser-tools.ts` 的 @public 导出删除，属 breaking，随本版报告统一处置——对齐 [v2.0.0 §七 B 表](./changelog/v2.0/v2.0.0.md) 裁定与 S313 中间态锚） | [日志](./changelog/v1.5/v1.5.7.md) |
+| **v1.5.7** | 📋 规划中 | 🔍 审计模块 · 覆盖面扩展与能力面治理（SMB 场景审计 · 浏览器实现底座处置 · OWASP 补条 · 规则语料双分类映射 · 使用率遥测与退役 · 主干能力清单 · 三处接口面对位：国标 / 决策日志输入源 / ACS 表达面评估）（由旧 v1.5.11 / v1.5.12 撤并）<br>**形态归属**：主干 5 章 + 非功能 4 章 + 外部成分 1<br>⚠️ 措辞校准（实测现状）：`playwright_*` 的 **MCP 面已于 2026-09-26 退役**（registry 107→103，见 CHANGELOG 当前口径脚注）；本项残留的是**实现底座**（`engine/orchestrator/src/refine-agent/browser-tools.ts` 的 @public 导出删除，属 breaking，随本版报告统一处置——对齐 [v2.0.0 §七 B 表](./changelog/v2.0/v2.0.0.md) 裁定与 S313 中间态锚）；（三件图像能力 `analyzeScreenshot` / `readImageMeta` / `degradeImageToText` 先迁出 `engine/orchestrator/src/refine-agent/image-meta.ts` 并**保留** `@public` 与基线，仅吊销四件套 4 个符号） | [日志](./changelog/v1.5/v1.5.7.md) |
 | **v1.5.8** | 📋 规划中 | **⚡ 进化模块 · 准入门与晋级判据（RSI 三算子对位）**（由旧 v1.5.14 / v1.5.15 撤并）<br>**形态归属**：主干 5 章 + 通道成分 1 | [日志](./changelog/v1.5/v1.5.8.md) |
 | **v1.5.9** | 📋 规划中 | **⚡ 进化模块 · 写面审计与能力基线 · 进化面插件化**（由旧 v1.5.16 / v1.5.17 撤并（另两章归位再分配迁出））<br>**形态归属**：主干 5 章 + 插件 1 章 + 非功能 1 章 | [日志](./changelog/v1.5/v1.5.9.md) |
 | **v1.6.0** | 📋 规划中 | **🧭 判定底座 · 阶段一（判据与数据地基）· 判据 schema 定稿**（由旧 v1.6.0–v1.6.2 撤并）<br>**形态归属**：主干 9 章 + 非功能 1 章 + 通道成分 1（主干 8→9：增章十循环 workflow 语义——`loop:` 声明位 / 预算熔断 / `humanOnly` 红线 / 全停命令；（详→注-1） | [日志](./changelog/v1.6/v1.6.0.md) |
