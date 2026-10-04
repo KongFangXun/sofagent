@@ -1589,7 +1589,7 @@ grep -q "TrainAuditEventType\|train_job_submitted" engine/train/src/train-audit.
 grep -q 'cp -Rn' install.sh && { echo "❌ cp -Rn 吞错语义回流"; exit 1; } || echo "✅ 迁移无 cp -Rn"
 grep -A2 'cp -R "$old_data"' install.sh | grep -q 'rm -rf "$old_data"' && echo "✅ 删源在复制成功分支内" || { echo "❌ 删源脱离成功分支"; exit 1; }
 # B3 谎报守卫：ln 调用无「失败仍报 ok」（4 处 sf 全守卫——BSD grep 下 sfn 前缀含 sf，显式计数）
-SF_COUNT=$(grep -E 'ln -sf "' install.sh | grep -vc 'warn\|#' || true); [ "$SF_COUNT" = "4" ] && echo "✅ ln -sf 恰 4 处（均带守卫——多出即需人工核）" || echo "🟡 ln -sf 计数 $SF_COUNT（预期 4），逐处核对守卫"
+SF_COUNT=$(grep -E 'ln -sf "' install.sh | grep -vc 'warn\|#' || true); [ "$SF_COUNT" = "5" ] && echo "✅ ln -sf 恰 5 处（均带守卫——多出即需人工核）" || echo "🟡 ln -sf 计数 $SF_COUNT（预期 5），逐处核对守卫"
 # P1 次生修复：迁移中止叙事在位（err 话术 + 调用处接管退出）
 grep -q '安装因迁移失败中止' install.sh && echo "✅ 迁移中止 err 叙事在位" || { echo "❌ 中止叙事缺失"; exit 1; }
 # B4 安全披露：豁免开关必须在 .md 有披露
