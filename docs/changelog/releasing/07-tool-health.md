@@ -73,10 +73,13 @@
 真装 hook + 真提交密钥验证拦截链路：
 
 ```bash
+# 0. 先记住仓库绝对路径（后面要 cd 到测试仓库，相对路径会指错）
+REPO="$(pwd)"
+
 # 1. 准备隔离测试 bin（⚠️ 先 rm -f 确认不是 symlink——symlink 会覆盖 dist）
 mkdir -p /tmp/fe-verify-bin
 rm -f /tmp/fe-verify-bin/sofagent-audit  # 确认不是 symlink
-printf '#!/bin/bash\nexec node %s/engine/audit/dist/cli-quick.js "$@"\n' "$(pwd)" > /tmp/fe-verify-bin/sofagent-audit
+printf '#!/bin/bash\nexec node %s/engine/audit/dist/cli-quick.js "$@"\n' "$REPO" > /tmp/fe-verify-bin/sofagent-audit
 chmod +x /tmp/fe-verify-bin/sofagent-audit
 
 # 2. 新仓库装 hook（🔴 必须显式 console.log 输出——「require('...').HOOK_TEMPLATE」只求值不打印，
@@ -85,19 +88,23 @@ mkdir -p /tmp/hook-test && cd /tmp/hook-test && rm -rf .git && git init
 # 🔴 修正：不再从 core 的 HOOK_TEMPLATE 导出取模板（该常量已 @deprecated——它曾与
 #    engine/audit/hooks/ 人工同步并漂移，正是 S51 假红根因）。改为走**真实安装路径**：
 #    `sofagent-audit --init`（唯一源 = hooks/ 目录），顺带让本步骤测的是用户实际拿到的 hook。
-node "$(pwd)/../../engine/audit/dist/index.js" --init >/dev/null 2>&1
+#    ⚠️ 必须用 $REPO 绝对路径——此刻 cwd 已是测试仓库，相对路径指不到本仓。
+node "$REPO/engine/audit/dist/index.js" --init >/dev/null 2>&1
 test -s .git/hooks/commit-msg || { echo "❌ hook 未安装——--init 异常，停手排查"; exit 1; }
 test -x .git/hooks/commit-msg || chmod +x .git/hooks/commit-msg
 
 # 3. 拦截验证：提交含密钥 .env
 # ⚠️ message 必须够长够具体（≥8 有效字符）——A5 不瞒真相 + A19 msg 质量会拦截，
 #    过短的 message（"test"/"init"）会导致「密钥没测到先被 message 规则拦」的假失败
-# 🔴 修正：SOFAGENT_HOME 不能用 /tmp 下路径——core 的 sanitizeSofagentHome 会
-#    fail-loud 拒绝（越界前缀），audit 随之崩溃。两种正确写法任选：
-#      a) 用 HOME 下路径（推荐）：SOFAGENT_HOME="$HOME/.sofagent-hooktest"
-#      b) 确需 /tmp 时显式放行：SOFAGENT_HOME_ALLOWED_PREFIXES=/tmp
-export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA="$HOME/.sofagent-hooktest/data" \
-       SOFAGENT_HOME="$HOME/.sofagent-hooktest/home"
+# 🔴 隔离只覆盖 SOFAGENT_DATA，**不要覆盖 SOFAGENT_HOME**——commit-msg hook 的全局信任锚
+#    路径是 `$SOFAGENT_HOME/internal/audit-global-dist-hash.txt`，把 HOME 指到测试目录即锚
+#    不可达 ⇒ hook fail-loud 拦下**每一个** commit（报文「全局审计引擎基准缺失」）——
+#    拦截与放行两条链路**同时**退化成「一律拦」，验证力归零：看着拦住了，其实没测到 A1/A2。
+#    数据面隔离交给 SOFAGENT_DATA 就够（DATA 允许任意路径，审计历史 / 决策日志全走它）。
+#    （另：SOFAGENT_HOME 若确要覆盖，不得指向 /tmp——core 的 sanitizeSofagentHome 会
+#     fail-loud 拒绝越界前缀并连带 audit 崩溃。）
+export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA="$HOME/.sofagent-hooktest/data"
+unset SOFAGENT_HOME
 echo "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" > .env
 git add -f .env   # ⚠️ 必须 -f——init 自带的 .gitignore 会挡 .env（git 层先拦是双保险，但那样测不到 hook 层）
 git commit -m "chore: add environment config for deployment"  # 期望：A1+A2 拦截 exit 2，.env 未入库
@@ -113,4 +120,4 @@ git log --oneline -1 | grep -q "hello application" && echo "✅ 干净提交放�
 cd - && rm -rf /tmp/hook-test /tmp/fe-verify-bin /tmp/fe-vd
 ```
 
-> ⚠️ **SOFAGENT_HOME 越界守卫提示**：v1.4.4 起 data-paths 守卫拒绝 HOME 指向 /tmp 等非允许前缀（回退 ~/.sofagent）——隔离 HOME 请用测试仓库内路径（如上 `$(pwd)/.sofagent-test`），数据面隔离走 `SOFAGENT_DATA=/tmp/fe-vd`（DATA 允许任意路径）。
+> ⚠️ **SOFAGENT_HOME 两条纪律**：① 本步骤**不覆盖** SOFAGENT_HOME——commit-msg 的全局信任锚路径是 `$SOFAGENT_HOME/internal/audit-global-dist-hash.txt`，覆盖后锚不可达 ⇒ 每条 commit 都被 fail-loud 拦（拦截与放行两链路同时退化为「一律拦」，验证力归零）；数据面隔离走 `SOFAGENT_DATA`（DATA 允许任意路径，审计历史 / 决策日志全走它）。② 确需覆盖 HOME 时不得指向 /tmp 等非允许前缀——data-paths 守卫会 fail-loud 拒绝（回退 ~/.sofagent）并连带 audit 崩溃；且覆盖后须**先把全局锚同步进该 HOME**，否则落回 ① 的失效形态。

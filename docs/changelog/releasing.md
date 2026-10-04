@@ -50,7 +50,8 @@
 - [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)　✅ 完成（A/B/C 草稿已出（桌面）· 三落点分配：acceptance S472 块内零行增「`core doctor --archive` 可达」+ literals 新增 `audit-pkg-bin-count` + A11 core 单测 · C 类校准 5 条落 fresh-eyes-calibration · 裁定不新增维度——棘轮 85≤85 且 13 个归并候选经内容核对全为历史锚点）
 - [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)　✅ PASS（首轮 FAIL 唯一阻塞 = 章二/章三零场景承载 → 修复 `8b0105119` 补 S473 → 复跑轮 PASS · P0=0 / P1=3 / P2=9 · 主 session 零信任三件套 + 证据逐项实测 · acceptance 479/479 EXIT=0）
 - [ ] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
-- [ ] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)
+- [ ] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)　✅ 全八步过：工具健康 10 项 · 新增文件类型/目录排查（无新增类型、无新增 tools 脚本 ⇒ 排除规则与 SOP 登记均无缺口）· 三脚本对照（pre-push 项数无声明面；bump dry-run 461 处·前後工作树 0 改动 = 纯只读）· rebuild + dist 基线重置（聚合锚校验一致 · CLI 版本对）· 锚点 510 全绿 · **hook 端到端双链路**（A1+A2 双底线拦密钥 exit 2 且未入库 / 干净提交 WARN 放行 exit 0）· cjk-var 140 文件零违规 · fail-loud 6 项注入全报红
+  · 🔧 **本步修掉一个 SOP 自身的失效**：步骤六实测脚本原先把 `SOFAGENT_HOME` 覆盖到测试目录 ⇒ commit-msg 全局信任锚路径被搬走 ⇒ 拦截与放行**两条链路同时** exit 1（报文「全局审计引擎基准缺失」），「看着拦住了」实则 A1/A2 未被测到——已改为只隔离 `SOFAGENT_DATA` + 脚本内 `--init` 用仓库绝对路径，并把两条 SOFAGENT_HOME 纪律写进步骤六脚注
 - [ ] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)
 - [ ] 九 · 发布流水线（本机自装→检查→push→tag→release→npm publish · 项目负责人或授权 AI）→ [09-publish.md](./releasing/09-publish.md)
 - [ ] 十 · 分发（Skill / DSH plugin / OpenClaw plugin / 设备端安装 · 项目负责人或授权 AI）→ [10-distribute.md](./releasing/10-distribute.md)
