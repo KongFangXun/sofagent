@@ -13,6 +13,10 @@
 //   ② 词表登记、宿主没有 → DRIFT（宿主改名/移除——这类会让插件 seam 失效，最危险）
 //   ③ 宿主标记 deprecated 而词表未标注 → DRIFT（该 seam 不该用于新插件）
 //
+// 覆盖面：DSH §1 五族 + OpenClaw §3 插件 hook union（.d.ts）+ OpenClaw §3b 内建 hook
+// （HOOK.md 机制，权威源 = 宿主 docs/automation/hooks.md 的事件表——内建事件不进
+// PLUGIN_HOOK_NAMES union，只查 .d.ts 会漏掉整族）。
+//
 // 只提示不阻断：默认 exit 0（漂移是信息，不是本仓的错）。--strict 时漂移 → exit 2。
 // 宿主不在场（未安装）→ 打印 SKIP 并说明原因，exit 0（**绝不静默通过**）。
 //
@@ -91,6 +95,28 @@ function openclawFacts(dir) {
   return { file, union, deprecated };
 }
 
+/**
+ * OpenClaw §3b：内建 hook（operator HOOK.md 机制）——与 plugin hook **不同源**，
+ * 不进 PLUGIN_HOOK_NAMES union，权威源是宿主散文文档 docs/automation/hooks.md 的事件表。
+ * 提取只认「表格首列 = 反引号事件名」的行：散文里的 `command:*` 通配写法、内建插件表
+ * 里的事件列举、JSON 示例都不采。裸 `command` 是宿主文档明确登记的通用监听键（一次订阅
+ * 收全部 command:* 事件），照登参与对账。
+ */
+function openclawInternalFacts(dir) {
+  const rel = 'docs/automation/hooks.md';
+  const file = path.join(dir, rel);
+  if (!fs.existsSync(file)) return { file: rel, names: null };
+  const t = fs.readFileSync(file, 'utf8');
+  // 只认「## Event types」小节的事件表：该文档还有别的「首列 = 反引号小写名」的表
+  // （frontmatter 字段表 os/requires/always、config 字段表 emoji/events、示例表 export/install），
+  // 整文件提取会误采成事件。小节标题被宿主改名 → 返回 null 走 SKIP，绝不静默对账。
+  const sec = t.split(/^## Event types\s*$/m)[1];
+  if (sec === undefined) return { file: rel, names: null };
+  const body = sec.split(/^## /m)[0] ?? '';
+  const names = [...body.matchAll(/^\| `([a-z]+(?::[a-z-]+)*)` +\|/gm)].map((m) => m[1]);
+  return { file: rel, names: [...new Set(names)] };
+}
+
 /** DSH：五类宿主事件族（与 SEAMS.md §1 复核命令同口径） */
 function findDshHost() {
   const base = path.join(process.env.HOME ?? '', '.dsh/profiles/node_modules/@deepseek-ai');
@@ -156,6 +182,10 @@ const dshSec = doc.split('## 1. DSH 侧')[1]?.split('## 2. DSH 侧')[0] ?? '';
 const ocSec = (doc.split('## 3. OpenClaw 侧')[1] ?? '').split(/^### 3b\.|^## 4\. /m)[0] ?? ''; // 排除 §3b（内建 HOOK.md 机制，colon 风格，不属插件 hook 面）
 const dshDoc = documentedRows(dshSec);
 const ocDoc = documentedRows(ocSec);
+// §3b 内建块单独截取（ocSec 已把它截掉）——同一套三面判据、同一本台账
+const ocIntSec = (doc.split('<!-- SEAM-VOCAB:OPENCLAW-INTERNAL-HOST:BEGIN -->')[1] ?? '')
+  .split('<!-- SEAM-VOCAB:OPENCLAW-INTERNAL-HOST:END -->')[0] ?? '';
+const ocIntDoc = documentedRows(ocIntSec);
 
 console.log('=== seam 词表漂移巡检（SEAMS.md 登记本 vs 宿主实测）===');
 console.log(`  词表登记：DSH ${dshDoc.length} 条 / OpenClaw ${ocDoc.length} 条`);
@@ -178,6 +208,16 @@ if (!chosen) {
   for (const n of union.filter((x) => !ocDoc.includes(x))) drifts.push(`[OpenClaw] 宿主有、词表未登记：${n}${deprecated.includes(n) ? '（宿主已标废弃）' : ''}`);
   for (const n of ocDoc.filter((x) => !union.includes(x))) drifts.push(`[OpenClaw] 词表登记、宿主没有：${n}（该 seam 已失效，挂它的插件会静默不生效）`);
   for (const n of union.filter((x) => deprecated.includes(x) && ocDoc.includes(x))) drifts.push(`[OpenClaw] 词表登记了宿主已废弃的 hook：${n}`);
+
+  // ①b §3b 内建 hook（HOOK.md 机制）——权威源是宿主文档事件表，同账同判据
+  const intFacts = openclawInternalFacts(chosen.dir);
+  if (!intFacts.names) {
+    skips.push(`OpenClaw 内建 hook 文档缺失（${chosen.dir}/${intFacts.file} 不存在，§3b 无法对账）`);
+  } else {
+    console.log(`  宿主 OpenClaw 内建：${intFacts.file} · 实测 ${intFacts.names.length} 个 / 词表登记 ${ocIntDoc.length} 条`);
+    for (const n of intFacts.names.filter((x) => !ocIntDoc.includes(x))) drifts.push(`[OpenClaw §3b] 宿主有、词表未登记：${n}`);
+    for (const n of ocIntDoc.filter((x) => !intFacts.names.includes(x))) drifts.push(`[OpenClaw §3b] 词表登记、宿主没有：${n}（该 seam 已失效，挂它的 HOOK.md 会静默不生效）`);
+  }
 }
 
 // ② DSH
