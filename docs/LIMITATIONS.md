@@ -241,6 +241,10 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 判定：这是 **fail-closed 且有文档说明**的降级，不是缺陷本身。运行时留痕**已实装**——`warnTemplateFallback()`（`engine/orchestrator/src/fde/fde-quantify.ts`，模块级一次性打印）在「三级查找全 miss」与「模板读失败」两条路径上均已调用，用户可见「本次交付物使用内置默认骨架」及其三条查找路径。缓解：安装后如需定制交付模板，从仓库 `FDE/templates/` 显式提供，或设 `SOFAGENT_REPO_ROOT` 指向仓库根。
 
+### 官网 `sofagent.ai` 发版期不可达（待维护者核查）
+
+站源码不在本仓、仓内门禁无法覆盖；发版期实测 HTTPS 连接超时（DNS 解析正常），分发渠道门面暂不可用。
+
 ## 三、安全与信任模型局限
 
 ### 🔐 审计面的「授权过程」记录不全
