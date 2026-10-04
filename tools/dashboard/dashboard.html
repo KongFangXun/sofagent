@@ -1934,7 +1934,13 @@ function loadStarCount(){
 // 此前多处直接 slice(0,10)/(5,16) 显示 UTC 时间 = 北美时间（差 8 小时）——
 // 统一转北京时间（Asia/Shanghai）显示与按天分组。
 var SOFAGENT_TZ = 'Asia/Shanghai';
-function parseTs(raw){var t=raw?new Date(String(raw).replace(' ','T').replace(/\.\d+Z$/,'Z')):new Date();if(isNaN(t.getTime()))t=new Date();return t;}
+function parseTs(raw){
+  // Date 实例直接采用：String(Date) 形如 "Sun Oct 04 2026 ..."，new Date() 解析不了 ⇒ 会被兜底成 now，
+  // 症状是「示例数据的近 7 天趋势图横轴 7 个标签全同」。此处收口，避免各调用点各自规避。
+  if(raw instanceof Date)return isNaN(raw.getTime())?new Date():raw;
+  var t=raw?new Date(String(raw).replace(' ','T').replace(/\.\d+Z$/,'Z')):new Date();
+  if(isNaN(t.getTime()))t=new Date();return t;
+}
 // 北京时间 HH:MM 显示（审计日志行用）
 function fmtTime(raw){return parseTs(raw).toLocaleTimeString('zh-CN',{timeZone:SOFAGENT_TZ,hour12:false,hour:'2-digit',minute:'2-digit'});}
 // 北京时间 YYYY-MM-DD 日期（今日计数/按天分组/趋势图用）
