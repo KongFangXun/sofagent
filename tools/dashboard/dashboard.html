@@ -2518,12 +2518,23 @@ function loadWorklogData(){
         costEl.textContent=totCost>0?'¥'+(totCost*7.2).toFixed(2):'—';
       }
 
-      /* 全局总览：Agent 汇总 + Workflow 状态（任务明细独立 tab） */
-      var agRows=(d.agents||[]).map(function(a){
+      /* 全局总览：真概览 = Agent 任务数 Top 10（降序）+ 一行分类汇总（全量走「下载工作记录」） */
+      var clsAgent=function(id){
+        if(/^device-/.test(id))return '设备';
+        if(/^(sofagent|commons|market|workflow)-/.test(id))return '系统组件';
+        if(/^agent-/.test(id))return '业务';
+        return '其他';
+      };
+      var catCnt={'业务':0,'设备':0,'系统组件':0,'其他':0};
+      var agSorted=(d.agents||[]).slice().sort(function(a,b){return (b.totals.tasks||0)-(a.totals.tasks||0)});
+      agSorted.forEach(function(a){catCnt[clsAgent(a.agentId)]++});
+      var catLine='<div class="hint" style="margin:8px 0 4px">共 '+agSorted.length+' 个 agent —— 业务 '+catCnt['业务']+' · 设备 '+catCnt['设备']+' · 系统组件 '+catCnt['系统组件']+' · 其他 '+catCnt['其他']+'</div>';
+      var otherNote=catCnt['其他']>0?'<div class="hint" style="margin:0 0 4px">「其他」含历史测试/演示残留（已停止写入），非真实业务 agent</div>':'';
+      var agRows=agSorted.slice(0,10).map(function(a){
         var over=costCell(a.totals.costUsd,a.agentId,costWarns);
         return ['<strong>'+escapeHtml(a.agentId)+'</strong>',a.totals.tasks,a.totals.llmCalls,fmtTokens(a.totals.tokens),fmtMs(a.totals.modelCallMs),over,a.totals.humanInterventions||0];
       });
-      var agHtml=sampleFlag+'<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:8px 0 4px">Agent 汇总</div>'+
+      var agHtml=sampleFlag+catLine+otherNote+'<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:8px 0 4px">Agent 汇总（任务数 Top 10，降序）</div>'+
         wlTable(['Agent','任务数','模型调用','Token 数','耗时','成本','人工介入'],agRows);
       var statusMap={
         active:'<span class="st-dot st-active"></span>跑',
@@ -2532,11 +2543,14 @@ function loadWorklogData(){
         hitl:'<span class="st-dot st-hitl"></span>人工介入',
         unknown:'<span class="st-dot st-unknown"></span>?'
       };
-      var wfRows=(d.workflows||[]).map(function(w){
+      // Workflow 同样全量铺开（真实数据 632 个）——同样收敛为节点数 Top 10
+      var wfSorted=(d.workflows||[]).slice().sort(function(a,b){return ((b.nodes||[]).length-(a.nodes||[]).length)||((b.humanInterventions||0)-(a.humanInterventions||0))});
+      var wfRows=wfSorted.slice(0,10).map(function(w){
         var nodeHtml=(w.nodes||[]).map(function(n){return statusMap[n.status]||statusMap.unknown}).join(' ');
         return ['<strong>'+escapeHtml(w.workflowId)+'</strong>',nodeHtml,w.humanInterventions||0];
       });
-      agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">Workflow 节点状态（跑/完/失败/人工介入）</div>'+
+      var wfLine='<div class="hint" style="margin:16px 0 4px">共 '+wfSorted.length+' 个 Workflow —— 仅显示节点数 Top 10（全量走「下载工作记录」）</div>';
+      agHtml+=wfLine+'<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:8px 0 4px">Workflow 节点状态（跑/完/失败/人工介入）</div>'+
         wlTable(['Workflow','节点状态','人工介入'],wfRows);
       document.getElementById('wl-view-overview').innerHTML=agHtml;
 
