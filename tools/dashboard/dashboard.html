@@ -1396,9 +1396,11 @@ async function loadLiveData(){
     if(dh)try{daemonHealth=JSON.parse(dh)}catch(e){}
     // 服务端数据布局：data/audit/<年>/<月>/*.jsonl（按日取最近一份；无单文件回退）
     var sovReport=null;
-    var now=new Date();
-    var y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0');
-    var d=String(now.getDate()).padStart(2,'0');
+    // 🔴 数据主权按日文件路径必须按「北京时间」求当日：UTC 无头浏览器/跨零点
+    //    用 getFullYear/getMonth/getDate 会取到错的那一天文件（取数为空）。
+    //    en-CA → YYYY-MM-DD（fmtDay 已钉 SOFAGENT_TZ）。
+    var ymd=fmtDay(new Date()).split('-'); // [YYYY, MM, DD]
+    var y=ymd[0],m=ymd[1],d=ymd[2];
     sovReport=await tryFetch(dataRoot+'/audit/data-sovereignty/'+y+'/'+m+'/'+y+'-'+m+'-'+d+'.jsonl');
     var sovRecords=sovReport?parseJSONL(sovReport):[];
     if(sovRecords.length){sovereigntyData={localExecutions:0,cloudCalls:0,dataOutflow:0}}
@@ -2277,13 +2279,14 @@ function loadOntologyData(){
   var updated=document.getElementById('ontUpdatedAt');
   var downBtn=document.getElementById('ontDownloadBtn');
   if(!stats)return;
-  // 最近更新行用的短时间格式（MM-DD HH:mm）
+  // 最近更新行用的短时间格式（MM-DD HH:mm，北京时间）
   function fmtShort(iso){
     if(!iso)return '—';
     var t=new Date(iso);
     if(isNaN(t.getTime()))return '—';
-    function p(n){return (n<10?'0':'')+n}
-    return p(t.getMonth()+1)+'-'+p(t.getDate())+' '+p(t.getHours())+':'+p(t.getMinutes());
+    // 北京时间口径（原用 getMonth/getDate/getHours/getMinutes = 浏览器本地时区，
+    // UTC 无头浏览器会整体错 8 小时）
+    return fmtDayTime(iso);
   }
   fetch('/api/ontology')
     .then(function(r){
@@ -2588,7 +2591,9 @@ function loadWorklogData(){
         }).map(function(r){
           var who=r.agentId||r.sessionId||r.harnessId||'—';
           var why=r.summary||r.reason||'';
-          return [escapeHtml(String(r.ts||r.timestamp||'').slice(0,16)),'<strong>'+escapeHtml(who)+'</strong>','审批 / 纠正',escapeHtml(String(why).slice(0,80))];
+          // 时间列：原始 UTC ISO（原 slice(0,16) 直接截 → 显示 UTC）；改北京时间 MM-DD HH:mm
+          var ets=r.ts||r.timestamp||'';
+          return [escapeHtml(ets?fmtDayTime(ets):'—'),'<strong>'+escapeHtml(who)+'</strong>','审批 / 纠正',escapeHtml(String(why).slice(0,80))];
         });
       }
       if(ivEvents.length){
@@ -2907,7 +2912,7 @@ async function loadGovernanceData(){
         ['版本','数据集','创建时间','样本数','脱敏命中','审阅状态'],
         ds.sample.map(function(s){
           var badge=s.reviewStatus==='approved'?'<span style="color:var(--brand);font-weight:600">approved</span>':(s.reviewStatus==='rejected'?'<span style="color:var(--red);font-weight:600">rejected</span>':'<span style="color:var(--text-t)">pending</span>');
-          return [govEsc(s.versionId||'—'),govEsc(s.datasetId||'—'),s.createdAt?govEsc(s.createdAt.slice(0,10)):'—',s.sampleCount===undefined?'—':s.sampleCount,s.redactionHits===undefined?'—':s.redactionHits,badge];
+          return [govEsc(s.versionId||'—'),govEsc(s.datasetId||'—'),s.createdAt?govEsc(fmtDay(s.createdAt)):'—',s.sampleCount===undefined?'—':s.sampleCount,s.redactionHits===undefined?'—':s.redactionHits,badge];
         })
       );
     }
@@ -2934,7 +2939,7 @@ async function loadGovernanceData(){
         hl.map(function(h){
           var causal=h.causalType?govEsc(h.causalType):'—';
           var kind=govEsc(h.kind)+(h.category?'<span style="color:var(--text-t)"> / '+govEsc(h.category)+'</span>':'');
-          return [govEsc(String(h.ts).slice(5,16).replace('T',' ')),govEsc(h.agentId),kind,causal,h.causedByCount,govEsc(h.whySummary)];
+          return [govEsc(h.ts?fmtDayTime(h.ts):'—'),govEsc(h.agentId),kind,causal,h.causedByCount,govEsc(h.whySummary)];
         })
       );
     }

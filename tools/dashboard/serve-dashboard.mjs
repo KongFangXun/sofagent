@@ -67,6 +67,51 @@ const DAEMON_HEALTH = join(SOFAGENT_DATA, 'dashboard', 'daemon-health.json');
 const GRAPH_STATE = join(SOFAGENT_DATA, 'dashboard', 'graph-state.json');
 
 /* ────────────────────────────────
+ * 北京时间格式化（时区单源 · 对齐 dashboard.html 的 SOFAGENT_TZ）
+ *   审计/工作记录 timestamp 落盘为 UTC ISO（如 2026-10-03T23:49:12.416Z）。
+ *   `/api/summary` 与 `/api/audit-recent` 此前直接 slice 原始 ISO 显示 UTC 日期/
+ *   时间，宿主 TZ 为 UTC（无头浏览器 / CI）时整体错 8 小时——审计栏记录时间、
+ *   近 7 天趋势分桶、今日计数全部偏移。统一钉 Asia/Shanghai（可用 SOFAGENT_TZ 覆盖）。
+ * ──────────────────────────────── */
+const SOFAGENT_TZ = process.env.SOFAGENT_TZ || 'Asia/Shanghai';
+const BJ_TIME_FMT = new Intl.DateTimeFormat('en-CA', {
+  timeZone: SOFAGENT_TZ, hourCycle: 'h23',
+  month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+});
+const BJ_DAY_FMT = new Intl.DateTimeFormat('en-CA', {
+  timeZone: SOFAGENT_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+});
+function bjParse(ts) {
+  if (ts === null || ts === undefined || ts === '') return null;
+  if (ts instanceof Date) return isNaN(ts.getTime()) ? null : ts;
+  const t = new Date(String(ts).replace(' ', 'T').replace(/\.\d+Z$/, 'Z'));
+  return isNaN(t.getTime()) ? null : t;
+}
+function bjParts(fmt, t) {
+  const p = {};
+  for (const { type, value } of fmt.formatToParts(t)) p[type] = value;
+  return p;
+}
+// 北京时间 MM-DD HH:mm（审计记录时间列）
+function fmtBeijingMMDDHHmm(ts) {
+  const t = bjParse(ts);
+  if (!t) return '';
+  const p = bjParts(BJ_TIME_FMT, t);
+  return `${p.month}-${p.day} ${p.hour}:${p.minute}`;
+}
+// 北京时间 YYYY-MM-DD（按日分桶 / 今日键）
+function fmtBeijingDay(ts) {
+  const t = bjParse(ts);
+  if (!t) return '';
+  const p = bjParts(BJ_DAY_FMT, t);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+// 相对今天 offsetDays 天的北京时间日期（趋势图近 7 天键）
+function fmtBeijingDayOffset(offsetDays) {
+  return fmtBeijingDay(new Date(Date.now() + offsetDays * 86400000));
+}
+
+/* ────────────────────────────────
  * 治理引擎解析（v1.5.0 章一）
  * 候选链（首中即用，require 缓存保证幂等）：
  *   1. 仓库态：serve 脚本相对的 engine/audit/dist/public-api.js
@@ -280,16 +325,17 @@ function aggregateSummary() {
     });
 
     // ── 最近 10 条审计（bash render_rules 同一 jq + 规则码）──
+    // 时间列输出**原始 UTC ISO**（不再 slice[5:16]），由 Node 钉 Asia/Shanghai 格式化
     const recentRaw = runJq(
       'sort_by(.timestamp) | .[-10:] | reverse[]' +
       ' | [(.ruleResults[]? | select(.status == "FAIL" or .status == "WARN") | "A" + (.number | tostring))] as $violated' +
-      ' | "\\(.timestamp[5:16])\t\\(.exitCode)\t\\($violated[0] // "")\t\\((.task // .commitMsg // "")[0:40])"',
+      ' | "\\(.timestamp)\t\\(.exitCode)\t\\($violated[0] // "")\t\\((.task // .commitMsg // "")[0:40])"',
       filteredRaw
     );
     out.recent = recentRaw === null ? [] : recentRaw.split('\n').filter(Boolean).map((line) => {
       const parts = line.split('\t');
       return {
-        time: parts[0] || '',
+        time: fmtBeijingMMDDHHmm(parts[0]),
         exitCode: parseInt(parts[1] || 0, 10),
         rule: parts[2] || '',
         task: parts[3] || '',
@@ -299,29 +345,26 @@ function aggregateSummary() {
     // ── 近 7 天每日任务级 PASS/WARN/FAIL + 规则级通过率（通栏趋势图）──
     // 任务级：exitCode 0=PASS / 1=WARN / >1=FAIL，一次审计只算 1 条（→ 紫黄柱）
     // 规则级：ruleResults 逐条 PASS/非PASS（→ 绿线，与顶部"审计通过率"同口径）
-    const dailyRaw = runJq(
-      '[.[] | select(.timestamp)]' +
-      ' | group_by(.timestamp[0:10])' +
-      ' | map({ day: .[0].timestamp[0:10],' +
-      '     pass: ([.[] | select((.exitCode // 0) == 0)] | length),' +
-      '     warn: ([.[] | select(.exitCode == 1)] | length),' +
-      '     fail: ([.[] | select((.exitCode // 0) > 1)] | length),' +
-      '     rulePass: ([.[] | .ruleResults[]? | select(.status == "PASS")] | length),' +
-      '     ruleAll: ([.[] | .ruleResults[]? | select(.status != "SKIPPED")] | length) })' +
-      ' | .[] | "\\(.day)\t\\(.pass)\t\\(.warn)\t\\(.fail)\t\\(.rulePass)\t\\(.ruleAll)"',
-      filteredRaw
-    );
+    // 🔴 按「北京时间」分日：原 jq 按 UTC timestamp[0:10] 分桶 + UTC now 生成键，
+    //    UTC 宿主/凌晨整体错位（今日计数归零、日界记录错桶）。改在 Node 侧用
+    //    fmtBeijingDay 分桶——规避 jq 无 tz 数据库 + 小数秒解析限制。
     const byDay = {};
-    (dailyRaw === null ? '' : dailyRaw).split('\n').filter(Boolean).forEach((line) => {
-      const [day, p, w, f, rp, ra] = line.split('\t');
-      byDay[day] = {
-        pass: parseInt(p || 0, 10), warn: parseInt(w || 0, 10), fail: parseInt(f || 0, 10),
-        rulePass: parseInt(rp || 0, 10), ruleAll: parseInt(ra || 0, 10),
-      };
-    });
+    for (const r of cleanRecs) {
+      const day = fmtBeijingDay(r.timestamp);
+      if (!day) continue;
+      let d = byDay[day];
+      if (!d) d = byDay[day] = { pass: 0, warn: 0, fail: 0, rulePass: 0, ruleAll: 0 };
+      const ec = r.exitCode || 0;
+      if (ec === 0) d.pass++; else if (ec === 1) d.warn++; else d.fail++;
+      for (const rr of (r.ruleResults || [])) {
+        if (!rr || rr.status === 'SKIPPED') continue;
+        d.ruleAll++;
+        if (rr.status === 'PASS') d.rulePass++;
+      }
+    }
     out.daily = [];
     for (let i = 6; i >= 0; i--) {
-      const key = new Date(Date.now() - i * 24 * 3600 * 1000).toISOString().slice(0, 10);
+      const key = fmtBeijingDayOffset(-i);
       const d = byDay[key] || { pass: 0, warn: 0, fail: 0, rulePass: 0, ruleAll: 0 };
       const total = d.pass + d.warn + d.fail;
       const violations = d.warn + d.fail;
@@ -834,7 +877,7 @@ const server = createServer(async (req, res) => {
       out.records = sorted.slice(offset, offset + limit).map((r) => {
         const violated = (r.ruleResults || []).filter((x) => x.status === 'FAIL' || x.status === 'WARN').map((x) => 'A' + x.number);
         return {
-          time: String(r.timestamp || '').slice(5, 16),
+          time: fmtBeijingMMDDHHmm(r.timestamp),
           exitCode: r.exitCode || 0,
           rule: violated[0] || '',
           task: String(r.task || r.commitMsg || '').slice(0, 40),
