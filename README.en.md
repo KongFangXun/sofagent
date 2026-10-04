@@ -23,7 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.5 · Execution: State Machine & On-Demand Loading (2026-10-01)](#v155--execution-state-machine--on-demand-loading-2026-10-01)
+- [v1.5.6 · Consolidation (One Entry Point + Data Surface)](#v156--consolidation-one-entry-point--data-surface)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -201,27 +201,22 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.5 · Execution: State Machine & On-Demand Loading (2026-10-01)
+## v1.5.6 · Consolidation (One Entry Point + Data Surface)
 
-⚡ **How each node executes, which tools it carries, and who it collaborates with — now decided by file-based protocols.** Four things land at once:
+🧭 **One entry point, one clean data surface** (⏳ pending release) — thirteen commands collapse into one, and runtime data gains a lifecycle:
 
 | Capability | One-liner |
 |---|---|
-| **Per-node execution state machine** | SKILL.state protocol: ΔΣt merged deterministically in code (fail-closed: invalid patches rejected wholesale), reasoning traces merged-then-discarded while actions stay traceable, `SOFAGENT_STATEFUL_EXEC=off` one-switch rollback |
-| **Tool search on-demand loading** | Top-5 tools retrieved per task description (zero-score hits never injected; explicit tools still pass domain allowlists); ToolGate permission surface unaffected |
-| **Multi-Agent formation scheduling** | Declare `formation:` in team.yml to mount one of six formations (template fallback / explicit override / illegal-reject tri-state); handoffs land in decision-log |
-| **Orchestration dependency governance** | LangGraph demoted to optionalDependencies — zero static contagion in dsh-only installs; three entry points fail loudly with install guidance when missing |
+| **Single-entry CLI** | 13 bins collapse into `sofagent <domain> <action>` (15 domains + reserved words); the 12 legacy commands become forwarding shims for one compatibility minor |
+| **Data lifecycle governance** | Fact-memory sharding + hot/cold archiving; audit-chain history-segment archiving (archiving ≠ deletion); legacy-backup cleanup policy; doctor data-directory health section |
+| **Project scope for distilled memory** | Distilled experience is pinned to the project (resolved by repo) — no silent cross-project or global sharing; reuse goes through explicit export/import with lineage and approval traces |
+| **Ops & security doc injection (R6)** | Wording injected across HANDBOOK / LIMITATIONS / SECURITY / DEVELOPMENT; LIMITATIONS gains an "S1M verdict blind spots" entry |
+
+> 📌 Full changes and acceptance evidence: [v1.5.6 devlog](./docs/changelog/v1.5/v1.5.6.md); older capability sections in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
-**On entry · generate judgment** (FDE phase): map workflows (five-element deep-dive + three-question test — price every AI node) → build the dual graphs (business graph for humans + ontology
-for AI) → decide AI nodes → deploy three-layer deliverables. Each node carries "done criteria
-(merge_criteria) · who approves (approver) · when it runs (trigger)", frozen into the deliverable.
-
-**After departure · retain judgment** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7,
-every commit triggers the 25 audit rules (including **AgentShield static scanning across five config surfaces**), snapshots are rollback-ready, experience keeps accumulating; evolution writes promotion and distilled reflection back into the deliverable.
-
-**The organizational-management lens** — the two phases map onto onboarding a digital employee:
+**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above — what this section adds is the **organizational reading**: together they are onboarding a digital employee (the after-departure side runs daemon patrols 24/7, every commit triggers the 25 audit rules including **AgentShield static scanning across five config surfaces**, snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
 
 | Organizational act | sofagent equivalent |
 |---|---|
