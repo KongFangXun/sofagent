@@ -1801,15 +1801,18 @@ function loadSampleData(){
   document.getElementById('m-violations').textContent='14';
   document.getElementById('m-violations-sub').textContent='总 2112 次问题 · 示例';
   var samples=[
-    {time:'08-03 00:42',verdict:'PASS',rule:'',task:'feat: 添加 A22 权限提升审计规则'},
-    {time:'08-02 23:18',verdict:'WARN',rule:'A19',task:'fix: 修复 daemon 启动顺序'},
-    {time:'08-02 21:05',verdict:'PASS',rule:'',task:'refactor: 重构 sparkline 渲染'},
-    {time:'08-02 18:30',verdict:'FAIL',rule:'A7',task:'update: 修改配置（未先读取）'},
-    {time:'08-02 15:12',verdict:'PASS',rule:'',task:'test: 新增文件系统审计测试'},
-    {time:'08-02 14:00',verdict:'WARN',rule:'A3',task:'feat: 跨目录修改（越界）'},
-    {time:'08-02 11:28',verdict:'PASS',rule:'',task:'docs: 更新 WIKI 导航'},
-    {time:'08-02 09:15',verdict:'PASS',rule:'',task:'chore: 升级依赖版本'}
+    {time:'',verdict:'PASS',rule:'',task:'feat: 添加 A22 权限提升审计规则'},
+    {time:'',verdict:'WARN',rule:'A19',task:'fix: 修复 daemon 启动顺序'},
+    {time:'',verdict:'PASS',rule:'',task:'refactor: 重构 sparkline 渲染'},
+    {time:'',verdict:'FAIL',rule:'A7',task:'update: 修改配置（未先读取）'},
+    {time:'',verdict:'PASS',rule:'',task:'test: 新增文件系统审计测试'},
+    {time:'',verdict:'WARN',rule:'A3',task:'feat: 跨目录修改（越界）'},
+    {time:'',verdict:'PASS',rule:'',task:'docs: 更新 WIKI 导航'},
+    {time:'',verdict:'PASS',rule:'',task:'chore: 升级依赖版本'}
   ];
+  // 示例行时间**相对当前生成**（与「审计分析（近 7 天）」同一时间基准）——
+  // 原先硬编码固定日期，会让同图内「记录行日期」与「趋势图横轴」对不上。
+  samples.forEach(function(s,i){s.time=fmtDayTime(new Date(Date.now()-(i*2+1)*3600*1000).toISOString())});
   document.getElementById('liveAuditLog').innerHTML=samples.map(function(r){
     var ruleCell=r.rule
       ? '<span class="audit-rule" style="color:var(--'+(r.verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(r.rule)+'</span>'
