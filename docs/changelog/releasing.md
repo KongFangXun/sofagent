@@ -52,7 +52,8 @@
 - [ ] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
 - [ ] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)　✅ 全八步过：工具健康 10 项 · 新增文件类型/目录排查（无新增类型、无新增 tools 脚本 ⇒ 排除规则与 SOP 登记均无缺口）· 三脚本对照（pre-push 项数无声明面；bump dry-run 461 处·前後工作树 0 改动 = 纯只读）· rebuild + dist 基线重置（聚合锚校验一致 · CLI 版本对）· 锚点 510 全绿 · **hook 端到端双链路**（A1+A2 双底线拦密钥 exit 2 且未入库 / 干净提交 WARN 放行 exit 0）· cjk-var 140 文件零违规 · fail-loud 6 项注入全报红
   · 🔧 **本步修掉一个 SOP 自身的失效**：步骤六实测脚本原先把 `SOFAGENT_HOME` 覆盖到测试目录 ⇒ commit-msg 全局信任锚路径被搬走 ⇒ 拦截与放行**两条链路同时** exit 1（报文「全局审计引擎基准缺失」），「看着拦住了」实则 A1/A2 未被测到——已改为只隔离 `SOFAGENT_DATA` + 脚本内 `--init` 用仓库绝对路径，并把两条 SOFAGENT_HOME 纪律写进步骤六脚注
-- [ ] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)
+- [ ] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)　✅ 复核完成：发布就绪汇总齐（测试 5661 · acceptance 479/479 · check-version 139 · CRS 16 项 · CTH 10 项 · anchors 510 · storefront 12 断言 FAIL=0 · doc-score 10.0）· 收口硬判据 rc=0（第④项 workflow 待推送后补核）· 冻结窗口三查过 · 拍板清单 1 项（`npm deprecate` 反向动作）· 两件发布物实存桌面（`release-note-v1.5.6-body.md` + `v1.5.6-publish-prompt.md`）· 作者全链放行（三拍板全确认）
+  · 🔧 **本步修掉阶段八文件自身的截断**：该文件曾在一次自查补修里被误删到 23 行（步骤二正文 + 步骤表三~六 + 四条铁律 + AI 代执行边界全丢），下游步骤七/十一仍在引用 `~/Desktop/release-note-vX.Y.Z-body.md` ⇒ 照残文件执行会**漏掉 Release Note body 产出环节**（作者放行前看不到发布物本体）。已还原 35 行全量 + 保留新增的「一b 收口硬判据」；并回补**发布物防漂移 / body 与 prompt 同批产出 / 落盘统一桌面 / 提取源同步**四条铁律
 - [ ] 九 · 发布流水线（本机自装→检查→push→tag→release→npm publish · 项目负责人或授权 AI）→ [09-publish.md](./releasing/09-publish.md)
 - [ ] 十 · 分发（Skill / DSH plugin / OpenClaw plugin / 设备端安装 · 项目负责人或授权 AI）→ [10-distribute.md](./releasing/10-distribute.md)
 - [ ] 十一 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [11-post-publish.md](./releasing/11-post-publish.md)
