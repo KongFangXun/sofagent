@@ -567,7 +567,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
           <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">介入</button>
           <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报</button>
         </span>
-        <a href="/api/export-worklog" download="worklog.json" title="下载工作记录（worklog.json，含概况/任务/介入/周报数据）" class="btn btn-outline btn-sm" id="wlDownloadBtn" style="display:none"><i class="bi bi-download"></i> 下载工作记录</a>
       </span>
     </div>
     <div class="section-body">
@@ -2521,20 +2520,23 @@ function loadWorklogData(){
       /* 全局总览：真概览 = Agent 任务数 Top 10（降序）+ 一行分类汇总（全量走「下载工作记录」） */
       var clsAgent=function(id){
         if(/^device-/.test(id))return '设备';
-        if(/^(sofagent|commons|market|workflow)-/.test(id))return '系统组件';
+        if(/^(sofagent|commons|market|workflow|connector|forge)-/.test(id))return '系统组件';
         if(/^agent-/.test(id))return '业务';
         return '其他';
       };
       var catCnt={'业务':0,'设备':0,'系统组件':0,'其他':0};
       var agSorted=(d.agents||[]).slice().sort(function(a,b){return (b.totals.tasks||0)-(a.totals.tasks||0)});
       agSorted.forEach(function(a){catCnt[clsAgent(a.agentId)]++});
-      var catLine='<div class="hint" style="margin:8px 0 4px">共 '+agSorted.length+' 个 agent —— 业务 '+catCnt['业务']+' · 设备 '+catCnt['设备']+' · 系统组件 '+catCnt['系统组件']+' · 其他 '+catCnt['其他']+'</div>';
-      var otherNote=catCnt['其他']>0?'<div class="hint" style="margin:0 0 4px">「其他」含历史测试/演示残留（已停止写入），非真实业务 agent</div>':'';
+      /* 下载入口放在**本栏内容里**（与「审计」栏的下载同构），不挂在 tab 栏上——各栏管各自的下载 */
+      var catLine='<div class="hint" style="margin:8px 0 4px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'+
+        '<span>共 '+agSorted.length+' 个 agent —— 业务 '+catCnt['业务']+' · 设备 '+catCnt['设备']+' · 系统组件 '+catCnt['系统组件']+' · 其他 '+catCnt['其他']+'</span>'+
+        '<a href="/api/export-worklog" download="worklog.json" title="下载工作记录（worklog.json，含概况/任务/介入/周报数据）" class="btn btn-outline" style="height:24px;padding:0 10px;font-size:11px;display:none" id="wlDownloadBtn"><i class="bi bi-download"></i> 下载工作记录</a>'+
+        '</div>';
       var agRows=agSorted.slice(0,10).map(function(a){
         var over=costCell(a.totals.costUsd,a.agentId,costWarns);
         return ['<strong>'+escapeHtml(a.agentId)+'</strong>',a.totals.tasks,a.totals.llmCalls,fmtTokens(a.totals.tokens),fmtMs(a.totals.modelCallMs),over,a.totals.humanInterventions||0];
       });
-      var agHtml=sampleFlag+catLine+otherNote+'<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:8px 0 4px">Agent 汇总（任务数 Top 10，降序）</div>'+
+      var agHtml=sampleFlag+catLine+'<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:8px 0 4px">Agent 汇总（任务数 Top 10，降序）</div>'+
         wlTable(['Agent','任务数','模型调用','Token 数','耗时','成本','人工介入'],agRows);
       var statusMap={
         active:'<span class="st-dot st-active"></span>跑',
