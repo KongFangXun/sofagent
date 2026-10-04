@@ -12,7 +12,7 @@
 //   3. atomicAppendSync 抛错 → 抛 DecisionWriteError，绝不静默丢弃
 // ============================================================
 
-import { getDecisionLogPath, getEnvFingerprint, getHmacKey } from '@sofagent/core';
+import { getDecisionLogPath, getEnvFingerprint, getHmacKey, assertTestEnvNotWritingRealData } from '@sofagent/core';
 import { appendChained, type ChainFields } from './chain-kernel';
 import { sanitizeWhy, type DecisionKind, type DecisionCategory, type CausalType, type DecisionLogEntry, type DecisionWhy, type InvalidationReason, type LoopPhase } from './decision-schema';
 
@@ -200,6 +200,8 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
   }
 
   const filePath = getDecisionLogPath(dataDir);
+  // 写侧护栏：测试环境解析到真实数据根 → fail-loud 拒绝写入（先于任何 fs 写）
+  assertTestEnvNotWritingRealData(filePath, 'emitDecision');
   const fingerprint = getEnvFingerprint(dataDir);
   const hmacKey = getHmacKey();
 

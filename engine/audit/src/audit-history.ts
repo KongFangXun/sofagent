@@ -53,7 +53,7 @@ import type { RuleCheck, ActionGovernance } from './rules/types';
 // v1.2.0: checkHistoryChainDetailed + helpers sunk to core;
 // import for internal use (appendHistory/loadHistory/clearHistory still need them),
 // re-export for external backward compat.
-import { getHistoryFilePath, getEnvFingerprint, getHmacKey, stableStringify, validateHmacKey } from '@sofagent/core';
+import { getHistoryFilePath, getEnvFingerprint, getHmacKey, stableStringify, validateHmacKey, assertTestEnvNotWritingRealData } from '@sofagent/core';
 export { checkHistoryChainDetailed, getHistoryFilePath, getHistoryAnchorFilePath, getHmacKey, validateHmacKey } from '@sofagent/core';
 
 /**
@@ -310,6 +310,8 @@ function getActiveDataKey(): Buffer {
  */
 export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void {
   const filePath = getHistoryFilePath(dataDir);
+  // 写侧护栏：测试环境解析到真实数据根 → fail-loud 拒绝写入（先于任何 fs 写）
+  assertTestEnvNotWritingRealData(filePath, 'appendHistory');
   const dir = dirname(filePath);
   const fileExists = existsSync(filePath);
 

@@ -218,6 +218,14 @@
   DEFAULT_TENANT,
 } from './data-paths';
 
+// v1.5.7 测试环境写真实数据根护栏——供审计/决策/训练链写盘入口复用（写侧 fail-loud）。
+// 标 @internal：仅仓内消费者使用，不进 @public 基线。
+/* @internal */ export {
+  isTestEnvironment,
+  isUnderRealUserDataDir,
+  assertTestEnvNotWritingRealData,
+} from './data-paths';
+
 // ── 配置模板 ──
 /* @public */ export { CONFIG_TEMPLATE } from './config-template';
 

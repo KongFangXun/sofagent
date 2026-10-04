@@ -21,7 +21,7 @@
 
 import { existsSync, mkdirSync, readFileSync, openSync, readSync, closeSync, statSync, readdirSync, renameSync, rmSync } from 'fs';
 import { createHash } from 'crypto';
-import { getEnvFingerprint, getHmacKey, REDACTION_PATTERNS } from '@sofagent/core';
+import { getEnvFingerprint, getHmacKey, REDACTION_PATTERNS, assertTestEnvNotWritingRealData } from '@sofagent/core';
 import { appendChained, verifyChain, type ChainFields, type ChainCheckStatus } from '@sofagent/audit';
 import type { TrainJobStatus } from './train-job';
 
@@ -267,6 +267,8 @@ export function emitTrainAudit(input: EmitTrainAuditInput, dataDir: string): Tra
   }
 
   const filePath = trainAuditPath(dataDir, input.enterpriseId, input.trainJobId);
+  // 写侧护栏：测试环境解析到真实数据根 → fail-loud 拒绝写入（先于任何 fs 写）
+  assertTestEnvNotWritingRealData(filePath, 'emitTrainAudit');
   const fingerprint = getEnvFingerprint(dataDir);
   const hmacKey = getHmacKey();
 

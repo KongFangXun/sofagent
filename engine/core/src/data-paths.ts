@@ -252,6 +252,74 @@ export function getDataDir(explicitBase?: string): string {
 }
 
 // ═══════════════════════════════════════════════════════════
+// 测试环境写真实数据根护栏（v1.5.7）
+//
+// 动机：测试台架虚构 agentId（A / B / owner-good / …）曾落入真实
+//   ~/.sofagent/data/audit/decision-log.jsonl（约 3.4 万行）。虽有
+//   tools/check/vitest-setup.mjs 预置 SOFAGENT_DATA 做隔离，但缺「机械护栏」
+//   保证不再犯——一旦某条写路径绕过隔离（子进程丢 env / 显式重置 env），
+//   仍会静默写穿真实数据面。
+// 判据：进程被识别为测试环境 **且** 解析落点位于真实用户数据根
+//   （homedir()/.sofagent/data）时 fail-loud，拒绝写入。
+// 不误伤：显式 dataDir / SOFAGENT_DATA / SOFAGENT_HOME 指向临时隔离目录
+//   （测试自己的目录）不受影响；生产运行（非测试环境）不受影响。
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 进程是否被识别为测试环境。
+ *
+ * 仅取「测试框架/运行器明确注入、生产链路不可能出现」的信号，避免误伤生产：
+ *   · VITEST / VITEST_WORKER_ID —— vitest 注入（本仓测试主力）；
+ *   · JEST_WORKER_ID —— jest 注入；
+ *   · NODE_ENV === 'test' —— 通用测试约定；
+ *   · npm_lifecycle_event === 'test' —— `npm test` 运行脚本（**精确匹配**，不采用
+ *     「含 test」以免 test:count 之类非写入脚本误触发；且仅当进程由 npm 直接启动
+ *     才注入该变量）。
+ */
+export function isTestEnvironment(): boolean {
+  const ev = process.env.npm_lifecycle_event || '';
+  return Boolean(
+    process.env.VITEST ||
+      process.env.VITEST_WORKER_ID ||
+      process.env.JEST_WORKER_ID ||
+      process.env.NODE_ENV === 'test' ||
+      ev === 'test',
+  );
+}
+
+/**
+ * 判断路径是否位于真实用户数据根内（homedir()/.sofagent/data）。
+ * path.resolve 归一 + 尾分隔符拼前缀，避免兄弟目录前缀碰撞
+ * （如 …/data 与 …/data-backup 不得互相误判）。
+ */
+export function isUnderRealUserDataDir(target: string): boolean {
+  const realRoot = path.resolve(path.join(os.homedir(), '.sofagent', 'data'));
+  const resolved = path.resolve(target);
+  return resolved === realRoot || resolved.startsWith(realRoot + path.sep);
+}
+
+/**
+ * 写入侧 fail-loud 护栏：测试环境解析到真实用户数据根时抛错（拒绝写入）。
+ * 供审计/决策/训练链等写盘入口在解析出目标路径后立刻调用——先于任何 fs 写。
+ *
+ * @param filePath 即将写入的目标文件绝对路径
+ * @param context 调用方标识（写进错误信息，便于定位）
+ * @throws Error 测试环境 + 真实用户数据根（同时置 process.exitCode = 3，与
+ *   sanitizeSofagentHome 越界回退的 fail-loud 契约同码——调用链上游 `-ne 0`
+ *   兜底分支可识别为「引擎异常 ⇒ 阻断」）。
+ */
+export function assertTestEnvNotWritingRealData(filePath: string, context: string): void {
+  if (!isTestEnvironment()) return;
+  if (!isUnderRealUserDataDir(filePath)) return;
+  process.exitCode = 3;
+  throw new Error(
+    `[test-guard] ${context}: 测试环境禁止写入真实用户数据根（fail-loud，拒绝写入）——` +
+      `解析落点 ${path.resolve(filePath)} 位于 ${path.join(os.homedir(), '.sofagent', 'data')}。` +
+      `请让测试使用隔离目录（显式 dataDir 入参 / SOFAGENT_DATA / SOFAGENT_HOME 指向临时目录）。`,
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // G7 多租户抽象层 v0（v1.4.7）——路径与身份地基
 //
 // v0 能力边界：只做「路径命名空间 + 身份归属字段」——

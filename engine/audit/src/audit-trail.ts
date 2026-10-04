@@ -11,7 +11,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { hostname, platform, arch } from 'os';
 import { createHash } from 'crypto';
-import { DATA_DIR } from '@sofagent/core';
+import { DATA_DIR, assertTestEnvNotWritingRealData } from '@sofagent/core';
 
 /** 审计轨迹条目 */
 export interface AuditTrailEntry {
@@ -79,6 +79,8 @@ export function appendAuditTrail(
   dataDirOverride?: string,
 ): void {
   const trailPath = resolveTrailPath(dataDirOverride);
+  // 写侧护栏：测试环境解析到真实数据根 → fail-loud 拒绝写入（先于任何 fs 写）
+  assertTestEnvNotWritingRealData(trailPath, 'appendAuditTrail');
   const dataDir = dataDirOverride || process.env.SOFAGENT_DATA || DATA_DIR;
 
   const fullEntry: AuditTrailEntry = {
