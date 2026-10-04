@@ -96,7 +96,7 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 | **verdict = PASS**（regression + coverage 全 PASS，acceptance 已由脚本层保证） | 执行 session 汇报后结束 → 主 session 过「零信任复验三件套」（见下）→ 全过才进阶段六；PASS 轮 LEDGER 行由主 session 收编 |
 | **verdict = FAIL** | 执行 session 按「修复批协议」分诊修复 → 复绿 + commit → 归档断点重跑（自动收敛循环，5 轮上限） |
 | **命中停手条件** | 停手汇报 → 主 session 接手分诊（回阶段四语义）；修复后可重新走本阶段或交还执行 session |
-| **需要 driver 内自动修复** | 显式加 `--auto-fix` 启动（f-diagnose → f-fix → f-audit，最多 3 轮）——默认不开，盲审独立性与修复上下文不混跑；与 session 级修复批是两条机制，不混用 |
+| **需要 driver 内自动修复** | **默认开启**（driver `autoFix: true`，见 [loop.md](../../../FORGE/SKILL/release-gate-loop/loop.md)「自动触发 F 步骤链」）——f-diagnose → f-fix → f-audit，最多 3 轮。**本仓纪律**：当轮走 session 级修复批时，须显式 `--no-auto-fix` 启动（盲审独立性与修复上下文不混跑；两条机制不混用） |
 | **driver 反复 FAIL 且复验全为检查器债** | 走「手工裁决路径」（见下） |
 | **环境级故障（worker 系统性失败）** | driver 内建系统性失败熔断：失败率 ≥2/3 且绝对数 ≥5（双门阈值）= 环境级故障中止 run——不是单点降级占位继续跑。处置：读 death-audit.jsonl / sub-progress-*.jsonl 定位根因（常见：依赖 API 漂移 / DSH rc 包形态变化），修复依赖后 `--resume` 续跑 |
 
