@@ -1,6 +1,6 @@
 {
   "name": "sofagent",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "FDE Harness — on entry, write your business judgment into files (workflows, ontology, AI nodes); after departure, audit every change against them. 25 git-diff rules, tamper-evident chain, snapshots (104 tools, 11 plugins). CLI: single entry `sofagent <domain> <action>` (e.g. npx -y -p sofagent sofagent audit)",
   "license": "MIT",
   "author": "KongFangXun",
@@ -36,9 +36,9 @@
     "README.md"
   ],
   "dependencies": {
-    "@sofagent/audit": "1.5.5",
-    "@sofagent/mcp": "1.5.5",
-    "@sofagent/orchestrator": "1.5.5",
-    "@sofagent/daemon": "1.5.5"
+    "@sofagent/audit": "1.5.6",
+    "@sofagent/mcp": "1.5.6",
+    "@sofagent/orchestrator": "1.5.6",
+    "@sofagent/daemon": "1.5.6"
   }
 }

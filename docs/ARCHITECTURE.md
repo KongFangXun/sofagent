@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.5 · 2026-10-01（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.6 · 2026-10-04（UTC）· ✅ 已发版 · 孔放勋
 >
 > 设计决策记录——从为什么存在、约束层五种能力如何协作，到每个关键决策的工程理由。
 >

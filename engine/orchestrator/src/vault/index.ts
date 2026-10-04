@@ -1,5 +1,5 @@
 // ============================================================
-// vault/index.ts · v1.5.5 章三 · 凭证隔离 Vault barrel
+// vault/index.ts · v1.5.6 章三 · 凭证隔离 Vault barrel
 // ============================================================
 //
 // 汇总凭证隔离 Vault 三件：托管（credential-vault）/ 轮换吊销（credential-rotation）/

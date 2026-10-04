@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.5 · 2026-10-01（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.6 · 2026-10-04（UTC）· ✅ 已发版 · 孔放勋
 
 ## 目录
 

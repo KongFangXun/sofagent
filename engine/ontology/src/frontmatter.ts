@@ -1,13 +1,12 @@
 // ============================================================
 // frontmatter.ts · Markdown 头信息（frontmatter）解析单源
-// v1.5.5 批 19：三处同名/近名实现收敛为一处——
+// v1.5.6 批 19：三处同名/近名实现收敛为一处——
 //   · engine/mcp/src/tools/knowledge-page.ts  parseFrontmatter（导出）
 //   · engine/ontology/src/merge-engine.ts     parseFrontmatter（私有）
 //   · engine/ontology/src/query.ts            parseFrontmatterSafe（私有，近名）
 //   三者语义逐字一致（去 BOM → CRLF 归一 → `---` 段匹配 → YAML 解析；失败返回 null），
 //   但各写一份、漂移无门禁可查。现以本模块为唯一实现（本体包为 SSOT）。
 // ============================================================
-
 import { load as yamlLoad } from 'js-yaml';
 
 /**

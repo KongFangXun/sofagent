@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/orchestrator",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "engines": {
     "node": ">=18"
   },
@@ -41,18 +41,18 @@
     "@deepseek-ai/dsh-web-app": "0.1.5-rc.3",
     "@langchain/core": "^1.2.11",
     "@langchain/openai": "^1.5.13",
-    "@sofagent/audit": "1.5.5",
-    "@sofagent/core": "1.5.5",
-    "@sofagent/inject": "1.5.5",
-    "@sofagent/rules": "1.5.5",
-    "@sofagent/evolve": "1.5.5",
+    "@sofagent/audit": "1.5.6",
+    "@sofagent/core": "1.5.6",
+    "@sofagent/inject": "1.5.6",
+    "@sofagent/rules": "1.5.6",
+    "@sofagent/evolve": "1.5.6",
     "js-yaml": "^5.4.2",
     "zod": "^4.6.5"
   },
   "//optionalDependencies": "v1.4.5 T6 (R4)：benchmark/case-evaluator.ts:188 惰性 await import('@sofagent/eval')（裁剪安装时回退协议完成度），此前未声明——对齐 root package.json F-18 optionalDependencies 先例（惰性加载的跨 workspace 依赖声明为 optional，裁剪安装不断言）。 | v1.5.5 章五追加：@langchain/langgraph 同款降级——编排层可选执行后端，源码零静态 import(loop/graph.ts 仅经 execution-state/lazy-langgraph.ts 动态 import；loop barrel 运行时面经 loadLoopGraphRuntime() 惰性解析)；dsh-only 裁剪安装不背 LangGraph 依赖树；缺失时显式报错含安装/切换指引(LANGGRAPH_MISSING_GUIDE)。",
   "optionalDependencies": {
     "@langchain/langgraph": "^1.4.15",
-    "@sofagent/eval": "1.5.5"
+    "@sofagent/eval": "1.5.6"
   },
   "exports": {
     ".": {

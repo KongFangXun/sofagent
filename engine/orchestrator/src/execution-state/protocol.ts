@@ -1,5 +1,5 @@
 // ============================================================
-// execution-state/protocol.ts · v1.5.5 章一 · SKILL.state 执行协议核心
+// execution-state/protocol.ts · v1.5.6 章一 · SKILL.state 执行协议核心
 // ============================================================
 // 协议六要素的实现核心（P 恒定 / Σt 唯一记忆 / ot 仅最新 / ΔΣt 代码合并
 // 校验 fail-closed / Rt 弃前落审计摘要 / executionMode 双模式）。
@@ -7,7 +7,6 @@
 // 🔴 合并不靠模型自觉，靠代码保证：applyPatch 对每个字段跑 schema validator，
 //    校验不过即拒绝该补丁（返回 rejected），连续 N 次拒绝触发节点降级。
 // ============================================================
-
 import { getSchema, initialState, type NodeKind } from './schema';
 
 /** JSON Patch 子集——模型每步随动作输出的状态补丁形态 */
