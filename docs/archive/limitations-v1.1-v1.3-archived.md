@@ -70,3 +70,20 @@ FDE §7 交付（静态文件就绪）
 - **v1.2.5 后**：ACTIVATE 已交付，activate 命令可注册企业 Agent
 - **v1.2.8 后**：ORCHESTRATE + EXECUTE 前半已交付，企业 Agent 可编排 + 运行 + 每步审计
 - **v1.3.0（已交付）**：全链路打通（SUSTAIN），企业工作流自运转
+
+---
+
+## 八 · audit ↔ daemon 循环依赖（已解决 · 退役归档）
+
+> **来源**：docs/LIMITATIONS.md §八。**退役理由**：该项状态为「已解决」且修复已完成多年，留在**在用**局限节里属「表述仍真但已无指导价值」——按文档退役巡检「要淘汰」桶收敛：正文入档，活文档留一句结论 + 本指针。
+
+### audit ↔ daemon 循环依赖
+
+> **状态：已解决**。历史上 `@sofagent/audit` 的 `optionalDependencies` 曾包含 `@sofagent/daemon`（snapshot helpers），形成逻辑循环依赖。
+
+**v1.2.3 修复**：snapshot helpers（`restoreSnapshot` / `listAllSnapshots`）从 `@sofagent/daemon` 迁移到 `@sofagent/core`，`audit` 包的 `package.json` 不再含任何 `daemon` 引用（含 `optionalDependencies`），源码中仅保留 `types/daemon.d.ts` 类型 shim（无 runtime import）。依赖图恢复为单向：`daemon → audit → core`，符合四层单向依赖原则。
+（v1.4.7 后续：该类型 shim 经查为死声明——`declare module` 声明零消费，真实消费点直接 import `@sofagent/core`——已于 v1.4.7 删除，源码中不再有任何 daemon 引用形态。）
+
+**验证**：`grep -rn "@sofagent/daemon" engine/audit/package.json` 无命中；`grep -rn "from '@sofagent/daemon'" engine/audit/src/` 无命中（源码中已无任何 daemon 引用形态——`types/` 目录不存在、无 `declare module` shim；残留的 `@sofagent/daemon` 字样只出现在 init / federation-distill 的「如需 daemon 请安装」用户提示与迁移注释里，属文案非依赖引用）。
+
+**历史记录**：此局限在 v1.1.3 引入（audit 需调用 daemon 的 snapshot 能力），v1.2.0 物理重构时已规划迁移，v1.2.3 随编排隔离底座一并完成。

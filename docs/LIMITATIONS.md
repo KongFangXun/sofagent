@@ -647,16 +647,9 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 ## 八、包依赖与编排局限
 
-### audit ↔ daemon 循环依赖（v1.2.3 已解决）
+### audit ↔ daemon 循环依赖（✅ 已解决 · 正文退役归档）
 
-> **状态：已解决**。历史上 `@sofagent/audit` 的 `optionalDependencies` 曾包含 `@sofagent/daemon`（snapshot helpers），形成逻辑循环依赖。
-
-**v1.2.3 修复**：snapshot helpers（`restoreSnapshot` / `listAllSnapshots`）从 `@sofagent/daemon` 迁移到 `@sofagent/core`，`audit` 包的 `package.json` 不再含任何 `daemon` 引用（含 `optionalDependencies`），源码中仅保留 `types/daemon.d.ts` 类型 shim（无 runtime import）。依赖图恢复为单向：`daemon → audit → core`，符合四层单向依赖原则。
-（v1.4.7 后续：该类型 shim 经查为死声明——`declare module` 声明零消费，真实消费点直接 import `@sofagent/core`——已于 v1.4.7 删除，源码中不再有任何 daemon 引用形态。）
-
-**验证**：`grep -rn "@sofagent/daemon" engine/audit/package.json` 无命中；`grep -rn "from '@sofagent/daemon'" engine/audit/src/` 无命中（源码中已无任何 daemon 引用形态——`types/` 目录不存在、无 `declare module` shim；残留的 `@sofagent/daemon` 字样只出现在 init / federation-distill 的「如需 daemon 请安装」用户提示与迁移注释里，属文案非依赖引用）。
-
-**历史记录**：此局限在 v1.1.3 引入（audit 需调用 daemon 的 snapshot 能力），v1.2.0 物理重构时已规划迁移，v1.2.3 随编排隔离底座一并完成。
+当前口径一句结论：`@sofagent/audit` 对 `@sofagent/daemon` **零引用**（依赖段与源码双零命中），snapshot helpers 归 `@sofagent/core`。修复沿革与验证命令已退役归档至 [archive/limitations-v1.1-v1.3-archived.md](./archive/limitations-v1.1-v1.3-archived.md#八--audit--daemon-循环依赖已解决--退役归档)。
 
 ### daily-health 为同步执行（阻塞巡检调度至脚本完成）
 
