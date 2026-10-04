@@ -3656,7 +3656,7 @@ async function main() {
         if (!existsSync(p)) return false;
         const size = statSync(p).size;
         if (size < 500) return true;
-        const head = fs.readFileSync(p, 'utf-8').slice(0, 4000);
+        const head = readFileSync(p, 'utf-8').slice(0, 4000);
         return !/^## /m.test(head);
       });
       if (truncatedOutputs.length > 0) {
