@@ -406,3 +406,5 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 2026-10-01     | 20261001-02    | release-gate | 2    | SKIP       | PASS       | PASS     | PASS-WITH-CONDITIONS（P1 五条已闭环 1ff63d6e7：S471 三断言/dim1-f 锚修复/施工代裁定标注；lib 6 哈希留阶段九 tag 前硬门）| ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-01/run-02
 
 2026-10-04     | 20261004-01    | release-gate | 4    | SKIP       | PASS       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-10-04/run-01
+
+2026-10-04     | 20261004-02    | release-gate | 4    | SKIP       | PASS       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-10-04/run-02
