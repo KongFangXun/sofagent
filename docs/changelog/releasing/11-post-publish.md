@@ -42,7 +42,9 @@
 
 发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 [troubleshooting.md](./troubleshooting.md) 的分叉接回处置处理）；
 ② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 直建 ref 的 lightweight tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight；经 git/tags 建 object 再建 ref 的通道产出直接是 annotated，免覆盖）；
-③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） 
+③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内）
+> ⚠️ **发布物不得「放着不管」**：桌面可能被外部清理（实测：本版发布物在发版窗口内被清空，只剩无关文件）⇒ 发布物落盘后应**尽快消费**（步骤七 `gh release` 即用完），本步骤要么**归档进仓内 `docs/archive/`**、要么**显式删除**并在此登记；不登记 = 下轮无从判断「是清理了还是丢了」。
+ 
 
 | # | 完成 | 步骤 | 验证方式 |
 |:--:|:--:|------|------|

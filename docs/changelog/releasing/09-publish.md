@@ -347,6 +347,8 @@ for f in README.md README.en.md bootstrap.sh; do
 done
 ```
 
+
+> 🔴 **大文件 curl 恒 000 的处置**：`install.sh` 这类近 100KB 的文件在代理/网络抖动下 `curl` 可**连续 000**（同 tag 的 bootstrap.sh / lib 却 200）——此时勿反复重试等待，改用 **API 通道做内容级哈希对账闭环**：`gh api "repos/<O>/<R>/contents/install.sh?ref=<tag>" --jq .content | tr -d '\\n' | base64 -d | shasum -a 256`，与 `git show <tag>:install.sh | shasum -a 256` 逐字节比对。一致即 URL 可达性成立（curl 200 是同一事实的另一种测法，取其一即可，不必死等）。
 > 注意：check-version.sh 含安装入口 tag 对账检查项，`bash tools/check/check-version.sh` 会给出三方 tag 一致性结论；此处 curl 是最后一道实测防线（URL 真实可达性）。
 
 ### 🔴 bootstrap.sh sha256 同步（每版必做）
@@ -390,6 +392,8 @@ git grep -n "<上一版>" -- README.md README.en.md CHANGELOG.md SECURITY.md \
 ```
 
 > 验收：反查零「介绍面/状态面」命中 + 06 触点清单挂账格全部改 `[x]`；本拍与 bump 同 commit 收口。
+> 🔴 **规划表行两条硬约束（`check-forms` A7 会当场判红）**：① 本版行**不可删除**——A7 以 `VERSION_SOURCES` 逐版对 ROADMAP 规划版本表做对账，删行即判「规划版本表无该版本行（对账缺一侧）」；本版行在役期只**翻状态**（📋 规划中 → ✅ 已发版（日期））。② **版本单元格必须是纯版号**（`| **vX.Y.Z** |`）——A7 的行正则形如 `^\|\s*\*{0,2}vX\.Y\.Z\*{0,2}\s*\|`，写成 `| **vX.Y.Z**（日期） |` 即失配等同缺行；**日期放状态格**。
+
 
 ### 🔴 第四拍：bump 后全量门禁重跑（必做——bump 是新的改动面）
 
@@ -435,6 +439,7 @@ else
 fi
 ```
 
+> 🔴 **tag 权威核对端点**：`gh api repos/<O>/<R>/git/refs/tags/<tag>`（**复数** `refs`）**返回 404，不是权威判据**——权威二选一：`git ls-remote --tags origin <tag>`（比对 tag object SHA）或单数端点 `gh api repos/<O>/<R>/git/ref/tags/<tag>`。判「tag 是否已推上」时以 `ls-remote` 为准；<br>🔴 **push 时点**：tag 必须指向**已在远端 main 上**的提交（否则 tag 指向游离提交，`main` 缺 bump commt，收口第④项 workflow 复核无对象）⇒ 顺序 = push main（含 bump 提交）→ 等 CI 全绿 → 才打 tag + push tag。
 > 🔴 **tag push 失败重试**：`git tag -a` 本地打标成功但 push 可能被中断（实测 exit 137 SIGKILL / 超时）——此时**远端没有 tag，本地有**（`gh api repos/O/R/git/ref/tags/vX.Y.Z` 404 确认）。
 >重试直接用「网络降级策略」的完整命令（剥代理 + HTTP/1.1 + 低速兜底）单独 push tag：`env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u all_proxy git -c http.proxy= -c https.proxy= -c http.version=HTTP/1.1 -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=300 push origin vX.Y.Z`——push 完成后用 `gh api
 >repos/O/R/git/refs/tags/vX.Y.Z --jq '.object.sha'` 确认远端存在，与本地 `git rev-parse vX.Y.Z` 一致。
@@ -768,6 +773,11 @@ done
 ---
 
 ---
+
+## 故障排查手册（已拆分）## 收尾：窗口态豁免移除（publish 完成后必做）
+
+> 本阶段为了让 bump→publish 之间的时序差通过，曾登记 `npm-claims` 窗口态豁免（README 双语版本说明行的声称 ≠ registry latest）。**publish 完成后该豁免即成陈旧债**——声称值已与 registry 相等，豁免台账「可清空」设计要求债务清即移出（不改即留永久口子）：
+> `tools/check/npm-claims-exempt.json` 的 `exemptAnchors` 清空 + notes 记移除理由；复跑 `node tools/check/check-npm-claims.mjs` 应报「无豁免、在线对账真绿」。
 
 ## 故障排查手册（已拆分）
 
