@@ -228,6 +228,26 @@ const CHAIN_POLICY: Record<(typeof HOOK_FILES)[number], ChainPolicy> = {
   'post-commit': 'ignore-rc',
 };
 
+/**
+ * F43（v1.5.7）：解析**安装时刻**的审计引擎绝对入口（hook 记录用）。
+ * 语义：hook 是从「当前这份 audit 包」装出去的，运行时优先用同一份引擎——
+ *   ① npx 拉取的包：本包 dist/index.js（__dirname 推导）；
+ *   ② monorepo/引擎仓：同样成立（engine/audit/dist/index.js）。
+ * 解析不到返回 null（hook 回退既有 command -v / 全局解析链，保留现行为）。
+ */
+export function resolveEngineEntryForHook(): string | null {
+  // 发布/构建态：本包 CLI 主入口 dist/index.js（hook-install.ts 编译后在 dist/ 内）。
+  // 测试态（vitest src 直跑）：__dirname 落在 src/——探测 ../dist/index.js（同包构建产物）
+  // 与 src/index.ts（源码形态）双候选，任一存在即可作为记录值。
+  const distEntry = join(__dirname, 'index.js');
+  if (existsSync(distEntry)) return distEntry;
+  const candidates = [join(__dirname, '..', 'dist', 'index.js'), join(__dirname, 'index.ts')];
+  for (const c of candidates) {
+    if (existsSync(c)) return c;
+  }
+  return null;
+}
+
 /** 安装结果 */
 export interface InstallHooksResult {
   /** hook 实际安装目录（core.hooksPath 生效时为配置目录） */
@@ -250,6 +270,34 @@ export interface InstallHooksOptions {
   log?: (msg: string) => void;
   /** 覆盖既有 sofagent hook 前是否备份 .bak（缺省 true——保持 v1.2.9 起的行为） */
   backupExisting?: boolean;
+  /**
+   * F43（v1.5.7）：解析时刻的引擎绝对入口——安装器写入 hook 头部标记行
+   * `# SOFAGENT_ENGINE_ENTRY=<abs>`，hook 运行优先消费该记录值。
+   * 动机：npx 装的 hook 运行时按解析链落到**机器全局 dist**而非 npx 拉取的包
+   * ——升级全局包后首个 commit 被「全局哈希不匹配」拦截；未装全局包时 hook
+   * 解析不到引擎直接 exit 1。记录缺失时 hook 回退既有解析链（保留现行为）。
+   */
+  engineEntry?: string | null;
+}
+
+/**
+ * F43：向 hook 内容注入引擎入口标记行（紧跟 shebang 之后）。
+ * 只接受存在的绝对路径文件（防写入死路径）；非法输入原样返回。
+ * 标记行是 shell 注释形态——pre-commit / post-commit 等不消费它的 hook 不受影响。
+ */
+export function injectEngineEntryMark(templateContent: string, engineEntry?: string | null): string {
+  if (!engineEntry || !isAbsolute(engineEntry) || !existsSync(engineEntry)) {
+    return templateContent;
+  }
+  const mark = `# SOFAGENT_ENGINE_ENTRY=${engineEntry}`;
+  // 幂等：已有标记行（任意旧值）先剥离再写新值——重装/升级换入口时刷新记录
+  const stripped = templateContent.replace(/^# SOFAGENT_ENGINE_ENTRY=.*\n?/m, '');
+  if (!stripped.startsWith('#!')) {
+    return `${mark}\n${stripped}`;
+  }
+  const nl = stripped.indexOf('\n');
+  if (nl === -1) return `${stripped}\n${mark}\n`;
+  return `${stripped.slice(0, nl + 1)}${mark}\n${stripped.slice(nl + 1)}`;
 }
 
 /**
@@ -282,6 +330,8 @@ export function installHooks(opts: InstallHooksOptions): InstallHooksResult {
     // T4: 接管用户自有 hook → 保存 .pre-sofagent + 链式 wrapper
     const preName = preserveUserHook(hooksDir, name);
     let content = readFileSync(templatePath, 'utf-8');
+    // F43：写入解析时刻的引擎绝对入口标记行（commit-msg 运行优先消费）
+    content = injectEngineEntryMark(content, opts.engineEntry);
     if (preName) {
       content = buildChainedContent(content, preName, CHAIN_POLICY[name]);
       log(`  ⛓ 检测到既有 ${name} hook（非 sofagent）——已保留为 ${preName}，sofagent hook 会先执行它再进入主体逻辑`);

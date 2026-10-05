@@ -23,6 +23,8 @@ import { writeConfig } from '@sofagent/core';
 import { defaultRules } from '../rules';
 // v1.4.5 T1: hook 落点解析（core.hooksPath 优先）——与 index.ts installHook() 同源
 import { resolveHooksDir } from '../hook-install';
+// F43（v1.5.7）：安装时刻引擎入口解析 + hook 标记行注入（与 --install-hook 同源）
+import { resolveEngineEntryForHook, injectEngineEntryMark } from '../hook-install';
 
 /**
  * hook 模板**唯一源**：`engine/audit/hooks/<name>`（随包发布，`files` 白名单含 hooks/）。
@@ -41,6 +43,17 @@ function readHookTemplate(name: 'pre-commit' | 'commit-msg' | 'post-commit'): st
   } catch (err) {
     throw new Error(`hook 模板缺失: ${p}（audit 包应随包发布 hooks/ 目录）——${err instanceof Error ? err.message : String(err)}`);
   }
+}
+
+
+/**
+ * 读取 hook 模板并注入安装时刻的引擎入口标记行（F43 · v1.5.7）。
+ * --init 与 --install-hook 两条安装路径共用同一注入语义：
+ * hook 运行优先消费 SOFAGENT_ENGINE_ENTRY 记录值（npx 装的 hook 绑 npx 拉取的包，
+ * 不再绑机器全局 dist）；记录缺失时 hook 回退既有 command -v 解析链。
+ */
+function readHookTemplateWithEntry(name: 'pre-commit' | 'commit-msg' | 'post-commit'): string {
+  return injectEngineEntryMark(readHookTemplate(name), resolveEngineEntryForHook());
 }
 
 
@@ -578,7 +591,7 @@ export function runInit(): void {
           }
         } catch { /* 备份失败不阻塞安装 */ }
       }
-      writeFileSync(preCommitPath, readHookTemplate('pre-commit'), 'utf-8');
+      writeFileSync(preCommitPath, readHookTemplateWithEntry('pre-commit'), 'utf-8');
       chmodSync(preCommitPath, 0o755);
       console.log('  → .git/hooks/pre-commit 已安装（.sofagent/ 永不入库主防线）');
     }
@@ -619,7 +632,7 @@ export function runInit(): void {
       console.log(`  → commit-msg hook 已安装（检测到 sofagent 标识），跳过`);
       stepSkipped++;
     } else {
-      writeFileSync(hookPath, readHookTemplate('commit-msg'), 'utf-8');
+      writeFileSync(hookPath, readHookTemplateWithEntry('commit-msg'), 'utf-8');
       chmodSync(hookPath, 0o755);
       console.log(`  → 检测到 git 仓库: ${gitDir.replace('/.git', '')}`);
       console.log('  → .git/hooks/commit-msg 已安装（可执行，含无声失败保护）');
@@ -681,7 +694,7 @@ export function runInit(): void {
     if (hasPostCommitHook) {
       console.log('  → post-commit hook 已安装（检测到 sofagent 标识），跳过');
     } else {
-      writeFileSync(postCommitPath, readHookTemplate('post-commit'), 'utf-8');
+      writeFileSync(postCommitPath, readHookTemplateWithEntry('post-commit'), 'utf-8');
       chmodSync(postCommitPath, 0o755);
       console.log('  → .git/hooks/post-commit 已安装（--no-verify 绕过检测）');
     }
@@ -771,20 +784,33 @@ export function runInit(): void {
   if (isMacOS) {
     // 默认不装——询问用户是否注册 daemon 常驻服务。
     // 非 TTY（脚本/CI/npx）默认 N，绝不挂起等待输入；也可用 --no-daemon 显式跳过。
-    if (process.argv.includes('--no-daemon')) {
+    // F55（v1.5.7）新增 --register-daemon：非交互环境直接完成注册（不经过交互提问）
+    // ——CI/IDE/Agent 场景补装常驻层的唯一非交互通道。
+    if (process.argv.includes('--register-daemon')) {
+      // 显式请求注册——不经提问直达。注册失败须 fail-loud（约束：不静默），
+      // 由 registerDaemon 内部如实报告 + 外层 catch 输出失败详情并 exit 1。
+      console.log('  → 已指定 --register-daemon，直接注册 daemon 常驻服务（不经交互提问）');
+      try {
+        registerDaemon(cwd);
+      } catch (err) {
+        console.log(`  ⚠️ [sofagent] daemon 注册失败: ${(err as Error).message}`);
+        console.log('  → git hooks 仍可用；如需 daemon 请手动安装: npm install -g @sofagent/daemon');
+        process.exit(1);
+      }
+    } else if (process.argv.includes('--no-daemon')) {
       console.log('  → 已指定 --no-daemon，跳过 daemon 常驻服务注册');
     } else if (!promptYesNoSync('  是否注册 daemon 常驻服务（后台监控文件变更，开机自启）？', 'n')) {
       // v1.5.1 L9：文案改为**可执行的真动作**。改前是「重新运行 sofagent-audit --init 并选择注册」——
       // 但整轮 --init 没有菜单，「选择」指向不存在的东西；且非交互（脚本/CI/npx 管道）下
       // 本步的 y/N 提示**根本不会显示**（promptYesNoSync 在非 TTY 直接取默认 N），
       // 照抄该指令重跑仍然是同一个默认 N —— 死循环指令。
-      // 真实 opt-in 通道两条，均已核实可执行（无第三入口）：
-      //   ① 交互式终端（TTY）重跑 --init —— 第 5 步会打印 y/N 提示，答 y 走 registerDaemon()
-      //   ② 不经 --init —— 全局装 daemon 后 sofagent-daemon start（daemon/cli.ts 的 start 子命令）
-      console.log('  → 已跳过 daemon 注册（git commit 审计不受影响）');
-      console.log('  → 如需常驻监控，二选一（非交互环境重跑 --init 不会出现此提示，直接重跑无效）：');
-      console.log('    ① 在**交互式终端**里重跑 sofagent audit --init——第 5 步会问「是否注册 daemon 常驻服务」，答 y 即注册');
-      console.log('    ② 不经 --init：npm install -g @sofagent/daemon 后运行 sofagent-daemon start（非 macOS 请自行配置 systemd / Windows Service）');
+      // F55（v1.5.7）：跳过不再静默——显式 warn（区分非交互默认 N 与交互拒绝）+ 给出
+      // 非交互环境可直接执行的补装命令（--register-daemon）。CI/IDE/Agent 场景此前
+      // 无路可走（重跑 --init 不会出现提示，直接重跑无效）。
+      const skipReason = isInteractive() ? '用户拒绝' : '非交互环境（stdin/stdout 非 TTY，默认 N）';
+      console.log(`  ⚠️ [sofagent] daemon 常驻服务未注册（原因：${skipReason}）——补装：sofagent audit --init --register-daemon`);
+      console.log('  → git commit 审计不受影响（hook 已安装，daemon 仅负责 7×24 常驻监控）');
+      console.log('  → 也可不经 --init：npm install -g @sofagent/daemon 后运行 sofagent-daemon start');
     } else {
       try {
         registerDaemon(cwd);

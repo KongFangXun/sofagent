@@ -9,7 +9,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
-import { resolveHooksDir, installHooks, preserveUserHook, buildChainedContent } from './hook-install';
+import { resolveHooksDir, installHooks, preserveUserHook, buildChainedContent, injectEngineEntryMark, resolveEngineEntryForHook } from './hook-install';
 
 /** 建临时 git 仓库（含初始 commit——保证 rev-parse --show-toplevel 可用） */
 function makeRepo(): string {
@@ -161,5 +161,102 @@ describe('preserveUserHook / buildChainedContent（T4：链式保留）', () => 
 
     rmSync(tpl, { recursive: true, force: true });
     rmSync(repo, { recursive: true, force: true });
+  });
+});
+
+// ============================================================
+// F43（v1.5.7）· hook 绑定安装时刻引擎入口
+// ------------------------------------------------------------
+// 缺陷：npx 装的 hook 运行时按解析链落到机器全局 dist——升级全局包后首个
+//   commit 被「全局哈希不匹配」拦截；未装全局包时 hook 解析不到引擎 exit 1。
+// 修法：安装器把解析时刻的引擎绝对入口写进 hook 头部标记行
+//   `# SOFAGENT_ENGINE_ENTRY=<abs>`，hook 运行优先消费记录值。
+// ============================================================
+describe('injectEngineEntryMark / resolveEngineEntryForHook（F43）', () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'sofagent-f43-'));
+  });
+
+  afterEach(() => {
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* */ }
+  });
+
+  it('合法绝对入口：标记行紧跟 shebang 之后', () => {
+    const entry = join(dir, 'engine-entry.js');
+    writeFileSync(entry, '// fake dist index\n');
+    const out = injectEngineEntryMark('#!/bin/bash\n# sofagent commit-msg hook v1.5.6\nexit 0\n', entry);
+    const lines = out.split('\n');
+    expect(lines[0]).toBe('#!/bin/bash');
+    expect(lines[1]).toBe(`# SOFAGENT_ENGINE_ENTRY=${entry}`);
+  });
+
+  it('幂等：二次注入刷新记录值（旧标记行被替换而非追加）', () => {
+    const oldEntry = join(dir, 'old.js');
+    const newEntry = join(dir, 'new.js');
+    writeFileSync(oldEntry, 'a');
+    writeFileSync(newEntry, 'b');
+    const once = injectEngineEntryMark('#!/bin/bash\nbody\n', oldEntry);
+    const twice = injectEngineEntryMark(once, newEntry);
+    expect(twice.match(/^# SOFAGENT_ENGINE_ENTRY=/gm)?.length).toBe(1);
+    expect(twice).toContain(`# SOFAGENT_ENGINE_ENTRY=${newEntry}`);
+    expect(twice).not.toContain(`# SOFAGENT_ENGINE_ENTRY=${oldEntry}`);
+  });
+
+  it('非法入口（不存在文件/相对路径/null）：模板原样返回不注入', () => {
+    const tpl = '#!/bin/bash\nexit 0\n';
+    expect(injectEngineEntryMark(tpl, join(dir, 'no-such.js'))).toBe(tpl);
+    expect(injectEngineEntryMark(tpl, 'relative/path.js')).toBe(tpl);
+    expect(injectEngineEntryMark(tpl, null)).toBe(tpl);
+    expect(injectEngineEntryMark(tpl, undefined)).toBe(tpl);
+  });
+
+  it('无 shebang 模板：标记行置于文件头（防御形态）', () => {
+    const entry = join(dir, 'e.js');
+    writeFileSync(entry, 'x');
+    const out = injectEngineEntryMark('body only\n', entry);
+    expect(out.startsWith(`# SOFAGENT_ENGINE_ENTRY=${entry}\n`)).toBe(true);
+  });
+
+  it('installHooks 传 engineEntry：三个 hook 落盘均含标记行', () => {
+    const repo = makeRepo();
+    const tpl = makeTemplates();
+    const entry = join(dir, 'audit-dist-index.js');
+    writeFileSync(entry, '// dist\n');
+    try {
+      installHooks({ cwd: repo, templateDir: tpl, log: () => {}, engineEntry: entry });
+      for (const name of ['pre-commit', 'commit-msg', 'post-commit']) {
+        const content = readFileSync(join(repo, '.git', 'hooks', name), 'utf-8');
+        expect(content).toContain(`# SOFAGENT_ENGINE_ENTRY=${entry}`);
+      }
+    } finally {
+      rmSync(tpl, { recursive: true, force: true });
+      rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
+  it('installHooks 未传 engineEntry：落盘内容不含标记行（回退链行为保留）', () => {
+    const repo = makeRepo();
+    const tpl = makeTemplates();
+    try {
+      installHooks({ cwd: repo, templateDir: tpl, log: () => {} });
+      const content = readFileSync(join(repo, '.git', 'hooks', 'commit-msg'), 'utf-8');
+      expect(content).not.toContain('# SOFAGENT_ENGINE_ENTRY=');
+    } finally {
+      rmSync(tpl, { recursive: true, force: true });
+      rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
+  it('resolveEngineEntryForHook：返回存在的绝对入口（本包 dist/index.js）', () => {
+    const entry = resolveEngineEntryForHook();
+    expect(entry).not.toBeNull();
+    expect(entry!.startsWith('/')).toBe(true);
+    expect(existsSync(entry!)).toBe(true);
+    // 构建态指向 dist/index.js；vitest src 直跑态指向 src/index.ts（双候选任一）
+    expect(
+      entry!.endsWith(join('dist', 'index.js')) || entry!.endsWith(join('src', 'index.ts')),
+    ).toBe(true);
   });
 });

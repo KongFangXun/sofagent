@@ -624,6 +624,8 @@ sofagent orchestrator subagent run fde --mode sustain --task "巡检所有节点
 | Agent 卡住不动 | 断路器保护——任务拆得不够细，拆小点再跑。→ [自进化 检查点](./DEVELOPMENT.md#五自进化机制) |
 | 评分越来越不准 | 翻 task/logs 对照 think.md，清理低置信度旧条目 |
 | 什么不该让 Agent 做 | 确定性操作（去重/格式校验/文件清理）用脚本 |
+| CI/IDE 里 `--init` 后 daemon 没注册 | 非交互环境第 5 步默认跳过——补注册：`sofagent audit --init --register-daemon`（不经交互提问直接完成注册） |
+| 升级全局包后首次提交被「审计模块哈希」拦截 | 升级会触发审计模块哈希基线拦截，按提示运行 `sofagent audit --doctor --baseline` 重建基线 |
 
 > 更多见 [LIMITATIONS.md](./LIMITATIONS.md)。
 
