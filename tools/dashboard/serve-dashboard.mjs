@@ -146,7 +146,7 @@ function resolveGovernanceEngine() {
     });
     const m = require(resolved2);
     if (typeof m?.computeGovernanceKpis === 'function') { __govEngineCache = m; return m; }
-  } catch { /* 下一候选 */ }
+  } catch (e) { logger.warn(`[dashboard] 治理端点候选 3（bin wrapper 同源 dist）解析失败，尝试下一候选: ${e?.message ?? e}`); }
   // 候选 4：预留一体化形态
   try {
     const p = join(SOFAGENT_HOME_INSTALL, 'packages', 'audit', 'dist', 'public-api.js');
