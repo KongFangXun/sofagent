@@ -1,5 +1,7 @@
 # 安全策略
 
+> 🔴 **报告漏洞：直接跳 [§报告漏洞](#报告漏洞)**（本文档较长，该节是唯一上报入口——渠道/范围/响应预期全在那节）。
+
 > **快速上报**：见本文 [报告漏洞](#报告漏洞) 一节（渠道 / 范围 / 响应预期以该节为准）。渠道为 **GitHub Security Advisory 单通道**——v1.3.6 起不再提供安全邮箱（无法保证收信），亦未提供加密公钥；勿经 issue 上报未公开漏洞。
 
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
@@ -561,7 +563,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > ⚠️ **超大 diff 的 spill 落盘面（v1.3.9 能力 · 补齐计划见 ROADMAP · 如实披露）**：单文件 diff 超 5MB 时引擎溢出到磁盘再分块读回（`engine/core/src/diff-parser.ts`）。落盘位置经 `getDataDir()` SSOT 解析链（显式 `SOFAGENT_DATA` > 环境变量 > `~/.sofagent/data/`），**恒在引擎数据目录而非被审仓库内**——v1.4.3 已修复旧实现「spill 落 CWD 会被对方仓库 commit 卷入」的跨仓泄漏面；
 >目录权限 0700（spill 可能含密钥类 diff 内容）。读回上限 64MB：以内全量扫描（oversized 不置位，无审计盲区），超限截断置位并注入 WARN，落盘件保留供按需取回。**残余面**：spill 文件含明文 diff 内容（sanitize 管道不覆盖 spill 原文），强合规场景建议将 `~/.sofagent/data/spill/` 纳入加密卷覆盖范围并定期清理。
 
-> ⚠️ **Webhook SSRF——DNS 解析复验与残余 TOCTOU（v1.4.5 披露）**：webhook 推送 URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped IPv4 全段拒绝）之外，新增**DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，实际解析到的 A/AAAA 记录任一落在私网段仍拒绝——堵「域名看着公共、解析结果内网」的 DNS rebinding 式 SSRF。
+> ⚠️ **Webhook SSRF——DNS 解析复验与残余 TOCTOU（v1.4.5 披露）**：webhook 推送 URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped IPv4 全段拒绝）之外，新增**DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，实际解析到的 A/AAAA 记录任一落在私网段仍拒绝——堵「域名看着公共、解析结果内网」的 DNS rebinding 式 SSRF。**豁免面披露（v1.5.7 F38）**：`SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1` 显式设置时跳过上述 SSRF 检查（本地联调用）——豁免生效的每次推送均有 stderr 告警与通道健康留痕（audit 侧 `webhook.ts` / daemon 侧 `webhook/index.ts` 同口径），不静默放行。
 >DNS 查询失败按拒绝处理（fail-closed：无法证明安全即不推送）。**残余窗口（如实声明）**：复验与实际 fetch 是两次独立解析，存在微小 TOCTOU 窗口——本防线拦「配置时刻就指向内网」的静态攻击面，动态 rebind 收敛至两次解析窗口内，属纵深防御增量而非绝对边界。
 
 > ⚠️ **history.jsonl 的 beforeAfter 字段脱敏（端到端验证）**：审计条目的 `actionGovernance.beforeAfter`（变更前/后值摘要，从 diff 提取、截断至 200 字符）是新增落盘面——密钥可能混入。
@@ -641,7 +643,7 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 #### 远程安装（curl | bash）信任模型（v1.4.3 披露）
 
 一行安装（`curl ... bootstrap.sh | bash`）的行业通用信任链是「HTTPS 传输 + GitHub 账号安全」，**无代码签名**——若 raw.githubusercontent 通道或仓库账号被劫持，下载的脚本可被替换为任意代码。sofagent 自 v1.4.3 起在此模型上追加一层：**bootstrap.sh 内嵌发版时硬编码的 sha256（install.sh + 6 个 lib 文件共 7 个哈希），下载内容与发版时不一致即 fail-closed 拒绝执行**——劫持者即使控制传输通道，也无法在不改哈希（哈希在 bootstrap.sh 自身内，
-用户 curl 到的那份）的情况下替换安装载荷。残余信任面如实披露：① 用户 curl 到的 bootstrap.sh 本身仍无签名（首跳信任，与全行业一致）；② 哈希随发版更新，若发版流程被攻破（哈希与载荷同被替换）校验失效——此层防御针对传输劫持，不针对供应链根攻破；③ 高安全场景建议 `git clone` + 审查后 `bash install.sh`，绕开首跳信任。
+用户 curl 到的那份）的情况下替换安装载荷。残余信任面如实披露：① 用户 curl 到的 bootstrap.sh 本身仍无签名（首跳信任，与全行业一致）；② 哈希随发版更新，若发版流程被攻破（哈希与载荷同被替换）校验失效——此层防御针对传输劫持，不针对供应链根攻破；③ 高安全场景建议 `git clone` + 审查后 `bash install.sh`，绕开首跳信任。**边界重申（v1.5.7）：哈希锚与载荷同源（都在发版侧产出）——本机制防传输劫持、不防源头替换**；独立校验通道（release 页公示哈希 / attestation）已登记 [ROADMAP 探索方向](./docs/ROADMAP.md) 排期评估。
 
 #### 源码审查
 

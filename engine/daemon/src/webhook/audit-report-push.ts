@@ -5,7 +5,7 @@
 // 审计报告生成后推送到企业 IM（飞书/钉钉/企微），复用现有 createWebhookPusher。
 //
 // 配置：data/config/audit-report.json
-//   { "target": "feishu" | "dingtalk" | "wecom", "schedule": "daily", "format": "summary" }
+//   { "target": "feishu" | "dingtalk" | "wecom", "format": "summary" }
 //
 // 行为（主理人决策 R6）：
 //   配置文件缺失 / target 未配置 → 跳过推送 + console 一行日志，不 fail-fast、不 throw。
@@ -23,10 +23,12 @@ import type { GeneratedReport } from '@sofagent/audit';
 interface AuditReportPushConfig {
   /** 推送目标平台 */
   target?: WebhookPlatform;
-  /** 推送频率（目前仅 daily 实装；weekly/monthly 预留） */
-  schedule?: 'daily' | 'weekly' | 'monthly';
   /** 推送格式：summary = 只推概要，full = 推完整 Markdown */
   format?: 'summary' | 'full';
+  // v1.5.7 F39：原 `schedule?: 'daily' | 'weekly' | 'monthly'` 字段已删——实测全仓零
+  // 消费点（推送频率由调用侧选 generateDailyReport/generateWeeklyReport 决定，与配置
+  // 无关），属「schema 声明了但永不读」的死字段。旧配置文件里若含 schedule 键会被
+  // JSON.parse 原样读入但无人读取，无兼容性影响。
 }
 
 /**
