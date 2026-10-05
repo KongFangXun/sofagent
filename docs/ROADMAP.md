@@ -167,6 +167,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 | 方向 | 一句话 |
 |---|---|
+| **acceptance CI 接线（非阻塞 job）** | playbook/acceptance-test.sh 接入 verify.yml 做 schedule + workflow_dispatch 触发的非阻塞 job（跑只读批次 + 归档日志 artifact）。实测评估（v1.5.7 F26）：cli-only 批次单跑约 7 分钟（全量更长），超「建 job 先行条件 = 单次 ≤10 分钟」的接入预算；且存在前置依赖——用户可见字符串收敛（`sofagent-audit v` → `sofagent audit v`）后场景 472/473 等断言锚未随动，须先清偿 acceptance 断言漂移再接线，否则 job 恒红无信号价值。触发条件：断言漂移清偿 + 运行时长压缩评估（分批/抽样）后再议 |
 | **自带净水设备的水龙头（v3.x+ 远景）** | Subagent 支持挂载外部精调小模型（约束层提供路由与加载插槽），零投喂、本地推理、离线可用 |
 | **数据 schema 迁移管道（Omarchy migrations/ 启发）** | `~/.sofagent/data/` 数据格式演进的机制兜底：按版本号顺序执行迁移脚本 + 幂等可重跑（`sofagent doctor --migrate` 或升级时自动执行）。**不提前建管道**（无提前抽象纪律）——v1.5.0 trace 新数据源已埋 `schemaVersion` 前置件，首个破坏性 schema 变更真实出现时再触发评估 |
 | **大文档三档拆分（概念/决策/清单）** | ARCHITECTURE/PHILOSOPHY 类大文档按「概念/决策/清单」三档拆分重组，控制单文档认知负载——归文档优化专项（无版本单元格，触发时机=下一次大规模文档新增时） |

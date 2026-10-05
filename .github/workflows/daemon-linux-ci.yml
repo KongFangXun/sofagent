@@ -5,11 +5,15 @@ on:
     paths:
       - 'engine/scripts/daemon*'
       - 'engine/scripts/lib/daemon*'
+      - 'engine/daemon/**'
+      - 'engine/core/**'
       - '.github/workflows/daemon-linux-ci.yml'
   pull_request:
     paths:
       - 'engine/scripts/daemon*'
       - 'engine/scripts/lib/daemon*'
+      - 'engine/daemon/**'
+      - 'engine/core/**'
   workflow_dispatch:
 
 jobs:
