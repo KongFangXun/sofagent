@@ -102,28 +102,30 @@ export function collectEnvVars(): Record<string, string> {
 export function detectTools(): Record<string, { available: boolean; version?: string }> {
   const tools: Record<string, { available: boolean; version?: string }> = {};
 
-  const toolDefs: [string, string?][] = [
-    ['bash', 'GNU bash, version 3.2'],
-    ['sh', ''],
-    ['git', 'git version 2.39'],
-    ['node', 'v22.0.0'],
-    ['npm', '10.0.0'],
-    // v1.4.3 清扫任务一：删除 ['ao', '0.7.5'] 探测——ao 编排模块已于 v1.0.7
+  // 元组第二位（期望版本样例）在 v1.4.3 清扫后已无消费方——只探测可用性，
+  // 不做版本匹配（detectTools 输出仅含 available/version 实测值）
+  const toolDefs: string[] = [
+    'bash',
+    'sh',
+    'git',
+    'node',
+    'npm',
+    // v1.4.3 清扫任务一：删除 'ao' 探测——ao 编排模块已于 v1.0.7
     // 退役，探测是死代码（detectTools 输出不再含 ao 条目）
-    ['docker', 'Docker version 27'],
-    ['python3', 'Python 3.12'],
-    ['jq', 'jq-1.7'],
-    ['sed', ''],
-    ['awk', ''],
-    ['curl', 'curl 8.0'],
-    ['wget', 'GNU Wget 1.24'],
-    ['rsync', 'rsync version 3'],
-    ['make', 'GNU Make 4'],
-    ['gcc', ''],
-    ['openssl', 'OpenSSL 3'],
+    'docker',
+    'python3',
+    'jq',
+    'sed',
+    'awk',
+    'curl',
+    'wget',
+    'rsync',
+    'make',
+    'gcc',
+    'openssl',
   ];
 
-  for (const [cmd, expectedPattern] of toolDefs) {
+  for (const cmd of toolDefs) {
     const available = commandExists(cmd);
     const versionArgs = cmd === 'openssl' ? ['version'] : ['--version'];
     const version = available ? tryVersion(cmd, versionArgs) : undefined;

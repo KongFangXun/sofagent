@@ -11,7 +11,7 @@
 //   6. URL 提取（复用 networkOutboundTargetRule 的 hostname 解析口径）
 // ============================================================
 
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, afterAll, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -167,6 +167,49 @@ describe('端口 / 协议收窄维度（声明才校验，fail-closed）', () =>
   it('未声明 ports/protocols = 不限制该维度', () => {
     const policy = declareEgressHosts(['api.github.com']);
     expect(decideEgress({ host: 'api.github.com', port: 1234, protocol: 'tcp' }, policy).verdict).toBe('Allow');
+  });
+
+  // ── v1.5.7 F24：ports/protocols 全部非法的 fail-open 修复 ──
+  it('声明 ports 但全部非法 → 该条目被拒绝（不再 fail-open 放行所有端口）', () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      // 非法端口：非整数 / 越界（0、65536、负数、字符串）
+      const policy = declareEgressHosts([{ host: 'api.github.com', ports: [0, 65536, -1, '443' as unknown as number] }]);
+      // 修复前：rule.ports = [] → portAllowed 视为「不限制」→ 任意端口放行（fail-open）。
+      // 修复后：条目被拒 → 白名单空 → 全拒（fail-closed）。
+      const d = decideEgress({ host: 'api.github.com', port: 443 }, policy);
+      expect(d.verdict).toBe('Deny');
+      expect(d.reason).toBe('empty-policy');
+      // 告警可见：非法条目原文 + [sofagent] 前缀
+      const msgs = errSpy.mock.calls.map((c) => String(c[0]));
+      expect(msgs.some((m) => m.startsWith('[sofagent]') && m.includes('ports 全部非法'))).toBe(true);
+    } finally {
+      errSpy.mockRestore();
+    }
+  });
+
+  it('声明 protocols 但全部非法 → 该条目被拒绝（不再 fail-open 放行所有协议）', () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      // 非法协议：空串 / 纯空白 / 非字符串
+      const policy = declareEgressHosts([{ host: 'api.github.com', protocols: ['', '   ', 123 as unknown as string] }]);
+      const d = decideEgress({ host: 'api.github.com', protocol: 'https' }, policy);
+      expect(d.verdict).toBe('Deny');
+      expect(d.reason).toBe('empty-policy');
+      const msgs = errSpy.mock.calls.map((c) => String(c[0]));
+      expect(msgs.some((m) => m.startsWith('[sofagent]') && m.includes('protocols 全部非法'))).toBe(true);
+    } finally {
+      errSpy.mockRestore();
+    }
+  });
+
+  it('ports 含合法项 → 只按合法项收窄（混合声明不整表丢弃）', () => {
+    // 正例：混合声明（[0, 443, 65536]）→ 只保留 443——按白名单放行 443、拒 8080
+    const policy = declareEgressHosts([{ host: 'api.github.com', ports: [0, 443, 65536] }]);
+    expect(decideEgress({ host: 'api.github.com', port: 443 }, policy).verdict).toBe('Allow');
+    const denied = decideEgress({ host: 'api.github.com', port: 8080 }, policy);
+    expect(denied.verdict).toBe('Deny');
+    expect(denied.reason).toBe('port-not-allowed');
   });
 });
 

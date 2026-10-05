@@ -65,9 +65,24 @@ parse_args() {
   --yes, -y           配合 --force 跳过交互确认（CI 场景）
 HELP
         exit 0 ;;
-      *) shift ;;
+      # v1.5.7 F24-6：未知参数 fail-loud——此前 `*) shift ;;` 静默吞掉拼错 flag
+      # （如 --quikc/--platfrm），用户误以为生效。改打印原文 + 可用 flag 提示后退出。
+      *)
+        err "未知参数: $1"
+        err "可用参数: --platform <openclaw|workbuddy|claude|codex|hermes|cursor|gemini> --project-dir <dir> --policy <file> --quick/--ci --lite --no-daemon --no-config-inject --base-only --with-memory --remote --force --merge --yes/-y -h/--help"
+        exit 1 ;;
     esac
   done
+  # v1.5.7 F24-6：--platform 值白名单校验——此前拼错平台名（如 cloude/windbuddy）
+  # 静默落进通用安装分支（TARGET=SOFAGENT_HOME），用户以为装进了目标平台。
+  # 与下方 case 分支的平台集保持同步（openclaw/workbuddy/claude/codex/hermes/cursor/gemini）。
+  case "$PLATFORM" in
+    ""|openclaw|workbuddy|claude|codex|hermes|cursor|gemini) ;;
+    *)
+      err "非法平台值: --platform $PLATFORM"
+      err "可用平台: openclaw | workbuddy | claude | codex | hermes | cursor | gemini（不传 = 通用安装）"
+      exit 1 ;;
+  esac
   PLATFORM="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"  # 转小写
 }
 auto_detect_platform() {
