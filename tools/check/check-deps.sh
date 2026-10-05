@@ -69,7 +69,7 @@ check_npm "archiver" "8.0.0"
 echo ""
 echo "🟡 核心框架（LangGraph 三件套）"
 echo "─────────────────────────────────────────────────────────────"
-check_npm "@langchain/langgraph" "1.4.18"
+check_npm "@langchain/langgraph" "1.4.19"
 check_npm "@langchain/core" "1.2.14"
 check_npm "@langchain/openai" "1.6.2"
 
