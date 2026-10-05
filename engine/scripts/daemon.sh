@@ -269,7 +269,37 @@ _start() {
     return 0
   fi
 
-  echo "启动 sofagent daemon..."
+  # v1.5.7 F23：优先转发 TS daemon CLI（$SOFAGENT_HOME/daemon-dist/cli.js，由
+  # daemon-install.sh 部署的持久副本；仓库态回退 engine/daemon/dist）——bash 侧
+  # 保留为 launcher（解析/环境准备后 exec），让 watch.yml（install.sh 写入的
+  # cron 调度配置：inspectors / dream-cycle 段）在默认安装下被 TS 侧真实消费
+  # （cron.ts 三读侧有项目级 → 全局 fallback）。
+  # 依赖解析：daemon dist 是 CommonJS，@sofagent/* workspace 依赖不在副本内——
+  # launcher 探测仓库 node_modules / 全局 npm root 注入 NODE_PATH；两处都不可
+  # 解析时回退 bash 主循环（hash 巡检形态，不消费 watch.yml——降级语义，WARN 可见）。
+  local ts_cli="${SOFAGENT_HOME:-$HOME/.sofagent}/daemon-dist/cli.js"
+  [ -f "$ts_cli" ] || ts_cli="${REPO_ROOT}/engine/daemon/dist/cli.js"
+  if [ -f "$ts_cli" ]; then
+    local nm_root=""
+    if [ -d "${REPO_ROOT}/node_modules/@sofagent" ]; then
+      nm_root="${REPO_ROOT}/node_modules"
+    else
+      local g_nm
+      g_nm="$(npm root -g 2>/dev/null || true)"
+      [ -n "$g_nm" ] && [ -d "$g_nm/@sofagent" ] && nm_root="$g_nm"
+    fi
+    if [ -n "$nm_root" ]; then
+      echo "启动 sofagent daemon（TS 引擎：cron 调度消费 watch.yml + 文件监听）..."
+      _ensure_data_dir
+      export NODE_PATH="${nm_root}${NODE_PATH:+:${NODE_PATH}}"
+      exec node "$ts_cli" start
+    fi
+    echo "⚠️ TS daemon CLI 在位但 @sofagent/* 依赖不可解析（无仓库 node_modules / 全局安装）——"
+    echo "   回退 bash 巡检模式（watch.yml 调度不生效；装依赖: npm i -g @sofagent/daemon 或仓库 npm install）"
+  fi
+
+  echo "启动 sofagent daemon（bash 巡检模式——未找到 TS daemon CLI，watch.yml 调度不生效）..."
+  echo "  （部署 TS 引擎: bash engine/scripts/daemon-install.sh）"
   nohup "$0" --foreground >> "$DAEMON_LOG" 2>&1 &
   local bg_pid=$!
   echo "$bg_pid" > "$DAEMON_PID_FILE"

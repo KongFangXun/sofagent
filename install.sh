@@ -1000,10 +1000,22 @@ CLIEOF
   chmod +x "$bin_dir/sofagent"
 
   # v1.5.6 章一：登记域路由（npm 裸名 sofagent）供 wrapper 非保留字命令转发。
-  # 优先复用仓库内的 umbrella 入口（clone 态）；否则探测全局 npm 安装。
+  # v1.5.7 F22：router 源优先「安装态持久位置」——仓库 clone（--remote / curl pipe bash）
+  # 场景下 SCRIPT_DIR 位于易失目录，软链直指 clone 内文件会在源清理后悬空
+  # （实测复现：clone 删除后 sofagent-router → 不存在目标）。改为先把 umbrella 入口
+  # 复制到 $SOFAGENT_HOME/bin/sofagent-router.js 留存副本，软链指向该副本
+  # （拷贝自包含，与 Dashboard 入口的「易失源拷贝」先例同模式）；全局 npm 探测
+  # 保留为无仓库源时的回退（npm 全局根是持久位置，无需拷贝）。
   local router_src=""
   if [ -f "${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js" ]; then
-    router_src="${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js"
+    local router_persistent="${SOFAGENT_HOME}/bin/sofagent-router.js"
+    if cp "${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js" "$router_persistent" 2>/dev/null && [ -f "$router_persistent" ]; then
+      router_src="$router_persistent"
+      ok "  域路由入口已留存持久副本（防易失源悬空）：$router_persistent"
+    else
+      warn "  域路由持久副本拷贝失败（${router_persistent}）——回退直链仓库源（易失源场景可能悬空）"
+      router_src="${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js"
+    fi
   else
     local g_npm_root
     g_npm_root="$(npm root -g 2>/dev/null || true)"
