@@ -5,7 +5,8 @@
 // 只读查询 daemon 健康自检文件（daemon-health.json），
 // 复用 @sofagent/daemon 的 readHealthFile() + checkDaemonHealth()。
 //
-// 延迟 import @sofagent/daemon（optionalDependencies 模式）——
+// 延迟 import @sofagent/daemon（optionalDependencies 模式；总包 umbrella 安装态下
+// daemon 恒在——本降级分支是「独立安装 @sofagent/mcp」形态专用）——
 // daemon 未安装时返回友好提示，不崩溃。
 //
 // 安全约束：本 tool 只读，不包含 start/stop/spawn 等任何写操作。

@@ -7,7 +7,7 @@
 - **审计 CLI**（`@sofagent/audit`）——`sofagent` / `sofagent audit` 命令，扫描 git diff 检查 Agent 是否遵守工作纪律
 - **MCP server**（`@sofagent/mcp`）——104 tools，把审计/训练/治理能力接入任意 MCP 客户端
 - **编排器**（`@sofagent/orchestrator`）——训练任务全生命周期：数据管道、多卡多机、云执行平面
-- **守护进程**（`@sofagent/daemon`）——dashboard 与 cron 任务
+- **守护进程**（`@sofagent/daemon`）——dashboard 与 cron 任务（总包形态下恒在——dependencies 硬依赖，独立安装 `@sofagent/mcp` 时才有「daemon 未安装」形态）
 
 ## 快速开始
 

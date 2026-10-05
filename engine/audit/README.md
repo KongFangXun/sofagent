@@ -289,6 +289,8 @@ npm test         # 运行测试（测试数量以 tools/check/test-count.sh 实�
 npm run check    # 类型检查（tsc --noEmit）
 ```
 
+> ⚠️ **构建链产物完整性**：`verify/` 与 `hooks/` 由构建链生成并随 `files` 字段分发（`package.json` 的 `files` 含 `hooks/`、`verify/`）——**绕过 `npm run build` 直接改 dist 或手工拷贝会产出残缺包**（verify/hooks 缺位 → 安装侧完整性校验与 hook 安装失败）。发版与本地打包一律走标准构建链。
+
 ---
 
 ## License
