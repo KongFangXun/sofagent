@@ -12,10 +12,14 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, renameSync, rmSync } from 'fs';
 import { join, dirname, relative } from 'path';
-import { createHash } from 'crypto';
+import { createHash, createHmac } from 'crypto';
 import { REDACTION_PATTERNS } from '../shared/secret-patterns';
 // v1.5.2 A-13：快照链路径单源化——11 处硬写改走 getProjectShadowGitDir（data-paths.ts）
 import { getProjectShadowGitDir } from '../data-paths';
+// v1.5.7 F52：快照条目 HMAC 指纹——复用 audit-history 既有基建（getHmacKey 同一
+// 密钥 ~ / SOFAGENT_KEY_PATH、stableStringify 稳定序列化、sha256 截 128bit），
+// 零第二套签名体系。写侧 saveSnapshots 签名、读侧 loadSnapshots 验签。
+import { getHmacKey, stableStringify } from '../audit-history';
 
 /** 被追踪的文件信息 */
 interface TrackedFile {
@@ -38,6 +42,11 @@ export interface SnapshotEntry {
   files: Record<string, string>; // path → content
   /** v1.5.0 TASK-18: 快照标签（创建时传入——rollback 按 label 定位快照的维度） */
   label?: string;
+  /**
+   * v1.5.7 F52: 该条目无 HMAC 签名（F52 之前写入的 legacy 快照）。
+   * 验签豁免但恢复路径须显式提示——区分「已验签」与「无法验签」。
+   */
+  hmacLegacy?: boolean;
 }
 
 /**
@@ -59,8 +68,69 @@ export interface SnapshotEntry {
 interface ShadowStore {
   version?: number;
   blobs?: Record<string, string>;
-  snapshots?: Array<{ sha: string; timestamp: string; label?: string; fileIndex?: Record<string, string>; files?: Record<string, string> }>;
+  snapshots?: Array<{ sha: string; timestamp: string; label?: string; fileIndex?: Record<string, string>; files?: Record<string, string>; hmacSig?: string }>;
 }
+
+// ── v1.5.7 F52：快照 HMAC 指纹（防篡改快照回滚）─────────────────────────
+//
+// 威胁模型：snapshots.json 是磁盘明文，恶意进程可直接编辑其中文件内容——
+// restore 会把被篡改内容写回工作区（快照文件无完整性校验，全链路裸奔）。
+//
+// 方案：每个快照条目写入时带 hmacSig（HMAC-SHA256 over stableStringify(条目
+// 签名域)，密钥复用 audit-history 的 ~/.sofagent-key——零第二套基建）；读取
+// 时验签，失配抛错 fail-closed（拒绝恢复被篡改快照）。
+//
+// 兼容策略：无 hmacSig 的条目视为 legacy（F52 之前写入）——放行但条目上
+// 标记 hmacLegacy: true，恢复路径（revertToSnapshot）据此显式提示。
+
+/**
+ * 计算快照条目的 HMAC 签名。
+ *
+ * 签名域 = 条目的持久化形态（sha + timestamp + label? + fileIndex），不含
+ * hmacSig 自身。stableStringify 保证读写两侧 key 顺序无关（与 audit-history
+ * 链签名同款防假阳性措施）。截断 32 hex = 128bit，与链签名同长度。
+ *
+ * 🔴 blob 池防篡改：v2 存储把文件内容放 blobs 池（条目只存 path→contentHash
+ * 索引），只签条目拦不住「改 blob 内容、索引不动」的偷换——loadSnapshots
+ * 验签时对每个被引用 blob 重算 computeHash('blob:' + content) 与 fileIndex
+ * 记录的 hash 比对（见 verifySnapshotBlobPool），blob 内容一变 hash 即失配。
+ */
+function computeSnapshotHmac(entry: { sha: string; timestamp: string; label?: string; fileIndex?: Record<string, string> }, key: string): string {
+  const recordForSig = {
+    sha: entry.sha,
+    timestamp: entry.timestamp,
+    ...(entry.label !== undefined ? { label: entry.label } : {}),
+    ...(entry.fileIndex !== undefined ? { fileIndex: entry.fileIndex } : {}),
+  };
+  return createHmac('sha256', key)
+    .update(stableStringify(recordForSig))
+    .digest('hex')
+    .slice(0, 32);
+}
+
+/**
+ * blob 池完整性校验（F52）：fileIndex 记录的每个 contentHash 与 blobs 池内
+ * 实际内容的重算哈希比对——blob 被偷换（内容变、索引不动）在此暴露。
+ */
+function verifySnapshotBlobPool(
+  entry: NonNullable<ShadowStore['snapshots']>[number],
+  blobs: Record<string, string>,
+): void {
+  if (!entry.fileIndex) return;
+  for (const [p, expectedHash] of Object.entries(entry.fileIndex)) {
+    const content = blobs[expectedHash];
+    if (content === undefined) continue; // blob 丢失：既有降级语义（还原为空串）
+    const actualHash = computeHash(`blob:${content}`);
+    if (actualHash !== expectedHash) {
+      throw new Error(
+        `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${entry.sha.slice(0, 8)} 引用的文件「${p}」内容哈希与索引不符（blob 池被偷换——内容变而索引未动），拒绝加载`,
+      );
+    }
+  }
+}
+
+/** 快照条目验签失败时抛出的错误信息前缀（消费方靠它识别「指纹失配」） */
+export const SNAPSHOT_HMAC_MISMATCH_PREFIX = '[sofagent] 快照完整性校验失败：';
 
 /**
  * v1.3.4 交付 1（P0）：对快照内容做脱敏处理——复用 shared/secret-patterns 的
@@ -137,20 +207,49 @@ function loadSnapshots(shadowDir: string): SnapshotEntry[] {
   try {
     const data = JSON.parse(readFileSync(snapshotsPath, 'utf-8')) as ShadowStore;
     if (!Array.isArray(data.snapshots)) return [];
+
+    // v1.5.7 F52：验签（fail-closed）。密钥不在场（未生成/丢失）时无法区分
+    // 篡改与合法——带签名条目一律拒绝（宁可拒绝恢复不可假绿）；无签名条目
+    // = legacy，放行并标记 hmacLegacy（恢复路径显式提示）。
+    const hmacKey = getHmacKey();
+    const verify = (raw: NonNullable<ShadowStore['snapshots']>[number]): void => {
+      if (typeof raw.hmacSig !== 'string' || raw.hmacSig.length === 0) return; // legacy
+      if (!hmacKey) {
+        throw new Error(
+          `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${raw.sha.slice(0, 8)} 带签名但 HMAC 密钥不可用（~/.sofagent-key 缺失或不可读）——无法确认快照未被篡改，按 fail-closed 拒绝`,
+        );
+      }
+      const expected = computeSnapshotHmac(raw, hmacKey);
+      if (expected !== raw.hmacSig) {
+        throw new Error(
+          `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${raw.sha.slice(0, 8)} 的 HMAC 签名不匹配（疑似快照内容被篡改）——拒绝加载，恢复被拒绝`,
+        );
+      }
+      // 条目验签通过后校验 blob 池（签名的索引域 vs 池内实际内容）
+      if (data.blobs) verifySnapshotBlobPool(raw, data.blobs);
+    };
+    for (const raw of data.snapshots) verify(raw);
+
     // v2：内容寻址还原（label 透传——TASK-18 rollback 定位维度）
     if (data.version === 2 && data.blobs) {
       return data.snapshots.map((s) => {
-        if (!s.fileIndex) return { sha: s.sha, timestamp: s.timestamp, files: s.files ?? {}, ...(s.label !== undefined ? { label: s.label } : {}) };
+        const legacy = !(typeof s.hmacSig === 'string' && s.hmacSig.length > 0);
+        if (!s.fileIndex) return { sha: s.sha, timestamp: s.timestamp, files: s.files ?? {}, ...(s.label !== undefined ? { label: s.label } : {}), ...(legacy ? { hmacLegacy: true } : {}) };
         const files: Record<string, string> = {};
         for (const [p, h] of Object.entries(s.fileIndex)) {
           files[p] = data.blobs![h] ?? ''; // blob 丢失时降级为空串（不 crash 恢复流程）
         }
-        return { sha: s.sha, timestamp: s.timestamp, files, ...(s.label !== undefined ? { label: s.label } : {}) };
+        return { sha: s.sha, timestamp: s.timestamp, files, ...(s.label !== undefined ? { label: s.label } : {}), ...(legacy ? { hmacLegacy: true } : {}) };
       });
     }
     // v1：旧格式直读
-    return data.snapshots.map((s) => ({ sha: s.sha, timestamp: s.timestamp, files: s.files ?? {}, ...(s.label !== undefined ? { label: s.label } : {}) }));
-  } catch {
+    return data.snapshots.map((s) => ({ sha: s.sha, timestamp: s.timestamp, files: s.files ?? {}, ...(s.label !== undefined ? { label: s.label } : {}), hmacLegacy: true }));
+  } catch (err) {
+    // F52：验签失败（SNAPSHOT_HMAC_MISMATCH_PREFIX 开头）必须向上抛——
+    // 吞掉会把 fail-closed 翻转成「快照全丢」（loadSnapshots 返回 []）。
+    if (err instanceof Error && err.message.startsWith(SNAPSHOT_HMAC_MISMATCH_PREFIX)) {
+      throw err;
+    }
     return [];
   }
 }
@@ -192,13 +291,30 @@ function saveSnapshots(shadowDir: string, snapshots: SnapshotEntry[]): void {
   }
 
   const snapshotsPath = join(shadowDir, 'snapshots.json');
+  // v1.5.7 F52：条目签名（写入侧）。密钥 getHmacKey({createIfMissing:true})——
+  // 与 audit-history 写入侧同姿态（首次写入即生成密钥，开箱即签名）；密钥
+  // 不可得时（历史安全门拒绝等）条目不带签名 → 读侧按 legacy 放行（不阻断
+  // 快照功能本身，与链签名的降级姿态一致）。
+  const hmacKey = getHmacKey({ createIfMissing: true });
+  if (!hmacKey) {
+    // F52：拿不到密钥（丢失 / audit-history 安全门拒绝生成）时条目不带签名——
+    // 读侧按 legacy 放行。降级**必须显式可见**（不静默）：此刻起写入的快照
+    // 无完整性防线，用户须知晓。恢复密钥后新快照即恢复带签名。
+    console.warn(
+      '[snapshot] ⚠️ HMAC 密钥不可得（~/.sofagent-key 缺失，且因审计历史存在已签名记录而拒绝自动生成）——本次写入的快照条目不带完整性签名（读取时按 legacy 兼容放行）。请恢复密钥以重建快照完整性防线。',
+    );
+  }
+  const signed = indexed.map((s) => ({
+    ...s,
+    ...(hmacKey ? { hmacSig: computeSnapshotHmac(s, hmacKey) } : {}),
+  }));
   // v1.3.8 交付九：并发竞态加固——临时文件 + rename 原子替换。
   // 原实现 writeFileSync 直写 snapshots.json：daemon fs-watch 批量事件与
   // 手动 rollback 并发时，两方同时直写会让读者拿到半截 JSON（loadSnapshots
   // JSON.parse 失败静默返回 []，快照全丢）。写 .tmp 再 rename——同一文件系统
   // 内 rename 原子，读者要么看到旧版要么看到新版。
   const tmpPath = `${snapshotsPath}.tmp`;
-  writeFileSync(tmpPath, JSON.stringify({ version: 2, blobs: prunedBlobs, snapshots: indexed }, null, 2), 'utf-8');
+  writeFileSync(tmpPath, JSON.stringify({ version: 2, blobs: prunedBlobs, snapshots: signed }, null, 2), 'utf-8');
   renameSync(tmpPath, snapshotsPath);
 }
 
@@ -474,6 +590,14 @@ export function revertToSnapshot(dir: string, sha: string): string[] {
   const target = snapshots.find((s) => s.sha === sha);
   if (!target) {
     throw new Error(`快照 ${sha} 未找到。可用快照: ${snapshots.map((s) => s.sha.slice(0, 8)).join(', ')}`);
+  }
+
+  // v1.5.7 F52：legacy 快照（无 HMAC 签名）恢复时显式提示——区分
+  // 「已验签的快照」与「写入于指纹机制之前的快照」（后者无法证明完整性）。
+  if (target.hmacLegacy === true) {
+    console.warn(
+      `[snapshot] ⚠️ 快照 ${sha.slice(0, 8)} 为 legacy 条目（早于 v1.5.7 HMAC 指纹机制写入，无签名可验）——无法确认其未被篡改，按原样恢复`,
+    );
   }
 
   // ── 阶段一：全量写入 .sofagent/.revert-staging/（不触碰工作目录）──

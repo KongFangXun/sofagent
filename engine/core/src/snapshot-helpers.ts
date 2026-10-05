@@ -13,6 +13,7 @@ import {
   listSnapshots,
   createShadowRepo,
   hasShadowRepo,
+  SNAPSHOT_HMAC_MISMATCH_PREFIX,
 } from './filesystem/isomorphic-git';
 import type { SnapshotEntry } from './filesystem/isomorphic-git';
 
@@ -70,6 +71,11 @@ export function listAllSnapshots(projectDir: string): SnapshotInfo[] {
       fileCount: Object.keys(s.files).length,
     }));
   } catch (err) {
+    // v1.5.7 F52：完整性校验失败（fail-closed）必须向上抛——吞掉会把
+    // 「拒绝加载被篡改快照」翻转成「时间线为空」，人审面拿不到拒绝原因。
+    if (err instanceof Error && err.message.startsWith('[sofagent] 快照完整性校验失败：')) {
+      throw err;
+    }
     console.error('[snapshot] 列出快照失败:', (err as Error).message);
     return [];
   }
