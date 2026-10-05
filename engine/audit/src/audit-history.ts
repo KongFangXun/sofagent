@@ -20,7 +20,7 @@
 // v1.3.1 #44 披露的并发写风险：WAL 写在网关层单 writer 模式消除（详见 docs/LIMITATIONS.md）。
 // daemon 文件监控 + Agent commit 并发写 history.jsonl 的历史担忧已由上述两层解决。
 //
-// 每次 sofagent-audit 运行后，把结果追加到
+// 每次 sofagent audit 运行后，把结果追加到
 // ${SOFAGENT_DATA}/audit/history.jsonl（JSONL 格式；v1.2.2 起默认 data/audit/history.jsonl）。
 // 用于根因分析（audit-root-cause）和回归验证（audit-regression）。
 //
@@ -279,7 +279,7 @@ function noteEncryptionDegradedIfNeeded(): void {
     __encryptionDegradeWarned = true;
     console.error(
       '⚠️ [sofagent] 静态加密已降级为明文写入——检测到初始化标记在而数据密钥缺失/损坏。\n' +
-      `   恢复：从备份恢复 ${keysDirPath(home)}/data.key，或重置基线（sofagent-audit --doctor --baseline）。${DATA_KEY_RECOVERY_HINT}`,
+      `   恢复：从备份恢复 ${keysDirPath(home)}/data.key，或重置基线（sofagent audit --doctor --baseline）。${DATA_KEY_RECOVERY_HINT}`,
     );
   }
 }

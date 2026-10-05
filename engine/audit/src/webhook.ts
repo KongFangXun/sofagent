@@ -204,7 +204,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
     }
     lines.push(`扫描 ${payload.rules.length} 条规则全部通过`);
     lines.push(tracingLine);
-    lines.push(`审计模块: sofagent-audit v${version}`);
+    lines.push(`审计模块: sofagent audit v${version}`);
     return lines.join('\n');
   }
 
@@ -220,7 +220,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
   }
   lines.push(`详情：exit code ${payload.exitCode}`);
   lines.push(tracingLine);
-  lines.push(`审计模块: sofagent-audit v${version}`);
+  lines.push(`审计模块: sofagent audit v${version}`);
   return lines.join('\n');
 }
 

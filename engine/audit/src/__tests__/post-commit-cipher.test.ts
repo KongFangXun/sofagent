@@ -87,7 +87,7 @@ describe('post-commit 加密态对账（v1.5.0 TASK-9）', () => {
     const r = runHook(fx.repo, fx.data);
     expect(r.out).toContain('加密态');
     expect(r.out).toContain('明文对账不可用');
-    expect(r.out).toContain('CI 侧 sofagent-audit --diff 兜底');
+    expect(r.out).toContain('CI 侧 sofagent audit --diff 兜底');
     expect(r.code).toBe(0);
   });
 

@@ -1,5 +1,5 @@
 // ============================================================
-// init.ts · sofagent-audit --init 一键初始化
+// init.ts · sofagent audit --init 一键初始化
 // v1.3 新增：一条命令完成 3 步
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
@@ -184,7 +184,7 @@ function resolveDaemonEntry(cwd: string): { cliPath: string; args: string[] } | 
     if (p) candidates.push(p);
   } catch { /* 未安装 */ }
 
-  // 2. sofagent-audit 同 bin 目录下的 sofagent-daemon
+  // 2. bin 映射 `sofagent-audit` 同目录下的 sofagent-daemon（bin 名定位——保留旧名因它是 npm bin 注册名）
   try {
     const cmd = platform() === 'win32' ? 'where sofagent-audit' : 'which sofagent-audit';
     const auditPath = (execSync(cmd, { encoding: 'utf-8' }).trim().split('\n')[0]) || '';
@@ -246,7 +246,7 @@ function registerDaemon(cwd: string): void {
       console.log(`  ⚠️ 已有 daemon 注册文件存在，但无法确定它指向哪个项目：${readFailure ?? '未解析出 ProgramArguments 字符串'}`);
       console.log('  → 未做任何覆盖/卸载（不在未知状态下替你决策）');
       console.log(`  → 请先人工确认后再处理：cat ${plistPath}`);
-      console.log(`  → 确认可弃用后删除并重跑: rm ${plistPath} && sofagent-audit --init`);
+      console.log(`  → 确认可弃用后删除并重跑: rm ${plistPath} && sofagent audit --init`);
       return;
     }
     if (!promptYesNoSync(`  已有 daemon 注册（指向 ${oldTarget}），是否覆盖为当前项目？`, 'n')) {
@@ -367,8 +367,8 @@ export function runInit(): void {
   // `sofagent-audit · 初始化`（一屏两个名字），而 `--ruleset` 横幅又是
   // `sofagent-audit · FDE Harness`。README:212 专门解释过这个易混点
   // （`sofagent-audit` 是 CLI 命令名 / 正式包名 `@sofagent/audit`），CLI 自己
-  // 不得把它抵消。现统一为与 `index.ts` 横幅同源的 `sofagent-audit vX.Y.Z · FDE Harness 的审计模块`。
-  console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计模块`);
+  // 不得把它抵消。现统一为与 `index.ts` 横幅同源的 `sofagent audit vX.Y.Z · FDE Harness 的审计模块`。
+  console.log(`sofagent audit v${VERSION} · FDE Harness 的审计模块`);
   console.log('--init · 初始化');
   console.log('');
 
@@ -397,8 +397,8 @@ export function runInit(): void {
     // v1.4.5 (R4-P0): 旅程完整性——「直接编辑」必须是含重签名的完整旅程。config.yml
     // 有 HMAC 签名（fail-closed），手动编辑不重签会被验签拦住，用户会误以为配置坏了。
     console.log('  → 这个配置控制哪些审计规则启用，可直接编辑 .sofagent/config.yml 自定义');
-    console.log('  → 注意：编辑后需重新签名：sofagent-audit --sign-config（否则签名校验会拒绝启动）');
-    console.log('  → 注意：config.yml 已签名（防篡改）——手动编辑后需重新签名：sofagent-audit --sign-config');
+    console.log('  → 注意：编辑后需重新签名：sofagent audit --sign-config（否则签名校验会拒绝启动）');
+    console.log('  → 注意：config.yml 已签名（防篡改）——手动编辑后需重新签名：sofagent audit --sign-config');
     stepOk++;
   }
 
@@ -450,7 +450,7 @@ export function runInit(): void {
     } catch {
       // 签名失败不阻塞 init（可能密钥刚生成但权限问题）
       if (hmacKeyGenerated) {
-        console.log('  ⚠️ config.yml 签名失败——运行 sofagent-audit --sign-config 手动签名');
+        console.log('  ⚠️ config.yml 签名失败——运行 sofagent audit --sign-config 手动签名');
       }
     }
   }
@@ -476,7 +476,7 @@ export function runInit(): void {
   if (!gitDir) {
     console.log('  → 当前目录不在 git 仓库内，hook 已跳过');
     console.log('  ⚠️ 审计模块在 git 项目中才能运行——配置已生成，但审计不可用');
-    console.log('  → 初始化 git 仓库后重新跑: git init && sofagent-audit --init');
+    console.log('  → 初始化 git 仓库后重新跑: git init && sofagent audit --init');
     // P1-C4: 非 git 目录残留清理——删除刚创建的 .sofagent/ 目录
     try {
       const createdDir = join(cwd, '.sofagent');
@@ -504,7 +504,7 @@ export function runInit(): void {
     console.log('');
     console.log('╔══════════════════════════════════════════╗');
     console.log('║  ⚠️ 初始化未完成——当前不在 git 仓库      ║');
-    console.log('║  请先 git init 后重跑 sofagent-audit --init ║');
+    console.log('║  请先 git init 后重跑 sofagent audit --init ║');
     console.log('╚══════════════════════════════════════════╝');
     process.exit(1);
   } else {
@@ -594,7 +594,7 @@ export function runInit(): void {
         const content = readFileSync(hookPath, 'utf-8');
         // v1.3.1 #13: 先验证 hook 内容确实包含审计调用——占坑 hook 只含版本号字符串
         // 但不调用 sofagent-audit，应视为需要覆盖。
-        const hasAuditCall = content.includes('sofagent-audit') || content.includes('AUDIT_CMD');
+        const hasAuditCall = content.includes("sofagent audit") || content.includes("sofagent-audit") || content.includes('AUDIT_CMD');
         const versionMatch = content.match(/v(\d+)\.(\d+)\.(\d+)/);
         if (versionMatch) {
           const major = parseInt(versionMatch[1]!, 10);
@@ -639,7 +639,7 @@ export function runInit(): void {
         // v1.0.8 修复：不再用模糊匹配 `includes('sofagent')`——旧 hook 也会命中，导致存量用户无法升级
         // 改为检查版本号：v1.0.7 及以下 → 覆盖为当前版本；v1.0.8 及以上 → 跳过
         // v1.3.1 #13: 额外验证 hook 内容含审计对账逻辑（占坑 hook 防护）
-        const hasAuditCall = pcContent.includes('sofagent-audit') || pcContent.includes('HISTORY_FILE') || pcContent.includes('verify-commit');
+        const hasAuditCall = pcContent.includes('sofagent-audit') || pcContent.includes('sofagent audit') || pcContent.includes('HISTORY_FILE') || pcContent.includes('verify-commit');
         // v1.3.3 #13: 旧版 post-commit 用 $COMMIT_SHA 对账 parentSha（永远不匹配，假阳性），
         // v1.3.3 改为 HEAD^ + process.env.PARENT_SHA。检测旧逻辑标记以强制覆盖 v1.2.9–v1.3.2。
         const hasNewPARENT_SHALogic = pcContent.includes('PARENT_SHA');
@@ -783,7 +783,7 @@ export function runInit(): void {
       //   ② 不经 --init —— 全局装 daemon 后 sofagent-daemon start（daemon/cli.ts 的 start 子命令）
       console.log('  → 已跳过 daemon 注册（git commit 审计不受影响）');
       console.log('  → 如需常驻监控，二选一（非交互环境重跑 --init 不会出现此提示，直接重跑无效）：');
-      console.log('    ① 在**交互式终端**里重跑 sofagent-audit --init——第 5 步会问「是否注册 daemon 常驻服务」，答 y 即注册');
+      console.log('    ① 在**交互式终端**里重跑 sofagent audit --init——第 5 步会问「是否注册 daemon 常驻服务」，答 y 即注册');
       console.log('    ② 不经 --init：npm install -g @sofagent/daemon 后运行 sofagent-daemon start（非 macOS 请自行配置 systemd / Windows Service）');
     } else {
       try {
@@ -801,7 +801,7 @@ export function runInit(): void {
   // 完成 banner
   console.log('');
   console.log('╔══════════════════════════════════════════╗');
-  console.log('║  sofagent-audit 初始化完成               ║');
+  console.log('║  sofagent audit 初始化完成               ║');
   console.log('║  git commit 审计已就绪                   ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
@@ -810,7 +810,7 @@ export function runInit(): void {
   console.log('    1. 改个文件，试试 git commit——你会看到审计模块在提交前自动扫描');
   console.log('    2. 想测试拦截？echo "API_KEY=test" > .env && git add -f .env && git commit -m "test"');
   console.log('       （用 -f 强制添加以便演示拦截——.env 通常被 .gitignore 忽略）');
-  console.log('    3. 想看全部命令？sofagent-audit --help');
+  console.log('    3. 想看全部命令？sofagent audit --help');
   console.log('    4. 想管住 Agent 全流程？看 HANDBOOK → 场景一');
   console.log('');
 }

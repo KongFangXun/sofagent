@@ -67,7 +67,7 @@ describe('decision-log emitDecision', () => {
     expect(parsed.hashVersion).toBe(2);
     expect(typeof parsed.envFingerprint).toBe('string');
     expect(parsed.envFingerprint!.length).toBeGreaterThan(0);
-    expect(parsed.engine).toBe('sofagent-audit');
+    expect(parsed.engine).toBe('sofagent audit');
   });
 
   it('文件权限恒为 0o600', () => {

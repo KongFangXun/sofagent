@@ -52,7 +52,7 @@ export interface EmitDecisionInput {
   artifactRef?: string;
   /** 双时态快照：决策引用本体实体时记录当时 validFrom/validTo（v1.5.0 第二章） */
   entityValidity?: Record<string, { validFrom?: string; validTo?: string }>;
-  /** 决策记录来源标识（缺省 'sofagent-audit'） */
+  /** 决策记录来源标识（缺省 'sofagent audit'） */
   engine?: string;
   /** 触发证据链（字符串数组，可空）—— v1.3.3 新增
    *
@@ -224,7 +224,7 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     ...(input.artifactRef ? { artifactRef: input.artifactRef } : {}),
     ...(input.entityValidity !== undefined ? { entityValidity: input.entityValidity } : {}),
     ...(input.evidence !== undefined ? { evidence: input.evidence } : {}),
-    engine: input.engine ?? 'sofagent-audit',
+    engine: input.engine ?? 'sofagent audit',
   };
 
   // ── 1/4/5. 链字段生成 + HMAC 签名 + 原子追加 + 收紧权限（全部由 chain-kernel 承载）──

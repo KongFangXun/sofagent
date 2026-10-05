@@ -725,7 +725,7 @@ export function buildDatasetLineageReport(options: LineageReportOptions = {}): s
     '## 四、审计链引用',
     '',
     '- 审计历史链头（history-chain-head）：`' + chainHead + '`',
-    `- 决策日志条目（近 ${Math.min(decisionCount, 20000)} 条）：${decisionCount} 条（每条含 HMAC 签名，可 sofagent-audit decision-query 追溯）`,
+    `- 决策日志条目（近 ${Math.min(decisionCount, 20000)} 条）：${decisionCount} 条（每条含 HMAC 签名，可 sofagent audit decision-query 追溯）`,
     `- 审计历史：${readHistoryEntries(dataDir).length} 条（HMAC 链式完整性可 --verify 验证）`,
   );
 

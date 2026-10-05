@@ -4,7 +4,7 @@
 # v1.4.0 新增：Cursor / Claude Code / 千问办公 / git 原生 hook 共用此脚本
 #
 # 设计原则：复用 engine/audit 的成熟审计模块，不重写审计逻辑。
-#   本脚本只做「适配层」——把不同平台的调用方式归一化后，转发给 sofagent-audit。
+#   本脚本只做「适配层」——把不同平台的调用方式归一化后，转发给 sofagent audit。
 #
 # 支持的调用来源：
 #   1. git commit-msg hook      → 传入 $1 = commit message 文件路径
@@ -101,7 +101,7 @@ fi
 
 # ── 3. Node.js 检测 ──────────────────────────────────────────────────────
 if ! command -v node &>/dev/null; then
-  echo "❌ sofagent-audit: Node.js 未找到，审计未运行"
+  echo "❌ sofagent audit: Node.js 未找到，审计未运行"
   echo "   请安装 Node.js >= 18: https://nodejs.org"
   exit 1
 fi
@@ -112,7 +112,7 @@ if command -v git &>/dev/null && git rev-parse --show-toplevel &>/dev/null; then
   REPO_ROOT="$(git rev-parse --show-toplevel)"
 fi
 
-# ── 5. sofagent-audit 定位（优先仓库本地 dist，避免全局版本漂移）──────────
+# ── 5. sofagent audit 定位（优先仓库本地 dist，避免全局版本漂移）──────────
 AUDIT_DIST="$REPO_ROOT/engine/audit/dist/index.js"
 if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
   AUDIT_CMD=(node "$AUDIT_DIST")
@@ -133,7 +133,7 @@ if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
     # 不再「正在补生成...」自动记录——防止把已被篡改的 dist 固化为合法基线
     # （信任锚必须是用户显式确认的时刻，不是 hook 顺手拍快照）。
     echo "🔴 [sofagent] 审计模块哈希基准缺失（$HASH_RECORD 不存在）——无法保证审计模块未被替换，本次提交终止"
-    echo "   请运行: sofagent-audit --doctor --baseline 显式建立基线（在你确认 dist 可信的时刻）"
+    echo "   请运行: sofagent audit --doctor --baseline 显式建立基线（在你确认 dist 可信的时刻）"
     exit 1
   else
     CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('$AUDIT_DIST')).digest('hex'))" 2>/dev/null)
@@ -193,7 +193,7 @@ if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
       echo "   记录哈希: ${RECORDED_HASH:0:12}...  当前哈希: ${CURRENT_HASH:0:12}..."
       echo "   恢复原始 dist: npm run build --workspace=engine/audit"
       echo "   确认 dist 可信后重建信任锚: bash tools/audit-baseline-sync.sh"
-      echo "   （注意：sofagent-audit --doctor 只体检、不覆盖已存在的基线，不能用它刷新）"
+      echo "   （注意：sofagent audit --doctor 只体检、不覆盖已存在的基线，不能用它刷新）"
       exit 1
     fi
   fi

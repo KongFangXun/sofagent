@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // ============================================================
-// cli-quick.ts · npx sofagent-audit 零配置 CLI 入口
+// cli-quick.ts · npx sofagent audit 零配置 CLI 入口
 // v1.5.6 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
 //
 // 依赖说明（v1.5.6 P0-R13）：
 //   本文件 import @sofagent/core（见 package.json dependencies）。
 //   git clone 后直接跑 dist/cli-quick.js 会报 MODULE_NOT_FOUND——
 //   需先 `npm install`（根目录安装会 link workspace 依赖）或
-//   `npm install -g @sofagent/audit` 全局安装后再用 npx sofagent-audit。
+//   `npm install -g @sofagent/audit` 全局安装后再用 npx sofagent audit。
 //   构建产物 dist/ 会被 npm run build 覆盖，勿直接改 dist 文件。
 //
 // 用法：
@@ -57,7 +57,7 @@
 export const QUICK_SKIP_HINT =
   'ⓘ 本批未检查（未检查 ≠ 通过）= quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）'
   + '；git diff 硬证据类规则已全量执行，未检查项非漏检'
-  + '——用 --task 走完整引擎，或安装后运行 sofagent-audit；`--init` 装 hook 走完整引擎';
+  + '——用 --task 走完整引擎，或安装后运行 sofagent audit；`--init` 装 hook 走完整引擎';
 
 /** SKIPPED 的计数文案（v1.5.1 C8：不使用孤立的「跳过」二字） */
 function skipCountLabel(count: number, failFast: boolean): string {
@@ -88,11 +88,11 @@ function engineCrashExitCode(): number {
 }
 
 process.on('uncaughtException', (err) => {
-  console.error(`\u274c sofagent-audit(quick) 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
+  console.error(`\u274c sofagent audit(quick) 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
   process.exit(engineCrashExitCode());
 });
 process.on('unhandledRejection', (reason) => {
-  console.error(`\u274c sofagent-audit(quick) 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
+  console.error(`\u274c sofagent audit(quick) 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
   process.exit(engineCrashExitCode());
 });
 
@@ -362,7 +362,7 @@ export function runCliQuick(argv: string[]): number {
   // （历史 F-12/F-13 两次漂移均因两处手工同步；各成员的收录理由注释见 flag-table）
   const FULL_ONLY_FLAGS = [...FULL_ONLY_FLAGS_SRC];
   // v1.4.6 finding-12: 子命令同样需要完整引擎——此前只拦 flag 不拦子命令，
-  // npx 主入口敲 `sofagent-audit agent-shield`（或 ontology/conflict-check/
+  // npx 主入口敲 `sofagent audit agent-shield`（或 ontology/conflict-check/
   // federation-distill/corpus）时子命令落进下方位置参数 diffRange 分支，
   // parseDiff('agent-shield') 抛「diff 解析失败」→ 引擎崩溃 ⇒ 退出码 4
   // （v1.4.9 P1-15：此处原先写 exit 3，与上面「非 git 仓库 ⇒ 3」撞码，已改 4）。
@@ -384,21 +384,21 @@ export function runCliQuick(argv: string[]): number {
         console.log('   npm install -g @sofagent/audit');
         // v1.3.5 #12: 补 monorepo 路径——clone 本仓库直接跑 dist 的用户遇到的是
         //   MODULE_NOT_FOUND（见本文件头部依赖说明），需要本地装依赖+构建而非全局装包
-        console.log('   或本仓库内：npm install && npm run build，然后用 sofagent-audit-full ' + arg);
+        console.log('   或本仓库内：npm install && npm run build，然后用 sofagent audit --full ' + arg);
         return 1;
       }
     }
   }
 
   // ── v1.5.1 第八章：`demo` 子命令分支（五分钟戏剧弧 · L4 卸包） ──
-  // 挂点：本文件就是 sofagent-audit 的子命令入口（package.json bin →
+  // 挂点：本文件就是 sofagent audit 的子命令入口（package.json bin →
   //   dist/cli-quick.js），demo 挂在这里 → **不新增 bin**（不碰「13 bin → 1」
   //   收敛叙事），且传播命令与试用命令同体（去掉 `demo` 参数就是真审计）。
   // 位置：放在 FULL_ONLY 路由之后、--help 之前——demo 自带 --help 文案，
   //   且 demo 不要求当前目录是 git 仓库（它在 /tmp 自建沙箱），
   //   故必须在下方 isGitRepo 检查之前拦截。
   // 惰性 require：demo.ts 静态依赖 rules/index（25 条规则模块）——
-  //   顶层 import 会给既有零配置审计路径（npx sofagent-audit 的 30 秒 aha）
+  //   顶层 import 会给既有零配置审计路径（npx sofagent audit 的 30 秒 aha）
   //   凭空加上这份冷启动开销。既有路径**行为与开销零变化**，是本分支的硬约束。
   //
   // 为什么不用 flag-table 的 AUDIT_SUBCOMMANDS 登记：该表是「quick 侧见名
@@ -414,8 +414,8 @@ export function runCliQuick(argv: string[]): number {
   if (argv.includes('--help') || argv.includes('-h')) {
     // v1.5.2 B-9：help 顶部加版本行——npx 用户一眼确认装的是哪版。
     // 复用 VERSION 常量（与完整引擎 index.ts 的 -v 及横幅同源），零硬编码版本串。
-    console.log(`sofagent-audit v${VERSION}`);
-    console.log('sofagent-audit — AI Agent 行为审计\n');
+    console.log(`sofagent audit v${VERSION}`);
+    console.log('sofagent audit — AI Agent 行为审计\n');
     console.log('用法（quick 只读审计，零安装）：');
     console.log('  npx -y -p @sofagent/audit sofagent-audit              审计最近一次 commit（官方入口，始终最新；不写 history.jsonl 无留痕，适合临时检查）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（quick 模式直接跑，规则覆盖面同 quick；不写 history.jsonl）');
@@ -434,7 +434,7 @@ export function runCliQuick(argv: string[]): number {
     console.log('  （--ruleset 等完整引擎 flag 传入时 quick 会自动路由完整引擎不报错——见下方 flag 清单）');
     console.log('  完整引擎（--init/--doctor/--diff/--cached/--ruleset/--task/--commit-msg 等）需 --init 装 hook 或全局安装；');
     console.log('  从 quick 升级到完整：npm install -g @sofagent/audit（或 npx -y -p @sofagent/audit sofagent-audit-full）\n');
-    console.log('以下 flag 需完整引擎（sofagent-audit-full 或全局安装），quick 模式会自动路由或提示安装：');
+    console.log('以下 flag 需完整引擎（sofagent audit --full 或全局安装），quick 模式会自动路由或提示安装：');
     console.log('  --init              安装 git hook（每次 commit 自动审计）');
     console.log('  --doctor            健康诊断 + 完整性校验');
     console.log('  --install-hook      仅安装 hook');
@@ -469,7 +469,7 @@ export function runCliQuick(argv: string[]): number {
     // v1.5.2 B-9：改用 VERSION 常量（与完整引擎 index.ts 的 -v 及横幅同源）——
     // 消除此前 quick 侧读 package.json、完整引擎侧读 VERSION 的双源偏差，
     // 亦使 help 顶部版本行与本行输出恒一致。
-    console.log(`sofagent-audit v${VERSION}`);
+    console.log(`sofagent audit v${VERSION}`);
     return 0;
   }
 
@@ -549,7 +549,7 @@ export function runCliQuick(argv: string[]): number {
 
   if (!isGitRepo) {
     console.log('⚠️  当前目录不在 git 仓库内。');
-    console.log('   npx sofagent-audit 需要在 git 仓库内运行。');
+    console.log('   npx sofagent audit 需要在 git 仓库内运行。');
     console.log('   请 cd 到你的项目目录后重试。');
     return 3;
   }
@@ -597,6 +597,57 @@ export function runCliQuick(argv: string[]): number {
       }
       console.log('✅ [sofagent] 无文件变更——没有需要审计的内容。');
     };
+
+    // ── F3（v1.5.7）：空 diff 分支的消息面检查 ──
+    // 缺陷：diff 为空时直接 printEmpty + exit 0——commit message 是 diff 之外的
+    // 独立审计输入，注入载荷/黑名单词写在 message 里同样该拦，此前零检查假绿放行。
+    // 复用既有规则实现（零复制）：A9 的 message 维度经 scanA9 传入含 commitMsg 的
+    // ctx（其内部对 message 的检查独立于 diffFiles）；A19 直接消费 ctx.commitMsg。
+    // 语义边界：命中即 exit 2（对齐 S359 用法错误/审计发现同档）；A9/A19 对无
+    // message 降级 PASS（与完整引擎行为一致——不造无输入违规）。检查失败不阻断
+    // 空态返回（best-effort：规则模块加载异常时按旧行为放行，不留 stderr 痕会
+    // 重新打开静默面，故 catch 打一行 warn）。
+    // 位置纪律（根 commit 回归教训）：只在**确认终态空**的三个 return 点前调用
+    //（显式范围空 / 空树补审后仍空 / 有基线真空）——根 commit 补审**有内容**时
+    // 不检查（走主链路 17 条规则，message 检查天然在内）；放在 hasBaseline 分派
+    // 之前会把「待补审的根 commit」误拦成 exit 2。
+    const checkEmptyBranchMessage = (): number | null => {
+      try {
+        // 惰性 require（对齐 demo/stats 的启动轻量纪律——空 diff 是少数路径）。
+        // 双候选解析：dist（CJS 无扩展名）与 vitest src 直跑（需 .ts 后缀）——
+        // 与 continuous-sampler 的 resolveHealthWriter 同模式。
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const a9mod = require('./rules/rule-a9-no-injection.ts')
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          ?? require('./rules/rule-a9-no-injection');
+        const scanA9 = a9mod.scanA9 as (ctx: { diffFiles: DiffFile[]; commitMsg?: string }) => { status: string; details: string[] };
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const a19mod = require('./rules/rule-a19-commit-msg-quality.ts')
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          ?? require('./rules/rule-a19-commit-msg-quality');
+        const scanA19 = a19mod.scanA19 as (ctx: { commitMsg?: string }) => { status: string; details: string[] };
+        // message 取被审 range 终点（与主链路 getLatestCommitMsg(resolveDiffEndpoint) 同源）
+        const emptyBranchMsg = getLatestCommitMsg(resolveDiffEndpoint(diffRange)) ?? undefined;
+        const msgCtx = { diffFiles: [] as DiffFile[], commitMsg: emptyBranchMsg };
+        const a9 = scanA9(msgCtx);
+        const a19 = scanA19(msgCtx);
+        const msgHits: string[] = [];
+        if (a9.status === 'FAIL') msgHits.push(...a9.details.map((d) => `A9: ${d}`));
+        if (a19.status === 'FAIL') msgHits.push(...a19.details.map((d) => `A19: ${d}`));
+        if (msgHits.length > 0) {
+          console.log(`❌ [sofagent] commit message 检查未通过（diff 为空但消息面命中）：`);
+          for (const hit of msgHits) {
+            console.log(`   ${hit}`);
+          }
+          return 2;
+        }
+        return null;
+      } catch (err) {
+        console.warn(`⚠️ [sofagent] 消息面检查未能执行（规则模块加载异常）：${(err as Error).message}`);
+        return null;
+      }
+    };
+
     const hasBaseline = commitSha !== null && hasParentCommit();
     if (diffRange !== 'HEAD~1..HEAD') {
       // v1.5.1 F1：显式指定的范围必须先证明**可解析**，再谈「无变更」。
@@ -611,6 +662,8 @@ export function runCliQuick(argv: string[]): number {
         console.log(`   无法解析 diff 范围「${diffRange}」的 ref——请检查 ref 是否存在（如 HEAD~1..HEAD、origin/main..HEAD），或仓库是否尚无提交。`);
         return 3;
       }
+      const f3Explicit = checkEmptyBranchMessage();
+      if (f3Explicit !== null) return f3Explicit;
       printEmpty(`🔍 审计指定范围（${diffRange}）`);
       return 0;
     }
@@ -628,8 +681,11 @@ export function runCliQuick(argv: string[]): number {
         if (diffFiles.length > 0) {
           console.log(`🔍 审计首个 commit（${commitSha}）——首次提交无父基线，对比空树审计全部新增内容。`);
           console.log('');
-          // 已有内容，继续下方规则运行（不 return）
+          // 已有内容，继续下方规则运行（不 return）——message 检查在 17 条规则面内
         } else {
+          // 补审后仍空（如 --allow-empty 的根 commit）——终态空，跑消息面检查
+          const f3StillEmpty = checkEmptyBranchMessage();
+          if (f3StillEmpty !== null) return f3StillEmpty;
           printEmpty();
           return 0;
         }
@@ -638,6 +694,9 @@ export function runCliQuick(argv: string[]): number {
         return 0;
       }
     } else {
+      // 有基线的真空变更——终态空，跑消息面检查
+      const f3HasBaseline = checkEmptyBranchMessage();
+      if (f3HasBaseline !== null) return f3HasBaseline;
       printEmpty(`🔍 审计最近一次 commit（${commitSha}）`);
       return 0;
     }

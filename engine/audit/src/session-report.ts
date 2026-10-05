@@ -22,7 +22,7 @@ import { getFixSuggestion } from './fix-suggestions';
 /** session 报告聚合结构（写入 data/audit/session-report.json） */
 export interface SessionReport {
   timestamp: string;
-  /** `sofagent-audit v${VERSION}` */
+  /** `sofagent audit v${VERSION}` */
   engine: string;
   version: string;
   exitCode: number;
@@ -73,7 +73,7 @@ export function buildSessionReport(
 
   return {
     timestamp: new Date().toISOString(),
-    engine: `sofagent-audit v${VERSION}`,
+    engine: `sofagent audit v${VERSION}`,
     version: VERSION,
     exitCode: results.exitCode,
     status,
