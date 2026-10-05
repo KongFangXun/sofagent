@@ -54,9 +54,32 @@ export const DEFAULT_WATCH_CONFIG: WatchConfig = {
 };
 
 /**
+ * F46（v1.5.7）：watch.yml 两级路径解析 SSOT——[项目级路径, 全局级路径]。
+ *
+ * 全局级经 core 的 resolveHomeDir（读 SOFAGENT_HOME 环境变量，缺省 ~/.sofagent）——
+ * 与 loadWatchConfig 内部判定**同一口径**，消费方（fs-watch 三分支文案 / cron 全局
+ * fallback / 模板生成）不得自拼第二份路径。导出本函数即「零复制」承诺：路径规则
+ * 变更只改这一处。
+ */
+export function resolveWatchYmlPaths(cwd?: string): [string, string] {
+  const baseDir = cwd || process.cwd();
+  const projectLevel = join(baseDir, '.sofagent', 'watch.yml');
+  let homeDir: string;
+  try {
+    const { homedir } = require('os') as typeof import('os');
+    homeDir = process.env.SOFAGENT_HOME ?? homedir();
+  } catch {
+    homeDir = process.env.SOFAGENT_HOME ?? process.env.HOME ?? '/tmp';
+  }
+  const globalLevel = join(homeDir, 'watch.yml');
+  return [projectLevel, globalLevel];
+}
+
+/**
  * 加载 watch 配置（三级 fallback）
  *   1. ${cwd}/.sofagent/watch.yml
- *   2. ~/.sofagent/watch.yml
+ *   2. $SOFAGENT_HOME/watch.yml（缺省 ~/.sofagent——v1.5.7 F46 起经
+ *      resolveWatchYmlPaths SSOT 解析，与 install.sh 首装落点同口径）
  *   3. 默认配置
  *
  * @param cwd 工作目录
@@ -66,20 +89,15 @@ export function loadWatchConfig(cwd?: string): WatchConfig {
   const baseDir = cwd || process.cwd();
 
   // 1. 尝试项目级配置
-  const projectConfig = tryLoadWatchYml(join(baseDir, '.sofagent', 'watch.yml'));
+  const [projectConfigPath, globalConfigPath] = resolveWatchYmlPaths(baseDir);
+  const projectConfig = tryLoadWatchYml(projectConfigPath);
   if (projectConfig) {
     return mergeWatchDefaults(projectConfig);
   }
 
-  // 2. 尝试全局配置
-  let homeDir: string;
-  try {
-    const { homedir } = require('os') as typeof import('os');
-    homeDir = homedir();
-  } catch {
-    homeDir = process.env.HOME || '/tmp';
-  }
-  const globalConfig = tryLoadWatchYml(join(homeDir, '.sofagent', 'watch.yml'));
+  // 2. 尝试全局配置（路径经 SSOT 解析——此前硬编码 homedir()，SOFAGENT_HOME
+  //    自定义根目录下与 install.sh 首装落点断链）
+  const globalConfig = tryLoadWatchYml(globalConfigPath);
   if (globalConfig) {
     return mergeWatchDefaults(globalConfig);
   }
@@ -159,16 +177,24 @@ function mergeWatchDefaults(partial: Partial<WatchConfig> & { cron?: CronJob[] }
 
 /**
  * 生成默认 watch.yml 内容
+ *
+ * F46（v1.5.7）：支持自省注入——`introspectedPaths` 传入时模板的 paths 段写
+ * 探测结果（调用方 = daemon fs-watch 的 introspectDefaultWatchPaths：项目根
+ * 一级目录，排除 .git/node_modules/dist/build/隐藏目录）而非占位 '.'。
+ * 不传时维持旧模板（'.'——向后兼容，既有调用方 audit init 行为不变）。
+ *
+ * @param introspectedPaths 自省探测出的监控路径（可选——不传回落 '.'）
  */
-export function generateWatchTemplate(): string {
+export function generateWatchTemplate(introspectedPaths?: string[]): string {
+  const paths = introspectedPaths && introspectedPaths.length > 0 ? introspectedPaths : ['.'];
   return [
     '# sofagent 文件监控配置',
     '# 由 daemon/fs-watch 在启动时读取',
     '',
     'watch:',
-    '  # 要监控的路径（相对于项目根目录；默认监控根目录，按需收窄）',
+    '  # 要监控的路径（相对于项目根目录；以下为首装自省探测结果，可按需收窄）',
     '  paths:',
-    '    - .',
+    ...paths.map((p) => `    - ${JSON.stringify(p)}`),
     '',
     '  # 忽略模式（glob 风格）',
     '  ignore:',

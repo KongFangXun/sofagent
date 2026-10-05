@@ -15,7 +15,7 @@
 // 默认运行 fde Agent 的 sustain 模式，产出周度巡检报告。
 // ============================================================
 
-import { getDataDir } from '@sofagent/core';
+import { getDataDir, resolveWatchYmlPaths } from '@sofagent/core';
 import { execFileSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
@@ -125,12 +125,53 @@ function normalizeLayerSchedule(layer: InspectorLayer, raw: unknown): '@daily' |
   return LAYER_SCHEDULE[layer];
 }
 
+// ────────────────────────────────────────────────────────────
+// F47（v1.5.7）：watch.yml 段读取的共享 fallback——项目级 → 全局 → 代码默认。
+//
+// 缺陷背景：install.sh 首装把缺省段写进 $SOFAGENT_HOME/watch.yml（全局级），
+// 但 cron 侧三个 loadXxxConfig 只读 ${projectDir}/.sofagent/watch.yml——项目
+// 目录下无 watch.yml 时直接落代码默认，首装模板的分层频率覆盖
+// （如 L1: "@hourly"）静默失效（写读落点断链的第二处：读侧缺全局层）。
+//
+// 路径解析复用 core 的 resolveWatchYmlPaths SSOT（零复制）——全局层口径
+// = $SOFAGENT_HOME/watch.yml（缺省 ~/.sofagent/watch.yml），与 loadWatchConfig
+// 的三级 fallback、install.sh 首装落点三方同源。
+// ────────────────────────────────────────────────────────────
+
+/** 按序尝试读 watch.yml 段（返回首个存在且可解析的段对象；全缺 → null） */
+function loadWatchSection(
+  projectDir: string,
+  section: 'inspectors' | 'dream-cycle' | 'train-archive',
+): Record<string, unknown> | null {
+  const [projectYml, globalYml] = resolveWatchYmlPaths(projectDir);
+  for (const ymlPath of [projectYml, globalYml]) {
+    if (!existsSync(ymlPath)) continue;
+    try {
+      const raw = yamlLoad(readFileSync(ymlPath, 'utf-8')) as WatchConfig | null;
+      const sec = raw?.[section];
+      if (sec && typeof sec === 'object') {
+        return sec as Record<string, unknown>;
+      }
+      // 文件存在但该段缺失 → 不再尝试下一层（上层文件已显式表达「无此段」，
+      // 用下层同段值覆盖它的语义是「用户没写 = 别替我决定」——与 loadWatchConfig
+      // 对 watch: 段整文件判定的行为一致）
+      return null;
+    } catch {
+      // 坏 YAML → 尝试下一层（下一层可能是好的——fail-open 但不静默吞文件级故障）
+      continue;
+    }
+  }
+  return null;
+}
+
 /**
- * 读取 watch.yml `inspectors:` 段（v1.4.5 T1）。
+ * 读取 watch.yml `inspectors:` 段（v1.4.5 T1 · v1.5.7 F47 补全局层）。
  *
  * 语义：段缺失 / enabled 缺省 → 默认启用（P0「零调度」修复本体——
  * 此前 runAllLayers 零生产调用，巡检从未被调度）。显式 enabled: false 关闭。
  * 坏 YAML / 类型错误 fail-open 返回默认启用。
+ * 读取顺序（F47）：项目级 .sofagent/watch.yml → 全局 $SOFAGENT_HOME/watch.yml
+ * → 代码默认（对齐 loadWatchConfig 三级 fallback——首装模板的分层频率不再断链）。
  */
 export function loadInspectorsConfig(projectDir: string): InspectorsConfig {
   const defaults: InspectorsConfig = {
@@ -141,76 +182,54 @@ export function loadInspectorsConfig(projectDir: string): InspectorsConfig {
       L3: LAYER_SCHEDULE.L3,
     },
   };
-  const watchYml = join(projectDir, '.sofagent', 'watch.yml');
-  if (!existsSync(watchYml)) return defaults;
-  try {
-    const raw = yamlLoad(readFileSync(watchYml, 'utf-8')) as WatchConfig | null;
-    const section = raw?.inspectors;
-    if (!section || typeof section !== 'object') return defaults;
-    const s = section as Record<string, unknown>;
-    const enabled = s.enabled === false ? false : true;
-    const layersRaw = s.layers;
-    const layers: InspectorsConfig['layers'] = { ...defaults.layers };
-    if (layersRaw && typeof layersRaw === 'object') {
-      const l = layersRaw as Record<string, unknown>;
-      layers.L1 = normalizeLayerSchedule('L1', l.L1);
-      layers.L2 = normalizeLayerSchedule('L2', l.L2);
-      layers.L3 = normalizeLayerSchedule('L3', l.L3);
-    }
-    return { enabled, layers };
-  } catch {
-    return defaults;
+  const section = loadWatchSection(projectDir, 'inspectors');
+  if (!section) return defaults;
+  const enabled = section.enabled === false ? false : true;
+  const layersRaw = section.layers;
+  const layers: InspectorsConfig['layers'] = { ...defaults.layers };
+  if (layersRaw && typeof layersRaw === 'object') {
+    const l = layersRaw as Record<string, unknown>;
+    layers.L1 = normalizeLayerSchedule('L1', l.L1);
+    layers.L2 = normalizeLayerSchedule('L2', l.L2);
+    layers.L3 = normalizeLayerSchedule('L3', l.L3);
   }
+  return { enabled, layers };
 }
 
 /**
- * 读取 watch.yml `dream-cycle:` 段（v1.4.5 T2）。
+ * 读取 watch.yml `dream-cycle:` 段（v1.4.5 T2 · v1.5.7 F47 补全局层）。
  *
  * 语义：段缺失 → 默认 @daily 启用（P0「零触发」修复本体）。
  * 显式 enabled: false 关闭。坏 YAML fail-open 返回默认启用。
+ * 读取顺序（F47）：项目级 → 全局 $SOFAGENT_HOME/watch.yml → 代码默认。
  */
 export function loadDreamCycleConfig(projectDir: string): DreamCycleConfig {
   const defaults: DreamCycleConfig = { enabled: true, schedule: '@daily' };
-  const watchYml = join(projectDir, '.sofagent', 'watch.yml');
-  if (!existsSync(watchYml)) return defaults;
-  try {
-    const raw = yamlLoad(readFileSync(watchYml, 'utf-8')) as WatchConfig | null;
-    const section = raw?.['dream-cycle'];
-    if (!section || typeof section !== 'object') return defaults;
-    const s = section as Record<string, unknown>;
-    const enabled = s.enabled === false ? false : true;
-    const schedule = s.schedule === '@weekly' || s.schedule === '@monthly' ? s.schedule : '@daily';
-    return { enabled, schedule };
-  } catch {
-    return defaults;
-  }
+  const section = loadWatchSection(projectDir, 'dream-cycle');
+  if (!section) return defaults;
+  const enabled = section.enabled === false ? false : true;
+  const schedule = section.schedule === '@weekly' || section.schedule === '@monthly' ? section.schedule : '@daily';
+  return { enabled, schedule };
 }
 
 /**
- * 读取 watch.yml `train-archive:` 段（v1.4.5 第五章）。
+ * 读取 watch.yml `train-archive:` 段（v1.4.5 第五章 · v1.5.7 F47 补全局层）。
  *
  * cron 调度视角的薄适配：段语义本体在 tasks/train-archive.ts 的
  * loadTrainArchiveConfig（purge/diskCheck 子开关）——本函数只解析
  * cron 关心的 enabled + schedule 两键（同 loadDreamCycleConfig 模式）。
+ * 读取顺序（F47）：项目级 → 全局 $SOFAGENT_HOME/watch.yml → 代码默认。
  */
 export function loadTrainArchiveCronConfig(
   projectDir: string,
 ): { enabled: boolean; schedule: '@daily' | '@weekly' | '@monthly' } {
   const defaults = { enabled: true, schedule: '@weekly' as const };
-  const watchYml = join(projectDir, '.sofagent', 'watch.yml');
-  if (!existsSync(watchYml)) return defaults;
-  try {
-    const raw = yamlLoad(readFileSync(watchYml, 'utf-8')) as WatchConfig | null;
-    const section = raw?.['train-archive'];
-    if (!section || typeof section !== 'object') return defaults;
-    const s = section as Record<string, unknown>;
-    const enabled = s.enabled === false ? false : true;
-    const schedule =
-      s.schedule === '@daily' || s.schedule === '@monthly' ? s.schedule : '@weekly';
-    return { enabled, schedule };
-  } catch {
-    return defaults;
-  }
+  const section = loadWatchSection(projectDir, 'train-archive');
+  if (!section) return defaults;
+  const enabled = section.enabled === false ? false : true;
+  const schedule =
+    section.schedule === '@daily' || section.schedule === '@monthly' ? section.schedule : '@weekly';
+  return { enabled, schedule };
 }
 
 /** 巡检调度状态报告（--doctor 展示用） */
