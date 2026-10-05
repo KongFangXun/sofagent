@@ -148,7 +148,8 @@ describe('generateQuickOutput', () => {
 
     const output = generateQuickOutput(result, 'abc1234');
     expect(output).toContain('abc1234');
-    expect(output).toContain('全部 2 条规则通过');
+    // F50（v1.5.7）：PASS 态两行同义重复已合并为一行（保留规则覆盖面 + commit 回声 + 签名）
+    expect(output).toContain('2 条规则全通过（commit abc1234）');
     expect(output).toContain('sofagent 审计');
   });
 
@@ -215,6 +216,84 @@ describe('generateQuickOutput', () => {
     const output = generateQuickOutput(result, 'abc1234');
     expect(output).toContain('sofagent 审计');
     expect(output).toContain('零 token');
+  });
+});
+
+// ============================================================
+// F50（v1.5.7）· quick 签名强度对齐 hook
+// ------------------------------------------------------------
+// 缺陷（实测）：quick 违规行 `❌ A2 不泄密钥：…` 无 [sofagent] 前缀无分级；hook 侧
+//   `🔴 [sofagent] A1 不碰敏感 [底线]: …` 齐全——首屏试用入口恰是 quick。
+//   另 PASS 态同义重复两行（「全部 N 条规则通过」+「N 条规则全通过」）。
+// 锁点：① 违规/警告行含 [sofagent] 前缀 + ruleClass 分级标注；② 📊 汇总行含前缀；
+//   ③ PASS 态不再出现两行同义重复。
+// ============================================================
+describe('quick 签名强度对齐 hook（F50）', () => {
+  it('FAIL 违规行含 [sofagent] 前缀与 [底线] 分级（ruleClass=业务底线）', () => {
+    const rule = makeRule({
+      name: 'A1 不碰敏感',
+      status: 'FAIL',
+      ruleClass: '业务底线',
+      details: ['src/credentials.json'],
+    });
+    const lines = formatQuickResult(rule);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('❌ [sofagent] A1 不碰敏感 [底线]: src/credentials.json');
+  });
+
+  it('WARN 行含 [sofagent] 前缀与 [拐杖] 分级（ruleClass=能力拐杖）', () => {
+    const rule = makeRule({
+      name: 'A7 不存盲改',
+      status: 'WARN',
+      ruleClass: '能力拐杖',
+      details: ['src/a.ts 无 Read 记录'],
+    });
+    const lines = formatQuickResult(rule);
+    expect(lines[0]).toContain('⚠️  [sofagent] A7 不存盲改 [拐杖]: src/a.ts 无 Read 记录');
+  });
+
+  it('[规范] 分级同映射（ruleClass=工程规范）', () => {
+    const rule = makeRule({
+      name: 'A19 提交说明质量',
+      status: 'WARN',
+      ruleClass: '工程规范',
+      details: ['message 过短'],
+    });
+    const lines = formatQuickResult(rule);
+    expect(lines[0]).toContain('[sofagent] A19 提交说明质量 [规范]: message 过短');
+  });
+
+  it('ruleClass 缺失时前缀仍在、分级留空（插件/规则集旧路径不炸）', () => {
+    const rule = makeRule({
+      name: 'X1 自定义规则',
+      status: 'FAIL',
+      details: ['x.ts'],
+    });
+    const lines = formatQuickResult(rule);
+    expect(lines[0]).toContain('❌ [sofagent] X1 自定义规则: x.ts');
+    // 分级留空 = 除 [sofagent] 签名外无其他方括号标注
+    expect(lines[0].replace('[sofagent]', '')).not.toContain('[');
+  });
+
+  it('📊 汇总行含 [sofagent] 前缀', () => {
+    const result = makeResult([
+      makeRule({ name: 'A1', number: 1, status: 'PASS' }),
+      makeRule({ name: 'A2 不泄密钥', number: 2, status: 'FAIL', details: ['a.ts'] }),
+    ], 2);
+    const output = generateQuickOutput(result, 'abc1234');
+    expect(output).toContain('📊 [sofagent] 1 条违规');
+  });
+
+  it('PASS 态不再同义重复：全输出中「规则全通过」只出现一次', () => {
+    const result = makeResult([
+      makeRule({ name: 'A1', number: 1, status: 'PASS' }),
+      makeRule({ name: 'A2', number: 2, status: 'PASS' }),
+    ], 0);
+    const output = generateQuickOutput(result, 'abc1234');
+    const occurrences = output.split('条规则全通过').length - 1;
+    expect(occurrences).toBe(1);
+    // 旧重复形态「全部 N 条规则通过」不再出现
+    expect(output).not.toContain('全部 2 条规则通过');
   });
 });
 

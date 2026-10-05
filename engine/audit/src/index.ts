@@ -93,7 +93,7 @@ export type {
 } from './mandate-credential-reconcile';
 import { loadHistory, appendHistory, sanitizeFreeText, type AuditHistoryEntry } from './audit-history';
 // v1.5.6 T1/T4: hook 安装核心抽取——core.hooksPath 尊重 + 用户 hook 链式保留
-import { resolveHooksDir, installHooks } from './hook-install';
+import { resolveHooksDir, installHooks, resolveEngineEntryForHook } from './hook-install';
 // v1.5.6 T8: sanitizePatterns 编译复用 ReDoS 双层防护（静态检测 + 运行时对抗测试）
 import { compileSanitizePattern } from './ruleset-loader';
 // v1.5.6 第二章：--ruleset-path / --ruleset 加载入口的样例断言（fail-closed 拒载）
@@ -386,6 +386,11 @@ function parseArgs(argv: string[]): Args {
       // init.ts 通过 process.argv.includes('--no-daemon') 消费，
       // 此处仅注册为已知 flag，避免 parseArgs 误报「不支持的参数」。
       // 值由 init 流程直接从 process.argv 读取，不存入 args。
+    } else if (argv[i] === '--register-daemon') {
+      // F55（v1.5.7）: --register-daemon flag——非交互环境直接注册 daemon 常驻服务。
+      // 动机：--init 第 5 步在非 TTY 下默认 N 静默跳过，CI/IDE/Agent 场景无法补装
+      // 常驻层（重跑 --init 仍是同一个默认 N——死循环）。本 flag 绕过交互提问直达
+      // registerDaemon()。同 --no-daemon：init 流程直接读 process.argv。
     } else if (argv[i] === '--verify-evidence') {
       // v1.5.6 F2: 断链接线——daemon.sh:172 自 v0.82 起调用本参数，但 CLI 从未
       // 注册（2>/dev/null 吞错 → last_evidence_score 恒 unverified）。
@@ -550,7 +555,9 @@ function installHook(): void {
   const hooksTemplateDir = join(__dirname, '..', 'hooks');
 
   try {
-    const result = installHooks({ cwd: process.cwd(), templateDir: hooksTemplateDir });
+    // F43：安装时刻解析引擎绝对入口写入 hook 标记行（hook 运行优先用记录值，
+    // 记录缺失回退既有解析链）——npx 装的 hook 不再绑机器全局 dist。
+    const result = installHooks({ cwd: process.cwd(), templateDir: hooksTemplateDir, engineEntry: resolveEngineEntryForHook() });
     if (result.configured) {
       console.log(`ℹ️ [sofagent] 检测到 core.hooksPath=${result.configuredValue ?? ''}——hook 已安装到配置目录（git 将从该目录执行 hook）`);
     }
