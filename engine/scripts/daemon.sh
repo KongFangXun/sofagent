@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-sofagent daemon.sh · daemon 主进程 · v1.5.6
+# sofagent daemon.sh · daemon 主进程 · v1.5.6
 # ============================================================
 # 命令行接口：start / stop / status / --foreground
 # 主循环每 30 秒：检测平台进程 + 文件 hash 变化 → 更新 daemon.json

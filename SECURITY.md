@@ -628,6 +628,7 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 | 写入配置 | `~/.openclaw/config.json`（仅 OpenClaw） | 注入 loopDetection 断路器 |
 | npm install | **不自动安装**；编排模块为独立可选包 `@sofagent/orchestrator`（需单独 `npm install -g @sofagent/orchestrator`） | Sub Agent 编排模块 |
 | 安装服务 | launchd(macOS) / systemd(Linux) | daemon 后台进程（交互确认后。daemon 当前为 bash 实现，正常运行中） |
+| 执行外部命令 | 无 | install.sh 自身不执行任何外部命令（此前的裸文本缺陷行已于 v1.5.7 修复，仅保留注释行） |
 
 #### 脚本不会做的事
 
