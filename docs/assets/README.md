@@ -6,12 +6,12 @@
 
 | 文件 | 用途 | 谁消费 |
 |------|------|--------|
-| `sofagent.png` | 项目 Logo（200px），README 头部引用 | GitHub README、npm 包页面、tools/dashboard/dashboard.html |
+| `sofagent.png` | 项目 Logo（200px），README 头部引用 | GitHub README、npm 包页面、docs/ 各文档头部（WIKI/ARCHITECTURE 等；dashboard.html 实测无引用，2026-10-06 核对） |
 | `banner.png` | README 头部横幅 | README 中英版头部 |
 | `arch-layers.svg` | 三层定位图（模型层 → FDE Harness 层 → Agent 层），矢量、全内联样式 | README 中文版「什么是 FDE Harness」段 |
-| `usage-path.svg` | 使用路径图（试用 → 团队 → 企业 → 自运转），矢量、全内联样式 | README 中文版「产品一瞥」段 |
+| `usage-path.svg` | 使用路径图（试用 → 团队 → 企业 → 自运转），矢量、全内联样式 | README 中文版「使用」段 |
 | `arch-layers-en.svg` / `usage-path-en.svg` | 上两图的英文版 | README 英文版对应段 |
-| `dashboard.png` | Dashboard 驾驶舱截图 | README 中英版「产品一瞥」段 |
+| `dashboard.png` | Dashboard 驾驶舱截图 | README 中英版「使用」段 |
 | `audit-terminal.png` | sofagent audit 拦截 .env commit 的终端演示图 | README 中英版「快速开始」段 |
 | `architecture-diagram.png` | 系统架构总览图（FDE Harness 五模块编制，14 组件），2080×1544，archify 生成，交互版 HTML 为本地工作档案（不入库） | README 中英版「系统架构总览」折叠块 |
 | ~~`audit-defense.png`~~ | 审计三层防线泳道图 | **v1.4.4 入库后于 2026-09-04 撤出**（不上 README，零消费者不落 assets——git 历史保留入库痕迹，工作区不再保留；源图为本地工作档案，不入库） |

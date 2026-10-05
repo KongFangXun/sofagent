@@ -72,7 +72,7 @@ graph TB
 
 ## 能力全景（用「你遇到的事」说 · 3 分钟版）
 
-> 模块语言（注入/审计/回溯/沉淀/进化）是给开发者的；下面这张表用**用户任务语言**回答「到底能干什么」。状态：✅ 已发版 · 📋 排期中（未发版）——逐行核对至 v1.5.5（2026-10-01）。
+> 模块语言（注入/审计/回溯/沉淀/进化）是给开发者的；下面这张表用**用户任务语言**回答「到底能干什么」。状态：✅ 已发版 · 📋 排期中（未发版）——逐行核对至 v1.5.6（2026-10-04）。
 
 | 你遇到的事 | sofagent 做什么 | 状态 |
 |---|---|---|
@@ -86,7 +86,7 @@ graph TB
 | 出了事说不清谁干的？ | 每个决策 HMAC 留痕，第三方不装 sofagent 也能验证据 | ✅ |
 | 多台设备/多个 Agent 谁来管？ | 设备注册身份码 + 心跳派单 + 数据承接（多设备中间层） | ✅ |
 
-**一句话版**：进场帮你把业务摸清写成文件，离场后管住你的数字员工——干活有安检、出事能回滚、越用越懂你、老板看得见、数据不出门。
+**一句话版**：进场帮你把业务摸清写成文件，离场后管住你的数字员工——干活有安检、出事能回滚、越用越懂你（进化闭环排期中，实证边界见 [LIMITATIONS](./LIMITATIONS.md)）、老板看得见、数据不出门。
 
 **五分钟亲眼看**：`sofagent demo`（v1.5.1 已交付，经 npm 通道可用：`npx -y -p sofagent sofagent audit demo`；install 态 CLI 暂无 demo 子命令）——一条命令跑完「注入 → 故意违规 → 审计拦截 → 快照回滚 → 举证导出」完整链路，看到拦截发生的那一瞬间你就懂了这个产品。
 
@@ -209,6 +209,7 @@ graph TB
 | `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/` `v1.5/` `v2.0/`）——⚠️ 早期版本日志含审查元信息等非产品文档内容，不代表产品能力声明；阅读须知（含清理门槛与"已开发/已排期"标记口径）见 [changelog/README](./changelog/README.md)。规划中版本的排期见 [ROADMAP](./ROADMAP.md) |
 | `docs/changelog/releasing.md` | **发版 SOP**——十一阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
+| `docs/reports/` | 一次性扫描/治理动作的报告归档（与 `docs/evidence/` 分工：evidence 存可持续引用的证据本体，reports 存某次动作的过程报告——如 commons 退役扫描 JSON） |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
 
@@ -256,8 +257,8 @@ graph TB
 
 ## 七、术语表
 
-⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层**（一个层五种能力：注入·审计·回溯·沉淀·进化，FORGE 为内部工具）；**产品身份三层口径**（工程层 FDEing
-/ 判定层 S1M / 治理层 harness）见 [README · 三因子口径](../README.md)——与架构术语是同一事物的两个视角，架构术语以本声明指定的 SSOT 为准；
+⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语**定义处 = [ARCHITECTURE.md](./ARCHITECTURE.md)（单一 SSOT）**；[PHILOSOPHY.md](./PHILOSOPHY.md) 为论证处（引用 ARCHITECTURE 定义，不另立定义）——**约束层**（一个层五种能力：注入·审计·回溯·沉淀·进化，FORGE 为内部工具）；**产品身份三层口径**（工程层 FDEing
+/ 判定层 S1M / 治理层 harness）见 [README · 三因子口径](../README.md)，身份公式定稿 **FDEing × S1A（S1A = S1M + Harness）** 的 SSOT = [PHILOSOPHY · 身份口径](./PHILOSOPHY.md)——与架构术语是同一事物的两个视角，架构术语以本声明指定的 SSOT 为准；
 **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.5/`
 为**当前版本目录**（内容为各版本变更记录；后续排期内容**不代表已交付能力**）。**后训模块归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
 
@@ -266,6 +267,9 @@ graph TB
 | 术语 | 简释 | 精确定义 |
 |---|---|---|
 | FDE | Forward Deployed Engineer——进场生成判断、部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
+| 归域 | MCP 工具按**业务职能**分桶进五域的编制口径（增量化简记：域 +N = 该域条目数变化）——权威源 = `tool-registry.ts` 的 TOOLS 数组逐工具名分桶，与 `roles` 使用场景标签、`docs/API.md` 十能力域是三套不同标签，禁混用 | [ARCHITECTURE · 五域重算与三套标签声明](./ARCHITECTURE.md) |
+| 五域（消歧） | 两义：① **MCP 工具五域**——104 tools 按业务职能分的五个编制域（[ARCHITECTURE · 五域一环](./ARCHITECTURE.md)）；② **五域→三域映射**——v1.5.3 把旧五域叙事映射进现行三域（场景/判定/治理）的口径迁移表（[v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）。行文遇「五域」先辨指向 | 本条（消歧索引） |
+| 五（消歧） | 「五」字四义固定表述：**五种能力** = 约束层的注入·审计·回溯·沉淀·进化（[ARCHITECTURE §二](./ARCHITECTURE.md)）；**五模块** = 约束层内部的功能域编制（治理/执行/审计/编排/后训，模块不是产品线，[ARCHITECTURE 定位声明](./ARCHITECTURE.md)）；**五岗位** = FDE 职能离场后的企业常设化沉淀（工作流设计师/领域知识负责人/业务自建者/AI 治理者/Agent 运营负责人，[FDE/ROLES.md](../FDE/ROLES.md)）；**五要素** = 工作流梳理的深挖维度（[FDE/GUIDE §二](../FDE/GUIDE.md#二五要素深挖)）——四者不同物，行文须带全称 | 本条（消歧索引） |
 | FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理 → 判定 → 交付 → 养护」。名词位（岗位）/ 动词位（能力）禁混用 | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
 | 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
@@ -290,7 +294,7 @@ graph TB
 **3 分钟建立全景理解**——核心文档太长？先看这 4 条：
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·沉淀·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
-- **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射 + 行业坐标（企业 Neo-Lab 的智能主权基础设施，Sovereign AI 四层主权落点）。
+- **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射 + 行业坐标（Sovereign AI 四层主权落点）。
 - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
 - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.5.6。
 
@@ -318,7 +322,7 @@ graph TB
 |---|---|
 | 用治理面板 / 查 trace 对账（v1.5.0+） | [HANDBOOK 治理面](./HANDBOOK.md) · [devlog v1.5.0](./changelog/v1.5/v1.5.0.md) |
 | 查接口总览（104 MCP tools） | [API.md](./API.md) |
-| 了解系统怎么设计的 | [ARCHITECTURE.md](./ARCHITECTURE.md) |
+| 了解系统怎么设计的 | 入门先读 [HANDBOOK](./HANDBOOK.md) / [README](../README.md)；[ARCHITECTURE.md](./ARCHITECTURE.md) 为参考档（建议先读其导读层——心智模型/术语对照/能力总览，再进编号正文） |
 | 搭建本地开发环境 | [DEVELOPMENT.md](./DEVELOPMENT.md) |
 | 查某个版本改了什么 | [CHANGELOG.md](../CHANGELOG.md) → `docs/changelog/vX.Y/vX.Y.Z.md` |
 | 了解审计规则 | [SECURITY.md](../SECURITY.md) + [ARCHITECTURE §二](./ARCHITECTURE.md) |
@@ -359,20 +363,20 @@ graph TB
 
 | 内容类型 | 落点文档 | 文体 | 纪律 | 体量纪律 |
 |---|---|---|---|---|
-| 行业案例 / 研报数据 / 外部印证 | [VALIDATION](./VALIDATION.md) | 叙事·印证 | 案例不进 PHILOSOPHY——PHILOSOPHY 只引用结论（如「Harvey 筑起垂直壁垒」），数据与来源全在 VALIDATION | ≤19027 字（三行制收录） |
-| 产品结论 / 设计哲学 / 论证 | [PHILOSOPHY](./PHILOSOPHY.md) | 叙事·论证 | 结论自带的最小论证可以，行业案例展开留给 VALIDATION | ≤33514 字 |
+| 行业案例 / 研报数据 / 外部印证 | [VALIDATION](./VALIDATION.md) | 叙事·印证 | 案例不进 PHILOSOPHY——PHILOSOPHY 只引用结论（如「Harvey 筑起垂直壁垒」），数据与来源全在 VALIDATION | 以 `tools/check/doc-char-ratchet.json` 实测为准（三行制收录） |
+| 产品结论 / 设计哲学 / 论证 | [PHILOSOPHY](./PHILOSOPHY.md) | 叙事·论证 | 结论自带的最小论证可以，行业案例展开留给 VALIDATION | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
 | 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 25 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 | （SECURITY 面） |
-| 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 | ≤18895 字 |
-| 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 | CHANGELOG ≤16634 字 |
-| 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP | ≤86939 字 |
-| 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 七大接口面 + 104 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） | ≤15198 字 |
+| 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
+| 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
+| 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
+| 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 七大接口面 + 104 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
 | 已知限制 / 诚实边界 | [LIMITATIONS](./LIMITATIONS.md) | 参考 | 各文档披露「已知风险」时引用 LIMITATIONS，不展开重复 | （LIMITATIONS 面） |
 | 任务流程 / 操作步骤 / 发版 SOP | [SKILL/](../SKILL/) · [changelog/releasing/](./changelog/releasing/) | 任务流程 | 「干什么用什么步骤」——写给执行者（人/Agent）照着做；深度参考链接 docs/，不复制 | （任务面） |
-| 面向使用者的操作说明 | [README](../README.md) · [HANDBOOK](./HANDBOOK.md) | 用户手册 | 永不含代码库内部细节；开发者向操作说明进 DEVELOPMENT/guides | HANDBOOK ≤33390 字 |
+| 面向使用者的操作说明 | [README](../README.md) · [HANDBOOK](./HANDBOOK.md) | 用户手册 | 永不含代码库内部细节；开发者向操作说明进 DEVELOPMENT/guides | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
 | 全局导航 / 文档间分工 | [WIKI](./WIKI.md)（本表） | 导航 | 只做索引与分工声明；内容本体仅「三层嵌套架构图 / 运行时数据流」两处为已声明例外（见 §四） | （本文档自身——不自报数字，见 `doc-char-ratchet.json`） |
-| 致谢 / 外部出处（基石 · 生成伙伴 · 思想之源） | [THANKS](./THANKS.md) | 参考 | 只记「谁在哪个设计决策上留下痕迹」，不写能力声称（能力声称的唯一真相源是实现面）；一行制收录 | ≤11194 字 |
-| FDE 方法论（四阶段十二步） | [FDE/GUIDE.md](../FDE/GUIDE.md) | 用户手册 | 交付物本体（模板/清单/话术）优先保留，论证段归档 | ≤44157 字 |
-| 开发者内部机制 | [DEVELOPMENT](./DEVELOPMENT.md) | 参考 | 内部实现与数据架构；维护者对账数据归档不进正文 | ≤31775 字 |
+| 致谢 / 外部出处（基石 · 生成伙伴 · 思想之源） | [THANKS](./THANKS.md) | 参考 | 只记「谁在哪个设计决策上留下痕迹」，不写能力声称（能力声称的唯一真相源是实现面）；一行制收录 | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
+| FDE 方法论（四阶段十二步） | [FDE/GUIDE.md](../FDE/GUIDE.md) | 用户手册 | 交付物本体（模板/清单/话术）优先保留，论证段归档 | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
+| 开发者内部机制 | [DEVELOPMENT](./DEVELOPMENT.md) | 参考 | 内部实现与数据架构；维护者对账数据归档不进正文 | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
 **单一权威源禁二份纪律**：任何清单/数字/规则在仓内出现第二处时，必须一处为权威源、其余标注「引用自哪里」——不维护第二份完整副本（防止与权威源漂移；存量漂移由 check-docs §15 全仓扫描兜底）。
 
 > **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.5.6 · 孔放勋 · 2026-10-04。

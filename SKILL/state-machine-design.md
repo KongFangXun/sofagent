@@ -1,6 +1,6 @@
 # SKILL.state 执行协议 · 节点状态机设计文档
 
-> **版本**：v1.5.5 章一交付 · **出处**：[arXiv:2608.26263](https://arxiv.org/abs/2608.26263)（EMNLP）· sofagent 采纳形态
+> **版本**：v1.5.6 · 章一交付（v1.5.5 首发，随 v1.5.6 复核） · **出处**：[arXiv:2608.26263](https://arxiv.org/abs/2608.26263)（EMNLP）· sofagent 采纳形态
 > **模块**：`engine/orchestrator/src/execution-state/`（schema 注册表 + 协议核心 + 度量 + 审计摘要）
 
 ## 一、为什么
