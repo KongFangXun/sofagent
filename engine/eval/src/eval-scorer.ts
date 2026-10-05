@@ -5,6 +5,7 @@
 // ============================================================
 
 import type { EvalBreakdown } from './types';
+import { DEFAULT_SCORE_WEIGHTS } from './types';
 
 /**
  * 计算精确匹配得分
@@ -118,8 +119,12 @@ export function evalCase(actual: Record<string, unknown>, expected: Record<strin
   const semanticSimilarity = scoreSemanticSimilarity(actual, expected);
   const ruleCompliance = scoreRuleCompliance(actual, expected);
 
-  // 综合：精确匹配 50%，语义 20%，规则合规 30%
-  const overall = exactMatch * 0.5 + semanticSimilarity * 0.2 + ruleCompliance * 0.3;
+  // 综合：精确匹配 50%，语义 20%，规则合规 30%（F18 · v1.5.7：权重 SSOT
+  // = types.ts DEFAULT_SCORE_WEIGHTS——本行不再持有第二份字面量）
+  const overall =
+    exactMatch * DEFAULT_SCORE_WEIGHTS.exactMatch +
+    semanticSimilarity * DEFAULT_SCORE_WEIGHTS.semanticSimilarity +
+    ruleCompliance * DEFAULT_SCORE_WEIGHTS.ruleCompliance;
 
   return {
     exactMatch: Math.round(exactMatch * 10000) / 10000,
