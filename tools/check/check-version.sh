@@ -2352,7 +2352,52 @@ COVERED=$(git -C "${PROJECT_ROOT}" ls-files 2>/dev/null | wc -l | tr -d ' ')
 COVERED=${COVERED:-0}
 emit_coverage_line "check-version" "$((CHECKS + ERRORS))" "${COVERED}" "${SKIPS}"
 
-# ── 汇总 ──────────────────────────────────────────────────────
+echo "=== 29. 发版状态词守卫（已发版态·「⏳ 待发版」残留拦截 · F1） ==="
+# 背景（F1 · v1.5.7）：§26/§27 锚定「待发版」语义三字扫 docs/ 活文档，但 README.md 与
+#   README.en.md 是**根级门面**——§26 的扫描面（docs/ 排 changelog/archive）不含它们，
+#   v1.5.6 发版后两份 README 首屏的「（⏳ 待发版）」/「(⏳ pending release)」各存活多版
+#   无人拦（发版翻转只覆盖三件套 + docs/ 活文档）。本节补门面域。
+# 判据（对齐 §26 语义锚定纪律——措辞变体不可穷举，锚状态词本体）：
+#   已发版态（F6_RELEASED）下，双语 README 不得残留「⏳ 待发版」/「⏳ pending release」
+#   待翻牌标记；待发版窗口态（F6_WINDOW——下一版开发日志在位）与开发态不判（合法中间态，
+#   §27 同口径）。命中即 ERRORS（fail-loud——发版翻牌遗漏属门面事实错误，不是警告级）。
+# 自检（防空网）：正则对合成样本「（⏳ 待发版）」/(⏳ pending release) 必命中——
+#   正则被改坏（永不命中）时本节自检报错，不静默放行。
+F1_PENDING_RE='⏳[[:space:]]*(待发版|pending release)'
+_F1_SELFTEST=$(printf '%s\n' '（⏳ 待发版）' '(⏳ pending release)' | grep -cE "$F1_PENDING_RE" || true)
+if [ "${_F1_SELFTEST}" -ne 2 ]; then
+  echo -e "  ${RED}✗${NC} 本段自检失败：待发版状态词正则未按预期命中双语合成样本（应得 2，实得 ${_F1_SELFTEST}）——断言失效，先修正则"
+  ERRORS=$((ERRORS + 1))
+else
+  if $F6_RELEASED && ! $F6_WINDOW; then
+    _F1_HITS=""
+    for _f1f in "${PROJECT_ROOT}/README.md" "${PROJECT_ROOT}/README.en.md"; do
+      [ -f "$_f1f" ] || continue
+      _f1_hit=$(grep -nE "$F1_PENDING_RE" "$_f1f" 2>/dev/null || true)
+      if [ -n "$_f1_hit" ]; then
+        _F1_HITS="${_F1_HITS}$(printf '%s:%s\n' "$(basename "$_f1f")" "$_f1_hit")"
+      fi
+    done
+    if [ -n "$_F1_HITS" ]; then
+      echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但双语 README 仍残留待翻牌状态词——发版翻转遗漏（F1 门面域）："
+      printf '%s\n' "$_F1_HITS" | head -6 | sed 's/^/      /'
+      ERRORS=$((ERRORS + 1))
+    else
+      echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），双语 README 无「⏳ 待发版/pending release」残留"
+      CHECKS=$((CHECKS + 1))
+    fi
+  else
+    if $F6_WINDOW; then
+      echo -e "  ${YELLOW}⏭️${NC} 待发版窗口态——README 待翻牌标记为合法中间态，跳过（§27 同口径）"
+    else
+      echo -e "  ${GREEN}✓${NC} 开发态（tag/npm 均未达 v${SSOT_VERSION}）——README 待发版标注合法，跳过"
+    fi
+    SKIPS=$((SKIPS + 1))
+    CHECKS=$((CHECKS + 1))
+  fi
+fi
+echo ""
+
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then
   TOTAL=$((CHECKS + ERRORS))

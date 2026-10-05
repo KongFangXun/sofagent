@@ -93,8 +93,7 @@ evolve) — works right after installation |
 | Maintenance burden | Low — rules track upstream | Medium — custom scripts are yours to maintain | Medium — rules and hooks ship with this repo, but each version needs the hook reinstalled and config re-aligned |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both — focused on Agent governance |
 
-**30-second lightweight trial** (first run includes the npx package fetch, reruns finish in seconds; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p
-@sofagent/audit sofagent audit` (any git repo; secret leaks blocked on the spot).
+**30-second lightweight trial** (first run includes the npx package fetch, reruns finish in seconds; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p sofagent sofagent audit` (any git repo; secret leaks blocked on the spot).
 
 > 💡 For the trial, keep commit messages **at least 6 characters** (e.g. `initial audit test`) — A19 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) flags ultra-short messages (`init`/`add`) by design (it guards against meaningless commit messages), not a malfunction.
 
@@ -203,7 +202,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## v1.5.6 · Consolidation (One Entry Point + Data Surface)
 
-🧭 **One entry point, one clean data surface** (⏳ pending release) — thirteen commands collapse into one, and runtime data gains a lifecycle:
+🧭 **One entry point, one clean data surface** (✅ released · 2026-10-04) — thirteen commands collapse into one, and runtime data gains a lifecycle:
 
 | Capability | One-liner |
 |---|---|
@@ -390,7 +389,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # load the security rules
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 5678 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 25 audit rules · fresh-eyes independent review continuously running.
+> 🧪 **Engineering credibility** (current): 5687 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 25 audit rules · fresh-eyes independent review continuously running.
 > **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
 >the load-chain utility package and dsh-plugin-kit are outside this counting standard) — they are not the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account — see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever
