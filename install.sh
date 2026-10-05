@@ -298,6 +298,20 @@ if [ "${REMOTE_MODE}" = "1" ]; then
       err "git clone 失败（tag v${VERSION}），请检查网络或手动 git clone"; exit 1
     fi
     ok "仓库已克隆到: ${REMOTE_TMP}（钉定 v${VERSION}）"; cd "$REMOTE_TMP"
+    # v1.5.7 F39：哈希自锚定（与 rescue 路径同形态逻辑）——bootstrap 通道下外层
+    # SOFAGENT_INSTALL_SHA256 已校验下载的 install.sh，这里对克隆树的 install.sh
+    # 重算比对（fail-closed）：tag 被移走/重打（内容变了）时在此拦截，防止
+    # 「被校验的 ≠ 被执行的」。非 bootstrap 通道（直接 --remote）无锚可比对，跳过。
+    if [ -n "${SOFAGENT_INSTALL_SHA256:-}" ]; then
+      remote_clone_hash=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync(process.argv[1])).digest('hex'))" "$REMOTE_TMP/install.sh" 2>/dev/null         || shasum -a 256 "$REMOTE_TMP/install.sh" 2>/dev/null | cut -d' ' -f1         || sha256sum "$REMOTE_TMP/install.sh" 2>/dev/null | cut -d' ' -f1)
+      if [ -n "$remote_clone_hash" ] && [ "$remote_clone_hash" != "${SOFAGENT_INSTALL_SHA256}" ]; then
+        err "克隆树 install.sh 哈希与外层钉定不一致——tag 内容与发版不符，拒绝执行（fail-closed）"
+        err "  外层钉定: ${SOFAGENT_INSTALL_SHA256}"
+        err "  克隆实际: ${remote_clone_hash}"
+        cd - >/dev/null 2>&1 || true; rm -rf "$REMOTE_TMP" 2>/dev/null || true
+        exit 1
+      fi
+    fi
     # F-43：参数透传必须数组形态（对照 :201 rescue 路径既有先例）——字符串拼接
     # 会在 exec 展平成单 argv，多 flag 组合（--base-only --platform workbuddy）
     # 被合并为一个参数静默吞掉。bash 3.2 兼容：空数组先判长度再展开。
@@ -1063,7 +1077,7 @@ CLIEOF
   # v1.4.0 交付二：Web Dashboard 安装（v1.4.4 升级：目录同步取代两文件白名单）
   # 装完即用：sofagent web 起服务开浏览器，读 $SOFAGENT_HOME/data/ 真实数据
   # 同步规则：页面文件（*.html/*.css/*.js）整体跟随——未来新增页面文件不再改白名单；
-  #           docs/assets/ → web/assets/——安装态静态引用必命中（logo 断链根因的结构性修复）
+  #           （v1.5.7 F39：原 docs/assets/ → web/assets/ 同步已移除——实测零消费者）
   local web_dir="$SOFAGENT_HOME/web"
   mkdir -p "$web_dir"
   local dash_src_dir="${SCRIPT_DIR}/tools/dashboard"
@@ -1077,11 +1091,9 @@ CLIEOF
     done
     cp "${dash_src_dir}/serve-dashboard.mjs" "$bin_dir/serve-dashboard.mjs" 2>/dev/null
     chmod +x "$bin_dir/serve-dashboard.mjs" 2>/dev/null || true
-    if [ -d "${SCRIPT_DIR}/docs/assets" ]; then
-      mkdir -p "$web_dir/assets"
-      cp "${SCRIPT_DIR}"/docs/assets/* "$web_dir/assets/" 2>/dev/null || true
-    fi
-    ok "  Web Dashboard 已安装（${synced} 个页面文件 + assets/ 静态资源，sofagent web 启动）"
+    # v1.5.7 F39：docs/assets → web/assets 拷贝已移除——实测 dashboard.html 内 assets
+    # 引用计数为 0（logo 为内联 base64），该拷贝链零消费者。
+    ok "  Web Dashboard 已安装（${synced} 个页面文件，sofagent web 启动）"
   else
     warn "  dashboard.html 缺失（${dash_src_dir}/dashboard.html），跳过 Web Dashboard 安装"
   fi

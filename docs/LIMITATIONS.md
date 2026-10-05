@@ -564,6 +564,16 @@ sofagent audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/tas
 
 ## 五、审计与工程局限
 
+### 巨型文件现状（v1.5.7 F27 登记 · 不拆分，拆分去向排期评估）
+
+实测三个巨型文件（`wc -c` / `wc -l`，2026-10-06）：
+
+| 文件 | 实测体量 | 维护风险 | 拆分去向 |
+|---|---|---|---|
+| `playbook/acceptance-test.sh` | 498,997 字符 / 4,588 行 | 单文件承载 397 场景——新增场景持续增厚；bash 无模块化，场景间复用靠函数 | 按域拆多文件 + driver 汇编——**须与发版 SOP 容量约束协同**（发版门禁引用单文件路径），排期评估 |
+| `tools/dashboard/dashboard.html` | 297,721 字符 / 2,997 行 | 单文件 HTML（check-dashboard MAX_LINES 3000 顶格附近，余量 3 行）——新增能力无空间 | 拆分评估已登记 [ROADMAP · 探索方向](./ROADMAP.md)（单文件形态是安装态分发前提，拆分须与分发方式协同） |
+| `engine/audit/src/index.ts` | 103,980 字符 / 2,062 行 | CLI 入口 + 审计主流程单文件——改动面集中，review 噪声大 | 按子命令拆模块（`src/cli/` 目录化）——低风险机械拆分，排期评估 |
+
 ### 审计 A7 检测可靠性边界 / bash 重复代码债 / 架构概念过载 / 缺少恢复路径
 
 - **审计 A7**：检测基于 Agent 日志的正则匹配，历史版本已做 5 项加固，根本解法是结构化日志（JSONL）
@@ -665,9 +675,9 @@ A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daem
 
 Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown frontmatter 提取实体关联。如果 frontmatter 格式不规范（缺少 `---` 分隔符、YAML 语法错误、relations 字段拼写错误），该实体会被静默跳过——不会报错，但 Ontology 中会缺失这个对象。`--doctor` 目前不检查 Ontology 完整性，用户无法自动发现遗漏。
 
-### Work模板市场 模板（✅ 已随 v1.1.9 迁出 MIT scope）
+### 工作模板市场（Work 模板）（✅ 已随 v1.1.9 迁出 MIT scope）
 
-> ✅ 已于 v1.1.9 修复：Work模板市场 模板整体迁出 MIT scope，相关 CLI（`sofagent hub deploy`）与模板源已移至外部商业仓，不在开源仓库维护。
+> ✅ 已于 v1.1.9 修复：工作模板市场（Work 模板）整体迁出 MIT scope，相关 CLI（`sofagent hub deploy`）与模板源已移至外部商业仓，不在开源仓库维护。
 
 ### Agent Dashboard（✅ v1.4.0 起产品化，旧「原型假数据」局限已消除）
 

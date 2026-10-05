@@ -51,6 +51,7 @@
 | `check/check-sop-integrity.mjs` | 发版 SOP 阶段文件完整性守卫——钉**结构面**不判内容：A1 失明自检（扫到的文件数 / 阶段文件数低于基线 ⇒ exit 2，路径漂移即假绿温床）；A2 锚链完整（11 个阶段文件各带 `SOP-ANCHOR`，锚内阶段号须与文件名序号一致，prev/next 指向的阶段须存在）；A3 结构 pin（每份阶段文件的「步骤表行数 / 步骤标题数 / 正文小节数」三元组须等于基线——**静默删步骤行、删 `## 步骤X：` 标题、删正文小节、批量截断当场红**）；A4 最小形态（步骤面不成形 ⇒ 疑似截断）。附件类非 `NN-` 前缀文件 A2~A4 不适用 | 改发版 SOP 阶段文件后 / 发版 SOP |
 | `check/sop-integrity-baseline.json` | 发版 SOP 阶段文件结构基线（`check-sop-integrity.mjs` 消费：`minFiles` / `minStageFiles` / `a4MinRows` / `a4MinHeadings` 四项阈值 + 11 个阶段文件的结构三元组 + `indexExempt` 附件类豁免清单；**改阶段文件结构时须同批更新基线**——与 `check-forms` 的 `EXPECTED_COUNTS` 同款，改的是基线不是守卫） | 被 check-sop-integrity.mjs 消费 |
 | `check/silent-catch-baseline.json` | 静默吞错存量基线（`check-silent-catch.mjs` 消费，新增即红） | 被 check-silent-catch.mjs 消费 |
+| `check/silent-catch-io-ledger.json` | 外部 IO catch 四分类台账（F9 v1.5.7：69 处外部 IO 的 catch 分层登记——吞错清零补结构化日志的对照账本） | 被 check-silent-catch.mjs 消费 |
 | `check/check-archaeology.sh` | 规则文档禁考古守卫（`releasing.md` + `releasing/*.md` + `SKILL/**` + `playbook/**` 正文禁带出身：版本号 / 日期 / 跑批编号（run-N·第N轮·Round N）/ 出身标签；（详→注-4） | pre-push / 改规则文档后 |
 | `check/archaeology-exempt.json` | 禁考古豁免台账（`check-archaeology.sh` 消费：① `exemptPaths` 第三方 vendored 原文 + 历史档案目录——档案是出身该待的地方；② `exemptAnchors` 行级豁免 `{file, anchor, reason}`——**锚串而非行号**（行号漂移即静默失效），锚须文件内唯一且当前仍是命中行，两条硬校验不成立即 exit 2） | 被 check-archaeology.sh 消费 |
 | `check/check-readme-parity.sh` | 双语 README 结构 parity 门禁（中英 README 章节/条目对齐，防单语漂移） | CI / 改 README 后 |

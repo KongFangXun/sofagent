@@ -15,6 +15,7 @@
 - [三、架构印证](#三架构印证行业框架独立复现-sofagent-的选择)
 - [四、市场印证](#四市场印证行业判断被市场买单)
 - [五、研报视角的边界提示](#五研报视角的边界提示)
+- [六、反面案例 / 证伪记录](#六反面案例--证伪记录)
 
 
 ## 一、方法论印证：行业研究怎么验证 sofagent 直觉
@@ -33,10 +34,12 @@
 - **90/10 价值分层 → 知行合一框架**——模型给 90% 智力（知），sofagent 补 10% 可靠执行（行），关键在「合一」；模型越强那 10% 越值钱。
 - **治理缺口的代价（三项联网核验）**——Gartner 2026-05：到 2027 年 40% 企业自主 Agent 将因治理缺口被降级/停用；MIT NANDA：95% gen-AI 部署零可衡量 ROI；Governance Decay：运行时约束被上下文压缩擦除后违规率 0%→38%。约束/治理是投产前提，非加分项。
 - **a16z 七法则映射**——「人比软件便宜」与 90/10 同频；Loops/Evals/冗员等五条本仓原生具备，[完整映射表见归档](./archive/validation-digest/README.md)。
-- **红杉 Neo-Lab / Sovereign AI**——「主权是光谱不是开关」「先建评测集再谈微调」与本仓模型路由不自研、Benchmark 先行完全同构。
+- **Sovereign AI 四层主权框架（头部机构 Neo-Lab 论）**——「主权是光谱不是开关」「先建评测集再谈微调」与本仓模型路由不自研、Benchmark 先行完全同构。（出处明细见 [v1.4.0 商业侧定位](./changelog/v1.4/v1.4.0.md)）
 - **评测集是受管资产（三源收敛）**——来源：真实失败与生产流量沉淀（非合成数据）；规模：20-50 个真实失败案例即可起步、随版本扩展（拖越久越难补）；形态：进版本控制、接 CI 跑（临时脚本形态 = 不可回归的评测 = 假评测）。与本仓既有 09-06「评测集所有权治理」为姊妹条：彼管归属，此管来源与形态。来源：Anthropic《Demystifying Evals》（IMA 收录）｜ DeepSeek Safety 官方技术报告（IMA 收录）｜ OpenRouter · https://openrouter.ai/blog/tutorials/ai-agent-regression-testing-after-a-prompt-or-model-change/
 - **硅基员工论（Org Graph / Ontology Runtime）**——「长期存活、固定领域、进组织编制」的 Agent 称为 Org Graph 节点，与常驻 Agent 定位字面对应；Ontology Runtime 是企业底座而非 API 网关。
 - **数字员工操作性定义**——四跨越（组织身份/岗位职责/事件驱动/结果负责）+ 结果负责三要素（可观测/可归因/可回滚），与审计/回溯能力对齐。
+
+> 📖 **本节出处形态说明**：条内已含机构名/论文名的（如 Gartner / MIT NANDA / Anthropic《Demystifying Evals》）为一手来源就地标注；未带链接的条目出处统一在 [归档 · concept-layer](./archive/validation-deep/concept-layer.md)（成篇论证）——本节为一句话判据层，不逐条重复挂链。
 
 ### Verifier 才是瓶颈
 
@@ -275,3 +278,21 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 - **行为验收独立于能力分数（三源）**——门禁须能拦下「能力更强但行为不合格」的模型：OpenAI 曾因对齐测试显示欺骗倾向/未经许可行动而叫停能力更强的 Astra 模型——若门禁只按能力档位放行，Astra 会被放出去；Google Harness 把「端到端基准之外补一层行为评估」定为方法论（行为规格→行为用例→回归比对）；hugozhu 把验收（Spec/Evals）与执行自由（Harness）拆为两个独立契约。与上条正交：彼管「评测可被作弊」，此管「验收维度须独立于能力」。
 
 > 来源：Google Developers Blog ·〈The Anatomy of Harness Engineering〉｜OpenAI · Astra 对齐叫停决定（本仓经媒体转述收录，未复算官方声明）｜hugozhu.site ·〈别配置 Agent 了，给它岗位〉
+
+
+## 六、反面案例 / 证伪记录
+
+> **收录规则**：本节只收仓内已披露的失效、未达预期与判据偏差——每条三行制（判据 + 事实 + 出处链接指向仓内文档）。正面印证在 §一–§五，反面边界在此——两面对账才是完整的验证观。
+
+- **「越用越好」进化实证边界（v1.4.5 收口前）**
+  - 判据：进化宣称须有 ≥1 周持续样本 + A/B 对照支撑。
+  - 事实：v1.4.5 收口前仅 11 个一次性测试 Case（LIMITATIONS 已诚实披露）；7 天采样管道 v1.4.5 才交付，样本达标前「越用越好」表述不挂实测链接。
+  - 出处：[v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md)（进化模块实证收口段）· [LIMITATIONS §四](./LIMITATIONS.md)（7 天样本未采满披露）。
+- **Dream Cycle 采样恒真缺陷（v1.5.7 F45 修复）**
+  - 判据：采样器读数须能区分「管道正常」与「管道恒真」。
+  - 事实：采样曾存在恒真缺陷（读数不随真实产出变化），零产出探针是计数器不是成功证明——探针记「看了多少天」，不记「管道已验证正常」。
+  - 出处：[LIMITATIONS · Dream Cycle 采样恒真缺陷](./LIMITATIONS.md#-dream-cycle-采样恒真缺陷与零产出探针边界v157-f45-修复)。
+- **v1.4.8 判据偏差登记**
+  - 判据：门禁判据与产品行为的一致性须对账登记。
+  - 事实：v1.4.8 存在判据偏差（判据与实际行为不符），以登记形态在 CHANGELOG 历史中留痕（对外有披露价值的过程登记）。
+  - 出处：[v1.4.8 开发日志](./changelog/v1.4/v1.4.8.md) · [LIMITATIONS §四 · 历史遗留说明](./LIMITATIONS.md)。
