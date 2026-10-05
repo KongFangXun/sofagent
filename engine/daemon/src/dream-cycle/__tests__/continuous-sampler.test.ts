@@ -11,6 +11,13 @@
 //       mockDays 标注 → targetReached=false（降级轮不算达标）
 //   五、eval 缺数如实记 null（不造假日样本）
 //   六、readAllSamples + summarizeSamples：曲线序列 + 降级标注汇总
+// F45（v1.5.7 P0）新增：
+//   七、恒真修复：skipDreamCycle → dreamCycleComplete=false（初值不再恒真）
+//   八、conceptsProduced 字段落盘（skipDreamCycle 路径 = 0）
+//   九、零产出探针：连续 3 天零产出 → shouldAlert（计数器口径）
+//   十、探针不记成功标记：有产出的窗口 → zeroDays 如实计数、不告警
+//   十一、同日重采探针去重（cursor.lastZeroOutputAlertDate 去重游标）
+//   十二、旧样本兼容：无 conceptsProduced 字段的样本按 0 计
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -26,6 +33,9 @@ import {
   sampleFilePath,
   cursorFilePath,
   collectDailyDetails,
+  evaluateZeroOutputProbe,
+  ZERO_OUTPUT_ALERT_DAYS,
+  type DailySample,
 } from '../continuous-sampler';
 
 function tmpDir(): string {
@@ -342,5 +352,148 @@ describe('明细四件（Phase 4 尾巴 · D4 桥消费面对齐）', () => {
     const details = collectDailyDetails(dataDir, otherDay);
     expect(details.lowScoreFeedback).toEqual([]);
     expect(details.toolUsage).toEqual([]);
+  });
+});
+
+// ============================================================
+// F45（v1.5.7 P0）：恒真修复 + conceptsProduced + 零产出探针
+// ============================================================
+describe('F45 · 恒真修复与零产出探针', () => {
+  let home: string;
+  let dataDir: string;
+
+  beforeEach(() => {
+    home = tmpDir();
+    process.env.SOFAGENT_HOME = home;
+    dataDir = path.join(home, 'data');
+    fs.mkdirSync(dataDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    delete process.env.SOFAGENT_HOME;
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* 清理失败不阻断 */ }
+  });
+
+  /** 追加一条手工样本（探针数据面——date/conceptsProduced 可控） */
+  function seedSample(date: string, conceptsProduced: number): void {
+    fs.mkdirSync(path.join(dataDir, 'evolution'), { recursive: true });
+    const sample: Partial<DailySample> = {
+      date,
+      evalPassRate: null,
+      evalCaseCount: 0,
+      knowledgeEntities: 0,
+      knowledgeDelta: 0,
+      correctionReflows: 0,
+      dreamCycleComplete: true,
+      conceptsProduced,
+      providerStatus: 'real',
+      sampledAt: `${date}T23:00:00.000Z`,
+    };
+    fs.appendFileSync(sampleFilePath(dataDir, date), JSON.stringify(sample) + '\n');
+  }
+
+  /** 最近 N 天的日期数组（时间升序） */
+  function recentDates(n: number): string[] {
+    const dates: string[] = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      dates.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+    }
+    return dates;
+  }
+
+  // 用例七：恒真修复——skipDreamCycle 路径不再被记「完整跑完」
+  it('skipDreamCycle → dreamCycleComplete=false（初值 true 的恒真缺陷已修）', async () => {
+    const result = await collectDailySample(dataDir, { skipDreamCycle: true });
+    expect(result.sample.dreamCycleComplete).toBe(false);
+  });
+
+  // 用例八：conceptsProduced 字段落盘（skipDreamCycle = 0——「本轮产出」口径）
+  it('conceptsProduced 落盘：skipDreamCycle 路径 = 0（如实记，不回填旧值）', async () => {
+    const today = localToday();
+    const result = await collectDailySample(dataDir, { skipDreamCycle: true });
+    expect(result.sample.conceptsProduced).toBe(0);
+    const lines = fs.readFileSync(sampleFilePath(dataDir, today), 'utf-8').trim().split('\n');
+    expect(JSON.parse(lines[lines.length - 1]!).conceptsProduced).toBe(0);
+  });
+
+  // 用例九：零产出探针——连续 3 天零产出 → 告警（计数器口径）
+  it('连续 3 天零产出 → shouldAlert=true（checkedDays=3 · zeroDays=3）', () => {
+    for (const d of recentDates(ZERO_OUTPUT_ALERT_DAYS)) seedSample(d, 0);
+    const probe = evaluateZeroOutputProbe(readAllSamples(dataDir));
+    expect(probe.checkedDays).toBe(ZERO_OUTPUT_ALERT_DAYS);
+    expect(probe.zeroDays).toBe(ZERO_OUTPUT_ALERT_DAYS);
+    expect(probe.shouldAlert).toBe(true);
+    // 探针不记成功标记——alerted 是调用方持久化的去重位，探针自身无状态恒 false
+    expect(probe.alerted).toBe(false);
+  });
+
+  // 用例十：有产出的窗口——zeroDays 如实计数、不告警
+  it('最近窗口有产出 → zeroDays 如实计数且 shouldAlert=false', () => {
+    const dates = recentDates(ZERO_OUTPUT_ALERT_DAYS);
+    dates.forEach((d, i) => seedSample(d, i === dates.length - 1 ? 5 : 0)); // 最后一天有产出
+    const probe = evaluateZeroOutputProbe(readAllSamples(dataDir));
+    expect(probe.checkedDays).toBe(ZERO_OUTPUT_ALERT_DAYS);
+    expect(probe.zeroDays).toBe(ZERO_OUTPUT_ALERT_DAYS - 1);
+    expect(probe.shouldAlert).toBe(false);
+  });
+
+  // 用例十一：样本不足阈值——checkedDays 如实缩水、不虚构零
+  it('样本不足阈值 → checkedDays < 阈值且不告警（中断的天不补零）', () => {
+    seedSample(recentDates(1)[0]!, 0); // 只有 1 天
+    const probe = evaluateZeroOutputProbe(readAllSamples(dataDir));
+    expect(probe.checkedDays).toBe(1);
+    expect(probe.zeroDays).toBe(1);
+    expect(probe.shouldAlert).toBe(false);
+  });
+
+  // 用例十二：同日重采——探针告警去重（cursor.lastZeroOutputAlertDate）
+  it('同日重采探针只告警一次（cursor.lastZeroOutputAlertDate 去重游标）', async () => {
+    const today = localToday();
+    // 预置零产出历史（今天之前的 3 天）+ 今日首采（skipDreamCycle → 今日也是 0）
+    const prior = recentDates(ZERO_OUTPUT_ALERT_DAYS + 1).slice(0, ZERO_OUTPUT_ALERT_DAYS);
+    for (const d of prior) seedSample(d, 0);
+
+    // 今日首采：窗口 = 前 2 天 + 今日 = 3 天全零 → 应告警并落去重游标
+    const first = await collectDailySample(dataDir, { skipDreamCycle: true });
+    expect(first.cursor.lastZeroOutputAlertDate).toBe(today);
+
+    // 同日重采：去重游标 == 今日 → 不再告警（cursor 不变，仍记录今日）
+    const second = await collectDailySample(dataDir, { skipDreamCycle: true });
+    expect(second.cursor.lastZeroOutputAlertDate).toBe(today);
+  });
+
+  // 用例十三：旧样本兼容——无 conceptsProduced 字段的样本按 0 计
+  it('旧样本（v1.5.7 前无 conceptsProduced）按 0 计入探针', () => {
+    const legacy = recentDates(ZERO_OUTPUT_ALERT_DAYS);
+    for (const d of legacy) {
+      fs.mkdirSync(path.join(dataDir, 'evolution'), { recursive: true });
+      // 刻意不写 conceptsProduced——旧 schema 形态
+      fs.appendFileSync(sampleFilePath(dataDir, d), JSON.stringify({
+        date: d,
+        evalPassRate: null,
+        evalCaseCount: 0,
+        knowledgeEntities: 0,
+        knowledgeDelta: 0,
+        correctionReflows: 0,
+        dreamCycleComplete: true,
+        providerStatus: 'real',
+        sampledAt: `${d}T23:00:00.000Z`,
+      }) + '\n');
+    }
+    const probe = evaluateZeroOutputProbe(readAllSamples(dataDir));
+    expect(probe.zeroDays).toBe(ZERO_OUTPUT_ALERT_DAYS);
+    expect(probe.shouldAlert).toBe(true);
+  });
+
+  // 用例十四：同日多行取最新（重采不覆盖——最新行为准的探针口径）
+  it('同日多行样本：探针取最新行的 conceptsProduced', () => {
+    const [today] = recentDates(1);
+    seedSample(today, 0);
+    seedSample(today, 7); // 同日第二轮——有产出
+    const probe = evaluateZeroOutputProbe(readAllSamples(dataDir));
+    expect(probe.checkedDays).toBe(1);
+    expect(probe.zeroDays).toBe(0); // 最新行 7 → 不计零
+    expect(probe.shouldAlert).toBe(false);
   });
 });

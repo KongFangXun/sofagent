@@ -507,6 +507,39 @@ async function main() {
         }
       }
 
+      // ── F45（v1.5.7 P0）：进化采样与零产出探针 ──
+      // 消费面三件：cursor 进度（daysSampled/mockDays）+ 最近样本的 conceptsProduced
+      // 序列 + 探针计数器（checkedDays/zeroDays）。零产出告警历史经 daemon-health
+      // 的 lastError 已在上文「最近错误」透出——此处是探针现状面（不重复告警）。
+      console.log('\n── 进化采样与零产出探针（F45）──');
+      try {
+        const { getDataDir } = await import('@sofagent/core');
+        const {
+          loadCursor,
+          readAllSamples,
+          evaluateZeroOutputProbe,
+          ZERO_OUTPUT_ALERT_DAYS,
+          SAMPLE_TARGET_DAYS,
+        } = await import('./dream-cycle/continuous-sampler');
+        const dataDir = getDataDir();
+        const cursor = loadCursor(dataDir);
+        const samples = readAllSamples(dataDir);
+        const probe = evaluateZeroOutputProbe(samples);
+        console.log(`  采样进度: ${cursor.daysSampled}/${SAMPLE_TARGET_DAYS} 天（降级轮 ${cursor.mockDays}）· 样本文件 ${samples.length} 行`);
+        // 最近 7 个自然日的 concept 产出（每日最新一轮——探针同口径）
+        const recent = samples.slice(-7).map((s) => `${s.date}: ${s.conceptsProduced ?? 0}`);
+        if (recent.length > 0) {
+          console.log(`  近期 concept 产出: ${recent.join(' · ')}`);
+        }
+        const probeIcon = probe.shouldAlert ? '⚠️' : probe.zeroDays > 0 ? '🔔' : '✅';
+        console.log(`  ${probeIcon} 零产出探针: 最近 ${probe.checkedDays} 天中 ${probe.zeroDays} 天零产出（告警阈值 ${ZERO_OUTPUT_ALERT_DAYS} 天——计数器如实记，不记成功标记）`);
+        if (probe.shouldAlert) {
+          console.log('     Dream Cycle 疑似空转——检查 model 注册表与输入 Ledger（think.md + audit history）');
+        }
+      } catch (err) {
+        console.log(`  ⚠️ 采样面不可读: ${(err as Error).message}`);
+      }
+
       // ── v1.4.5 T9：webhook 告警通道健康 ──
       console.log('\n── Webhook 告警通道健康 ──');
       const { readWebhookChannelHealth } = await import('./webhook/index');
