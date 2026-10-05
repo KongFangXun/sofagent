@@ -62,6 +62,10 @@ import { runTaskStats } from './task-stats';
 import { runFdeCompanionDaily } from './fde-companion-daily';
 import { runFdeRegistryDaily } from './fde-registry-daily';
 import { runTrainOrphanScan } from './train-orphan-scan';
+// 批D 巡检合并施工（v1.5.7）：数据维护日检四步（F5 memory 归档 + F30 think 归档
+// + F48-⑤ prune-spill + F51-① persona 同步）——四步同一巡检器承载，
+// 一次施工进注册表（协调注记：避免四批各改一次互相覆盖）。
+import { runMaintenanceDaily } from './maintenance-daily';
 
 /** 巡检层级 */
 export type InspectorLayer = 'L1' | 'L2' | 'L3';
@@ -96,6 +100,8 @@ export const INSPECTORS: Readonly<Record<string, InspectorEntry>> = {
   'fde-companion-daily': { fn: runFdeCompanionDaily, layer: 'L1', enabled: true },
   'fde-registry-daily': { fn: runFdeRegistryDaily, layer: 'L1', enabled: true },
   'train-orphan-scan': { fn: runTrainOrphanScan, layer: 'L1', enabled: true },
+  // 批D 巡检合并施工（v1.5.7）：maintenance-daily 四步（F5/F30/F48-⑤/F51-①）
+  'maintenance-daily': { fn: runMaintenanceDaily, layer: 'L1', enabled: true },
   // v1.4.8 条目 2：audit-trail 入 L1（漂移修复——v1.3.2 交付后从未在活路径执行）
   'audit-trail': { fn: runAuditTrailInspector, layer: 'L1', enabled: true },
   // ── L2 深度巡检（@weekly）──
