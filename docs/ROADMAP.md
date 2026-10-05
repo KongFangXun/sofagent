@@ -3,8 +3,7 @@
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.5.6 · 2026-10-04（UTC）· ✅ 已发版 · 孔放勋 · 存量收敛：单入口与数据面
-> v1.5.4（✅ 已发版 · 2026-09-30）——执行模块 · 模型路由与凭证验证：测试 5408→5569 · acceptance 377→388。完整历史见 [CHANGELOG](../CHANGELOG.md)。
+> v1.5.6 · 2026-10-04（UTC）· ✅ 已发版 · 孔放勋 · 存量收敛：单入口与数据面。完整历史见 [CHANGELOG](../CHANGELOG.md)。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
@@ -119,7 +118,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | **v1.9.0** | 📋 规划中 | **🧩 判定底座 · 阶段四（消费与收口）· 既有判定面收敛与假概率正名**（由旧 v1.9.0–v1.9.2 撤并）<br>**形态归属**：主干 8 章 + 非功能 1 章 | [日志](./changelog/v1.9/v1.9.0.md) |
 | **v2.0.0** | 📋 规划中 | **🏁 S1M 宣告大版本（FDEing × S1A 身份切换 · S1A = S1M + Harness）**（宣告版零新能力纪律）<br>**形态归属**：主干 2 章 + 非功能 5 章 | [日志](./changelog/v2.0/v2.0.0.md) |
 
-> 注-1：外部依据 OpenAI dot × Manus Cue 双周双发（2026-09-28/29），判定留维护者侧对标文档）
+> 注-1：外部依据 OpenAI dot × Manus Cue 双周双发（2026-09-28/29），判定留维护者侧对标文档
 
 ### 判定底座施工期（v1.6.0 – v1.9.0 · 四阶段四版）
 
@@ -167,6 +166,8 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 | 方向 | 一句话 |
 |---|---|
+| **安装载荷独立校验通道（v1.5.7 F38 登记）** | bootstrap.sh 内嵌哈希与安装载荷同源（都在发版侧产出）——防传输劫持、不防源头替换。方向：release 页公示哈希 / provenance attestation，让用户可从第二通道交叉核对（排期评估，未排具体版本） |
+| **dashboard.html 拆分评估（v1.5.7 F39 登记）** | `tools/dashboard/dashboard.html` 单文件实测约 2997/3000 行（check-dashboard MAX_LINES 顶格附近）——维护风险随行数增长。拆分须与发版 SOP 容量约束协同（单文件形态是安装态分发前提），排期评估 |
 | **acceptance CI 接线（非阻塞 job）** | playbook/acceptance-test.sh 接入 verify.yml 做 schedule + workflow_dispatch 触发的非阻塞 job（跑只读批次 + 归档日志 artifact）。实测评估（v1.5.7 F26）：cli-only 批次单跑约 7 分钟（全量更长），超「建 job 先行条件 = 单次 ≤10 分钟」的接入预算；且存在前置依赖——用户可见字符串收敛（`sofagent-audit v` → `sofagent audit v`）后场景 472/473 等断言锚未随动，须先清偿 acceptance 断言漂移再接线，否则 job 恒红无信号价值。触发条件：断言漂移清偿 + 运行时长压缩评估（分批/抽样）后再议 |
 | **自带净水设备的水龙头（v3.x+ 远景）** | Subagent 支持挂载外部精调小模型（约束层提供路由与加载插槽），零投喂、本地推理、离线可用 |
 | **数据 schema 迁移管道（Omarchy migrations/ 启发）** | `~/.sofagent/data/` 数据格式演进的机制兜底：按版本号顺序执行迁移脚本 + 幂等可重跑（`sofagent doctor --migrate` 或升级时自动执行）。**不提前建管道**（无提前抽象纪律）——v1.5.0 trace 新数据源已埋 `schemaVersion` 前置件，首个破坏性 schema 变更真实出现时再触发评估 |
@@ -238,4 +239,4 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 > 📖 多设备同步方案见 [多设备同步指南](./guides/multi-device-sync.md)。
 
-> 📖 loop-engineering 启发方向的去向：FDE 节点注册表 + Worktree 隔离已交付（v1.3.5 / v1.3.6），理解债务已排期（v1.5.1），quota 事前门禁 + 依赖方向测试已交付（v1.4.8）。来源链接见 [cobusgreyling/loop-engineering](https://github.com/cobusgreyling/loop-engineering)（MIT 开源）。
+> 📖 loop-engineering 启发方向的去向：FDE 节点注册表 + Worktree 隔离已交付（v1.3.5 / v1.3.6），理解债务已交付（v1.5.1），quota 事前门禁 + 依赖方向测试已交付（v1.4.8）。来源链接见 [cobusgreyling/loop-engineering](https://github.com/cobusgreyling/loop-engineering)（MIT 开源）。

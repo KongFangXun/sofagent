@@ -3,7 +3,7 @@
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 104 tools 按域分组。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
-> 版本：v1.5.6（✅ 已发版 · 2026-10-04）· 104 tools / 7 面——**104 = v1.5.2 的 107 − 2026-09-26 浏览器四件套退役 4 + v1.5.4 新增 `router_slots` 1**（逐版工具数沿革见 [CHANGELOG](../CHANGELOG.md)；状态见 [ROADMAP](./ROADMAP.md)）
+> v1.5.6 · 2026-10-04（UTC）· ✅ 已发版 · 孔放勋 · 104 tools / 7 面——**104 = v1.5.2 的 107 − 2026-09-26 浏览器四件套退役 4 + v1.5.4 新增 `router_slots` 1**（逐版工具数沿革见 [CHANGELOG](../CHANGELOG.md)；状态见 [ROADMAP](./ROADMAP.md)）
 
 ## 目录
 
