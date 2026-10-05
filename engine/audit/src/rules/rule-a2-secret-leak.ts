@@ -103,7 +103,7 @@ function debugLogDecode(kind: 'base64' | 'hex', candidate: string, reason: strin
     for (const { pattern, replacement } of REDACTION_PATTERNS) {
       safe = safe.replace(pattern, replacement);
     }
-    process.stderr.write(`[sofagent-audit][debug] A2 ${kind} 候选丢弃（${reason}）: ${safe}\n`);
+    process.stderr.write(`[sofagent audit][debug] A2 ${kind} 候选丢弃（${reason}）: ${safe}\n`);
   } catch {
     // debug 留痕自身绝不抛错（诊断面不能反过来破坏审计主流程）
   }
@@ -244,22 +244,42 @@ function candidatePlaintexts(content: string): string[] {
 }
 
 /**
- * 检测 .gitattributes -diff 隐藏（函数名刻意避免英文绕过类字样——
+ * 检测 .gitattributes 内容不可见属性（函数名刻意避免英文绕过类字样——
  * A9 启发式会把英文绕过类字样误判为 prompt 注入模式，顺带清理）。
- * 当 diff 中出现 `.gitattributes` 的新增行含 `-diff` 属性时，被标记文件的内容
- * 不会出现在 git diff 输出中 → A2 扫不到其新增行（静默全绿）。返回命中的文件名列表。
+ * 当 diff 中出现 `.gitattributes` 的新增行给某路径标记了隐藏类属性时，
+ * 被标记文件的内容不会出现在 git diff 输出中 → A2 扫不到其新增行（静默全绿）。
+ * 返回命中的文件名列表。
+ *
+ * F13（v1.5.7）：属性集合判定——解析目标路径 + 属性 token 列表，命中任一
+ * 隐藏类属性即报，**与属性书写顺序无关**。旧实现锚定「路径后紧跟 -diff」
+ * 的相邻正则，两种真实写法漏报：
+ *   ① 属性前置：`key.bin merge=keep -diff`（-diff 不在第一个属性位）；
+ *   ② binary 宏：`*.env binary`（binary 是 git 内建宏 = -diff -merge -text，
+ *      同样让 diff 不输出内容行——旧判定只认字面 -diff）。
+ * 命中集（三个，均属「结构性隐藏证据」）：
+ *   -diff      取消 diff 输出（git 文档：unsets the diff attribute）
+ *   binary     内建宏，展开含 -diff
+ *   untracked  对 git 完全隐藏（比 -diff 更彻底的证据不可见）
  */
 function detectGitattributesDiffHidden(ctx: AuditContext): string[] {
   const hits: string[] = [];
+  // 隐藏类属性集合——token 精确匹配（diff=cpp / !diff 等带值/取反形态不是隐藏）
+  const HIDING_ATTRS = new Set(['-diff', 'binary', 'untracked']);
   for (const file of ctx.diffFiles) {
     if (!file.path.endsWith('.gitattributes')) continue;
     for (const line of file.lines) {
       if (!line.startsWith('+') || isDiffFileHeader(line)) continue;
       const content = line.substring(1);
-      // 形如：secrets.js -diff  /  *.env -diff  /  key.bin -diff merge=keep
-      if (/^\s*[^\s#][^\s]*\s+-diff(\s|$)/.test(content)) {
-        const attrTarget = content.trim().split(/\s+/)[0] ?? '(unknown)';
-        hits.push(attrTarget);
+      const trimmedLine = content.trim();
+      // 空行 / 注释行不判
+      if (trimmedLine === '' || trimmedLine.startsWith('#')) continue;
+      // 形如：secrets.js -diff  /  *.env -diff  /  key.bin -diff merge=keep  /  *.env binary
+      const tokens = trimmedLine.split(/\s+/);
+      const attrTarget = tokens[0] ?? '(unknown)';
+      const attrs = tokens.slice(1);
+      const hit = attrs.find((a) => HIDING_ATTRS.has(a));
+      if (hit) {
+        hits.push(`${attrTarget}（${hit}）`);
       }
     }
   }
@@ -431,16 +451,18 @@ export function scanA2(ctx: AuditContext): RuleScan {
     );
   }
 
-  // .gitattributes -diff 绕过检测（v1.3.8 P1-A2 升级为 FAIL）
+  // .gitattributes 隐藏属性检测（v1.3.8 P1-A2 升级为 FAIL · v1.5.7 F13 属性集合判定）
   // 红队实测两步隐身：第一步提交 .gitattributes 标记 secrets.js -diff（此处仅 WARN 放行），
   // 第二步提交密钥文件——git diff 不输出内容行，A2 无内容可扫静默全绿。
-  // -diff 标记对审计模块是「结构性隐藏证据」，合法场景（真正的二进制产物如 .png/.lock）
-  // 极少需要 -diff；按 fail-closed 原则升级 FAIL，用户确属误报可用 --ruleset 自定义豁免。
+  // F13：命中集从字面 -diff 扩为 {-diff, binary, untracked} 且与属性顺序无关
+  //（binary 是内建宏 = -diff -merge -text；属性前置写法 `x merge=keep -diff` 旧正则漏报）。
+  // 隐藏标记对审计模块是「结构性隐藏证据」，合法场景（真正的二进制产物如 .png/.lock）
+  // 极少需要这些标记；按 fail-closed 原则升级 FAIL，用户确属误报可用 --ruleset 自定义豁免。
   const attrHiddenTargets = detectGitattributesDiffHidden(ctx);
   if (attrHiddenTargets.length > 0) {
     status = 'FAIL';
     details.push(
-      `检测到 .gitattributes 将以下文件标记为 -diff（内容不会出现在 git diff 中，A2 无法扫描——两步隐身路径：先标记 -diff 再提交密钥文件即静默绕过）: ${attrHiddenTargets.join(', ')}。如属真实二进制产物请改用审计友好的标记方式（如 .gitattributes 注释说明），密钥文件必须移除 -diff 标记。`
+      `检测到 .gitattributes 将以下路径标记为内容不可见属性（diff 不输出内容行，A2 无法扫描——两步隐身路径：先标记 -diff/binary/untracked 再提交密钥文件即静默绕过）: ${attrHiddenTargets.join(', ')}。如属真实二进制产物请改用审计友好的标记方式（如 .gitattributes 注释说明），密钥文件必须移除隐藏标记。`
     );
   }
 

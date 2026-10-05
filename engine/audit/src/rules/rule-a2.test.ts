@@ -313,8 +313,58 @@ describe('A2 不泄密钥', () => {
       expect(result.status).toBe('FAIL');
     });
 
-    it('普通 .gitattributes 行（非 -diff）→ PASS（不误伤）', () => {
-      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+*.png binary'])]);
+    it('普通 .gitattributes 行（非隐藏属性）→ PASS（不误伤）', () => {
+      // F13 前 +*.png binary 是负向样本；binary 现属隐藏宏命中集（= -diff -merge -text），
+      // 本负向换用纯语言标记属性
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+*.png diff=hex'])]);
+      const result = scanA2(ctx);
+      expect(result.status).toBe('PASS');
+    });
+  });
+
+  // ── F13（v1.5.7）：属性集合判定——与属性书写顺序无关 + binary/untracked 宏 ──
+  // 缺陷实证：旧正则锚定「路径后紧跟 -diff」，两种真实写法漏报——
+  //   ① 属性前置 `key.bin merge=keep -diff`（-diff 不在第一个属性位）；
+  //   ② binary 宏 `*.env binary`（= -diff -merge -text，同样让 diff 静默）。
+  // 重写后解析属性 token 列表，命中 {-diff, binary, untracked} 任一即报。
+  // 负向探针：把下方 detectGitattributesDiffHidden 的 HIDING_ATTRS 改回只含
+  // '-diff'（或删掉本 describe 的前两用例）→ 用例①②③必红。
+  describe('.gitattributes 隐藏属性（F13 属性集合判定·顺序无关）', () => {
+    it('① 属性前置：key.bin merge=keep -diff → FAIL（-diff 不在第一个属性位，旧正则漏报）', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+key.bin merge=keep -diff'])]);
+      const result = scanA2(ctx);
+      expect(result.status).toBe('FAIL');
+      expect(result.details.join(' ')).toContain('key.bin');
+    });
+
+    it('② binary 宏：*.env binary → FAIL（binary = -diff -merge -text 内建宏，diff 同样静默）', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+*.env binary'])]);
+      const result = scanA2(ctx);
+      expect(result.status).toBe('FAIL');
+      expect(result.details.join(' ')).toContain('binary');
+    });
+
+    it('③ untracked：secrets.js untracked → FAIL（对 git 完全隐藏，比 -diff 更彻底）', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+secrets.js untracked'])]);
+      const result = scanA2(ctx);
+      expect(result.status).toBe('FAIL');
+    });
+
+    it('④ 回归：-diff 在首位的三种既有写法仍 FAIL（secrets.js -diff / *.env -diff / key.bin -diff merge=keep）', () => {
+      for (const line of ['+secrets.js -diff', '+*.env -diff', '+key.bin -diff merge=keep']) {
+        const ctx = makeCtx([makeDiffFile('.gitattributes', [line])]);
+        expect(scanA2(ctx).status).toBe('FAIL');
+      }
+    });
+
+    it('负向①：非隐藏属性（*.lock linguist-generated / src/*.ts diff=ts）→ PASS', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+*.lock linguist-generated', '+src/*.ts diff=ts'])]);
+      const result = scanA2(ctx);
+      expect(result.status).toBe('PASS');
+    });
+
+    it('负向②：!diff 取反 / 注释行 → PASS（带值/取反形态不是隐藏）', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+docs/*.md !diff', '# *.env -diff（注释）'])]);
       const result = scanA2(ctx);
       expect(result.status).toBe('PASS');
     });
@@ -559,7 +609,7 @@ describe('A2 解码失败 debug 留痕（T14）', () => {
       const ctx = makeCtx([makeDiffFile('src/bin.ts', [`+${binaryB64}`])]);
       scanA2(ctx);
 
-      const debugLines = stderrWrites.filter((w) => w.includes('[sofagent-audit][debug]'));
+      const debugLines = stderrWrites.filter((w) => w.includes('[sofagent audit][debug]'));
       // 至少一条 base64 候选丢弃记录（整行候选——纯编码形态直达解码层）
       expect(debugLines.length).toBeGreaterThanOrEqual(1);
       // debug 输出不含原始候选明文的完整形态（截断到 48 字符）
@@ -584,7 +634,7 @@ describe('A2 解码失败 debug 留痕（T14）', () => {
       const binaryB64 = Buffer.from('\x01\x02\x03\x04\x05\x06\x07\x08').toString('base64');
       const ctx = makeCtx([makeDiffFile('src/bin2.ts', [`+${binaryB64}`])]);
       scanA2(ctx);
-      expect(stderrWrites.filter((w) => w.includes('[sofagent-audit][debug]'))).toHaveLength(0);
+      expect(stderrWrites.filter((w) => w.includes('[sofagent audit][debug]'))).toHaveLength(0);
     } finally {
       (process.stderr as { write: unknown }).write = originalWrite;
     }

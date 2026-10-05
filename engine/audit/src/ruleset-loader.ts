@@ -747,6 +747,6 @@ export function formatRulesetList(infos: RulesetInfo[]): string {
     lines.push(`  ${tag} ${info.name}${desc}`);
   }
   lines.push('');
-  lines.push('用法: sofagent-audit --diff HEAD~1..HEAD --ruleset <name>');
+  lines.push('用法: sofagent audit --diff HEAD~1..HEAD --ruleset <name>');
   return lines.join('\n');
 }

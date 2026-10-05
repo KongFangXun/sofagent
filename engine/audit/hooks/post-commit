@@ -1,10 +1,10 @@
 #!/bin/bash
 # sofagent post-commit hook v1.5.6
 # --no-verify 跳过 commit-msg，但不跳过 post-commit
-# 安装：sofagent-audit --init（v1.0.6 起 --init 同时安装 commit-msg + post-commit）
+# 安装：sofagent audit --init（v1.0.6 起 --init 同时安装 commit-msg + post-commit）
 #
 # CRITICAL: post-commit 永远 exit 0——任何时候都不能阻断 commit
-# post-commit 是 best-effort 检测——不保证 100% 覆盖，建议配合 CI 侧 sofagent-audit --diff 兜底
+# post-commit 是 best-effort 检测——不保证 100% 覆盖，建议配合 CI 侧 sofagent audit --diff 兜底
 #
 # v1.2.9 P0-2: 对账逻辑适配 parentSha——commit-msg hook 在 commit 对象生成前运行，
 # 审计记录写 parentSha（= 审计时 HEAD = 新提交的父提交）而非 commitSha。
@@ -32,7 +32,7 @@ if [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; then
   [ -f "$SOFAGENT_AUDIT_ENTRY" ] || exit 0  # post-commit 不阻断，静默退出即可
 elif [ -f "engine/audit/dist/index.js" ]; then
   :  # 仓库态在位（相对 CWD——契约要求保留，下游对账照常执行）
-elif command -v sofagent-audit &>/dev/null; then
+elif command -v sofagent audit &>/dev/null; then
   :  # 全局安装态在位（纯在位判据，本 hook 不执行任何引擎入口）
 else
   exit 0  # sofagent 不在位——静默退出
@@ -111,7 +111,7 @@ for (const line of lines) {
   plainLines.push(line);
 }
 if (plainLines.length === 0 && cipherCount > 0) {
-  console.log("  ℹ️ [sofagent] 审计历史为加密态（SOFAGENT-AGE-V1），post-commit 明文对账不可用——--no-verify 检测依赖 CI 侧 sofagent-audit --diff 兜底");
+  console.log("  ℹ️ [sofagent] 审计历史为加密态（SOFAGENT-AGE-V1），post-commit 明文对账不可用——--no-verify 检测依赖 CI 侧 sofagent audit --diff 兜底");
   process.exit(0);  // 对账不可用≠失败——发声后 exit 0（post-commit 永不阻断铁律不变）
 }
 // 混合态跳过计数——对账出口（命中/未命中）前统一发声（任务书：结尾输出「跳过 N 条密文行」）
@@ -163,7 +163,7 @@ try {
       }
       console.log("");
       console.log("  ℹ️ [sofagent] 父提交存在审计拦截记录（exit " + entry.exitCode + "）但本次 commit 未走审计——疑似 --no-verify 绕过。");
-      console.log("  可运行 sofagent-audit --verify-commit " + COMMIT_SHA + " 复核。");
+      console.log("  可运行 sofagent audit --verify-commit " + COMMIT_SHA + " 复核。");
       process.exit(0);  // post-commit 永不阻断
     }
   }
@@ -194,10 +194,10 @@ try {
     hookMissing = true;
   }
   if (hookMissing) {
-    console.log("  ⚠️ [sofagent] 未确认审计记录，且 commit-msg hook 不在位（防线已卸甲）——建议重新安装：sofagent-audit --init");
+    console.log("  ⚠️ [sofagent] 未确认审计记录，且 commit-msg hook 不在位（防线已卸甲）——建议重新安装：sofagent audit --init");
   } else {
     console.log("  ℹ️ [sofagent] 未确认审计记录（post-commit 对账未命中）。");
-    console.log("  如未使用 --no-verify 可忽略；如需确认运行 sofagent-audit --verify-commit " + COMMIT_SHA);
+    console.log("  如未使用 --no-verify 可忽略；如需确认运行 sofagent audit --verify-commit " + COMMIT_SHA);
   }
   // v1.5.0 TASK-9: 混合态跳过计数——对账完成后补一行密文行跳过说明
   if (cipherCount > 0) {
@@ -208,7 +208,7 @@ try {
   // JSON.parse 异常 = 真实损坏，红字 + exit 1（损坏必须红，不能吞）。
   // 注意走 console.log（stdout）——外层 2>/dev/null 会吞 stderr。
   console.log("  ❌ [sofagent] 审计历史解析异常（可能损坏）: " + (err && err.message ? err.message : String(err)));
-  console.log("  可运行 sofagent-audit --doctor 检查数据目录，或人工核查 " + HISTORY_FILE);
+  console.log("  可运行 sofagent audit --doctor 检查数据目录，或人工核查 " + HISTORY_FILE);
   process.exit(1);
 }
 ' 2>/dev/null

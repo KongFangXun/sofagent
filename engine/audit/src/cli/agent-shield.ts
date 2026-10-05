@@ -3,7 +3,7 @@
 // ============================================================
 //
 // 用法：
-//   sofagent-audit agent-shield [--json] [--no-process] [--fail-on warn]
+//   sofagent audit agent-shield [--json] [--no-process] [--fail-on warn]
 //                               [--mcp <path>] [--hooks <dir>] [--repo <dir>]
 //                               [--allow <name>]...
 //
@@ -223,7 +223,7 @@ function printHumanReadable(
 
 /** agent-shield 子命令用法（--help 输出） */
 export const AGENT_SHIELD_HELP = `
-用法: sofagent-audit agent-shield [选项]
+用法: sofagent audit agent-shield [选项]
 
   AgentShield 五类配置面扫描——Agent 的配置文件/工具定义/MCP 端点本身可被注入
   恶意指令，是独立于代码变更（git diff）的攻击面。全程只读，不写任何文件。

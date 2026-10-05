@@ -2,7 +2,7 @@
 // support-bundle.ts · 一键生成 issue 摘要 + 证据 zip
 // v1.5.6 新建 · 功能 ⑦
 //
-// 用法：sofagent-audit --support-bundle
+// 用法：sofagent audit --support-bundle
 // 输出：data/support-bundles/<timestamp>-support-bundle.zip
 //
 // zip 内容：

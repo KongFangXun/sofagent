@@ -1,12 +1,12 @@
 // ============================================================
-// cli/demo.ts · `sofagent-audit demo` 五分钟戏剧弧（v1.5.3 第八章）
+// cli/demo.ts · `sofagent audit demo` 五分钟戏剧弧（v1.5.3 第八章）
 // ============================================================
 //
 // 定位：转化漏斗第一环——一条命令让新用户在五分钟内**亲眼看一次拦截发生**。
 // 形态：`[通道]`（演示编排）｜ L4 卸包——串接既有能力的脚本面，
 //       **零新引擎逻辑**（不新增规则、不改判定、不新增 bin）。
 //
-// 🔴 挂点：`sofagent-audit` 的子命令入口就是 src/cli-quick.ts
+// 🔴 挂点：`sofagent audit` 的子命令入口就是 src/cli-quick.ts
 //    （package.json bin → dist/cli-quick.js），本模块由 cli-quick 的
 //    `argv[2] === 'demo'` 分支调用。**不新增 bin**——不碰「13 bin → 1」收敛叙事，
 //    且传播命令与试用命令同体（看完 demo 去掉 `demo` 就是真审计）。
@@ -31,9 +31,9 @@
 //    且 npx 冷启动不拖依赖。
 //
 // 用法：
-//   sofagent-audit demo                  五幕完整版
-//   sofagent-audit demo --speed fast     60 秒精简版（跳幕①②，直入拦截）
-//   sofagent-audit demo --out <dir>      指定产物目录（缺省 `<dataDir>/demo`，即
+//   sofagent audit demo                  五幕完整版
+//   sofagent audit demo --speed fast     60 秒精简版（跳幕①②，直入拦截）
+//   sofagent audit demo --out <dir>      指定产物目录（缺省 `<dataDir>/demo`，即
 //                                        `$SOFAGENT_DATA/demo`——沿用仓内 dataDir 解析口径）
 // ============================================================
 
@@ -1010,7 +1010,7 @@ export function parseDemoArgs(argv: string[]): DemoArgs {
 /** demo 子命令帮助文本 */
 export function demoHelpText(): string {
   return [
-    'sofagent-audit demo — 五分钟戏剧弧（一条命令，亲眼看一次拦截发生）',
+    'sofagent audit demo — 五分钟戏剧弧（一条命令，亲眼看一次拦截发生）',
     '',
     '用法：',
     '  npx -y -p @sofagent/audit sofagent-audit demo                 五幕完整版',

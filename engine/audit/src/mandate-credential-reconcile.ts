@@ -79,7 +79,7 @@ export interface ReconcileOptions {
   enabled?: boolean;
   /** 数据目录（读授权台账 + 写 decision-log；缺省走全局解析链） */
   dataDir?: string;
-  /** 留痕归属 Agent（缺省 'sofagent-audit'） */
+  /** 留痕归属 Agent（缺省 'sofagent audit'） */
   agentId?: string;
   /** 留痕会话标识（缺省 'credential-reconcile'） */
   sessionId?: string;
@@ -267,7 +267,7 @@ function recordReconcile(finding: ReconcileFinding, options: ReconcileOptions): 
     if (finding.mismatch !== undefined) evidence.push(`mismatch=${finding.mismatch}`);
     emitDecision(
       {
-        agentId: options.agentId ?? 'sofagent-audit',
+        agentId: options.agentId ?? 'sofagent audit',
         sessionId: options.sessionId ?? 'credential-reconcile',
         kind: 'CREDENTIAL_RECONCILE',
         moment: 'ATTRIBUTION',

@@ -19,16 +19,16 @@ function engineCrashExitCode(): number {
 }
 
 process.on('uncaughtException', (err) => {
-  console.error(`\u274c sofagent-audit 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
+  console.error(`\u274c sofagent audit 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
   process.exit(engineCrashExitCode());
 });
 process.on('unhandledRejection', (reason) => {
-  console.error(`\u274c sofagent-audit 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
+  console.error(`\u274c sofagent audit 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
   process.exit(engineCrashExitCode());
 });
 
 // ============================================================
-// sofagent-audit · 提交时审计 CLI 入口
+// sofagent audit · 提交时审计 CLI 入口
 // v1.5.6 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
 //          evolve-run→evolve, ab-test→ab-test,
@@ -343,8 +343,8 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--revert') {
       // v1.0.8: 无参报错修复
       if (!argv[i + 1] || argv[i + 1]!.startsWith('--')) {
-        console.error('❌ sofagent 提示：缺少快照 SHA 参数，用法: sofagent-audit --revert <snapshot-sha>');
-        console.error('   查看可用快照：sofagent-audit --timeline');
+        console.error('❌ sofagent 提示：缺少快照 SHA 参数，用法: sofagent audit --revert <snapshot-sha>');
+        console.error('   查看可用快照：sofagent audit --timeline');
         exit(2);
       }
       i++;
@@ -431,30 +431,30 @@ function parseArgs(argv: string[]): Args {
       break;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
-      console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计模块\n`);
+      console.log(`sofagent audit v${VERSION} · FDE Harness 的审计模块\n`);
       console.log('快速开始:');
-      console.log('  安装    npm install -g @sofagent/audit && sofagent-audit --init');
-      console.log('  试用    sofagent-audit --diff HEAD~1..HEAD');
+      console.log('  安装    npm install -g @sofagent/audit && sofagent audit --init');
+      console.log('  试用    sofagent audit --diff HEAD~1..HEAD');
       console.log('  npx     npx -y -p @sofagent/audit sofagent-audit --init');
       console.log('命令:');
-      console.log('  sofagent-audit --diff <range> [--task <desc>]   审计 git diff');
-      console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
-      console.log('  sofagent-audit --doctor                         运行环境健康检查（检查 config / hook / 版本一致性）');
-      console.log('  sofagent-audit --sign-config                    对 config.yml 签名（消除防篡改警告）');
-      console.log('  sofagent-audit --support-bundle                 一键生成 issue 摘要 + 证据 zip（脱敏）');
-      console.log('  sofagent-audit --root-cause                     根因分析');
-      console.log('  sofagent-audit --verify-chain                   审计链完整性校验');
-      console.log('  sofagent-audit --verify-commit <hash>           检查 commit 审计记录');
-      console.log('  sofagent-audit --regression <dir>               回归验证');
-      console.log('  sofagent-audit --install-hook                   安装 pre-commit + commit-msg + post-commit hook');
-      console.log('  sofagent-audit --revert <snapshot-sha>           恢复到指定快照（非交互环境须加 --yes 显式放行）');
-      console.log('  sofagent-audit --timeline [N]                   查看快照时间线');
-      console.log('  sofagent-audit ontology view                    本体人类可读视图');
+      console.log('  sofagent audit --diff <range> [--task <desc>]   审计 git diff');
+      console.log('  sofagent audit --init                           一键初始化（配置+hook+冒烟）');
+      console.log('  sofagent audit --doctor                         运行环境健康检查（检查 config / hook / 版本一致性）');
+      console.log('  sofagent audit --sign-config                    对 config.yml 签名（消除防篡改警告）');
+      console.log('  sofagent audit --support-bundle                 一键生成 issue 摘要 + 证据 zip（脱敏）');
+      console.log('  sofagent audit --root-cause                     根因分析');
+      console.log('  sofagent audit --verify-chain                   审计链完整性校验');
+      console.log('  sofagent audit --verify-commit <hash>           检查 commit 审计记录');
+      console.log('  sofagent audit --regression <dir>               回归验证');
+      console.log('  sofagent audit --install-hook                   安装 pre-commit + commit-msg + post-commit hook');
+      console.log('  sofagent audit --revert <snapshot-sha>           恢复到指定快照（非交互环境须加 --yes 显式放行）');
+      console.log('  sofagent audit --timeline [N]                   查看快照时间线');
+      console.log('  sofagent audit ontology view                    本体人类可读视图');
       console.log('  子命令自有参数见各自 --help 说明：');
-      console.log('  sofagent-audit agent-shield [--json] [--no-process]   AgentShield 五类配置面扫描（MCP/Hook/配置/密钥/影子 AI）');
-      console.log('  sofagent-audit conflict-check [--fix] [--json]       知识矛盾/孤儿/死链检测');
-      console.log('  sofagent-audit federation-distill [--json]           联邦蒸馏');
-      console.log('  sofagent-audit corpus export [--scope all] [--json]  训练语料导出三件套（规则+方法论+样本）');
+      console.log('  sofagent audit agent-shield [--json] [--no-process]   AgentShield 五类配置面扫描（MCP/Hook/配置/密钥/影子 AI）');
+      console.log('  sofagent audit conflict-check [--fix] [--json]       知识矛盾/孤儿/死链检测');
+      console.log('  sofagent audit federation-distill [--json]           联邦蒸馏');
+      console.log('  sofagent audit corpus export [--scope all] [--json]  训练语料导出三件套（规则+方法论+样本）');
       console.log('');
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
@@ -463,8 +463,8 @@ function parseArgs(argv: string[]): Args {
       console.log('  --ci        = --silent（CI 友好输出，无交互提示）     exit 0/1/2');
       console.log('');
       console.log('双入口对照:');
-      console.log('  sofagent-audit      quick 只读审计（17 条默认规则，秒级）');
-      console.log('  sofagent-audit-full 完整引擎（--init / --diff <range> / 25 条规则）——详见 README「快速开始」');
+      console.log('  sofagent audit      quick 只读审计（17 条默认规则，秒级）');
+      console.log('  sofagent audit --full 完整引擎（--init / --diff <range> / 25 条规则）——详见 README「快速开始」');
       if (verbose) {
         console.log('\n完整参数列表:');
         console.log('  --diff <range>     git diff 范围（默认 HEAD~1..HEAD）');
@@ -492,13 +492,13 @@ function parseArgs(argv: string[]): Args {
         console.log('  --ruleset-path <d> 加载本地自定义规则集目录');
         console.log('  --list-rulesets    列出可用规则集');
         console.log('  --mcp              MCP Server（已拆分为 @sofagent/mcp）');
-        console.log('\n退出码: 0=全通过 / 1=有警告 / 2=有违规（含用法错误；非 git 仓库亦归此档，见 error=NOT_A_GIT_REPO） / 3=非 git 仓库（仅 quick 入口 sofagent-audit 使用；本引擎不产生 3） / 4=引擎崩溃');
+        console.log('\n退出码: 0=全通过 / 1=有警告 / 2=有违规（含用法错误；非 git 仓库亦归此档，见 error=NOT_A_GIT_REPO） / 3=非 git 仓库（仅 quick 入口 sofagent audit 使用；本引擎不产生 3） / 4=引擎崩溃');
       } else {
-        console.log('\n完整参数列表: sofagent-audit --help --verbose');
+        console.log('\n完整参数列表: sofagent audit --help --verbose');
       }
       exit(0);
     } else if (argv[i] === '--version') {
-      console.log(`sofagent-audit v${VERSION}`);
+      console.log(`sofagent audit v${VERSION}`);
       exit(0);
     } else {
       const arg = argv[i];
@@ -524,7 +524,7 @@ function parseArgs(argv: string[]): Args {
  * 从 cwd 往上查找 .git 目录，将 hooks/ 下三个模板复制到 .git/hooks/
  *
  * v1.3.9 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
- * 老用户 `sofagent-audit --install-hook` 升级时不再 miss post-commit（--no-verify 绕过的唯一防线）。
+ * 老用户 `sofagent audit --install-hook` 升级时不再 miss post-commit（--no-verify 绕过的唯一防线）。
  * v1.5.6 H-01: 补装 pre-commit（.sofagent/ 永不入库主防线——staged 清理在
  * commit 对象生成前生效，规避 macOS git 内存 index 快照时序问题）。
  */
@@ -554,7 +554,7 @@ function installHook(): void {
     if (result.configured) {
       console.log(`ℹ️ [sofagent] 检测到 core.hooksPath=${result.configuredValue ?? ''}——hook 已安装到配置目录（git 将从该目录执行 hook）`);
     }
-    console.log('   每次 git commit 时会自动运行 sofagent-audit 检查；pre-commit 拦 .sofagent/ 入库，post-commit 在提交后对账 --no-verify 绕过。');
+    console.log('   每次 git commit 时会自动运行 sofagent audit 检查；pre-commit 拦 .sofagent/ 入库，post-commit 在提交后对账 --no-verify 绕过。');
     exit(0);
   } catch (e) {
     console.error(`❌ sofagent 提示：${e instanceof Error ? e.message : String(e)}`);
@@ -570,7 +570,7 @@ function runRootCauseAnalysis(): void {
     const history = loadHistory();
 
     if (history.length === 0) {
-      console.log('无历史数据。运行 sofagent-audit --diff <range> 后会自动记录审计历史。');
+      console.log('无历史数据。运行 sofagent audit --diff <range> 后会自动记录审计历史。');
       exit(0);
     }
 
@@ -639,7 +639,7 @@ function loadSnapshotsFromDir(dir: string): DiffSnapshot[] {
   try {
     files = readdirSync(dir).filter((f) => f.endsWith('.json'));
   } catch (err) {
-    process.stderr.write(`[sofagent-audit] warn: snapshot 目录不可读: ${(err as Error).message}\n`);
+    process.stderr.write(`[sofagent audit] warn: snapshot 目录不可读: ${(err as Error).message}\n`);
     return snapshots;
   }
 
@@ -657,7 +657,7 @@ function loadSnapshotsFromDir(dir: string): DiffSnapshot[] {
       });
     } catch (err) {
       // 跳过解析失败的文件
-      process.stderr.write(`[sofagent-audit] warn: snapshot 解析失败: ${(err as Error).message}\n`);
+      process.stderr.write(`[sofagent audit] warn: snapshot 解析失败: ${(err as Error).message}\n`);
     }
   }
 
@@ -689,7 +689,7 @@ function printTimeline(limit: number, json: boolean): void {
       console.log(`${time}  ${snap.shortSha}  ${snap.fileCount} 文件`);
     }
     console.log(`\n  共 ${snapshots.length} 条快照（最近 ${limit} 条）`);
-    console.log('  回滚：sofagent-audit --revert <SHA>');
+    console.log('  回滚：sofagent audit --revert <SHA>');
   } catch (err) {
     console.error('❌ sofagent 获取快照时间线时遇到问题:', (err as Error).message);
     exit(1);
@@ -714,7 +714,7 @@ function confirm(question: string, allowNonTty = false): Promise<boolean> {
   if (!process.stdin.isTTY) {
     if (!allowNonTty) {
       console.error('🚫 非交互环境（stdin 非 TTY）——破坏性操作已拒绝执行（校验强度对齐 MCP 侧硬门控）。');
-      console.error('   确认要执行时请显式加 --yes，例如：sofagent-audit --revert <sha> --yes');
+      console.error('   确认要执行时请显式加 --yes，例如：sofagent audit --revert <sha> --yes');
       return Promise.resolve(false);
     }
     console.error('⚠️  非交互环境 + 显式 --yes——按显式授权执行破坏性操作。');
@@ -748,7 +748,7 @@ function checkVersionConsistency(): void {
     const pkgVersion = pkg?.version;
     if (typeof pkgVersion === 'string' && pkgVersion !== VERSION) {
       console.warn(
-        `⚠️ 版本不一致：sofagent-audit 全局安装为 v${pkgVersion}，当前源码为 v${VERSION}。`
+        `⚠️ 版本不一致：sofagent audit 全局安装为 v${pkgVersion}，当前源码为 v${VERSION}。`
       );
       console.warn(
         `   全局安装可能陈旧，建议刷新：npm i -g @sofagent/audit@latest`
@@ -756,7 +756,7 @@ function checkVersionConsistency(): void {
     }
   } catch (err) {
     // 读取失败不阻断运行——自检是 advisory，绝不能影响主流程
-    process.stderr.write(`[sofagent-audit] warn: 版本自检读取失败: ${(err as Error).message}\n`);
+    process.stderr.write(`[sofagent audit] warn: 版本自检读取失败: ${(err as Error).message}\n`);
   }
 }
 
@@ -868,7 +868,7 @@ async function main(): Promise<void> {
         console.log('audit 环境自检：');
         const gitAvailable = (() => { try { require('child_process').execFileSync('git', ['--version'], { stdio: 'pipe' }); return true; } catch { return false; } })();
         console.log(`  ${gitAvailable ? '✅' : '❌'} git ${gitAvailable ? '可用' : '不可用'}`);
-        console.log(`  ✅ sofagent-audit CLI 可用`);
+        console.log(`  ✅ sofagent audit CLI 可用`);
         exit(0);
       }
       throw err;
@@ -880,16 +880,16 @@ async function main(): Promise<void> {
   // P1-A9: 无参数运行静默写库——用户无意识触发真实审计并写入全局数据。
   // 无参数时（argv 仅含 node + 脚本路径，无任何 flag），改为输出 help 而非默认执行审计。
   if (process.argv.slice(2).length === 0) {
-    console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计模块\n`);
+    console.log(`sofagent audit v${VERSION} · FDE Harness 的审计模块\n`);
     console.log('⚠️  无参数运行不会执行审计。请指定要执行的操作：\n');
     console.log('常用命令:');
-    console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
-    console.log('  sofagent-audit --diff HEAD~1..HEAD              审计最近一次 commit');
-    console.log('  sofagent-audit --diff --cached                  审计暂存区（commit-msg hook 用）');
-    console.log('  sofagent-audit --diff origin/main..HEAD         审计分支差异');
-    console.log('  sofagent-audit --doctor                         运行环境健康检查');
-    console.log('  sofagent-audit --verify-chain                   审计链完整性校验');
-    console.log('  sofagent-audit --help                           查看全部命令');
+    console.log('  sofagent audit --init                           一键初始化（配置+hook+冒烟）');
+    console.log('  sofagent audit --diff HEAD~1..HEAD              审计最近一次 commit');
+    console.log('  sofagent audit --diff --cached                  审计暂存区（commit-msg hook 用）');
+    console.log('  sofagent audit --diff origin/main..HEAD         审计分支差异');
+    console.log('  sofagent audit --doctor                         运行环境健康检查');
+    console.log('  sofagent audit --verify-chain                   审计链完整性校验');
+    console.log('  sofagent audit --help                           查看全部命令');
     console.log('');
     console.log('提示：commit-msg hook 会自动运行审计，通常无需手动执行。');
     exit(0);
@@ -932,7 +932,7 @@ async function main(): Promise<void> {
       exit(0);
     } catch (err) {
       console.error(`❌ 签名失败: ${err instanceof Error ? err.message : String(err)}`);
-      console.error('   提示：签名需要 HMAC 密钥（~/.sofagent-key），运行 sofagent-audit --init 可自动生成');
+      console.error('   提示：签名需要 HMAC 密钥（~/.sofagent-key），运行 sofagent audit --init 可自动生成');
       exit(1);
     }
   }
@@ -1128,7 +1128,7 @@ async function main(): Promise<void> {
     if (args.json) {
       console.log(JSON.stringify({ exitCode: 2, rules: [], error: 'NOT_A_GIT_REPO' }, null, 2));
     } else {
-      console.error('错误：当前目录不在 git 仓库内。sofagent-audit 需要 git 仓库才能运行。');
+      console.error('错误：当前目录不在 git 仓库内。sofagent audit 需要 git 仓库才能运行。');
     }
     exit(2);
   }
@@ -1143,7 +1143,7 @@ async function main(): Promise<void> {
       console.log(JSON.stringify({ exitCode: 2, rules: [], error: 'DIFF_PARSE_FAILED' }, null, 2));
     } else {
       console.error(`❌ diff 获取失败——range 可能无效: ${args.diffRange ?? args.cached ? '--cached' : '(空)'}`);
-      console.error('  示例: sofagent-audit --diff origin/main..HEAD');
+      console.error('  示例: sofagent audit --diff origin/main..HEAD');
     }
     exit(2);
   }
@@ -1328,7 +1328,7 @@ async function main(): Promise<void> {
       try {
         const { hooks } = await import('./invalidation');
         hooks.onAuthorizationChanged({
-          agentId: 'sofagent-audit',
+          agentId: 'sofagent audit',
           sessionId: args.diffRange,
           changedRules: disabledEntries.map(([key]) => key),
           trigger: `config.yml 关闭审计规则：${disabledList}`,
@@ -1336,7 +1336,7 @@ async function main(): Promise<void> {
         });
       } catch {
         // 失效标记失败——吞错（配置变更留痕不能反过来压垮审计），但显式告警不静默
-        process.stderr.write('[sofagent-audit] 警告: 结论失效标记写入失败，跳过（不影响审计结果）\n');
+        process.stderr.write('[sofagent audit] 警告: 结论失效标记写入失败，跳过（不影响审计结果）\n');
       }
     }
 
@@ -1639,7 +1639,7 @@ async function main(): Promise<void> {
       // v1.5.6 F-16: 内容指纹（HEAD^{tree}）——post-commit 对账三重键之一
       treeSha,
       commitPhase: isPreCommitPhase ? 'pre-commit' : undefined,
-      engine: `sofagent-audit v${VERSION}`,
+      engine: `sofagent audit v${VERSION}`,
       actionGovernance: {
         actor,
         timestamp: govTimestamp,
@@ -1654,14 +1654,14 @@ async function main(): Promise<void> {
           // v1.4.9 交付十三：whichDataVersion 契约就位——FDE 知识库版本化未就绪时留空（不报错），
           // 版本化落地后从 knowledge 版本元数据回填
           whichDataVersion: undefined,
-          whichApp: `sofagent-audit v${VERSION}`,
+          whichApp: `sofagent audit v${VERSION}`,
         },
       },
     };
     appendHistory(historyEntry);
   } catch {
     // 历史写入失败不影响审计结果
-    process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
+    process.stderr.write('[sofagent audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
   // 8.5 session 产物（P0：审计结果 session 可见性）——v1.3.9
@@ -1674,7 +1674,7 @@ async function main(): Promise<void> {
         process.stderr.write(`[sofagent] session 报告已写入: ${jsonPath}\n`);
       }
     } catch {
-      process.stderr.write('[sofagent-audit] 警告: session 报告写入失败，跳过（不影响审计结果）\n');
+      process.stderr.write('[sofagent audit] 警告: session 报告写入失败，跳过（不影响审计结果）\n');
     }
   }
 
@@ -1690,7 +1690,7 @@ async function main(): Promise<void> {
       commitSnapshot(process.cwd());
     } catch {
       // 快照失败不影响审计结果
-      process.stderr.write('[sofagent-audit] 警告: 快照创建失败，跳过（不影响审计结果）\n');
+      process.stderr.write('[sofagent audit] 警告: 快照创建失败，跳过（不影响审计结果）\n');
     }
   }
 
@@ -1783,7 +1783,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   if (json) {
     // JSON 顶层补产品签名——此前只有 exitCode+rules，CI/CD 无法区分 sofagent 产出
     console.log(JSON.stringify({
-      engine: 'sofagent-audit',
+      engine: 'sofagent',
       version: VERSION,
       verdict: results.exitCode === 0 ? 'PASS' : results.exitCode === 1 ? 'WARN' : 'FAIL',
       timestamp: new Date().toISOString(),
@@ -1869,7 +1869,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   // 产品签名行（人类可读输出头部，FAIL 拦截时醒目，让用户知道是 sofagent 拦的）
   console.log('  ' + productSignature(exitCode, totalRules, totalCnt));
   console.log(bannerTop());
-  console.log(bannerLine(`sofagent-audit · FDE Harness · v${VERSION}`));
+  console.log(bannerLine(`sofagent audit · FDE Harness · v${VERSION}`));
   console.log(bannerLine(`扫描 ${diffFiles.length} 文件 · ${totalRules} 项检查 · ${totalCnt} 条规则 (${defaultCnt} 默认 + ${extendedCnt} 扩展) · ${issueWord}`));
   console.log(bannerLine(`${statusLabel}  ·  ${actionLabel}`));
   console.log(bannerBottom());
@@ -1948,11 +1948,11 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   const ruleSummary = exitCode === 0
     ? `${results.rules.length} 条规则全部通过`
     : `${results.rules.length} 条规则已完成检测`;
-  console.log(`  审计模块: sofagent-audit v${VERSION} · ${ruleSummary}`);
+  console.log(`  审计模块: sofagent audit v${VERSION} · ${ruleSummary}`);
 
   // v1.0.8: PASS 时向 stderr 输出轻量签名行（防遗忘装了 sofagent）
   if (exitCode === 0) {
-    process.stderr.write(`✅ sofagent-audit v${VERSION} · ${results.rules.length} 条规则全部通过\n`);
+    process.stderr.write(`✅ sofagent audit v${VERSION} · ${results.rules.length} 条规则全部通过\n`);
     // v1.3.9+: PASS 时补行动指示——消除"PASS 无感"（审计通过与失败都带 [sofagent]，用户看不出持续感）
     console.log('  下次 commit 也将自动审计——无需任何操作，持续守护中');
   }
@@ -1965,7 +1965,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
     console.log('  ┌─ 下一步 ─────────────────────────────────────────────┐');
     console.log('  │ 1. 修复上述问题后重新 git add + git commit            │');
     console.log('  │ 2. 如确需临时跳过，请咨询安全管理员并在 CI 侧补审     │');
-    console.log('  │ 3. 查看完整文档：sofagent-audit --help                │');
+    console.log('  │ 3. 查看完整文档：sofagent audit --help                │');
     console.log('  └──────────────────────────────────────────────────────┘');
   }
 
@@ -1980,7 +1980,7 @@ if (process.env.SOFAGENT_SINGLE_ENTRY !== '1') {
   process.stderr.write('[sofagent] 旧命令 `sofagent-audit-full` 已收敛到单入口 `sofagent audit --full`——本命令进入兼容期（仍可用，下一 minor 版本移除）。\n');
 }
   main().catch((err) => {
-    console.error('sofagent-audit 内部错误:', err.message);
+    console.error('sofagent audit 内部错误:', err.message);
     exit(2);
   });
 }

@@ -6,7 +6,7 @@
 // 昨晚并行会话在主仓做审计规则/npm 实验，残留 t/、npm-p4-test/、
 // b.ts、.env 等 7 项垃圾，无任何门禁发现。
 //
-// 本模块在每次 sofagent-audit 运行时顺带扫描全仓：
+// 本模块在每次 sofagent audit 运行时顺带扫描全仓：
 // - 已跟踪文件（git ls-files）中的垃圾命名
 // - untracked 文件（git ls-files --others --exclude-standard）中的垃圾命名
 // - 嵌套独立 .git 目录（git 灾难根源之一：误把主仓当 /tmp 实验场）

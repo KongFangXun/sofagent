@@ -72,6 +72,6 @@ describe('printResults · ci||silent 模式 stdout 结论行（P0 可见性）',
     // 非 ci 模式不应出现 ci 专属结论行格式
     expect(out).not.toContain('[sofagent] 审计通过 ·');
     // 但应有可视化 banner（sofagent-audit）
-    expect(out).toContain('sofagent-audit');
+    expect(out).toContain('sofagent audit');
   });
 });

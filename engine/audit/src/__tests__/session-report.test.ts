@@ -42,7 +42,7 @@ describe('session-report · buildSessionReport', () => {
     expect(report.warnCount).toBe(0);
     expect(report.task).toBe('t1');
     expect(report.commitSha).toBe('abc123');
-    expect(report.engine).toContain('sofagent-audit v');
+    expect(report.engine).toContain('sofagent audit v');
 
     // files: 反查命中 → 该文件状态为 FAIL
     expect(report.files).toHaveLength(1);

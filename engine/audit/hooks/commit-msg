@@ -1,6 +1,6 @@
 #!/bin/bash
 # sofagent commit-msg hook v1.5.6
-# 安装：sofagent-audit --init 或 sofagent-audit --install-hook
+# 安装：sofagent audit --init 或 sofagent audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 # 变更：空提交同样发起引擎调用（message 类规则 A5/A9/A19 照常执行）；
 #             fresh-eyes run 冻结期检查已随多轮编排退役（S382 哨点——审查标准面保护改由 loop.md 主任务协议承担）
@@ -23,12 +23,12 @@ fi
 
 # 1. Node.js 检测
 if ! command -v node &>/dev/null; then
-  echo "❌ sofagent-audit: Node.js 未找到，审计未运行"
+  echo "❌ sofagent audit: Node.js 未找到，审计未运行"
   echo "   请安装 Node.js >= 18: https://nodejs.org"
   exit 1
 fi
 
-# 2. sofagent-audit 检测（优先用仓库本地 engine/audit/dist/，避免全局旧版版本漂移）
+# 2. sofagent audit 检测（优先用仓库本地 engine/audit/dist/，避免全局旧版版本漂移）
 # v1.4.8 F-15: 全局回退分支不再 `command -v`（PATH 解析可被前置假 binary 完全
 # 绕过——执行面与校验面路径错位），改与 2.1 校验面同源的 require.resolve 绝对
 # 路径：node_modules 解析链不受 PATH 摆布，校验哪个文件就执行哪个文件。
@@ -93,8 +93,8 @@ resolve_global_audit() {
         echo "🔴 [sofagent] 全局审计引擎基准缺失——本地全局包的完整性无从比对"
         echo "   建立基准（任一，均为显式确认时刻）："
         echo "     · bash tools/audit-baseline-sync.sh --global   # 仓库内：同步全局安装包口径信任锚（最可靠）"
-        echo "     · sofagent-audit --install-hook   # 重装 hook 时自动建立全局锚（v1.5.4 起）"
-        echo "     · sofagent-audit --doctor --baseline"
+        echo "     · sofagent audit --install-hook   # 重装 hook 时自动建立全局锚（v1.5.4 起）"
+        echo "     · sofagent audit --doctor --baseline"
         exit 1
       fi
       _GLOBAL_RECORDED=$(tr -d '[:space:]' < "$_GLOBAL_HASH_RECORD" 2>/dev/null)
@@ -109,14 +109,14 @@ resolve_global_audit() {
         echo "     ① 仓库内同步信任锚（推荐）：bash tools/audit-baseline-sync.sh --global"
         echo "        —— 该工具同步的是「全局安装包」口径的信任锚（audit-global-dist-hash.txt），"
         echo "           不污染本仓口径的锚（audit-dist-hash.txt）；全局包升级后锚陈旧即用它刷新"
-        echo "     ② 删陈旧锚后重装 hook：rm -f \"\$HOME/.sofagent/internal/audit-global-dist-hash.txt\" && sofagent-audit --install-hook"
+        echo "     ② 删陈旧锚后重装 hook：rm -f \"\$HOME/.sofagent/internal/audit-global-dist-hash.txt\" && sofagent audit --install-hook"
         echo "   ⚠️ 同版本 npm install -g @sofagent/audit 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。"
         exit 1
       fi
     fi
     AUDIT_CMD=(node "$RESOLVED_ENTRY")
   else
-    echo "❌ sofagent-audit 未安装，审计未运行"
+    echo "❌ sofagent audit 未安装，审计未运行"
     echo "   请运行: npm install -g @sofagent/audit"
     exit 1
   fi
@@ -199,7 +199,7 @@ if [ -f "$_DIST_ROOT_FOR_HASH/engine/audit/dist/index.js" ]; then
     # 即把（可能已被污染的）dist 固化为合法基线，且与 SECURITY.md「基线缺失显性报错，
     # 不再自动记录」的承诺直接冲突（该承诺原只覆盖 doctor 路径）。改为：告警 + 显式
     # 指引 + 放行本次（首装后未建基线是正常态，不阻断提交；信任锚由显式命令建立）。
-    echo "⚠️ [sofagent] dist 基线缺失——本次完整性校验未执行。运行 sofagent-audit --doctor 或 bash tools/audit-baseline-sync.sh 显式建立信任锚"
+    echo "⚠️ [sofagent] dist 基线缺失——本次完整性校验未执行。运行 sofagent audit --doctor 或 bash tools/audit-baseline-sync.sh 显式建立信任锚"
   else
     RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
 
@@ -257,7 +257,7 @@ if [ -f "$_DIST_ROOT_FOR_HASH/engine/audit/dist/index.js" ]; then
       echo "   定位到具体文件: bash tools/audit-baseline-sync.sh --check"
       echo "   恢复原始 dist: npm run build --workspace=engine/audit"
       echo "   确认 dist 可信后重建信任锚: bash tools/audit-baseline-sync.sh"
-      echo "   （注意：sofagent-audit --doctor 只体检、不覆盖已存在的基线，不能用它刷新）"
+      echo "   （注意：sofagent audit --doctor 只体检、不覆盖已存在的基线，不能用它刷新）"
       exit 1
     fi
   fi

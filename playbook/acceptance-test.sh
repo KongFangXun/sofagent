@@ -443,11 +443,11 @@ printf 'audit:\n  rules:\n    a7: false\n' > "$TMP_REPO/.sofagent/config.yml"
 echo "# signature test" >> README.md; git add README.md
 GIT_EDITOR=true git commit --quiet -m "sig: normal commit" 2>&1 || true
 SIG_PASS_OUT=$($CLI --diff HEAD~1..HEAD 2>&1 || true)
-if grep -q "审计模块: sofagent-audit" <<< "$SIG_PASS_OUT" && [[ "$SIG_PASS_OUT" == *条规则全部通过* ]]; then pass
+if grep -q "审计模块: sofagent audit v" <<< "$SIG_PASS_OUT" && [[ "$SIG_PASS_OUT" == *条规则全部通过* ]]; then pass
 else fail "PASS 场景未输出签名行"; fi
 echo "API_KEY=sk-test-1234567890" > .env; git add -f .env
 SIG_FAIL_OUT=$($CLI --diff --cached 2>&1 || true)
-if grep -q "审计模块: sofagent-audit" <<< "$SIG_FAIL_OUT" && grep -q "条规则已完成检测" <<< "$SIG_FAIL_OUT" && ! [[ "$SIG_FAIL_OUT" == *条规则全部通过* ]]; then pass
+if grep -q "审计模块: sofagent audit v" <<< "$SIG_FAIL_OUT" && grep -q "条规则已完成检测" <<< "$SIG_FAIL_OUT" && ! [[ "$SIG_FAIL_OUT" == *条规则全部通过* ]]; then pass
 else fail "FAIL/WARN 场景签名行不正确"; fi
 git reset HEAD . 2>/dev/null || true; rm -f .env
 rm -f /tmp/sofagent-wh.*.log 2>/dev/null || true
@@ -560,7 +560,7 @@ git init -q && git config user.email "qa@test" && git config user.name "QA"
 echo "safe" > file.txt && git add . && git commit -qm "init file.txt"
 SAFE_HASH=$(git rev-parse HEAD); echo "more safe" >> file.txt && git add . && git commit -qm "update file.txt"
 set +eo pipefail
-node "$PROJECT_ROOT/engine/audit/dist/index.js" --diff ${SAFE_HASH}..HEAD --task "update file.txt" 2>&1 | grep -q "sofagent-audit v" && PASS_SIGN=true || PASS_SIGN=false
+node "$PROJECT_ROOT/engine/audit/dist/index.js" --diff ${SAFE_HASH}..HEAD --task "update file.txt" 2>&1 | grep -q "sofagent audit v" && PASS_SIGN=true || PASS_SIGN=false
 set -eo pipefail; cd "$PROJECT_ROOT"
 $PASS_SIGN && pass || fail "PASS 输出缺少 sofagent-audit 签名行"
 scenario 45 "pre-push-check 含 tag message 校验 + 依赖图循环检测"
