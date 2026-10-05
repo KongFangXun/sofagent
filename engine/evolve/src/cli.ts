@@ -12,10 +12,91 @@ async function main() {
     console.log('Subcommands:');
     console.log('  run <path>     运行 Skill 优化（默认内置 native gate，零外部依赖）');
     console.log('  check <path>   扫描 Skill 文件安全性');
+    console.log('  propose        生成 DSH 技能更新提案（F14 · v1.5.7——buildProposerPrompt 拼装 + 模型输出安全闸解析）');
     process.exit(0);
   }
 
   switch (subcommand) {
+    case 'propose': {
+      // F14（v1.5.7）：proposer 链路接线——此前 buildProposerPrompt /
+      // parseProposalWithSafety 只在 barrel 再导出零生产调用（「诞生即死」）。
+      // 流程：三源输入 → buildProposerPrompt 拼装（纯函数，可回放）→ 调用方把
+      // prompt 交给通用模型 → parseProposalWithSafety 解析输出（安全闸前置——
+      // 危险 diff/空 solves/空 diff 一律 safe=false 拒绝，不进 gate 不进 SKILL/）。
+      // CLI 形态：--wiki <file>（必填）--impact <file> --failure <file> --output <model-output-file>
+      // 两种用法：仅 --wiki = 打印 prompt（交给模型）；带 --output = 解析模型产物出安全裁决。
+      const { buildProposerPrompt, parseProposalWithSafety } = await import('./proposer');
+      const flag = (name: string): string | undefined => {
+        const i = args.indexOf(`--${name}`);
+        return i !== -1 ? args[i + 1] : undefined;
+      };
+      const wikiPath = flag('wiki');
+      const outputPath = flag('output');
+      const workDir = flag('workdir') ?? process.cwd();
+
+      if (!wikiPath) {
+        console.error('❌ propose 需要 --wiki <wiki-index-file> 参数');
+        console.error('   用法: sofagent-evolve propose --wiki <file> [--impact <file>] [--failure <file>] [--workdir <dir>]');
+        console.error('         sofagent-evolve propose --wiki <file> --output <model-output-file>  # 解析模型产物并安全裁决');
+        process.exit(1);
+      }
+
+      const { readFileSync } = await import('fs');
+      let wikiIndex = '';
+      try {
+        wikiIndex = readFileSync(wikiPath, 'utf-8');
+      } catch (err) {
+        console.error(`❌ 无法读取 wiki 索引 ${wikiPath}: ${(err as Error).message}`);
+        process.exit(1);
+      }
+      const impactPath = flag('impact');
+      const failurePath = flag('failure');
+      if (impactPath && !require('fs').existsSync(impactPath)) {
+        console.error(`❌ 无法读取 skill-impact 台账 ${impactPath}`);
+        process.exit(1);
+      }
+      if (failurePath && !require('fs').existsSync(failurePath)) {
+        console.error(`❌ 无法读取 failure-ledger ${failurePath}`);
+        process.exit(1);
+      }
+
+      console.log(`sofagent-evolve v${require('../package.json').version} — DSH 技能更新提案`);
+
+      if (!outputPath) {
+        // 用法一：拼装并打印 prompt（调用方交给通用模型执行）
+        const prompt = buildProposerPrompt(
+          { wikiIndex, skillImpactLedgerPath: impactPath, failureLedgerPath: failurePath },
+          workDir,
+        );
+        console.log(prompt);
+        console.error('\nℹ️ 将上方 prompt 交给通用模型，模型输出保存为文件后用 --output <file> 解析');
+        break;
+      }
+
+      // 用法二：解析模型产物 → 安全闸裁决
+      let modelOutput = '';
+      try {
+        modelOutput = readFileSync(outputPath, 'utf-8');
+      } catch (err) {
+        console.error(`❌ 无法读取模型产物 ${outputPath}: ${(err as Error).message}`);
+        process.exit(1);
+      }
+      const result = parseProposalWithSafety(modelOutput);
+      if (result.proposal === null || result.proposal === undefined) {
+        // parse 层拒绝（无 JSON / 坏 JSON）——proposal 为 null，安全裁决即拒绝语义
+        console.log(`  安全裁决: ❌ 拒绝进 gate——模型产物无可解析提案（verdict=${result.safety.verdict}）`);
+        process.exit(1);
+      }
+      console.log(`  提案: ${result.proposal.title}`);
+      console.log(`  目标: ${result.proposal.targetSkillPath}`);
+      console.log(`  溯源: ${result.proposal.solves.length} 条`);
+      const rejectReason = result.safe
+        ? ''
+        : `（拒绝进 gate——verdict=${result.safety.verdict}${result.proposal.solves.length === 0 ? ' · solves 为空' : ''}${result.proposal.diff.length === 0 ? ' · diff 为空' : ''}）`;
+      console.log(`  安全裁决: ${result.safe ? '✅ SAFE（可进 gate）' : `❌ ${rejectReason}`}`);
+      if (!result.safe) process.exit(1);
+      break;
+    }
     case 'run': {
       const targetPath = args[1];
       if (!targetPath) {
@@ -77,7 +158,7 @@ async function main() {
     }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-evolve <run|check>');
+      console.error('Usage: sofagent-evolve <run|check|propose>');
       process.exit(1);
   }
 }
