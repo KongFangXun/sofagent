@@ -9,6 +9,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.6-16B8F3" alt="Version" /></a>
+  <a href="https://www.npmjs.com/package/sofagent"><img src="https://img.shields.io/npm/v/sofagent" alt="npm version" /></a>
 </p>
 
 <p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
@@ -31,18 +32,18 @@
 
 ## 这是什么
 
-> 🧩 **一句话（三因子口径）**：sofagent 是**自带 Harness 的 S1M，用 FDE 打法交付**——FDEing 是工程能力、S1M 是本体、harness 是治理层，三层各司其职、不互替。
-
 > 💬 **一句话版本**：进场时它替你把业务摸清、写成文件；离场后你的数字员工每次改代码、动文件，都按文件过一道安检、留一份记录、存一个快照——出事能查、能回滚。
 
-> 🏢 **组织视角版本**：AI 落地的卡点已经从「模型够不够聪明」迁移到「组织敢不敢接」——能不能进组织架构、有没有账号、绩效怎么算、做错了怎么退回。sofagent 就是给数字员工办入职的那套制度：进场把岗位职责写成文件（岗位职责说明书），离场按文件做绩效考核（每次变更留证据）、组织记忆（越干越有的家底）、试错容错（做错了退得回）。给 AI 发工号之前，先装 sofagent。
+> 🏢 **组织视角版本**：AI 落地的卡点已经从「模型够不够聪明」迁移到「组织敢不敢接」——能不能进组织架构、有没有账号、绩效怎么算、做错了怎么退回。sofagent 就是给数字员工办入职的那套制度：进场把岗位职责写成文件（岗位职责说明书），离场按文件做绩效考核（每次变更留证据）、组织记忆（越干越有的家底——沉淀机制随使用迭代，当前实证边界见 [LIMITATIONS](./docs/LIMITATIONS.md)）、试错容错（做错了退得回）。给 AI 发工号之前，先装 sofagent。
 
-**开源 FDE Harness 层**（FDE = Forward Deployed Engineer，前线部署工程师——详见〈什么是 FDE Harness〉节）——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理：进场把业务判断写成文件（工作流、本体数据、AI 节点部署），离场按文件审计每一次变更。约束层五种能力（注入 · 审计 · 回溯 · 沉淀 · 进化），五种形态分发（FDE 插件 / Skill / MCP / CLI / Dashboard）。
+> 🧩 **一句话（三因子口径**，术语见〈[什么是 FDE Harness](#什么是-fde-harness)〉**）**：sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M，System One Model——把判定从生成里分出来的决策模型，基底排期 v1.6.0–v1.9.0 建设、v2.0.0 宣告）排期 v1.6.0–v1.9.0——FDEing 是工程能力、S1M 是本体、harness 是治理层，三层各司其职、不互替。身份公式定稿 **FDEing × S1A（S1A = S1M + Harness）**，口径 SSOT = [PHILOSOPHY · 身份口径](./docs/PHILOSOPHY.md)。
+
+**开源 FDE Harness 层**（Harness = 「缰绳」——套住 Agent 的治理层，不是 Agent 本身；FDE = Forward Deployed Engineer，前线部署工程师——详见〈什么是 FDE Harness〉节）——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理：进场把业务判断写成文件（工作流、本体数据、AI 节点部署），离场按文件审计每一次变更。约束层五种能力（注入 · 审计 · 回溯 · 沉淀 · 进化），五种形态分发（FDE 插件 / Skill / MCP / CLI / Dashboard）。
 sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（管住强度按宿主分档：DSH/OpenClaw 硬注入可拦截，其余档位为建议性注入 + git hook 审计兜底——见〈多平台挂载〉档位表）。
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent audit 拦截 .env 提交" width="860" /><br/>
-  <sub>零配置审计实拍：一行命令审计最近一次 commit，密钥泄漏当场拦截</sub>
+  <sub>零配置审计实拍：一行命令审计最近一次 commit，密钥泄漏当场拦截（截图摄于单入口收敛前，命令已收敛为 sofagent audit）</sub>
 </p>
 
 <details>
@@ -57,9 +58,11 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **30 秒轻量试用**（首次含 npx 拉包，复跑秒级；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
-> 💡 试用时提交消息请写 **≥6 字符**（如 `initial audit test`）——A19 质量规则（编号对照见 [规则表](./docs/ARCHITECTURE.md)）对超短消息（`init`/`add`）判红属设计意图（防无意义提交信息），不是故障。
+> 💡 只要审计 CLI、不想拉全量依赖树？改装 scoped 包：`npm i -g @sofagent/audit`（体积与依赖面小得多，能力面见 [LIMITATIONS · 包依赖](./docs/LIMITATIONS.md)）。
 
-**五分钟戏剧演示**（v1.5.1 已交付，沙箱隔离、真实文件零接触）：`npx -y -p sofagent sofagent audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕完整链路（`--speed fast` 60 秒精简版；产物落 `$SOFAGENT_DATA/demo`（默认 `~/.sofagent/data/demo`），不触碰被审仓库与其他目录）。
+> 💡 试用时提交消息请写 **≥6 字符**（如 `initial audit test`）——A19 质量规则（编号对照见 [SECURITY 规则清单](./SECURITY.md#25-条审计规则完整清单文档级-ssot)）对超短消息（`init`/`add`）判红属设计意图（防无意义提交信息），不是故障。
+
+**五分钟沙箱演示**（v1.5.1 已交付，沙箱隔离、真实文件零接触）：`npx -y -p sofagent sofagent audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕完整链路（`--speed fast` 60 秒精简版；产物落 `$SOFAGENT_DATA/demo`（默认 `~/.sofagent/data/demo`），不触碰被审仓库与其他目录）。
 
 > 版本说明：v1.5.6 已发版（2026-10-04）；npm 可安装最新版 `@sofagent/audit@1.5.6`。
 
@@ -110,8 +113,8 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，7×24 在线守护（commit 时触发审计），人离场治理不离开
 - 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（单机实测：quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
-- 🧱 **25 条审计规则 + 104 个 MCP tool**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截（critical 层命中后其余规则跳过——fail-fast 设计；默认非 fail-closed——配置可被篡改、hook 可被 --no-verify 跳过，绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）。**证据两档**：25 条中 20 条基于 git diff 硬证据（本地即生效）+ 4 条混合（diff + Agent 日志，Agent 接入后生效）+ 1 条文件系统扫描；
-  A7/A8 等日志规则（编号对照见 [规则表](./docs/ARCHITECTURE.md)）在无 Agent 日志时跳过（信任边界详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
+- 🧱 **规则与安全面：25 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截；fail-fast 设计（critical 层命中后其余规则跳过）、默认非 fail-closed（配置可被篡改、hook 可被 --no-verify 跳过——绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
+- 🔧 **工具与能力面：104 个 MCP tool + 证据两档**——25 条规则中 20 条基于 git diff 硬证据（本地即生效）、4 条混合 + 1 条文件系统扫描（A7/A8 等日志规则在无 Agent 日志时跳过，编号对照见 [SECURITY 规则清单](./SECURITY.md#25-条审计规则完整清单文档级-ssot)，信任边界见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## 什么是 FDE Harness
@@ -207,7 +210,7 @@ npx -y -p sofagent sofagent audit
 
 > ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent audit --init`（见下方完整安装）。
 
-拦截特定格式密钥泄漏时是这样的（真实输出；A2（编号对照见 [规则表](./docs/ARCHITECTURE.md)）检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式，通用密钥形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）——首屏的实拍图即此场景，此处不再重复。
+拦截特定格式密钥泄漏时是这样的（真实输出；A2（编号对照见 [SECURITY 规则清单](./SECURITY.md#25-条审计规则完整清单文档级-ssot)）检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式，通用密钥形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）。首屏的实拍图为 A1 场景（.env 敏感文件提交被拦、exit 2），A2 密钥格式检测为另一条规则，此处不重复截图。
 
 **完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
 
@@ -246,7 +249,7 @@ sofagent audit --doctor    # 验证环境（可选）
 >
 > | 入口 | 命令 | 形态 | 给谁看 |
 > |---|---|---|---|
-> | **终端版** | `sofagent-dashboard --full` | 终端 ASCII 三栏（零前端依赖） | 开发者 / FDE 快速看 |
+> | **终端版** | `sofagent dashboard --full`（旧 bin `sofagent-dashboard` 仍在兼容期可用） | 终端 ASCII 三栏（零前端依赖） | 开发者 / FDE 快速看 |
 > | **Web 版** | `sofagent web`（install.sh 安装态可用）· 仓库态 `node tools/dashboard/serve-dashboard.mjs` | 浏览器可视化（localhost:3780） | 老板 / IT 可视化看 |
 > | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式（仅 macOS 双击入口） | macOS 用户 |
 >
@@ -294,6 +297,10 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 
 ## 生态与文档索引
 
+**社交证明**：
+
+[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
+
 **Featured in**（社区收录 · 含收录申请中）：
 
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
@@ -304,6 +311,11 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 [![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-listed-brightgreen)](https://github.com/punkpeye/awesome-mcp-servers)
 [![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
 [![awesome-ai-agents (e2b)](https://img.shields.io/badge/awesome--ai--agents%20%28e2b%29-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
+
+**仓库内两大目录的语义归属**：
+
+- `SKILL/`——给 Agent 读的行为约束文件系统（三层：SKILL.md 主入口 / harness/ 约束层 / agents/ Sub Agent），新 Skill 放这里
+- `FORGE/`——自迭代工具链的 Skill 与台账（内部工具，外部用户可忽略），driver 运行产物落 `~/.sofagent/data/forge-runs/`
 
 **上游与插件入口**：
 
