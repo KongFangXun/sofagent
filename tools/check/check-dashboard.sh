@@ -235,7 +235,7 @@ fi
 if [ -f "$HTML" ]; then
   DASH_LINES=$(wc -l < "$HTML" | tr -d ' ')
   DASH_INLINE=$(grep -c 'style="' "$HTML" || true)
-  MAX_LINES=3000   # 冻结上限 = 本版实测 2955 + 余量 45
+  MAX_LINES=3000   # 冻结上限 3000；v1.5.7 F39 实测 2997/3000（余量 3 行）——顶格附近，拆分评估已登记 ROADMAP
   MAX_INLINE=210   # 冻结上限 = 本版实测 192 + 余量 18
   if [ "$DASH_LINES" -gt "$MAX_LINES" ]; then
     echo "  ❌ [⑨体量与形态] dashboard.html 行数 ${DASH_LINES} 超冻结上限 ${MAX_LINES}——单文件形态已冻结：新增能力走模块化，不在此文件继续堆"

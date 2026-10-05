@@ -137,7 +137,17 @@ function resolveGovernanceEngine() {
     const m = require(resolved);
     if (typeof m?.computeGovernanceKpis === 'function') { __govEngineCache = m; return m; }
   } catch { /* 下一候选 */ }
-  // 候选 3：预留一体化形态
+  // 候选 3：bin wrapper 同源 dist 解析（v1.5.7 F39 补——与 install.sh 既有枚举同口径）：
+  // 安装态 bin/sofagent wrapper 与引擎 dist 同 SOFAGENT_HOME 部署，从 wrapper 同级
+  // node_modules 解析 @sofagent/audit（bin → ../node_modules 标准布局）
+  try {
+    const resolved2 = require.resolve('@sofagent/audit/public-api', {
+      paths: [join(SOFAGENT_HOME_INSTALL, 'node_modules'), join(SOFAGENT_HOME_INSTALL, 'bin', '..')],
+    });
+    const m = require(resolved2);
+    if (typeof m?.computeGovernanceKpis === 'function') { __govEngineCache = m; return m; }
+  } catch { /* 下一候选 */ }
+  // 候选 4：预留一体化形态
   try {
     const p = join(SOFAGENT_HOME_INSTALL, 'packages', 'audit', 'dist', 'public-api.js');
     const m = require(p);
@@ -681,6 +691,20 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // F38（v1.5.7）：Host 头白名单校验——DNS rebinding 防线。本服务无鉴权且绑定本机，
+  // 攻击者可用 rebinding 让 evil.example.com 解析到 127.0.0.1 后携恶意 Host 头访问。
+  // 白名单 = localhost / 127.0.0.1 / [::1] / DASHBOARD_HOST 显式配置值（局域网共享
+  // 0.0.0.0 时 Host 为 IP 形态，本机访问仍走 localhost 三态）。不匹配 403 + stderr 留痕。
+  const reqHost = (req.headers.host || '').split(':')[0].replace(/^\[|\]$/g, '');
+  const hostAllow = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+  if (process.env.DASHBOARD_HOST) hostAllow.add(process.env.DASHBOARD_HOST);
+  if (!hostAllow.has(reqHost)) {
+    console.error(`[dashboard] ⚠️  Host 头不在白名单（返回 403，服务继续）: Host=${req.headers.host || '(空)'} — 仅允许 ${[...hostAllow].join(' / ')}`);
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden: Host header not allowed');
+    return;
+  }
+
   // CORS + no-cache
   // v1.5.2 fresh-eyes（finding-14）：默认不再回显 CORS 头——同源访问本就不需要 CORS，
   // 本机直连使用不受影响。此前 `Access-Control-Allow-Origin: *` 一刀切作用于 /data/*、
@@ -930,29 +954,6 @@ const server = createServer(async (req, res) => {
   // Default route → dashboard.html（v1.4.0 双态：安装态 web/dashboard.html / 仓库态 tools/dashboard/）
   if (urlPath === '/' || urlPath === '') {
     urlPath = DASHBOARD_HTML_REL;
-  }
-
-  // /assets/* 别名（v1.4.4 目录同步配套）：安装态 web/assets/ 天然命中；
-  // 仓库态映射 docs/assets/——两态同 URL 引用，页面写 /assets/banner.png 不再断链
-  if (urlPath === '/assets' || urlPath.startsWith('/assets/')) {
-    const rel = urlPath.slice('/assets'.length);
-    const assetsRoot = IS_INSTALL_MODE ? DOCS_DIR : ASSETS_DIR_REPO;
-    const filePath = join(assetsRoot, 'assets', normalize(rel));
-    if (filePath !== join(assetsRoot, 'assets') && !filePath.startsWith(join(assetsRoot, 'assets') + '/')) {
-      res.writeHead(403);
-      res.end('Forbidden');
-      return;
-    }
-    const data = await tryRead(filePath);
-    if (data === null) {
-      res.writeHead(404);
-      res.end('Not found');
-      return;
-    }
-    const mime = MIME[extname(filePath)] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': mime });
-    res.end(data);
-    return;
   }
 
   const filePath = join(DOCS_DIR, normalize(urlPath));
