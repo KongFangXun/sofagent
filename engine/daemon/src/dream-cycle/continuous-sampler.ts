@@ -39,6 +39,14 @@ import { runDreamCycle } from './state-machine';
 /** 采样目标周期（天）——开发日志第七章一验收线 */
 export const SAMPLE_TARGET_DAYS = 7;
 
+/**
+ * F45（v1.5.7 P0）：零产出告警阈值（天）——最近连续 N 天 conceptsProduced
+ * 均为 0 时告警。探针语义：**告警条件本身是计数器**（连续零产出天数），
+ * 记的是零命中计数与探针总样本数，不记「已验证管道正常」的成功标记——
+ * 零产出被如实计数并透出，不由探针自身裁决管道好坏。
+ */
+export const ZERO_OUTPUT_ALERT_DAYS = 3;
+
 // ── 明细口径四类型（v1.4.5 Phase 4 尾巴——与 D4 桥
 // engine/orchestrator/src/evolution/evolution-samples.ts 的同名类型
 // 字段级对齐，采样侧只做收集不做转换）──────────────────────
@@ -100,6 +108,14 @@ export interface DailySample {
   correctionReflows: number;
   /** Dream Cycle 本轮是否完整跑完六阶段 */
   dreamCycleComplete: boolean;
+  /**
+   * F45（v1.5.7 P0）：本轮 Dream Cycle 产出 concept 数。
+   * 恒真修复的实测面——`dreamCycleComplete` 只能证明「六阶段跑完」，不能证明
+   * 「跑出了东西」：零 concept 的完整轮此前在汇总里与高产出轮不可区分。
+   * 语义：skipDreamCycle / 同日重采（alreadySampled）时 = 0（如实记，不回填
+   * 旧轮值——本字段是「本轮产出」口径，不是「最近一次产出」口径）。
+   */
+  conceptsProduced: number;
   /** 大脑状态（'real'=真脑；'mock'=降级轮——采样标注位） */
   providerStatus: 'real' | 'mock';
   /** 降级原因（providerStatus='mock' 时非空） */
@@ -129,6 +145,12 @@ export interface SamplerCursor {
   mockDays: number;
   /** 首日基线（entities 存量——增量口径的锚点） */
   baselineEntities: number | null;
+  /**
+   * F45（v1.5.7 P0）：零产出告警去重游标——最近一次零产出告警的日期。
+   * 同日多次采样 / daemon 重启后不再重复告警；旧 cursor 无此字段（undefined
+   * ≠ 任意日期，首告警照常打出）。
+   */
+  lastZeroOutputAlertDate?: string;
 }
 
 /** 采样结果（collectDailySample 返回） */
@@ -171,6 +193,8 @@ export function loadCursor(dataDir: string): SamplerCursor {
       daysSampled: Number.isFinite(parsed.daysSampled) ? Number(parsed.daysSampled) : 0,
       mockDays: Number.isFinite(parsed.mockDays) ? Number(parsed.mockDays) : 0,
       baselineEntities: Number.isFinite(parsed.baselineEntities) ? Number(parsed.baselineEntities) : null,
+      // F45：告警去重游标（旧 cursor 无此字段 → undefined，首告警照常）
+      ...(typeof parsed.lastZeroOutputAlertDate === 'string' ? { lastZeroOutputAlertDate: parsed.lastZeroOutputAlertDate } : {}),
     };
   } catch {
     return { lastSampleDate: '', daysSampled: 0, mockDays: 0, baselineEntities: null };
@@ -404,6 +428,147 @@ function todayISO(): string {
   return `${y}-${m}-${d}`;
 }
 
+// ────────────────────────────────────────────────────────────
+// F45（v1.5.7 P0）：连续零产出探针
+//
+// 探针语义（任务书钉死）：**记零命中计数，不记成功标记**——
+//   probe.checkedDays / probe.zeroDays 是「看了多少天、其中多少天零产出」的
+//   计数器；alerted 只标记「告警已打出」（防同日重复告警），**不是**「管道
+//   已验证正常」的成功证明。零产出被如实计数并透出，裁决权在人/上游。
+// 旧样本兼容：v1.5.7 前的 DailySample 无 conceptsProduced 字段——按 0 计
+//   （对旧数据不假造产出；首日新样本即带真值，探针面自然换血）。
+// ────────────────────────────────────────────────────────────
+
+/** 连续零产出探针结果（doctor / 调用方消费的观测面） */
+export interface ZeroOutputProbe {
+  /** 探针看的最近样本天数（≤ 阈值天数——样本不足时如实记实际数） */
+  checkedDays: number;
+  /** 其中 conceptsProduced = 0 的天数（零命中计数） */
+  zeroDays: number;
+  /** 最近一天样本日期（样本序列为空时 null） */
+  lastSampleDate: string | null;
+  /** 是否触发告警（checkedDays ≥ 阈值 且 zeroDays = checkedDays） */
+  shouldAlert: boolean;
+  /** 零产出告警是否已在探针面标记过（本字段由调用方持久化去重，探针自身无状态） */
+  alerted: boolean;
+}
+
+/**
+ * 评估连续零产出探针（纯函数——输入完整样本序列，输出计数器与告警判定）。
+ *
+ * 口径：取**最近 ZERO_OUTPUT_ALERT_DAYS 个有样本的自然日**（每日以最新行为准——
+ * 同日多次采样取最新一轮的 conceptsProduced），全部零产出且天数达到阈值即告警。
+ * 中断的天（无样本）不补零——「没采样」与「采了但零产出」是两回事，前者
+ * 记 checkedDays 缩水，不由探针虚构零。
+ */
+export function evaluateZeroOutputProbe(samples: DailySample[]): ZeroOutputProbe {
+  // 每日取最新行（同日多行——readAllSamples 按文件内行序，后者为新）
+  const byDate = new Map<string, number>();
+  for (const s of samples) {
+    byDate.set(s.date, typeof s.conceptsProduced === 'number' ? s.conceptsProduced : 0);
+  }
+  const dates = Array.from(byDate.keys()).sort(); // ISO date 字典序 = 时间序
+  const window = dates.slice(-ZERO_OUTPUT_ALERT_DAYS);
+  const values = window.map((d) => byDate.get(d) ?? 0);
+  const zeroDays = values.filter((v) => v === 0).length;
+  const checkedDays = window.length;
+  return {
+    checkedDays,
+    zeroDays,
+    lastSampleDate: dates.length > 0 ? dates[dates.length - 1]! : null,
+    shouldAlert: checkedDays >= ZERO_OUTPUT_ALERT_DAYS && zeroDays === checkedDays,
+    alerted: false,
+  };
+}
+
+/**
+ * 解析 daemon-health 写入口（dist CJS 与 vitest src 双运行时兼容）。
+ *
+ * dist（tsc CJS 输出）：`require('../daemon-health')` 命中 dist/daemon-health.js；
+ * vitest（src 直跑）：无扩展名 require 经 vite 变换不解析——补 `../daemon-health.ts`
+ * 候选命中源文件。两候选皆失败返回 null（调用方降级留 stderr 痕）。
+ */
+function resolveHealthWriter(): ((event: 'error', extra: { lastError: string }) => unknown) | null {
+  for (const spec of ['../daemon-health', '../daemon-health.ts']) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const mod = require(spec) as { writeHealthFile?: unknown };
+      if (typeof mod.writeHealthFile === 'function') {
+        return mod.writeHealthFile as (event: 'error', extra: { lastError: string }) => unknown;
+      }
+    } catch {
+      // 试下一候选
+    }
+  }
+  return null;
+}
+
+/**
+ * 打出零产出告警（stderr 可见 + 审计留痕 + doctor 可见三件套）。
+ *
+ * - stderr：调度进程的日志面（daemon 日志 / launchd·systemd journal 均收 stderr）；
+ * - 审计留痕：appendHistory 落 data/audit/history.jsonl（ruleResults 携带探针
+ *   计数器明细——checkedDays/zeroDays/lastSampleDate，与 run-fs-audit 的
+ *   daemon 留痕形态同构，不旁造第二套落盘）；
+ * - doctor 可见：writeHealthFile('error', …) 落 daemon-health.json 的
+ *   lastError——doctor 的 degraded 分支与「最近错误」行直接透出。
+ * 三处任一失败不互相阻断（best-effort 串联，但 stderr 始终打——可见性优先）。
+ */
+export function emitZeroOutputAlert(probe: ZeroOutputProbe): void {
+  const message = `[evolution] ⚠️ Dream Cycle 连续 ${probe.zeroDays} 天零 concept 产出`
+    + `（探针窗口 ${probe.checkedDays} 天 · 最后样本 ${probe.lastSampleDate ?? '无'}）`
+    + `——管道可能在空转，请检查 model 注册表 / 输入 Ledger（think.md + audit history）是否为空`;
+
+  // 一、stderr（可见性优先——此面失败无依赖，永远打）
+  process.stderr.write(`${message}\n`);
+
+  // 二、审计留痕（appendHistory——探针计数器进 ruleResults 明细）
+  try {
+    const { appendHistory } = require('@sofagent/audit') as {
+      appendHistory: (entry: {
+        timestamp: string;
+        diffRange: string;
+        exitCode: number;
+        ruleResults: Array<{ name: string; number: number; status: 'PASS' | 'WARN' | 'FAIL' | 'SKIPPED'; details: string[] }>;
+        diffFileCount: number;
+        engine?: string;
+      }) => void;
+    };
+    appendHistory({
+      timestamp: new Date().toISOString(),
+      diffRange: 'dream-cycle:zero-output-probe',
+      exitCode: 1, // WARN——零产出是异常信号不是违规（不阻断）
+      ruleResults: [{
+        name: 'Dream Cycle 零产出探针（F45）',
+        number: 0,
+        status: 'WARN',
+        details: [
+          message,
+          `probe.checkedDays=${probe.checkedDays} probe.zeroDays=${probe.zeroDays}`,
+          `probe.lastSampleDate=${probe.lastSampleDate ?? 'null'}`,
+        ],
+      }],
+      diffFileCount: 0,
+      engine: 'sofagent-daemon',
+    });
+  } catch (err) {
+    // 审计留痕失败不吞——stderr 补一行，与 K 批「降级必须留痕」同款纪律
+    process.stderr.write(`[evolution] 零产出告警的审计留痕失败: ${(err as Error).message}\n`);
+  }
+
+  // 三、doctor 可见（daemon-health.json lastError——doctor degraded/最近错误行透出）
+  const writeHealth = resolveHealthWriter();
+  if (writeHealth !== null) {
+    try {
+      writeHealth('error', { lastError: message });
+    } catch (err) {
+      process.stderr.write(`[evolution] 零产出告警的健康文件写入失败: ${(err as Error).message}\n`);
+    }
+  } else {
+    process.stderr.write('[evolution] 零产出告警的健康文件写入失败: daemon-health 模块不可解析\n');
+  }
+}
+
 /**
  * 采集一个日样本（幂等：当日已采则跳过 Dream Cycle 重跑，直接返回现状）。
  *
@@ -429,12 +594,17 @@ export async function collectDailySample(
   const alreadySampled = cursor.lastSampleDate === date;
 
   // 一、跑 Dream Cycle（真脑缺省——第七章一以真脑为前提）
-  let dreamCycleComplete = true;
+  // F45（v1.5.7 P0）：初值 true → false——「没跑」不得被记成「完整跑完」。
+  //   此前初值 true 使 skipDreamCycle / alreadySampled / 异常路径下的样本
+  //   全部带 dreamCycleComplete=true，与真跑完的轮次在汇总里不可区分（恒真）。
+  let dreamCycleComplete = false;
+  let conceptsProduced = 0;
   let providerStatus: 'real' | 'mock' = 'real';
   let degradedReason: string | undefined;
   if (!alreadySampled && !opts?.skipDreamCycle) {
     const result = await runDreamCycle(dataDir, {});
     dreamCycleComplete = result.cycleComplete;
+    conceptsProduced = result.counts.concepts;
     providerStatus = result.providerStatus ?? 'real';
     degradedReason = result.degradedReason;
   }
@@ -461,6 +631,8 @@ export async function collectDailySample(
     knowledgeDelta,
     correctionReflows: reflows,
     dreamCycleComplete,
+    // F45：本轮 concept 产出实测（skipDreamCycle/重采 = 0——「本轮产出」口径）
+    conceptsProduced,
     providerStatus,
     ...(degradedReason ? { degradedReason } : {}),
     ...(details.correctionBackflow.length > 0 ? { correctionBackflow: details.correctionBackflow } : {}),
@@ -473,6 +645,23 @@ export async function collectDailySample(
   mkdirSync(evolutionDir(dataDir), { recursive: true });
   appendFileSync(sPath, JSON.stringify(sample) + '\n', 'utf-8');
 
+  // ── F45（v1.5.7 P0）：连续零产出探针（采样落盘后评估——窗口含当日新样本）──
+  // 探针去重：同日多次采样只告警一次（上次告警日期 == 当日 ⇒ 已打过，跳过）。
+  // 探针面只记「零命中计数」——shouldAlert 是计数器的判定投射，不是成功标记；
+  // 告警动作本身 best-effort（emit 内三件套互不阻断），不反向影响采样主链。
+  let zeroAlertFiredToday = false;
+  try {
+    const probe = evaluateZeroOutputProbe(readAllSamples(dataDir));
+    if (probe.shouldAlert && cursor.lastZeroOutputAlertDate !== date) {
+      emitZeroOutputAlert(probe);
+      zeroAlertFiredToday = true;
+    }
+  } catch {
+    // 探针失败不阻断采样主链（观测增强，非依赖）；emit 的第一落点就是 stderr，
+    // 评估自身异常属极端形态（readAllSamples 已宽松读盘），stderr 一行可见
+    process.stderr.write('[evolution] 零产出探针评估异常（不影响采样）\n');
+  }
+
   // 四、更新游标（当日首采才推进天数——幂等）
   const nextCursor: SamplerCursor = alreadySampled
     ? cursor
@@ -482,13 +671,18 @@ export async function collectDailySample(
         mockDays: cursor.mockDays + (providerStatus === 'mock' ? 1 : 0),
         baselineEntities: entities,
       };
-  saveCursor(dataDir, nextCursor);
+  // F45：告警去重游标——探针确实告警时推进 lastZeroOutputAlertDate（同日重采/
+  // daemon 重启后不再重复告警；未告警时透传旧值）
+  const cursorWithAlert: SamplerCursor = zeroAlertFiredToday
+    ? { ...nextCursor, lastZeroOutputAlertDate: date }
+    : nextCursor;
+  saveCursor(dataDir, cursorWithAlert);
 
   return {
     sample,
-    cursor: nextCursor,
+    cursor: cursorWithAlert,
     sampleFilePath: sPath,
-    targetReached: nextCursor.daysSampled >= SAMPLE_TARGET_DAYS && nextCursor.mockDays === 0,
+    targetReached: cursorWithAlert.daysSampled >= SAMPLE_TARGET_DAYS && cursorWithAlert.mockDays === 0,
   };
 }
 
