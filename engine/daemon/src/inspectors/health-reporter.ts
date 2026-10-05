@@ -257,14 +257,62 @@ export function runHealthReport(projectDir: string): DaemonHealth | null {
   }
 
   // 写入 data/dashboard/daemon-health.json
+  // F48-③（v1.5.7）：同日覆盖写 + 按周轮转（保留 4 份周档）——
+  //   此前每次运行无条件覆盖，历史健康趋势不可回看（Dashboard 只见最后一帧）。
+  //   轮转档命名 daemon-health-YYYY-Www.json（ISO 周号），新周首写时把当前档
+  //   归位为上周档、删除超保留数的旧档。消费方（sofagent-dashboard.sh 与
+  //   ARCHITECTURE 数据流速览表）读当前档不变——周档是追加的回看面，零迁移。
+  //   写入频率 = daemon 每次巡检（ARCHITECTURE「数据流速览」表口径）。
   try {
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
+    rotateWeeklyArchive(outputDir, 'daemon-health.json', now);
     fs.writeFileSync(outputPath, JSON.stringify(health, null, 2), 'utf-8');
     return health;
   } catch (err) {
     console.warn(`[health-reporter] 写入健康报告失败: ${(err as Error).message}`);
     return null;
+  }
+}
+
+/** 周档保留数（F48-③：保留 4 份周档 ≈ 一个月回看窗） */
+const WEEKLY_KEEP = 4;
+
+/**
+ * F48-③：按周轮转——当前档跨周时归位为上周档、清理超保留数旧档。
+ * 纯文件操作：目录不存在/无旧档时零副作用；单步失败静默（轮转是回看增强，
+ * 不阻断报告写主流程）。
+ */
+function rotateWeeklyArchive(dir: string, baseName: string, nowISO: string): void {
+  try {
+    const current = require('path').join(dir, baseName) as string;
+    if (!fs.existsSync(current)) return;
+    const stat = fs.statSync(current);
+    // 当前档的写入周 vs 本周：跨周才归位（同周 = 覆盖写语义，不轮转）
+    const isoWeek = (d: Date): string => {
+      const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+      const dayNum = t.getUTCDay() || 7;
+      t.setUTCDate(t.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+      const week = Math.ceil(((t.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+      return `${t.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+    };
+    const fileWeek = isoWeek(stat.mtime);
+    const nowWeek = isoWeek(new Date(nowISO));
+    if (fileWeek === nowWeek) return;
+    // 归位：当前档 → daemon-health-<fileWeek>.json
+    const archived = require('path').join(dir, baseName.replace(/\.json$/, `-${fileWeek}.json`)) as string;
+    fs.copyFileSync(current, archived);
+    // 清理超保留数旧档（按文件名排序 = 周序，删最旧）
+    const prefix = baseName.replace(/\.json$/, '-');
+    const oldArchives = fs.readdirSync(dir)
+      .filter((f) => f.startsWith(prefix) && f.endsWith('.json'))
+      .sort();
+    for (let i = 0; i < oldArchives.length - WEEKLY_KEEP; i++) {
+      try { fs.unlinkSync(require('path').join(dir, oldArchives[i]!) as string); } catch { /* 单档删除失败不阻断 */ }
+    }
+  } catch {
+    // 轮转自身失败不阻断报告写（回看增强非依赖）
   }
 }

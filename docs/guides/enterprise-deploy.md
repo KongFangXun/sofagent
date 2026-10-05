@@ -69,6 +69,20 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 - 数据保留策略（cleanup.sh --purge --before 命令）
 - 独立审计日志（task-record.sh 双通道）
 
+## 容量规划与保留期（F48-① · v1.5.7）
+
+企业批量部署前按设备活度预估磁盘占用与保留窗口。**实测锚点**（单机单用户口径，见 LIMITATIONS）：单次引擎审计约 1.1s、5 万行 diff 约 6.1s；磁盘面主增长源是审计历史与 spill 临时文件。
+
+| 数据面 | 增长特征 | 保留机制（自动） | 容量参考 |
+|---|---|---|---|
+| `audit/history.jsonl` 主链 | 每次 commit 追加 1 条 | doctor `--repair` 超 50MB 自动归档（归档段带独立锚点，**归档 ≠ 删除**） | 中活度设备（50 commits/日）约 1-2MB/日 |
+| `memory/`（事实级） | 每条事实一文件 | maintenance-daily 巡检：文件数超 **10000**（`MEMORY_DIR_FILE_WARN` 共享常量）自动 `archive()`（30 天冷数据移归档区） | 达阈值前约 10-50MB |
+| `think.md` | append-only Ledger | maintenance-daily：60 天前条目自动归档至 `think.archive.md` + 备份轮转 3 份 | 反思频率线性，归档后主文件稳定 |
+| `spill/`（>5MB diff 落盘） | 大 diff 临时文件 | maintenance-daily：按 TTL 回收（`SOFAGENT_SPILL_TTL_DAYS` 覆盖，缺省 30 天） | 罕见面；含密钥类内容建议收短 TTL |
+| `task/logs` | 每任务一目录 | cleanup.sh `--purge --before` 手动/外置 cron | 按企业 SOP 定保留期 |
+
+**规划建议**：① 每设备预留 ≥500MB 数据分区（覆盖上述全部增长源 + 归档区）；② 强合规场景把 `SOFAGENT_SPILL_TTL_DAYS` 收到 7 天以内（spill 可能含脱敏前 diff 内容）；③ 归档区的清理属企业 SOP 决策（引擎只归档不删除——审计证据链完整性优先）。
+
 > think.md gpg 加密自动化仍待规划。
 
 详见 [ROADMAP.md](../ROADMAP.md)。
