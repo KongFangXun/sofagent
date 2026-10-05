@@ -11,6 +11,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'node:path';
+import { homedir } from 'node:os';
 
 /** 方法论语义段键（GUIDE 锚点标记的三件套） */
 export const METHODOLOGY_KEYS = ['five-elements', 'three-questions', 'quantification'] as const;
@@ -105,21 +106,42 @@ function countTables(text: string): number {
 /**
  * 从仓库根读 GUIDE 并解析（默认 <cwd>/FDE/GUIDE.md——
  * SOFAGENT_REPO_ROOT 环境变量可覆盖，测试注入用）。
+ *
+ * F19（v1.5.7）：查找链插入 $SOFAGENT_HOME/skill/FDE/GUIDE.md 一级——
+ * cwd 相对之后、包相对之前。install.sh 的 FDE 步骤把 fde.md 与 Agent Skill
+ * 装进 $SOFAGENT_HOME/skill/（SKILL 整树复制含 skill/ 下的 FDE 资料），
+ * 安装态（cwd 非仓库根、未设 SOFAGENT_REPO_ROOT）此前恒空语料返回；
+ * 本级使安装态可读。三级全不可达仍返回空 sections + complete:false
+ * （既有缺省语义不变）。
  */
 export function exportMethodology(repoRoot?: string): MethodologyCorpus & { guidePath: string } {
+  const parseOrEmpty = (guidePath: string): MethodologyCorpus & { guidePath: string } => {
+    if (!existsSync(guidePath)) {
+      return {
+        schemaVersion: 'v1',
+        source: 'FDE/GUIDE.md',
+        exportedAt: new Date().toISOString(),
+        sections: [],
+        complete: false,
+        missing: [...METHODOLOGY_KEYS],
+        guidePath,
+      };
+    }
+    const md = readFileSync(guidePath, 'utf-8');
+    return { ...parseMethodologySections(md), guidePath };
+  };
+
+  // 一级：显式 repoRoot 参数 / SOFAGENT_REPO_ROOT / cwd 相对（既有优先级不变）
   const root = repoRoot ?? process.env.SOFAGENT_REPO_ROOT ?? process.cwd();
-  const guidePath = join(root, 'FDE', 'GUIDE.md');
-  if (!existsSync(guidePath)) {
-    return {
-      schemaVersion: 'v1',
-      source: 'FDE/GUIDE.md',
-      exportedAt: new Date().toISOString(),
-      sections: [],
-      complete: false,
-      missing: [...METHODOLOGY_KEYS],
-      guidePath,
-    };
-  }
-  const md = readFileSync(guidePath, 'utf-8');
-  return { ...parseMethodologySections(md), guidePath };
+  const primary = parseOrEmpty(join(root, 'FDE', 'GUIDE.md'));
+  if (primary.complete) return primary;
+
+  // 二级（F19）：$SOFAGENT_HOME/skill/FDE/GUIDE.md——安装态（一级未命中才查，
+  // 语义：仓库根在场时永远以仓库根为准，安装副本只在 cwd 不可达时兜底）
+  const home = process.env.SOFAGENT_HOME ?? join(homedir(), '.sofagent');
+  const installed = parseOrEmpty(join(home, 'skill', 'FDE', 'GUIDE.md'));
+  if (installed.complete) return installed;
+
+  // 两级皆未命中：返回一级结果（保持旧语义——guidePath 指向调用方语境的首选位置）
+  return primary;
 }

@@ -8,9 +8,14 @@
 // 查找顺序（**单一实现** loadAgentMd，四个 Agent 共用）：
 //   0. $SOFAGENT_REPO_ROOT/SKILL/agents/<name>/SKILL.md
 //   1. $cwd/SKILL/agents/<name>/SKILL.md
+//   1.5. $SOFAGENT_HOME/skill/agents/<name>/SKILL.md（F19 · v1.5.7：安装态——
+//       install_skill_unified 把 SKILL/ 整树复制到 $SOFAGENT_HOME/skill/，
+//       agents/<name>/SKILL.md 结构原样可达；此前安装态 0/1/2 级全不可达、
+//       恒走 fallback 精简版，K5 披露的「结构性不可达」由本级闭合）
 //   2. <包相对>/SKILL/agents/<name>/SKILL.md（dist/ 向上三级 = 仓库根）
-// 三条全不可达（如 npm 全局安装且未设 SOFAGENT_REPO_ROOT）→ **打印 warn** 后
-// 回退到各 Agent 的硬编码精简版（fail-safe + 留痕，不静默降级）。
+// 四条全不可达 → **打印 warn** 后回退到各 Agent 的硬编码精简版（fail-safe +
+// 留痕，不静默降级）。
+// 优先级：SOFAGENT_REPO_ROOT > cwd 相对 > SOFAGENT_HOME 安装态 > 包相对 > fallback。
 //
 // v1.5.0：迁移至 @sofagent/orchestrator
 // v1.5.0 P0-R2: npm 全局安装后 __dirname 不再是仓库内相对位置，
@@ -36,6 +41,7 @@
 // ============================================================
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { homedir } from 'os';
 import type { SubAgentDefinition } from './registry';
 
 /**
@@ -99,9 +105,10 @@ function parseSkillMd(content: string): string {
  *
  * 查找顺序：SOFAGENT_REPO_ROOT/SKILL/agents/<skillName>/SKILL.md
  *   → cwd/SKILL/agents/<skillName>/SKILL.md
+ *   → $SOFAGENT_HOME/skill/agents/<skillName>/SKILL.md（F19 安装态）
  *   → <包相对>/SKILL/agents/<skillName>/SKILL.md
  *
- * 三条全不可达时**打印 warn 留痕**并返回 fallback（fail-safe，不静默降级）。
+ * 全部不可达时**打印 warn 留痕**并返回 fallback（fail-safe，不静默降级）。
  *
  * @param skillName Agent 名（= SKILL/agents/ 下的目录名，如 engineer / reviewer）
  * @param fallback  文件不可达时使用的硬编码精简版 system prompt
@@ -122,6 +129,16 @@ function loadAgentMd(skillName: string, fallback: string): string {
     return parseSkillMd(readFileSync(cwdPath, 'utf-8'));
   }
 
+  // 路径 1.5（F19 · v1.5.7）: $SOFAGENT_HOME/skill/agents/<skillName>/SKILL.md
+  // 安装态——install_skill_unified 复制 SKILL/ 整树到 $SOFAGENT_HOME/skill/，
+  // agents/<name>/SKILL.md 结构原样在位。SOFAGENT_HOME 经 data-paths 同链解析
+  // （env > ~/.sofagent），与 install.sh 首装落点同口径。
+  const installBase = process.env.SOFAGENT_HOME ?? join(homedir(), '.sofagent');
+  const installedPath = join(installBase, 'skill', 'agents', skillName, 'SKILL.md');
+  if (existsSync(installedPath)) {
+    return parseSkillMd(readFileSync(installedPath, 'utf-8'));
+  }
+
   // 路径 2: 包相对路径/SKILL/agents/<skillName>/SKILL.md
   // 本文件编译后位于 <repo>/engine/orchestrator/dist/，向上三级 = <repo>
   // （此前写四级会上溯到仓库根的父目录，恒不可达且静默回退精简版）
@@ -134,7 +151,7 @@ function loadAgentMd(skillName: string, fallback: string): string {
   // 安装态大概率如此）——回退精简版显性化，不再静默
   console.warn(
     `[builtin-agents] SKILL/agents 不可达（安装态精简版回退）: ${skillName}——` +
-      `已试 ${repoRoot() ?? '(未设 SOFAGENT_REPO_ROOT)'}、${join(process.cwd(), 'SKILL', 'agents')}、${pkgPath}`,
+      `已试 ${repoRoot() ?? '(未设 SOFAGENT_REPO_ROOT)'}、${join(process.cwd(), 'SKILL', 'agents')}、${installedPath}、${pkgPath}`,
   );
   return fallback;
 }
