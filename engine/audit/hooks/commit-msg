@@ -122,6 +122,15 @@ resolve_global_audit() {
   fi
 }
 
+# 0.5 F43（v1.5.7）：安装时刻记录的引擎入口优先。
+#   安装器在 hook 头部写入 `# SOFAGENT_ENGINE_ENTRY=<绝对路径>` 标记行——hook 是
+#   从哪份 audit 包装出去的，运行时就用同一份引擎（npx 装的 hook 绑 npx 拉取的包，
+#   不再绑机器全局 dist——升级全局包后首个 commit 被「全局哈希不匹配」拦截的根因）。
+#   记录缺失（旧版 hook / 手工部署）→ 回退下方既有解析链（行为保留）。
+#   🔴 fail-loud 语义与 SOFAGENT_AUDIT_ENTRY 一致：记录在而文件不在 = 显式报错，
+#   不静默回退（静默回退会让「升级后删旧包目录」场景悄悄换引擎，哈希基线错位）。
+_RECORDED_ENTRY=$(sed -n 's/^# SOFAGENT_ENGINE_ENTRY=//p' "$0" 2>/dev/null | head -1)
+
 if [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; then
   if [ ! -f "$SOFAGENT_AUDIT_ENTRY" ]; then
     echo "❌ SOFAGENT_AUDIT_ENTRY 指向的入口不存在: $SOFAGENT_AUDIT_ENTRY"
@@ -129,6 +138,15 @@ if [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; then
     exit 1
   fi
   AUDIT_CMD=(node "$SOFAGENT_AUDIT_ENTRY")
+elif [ -n "$_RECORDED_ENTRY" ]; then
+  # F43：安装记录优先——先校验文件在位（包被卸载/升级删除旧目录时如实报错+给重建指引）
+  if [ ! -f "$_RECORDED_ENTRY" ]; then
+    echo "🔴 [sofagent] hook 记录的审计引擎入口不存在: $_RECORDED_ENTRY"
+    echo "   （安装时刻的 audit 包可能已被卸载/移除——不静默换用其它引擎，避免哈希基线错位）"
+    echo "   恢复：重装后重新安装 hook: sofagent audit --install-hook（会刷新记录入口）"
+    exit 1
+  fi
+  AUDIT_CMD=(node "$_RECORDED_ENTRY")
 elif [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
   # F-28 信任根修复：repo-local 分支此前零校验——被审仓库自带 engine/audit/dist
   # 即被执行（恶意仓一处放置 = 每次 commit 以受害者身份执行攻击者代码，红队
