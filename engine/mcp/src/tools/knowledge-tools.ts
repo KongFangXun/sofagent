@@ -115,11 +115,11 @@ export function parseOkfFields(content: string): { stale: boolean; staleAfter?: 
  */
 export async function mergeFederationAsync(query: string): Promise<void> {
   try {
-    const fed = (await import('@sofagent/daemon/federation' as string)) as {
-      withOfflineFallback?: unknown;
-      listPeers?: unknown;
-      loadOpenClawChannel?: unknown;
-    };
+    // F51B（v1.5.7）：恢复类型校验——原 `as string` 把模块字面量降级为 string，
+    // TS 不再校验 @sofagent/daemon/federation 的导出面（导出名拼错在编译期不可见）。
+    // @sofagent/daemon 是 optionalDependencies：独立安装态缺失时运行时 import 抛错
+    // 走本 catch 降级（联邦只是增强），编译期 workspace link 下正常校验。
+    const fed = await import('@sofagent/daemon/federation');
     if (typeof fed.withOfflineFallback !== 'function' || typeof fed.listPeers !== 'function') return;
     const peers = (fed.listPeers as () => Array<{ peer: unknown }>)().map((s) => s.peer);
     if (peers.length === 0) return;

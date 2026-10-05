@@ -109,9 +109,10 @@ function printHelp() {
 function delegateToInstallWrapper(cmd, rest) {
   const wrapper = join(AGENT_HOME, 'bin', 'sofagent');
   if (existsSync(wrapper)) {
+    // F51A（v1.5.7）：删除 FROM_ROUTER 环境变量注入——全仓零读取（写入即死代码），
+    // 安装态 wrapper 不依赖该标记（其提示语按自身入口形态生成）。
     const r = spawnSync(wrapper, [cmd, ...rest], {
       stdio: 'inherit',
-      env: { ...process.env, SOFAGENT_FROM_ROUTER: '1' },
     });
     return r.status === null ? 130 : r.status;
   }
