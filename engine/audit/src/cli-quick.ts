@@ -394,6 +394,11 @@ export function runCliQuick(argv: string[]): number {
     if (FULL_ONLY_FLAGS.includes(arg) || FULL_ONLY_SUBCOMMANDS.includes(arg)) {
       // 路由到完整引擎（dist/index.js）
       const indexPath = join(__dirname, 'index.js');
+      // v1.5.7 F6：自动路由属于「单入口内部转发」，不是用户直敲旧命令——
+      // 置 SOFAGENT_SINGLE_ENTRY=1（与 umbrella 路由同键同义），quick 侧本条
+      // 弃用提示已在上方打印、full 侧 (index.ts) 同键静默，避免一次调用叠两条提示。
+      // 直敲旧命令路径（不经本分支）零改动——提示行为不变。
+      process.env.SOFAGENT_SINGLE_ENTRY = '1';
       try {
         const result = spawnSync(process.execPath, [indexPath, ...argv.slice(2)], {
           stdio: 'inherit',
@@ -529,8 +534,9 @@ export function runCliQuick(argv: string[]): number {
         JSON.stringify(report, null, 2),
         'utf-8',
       );
-    } catch {
-      /* 落盘失败不阻断输出（聚合报告已打印——落盘是观测增强） */
+    } catch (err) {
+      // 落盘失败不阻断输出（聚合报告已打印——落盘是观测增强），但留痕可见
+      console.error('[sofagent] audit-stats.json 落盘失败（stats 子命令收尾）:', err);
     }
     return 0;
   }
