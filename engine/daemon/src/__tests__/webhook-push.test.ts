@@ -59,7 +59,7 @@ import * as path from 'path';
 import * as os from 'os';
 
 // 🔴 被测模块尚不存在——import 失败即 TDD Red 起点
-import { createWebhookPusher } from '../webhook/index';
+import { createWebhookPusher, readWebhookChannelHealth } from '../webhook/index';
 import type { WebhookPlatform, AuditVerdict } from '../webhook/index';
 
 // ════════════════════════════════════════
@@ -424,6 +424,33 @@ describe('Webhook SSRF 防护（纵深防御）', () => {
     expect(result.attempts).toBe(0);
     expect(result.degraded).toBe(true);
     expect(result.error).toContain('内网');
+  });
+
+  // v1.5.7 F38：豁免生效留痕——ALLOW_LOCALHOST=1 放行内网 endpoint 时，
+  // stderr 有告警 + daemon-health.json 有豁免记录（不静默放行）。
+  it('testWebhookPush_localhostExempt_warnsAndRecordsExempt_noSilentAllow', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // 健康留痕写侧读进程 env 的 SOFAGENT_DATA——stub 进程 env 指向临时目录
+    const savedData = process.env.SOFAGENT_DATA;
+    process.env.SOFAGENT_DATA = tmp.dir;
+    const dataEnv = envWith('feishu', 'http://127.0.0.1:9/hook', { SOFAGENT_WEBHOOK_ALLOW_LOCALHOST: '1' });
+
+    const pusher = createWebhookPusher({ env: dataEnv, logPath: tmp.logPath });
+    const result = await pusher.push('feishu', 'PASS', '豁免留痕探针');
+
+    // 豁免放行 → fetch 真实发起且成功
+    expect(fetchMock).toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    // stderr 告警在（含豁免标识与本机 endpoint）
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ALLOW_LOCALHOST=1'));
+    // 审计留痕在（daemon-health.json webhook.lastError 记豁免事件）
+    const health = readWebhookChannelHealth(tmp.dir);
+    expect(health?.lastError).toContain('ALLOW_LOCALHOST=1');
+    // 还原进程 env
+    if (savedData === undefined) delete process.env.SOFAGENT_DATA;
+    else process.env.SOFAGENT_DATA = savedData;
   });
 
   // 测试：豁免开关（SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1）放行本机地址——

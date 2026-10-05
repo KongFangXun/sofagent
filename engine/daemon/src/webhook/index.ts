@@ -350,6 +350,16 @@ export function createWebhookPusher(options: WebhookPusherOptions = {}): Webhook
             `endpoint 指向本机/内网地址，已拒绝推送（SSRF 防护）: ${endpoint}`,
           );
         }
+        // v1.5.7 F38：豁免生效留痕——豁免是显式放宽安全面，须 stderr 告警 + 通道健康
+        // 记录豁免事件（健康面板可见），与 audit 侧 webhook.ts 豁免 warn 同口径。
+        // 留痕须在成功后仍可读——成功路径的健康写回（lastError: null 清错）不覆写
+        // 豁免记录，故此处把豁免 endpoint 存入 lastSuccessAt 同行的独立豁免锚
+        // （实现：成功路径判断 lastError 是否为豁免记录，是则保留）。
+        const exemptFired = allowLocalhost && isPrivateWebhookUrl(endpoint);
+        if (exemptFired) {
+          console.warn(`[sofagent-daemon] 测试豁免模式（SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1）：放行本机/内网 webhook 推送: ${endpoint}`);
+          writeWebhookChannelHealth({ lastError: `豁免放行（ALLOW_LOCALHOST=1）: ${endpoint}` });
+        }
 
         const body = buildPayload(platform, verdict, message);
         const maxAttempts = 1 + Math.max(0, maxRetries);
@@ -361,7 +371,8 @@ export function createWebhookPusher(options: WebhookPusherOptions = {}): Webhook
           const outcome = await attemptOnce(endpoint, body, timeoutMs);
           if (outcome.kind === 'success') {
             // v1.4.5 T9：成功也落通道健康（lastSuccessAt——健康面板可见「通道活着」）
-            writeWebhookChannelHealth({ lastSuccessAt: new Date().toISOString(), lastError: null });
+            // v1.5.7 F38：豁免记录不在成功时清除（保留可观测性）
+            writeWebhookChannelHealth({ lastSuccessAt: new Date().toISOString(), ...(exemptFired ? {} : { lastError: null }) });
             return { success: true, platform, attempts, degraded: false };
           }
           lastError = outcome.error;
