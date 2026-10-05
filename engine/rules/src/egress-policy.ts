@@ -206,12 +206,25 @@ export function declareEgressHosts(
     const rule: EgressHostRule = { host: normalized };
     if (typeof entry === 'object' && entry !== null) {
       if (Array.isArray(entry.ports) && entry.ports.length > 0) {
-        rule.ports = entry.ports.filter((p): p is number => Number.isInteger(p) && p > 0 && p <= 65535);
+        const validPorts = entry.ports.filter((p): p is number => Number.isInteger(p) && p > 0 && p <= 65535);
+        if (validPorts.length === 0) {
+          // fail-open 修复（v1.5.7 F24）：声明了 ports 但全部非法——此前 filter 后为空数组，
+          // portAllowed 把空数组当「不限制」放行所有端口。改为拒绝该条目并告警
+          // （不静默、不降级为不限端口——白名单声明面写错就该收紧而不是放宽）。
+          console.error(`[sofagent] egress 声明条目「${normalized}」的 ports 全部非法（原文：${JSON.stringify(entry.ports)}）——该条目被拒绝，不进入白名单`);
+          continue;
+        }
+        rule.ports = validPorts;
       }
       if (Array.isArray(entry.protocols) && entry.protocols.length > 0) {
-        rule.protocols = entry.protocols
-          .filter((p): p is string => typeof p === 'string' && p.trim() !== '')
-          .map((p) => p.trim().toLowerCase());
+        const validProtocols = entry.protocols
+          .filter((p): p is string => typeof p === 'string' && p.trim() !== '');
+        if (validProtocols.length === 0) {
+          // fail-open 修复（同上）：protocols 全部非法 → 拒绝该条目并告警
+          console.error(`[sofagent] egress 声明条目「${normalized}」的 protocols 全部非法（原文：${JSON.stringify(entry.protocols)}）——该条目被拒绝，不进入白名单`);
+          continue;
+        }
+        rule.protocols = validProtocols.map((p) => p.trim().toLowerCase());
       }
     }
     rules.push(rule);

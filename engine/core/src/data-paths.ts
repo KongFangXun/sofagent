@@ -246,9 +246,47 @@ export function resolveDaemonJson(overrideHome?: string): string {
  * （此前 scheduler/long-tasks/memory-store/cost-audit 各自写死 `join(HOME, '.sofagent', 'data')`
  * 回退，架空 SOFAGENT_HOME 定制——用户设 SOFAGENT_HOME=/custom 后数据落点静默分裂）。
  * 注意：返回值实时读环境变量（与 resolveDataDir 同语义），不缓存。
+ *
+ * v1.5.7 F24-4: SOFAGENT_DATA 纳入与 SOFAGENT_HOME 同一前缀校验——此前只有
+ * SOFAGENT_HOME 过 sanitizeSofagentHome，SOFAGENT_DATA 越界值（如 /etc、随机
+ * 绝对路径）静默成为数据落点（写穿隔离面）。越界 fail-loud，错误信息形态对齐
+ * 既有守卫（前缀白名单 + SOFAGENT_HOME_ALLOWED_PREFIXES 显式放行通道）。
+ * 未来新增 --project-dir 类参数须纳入本前缀校验。
  */
 export function getDataDir(explicitBase?: string): string {
-  return explicitBase || process.env.SOFAGENT_DATA || resolveDataDir();
+  if (explicitBase !== undefined && explicitBase !== '') return explicitBase;
+  const envData = process.env.SOFAGENT_DATA;
+  if (envData !== undefined && envData !== '') {
+    sanitizeDataPrefix(envData, 'SOFAGENT_DATA');
+    return envData;
+  }
+  return resolveDataDir();
+}
+
+/** SOFAGENT_DATA 前缀校验（与 sanitizeSofagentHome 同一白名单与错误形态） */
+function sanitizeDataPrefix(raw: string, varName: string): string {
+  const resolved = path.resolve(raw);
+  const userHome = os.homedir();
+  const allowedPrefixes: string[] = [userHome, '/opt/sofagent', '/var/lib/sofagent', path.join(os.tmpdir(), '')];
+  const extra = process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+  if (extra !== undefined && extra !== '') {
+    for (const p of extra.split(':')) {
+      const trimmed = p.trim();
+      if (trimmed !== '') allowedPrefixes.push(path.resolve(trimmed));
+    }
+  }
+  const inAllowed = allowedPrefixes.some(
+    (prefix) => resolved === prefix || resolved.startsWith(prefix + path.sep),
+  );
+  if (!inAllowed) {
+    process.exitCode = 3;
+    throw new Error(
+      `${varName} 越界：${resolved} 不在允许前缀内（fail-loud，不再静默回退）。` +
+      `如确需该数据目录，请设置 SOFAGENT_HOME_ALLOWED_PREFIXES 显式放行（冒号分隔多前缀）。` +
+      `允许前缀：${allowedPrefixes.join(':')}`,
+    );
+  }
+  return resolved;
 }
 
 // ═══════════════════════════════════════════════════════════

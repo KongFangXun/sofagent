@@ -13,6 +13,7 @@ import {
   getConfigFile,
   resolveTenantDataDir,
   validateTenantId,
+  getDataDir,
   DEFAULT_TENANT,
 } from '../data-paths';
 
@@ -131,6 +132,39 @@ describe('G7 resolveTenantDataDir 租户路径隔离', () => {
       if (prev === undefined) delete process.env.SOFAGENT_TENANT;
       else process.env.SOFAGENT_TENANT = prev;
       rmSync(base, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('F24-4 SOFAGENT_DATA 越界校验（fail-loud）', () => {
+  it('SOFAGENT_DATA 指向越界路径 → 抛错（错误信息含允许前缀指引）', () => {
+    const prev = process.env.SOFAGENT_DATA;
+    const prevAllowed = process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+    try {
+      process.env.SOFAGENT_DATA = '/etc/sofagent-out-of-prefix';
+      delete process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+      expect(() => getDataDir()).toThrow(/SOFAGENT_DATA 越界.*fail-loud.*SOFAGENT_HOME_ALLOWED_PREFIXES/s);
+    } finally {
+      if (prev === undefined) delete process.env.SOFAGENT_DATA;
+      else process.env.SOFAGENT_DATA = prev;
+      if (prevAllowed === undefined) delete process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+      else process.env.SOFAGENT_HOME_ALLOWED_PREFIXES = prevAllowed;
+      // 清掉守卫设的 exitCode（防污染后续测试进程态）
+      process.exitCode = undefined;
+    }
+  });
+
+  it('SOFAGENT_DATA 指向 tmp 隔离目录 → 放行（测试隔离通道语义保留）', () => {
+    const prev = process.env.SOFAGENT_DATA;
+    try {
+      const iso = mkdtempSync(join(tmpdir(), 'sofagent-f24-data-'));
+      process.env.SOFAGENT_DATA = iso;
+      expect(() => getDataDir()).not.toThrow();
+      expect(getDataDir()).toBe(iso);
+    } finally {
+      if (prev === undefined) delete process.env.SOFAGENT_DATA;
+      else process.env.SOFAGENT_DATA = prev;
+      process.exitCode = undefined;
     }
   });
 });
