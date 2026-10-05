@@ -28,7 +28,11 @@ export interface ModelRegisterArgs {
   source?: 'endpoint' | 'local-path';
   /** 权重目录（source=local-path 必填——按 manifest.json 目录规范校验） */
   weights_dir?: string;
-  /** 注册时校验权重哈希（缺省 true——供应链完整性） */
+  /**
+   * @deprecated v1.5.7 F53：注册路径验哈希已硬编码为 true（供应链红线，
+   * 三条版本切换路径统一无旁路）——本参数不再生效，传入即被忽略。
+   * 保留为可选字段仅为旧调用方 schema 兼容，后续版本移除。
+   */
   verify_hash?: boolean;
   /** 评测分数（评测→注册流程的证据位） */
   eval_score?: number;
@@ -60,7 +64,7 @@ export interface ModelRegisterToolResult {
 }
 
 export async function modelRegister(args: ModelRegisterArgs): Promise<ModelRegisterToolResult> {
-  const { name, endpoint, model, client_type, source, weights_dir, verify_hash, eval_score, comment, profile } = args;
+  const { name, endpoint, model, client_type, source, weights_dir, eval_score, comment, profile } = args;
 
   if (typeof name !== 'string' || name.trim() === '') {
     return {
@@ -98,7 +102,6 @@ export async function modelRegister(args: ModelRegisterArgs): Promise<ModelRegis
         ...(client_type ? { clientType: client_type } : {}),
         ...(source ? { source } : {}),
         ...(source === 'local-path' && weights_dir ? { weightsDir: weights_dir } : {}),
-        ...(typeof verify_hash === 'boolean' ? { verifyHash: verify_hash } : {}),
         ...(typeof eval_score === 'number' ? { meta: { evalScore: eval_score, ...(comment ? { notes: comment } : {}) } } : comment ? { meta: { notes: comment } } : {}),
         ...(cleanProfile ? { profile: cleanProfile } : {}),
       },

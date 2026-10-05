@@ -1025,8 +1025,8 @@ export const TOOLS: ToolDef[] = [
         model: { type: 'string', description: '模型名（传给服务的 model 字段）' },
         client_type: { type: 'string', enum: ['ollama', 'openai-compatible'], description: '客户端协议（缺省 ollama；openai-compatible = vLLM/第三方 router）', default: 'ollama' },
         source: { type: 'string', enum: ['endpoint', 'local-path'], description: '来源类型', default: 'endpoint' },
-        weights_dir: { type: 'string', description: '权重目录（source=local-path 必填——按 manifest.json 目录规范校验，校验通过才注册）' },
-        verify_hash: { type: 'boolean', description: '注册时校验权重哈希（缺省 true——供应链完整性）', default: true },
+        weights_dir: { type: 'string', description: '权重目录（source=local-path 必填——按 manifest.json 目录规范校验，校验通过才注册；哈希校验恒开、不可关）' },
+        verify_hash: { type: 'boolean', description: '【v1.5.7 起失效】注册路径验哈希已硬编码为 true（供应链红线，无旁路）——本参数不再生效，仅为旧调用方兼容保留' },
         eval_score: { type: 'number', description: '评测分数' },
         comment: { type: 'string', description: '备注' },
         profile: {
@@ -1044,7 +1044,7 @@ export const TOOLS: ToolDef[] = [
       required: ['name'],
     },
     // v1.4.8 条目 5 迁移：查表分发
-    handler: async (args) => { if (!args.name) { return { error: 'Missing required argument: name' }; } const mrr = await modelRegister({ name: args.name as string, endpoint: (args.endpoint as string) ?? '', model: (args.model as string) ?? '', ...(args.client_type === 'openai-compatible' || args.client_type === 'ollama' ? { client_type: args.client_type } : {}), ...(args.source === 'endpoint' || args.source === 'local-path' ? { source: args.source } : {}), ...(typeof args.weights_dir === 'string' ? { weights_dir: args.weights_dir } : {}), ...(typeof args.verify_hash === 'boolean' ? { verify_hash: args.verify_hash } : {}), ...(typeof args.eval_score === 'number' ? { eval_score: args.eval_score } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}), ...(args.profile !== undefined ? { profile: args.profile as ModelRegisterArgs['profile'] } : {}) }); return { ...mrr, isError: mrr.data.isError }; },
+    handler: async (args) => { if (!args.name) { return { error: 'Missing required argument: name' }; } const mrr = await modelRegister({ name: args.name as string, endpoint: (args.endpoint as string) ?? '', model: (args.model as string) ?? '', ...(args.client_type === 'openai-compatible' || args.client_type === 'ollama' ? { client_type: args.client_type } : {}), ...(args.source === 'endpoint' || args.source === 'local-path' ? { source: args.source } : {}), ...(typeof args.weights_dir === 'string' ? { weights_dir: args.weights_dir } : {}), ...(typeof args.eval_score === 'number' ? { eval_score: args.eval_score } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}), ...(args.profile !== undefined ? { profile: args.profile as ModelRegisterArgs['profile'] } : {}) }); return { ...mrr, isError: mrr.data.isError }; },
   },
   {
     // v1.3.6 (交付 ④)：模型灰度切换/晋升/回滚——晋升强制人审（对齐 promote_ab）
