@@ -418,16 +418,22 @@ chmod 700 "$SOFAGENT_HOME/keys" 2>/dev/null || true
 #   cron 调度按 watch.yml 的 inspectors: / dream-cycle: 段驱动（缺省启用），
 #   首装写入缺省段确保开箱即巡检；已存在的 watch.yml 不覆盖（用户语义优先）。
 # 落点（fresh-eyes A-13 对齐读取方）：$SOFAGENT_HOME/watch.yml（全局级）——
-#   读取方 watch-config.ts 三级 fallback 为 ${cwd}/.sofagent/watch.yml →
-#   ~/.sofagent/watch.yml → 代码默认值（无 internal 层）；此前写 internal/watch.yml
-#   全仓零读取方（写读落点断链）。模板须带顶层 watch: 键（loader 无 watch 段即
-#   返回 null——此前模板缺该键，挪路径也读不出）。「默认启用」语义 = 代码 fallback
-#   之外的多一层落盘缺省（inspectors/dream-cycle 段 enabled: true）。
+#   v1.5.7 F47 起读取方三处对齐：watch-config.ts（loadWatchConfig 三级
+#   fallback）与 cron.ts 的 inspectors/dream-cycle/train-archive 三段读侧
+#   均经 resolveWatchYmlPaths SSOT 解析全局层 = 本文件写入的
+#   $SOFAGENT_HOME/watch.yml（缺省 ~/.sofagent/watch.yml；SOFAGENT_HOME
+#   可覆盖，install.sh 与读侧同源）。模板须带顶层 watch: 键（loader 无
+#   watch 段即返回 null——此前模板缺该键，挪路径也读不出）。「默认启用」
+#   语义 = 代码 fallback 之外的多一层落盘缺省（enabled: true）。
+#   v1.5.7 F47：段集合与 daemon 侧 ensureDefaultInspectorsConfig() 对齐——
+#   补 train-archive: 段（该函数四段：watch/inspectors/dream-cycle/
+#   train-archive；此前本模板缺 train-archive，首装与 daemon 首启生成的
+#   缺省面不一致，train-archive 调度只靠代码默认值兜底）。
 if [ ! -f "$SOFAGENT_HOME/watch.yml" ]; then
   cat > "$SOFAGENT_HOME/watch.yml" << 'WATCHEOF'
 # sofagent 定时任务缺省配置（首装生成——可按需修改）
-# 读取优先级（watch-config.ts 三级 fallback）：项目级 ${项目根}/.sofagent/watch.yml
-# 优先于本全局文件；两者皆缺省时代码内置默认值兜底（默认同样启用巡检）
+# 读取优先级：项目级 ${项目根}/.sofagent/watch.yml 优先于本全局文件；
+# 两者皆缺省时代码内置默认值兜底（默认同样启用巡检）
 
 # 顶层 watch 键（loader 契约：无此键整文件被视作无效配置）
 watch: {}
@@ -446,8 +452,16 @@ inspectors:
 dream-cycle:
   enabled: true
   schedule: "@daily"
+
+# 训练产物归档（v1.5.7 F47 对齐 ensureDefaultInspectorsConfig）：
+# 默认每周归档冷存 + 90 天覆写销毁 + 磁盘预警；enabled: false 可关闭
+train-archive:
+  enabled: true
+  schedule: "@weekly"
+  purge: true
+  diskCheck: true
 WATCHEOF
-  ok "巡检缺省配置已写入 $SOFAGENT_HOME/watch.yml（inspectors + dream-cycle 默认启用）"
+  ok "巡检缺省配置已写入 $SOFAGENT_HOME/watch.yml（inspectors + dream-cycle + train-archive 默认启用）"
 else
   info "已存在 ~/.sofagent/watch.yml——保留用户配置（巡检配置未被覆盖）"
 fi

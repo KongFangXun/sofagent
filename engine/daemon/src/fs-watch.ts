@@ -16,13 +16,53 @@
 //   // 停止监控: watcher.stop();
 // v1.1.0: 递归监控——遍历子目录建多 watcher
 
-import { watch, FSWatcher } from 'fs';
+import { watch, FSWatcher, existsSync as exists } from 'fs';
 import { readdirSync, statSync } from 'fs';
 import { join, relative, basename } from 'path';
-import { loadWatchConfig, type WatchConfig } from '@sofagent/core';
+import { loadWatchConfig, resolveWatchYmlPaths, type WatchConfig } from '@sofagent/core';
 
 /** 监控回调——收到变更文件路径列表 */
 export type ChangeCallback = (changedFiles: string[]) => void;
+
+/**
+ * F46（v1.5.7）：默认模板路径自省——探测项目根一级目录，产出有意义的缺省监控面。
+ *
+ * 背景：DEFAULT_WATCH_CONFIG.paths = ['.'] 在任意仓库下都「有目录可监控」，
+ * 但对无 src/ 的项目这是最宽泛的兜底（全仓扫描）。本函数在**用户未配置
+ * watch: 段**时自省项目根的一级目录，挑出真实源码目录作为缺省 paths——
+ * 生成的模板从此「开箱即有意义」而不是占位 '.'。
+ *
+ * 排除口径（任务书钉死）：.git / node_modules / dist / build / 隐藏目录。
+ * 无任何可用目录（空目录/全部被排除）→ 回落 ['.']（旧默认——保底不空转）。
+ *
+ * 纯函数：只读项目根，不写任何文件。
+ */
+export function introspectDefaultWatchPaths(projectDir: string): string[] {
+  const EXCLUDE = new Set(['.git', 'node_modules', 'dist', 'build']);
+  let entries: Array<{ name: string; isDirectory: boolean }>;
+  try {
+    entries = readdirSync(projectDir, { withFileTypes: true }).map((e) => ({
+      name: e.name,
+      // readdirSync 的 isDirectory 在符号链接/权限异常下不抛——逐项容错
+      isDirectory: (() => {
+        try {
+          return statSync(join(projectDir, e.name)).isDirectory();
+        } catch {
+          return false;
+        }
+      })(),
+    }));
+  } catch {
+    return ['.'];
+  }
+  const dirs = entries
+    .filter((e) => e.isDirectory)
+    .filter((e) => !e.name.startsWith('.')) // 隐藏目录（.git/.github/.sofagent…）
+    .filter((e) => !EXCLUDE.has(e.name))
+    .map((e) => `${e.name}/`);
+  if (dirs.length === 0) return ['.'];
+  return dirs;
+}
 
 /** 监控器实例 */
 export interface FileWatcher {
@@ -101,6 +141,11 @@ function isInWatchPaths(filePath: string, watchPaths: string[]): boolean {
  * @returns FileWatcher 实例
  */
 export function startWatching(projectDir: string, onChange: ChangeCallback): FileWatcher {
+  // F46（v1.5.7）：先探测 watch.yml 的配置来源（项目级/全局/未配置）——
+  // 0 目录告警文案三分支的判据面（未配置 / 均不可用 / 为空）。
+  const [projectYml, globalYml] = resolveWatchYmlPaths(projectDir);
+  const configuredSource: 'project' | 'global' | 'none'
+    = exists(projectYml) ? 'project' : exists(globalYml) ? 'global' : 'none';
   const config = loadWatchConfig(projectDir);
   const watchers: FSWatcher[] = [];
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -210,8 +255,26 @@ export function startWatching(projectDir: string, onChange: ChangeCallback): Fil
   }
 
   // v1.4.8 F-31: 0 目录从 ✅ 改 ⚠️——监控面空转必须可见
+  // F46（v1.5.7）：文案三分支——告警必须能区分「没配置」「配了但路径全废」「配了空表」
+  //   三种根因，排查口径不同（未配置→引导写配置；均不可用→查路径拼写；为空→补条目）。
   if (watchers.length === 0) {
-    console.warn(`[fs-watch] ⚠️ 监控 0 个目录（paths 全部不存在）——fs 审计触发面为空，请在 .sofagent/watch.yml 配置有效路径`);
+    if (configuredSource === 'none') {
+      console.warn(
+        `[fs-watch] ⚠️ 监控 0 个目录（未配置 watch.yml——项目级 ${projectYml} 与全局 ${globalYml} 均不存在，`
+        + `当前用代码默认 paths）——fs 审计触发面为空，请在 .sofagent/watch.yml 配置有效路径`,
+      );
+    } else if (config.paths.length === 0) {
+      const srcLabel = configuredSource === 'project' ? `项目级 ${projectYml}` : `全局 ${globalYml}`;
+      console.warn(
+        `[fs-watch] ⚠️ 监控 0 个目录（${srcLabel} 的 watch.paths 为空表）`
+        + `——fs 审计触发面为空，请在 watch: paths: 下补监控条目`,
+      );
+    } else {
+      console.warn(
+        `[fs-watch] ⚠️ 监控 0 个目录（watch.paths 配置的 ${config.paths.length} 条路径均不存在或不可读）`
+        + `——fs 审计触发面为空，请核对 .sofagent/watch.yml 中的路径`,
+      );
+    }
   } else {
     console.log(`[fs-watch] 监控已启动（${watchers.length} 个目录，防抖 ${config.debounceMs}ms）`);
   }

@@ -233,6 +233,7 @@
 /* @public */ export {
   loadWatchConfig,
   generateWatchTemplate,
+  resolveWatchYmlPaths,
   DEFAULT_WATCH_CONFIG,
 } from './config/watch-config';
 /* @public */ export type { WatchConfig, CronJob } from './config/watch-config';
