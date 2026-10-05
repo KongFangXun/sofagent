@@ -221,15 +221,15 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，25 条规则（17 默认 + 8 扩展，[完整清单见 SECURITY](../SECURITY.md#25-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1479 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（619 测试） |
+| audit | 提交时审计，25 条规则（17 默认 + 8 扩展，[完整清单见 SECURITY](../SECURITY.md#25-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1483 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（621 测试） |
 | inject | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 工具门禁（职责边界与文件落点见 [DEVELOPMENT · 编排哲学](./DEVELOPMENT.md)） |
 | train | 后训模块：train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告 + 云端执行面（替换路径 `import { createTrainJob } from '@sofagent/train'`） | ✅ 已实现（717 测试） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（618 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（623 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources 暴露（104 tools 分域清单见 [API](./API.md)，由 tool-registry 生成） |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt） | ✅ 已实现 |
