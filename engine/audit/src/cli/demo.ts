@@ -548,8 +548,20 @@ function act4Rollback(sb: Sandbox, p: DemoPrinter, prePollutionSha: string | nul
   p.line(`  污染现场（${VIOLATION_SCOPE_FILE} 含 ${POLLUTION_MARKER}）：`);
   p.engineOutput(before);
 
-  // 真实快照恢复（human_confirmed=true 是 snapshot_restore 的强制人审判定入口）
-  const restored = restoreSnapshot(dir, prePollutionSha);
+  // 真实快照恢复（human_confirmed=true 是 snapshot_restore 的强制人审判定入口）。
+  // v1.5.7 F52：快照带回 HMAC 指纹——签名/验签须用**同一把**沙箱密钥。快照由
+  // 引擎子进程在沙箱 env（SOFAGENT_KEY_PATH=<sandbox>/.sofagent/demo-key）下
+  // 创建签名；本函数在 demo 主进程内验签，须把进程密钥上下文临时切到沙箱
+  // （finally 还原）——否则读到用户真实 ~/.sofagent-key，验签必失配。
+  const savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+  let restored: string[];
+  try {
+    process.env.SOFAGENT_KEY_PATH = env.SOFAGENT_KEY_PATH as string;
+    restored = restoreSnapshot(dir, prePollutionSha);
+  } finally {
+    if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+    else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
+  }
   const after = existsSync(target) ? readFileSync(target, 'utf-8') : '';
   const diff = git(['diff', '--', VIOLATION_SCOPE_FILE], dir, env).combined;
 
@@ -864,8 +876,19 @@ export function runDemo(opts: { speed: DemoSpeed; outDir: string; templateDir?: 
     const act1 = act1SeedRepo(sb, p, opts.speed);
     acts.push({ scope: '幕① · 进场写规则', ok: act1.ok });
 
-    // 幕③ 之前记下「污染前」快照指针（幕① 基线审计落地的干净快照）
-    const snapshots = act1.ok ? listAllSnapshots(sb.dir) : [];
+    // 幕③ 之前记下「污染前」快照指针（幕① 基线审计落地的干净快照）。
+    // v1.5.7 F52：快照验签须用沙箱密钥（快照由引擎子进程在沙箱 env 下签名）——
+    // 主进程默认读到用户真实 ~/.sofagent-key 会验签失配。与 act4Rollback 同款
+    // 临时切换（finally 还原）。
+    const savedKeyPathForList = process.env.SOFAGENT_KEY_PATH;
+    let snapshots: Array<{ sha: string }> = [];
+    try {
+      process.env.SOFAGENT_KEY_PATH = sb.env.SOFAGENT_KEY_PATH as string;
+      snapshots = act1.ok ? listAllSnapshots(sb.dir) : [];
+    } finally {
+      if (savedKeyPathForList === undefined) delete process.env.SOFAGENT_KEY_PATH;
+      else process.env.SOFAGENT_KEY_PATH = savedKeyPathForList;
+    }
     const prePollutionSha = snapshots.length > 0 ? (snapshots[snapshots.length - 1] as { sha: string }).sha : null;
 
     // ── 幕② · 约束注入 ──
