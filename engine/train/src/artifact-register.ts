@@ -312,7 +312,7 @@ export function registerTrainArtifact(input: RegisterTrainArtifactInput): Artifa
       model: record.job.baseModel,
       source: 'local-path',
       weightsDir: input.weightsDir,
-      verifyHash: true,
+      // v1.5.7 F53：registerModel 验哈希已硬编码 true（无旁路），此处不再显式传
       meta: {
         evalScore,
         notes: `train:${input.trainJobId} eval:${input.evalReport.benchmarkId}(${evalScore})`,

@@ -214,8 +214,6 @@ export interface RegisterModelInput {
   source?: ModelSource;
   /** 权重目录（source=local-path 必填——按 weights-manifest 目录规范校验） */
   weightsDir?: string;
-  /** 注册时是否校验权重哈希（缺省 true——供应链完整性） */
-  verifyHash?: boolean;
   meta?: { evalScore?: number; notes?: string };
   /** 端点能力画像（v1.3.6 交付⑧——可选填，不填向后兼容） */
   profile?: EndpointProfile;
@@ -241,7 +239,7 @@ export function registerModel(input: RegisterModelInput, options: ModelRegistryO
     if (typeof input.weightsDir !== 'string' || input.weightsDir.trim() === '') {
       return { ok: false, awaitingHuman: false, message: 'local-path 注册缺 weightsDir', issues: ['source=local-path 时 weights_dir 必填（权重目录——按 manifest.json 目录规范）'] };
     }
-    const check = checkWeightsDir(input.weightsDir, { verifyHash: input.verifyHash !== false });
+    const check = checkWeightsDir(input.weightsDir, { verifyHash: true });
     if (!check.ok) {
       return { ok: false, awaitingHuman: false, message: `权重目录校验失败：${check.issues.join('；')}`, issues: check.issues };
     }
@@ -486,15 +484,12 @@ export function rollbackModel(lane: 'executor' | 'pipeline', options: ModelRegis
  * 供应链红线：回滚目标版本哈希强制校验——checkWeightsDir 只验 current 版本，
  * 回滚恰好要指向非 current 的历史版本，故对目标版本目录单独 hashDir 直验。
  *
- * ⚠️ 三条版本切换路径的验哈希强度**不一致**（L1 · v1.5.1 如实收口——此前此处写
- * 「三条路径全部验哈希，无一旁路」与实现相反，已删除该声称）：
- *   - 注册 registerModel：默认验哈希，但**调用方可用 `verifyHash: false` 显式跳过**
- *     （`checkWeightsDir(input.weightsDir, { verifyHash: input.verifyHash !== false })`）
- *     ——而该调用方恰是被约束方（Agent / MCP tool）；
- *   - 切换 switchModel：硬编码 `verifyHash: true`，无开关；
- *   - 回滚 rollbackWeightsVersion：本函数硬编码 `verifyHash: true`，无开关。
- * 即：**注册路径存在显式旁路**，切换/回滚两条无。是否把注册侧也收紧为硬编码
- * （消灭旁路、改变 API 语义）属维护者口径，见 ROADMAP；本批只做如实描述。
+ * ✅ 三条版本切换路径均硬编码验哈希，无旁路（v1.5.7 F53 收口）：
+ *   - 注册 registerModel：硬编码 `verifyHash: true`；
+ *   - 切换 switchModel：硬编码 `verifyHash: true`；
+ *   - 回滚 rollbackWeightsVersion：本函数硬编码 `verifyHash: true`。
+ * （v1.5.1 时注册路径曾有 `verifyHash: false` 显式跳过口——调用方恰是被
+ * 约束方，属旁路；v1.5.7 移除该入参，三条路径统一为唯一强校验路径。）
  */
 export function rollbackWeightsVersion(
   modelName: string,
