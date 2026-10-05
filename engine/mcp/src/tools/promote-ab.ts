@@ -20,6 +20,8 @@
 
 import { existsSync, readFileSync, copyFileSync } from 'fs';
 import { AB_TEST_LATEST } from '@sofagent/core';
+// F18（v1.5.7）：评分权重 SSOT——不再持有第二份 0.5/0.2/0.3 字面量
+import { DEFAULT_SCORE_WEIGHTS } from '@sofagent/eval';
 
 // ============================================================
 // 类型定义
@@ -143,7 +145,7 @@ export async function promoteAb(args: PromoteAbArgs): Promise<PromoteAbResult> {
       evalSet: '',
       promoteThreshold,
       minSampleSize: 3,
-      scoreWeights: { exactMatch: 0.5, semanticSimilarity: 0.2, ruleCompliance: 0.3 },
+      scoreWeights: { ...DEFAULT_SCORE_WEIGHTS },
     },
   );
 

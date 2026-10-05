@@ -15,7 +15,10 @@
   EvalBreakdown,
   EvalResult,
   EvalConfig,
+  ScoreWeights,
 } from './types';
+// F18（v1.5.7）：评分权重 SSOT——ab-test / mcp promote-ab / eval-scorer 共用
+/* @public */ export { DEFAULT_SCORE_WEIGHTS } from './types';
 
 /* @public */ export { evalCase } from './eval-scorer';
 /* @public */ export { runEval, defaultRunFunction } from './eval-runner';

@@ -25,13 +25,12 @@ export interface ABConfig {
 }
 
 /**
- * 评分权重
+ * 评分权重（F18 · v1.5.7：定义与默认值 SSOT 已收口至 @sofagent/eval 的
+ * types.ts——ab-test 依赖 eval，为防第二份字面量此处改为 re-export。
+ * 消费方（eval-scorer / mcp promote-ab / 本包下游）一律从源头或本 re-export
+ * 取值，全仓机械守卫锁 0.5/0.2/0.3 第二份字面量）。
  */
-export interface ScoreWeights {
-  exactMatch: number;
-  semanticSimilarity: number;
-  ruleCompliance: number;
-}
+export type ScoreWeights = import('@sofagent/eval').ScoreWeights;
 
 /**
  * 单次 A/B 测试结果
@@ -62,10 +61,7 @@ export interface PromotionDecision {
 }
 
 /**
- * 默认评分权重
+ * 默认评分权重（F18 · v1.5.7：re-export @sofagent/eval 的 SSOT——本包不再
+ * 持有字面量副本；既有消费方 import 路径不变，取值随 SSOT 单点演进）。
  */
-export const DEFAULT_SCORE_WEIGHTS: ScoreWeights = {
-  exactMatch: 0.5,
-  semanticSimilarity: 0.2,
-  ruleCompliance: 0.3,
-};
+export const DEFAULT_SCORE_WEIGHTS = require('@sofagent/eval').DEFAULT_SCORE_WEIGHTS as import('@sofagent/eval').ScoreWeights;
