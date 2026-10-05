@@ -120,6 +120,41 @@
       "types": "./dist/router/decision-dispatch.d.ts",
       "require": "./dist/router/decision-dispatch.js",
       "default": "./dist/router/decision-dispatch.js"
+    },
+    "./domain/workflow": {
+      "types": "./dist/domain/workflow.d.ts",
+      "require": "./dist/domain/workflow.js",
+      "default": "./dist/domain/workflow.js"
+    },
+    "./domain/team": {
+      "types": "./dist/domain/team.d.ts",
+      "require": "./dist/domain/team.js",
+      "default": "./dist/domain/team.js"
+    },
+    "./domain/fde": {
+      "types": "./dist/domain/fde.d.ts",
+      "require": "./dist/domain/fde.js",
+      "default": "./dist/domain/fde.js"
+    },
+    "./domain/loop-agent": {
+      "types": "./dist/domain/loop-agent.d.ts",
+      "require": "./dist/domain/loop-agent.js",
+      "default": "./dist/domain/loop-agent.js"
+    },
+    "./domain/sandbox": {
+      "types": "./dist/domain/sandbox.d.ts",
+      "require": "./dist/domain/sandbox.js",
+      "default": "./dist/domain/sandbox.js"
+    },
+    "./domain/evolution": {
+      "types": "./dist/domain/evolution.d.ts",
+      "require": "./dist/domain/evolution.js",
+      "default": "./dist/domain/evolution.js"
+    },
+    "./domain/observability": {
+      "types": "./dist/domain/observability.d.ts",
+      "require": "./dist/domain/observability.js",
+      "default": "./dist/domain/observability.js"
     }
   },
   "files": [
