@@ -105,6 +105,24 @@ function describeTarget(t: unknown): string {
 }
 
 /**
+ * 错误消息摘要（限长 + 控制字符转义）——与 describeTarget 同形态。
+ *
+ * 错误消息可能含换行/控制字符（如 stderr 回显），直接拼进 violations
+ * 会污染审计报告与日志。审计门的失败原因须可读但不可注入。
+ */
+function summarizeError(raw: unknown): string {
+  const text = typeof raw === 'string' ? raw : String(raw);
+  const escaped = text
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+  // eslint-disable-next-line no-control-regex
+  const cleaned = escaped.replace(/[\x00-\x1f\x7f]/g, (c) => `\\x${c.charCodeAt(0).toString(16).padStart(2, '0')}`);
+  return cleaned.length > 120 ? `${cleaned.slice(0, 120)}…` : cleaned;
+}
+
+/**
  * 应用前整体预校验——全部 target 合法才允许动手。
  *
  * 为什么不在循环里边写边校验：逐条应用时若第 3 条非法，前 2 条已经落盘，
@@ -450,9 +468,19 @@ async function runAuditGate(
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
       });
-    } catch {
-      // 无 git diff → 跳过审计（视为 PASS）
-      return { passed: true, violations: [] };
+    } catch (err) {
+      // 无 git diff → 审计未执行，按不通过处置（fail-closed）。
+      // 此前这里静默 return passed:true——审计门整体旁路且零留痕，
+      // 意味着「diff 拿不到」的修复可以不审而 PASS。git diff 失败
+      // 只说明证据不可得，不说明变更合规；证据不可得时按 FAIL 处置，
+      // 由 applyFix 的既有回滚路径收拾现场。
+      const reason = err instanceof Error ? err.message : String(err);
+      return {
+        passed: false,
+        violations: [
+          `audit-gate: [sofagent] 审计未执行：git diff 获取失败（${summarizeError(reason)}）——按不通过处置`,
+        ],
+      };
     }
 
     if (!diffOutput.trim()) {
