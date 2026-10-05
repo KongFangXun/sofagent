@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
-// v1.3.7 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.3.7 新增：从 sofagent audit --doctor 迁移至 @sofagent/core
 // v1.3.7 维护：新增 post-commit hook 存在性检查
 // v1.3.7 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
 //
@@ -180,8 +180,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     else ok('git 可用');
     // 移除凑数检查项——npm 可用/磁盘空间与 sofagent 健康无因果（npm 装过即可，
     // 磁盘 342GB ✅ 只是噪音）。npm/disk 仍在 checkEnv() 内部计算，只是不再作为健康信号展示。
-    if (!env.openclaw.exists) { warn('~/.openclaw 不存在'); repairHint('运行 sofagent-audit --init 初始化（或安装 OpenClaw 平台）'); }
-    if (!env.sofagent.exists) { warn('~/.sofagent 不存在（将自动创建）'); repairHint('运行 sofagent-audit --init 初始化'); }
+    if (!env.openclaw.exists) { warn('~/.openclaw 不存在'); repairHint('运行 sofagent audit --init 初始化（或安装 OpenClaw 平台）'); }
+    if (!env.sofagent.exists) { warn('~/.sofagent 不存在（将自动创建）'); repairHint('运行 sofagent audit --init 初始化'); }
   }
 
   // v1.2.9 版本一致性检查（~/.sofagent/VERSION vs 当前引擎版本）
@@ -238,7 +238,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       const content = readFileSync(configPath, 'utf-8');
       if (content.trim().length === 0) {
         warn('.sofagent/config.yml 为空');
-        repairHint('运行 sofagent-audit --init 生成默认配置');
+        repairHint('运行 sofagent audit --init 生成默认配置');
       } else {
         // v1.1.3: 验证 YAML 合法性
         try {
@@ -313,7 +313,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     if (existsSync(dataDir) || existsSync(sofagentDir)) {
       info('数据目录已初始化，运行一次审计后将自动创建数据子目录');
     } else {
-      info('data/ 目录不存在（运行 sofagent-audit --init 创建）');
+      info('data/ 目录不存在（运行 sofagent audit --init 创建）');
       dirsOk = false;
     }
   }
@@ -469,15 +469,15 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           hookOk = true;
         } else if (!hasMarker) {
           warn('commit-msg hook 存在但不包含 sofagent 标识');
-          repairHint('sofagent-audit --install-hook');
+          repairHint('sofagent audit --install-hook');
         } else {
           // 有 sofagent 字样但缺版本标记 / 行为锚点——典型的**替换型篡改或旧版残留**。
           // 不再误报「已安装」（这正是 E3 的缺陷面）。
           const missing: string[] = [];
           if (!versionMarker) missing.push('版本标记行（# sofagent commit-msg hook vX.Y.Z）');
-          if (!hasBehaviorAnchor) missing.push('行为锚点（sofagent-audit 调用 + EXIT_CODE 契约）');
+          if (!hasBehaviorAnchor) missing.push('行为锚点（sofagent-audit bin 调用 + EXIT_CODE 契约）');
           warn(`commit-msg hook 不完整——缺 ${missing.join(' / ')}（可能是被替换的空壳脚本或旧版残留）`);
-          repairHint('sofagent-audit --install-hook（重装以恢复版本标记与行为锚点）');
+          repairHint('sofagent audit --install-hook（重装以恢复版本标记与行为锚点）');
         }
       } catch (err) {
         warn(`commit-msg hook 存在但无法读取: ${err instanceof Error ? err.message : String(err)}`);
@@ -487,8 +487,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       // v1.5.2 A-7：warn → fail——commit-msg 是审计主防线，「审计不会运行」不该静默
       // 通过（此前 allOk 含 hookOk 但 CLI 侧只看 failCount，warn 即 exit 0——最该
       // 报警的一天静默通过）。文案不变，只升严重度。
-      fail('commit-msg hook 未安装——审计不会运行！运行 sofagent-audit --install-hook 安装');
-      repairHint('sofagent-audit --install-hook');
+      fail('commit-msg hook 未安装——审计不会运行！运行 sofagent audit --install-hook 安装');
+      repairHint('sofagent audit --install-hook');
     }
 
     // v1.4.2 H-01: pre-commit——三层防线主防线（.sofagent/ 永不入库的 staged 清理）
@@ -502,7 +502,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           ok('pre-commit hook 已安装并包含 .sofagent/ 入库防线');
         } else if (prcContent.includes('sofagent')) {
           warn('pre-commit hook 存在但不含入库防线逻辑（旧版审计 hook，无 reset 守卫）');
-          repairHint('sofagent-audit --install-hook');
+          repairHint('sofagent audit --install-hook');
         } else {
           // 非 sofagent 的用户自有 pre-commit——不告警（尊重用户自己的 hook）
           info('pre-commit hook 存在（非 sofagent，未接管——如需三层防线运行 --install-hook）');
@@ -514,8 +514,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     } else {
       // v1.5.2 A-7：warn → fail——pre-commit 是 .sofagent/ 入库主防线，语义同
       // commit-msg（主防线缺失 = 最该报警的一天）。文案不变，只升严重度。
-      fail('pre-commit hook 未安装——.sofagent/ 入库主防线缺失。运行 sofagent-audit --install-hook 补装');
-      repairHint('sofagent-audit --install-hook');
+      fail('pre-commit hook 未安装——.sofagent/ 入库主防线缺失。运行 sofagent audit --install-hook 补装');
+      repairHint('sofagent audit --install-hook');
     }
 
     // post-commit：检查存在性 + 内容是否含审计对账逻辑（v1.3.2 P0-RC3 加强）
@@ -532,15 +532,15 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           ok('post-commit hook 已安装并包含审计对账逻辑');
         } else {
           warn('post-commit hook 存在但不包含 sofagent 审计对账逻辑（可能是占坑 hook）');
-          repairHint('sofagent-audit --install-hook');
+          repairHint('sofagent audit --install-hook');
         }
       } catch (err) {
         warn(`post-commit hook 存在但无法读取: ${err instanceof Error ? err.message : String(err)}`);
         repairHint(`检查文件权限（chmod 755 ${postCommitPath}）`);
       }
     } else {
-      warn('post-commit hook 未安装——绕过检测不可用。运行 sofagent-audit --init 或 --install-hook 自动安装');
-      repairHint('sofagent-audit --install-hook');
+      warn('post-commit hook 未安装——绕过检测不可用。运行 sofagent audit --init 或 --install-hook 自动安装');
+      repairHint('sofagent audit --install-hook');
     }
   } catch (err) {
     info(`非 git 仓库，跳过 hook 检查（${err instanceof Error ? err.message : String(err)}）`);
@@ -665,15 +665,15 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           ok(`audit dist/index.js 完整性校验通过（SHA-256: ${currentHash.slice(0, 12)}...）`);
         } else {
           fail(`audit dist/index.js 哈希不匹配——可能被替换（影子审计器劫持风险）。记录值: ${recordedHash.slice(0, 12)}...，当前值: ${currentHash.slice(0, 12)}...`);
-          repairHint('重新安装 sofagent（npm run build 或 sofagent-audit --install-hook）以恢复原始 dist');
+          repairHint('重新安装 sofagent（npm run build 或 sofagent audit --install-hook）以恢复原始 dist');
           distIntegrityOk = false;
         }
       } else {
         // v1.4.2 G-01: 基线缺失不再静默自动记录——影子审计器劫持的信任锚必须是「首次人工
         // 执行时刻」，自动记录会把「已被篡改的 dist」固化为合法基线（首跑即沦陷场景）。
         // 改为显眼提示 + 引导 --baseline 显式建立（信任锚 = 人工确认时刻）。
-        fail('⚠️ 未建立 dist 基线哈希，影子审计器风险未设防。立即执行 sofagent-audit --doctor --baseline 建立基线');
-        repairHint('sofagent-audit --doctor --baseline（信任锚 = 你此刻确认 dist 可信的时刻）');
+        fail('⚠️ 未建立 dist 基线哈希，影子审计器风险未设防。立即执行 sofagent audit --doctor --baseline 建立基线');
+        repairHint('sofagent audit --doctor --baseline（信任锚 = 你此刻确认 dist 可信的时刻）');
         distIntegrityOk = false;
       }
     } catch (err) {
@@ -694,7 +694,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   // `execFileSync('bash', [projectDir/tools/audit-baseline-sync.sh, '--quiet'])` **之后**：
   //   · 本地无 engine/audit/dist（worktree / 未构建）时，仓内 sync 脚本 exit 1 →
   //     execFileSync 抛出 → 外层 catch 提前返回 ⇒ 全局锚刷新分支根本跑不到；
-  //   · 于是 commit-msg hook 首推的「sofagent-audit --doctor --baseline」名不副实
+  //   · 于是 commit-msg hook 首推的「sofagent audit --doctor --baseline」名不副实
   //     （三路恢复指引的第 1 路不可执行）。
   // 正解：全局锚刷新的解析/计算本就自足——resolveGlobalAuditDistRoot() 只走显式全局根
   // （execPath 推导 + npm root -g），computeDistAggregateHash() 只读全局包 dist，**均不依赖
@@ -730,8 +730,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   if (!keyStatus.configured) {
     // (2026-08-02 复核修正)：--init-hmac 命令不存在，提示语指向 的 --init 入口
     // （--init 已实现自动生成 ~/.sofagent-key）
-    warn('无 HMAC 签名，完整性校验强度降低：审计日志仅 SHA-256 校验（Agent 可重算整链）。运行 sofagent-audit --init 可自动生成 HMAC 密钥（~/.sofagent-key）启用 HMAC-SHA256 强校验');
-    repairHint('sofagent-audit --init');
+    warn('无 HMAC 签名，完整性校验强度降低：审计日志仅 SHA-256 校验（Agent 可重算整链）。运行 sofagent audit --init 可自动生成 HMAC 密钥（~/.sofagent-key）启用 HMAC-SHA256 强校验');
+    repairHint('sofagent audit --init');
   } else if (!keyStatus.strong) {
     // 弱密钥明确告警，不静默稀释强校验
     warn(`HMAC 密钥强度不足（${keyStatus.reason}）——审计日志强校验被弱密钥稀释，建议重新生成 ≥16 字节强密钥（如：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key）`);
@@ -872,7 +872,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           warn(`检测到 ${missing.length} 个未审计 commit（可能 --no-verify 绕过或 hook 安装前提交）：`);
           for (const m of missing.slice(0, 10)) console.log(`     ${m}`);
           if (missing.length > 10) console.log(`     ... 共 ${missing.length} 个`);
-          repairHint('sofagent-audit --verify-commit <SHA> 逐个复核；确认无风险后可忽略（hook 安装前的历史 commit 属预期）');
+          repairHint('sofagent audit --verify-commit <SHA> 逐个复核；确认无风险后可忽略（hook 安装前的历史 commit 属预期）');
         }
       }
     }
@@ -1079,8 +1079,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
  *
  * repair=true 时自动执行可自动修复的项：
  *   - ~/.sofagent 不存在 → 创建目录
- *   - commit-msg hook 缺失 → sofagent-audit --install-hook
- *   - HMAC 密钥缺失 → sofagent-audit --init
+ *   - commit-msg hook 缺失 → sofagent audit --install-hook
+ *   - HMAC 密钥缺失 → sofagent audit --init
  *   - js-yaml 未安装 → npm install js-yaml
  *   - v1.5.6 章二：审计目录维护（>30 天遗留备份清理 + history.jsonl 超 50MB 历史段归档）
  *
@@ -1137,7 +1137,7 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
     // 3. HMAC 密钥缺失 → 提示运行 --init（不自动执行，因为会重置审计链）
     const keyPath = join(homedir(), '.sofagent-key');
     if (!existsSync(keyPath)) {
-      info('HMAC 密钥缺失——建议运行 sofagent-audit --init 生成');
+      info('HMAC 密钥缺失——建议运行 sofagent audit --init 生成');
       // 不自动执行 --init（会重置审计链，需用户确认）
     }
 
