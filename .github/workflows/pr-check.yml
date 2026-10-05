@@ -146,6 +146,16 @@ jobs:
       - name: check-unwired-exports.sh（@public 导出接线）
         run: bash tools/check/check-unwired-exports.sh
 
+      # ── v1.5.7 F31 接入：插件适配层 seam 契约门禁 ──
+      # 门禁目的：插件 seam ∈ SEAMS.md 词汇表（正向）+ DSH 三处 seam 逐条一致 +
+      #   description 不滞后 + 反向词汇表每条在真实宿主 grep 到定义处（宿主缺席打印
+      #   SKIP 不静默通过）——拦「漏写 seam」与「词表静默过期」两类漂移。
+      # 依赖：纯 node 内置——无需 build、无需 node_modules。
+      # 注：CI 上无本地宿主（openclaw 全局包）时反向检查降级 SKIP（可见、不假绿）。
+      - name: check-seam-contract.mjs（插件 seam 契约）
+        run: node tools/check/check-seam-contract.mjs
+
+
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # v1.4.7：装依赖跑（口径统一到 AST）——此前「不装依赖直接跑」会因无 typescript 静默
   # 回退正则解析，与基线/文档声称值的 AST 口径分歧（实测差 8 符号：2236 vs 2244）导致

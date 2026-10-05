@@ -38,6 +38,8 @@
 #                             人工项读本版 devlog「文档质量评分」留痕，未确认按不通过计 fail-closed）
 #   + check-npm-claims.mjs  → registry 实测声称对账（文档声称值 vs registry 在线真值；
 #                             离线 SKIP 可见不假绿 · 豁免台账 npm-claims-exempt.json · v1.5.2 A-6 接入）
+#   + check-seam-contract.mjs → 插件 seam 契约门禁（词汇表正向 + DSH 三处一致 + 宿主反向实跑；
+#                             宿主缺席 SKIP 可见不假绿 · v1.5.7 F31 接入）
 #   + npm run build         → 审计模块构建
 #   + check-release-closeout.sh → 发版收口门禁（v1.5.5 批 13：安装链三件套同源 + 版本面归零
 #                             + 版本状态无漂移 + main 三条 workflow 结论 + Release 幂等豁免；
@@ -338,6 +340,29 @@ if [ "$MINIMAL" = false ]; then
     echo "$_xpr_output" | grep "❌\|✗" | head -5 | sed 's/^/    /'
   fi
   unset _xpr_output _xpr_rc
+fi
+
+# ════════════════════════════════════════
+# 2f. 插件 seam 契约（check-seam-contract.mjs · v1.5.7 F31 接入）
+#   插件 seam ∈ SEAMS.md 词汇表（正向）+ DSH 三处 seam 逐条一致 + description 不滞后
+#   + 反向：词汇表每条在真实宿主 grep 到定义处（宿主缺席打印 SKIP 不静默通过）。
+#   与 2e 同族（dsh-plugins 完整性守卫）；纯 node 内置，无需先 build。
+#   三态语义：0 = 全绿（可含可见 SKIP）/ 1 = 有 FAIL / 2 = 检查器失明（拒绝假绿）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 2f. 插件 seam 契约 ──${NC}"
+  _sc_output=$(node tools/check/check-seam-contract.mjs 2>&1)
+  _sc_rc=$?
+  if [ "$_sc_rc" -eq 0 ]; then
+    check_pass "check-seam-contract.mjs（词汇表正向 + 三处一致 + 宿主反向全绿）"
+  elif [ "$_sc_rc" -eq 2 ]; then
+    check_fail "check-seam-contract.mjs 检查器失明（exit 2——SEAMS.md 缺失/词汇表解析为空，拒绝假绿）"
+    printf '%s\n' "$_sc_output" | grep -E '❌|✗|失明' | head -5 | sed 's/^/    /'
+  else
+    check_fail "check-seam-contract.mjs 发现 seam 契约违规（rc=${_sc_rc}）"
+    printf '%s\n' "$_sc_output" | grep -E '❌|✗' | head -5 | sed 's/^/    /'
+  fi
+  unset _sc_output _sc_rc
 fi
 
 # ════════════════════════════════════════
