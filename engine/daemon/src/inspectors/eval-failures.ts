@@ -103,8 +103,9 @@ export function runEvalFailuresCheck(projectDir: string): InspectorResult {
     // 更新标记文件（避免 mtime 变了但 failures 一直为空时反复读）
     try {
       writeFileSync(markerPath, String(currentMtime));
-    } catch {
-      // 标记写入失败不阻塞
+    } catch (err) {
+      // 标记写入失败不阻塞——留痕可见（下轮会重读 failures，代价是多一次读取）
+      console.error('[sofagent] eval-failures 标记写入失败（下轮将重读，inspect）:', err);
     }
     return {
       name: 'eval-failures',

@@ -80,6 +80,7 @@
   "engine/orchestrator/src/composer.ts",
   "engine/orchestrator/src/dag-runner.ts",
   "engine/orchestrator/src/dispatch/intent-classifier.ts",
+  "engine/orchestrator/src/domain/workflow.ts",
   "engine/orchestrator/src/durable/idempotency-check.ts",
   "engine/orchestrator/src/durable/side-effect-ledger.ts",
   "engine/orchestrator/src/exec/git-capability.ts",

@@ -118,7 +118,10 @@ function classifyRepo(): { state: RepoState; hint: string } {
         hint: '⚠️ 有未提交更改——请先 git commit 或 git stash 后再跑 --init，否则 commit-msg hook 可能误报。',
       };
     }
-  } catch { /* 非 git 仓库，已在前面处理 */ }
+  } catch (err) {
+    // 非 git 仓库，已在前面处理——留痕可见（状态探测降级，不影响主流程）
+    console.error('[sofagent] git status 探测失败（按非 git 仓库处理，checkRepoState）:', err);
+  }
 
   // 3. 检测是否有代码文件
   try {
@@ -129,7 +132,10 @@ function classifyRepo(): { state: RepoState; hint: string } {
         hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 playbook/acceptance-test.sh 验证安装。',
       };
     }
-  } catch { /* */ }
+  } catch (err) {
+    // ls-files 失败按有代码处理（保守方向），留痕可见
+    console.error('[sofagent] git ls-files 探测失败（按已有代码仓库处理，checkRepoState）:', err);
+  }
 
   return {
     state: 'has_code',
@@ -513,7 +519,10 @@ export function runInit(): void {
           console.log('  → 已清理 .gitignore 中的 sofagent 条目');
         }
       }
-    } catch { /* 清理失败不阻塞退出 */ }
+    } catch (err) {
+      // 清理失败不阻塞退出——留痕可见（残留清理是尽力而为）
+      console.error('[sofagent] 非 git 目录残留清理失败（不阻塞退出，init 收尾）:', err);
+    }
     console.log('');
     console.log('╔══════════════════════════════════════════╗');
     console.log('║  ⚠️ 初始化未完成——当前不在 git 仓库      ║');
@@ -589,7 +598,10 @@ export function runInit(): void {
             writeFileSync(join(hooksDir, 'pre-commit.bak'), existing, 'utf-8');
             console.log('  → 已备份既有非 sofagent pre-commit hook 到 pre-commit.bak');
           }
-        } catch { /* 备份失败不阻塞安装 */ }
+        } catch (err) {
+          // 备份失败不阻塞安装——留痕可见（既有 hook 仍有原文可寻）
+          console.error('[sofagent] 既有 pre-commit hook 备份失败（不阻塞安装，已继续覆盖安装）:', err);
+        }
       }
       writeFileSync(preCommitPath, readHookTemplateWithEntry('pre-commit'), 'utf-8');
       chmodSync(preCommitPath, 0o755);

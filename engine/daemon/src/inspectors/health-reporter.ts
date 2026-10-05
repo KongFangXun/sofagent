@@ -310,9 +310,10 @@ function rotateWeeklyArchive(dir: string, baseName: string, nowISO: string): voi
       .filter((f) => f.startsWith(prefix) && f.endsWith('.json'))
       .sort();
     for (let i = 0; i < oldArchives.length - WEEKLY_KEEP; i++) {
-      try { fs.unlinkSync(require('path').join(dir, oldArchives[i]!) as string); } catch { /* 单档删除失败不阻断 */ }
+      try { fs.unlinkSync(require('path').join(dir, oldArchives[i]!) as string); } catch { /* 单档删除失败不阻断（为何可静默：超保留数旧档的清理是尽力而为，单档残留只占盘不影响正确性） */ }
     }
   } catch {
-    // 轮转自身失败不阻断报告写（回看增强非依赖）
+    // 轮转自身失败不阻断报告写（为何可静默：回看增强非依赖——当前档已写成功，
+    // 轮转失败仅损失历史归档，报告主流程不受影响）
   }
 }

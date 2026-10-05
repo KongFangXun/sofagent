@@ -794,15 +794,17 @@ function runEmptyDiffMessageAudit(args: Args): RuleCheck[] | null {
       if (existsSync(editMsgPath)) {
         commitMsg = readFileSync(editMsgPath, 'utf-8').trim();
       }
-    } catch {
-      // 非 git 仓库——留空
+    } catch (err) {
+      // 非 git 仓库——留空，留痕可见（COMMIT_EDITMSG 探测降级）
+      console.error('[sofagent] COMMIT_EDITMSG 探测失败（commitMsg 取值降级，resolveCommitMsg）:', err);
     }
   }
   if (!commitMsg) {
     try {
       commitMsg = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
-    } catch {
-      // 无 HEAD（空仓库）——留空
+    } catch (err) {
+      // 无 HEAD（空仓库）——留空，留痕可见
+      console.error('[sofagent] git log 取 commitMsg 失败（无 HEAD/空仓库，resolveCommitMsg）:', err);
     }
   }
   // 无 message 可审 → 非提交场景，交回原短路行为
@@ -1231,8 +1233,9 @@ async function main(): Promise<void> {
       if (existsSync(editMsgPath)) {
         commitMsg = readFileSync(editMsgPath, 'utf-8').trim();
       }
-    } catch {
-      // git rev-parse 失败（非 git 仓库），留空
+    } catch (err) {
+      // git rev-parse 失败（非 git 仓库），留空——留痕可见
+      console.error('[sofagent] git rev-parse --git-dir 失败（commitMsg 探测降级）:', err);
     }
   }
 
@@ -1243,8 +1246,9 @@ async function main(): Promise<void> {
       // v1.0.9 T02：从 --diff range 提取**终点** commit，而非始终取 HEAD
       const refArg = resolveDiffEndpoint(args.diffRange);
       commitMsg = execFileSync('git', ['log', '-1', '--pretty=%B', refArg], { encoding: 'utf-8' }).trim();
-    } catch {
-      // 完全无法获取，保持空
+    } catch (err) {
+      // 完全无法获取，保持空——留痕可见
+      console.error('[sofagent] git log 取 commitMsg 失败（diff 终点 fallback 降级）:', err);
     }
   }
 
@@ -1606,8 +1610,10 @@ async function main(): Promise<void> {
     try {
       const treeArgs = isPreCommitPhase ? ['write-tree'] : ['rev-parse', 'HEAD^{tree}'];
       treeSha = execFileSync('git', treeArgs, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-    } catch {
-      treeSha = undefined; // unborn HEAD 等场景——不伪造
+    } catch (err) {
+      // unborn HEAD 等场景——不伪造，留痕可见（treeSha 记账降级，F-16 对账第三重跳过）
+      console.error('[sofagent] treeSha 记账失败（unborn HEAD 等场景，对账第三重跳过）:', err);
+      treeSha = undefined;
     }
 
     // A4 研读落地：Action Governance 审计 5 字段 schema + 决策溯源组

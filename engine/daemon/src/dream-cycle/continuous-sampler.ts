@@ -497,7 +497,8 @@ function resolveHealthWriter(): ((event: 'error', extra: { lastError: string }) 
         return mod.writeHealthFile as (event: 'error', extra: { lastError: string }) => unknown;
       }
     } catch {
-      // 试下一候选
+      // 试下一候选（为何可静默：require 探测链 fallback——两候选皆败时返回 null，
+      // 调用方降级留 stderr 痕，失败已被上层感知）
     }
   }
   return null;

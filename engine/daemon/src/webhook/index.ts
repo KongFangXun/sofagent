@@ -98,8 +98,9 @@ function writeWebhookChannelHealth(patch: Partial<WebhookChannelHealth>): void {
     const dir = path.dirname(healthPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(healthPath, JSON.stringify(raw, null, 2), 'utf-8');
-  } catch {
-    // 健康落盘失败不阻断推送主流程（观测性 best-effort）
+  } catch (err) {
+    // 健康落盘失败不阻断推送主流程（观测性 best-effort）——留痕可见
+    console.error('[sofagent] webhook 健康状态落盘失败（不阻断推送，recordHealth）:', err);
   }
 }
 
