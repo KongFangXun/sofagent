@@ -376,6 +376,79 @@ describe('doctor 版本修复提示按安装形态分流（v1.4.9 P1-13）', () 
 });
 
 // ============================================================
+// F49（v1.5.7）· 版本修复提示方向分流 + dist 失败指引按安装形态分流
+// ------------------------------------------------------------
+// 缺陷：① formatVersionRepairHint 一律以 engine VERSION 为安装目标——运行旧引擎
+//   时提示「装回旧版」（1.5.2 实测：VERSION 写 1.5.7、引擎 1.5.2，提示装
+//   @sofagent/audit@1.5.2）；② dist 校验失败指引 npm run build 对 npm 用户是死路。
+// ============================================================
+describe('doctor 版本修复提示方向分流（F49）', () => {
+  it('引擎旧于安装标记（homeVersionFile 更新）→ 提示升级引擎而非更新文件，且不指向旧版本号', () => {
+    const versionFile = join('/repo', '.sofagent', 'VERSION');
+    // 引擎 1.5.2，VERSION 写 1.5.7 → 引擎落后
+    const hint = formatVersionRepairHint('npm', 'engine-outdated', versionFile, '1.5.2');
+    expect(hint).toContain('升级引擎');
+    expect(hint).toContain('npm i -g @sofagent/audit@latest');
+    // 不得把旧引擎版本号当安装目标（1.5.2 实测缺陷：提示装回旧版）
+    expect(hint).not.toContain('@sofagent/audit@1.5.2');
+    expect(hint).not.toContain('bash install.sh');
+  });
+
+  it('runDoctor 集成：VERSION 写更新版本 → 输出「引擎落后」与 latest 升级指引（不提示装旧版）', () => {
+    const projDir = mkdtempSync(join(tmpdir(), 'sofagent-f49-proj-'));
+    const fakeHome = mkdtempSync(join(tmpdir(), 'sofagent-f49-home-'));
+    const savedHome = process.env.SOFAGENT_HOME;
+    const savedPrefixes = process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      process.env.SOFAGENT_HOME = fakeHome;
+      process.env.SOFAGENT_HOME_ALLOWED_PREFIXES = tmpdir();
+      // 写一个远大于当前引擎 VERSION 的版本号 → engineOlder 分支
+      writeFileSync(join(fakeHome, 'VERSION'), '99.0.0\n', 'utf-8');
+      runDoctor(projDir);
+      const output = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
+      expect(output).toContain('引擎落后于安装标记');
+      expect(output).toContain('npm i -g @sofagent/audit@latest');
+      // 不再出现旧向文案的「发版后未同步」定性
+      expect(output).not.toContain('发版后未同步');
+    } finally {
+      logSpy.mockRestore();
+      if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
+      else process.env.SOFAGENT_HOME = savedHome;
+      if (savedPrefixes === undefined) delete process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+      else process.env.SOFAGENT_HOME_ALLOWED_PREFIXES = savedPrefixes;
+      try { rmSync(fakeHome, { recursive: true, force: true }); } catch { /* */ }
+      try { rmSync(projDir, { recursive: true, force: true }); } catch { /* */ }
+    }
+  });
+
+  it('runDoctor 集成：VERSION 写旧版本 → 维持「发版后未同步」原语义（方向判定不误伤）', () => {
+    const projDir = mkdtempSync(join(tmpdir(), 'sofagent-f49-old-proj-'));
+    const fakeHome = mkdtempSync(join(tmpdir(), 'sofagent-f49-old-'));
+    const savedHome = process.env.SOFAGENT_HOME;
+    const savedPrefixes = process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      process.env.SOFAGENT_HOME = fakeHome;
+      process.env.SOFAGENT_HOME_ALLOWED_PREFIXES = tmpdir();
+      writeFileSync(join(fakeHome, 'VERSION'), '0.0.1\n', 'utf-8'); // 旧于引擎
+      runDoctor(projDir);
+      const output = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
+      expect(output).toContain('发版后未同步');
+      expect(output).not.toContain('引擎落后于安装标记');
+    } finally {
+      logSpy.mockRestore();
+      if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
+      else process.env.SOFAGENT_HOME = savedHome;
+      if (savedPrefixes === undefined) delete process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+      else process.env.SOFAGENT_HOME_ALLOWED_PREFIXES = savedPrefixes;
+      try { rmSync(fakeHome, { recursive: true, force: true }); } catch { /* */ }
+      try { rmSync(projDir, { recursive: true, force: true }); } catch { /* */ }
+    }
+  });
+});
+
+// ============================================================
 // v1.5.1 E3 · commit-msg hook 完整性校验（子串匹配 → 三要素）
 // ------------------------------------------------------------
 // 改前缺陷：doctor 用 `hookContent.includes('sofagent')` 判「已安装」——把

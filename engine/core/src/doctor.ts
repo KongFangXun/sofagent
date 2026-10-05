@@ -91,6 +91,24 @@ export function detectInstallShape(moduleDir: string = __dirname): InstallShape 
 }
 
 /**
+ * 最小语义化版本比较（F49 ① 私有辅助）：a<b 返回 -1，相等 0，a>b 返回 1。
+ * 不能 import @sofagent/rules 的 compareVersions——依赖方向 rules → core 单向，
+ * 反向引入成环。语义与 rules 侧实现一致（MAJOR.MINOR.PATCH 数字三元组，
+ * 不可解析按相等处理——doctor 场景 VERSION 文件脏值不该炸健康检查）。
+ */
+function compareVersionTriple(a: string, b: string): number {
+  const pa = /^(\d+)(?:\.(\d+))?(?:\.(\d+))?/.exec(a.trim());
+  const pb = /^(\d+)(?:\.(\d+))?(?:\.(\d+))?/.exec(b.trim());
+  if (!pa || !pb) return 0;
+  for (let i = 1; i <= 3; i++) {
+    const x = Number(pa[i] ?? 0);
+    const y = Number(pb[i] ?? 0);
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  return 0;
+}
+
+/**
  * 生成版本一致性检查的修复提示（v1.4.9 P1-13）。
  *
  * 四条文案（`shape` × `situation`）都**必须**带上 `homeVersionFile` 绝对路径——
@@ -103,12 +121,24 @@ export function detectInstallShape(moduleDir: string = __dirname): InstallShape 
  * @param version         当前引擎版本（升级/写入的目标版本）
  * @returns 修复提示文案
  */
+// F49（v1.5.7）：方向分流的语义——「mismatch」拆成两向：
+//   · homeVersionFile 旧于 engine VERSION（文件滞后）：维持 v1.4.9 P1-13 的修法文案
+//     （更新 VERSION 文件 / 重装同步）；
+//   · homeVersionFile 新于 engine VERSION（**运行引擎旧**——用户先升级了安装器/其他
+//     机器写了新版本号，本机引擎还是旧的）：修法不是改文件，而是升级引擎本身。
+//     旧文案在 1.5.2 实测指向「装回旧版」（npm i -g @sofagent/audit@<engine 旧版本>）
+//     ——把用户往回带。判据用 compareVersions（@sofagent/rules 单源实现）。
 export function formatVersionRepairHint(
   shape: InstallShape,
-  situation: 'mismatch' | 'missing',
+  situation: 'mismatch' | 'missing' | 'engine-outdated',
   homeVersionFile: string,
   version: string,
 ): string {
+  // F49 ③：引擎旧于安装标记（homeVersionFile 新）——任何安装形态的修法都是升级引擎，
+  // 与「文件滞后」两向分开（改文件只会掩盖引擎陈旧）。
+  if (situation === 'engine-outdated') {
+    return `运行引擎（${version}）旧于安装标记——升级引擎：npm i -g @sofagent/audit@latest（升级后本提示消失；VERSION 文件勿手改）`;
+  }
   if (shape === 'npm') {
     // npm 形态无 install.sh：修法是升级 npm 包（或直接改该文件）。
     // 括号里保留「无 install.sh」这句解释是刻意的——用户若看过旧提示会疑惑脚本去哪了；
@@ -199,12 +229,21 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     if (existsSync(homeVersionFile)) {
       const installedVersion = readFileSync(homeVersionFile, 'utf-8').trim();
       if (installedVersion !== VERSION) {
-        warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——可能发版后未同步`);
-        repairHint(formatVersionRepairHint(installShape, 'mismatch', homeVersionFile, VERSION));
-        // v1.3.9 补充升级安全性：消除企业 IT 对「升级覆盖数据」的顾虑——
-        // 升级保留用户数据与已装 hooks（不覆盖 ~/.sofagent/data/ 与已装 hooks），
-        // 破坏性变更见 CHANGELOG 对应版本条目。
-        info('升级保留 ~/.sofagent/data/ 与已装 hooks（不覆盖用户数据）；破坏性变更见 CHANGELOG 对应版本条目');
+        // F49 ①：方向判定——homeVersionFile 旧于引擎（文件滞后）维持原 warn 语义；
+        // homeVersionFile 新于引擎（运行引擎旧）改报「引擎滞后」并给升级指引。
+        // 旧实现一律以 engine VERSION 为安装目标 → 运行旧引擎时提示装回旧版（1.5.2 实测）。
+        const engineOlder = compareVersionTriple(VERSION, installedVersion) < 0;
+        if (engineOlder) {
+          warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——本机运行的引擎落后于安装标记`);
+          repairHint(formatVersionRepairHint(installShape, 'engine-outdated', homeVersionFile, VERSION));
+        } else {
+          warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——可能发版后未同步`);
+          repairHint(formatVersionRepairHint(installShape, 'mismatch', homeVersionFile, VERSION));
+          // v1.3.9 补充升级安全性：消除企业 IT 对「升级覆盖数据」的顾虑——
+          // 升级保留用户数据与已装 hooks（不覆盖 ~/.sofagent/data/ 与已装 hooks），
+          // 破坏性变更见 CHANGELOG 对应版本条目。
+          info('升级保留 ~/.sofagent/data/ 与已装 hooks（不覆盖用户数据）；破坏性变更见 CHANGELOG 对应版本条目');
+        }
       } else {
         ok(`~/.sofagent/VERSION (${installedVersion}) 与引擎版本一致`);
       }
@@ -668,7 +707,13 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           ok(`audit dist/index.js 完整性校验通过（SHA-256: ${currentHash.slice(0, 12)}...）`);
         } else {
           fail(`audit dist/index.js 哈希不匹配——可能被替换（影子审计器劫持风险）。记录值: ${recordedHash.slice(0, 12)}...，当前值: ${currentHash.slice(0, 12)}...`);
-          repairHint('重新安装 sofagent（npm run build 或 sofagent audit --install-hook）以恢复原始 dist');
+          // F49 ③：修复指引按安装形态分流——`npm run build` 对 npm 形态用户是死路
+          // （其机器上没有仓库/工程脚本，重装包才是可达修法）。
+          repairHint(
+            detectInstallShape() === 'npm'
+              ? '重新安装 sofagent 以恢复原始 dist：npm i -g @sofagent/audit@latest（npm 安装形态无本地构建）'
+              : '重新安装 sofagent（npm run build --workspace=engine/audit 或 sofagent audit --install-hook）以恢复原始 dist',
+          );
           distIntegrityOk = false;
         }
       } else {
@@ -685,8 +730,14 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   } else {
     // v1.3.5 #18: dist 不存在 → 显式告警（非 monorepo 且未安装 @sofagent/audit 的场景）。
     // 此前静默跳过 =「检查不到」被当成「通过」，与失败路径不可区分。
+    // F49 ③：指引按安装形态分流——npm 形态给重装包指引（无仓可 build）；
+    //   repo/引擎仓形态保留构建/重装双路。
     warn('audit dist/index.js 未找到——dist 完整性检查（影子审计器劫持防护）不可用');
-    repairHint('npm run build --workspace=engine/audit（monorepo）或安装 @sofagent/audit');
+    repairHint(
+      detectInstallShape() === 'npm'
+        ? '重装 npm 包：npm i -g @sofagent/audit@latest（dist 随包分发，缺失即安装不完整）'
+        : 'npm run build --workspace=engine/audit（monorepo）或安装 @sofagent/audit',
+    );
     distIntegrityOk = false;
   }
 
