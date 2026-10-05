@@ -36,6 +36,9 @@ fi
 # 仅当没拿到文件路径时尝试解析（避免与 git 原生 hook 冲突）
 if [ -z "$COMMIT_MSG_FILE" ] && [ ! -t 0 ]; then
   CMD_INPUT=$(cat 2>/dev/null || true)
+  # v1.5.7 F29 边界修复：MSG 先置空——node 不在 PATH / node 分支整体失败时，
+  # 下方 [ -z "$MSG" ] 在 set -u 下不再炸 unbound（极简环境实测踩中）。
+  MSG=""
   if [ -n "$CMD_INPUT" ]; then
     # v1.4.3 F-03 修复：message 抽取分两级——
     # ① node JSON 解析（主路径）：正确处理 -m/--message 的空格与等号（--message=）两种形式、
@@ -44,6 +47,9 @@ if [ -z "$COMMIT_MSG_FILE" ] && [ ! -t 0 ]; then
     #    （(-m|--message)([[:space:]]+|=)）——第五轮实测：等号形式旧正则抽取为空、
     #    嵌套引号（it's）被闭引 sed 截断，此为已知 fallback 局限，node 可用时不受影响。
     if command -v node &>/dev/null; then
+      # v1.5.7 F29 边界修复：MSG 先置空——node 分支整体失败时（管道破裂等）
+      # 下方 [ -z "$MSG" ] 在 set -u 下不再炸 unbound（极简环境实测踩中）。
+      MSG=""
       MSG=$(printf '%s' "$CMD_INPUT" | node -e '
         let raw = "";
         process.stdin.on("data", d => raw += d);
@@ -113,19 +119,122 @@ if command -v git &>/dev/null && git rev-parse --show-toplevel &>/dev/null; then
 fi
 
 # ── 5. sofagent audit 定位（优先仓库本地 dist，避免全局版本漂移）──────────
-AUDIT_DIST="$REPO_ROOT/engine/audit/dist/index.js"
-if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
+# v1.5.7 F29：AUDIT_DIST 此前恒指 $REPO_ROOT/engine/audit/dist/index.js——
+# REPO_ROOT 是**被审仓**的根，普通业务仓下该路径不存在，§6 哈希校验整段
+# 静默跳过 ⇒ 主流安装形态（全局安装 + 普通仓）下审计器本体被篡改零防线。
+# 现按形态分流：引擎仓自审 = 仓内 dist（原行为）；普通仓 = _resolve_audit_dist
+# 三级解析，解析成功做全局口径哈希校验，解析失败打印 SKIP 行（不静默不阻断）。
+AUDIT_DIST=""
+_REPO_IS_SOFA=0
+if [ -n "$REPO_ROOT" ] && [ -f "$REPO_ROOT/engine/audit/dist/index.js" ] \
+  && [ -f "$REPO_ROOT/package.json" ] && [ -f "$REPO_ROOT/engine/audit/package.json" ]; then
+  _TOP_NAME=$(node -e "try{process.stdout.write(require(process.argv[1]).name||'')}catch{}" "$REPO_ROOT/package.json" 2>/dev/null)
+  _AUD_NAME=$(node -e "try{process.stdout.write(require(process.argv[1]).name||'')}catch{}" "$REPO_ROOT/engine/audit/package.json" 2>/dev/null)
+  if [ "$_TOP_NAME" = "sofagent-monorepo" ] && [ "$_AUD_NAME" = "@sofagent/audit" ]; then
+    _REPO_IS_SOFA=1
+    AUDIT_DIST="$REPO_ROOT/engine/audit/dist/index.js"
+  fi
+fi
+
+# 普通仓形态：审计器本体路径三级解析（按序取第一个成功）。
+# 置 AUDIT_GLOBAL_DIST（非空 = 解析成功）+ AUDIT_GLOBAL_SRC（命中的那级，文案用）。
+_resolve_audit_dist() {
+  AUDIT_GLOBAL_DIST=""
+  AUDIT_GLOBAL_SRC=""
+  SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
+  # ① $SOFAGENT_HOME/internal/ 下的安装路径记录（若存在）
+  _RECORD="$SOFAGENT_HOME/internal/audit-install-path.txt"
+  if [ -f "$_RECORD" ]; then
+    _RECORDED=$(tr -d '[:space:]' < "$_RECORD" 2>/dev/null)
+    if [ -n "$_RECORDED" ] && [ -f "$_RECORDED" ]; then
+      AUDIT_GLOBAL_DIST="$_RECORDED"
+      AUDIT_GLOBAL_SRC="install-record"
+      return 0
+    fi
+  fi
+  # ② command -v 解析 bin 入口，读其包装/shebang 指向的真实 dist。
+  #    按可信度排序尝试三个 bin（sofagent-audit 直链包内 dist 最干净；
+  #    sofagent 总包是转发壳，实测可内嵌与顶层不同版本的依赖副本——
+  #    本机实测内嵌 1.5.2 / 顶层 1.5.6，须先推导顶层再兜底内嵌解析）。
+  for _CMD in sofagent-audit sofagent; do
+    _BIN=$(command -v "$_CMD" 2>/dev/null || true)
+    [ -n "$_BIN" ] || continue
+    _BIN=$(readlink -f "$_BIN" 2>/dev/null || echo "$_BIN")
+    # ②a bin 相对路径推导：
+    #    @sofagent/audit 的 bin → 包根同级 dist/（bin 链接进全局 bin 前已
+    #    解析为真实路径 dist/cli-quick.js → dist/index.js 同目录）
+    _DIST_CANDID=$(dirname "$_BIN")/index.js
+    if [ -f "$_DIST_CANDID" ]; then
+      AUDIT_GLOBAL_DIST="$_DIST_CANDID"
+      AUDIT_GLOBAL_SRC="bin-adjacent"
+      return 0
+    fi
+    # ②b 全局 bin 目录标准布局推导：bin → ../lib/node_modules/@sofagent/audit/dist/index.js
+    _BIN_DIR=$(dirname "$_BIN")
+    for _GUESS in \
+      "$_BIN_DIR/../lib/node_modules/@sofagent/audit/dist/index.js" \
+      "$_BIN_DIR/../../lib/node_modules/@sofagent/audit/dist/index.js"; do
+      if [ -f "$_GUESS" ]; then
+        AUDIT_GLOBAL_DIST="$_GUESS"
+        AUDIT_GLOBAL_SRC="bin-lib-layout"
+        return 0
+      fi
+    done
+    # ②c 转发壳内嵌 require.resolve（最后兜底：直接安装 @sofagent/audit 且
+    # 非标准布局时。注意此时命中的可能是总包内嵌副本——版本落后于顶层
+    # 独立包时以基线口径为准拦截并给出刷新指引，宁可假拦不可假绿）
+    _RESOLVED=$(node -e '
+      const {dirname, join} = require("path");
+      const {existsSync, readFileSync} = require("fs");
+      try {
+        const binPath = process.argv[1];
+        const text = readFileSync(binPath, "utf8");
+        if (/require\.resolve\((["\x27])@sofagent\/audit\1\)/.test(text)) {
+          const { createRequire } = require("module");
+          const req = createRequire(binPath);
+          const entry = req.resolve("@sofagent/audit");
+          const distIndex = join(dirname(entry), "index.js");
+          if (existsSync(distIndex)) { process.stdout.write(distIndex); process.exit(0); }
+        }
+      } catch (x) { /* 解析失败走下一级 */ }
+    ' "$_BIN" 2>/dev/null || true)
+    if [ -n "$_RESOLVED" ] && [ -f "$_RESOLVED" ]; then
+      AUDIT_GLOBAL_DIST="$_RESOLVED"
+      AUDIT_GLOBAL_SRC="bin-wrapper-resolve"
+      return 0
+    fi
+  done
+  # ③ npm root -g 下 @sofagent/audit/dist/index.js（与 commit-msg hook 解析式同源）
+  _NPM_ROOT=$(npm root -g 2>/dev/null | head -1 || true)
+  if [ -n "$_NPM_ROOT" ] && [ -f "$_NPM_ROOT/@sofagent/audit/dist/index.js" ]; then
+    AUDIT_GLOBAL_DIST="$_NPM_ROOT/@sofagent/audit/dist/index.js"
+    AUDIT_GLOBAL_SRC="npm-root-g"
+    return 0
+  fi
+  return 1
+}
+
+if [ "$_REPO_IS_SOFA" -eq 1 ]; then
   AUDIT_CMD=(node "$AUDIT_DIST")
-elif command -v sofagent-audit &>/dev/null; then
-  AUDIT_CMD=(sofagent-audit)
 else
-  echo "❌ sofagent-audit 未安装，审计未运行"
-  echo "   请运行: npm install -g @sofagent/audit"
-  exit 1
+  if _resolve_audit_dist; then
+    AUDIT_DIST="$AUDIT_GLOBAL_DIST"
+    AUDIT_CMD=(node "$AUDIT_DIST")
+  elif command -v sofagent-audit &>/dev/null; then
+    # 路径三级全落空但 PATH 上有 sofagent-audit——执行面照旧（PATH 假 binary
+    # 风险由 commit-msg hook 的非 PATH 解析兜底），完整性校验走 SKIP 分支
+    AUDIT_CMD=(sofagent-audit)
+  else
+    echo "❌ sofagent-audit 未安装，审计未运行"
+    echo "   请运行: npm install -g @sofagent/audit"
+    exit 1
+  fi
 fi
 
 # ── 6. dist 完整性校验（P1-A2：防本地覆写致审计失效）─────────────────────
-if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
+# 双形态：引擎仓自审走原双信号矩阵（不动）；普通仓走全局口径聚合哈希
+# （对齐 commit-msg hook 全局分支：聚合哈希 vs audit-global-dist-hash.txt）。
+if [ "$_REPO_IS_SOFA" -eq 1 ] && [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
   SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
   HASH_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
   if [ ! -f "$HASH_RECORD" ]; then
@@ -197,6 +306,54 @@ if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
       exit 1
     fi
   fi
+elif [ -n "$AUDIT_GLOBAL_DIST" ]; then
+  # ── 普通仓 + 全局安装形态：全局口径聚合哈希校验 ──────────────────────
+  # 对齐 commit-msg hook 全局分支：聚合哈希（dist/**/*.js 排序逐文件哈希再
+  # 聚合）vs audit-global-dist-hash.txt。不引入源码指纹信号——指纹基线是
+  # 引擎仓源码口径，普通仓下恒不匹配，反而把真篡改洗成「属预期放行」。
+  # 算法内联（与 commit-msg 的 _aggregate_dist_hash 逐字一致）：校验器不能
+  # 读被审仓内脚本（可投毒）。
+  _DIST_DIR=$(dirname "$AUDIT_GLOBAL_DIST")
+  _GLOBAL_HASH=$(node -e '
+    const {createHash}=require("crypto"),{readFileSync,readdirSync,statSync}=require("fs"),{join,relative,sep}=require("path");
+    const distRoot=process.argv[1];
+    let ok=false; try{ok=statSync(distRoot).isDirectory()}catch(x){}
+    if(!ok){process.exit(0)}
+    const out=[];
+    (function walk(d){for(const e of readdirSync(d,{withFileTypes:true})){const p=join(d,e.name); if(e.isDirectory())walk(p); else if(e.isFile()&&e.name.endsWith(".js"))out.push(p);}})(distRoot);
+    const files=out.map(f=>({rel:relative(distRoot,f).split(sep).join("/"),abs:f})).sort((a,b)=>a.rel<b.rel?-1:a.rel>b.rel?1:0);
+    if(files.length===0){process.exit(0)}
+    const inputs=files.map(f=>f.rel+"\u0000"+createHash("sha256").update(readFileSync(f.abs)).digest("hex"));
+    process.stdout.write(createHash("sha256").update(inputs.join("\u0001"),"utf8").digest("hex"));
+  ' "$_DIST_DIR" 2>/dev/null || true)
+  _GLOBAL_HASH_RECORD="$SOFAGENT_HOME/internal/audit-global-dist-hash.txt"
+  if [ -z "$_GLOBAL_HASH" ]; then
+    echo "⚠️ [sofagent] 审计器本体哈希计算失败（${_DIST_DIR} 不可读）——完整性校验未执行（来源：${AUDIT_GLOBAL_SRC}）"
+  elif [ ! -f "$_GLOBAL_HASH_RECORD" ]; then
+    # 基线缺失 fail-loud（与既有语义一致）：不自动落锚——防止把已被篡改的
+    # dist 固化为合法基线。信任锚必须是用户显式确认的时刻。
+    echo "🔴 [sofagent] 全局审计引擎基准缺失（$_GLOBAL_HASH_RECORD 不存在）——无法保证审计器本体未被替换，本次提交终止"
+    echo "   建立基准（任一，均为显式确认时刻）："
+    echo "     · 仓库内：bash tools/audit-baseline-sync.sh --global"
+    echo "     · 通用：sofagent audit --install-hook（重装 hook 时自动建立全局锚）"
+    echo "     · 通用：sofagent audit --doctor --baseline"
+    exit 1
+  else
+    _GLOBAL_RECORDED=$(tr -d '[:space:]' < "$_GLOBAL_HASH_RECORD" 2>/dev/null)
+    if [ "$_GLOBAL_HASH" != "$_GLOBAL_RECORDED" ]; then
+      echo "🔴 [sofagent] 全局审计引擎哈希不匹配（可能被投毒，来源：${AUDIT_GLOBAL_SRC}）: $AUDIT_GLOBAL_DIST"
+      echo "   当前聚合哈希 ${_GLOBAL_HASH:0:12}... ≠ 基准 ${_GLOBAL_RECORDED:0:12}..."
+      echo "   恢复（按序尝试，任选其一）："
+      echo "     ① 仓库内同步信任锚：bash tools/audit-baseline-sync.sh --global"
+      echo "     ② 删陈旧锚后重装 hook：rm -f \"\$HOME/.sofagent/internal/audit-global-dist-hash.txt\" && sofagent audit --install-hook"
+      echo "   ⚠️ 同版本 npm install -g @sofagent/audit 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。"
+      exit 1
+    fi
+  fi
+else
+  # ── 普通仓 + 解析失败形态：SKIP（必须打印，不得静默）─────────────────
+  # 走到这里 = 三级解析全落空但 PATH 上有 sofagent-audit（执行面照旧）。
+  echo "⚠️ [sofagent] SKIP：未启用审计器本体完整性校验——全局审计器路径三级解析均未命中，执行面走 PATH 上的 sofagent-audit"
 fi
 
 # ── 6. .sofagent/ ignore 兜底 ────────────────────────────────────────────
