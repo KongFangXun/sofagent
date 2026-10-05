@@ -1,7 +1,7 @@
 {
   "name": "@sofagent/audit",
   "version": "1.5.6",
-  "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
+  "description": "Commit-time audit for AI coding agents — scans git diff against 25 discipline rules (secret leaks, out-of-scope edits, injection, permission lines), tamper-evident chain + snapshots. CLI: `npx -y -p @sofagent/audit` or via the sofagent single entry.",
   "main": "./dist/public-api.js",
   "types": "dist/public-api.d.ts",
   "exports": {
@@ -39,7 +39,12 @@
     "agent",
     "discipline",
     "mcp",
-    "model-context-protocol"
+    "model-context-protocol",
+    "llm",
+    "ai-agents",
+    "security",
+    "secret-scanning",
+    "agent-governance"
   ],
   "license": "MIT",
   "author": "KongFangXun",

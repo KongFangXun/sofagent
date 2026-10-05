@@ -40,8 +40,8 @@ export interface ActivateWorkflowResult {
 /**
  * 激活企业工作流
  *
- * 延迟导入 @sofagent/orchestrator 避免循环依赖和启动时加载。
- * MCP 包 optionalDependencies 不含 orchestrator——如果未安装，返回友好错误。
+ * @sofagent/orchestrator 是本包硬依赖（engine/mcp/package.json dependencies）——
+ * 不存在「未安装」形态；延迟 import 仅为避免启动期加载（循环依赖与冷启动优化）。
  *
  * @param args 激活参数
  * @returns 结构化结果（text + data）
@@ -50,7 +50,7 @@ export async function activateWorkflowTool(args: ActivateWorkflowArgs): Promise<
   const dryRun = args.dry_run ?? false;
   const nodeFilter = args.node_filter;
 
-  // 延迟导入——orchestrator 可能未安装
+  // 延迟导入——硬依赖（dependencies 在位），延迟仅为避免启动期加载
   let activateWorkflow: (opts: {
     dataDir: string;
     dryRun: boolean;
@@ -62,24 +62,11 @@ export async function activateWorkflowTool(args: ActivateWorkflowArgs): Promise<
     hitlNodes: string[];
   }>;
 
-  try {
-    const mod = await import('@sofagent/orchestrator');
-    if (typeof mod.activateWorkflow !== 'function') {
-      throw new Error('activateWorkflow 不可用');
-    }
-    activateWorkflow = mod.activateWorkflow;
-  } catch {
-    return {
-      text: '[sofagent] 激活失败：@sofagent/orchestrator 未安装或不可用',
-      data: {
-        registeredAgents: [],
-        skippedNodes: [],
-        hitlNodes: [],
-        workflowGraph: '',
-        dryRun,
-      },
-    };
+  const mod = await import('@sofagent/orchestrator');
+  if (typeof mod.activateWorkflow !== 'function') {
+    throw new Error('[sofagent] activateWorkflow 不可用（@sofagent/orchestrator 导出缺失——安装损坏，fail-loud）');
   }
+  activateWorkflow = mod.activateWorkflow;
 
   const dataDir = loadEnvConfig().dataDir;
 
