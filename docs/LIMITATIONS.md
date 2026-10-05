@@ -306,6 +306,14 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 - 0 目录告警已分三分支（未配置 / 均不可用 / 为空），但判定的是**启动时刻快照**：启动后用户删目录 / 权限变化导致的监控面塌缩，到下一次重启才可见（fs.watch 的 error 事件对 ENOENT 静默跳过——目录消失时 watcher 逐个失明，无聚合告警）。
 - 自省与模板只在「未配置」时生效：已存在的 watch.yml（含只写 `watch: {}` 的首装模板）**永不覆盖**——空 paths 的存量配置不会被自省结果救活，告警文案会如实指出「为空表」分支。
 
+### 🚧 L4 审计门在 diff 不可得时 fail-closed，不静默放行（v1.5.7 F28）
+
+**原缺陷**：`engine/orchestrator/src/loop-agent/fix-applier.ts` 审计卡关默认实现的 git diff catch 分支静默 `return { passed: true, violations: [] }`——「diff 拿不到」（git 不可用 / agent 目录不在 git 管理中 / git 报错）被当作「审计通过」处置，审计门整体旁路且零留痕：证据不可得与证据合规两者不可区分。
+
+**修复后的边界（如实披露）**：
+- diff 获取失败现按 fail-closed 处置：`passed: false` + violations 带「审计未执行：git diff 获取失败（错误摘要）——按不通过处置」，复用 applyFix 对审计不通过的既有回滚路径（applied:false + git-checkout 回滚）。
+- 空 diff（git 正常返回空串）仍为 PASS——空变更无可审计对象，与「diff 拿不到」是两件事。
+- 错误摘要限长（120 字符）+ 控制字符转义——git stderr 回显不可注入审计报告，但代价是超长错误信息被截断，完整诊断须查运行日志。
 
 
 
@@ -451,7 +459,9 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 ### 🔓 快照恢复的人审门禁是约定级，不是机制（v1.5.0 披露）
 
-回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道，快照文件也无 HMAC / 指纹可验（全链路无完整性校验）。即：Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限——该门禁是约定不是机制。
+回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道。即：Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限——该门禁是约定不是机制。
+
+> v1.5.7 F52 更新（快照指纹已加 / 人审通道仍缺）：快照文件现已带 HMAC 指纹——`snapshots.json` 每个条目写入时签名（复用 audit-history 的 `~/.sofagent-key` 同一密钥 + stableStringify 稳定序列化，零第二套基建）、restore 读取时验签，失配 fail-closed 拒绝恢复（含 blob 池偷换检测——改内容不动索引同样暴露）；存量无签名快照按 legacy 兼容放行、恢复时 console.warn 显式提示「无法确认其未被篡改」。**但 `human_confirmed` 本身仍是同 call 自报布尔，无带外确认通道**——带外通道（复用仓内既有 HITL 机制）登记排期，落地前本披露继续有效。裁定前请勿把该门禁当作安全边界。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
 
 > v1.5.5 补充（CLI 侧已对齐）：CLI 路径 `sofagent audit --revert <sha>` 的确认函数（`engine/audit/src/index.ts` 的 `confirm()`）此前在**非 TTY 下自动确认**（Agent / CI / 管道等非交互环境下静默放行），强度**弱于**常规路径与 MCP 侧硬门控；现改为非 TTY 下**拒绝执行**并打印显式放行方式，仅显式传 `--yes` 才放行。两侧现同为「无显式授权即不放行」——**CLI 侧是机制（默认拒绝），MCP 侧仍是约定（调用方自报）**，落差只在 MCP 侧。
 
@@ -526,7 +536,7 @@ sofagent audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 1466 个、全 workspace 5710 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 1466 个、全 workspace 5721 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |---|---|---|
@@ -604,7 +614,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 397 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1466 个、全 workspace 5710 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1466 个、全 workspace 5721 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 396 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）

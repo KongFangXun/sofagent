@@ -49,6 +49,11 @@
 >**升级影响（行为变更）**：此前在 `fde.md` 设 `data_cleanup_on_record: true` 的用户，写入后按 1/N 概率自动清理的行为不再发生——需要自动清理请显式调度 `engine/scripts/cleanup.sh`，保留策略用 `SOFAGENT_RETENTION_DAYS` / `SOFAGENT_RETENTION_MAX`（消费点 `engine/scripts/cleanup.sh`）。完整披露见 [LIMITATIONS §七](./docs/LIMITATIONS.md)。
 > ② **`@sofagent/train` 导出 `routeRequest` 更名为 `canaryRouteRequest`**（同名消歧）：orchestrator 另有同名 `routeRequest`（`@sofagent/orchestrator/workflow` 语义路由）——同名不同物，裸符号 grep 接线断言会假阳性。该导出零生产消费者，破坏面为零；消费侧（仅测试）已同步更名。同名导出矩阵见 [WIKI 术语表](./docs/WIKI.md)。
 
+> 🔶 **破坏性变更公告（v1.5.7 待发版 · F53 注册路径验哈希旁路移除）**
+>
+> **`RegisterModelInput.verifyHash` 入参删除，`registerModel` 验哈希硬编码为 `true`**（供应链红线收口）：v1.5.1 披露的「注册路径可用 `verifyHash: false` 显式跳过验哈希」旁路（调用方恰是被约束方）已移除——注册 / 切换（switchModel）/ 回滚（rollbackWeightsVersion）三条版本切换路径统一为唯一强校验路径，无旁路。
+> **升级影响（行为变更）**：此前依赖 `verifyHash: false` 跳过权重哈希校验的注册调用将**直接失败**（哈希不匹配即拒绝注册，fail-closed）；MCP tool `model_register` 的 `verify_hash` 参数不再生效（schema 保留兼容、传入即被忽略，后续版本移除）。全仓三个调用点已同批适配（mcp/model-register、train/artifact-register、orchestrator/registerLocalEndpoint——最后一个本就不传该参数）。裁定链：维护者拍板「硬编码 true 为唯一路径」，该 API 语义变更随 v1.5.7 发版生效。
+
 - **v1.4.9** — 设备接入与数据承接：G9 设备注册/发现/心跳（Ed25519 身份 + 在线才派单/掉线改派）· G10 数据目录白名单授权读取 · G11 采集声明 opt-in 上行（WAL 加密暂存 + 断点续传 + 审计计量）· T7 router 过站 session 承接 · T8 敏感识别三层插槽（SDK 面，
   管线接线排期 v1.5.1）· T9 权重灰度 AB（SDK 面同上）· G5b 连接器注册 + G1 workflow 模板血缘 · T6 installer + T10 模型清单 · MCP 95→**104**（9 新）· 测试 4429→**4805** · 2026-09-17 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.9.md)
 
