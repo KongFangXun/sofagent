@@ -36,7 +36,7 @@ import { emitAuditDecision } from './audit-decision-writer';
 // v1.5.6 章二：审计目录维护入口（--repair 触发遗留备份清理 + 历史段归档）
 import { runAuditDirMaintenance } from './audit-dir-maintenance';
 // v1.5.6 章二：记忆作用域解析（doctor 披露本仓记忆钉在哪个 scope）
-import { resolveMemoryScope, createMemoryStore } from './memory-store';
+import { resolveMemoryScope, createMemoryStore, MEMORY_DIR_FILE_WARN } from './memory-store';
 import { getHistoryAnchorFilePath } from './audit-history';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
@@ -324,7 +324,10 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   console.log('\n── 数据目录健康度 [全局 ~/.sofagent/，非当前仓库] ──');
   {
     const HEALTH_DIRS = ['memory', 'audit', 'task/logs', 'orchestrator'];
-    const FILE_WARN = 10000; // 单目录文件数黄警阈值（v1.5.6 章二：实测 17178 个事实文件已达退化区间）
+    // F5（v1.5.7）：阈值提为共享导出 MEMORY_DIR_FILE_WARN（memory-store.ts 定义，
+    // 本处 import）——全仓不允许第二份 10000 字面量（测试除外），daemon 巡检的
+    // memory 归档步骤与 doctor 黄警判同一阈值。
+    const FILE_WARN = MEMORY_DIR_FILE_WARN;
     const SIZE_WARN_BYTES = 512 * 1024 * 1024; // 单目录总量黄警 512MB
     let healthWarned = false;
     let healthChecked = 0;

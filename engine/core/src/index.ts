@@ -302,7 +302,7 @@
 } from './compress-memory';
 
 // ── 事实级记忆存储（v1.2.9 功能①；v1.5.6 章二加项目作用域）──
-/* @public */ export { createMemoryStore, resolveMemoryScope } from './memory-store';
+/* @public */ export { createMemoryStore, resolveMemoryScope, MEMORY_DIR_FILE_WARN } from './memory-store';
 /* @public */ export type { MemoryFact } from './memory-store';
 
 // ── 记忆契约（think.md · Ledger-Views-Policy）──
@@ -441,7 +441,7 @@
 } from './data-diff';
 
 // ── 文件系统 / 记忆层 ──
-/* @public */ export { getPersonaContent } from './filesystem/memory-sync';
+/* @public */ export { getPersonaContent, syncPersona } from './filesystem/memory-sync';
 
 // ── 文件系统 / Shadow Repo（同构 Git 快照） ──
 /* @public */ export {

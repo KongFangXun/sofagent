@@ -34,6 +34,15 @@ import { getDataDir } from './data-paths';
 // 类型定义
 // ────────────────────────────────────────────────────────────
 
+/**
+ * F5（v1.5.7）：memory 目录文件数黄警阈值——全仓唯一份共享导出。
+ * 消费方：doctor 数据目录健康度节（黄警判）+ daemon 巡检 memory 归档步骤
+ * （超阈值触发 archive()）。依据（v1.5.6 章二）：实测 17178 个事实文件已达
+ * 文件系统性能退化区间，10000 为提前预警线。机械纪律：engine 生产源码不得
+ * 出现第二份 10000 字面量的同语义阈值（测试面豁免）。
+ */
+export const MEMORY_DIR_FILE_WARN = 10000;
+
 /** 单条记忆事实 */
 export interface MemoryFact {
   /** UUID */

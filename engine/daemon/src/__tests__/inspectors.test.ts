@@ -43,9 +43,9 @@ describe('runInspectors', () => {
     try { fs.rmSync(isoDir, { recursive: true, force: true }); } catch { /* best-effort */ }
   }, 90_000);
 
-  it('返回全部注册巡检结果（v1.4.8 起 runInspectors 走注册表单源——26 执行 = 27 注册 - 1 disabled（F-47 后 27 注册））', { timeout: 90_000 }, () => {
+  it('返回全部注册巡检结果（v1.4.8 起 runInspectors 走注册表单源——27 执行 = 28 注册 - 1 disabled（批D maintenance-daily 入 L1 后 28 注册））', { timeout: 90_000 }, () => {
     const results = runInspectors(tmpDir);
-    expect(results).toHaveLength(26);
+    expect(results).toHaveLength(27);
     expect(results.some((r) => r.name === 'audit-trail')).toBe(true); // 漂移修复：audit-trail 首次进活路径
     expect(results.some((r) => r.name === 'weekly-digest')).toBe(true); // v1.5.1 章二：理解债务周报（L2 @weekly）
   });
