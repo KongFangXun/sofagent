@@ -229,7 +229,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 工具门禁（职责边界与文件落点见 [DEVELOPMENT · 编排哲学](./DEVELOPMENT.md)） |
 | train | 后训模块：train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告 + 云端执行面（替换路径 `import { createTrainJob } from '@sofagent/train'`） | ✅ 已实现（717 测试） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（606 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（618 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources 暴露（104 tools 分域清单见 [API](./API.md)，由 tool-registry 生成） |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt） | ✅ 已实现 |
@@ -329,7 +329,7 @@ graph TB
 | **v1.3.5** | MCP 自进化+运维闭环（A/B 实验 run_ab_test / promote_ab 人审晋升 + 快照 snapshot_list / snapshot_restore 人审恢复）+ instinct→skill 自动进化（三源提取 + 置信度评分 + /evolve 聚合）+ FDE 运维五件 + DSH MCP 互通 |
 | **v1.3.6** | 引擎接口外化——Workflow 标准格式 + 运行容器 / Ontology Schema 注册 / 模型注册 + 灰度切换 / SubAgent 托管 SDK / 训练协议三约定 + 预算控制 / 机器可判定验收 / 路由决策可解释性 / 可靠性五件（worktree 隔离 + 双闸验证 + 疲劳度检测 + 分级降级 + decisions.jsonl）· MCP 60 tools |
 | **v1.3.7** | SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 虚拟 key / 独立进程 / A-B 双跑）· 场景驱动权限 · AgentShield 五类扫描 · 行业 overlay 四套 · 断路器行为监控 · ontology 生命周期 |
-| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固 |
+| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1。**现状标注（F48-② · v1.5.7）**：密钥缺失时 daemon 启动打一次性引导提示（crypto-init WARN，明文兼容不阻断）；附链面（task/logs · think.md · knowledge/）**仍明文**——静态加密当前仅覆盖 history.jsonl 主链，权威清单见 LIMITATIONS）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固 |
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（`checkHistoryChainDetailed`）· HMAC key 强校验 · 签名基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` CLI）· CLI 版本一致性自检。
 >详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
@@ -810,7 +810,7 @@ graph LR
 | `think.md`（append-only） | @sofagent/think | inject 加载链第 3 层 · daemon dream-cycle |
 | `eval/` · `ab-test/` | @sofagent/eval · ab-test | think（进化）· orchestrator（ab-scheduler）· Dashboard |
 | `knowledge/` | daemon dream-cycle | inject 加载链第 4 层 |
-| `dashboard/daemon-health.json` | daemon health-reporter | Dashboard 健康面板 |
+| `dashboard/daemon-health.json` | daemon health-reporter（每次巡检写入；同日覆盖 + 跨周归档 `daemon-health-<ISO周>.json` 保留 4 份 · F48-③） | Dashboard 健康面板（读当前档）；周档为回看面 |
 | `forge-runs/` | FORGE driver（fresh-eyes/release-gate） | verdict.md（人类读） |
 | `orchestrator/goals/current.json` | @sofagent/core（/goal） | orchestrator goal_eval 节点 |
 | `support-bundles/` | @sofagent/audit --support-bundle | 人类（脱敏诊断快照） |
@@ -1428,16 +1428,14 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 > **数据飞轮 = 护城河的正反馈引擎**：企业真正的护城河不在模型或算力，而在**持续沉淀的私有数据资产**。专家对 AI 结果的每一次修正（审计记录的 git diff、fresh-eyes 发现的 finding、Verifier 定义的「什么算合格」）都会生成**独有的垂直数据**——越用越懂自己的业务，形成正反馈闭环（数据飞轮）。sofagent 的「数据主权 / 本地闭环 / BYOK」不只是防守（数据不出域），更是进攻：**每一次使用都在让下一次更好**。这与 PHILOSOPHY「企业把自身 workflow 数据做成领域后训练即护城河」一脉相承。
 
-**daemon 主动巡检清单**（`engine/daemon/src/inspectors/`，注册于 `runInspectors()`）：
+**daemon 主动巡检清单**（注册于 `engine/daemon/src/inspectors/registry.ts` 的 `INSPECTORS` 单源——**以下为示例而非全集**；完整清单（名称/层级/启用态）以代码为准，金名单测试 `inspector-registry.test.ts` 双向锁防漂移）：
 
-| Inspector | schedule | 检查内容 |
+| Inspector（示例） | schedule | 检查内容 |
 |---|---|---|
 | audit-history | @daily | 审计历史健康度（exit code 分布 / 高频 WARN 规则） |
 | conflict-check | @weekly | knowledge 矛盾（critical）/ 孤儿（warning）/ 死链（warning） |
-| doctor-health | @daily | daemon 自身运行状态（plist / fs-watch / 依赖） |
-| knowledge-freshness | @weekly | knowledge/ 30 天以上未更新提醒 |
+| maintenance-daily | @daily | 数据维护四步（F5 memory 归档 · F30 think 归档 · F48-⑤ spill TTL 回收 · F51-① persona 同步，v1.5.7 批D） |
 | knowledge-health | @weekly | knowledge 健康：孤立/重复（normalized-key）/断链/index 过旧（>24h）/缺源（warning，fail-closed 只读，报告落 health-report.md） |
-| skill-staleness | @weekly（默认禁用） | Skill 陈旧度（需 eval 数据支持） |
 | warn-accumulator | @daily | 连续未处理 WARN 累积（阈值 3，含文件级追踪） |
 
 > **范围声明**：sofagent 是 Harness 中间件（**品类定位词**——「中间件」在此答的是「sofagent 属于哪个品类」，**不是**「约束层是技术实现层的中间件」这一实现论判断；两义互指见 [设计哲学](./PHILOSOPHY.md)）——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。
