@@ -34,7 +34,7 @@
 | FDE 部署 / 持续优化 | 落地 → 常驻（完整方法论见 [FDE/GUIDE.md](../FDE/GUIDE.md)） |
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
 | 想理解架构设计 | [架构文档](./ARCHITECTURE.md) |
-| 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐，读 5 分钟**） |
+| 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐**；全文通读约 30 分钟，各节导读段约 5 分钟） |
 
 > 📁 **项目文件导航**：根目录 8 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）、
 >[AGENTS.md](../AGENTS.md)（Codex 适配薄挂载，四层加载链入口）、[GEMINI.md](../GEMINI.md)（Gemini CLI 适配薄挂载）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。

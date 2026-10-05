@@ -718,6 +718,16 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ## 维护者口径
 
+### 版本号单一 SSOT：读取 vs 全量替换的选择理由
+
+> **口径**：仓内版本号的单一事实源 = 根 `package.json` 的 `version` 字段；其余一切版本声明（8 层 manifest、文档版本头、bin 头注）都是**派生面**，由 `tools/release/bump-version.sh` 精确路径替换 + `check-version.sh` 断言对账。
+> **为什么选「单一 SSOT + 派生替换」而非「各处读取 SSOT」**：① 运行时读取需要每处接 import/require，静态文件（文档、shell 脚本、plugin manifest）做不到零成本读取；② 替换漏了有门禁兜底——`check-version.sh` 断言 8 层 manifest 全等（v1.4.1 阶段十一引入），漂移即红。
+> **既有事故证据**（替换路线的真实风险，均已补守卫）：① manifest 全漂移曾致 ClawHub 发版 4/4 全拒（`tools/check/check-version.sh:570` 注释在案；防复发 = acceptance S331 断言 8 层全=SSOT）；② `*audit` 通配误伤 `sofagent-audit` 静默漏 bump（防复发 = S332 并入 S331，bump 脚本跳过逻辑改精确路径匹配）。两条证据说明：替换路线必须配「全量对账门禁」，缺门禁的替换等于静默漂移——这正是本仓把断言做进 acceptance 与 check-version 双面的原因。
+
+### 身份词过渡期口径纪律（v1.5.7 起）
+
+> v1.5.7 起新增/改写的文档与注释统一用新身份词（**FDEing × S1A**，S1A = S1M + Harness，SSOT = PHILOSOPHY · 身份口径）；存量旧表述不回改，留 v2.0 统一收敛。
+
 ### 场景数 SSOT 口径
 
 > **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 397（最大场景号 S473）。
