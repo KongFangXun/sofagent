@@ -54,8 +54,9 @@ export function runAudit(
   let commitMsg = '';
   try {
     commitMsg = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
-  } catch {
-    // 非 git 仓库或无提交记录——正常情况，不报错
+  } catch (err) {
+    // 非 git 仓库或无提交记录——正常情况，不报错；留痕可见（commitMsg 取空）
+    console.error('[sofagent] git log 取 commitMsg 失败（按空处理，auditRunTool）:', err);
   }
 
   // 4. 加载审计配置

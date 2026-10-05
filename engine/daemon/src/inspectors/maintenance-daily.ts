@@ -99,7 +99,8 @@ export function runMaintenanceDaily(_projectDir: string): InspectorResult {
             else if (e.isFile()) n++;
           }
         } catch {
-          // 读失败按 0 计（下面有文件数>0 的门）
+          // 读失败按 0 计（为何可静默：下面有文件数>0 的门——目录不可读时按空处理，
+          // 下游判据仍会拒绝「空目录冒充有货」，失败可被该门兜住）
         }
         return n;
       };

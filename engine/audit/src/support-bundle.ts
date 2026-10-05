@@ -117,12 +117,18 @@ function collectInstallInfo(): string {
   try {
     const gitRemote = execFileSync('git', ['remote', 'get-url', 'origin'], { encoding: 'utf-8', stdio: 'pipe' }).trim();
     lines.push(`git remote: ${sanitize(gitRemote)}`);
-  } catch { /* 非 git 仓库 */ }
+  } catch (err) {
+    // 非 git 仓库——bundle 里缺 remote 行，留痕可见
+    console.error('[sofagent] git remote 探测失败（bundle 缺 remote 行，collectSupportBundle）:', err);
+  }
 
   try {
     const gitBranch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf-8', stdio: 'pipe' }).trim();
     lines.push(`git branch: ${gitBranch}`);
-  } catch { /* */ }
+  } catch (err) {
+    // 非 git 仓库 / 无 HEAD——bundle 里缺 branch 行，留痕可见
+    console.error('[sofagent] git branch 探测失败（bundle 缺 branch 行，collectSupportBundle）:', err);
+  }
 
   // 安装目录（收敛到 core resolveHomeDir——单一事实源；v1.3.9 十四）
   const sofagentHome = resolveHomeDir();

@@ -129,8 +129,9 @@ export function resolveHooksDir(cwd: string): HooksDirResolution | null {
       cwd,
     }).trim();
     if (top) repoRoot = top;
-  } catch {
-    // rev-parse 失败（如 .git 是文件而非目录的 worktree 场景）——退化用 .git 父目录
+  } catch (err) {
+    // rev-parse 失败（如 .git 是文件而非目录的 worktree 场景）——退化用 .git 父目录，留痕可见
+    console.error('[sofagent] git rev-parse --show-toplevel 失败（退化用 .git 父目录，resolveHooksDir）:', err);
   }
 
   let configuredValue: string | undefined;
@@ -141,8 +142,9 @@ export function resolveHooksDir(cwd: string): HooksDirResolution | null {
       cwd,
     }).trim();
     if (v) configuredValue = v;
-  } catch {
-    // 未配置——走缺省 .git/hooks
+  } catch (err) {
+    // 未配置——走缺省 .git/hooks，留痕可见
+    console.error('[sofagent] git config core.hooksPath 读取失败（走缺省 .git/hooks，resolveHooksDir）:', err);
   }
 
   if (configuredValue) {
@@ -340,8 +342,9 @@ export function installHooks(opts: InstallHooksOptions): InstallHooksResult {
       try {
         copyFileSync(destPath, join(hooksDir, `${name}.bak`));
         log(`  → 已备份旧 ${name} hook 到 ${join(hooksDir, `${name}.bak`)}`);
-      } catch {
-        // 备份失败不阻塞安装
+      } catch (err) {
+        // 备份失败不阻塞安装——留痕可见（旧 hook 原文仍在 destPath 被覆盖前位置可寻）
+        console.error(`[sofagent] 旧 ${name} hook 备份失败（不阻塞安装，已继续覆盖安装）:`, err);
       }
     }
 
@@ -401,9 +404,10 @@ export function installHooks(opts: InstallHooksOptions): InstallHooksResult {
         }
       }
     }
-  } catch {
-    /* 为何可静默：建立失败不阻塞安装——hook 会给出可达指引（--install-hook / --doctor --baseline），
-       且「基准缺失 ⇒ 拦截」语义不因本处失败而放松 */
+  } catch (err) {
+    // 建立失败不阻塞安装——hook 会给出可达指引（--install-hook / --doctor --baseline），
+    // 且「基准缺失 ⇒ 拦截」语义不因本处失败而放松。留痕可见（全局基准建立，installHook 收尾）。
+    console.error('[sofagent] 全局引擎基准建立失败（不阻塞安装，hook 侧有可达指引）:', err);
   }
 
   return { hooksDir, configured, configuredValue, installed };
