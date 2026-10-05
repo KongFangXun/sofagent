@@ -166,8 +166,8 @@ sofagent daemon start
 # 预共享分发到 20 台目标机（scp + 0600 权限）
 for host in $(cat hosts.txt); do
   ssh "$host" 'mkdir -p ~/.sofagent/keys && chmod 700 ~/.sofagent/keys'
-  scp ~/.sofagent/keys/master.key "$host":~/.sofagent/keys/master.key
-  ssh "$host" 'chmod 600 ~/.sofagent/keys/master.key'
+  scp ~/.sofagent/keys/data.key "$host":~/.sofagent/keys/data.key
+  ssh "$host" 'chmod 600 ~/.sofagent/keys/data.key'
 done
 ```
 
@@ -188,13 +188,13 @@ head -1 ~/.sofagent/data/audit/history.jsonl | grep -c "SOFAGENT-AGE-V1"   # 期
 set -euo pipefail
 while IFS= read -r host; do
   ssh "$host" 'mkdir -p ~/.sofagent/keys && chmod 700 ~/.sofagent/keys'
-  scp -q ~/.sofagent/keys/master.key "$host":~/.sofagent/keys/master.key
-  ssh "$host" 'chmod 600 ~/.sofagent/keys/master.key && SOFAGENT_CONFIRM_BACKUP=1 sofagent daemon start' \
+  scp -q ~/.sofagent/keys/data.key "$host":~/.sofagent/keys/data.key
+  ssh "$host" 'chmod 600 ~/.sofagent/keys/data.key && SOFAGENT_CONFIRM_BACKUP=1 sofagent daemon start' \
     && echo "✅ $host 激活" || echo "❌ $host 失败（查 daemon 日志）"
 done < hosts.txt
 ```
 
-> ⚠️ 安全边界：master.key 是全 fleet 同源密钥——单机失窃即全 fleet 密文暴露，强隔离场景应逐机生成（去掉分发步，每台各自 `sofagent daemon start` + 本机确认）；备份指纹记录务必离线保管，密钥丢失 = 加密数据永久不可读（见 [SECURITY](../../SECURITY.md) 静态加密节）。
+> ⚠️ 安全边界：data.key 是全 fleet 同源密钥——单机失窃即全 fleet 密文暴露，强隔离场景应逐机生成（去掉分发步，每台各自 `sofagent daemon start` + 本机确认）；备份指纹记录务必离线保管，密钥丢失 = 加密数据永久不可读（见 [SECURITY](../../SECURITY.md) 静态加密节）。
 
 ### 其他方案
 
