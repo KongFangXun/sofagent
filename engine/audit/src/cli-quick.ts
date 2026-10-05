@@ -211,7 +211,24 @@ function getLatestCommitMsg(ref: string = 'HEAD'): string | null {
 }
 
 /**
+ * 规则分级标注（F50 · v1.5.7）：quick 侧与 hook 侧（index.ts / reporter.ts）同口径。
+ * 复用规则既有 ruleClass 字段，零新增字段；形态对齐 hook 侧 `[底线]` / `[拐杖]` 写法
+ * （hook 侧 classTag 三档含 [规范]，quick 对齐同一映射保持签名形态一致）。
+ */
+function quickClassTag(rule: RuleCheck): string {
+  return rule.ruleClass === '业务底线' ? '[底线]'
+    : rule.ruleClass === '能力拐杖' ? '[拐杖]'
+    : rule.ruleClass === '工程规范' ? '[规范]'
+    : '';
+}
+
+/**
  * 格式化单条审计结果为 emoji 输出行
+ *
+ * F50（v1.5.7）：违规/警告行补 `[sofagent]` 前缀 + 规则分级标注——
+ * 改前首屏试用入口（quick）的违规行 `❌ A2 不泄密钥：…` 无签名无分级，而 hook 侧
+ * `🔴 [sofagent] A1 不碰敏感 [底线]: …` 齐全，两模式签名强度不一致。对齐后用户在
+ * quick 首屏即可识别拦截来源与规则分级（与 hook 侧 / F3 空 diff 分支 A9 报文同形态）。
  *
  * @param rule 单条规则检查结果
  * @returns 格式化后的输出行数组
@@ -223,18 +240,20 @@ export function formatQuickResult(rule: RuleCheck): string[] {
     rule.status === 'WARN' ? '⚠️ ' :
     rule.status === 'SKIPPED' ? '⏭️ ' :
     '✅';
+  // 分级标注只对 FAIL/WARN 输出（PASS/SKIPPED 汇总即可，逐条无信息量）
+  const classTag = quickClassTag(rule);
 
   if (rule.status === 'PASS' || rule.status === 'SKIPPED') {
     // PASS / SKIPPED 不逐条输出，汇总即可
     return lines;
   }
 
-  // FAIL / WARN 逐条输出详情
+  // FAIL / WARN 逐条输出详情（[sofagent] 前缀 + 分级标注，形态对齐 hook 侧）
   if (rule.details.length === 0) {
-    lines.push(`${icon} ${rule.name}`);
+    lines.push(`${icon} [sofagent] ${rule.name}${classTag ? ` ${classTag}` : ''}`);
   } else {
     for (const detail of rule.details) {
-      lines.push(`${icon} ${rule.name}：${detail}`);
+      lines.push(`${icon} [sofagent] ${rule.name}${classTag ? ` ${classTag}` : ''}: ${detail}`);
     }
   }
 
@@ -298,11 +317,17 @@ export function generateQuickOutput(
   const failFast = hasFailFastSkip(result.rules);
   parts.push('');
   if (violationCount === 0 && warnCount === 0) {
-    // v1.3.4 P1-8: PASS 时输出可感知回声——让用户明确知道「sofagent 在工作且通过了」
-    // v1.3.2 P2-17: 解释 17 条默认 vs 25 条总量，消除「少装了什么」的认知落差
-    // v1.5.1 M13①：补 `[sofagent]` 签名——改前本行无前缀、紧随其后的回声行有
-    // `✓ [sofagent] …`，同一屏一行署名一行不署名。产品自称口径与下方回声行一致。
-    parts.push(`✅ [sofagent] 全部 ${passCount} 条规则通过（默认 17 条 · 完整 25 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCountLabel(skipCount, failFast)}）` : ''}`);
+    // v1.3.4 P1-8 + F50（v1.5.7）：PASS 态原输出两行同义重复（「全部 N 条规则通过（默认
+    // 17 条 · 完整 25 条含扩展…）」+「✓ [sofagent] N 条规则全通过（commit xxx）」）——
+    // 合并为信息量更大的一条：保留规则覆盖面解释 + commit/range 回声 + [sofagent] 签名。
+    const echo = commitSha && !isRangeMode
+      ? `commit ${commitSha}`
+      : commitSha && isRangeMode
+        ? `range ${range}`
+        : null;
+    parts.push(
+      `✅ [sofagent] ${passCount} 条规则全通过${echo ? `（${echo}）` : ''}（默认 17 条 · 完整 25 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCountLabel(skipCount, failFast)}）` : ''}`,
+    );
     // v1.3.5 #7: 跳过计数解释——让用户知道「跳过」是 quick 模式缺输入而非漏检
     // v1.4.3 F-08 (bugfix 批): 归因口径如实化——quick 模式不含归因分析（ATTRIBUTION
     // 引擎需任务描述/Agent 日志输入），原措辞「需任务描述输入的规则」未点破归因
@@ -310,19 +335,15 @@ export function generateQuickOutput(
     if (skipCount > 0) {
       parts.push(QUICK_SKIP_HINT);
     }
-    // v1.3.4 P1-8: 显著回声行——用户用了三周可能不知道 sofagent 在工作，此行解决可感知性
-    if (commitSha && !isRangeMode) {
-      parts.push(`✓ [sofagent] ${passCount} 条规则全通过（commit ${commitSha}）`);
-    } else if (commitSha && isRangeMode) {
-      parts.push(`✓ [sofagent] ${passCount} 条规则全通过（range ${range}）`);
-    }
   } else {
     const summaryParts: string[] = [];
     if (violationCount > 0) summaryParts.push(`${violationCount} 条违规`);
     if (warnCount > 0) summaryParts.push(`${warnCount} 条警告`);
     if (passCount > 0) summaryParts.push(`${passCount} 条通过`);
     if (skipCount > 0) summaryParts.push(skipCountLabel(skipCount, failFast));
-    parts.push(`📊 ${summaryParts.join(' · ')}`);
+    // F50（v1.5.7）：汇总行补 [sofagent] 前缀——违规详情行已带前缀，汇总行裸奔会使
+    // 同屏一半署名一半不署名（与 hook 侧汇总行签名强度不一致）。
+    parts.push(`📊 [sofagent] ${summaryParts.join(' · ')}`);
     // v1.3.5 #7: 跳过计数解释（同上，非 PASS 分支也需要）
     // v1.4.3 F-08: 同 PASS 分支——归因口径如实化
     if (skipCount > 0) {
