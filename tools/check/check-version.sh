@@ -1094,9 +1094,13 @@ if [ -n "$CUR_VER" ]; then
   # 🔴 折行容忍（判定面缺陷修复，非放宽阈值）：原实现 `grep -m1 "v$CUR_VER.*—"` 只取首行 ⇒
   #   折行条目的日期抽不到 ⇒ 静默退回硬编码 LAST_KNOWN_DATE ⇒ 全量文档头报「日期漂移」
   #   （23 处下游噪声，真因被淹没）。现改为在**逻辑条目**上取（见 changelog_entries）。
-  EXPECTED_DOC_DATE=$(changelog_entries "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null \
-    | grep -F "$(printf '%s\t' "${CUR_VER}")" | cut -f2- \
-    | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | tail -1 || true)
+  # v1.5.7 F17 伴随修：条目内可能含非发版日期（如双口径说明锚链 #实现纪要2026-10-02--10-04），
+  # tail -1 会误捕锚内日期。改为优先提取「已发版：」标记前紧邻的日期（发版日期的固定位置），
+  # 无该标记时退回 tail -1（兼容待发版形态）。
+  _entry=$(changelog_entries "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null \
+    | grep -F "$(printf '%s\t' "${CUR_VER}")" | cut -f2- || true)
+  EXPECTED_DOC_DATE=$(printf '%s' "${_entry}" | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}[^0-9]{0,40}已发版" | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | head -1 || true)
+  [ -z "${EXPECTED_DOC_DATE}" ] && EXPECTED_DOC_DATE=$(printf '%s' "${_entry}" | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | tail -1 || true)
 fi
 # 兜底：CHANGELOG 还没当前版本段（开发中）时退回最后已知日期
 # v1.3.6 开发中：文档头统一沿用上一版发版日期 2026-08-16，发版时随 CHANGELOG 段更新
@@ -1756,7 +1760,8 @@ if [[ "${MCP_REG}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
   # 本行「版本：vX.Y.Z（状态）· N tools / M 面」共三个字段：工具数（上一段对账）、
   # 版本号、状态措辞。后两者长期无人对账——曾出现 v1.4.8 版本头带「（已发版）」字样
   # 滞留至 1.4.9 待发版窗口（bump 不认此形态 + 状态措辞系上版机械沿用）。
-  API_HEAD_VER=$(sed -n '1,20p' "${PROJECT_ROOT}/docs/API.md" 2>/dev/null | grep -oE '版本：v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+  # v1.5.7：兼容两种版本头形态——旧「版本：vX.Y.Z（状态）」与新标准「vX.Y.Z · 日期（UTC）· 状态」
+  API_HEAD_VER=$(sed -n '1,20p' "${PROJECT_ROOT}/docs/API.md" 2>/dev/null | grep -oE '(版本：)?v[0-9]+\.[0-9]+\.[0-9]+[^0-9]' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
   if [[ -z "${API_HEAD_VER}" ]]; then
     echo -e "  ${RED}✗ ${NC}API.md 头部未提取到版本头版本号（格式变化？）——锚点失效须人工修，不得静默跳过"
     ERRORS=$((ERRORS + 1))
@@ -2029,6 +2034,18 @@ if [[ -n "${CHANGELOG_TOP_VERSION}" ]] && [[ "${CHANGELOG_TOP_VERSION}" != "${PK
     echo -e "  ${RED}✗${NC} README.en.md 头部缺 badge→CHANGELOG 版本动线——双语动线漂移（B1）"
     ERRORS=$((ERRORS + 1))
   fi
+  # e. README 徽章版本号必须等于根 package.json 版本（v1.5.7 F41 追加——防 bump 漏改徽章）
+  PKG_VERSION=$(node -e "try{process.stdout.write(require(process.argv[1]).version||'')}catch{}" "${PROJECT_ROOT}/package.json" 2>/dev/null)
+  for _readme in README.md README.en.md; do
+    _badge_v=$(grep -oE 'Version-v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/${_readme}" 2>/dev/null | head -1 | sed 's/Version-//')
+    if [ -n "${_badge_v}" ] && [ "${_badge_v}" = "${PKG_VERSION}" ]; then
+      echo -e "  ${GREEN}✓${NC} ${_readme} 徽章 Version-v${_badge_v} = package.json ${PKG_VERSION}"
+      CHECKS=$((CHECKS + 1))
+    else
+      echo -e "  ${RED}✗${NC} ${_readme} 徽章版本（${_badge_v:-缺失}）≠ package.json 版本（${PKG_VERSION:-读取失败}）——bump 时漏改徽章"
+      ERRORS=$((ERRORS + 1))
+    fi
+  done
   # d. 安装 URL refs/tags 不得指向未发布的新版 tag（指向未来 = 安装链断）
   B1_TAG_OVER=0
   while IFS= read -r _tagurl; do
