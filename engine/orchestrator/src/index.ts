@@ -4,6 +4,9 @@
 // `/* @internal */`：内部 API——不承诺稳定性，破坏性变更无需 bump
 // 未标记的导出视为 @public（保守默认：宁可多承诺不可漏承诺）
 // ────────────────────────────────────────────────────────
+// v1.5.7 F32 迁移指引：新代码建议按域子路径导入
+// （@sofagent/orchestrator/domain/<workflow|team|fde|loop-agent|sandbox|evolution|observability>，
+// 域 barrel 在 src/domain/）；根 barrel 为兼容面（导出集不变，零 breaking）。
 /**
  * @sofagent/orchestrator
  *
