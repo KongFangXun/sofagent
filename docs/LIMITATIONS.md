@@ -288,6 +288,15 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏感文件 → FAIL（exit 2 阻断，强度不变）；**删除**敏感文件、或把敏感文件**改名移出**敏感区 → WARN（exit 1 放行）。降级理由：`git rm .env` 这类**补救动作**本身被硬阻断，会把用户逼向 `--no-verify`（正好落进产品自己定义要防的「诚实 Agent 疏忽」场景）。
 缓解：「已移除」档仍显式提示**删除 ≠ 止损完成**——密钥若曾入库则历史仍在，须轮换凭据并考虑 `git filter-repo` 清理历史；同一提交里若同时存在「引入」方向，整体仍判 FAIL（最严者胜）。
 
+### 🧾 quick 入口空 diff 分支的消息面检查边界（v1.5.7 F3）
+
+**原缺陷**：`cli-quick` 的空 diff 分支直接「无文件变更 + exit 0」——commit message 是 diff 之外的独立审计输入，注入载荷或黑名单词写在 message 里同样该拦，此前零检查假绿放行（`fix` 这类黑名单 message 配空 diff = 免费绿灯）。
+
+**修复后的边界（如实披露）**：
+- 空 diff 分支现跑 A9（message 维度）+ A19，命中 exit 2；但**仅覆盖空 diff 路径**——quick 主链路（有 diff 时）的消息面检查一直存在（A9/A19 本就在 17 条规则面内），本修复补的是「diff 为空提前 return」绕过规则运行的那条岔路。
+- 规则模块加载异常时按旧行为放行（best-effort + stderr warn 一行）——空态检查是增强不是依赖，不能因诊断面故障反向炸空态返回。
+- A19 对无 message（取不到 commit 上下文）降级 PASS——与完整引擎口径一致，不造无输入违规。
+
 ### 📡 fs-watch 默认模板自省与 0 目录告警的边界（v1.5.7 F46）
 
 **原缺陷**：默认模板 `paths: ['.']` 对无 src/ 目录的项目是最宽泛兜底（全仓扫描，靠 ignore 排除法兜底）；而 0 目录告警只有一种文案（「paths 全部不存在」）——「用户没配置」「配了但路径全废」「配了空表」三种根因不可区分，排查方向完全不同。
@@ -517,7 +526,7 @@ sofagent audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 1457 个、全 workspace 5678 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 1466 个、全 workspace 5687 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |---|---|---|
@@ -595,7 +604,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 397 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1457 个、全 workspace 5678 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1466 个、全 workspace 5687 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 396 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
