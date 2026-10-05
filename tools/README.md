@@ -104,6 +104,8 @@
 | `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件（上一 tag 后有改动或本轮暂存）零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine` + `tools`（`playbook/` 剔出：行为锁本质是测试）；（详→注-14） | CI / 改 SECURITY 测绘数字或 hook 时 |
 | `check/doc-score.mjs` | 文档质量六维评分器（准确/精简/结构/排版/可读/淘汰六维，各维 = 通过项/总项 × 10；机械项调既有门禁、人工项读本版 devlog「文档质量评分」留痕，未确认即按不通过计 fail-closed；任一维 <8 或低于基线即不可放行） | pre-push 第 3k 步 / 发版 SOP |
 | `check/doc-score-baseline.json` | 文档质量六维评分基线（逐维下限 + floor 8 + 建档日期；只许升不许降） | 被 doc-score.mjs 消费 |
+| `check/check-sop-integrity.mjs` | 发版 SOP 阶段文件完整性守卫（A1 失明自检 / A2 SOP-ANCHOR 锚链 / A3 结构 pin 三元组 / A4 最小形态——治阶段文件被静默截断而门禁全绿） | CI / 改 releasing/ 阶段文件后 |
+| `check/sop-integrity-baseline.json` | SOP 阶段文件结构基线台账（11 阶段文件三元组 + 附件豁免；改阶段文件结构时同批更新） | 被 check-sop-integrity.mjs 消费 |
 
 > 注-1：`SKILL.md` 反向对账——SKILL.md 出现 `（seam: …）` 字面量的每一处都必须与三处一致，**残余缺口：SKILL.md 整体删去 seam 字样时不判红，只打印显著提示**；`--selftest` 合成回归验证必报红）
 > 注-2：`--self-test` 脚本内双探针故障注入）
