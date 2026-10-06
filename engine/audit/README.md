@@ -207,11 +207,11 @@ sofagent audit --diff HEAD~1..HEAD --webhook feishu --webhook-url "https://open.
 | A22 不越权限 | 权限提升检测（全权限 chmod、sudoers 修改、setuid/setgid、owner 变更为特权用户） | FAIL | 业务底线 |
 | A23 不逃路径 | 路径穿越检测（三级以上目录穿越序列、symlink 逃逸） | FAIL | 业务底线 |
 
-### 扩展规则（A14-A17 + A24 + E1/E2/E4/E5/E6，共 10 条）
+### 扩展规则（A14-A17 + A24 + E1/E2/E4/E5/E6/E7，共 11 条）
 
-> ℹ️ E1-E6 内部规则 ID 为 201-206，预留 101-199 区间给未来默认规则扩展。E3 已并入 A11（行数维度），编号跳号。E5 为 v1.5.7 章一新增（SMB 数据产物审计）；E6 为 v1.5.7 章三新增（OWASP ASI03 提示注入防护——prompt 载体文件的隐藏指令载荷/边界伪造/多轮持续操控，与 A9 单行注入评分判定面互补）。
+> ℹ️ E1-E7 内部规则 ID 为 201-207，预留 101-199 区间给未来默认规则扩展。E3 已并入 A11（行数维度），编号跳号。E5 为 v1.5.7 章一新增（SMB 数据产物审计）；E6 为 v1.5.7 章三新增（OWASP ASI03 提示注入防护——prompt 载体文件的隐藏指令载荷/边界伪造/多轮持续操控，与 A9 单行注入评分判定面互补）；E7 为 v1.5.7 章八新增（决策质量信号——decision-log 输入源首条消费规则：FALLBACK_DEGRADE 高频 ⇒ WARN）。
 
-A14-A17 + A24 + E1/E2/E4/E5/E6 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
+A14-A17 + A24 + E1/E2/E4/E5/E6/E7 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
 
 | 规则 | 判定 | 严重度 | 分级 |
 |------|------|:--:|------|
@@ -225,6 +225,7 @@ A14-A17 + A24 + E1/E2/E4/E5/E6 均需 `extendedRules: true` 启用（`DEFAULT_CO
 | E4 低注释率 | 新增 >200 行且注释率 < 5% | WARN | 能力拐杖 |
 | E5 数据产物审计 | SMB 场景：数值勾稽（合计≠明细和 FAIL）+ 来源可溯（数值行缺 source 引用 WARN）+ 口径一致（同字段 unit 冲突 FAIL） | FAIL/WARN | 工程规范 |
 | E6 提示注入防护 | OWASP ASI03 对位：prompt 载体文件（SKILL/ FDE/ 目录 + SKILL.md/fde.md/role-*.md）新增行中的隐藏指令载荷（HTML 注释/零宽字符）、系统消息边界伪造（[SYSTEM] 伪造前缀）、多轮持续角色操控 | FAIL | 业务底线 |
+| E7 决策质量信号 | decision-log 输入源（第三通道）：FALLBACK_DEGRADE 高频（≥5）⇒ 主判定面不稳信号（降级是安全行为不判 FAIL，WARN 提示关注频率与根因） | WARN | 能力拐杖 |
 
 > ⚠️ **A15 说明**：v1.1.3 起 A15 升级为 FAIL——workflow.yml 节点未声明 actions 时 FAIL（防 Agent 不声明 actions 绕过所有约束）。原 WARN 设计已废弃。
 
