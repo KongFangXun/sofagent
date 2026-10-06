@@ -1902,7 +1902,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log('');
   // 口径统一（run-02 P1-5）：defaultCnt/extendedCnt 前置计算——签名行与明细行
   // 同源同口径「N 项检查 · M 条规则 (D 默认 + E 扩展)」，quick 模式不再出现
-  // 横幅「17 规则」与明细「25 条规则」自相矛盾。
+  // 横幅「17 规则」与明细计数自相矛盾（计数为运行时实数，此处注释为历史口径示例）。
   const defaultCnt = defaultRules.length;
   const extendedCnt = extendedRules.length;
   const totalCnt = defaultCnt + extendedCnt;

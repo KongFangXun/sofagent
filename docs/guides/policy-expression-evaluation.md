@@ -1,6 +1,6 @@
 # ACS YAML 策略引擎 · 表达面兼容性评估
 
-> v1.5.7 · 2026-10-07 · [changelog/v1.5/v1.5.7.md 章九](../changelog/v1.5/v1.5.7.md)
+> v1.5.7（待发版）· [changelog/v1.5/v1.5.7.md 章九](../changelog/v1.5/v1.5.7.md)
 
 > **评估对象**（外部对照，不预设结论）：Microsoft AGT 的 ACS 用 YAML + OPA Rego + Cedar 三引擎承载策略；本仓 ruleset 现为 JSON（`engine/audit/src/rulesets/*.json` 八份 + v1.5.2 起的 `--ruleset-path` JSON 加载格式与 `ruleset_export` 导出格式，双向可逆）。本章只回答「**换不换、什么时候换**」，不实做引擎。
 >

@@ -184,9 +184,7 @@ grep -c "PASS" engine/audit/src/webhook.ts # 应 > 0
 # 子项 e: MCP capabilities 准确性（被 check-docs.sh §7 跨文档对照覆盖）
 
 # 子项 f: CLI stdout 签名一致性（教训—感知层废墟高发区）
-# v1.5.7 章二承接批 #1：原写法 `grep -q X && echo ✅` 单臂——真失败时无 ❌ 输出、
-# 退出码 1 与「命令不存在」等真实失败不可区分（driver 只看 exitCode，输出与码不一致）。
-# 改双臂显式收尾（对齐铁律 #1「显式收尾」）：失败也打 ❌，退出码与输出严格一致。
+# 双臂显式收尾（对齐铁律 #1「显式收尾」）：失败也打 ❌，退出码与输出严格一致。
 if node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent"; then echo "✅ --version 签名存在"; else echo "❌ --version 签名缺失（audit dist 未构建或签名漂移）"; exit 1; fi
 V7F1=$(grep -c "sofagent audit.*v\|sofagent audit ·" engine/audit/src/index.ts || echo 0)
 if [ "$V7F1" -ge 1 ]; then echo "✅ 签名计数 ≥1（$V7F1）"; else echo "❌ sofagent audit 签名计数 0（词形漂移）"; exit 1; fi
