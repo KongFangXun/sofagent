@@ -3,7 +3,7 @@
 //
 // 定位：26+3 条审计规则的机器可读序列化格式（训练语料第一件）。
 // 口径（changelog 表下注 A，2026-09-01 核对 rules/index.ts 后定）：
-//   - 26 条已实现规则（defaultRules 17 + extendedRules 9）
+//   - 27 条已实现规则（defaultRules 17 + extendedRules 10）
 //   - 3 条永久跳号编号位（A12/A13/E3）——已并入 A11，导出时以
 //     status: 'merged-into-A11' 占位登记，共 29 个编号位，
 //     「零遗漏」对编号空间对数而非仅对数组对数。

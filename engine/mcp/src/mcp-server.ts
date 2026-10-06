@@ -24,6 +24,8 @@ import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools
 import { registerEvolvedTools } from './tools/evolution-dynamic-bridge';
 // v1.5.0 TASK-26：tools/call 前置权限守卫（opt-in——SOFAGENT_PERMISSION_GUARD=1）
 import { guardToolCall, isPermissionGuardEnabled } from './tools/permission-guard';
+// v1.5.7 章四：tool 调用使用率遥测（本地 jsonl——不含参数/内容，默认开 SOFAGENT_USAGE_TRACKING=0 可关）
+import { recordToolUsage } from './usage-tracker';
 // 工具结果类型（sendTool 消费面）
 import { type ToolResult } from './tools/audit-tools';
 
@@ -163,6 +165,15 @@ class McpServer {
     const renamed = canonicalName !== requestedName;
     const toolName = canonicalName;
     const args = (params.arguments ?? {}) as Record<string, unknown>;
+
+    // v1.5.7 章四：调用遥测埋点——try/catch 包裹失败静默（recordToolUsage 内部
+    // 还有第二层 catch 兜底），绝不吞主流程错误、绝不阻断调用。
+    // 会话标识取 SOFAGENT_AGENT_ID（对齐 agent-identity 惯例）；不可达 = 'unknown'。
+    try {
+      recordToolUsage(toolName, process.env.SOFAGENT_AGENT_ID ?? 'unknown');
+    } catch {
+      /* 遥测失败不影响主路径 */
+    }
 
     try {
       // v1.5.0 TASK-26：权限守卫前置判定（opt-in）——risk 定级 → policy 判定 →

@@ -36,6 +36,8 @@ const require = createRequire(import.meta.url);
 const DOMAINS = {
   audit: { pkg: '@sofagent/audit', file: 'cli-quick.js', fullFile: 'index.js' },
   core: { pkg: '@sofagent/core', file: 'cli.js' },
+  // v1.5.7 章四：tool 使用率盘点直达路由（实现即 core stats --tools——独立域词便于发现）
+  stats: { pkg: '@sofagent/core', file: 'cli.js', note: 'stats --tools 三视图' },
   daemon: { pkg: '@sofagent/daemon', file: 'cli.js' },
   device: { pkg: '@sofagent/daemon', file: 'cli.js', note: '设备面 · create-usb-key 等' },
   train: { pkg: '@sofagent/orchestrator', file: 'cli.js', note: '训练子命令（train …）' },
@@ -176,10 +178,10 @@ function resolveDomainCli(domain, rest) {
   }
   const cliPath = join(distDir, spec.file);
   if (!existsSync(cliPath)) throw new Error(`域实现入口缺失：${cliPath}（请先 npm run build）`);
-  // train 域：orchestrator 以 `train <动作>` 形态分发（cli.ts `case 'train'`），
+  // train/stats 域：实现 CLI 以 `<域词> <动作>` 形态分发（cli.ts `case 'train'/'stats'`），
   // 路由已把域名词剥掉，须补回前缀——否则 `sofagent train doctor` 会变成
   // `cli.js doctor`（不识别），而直调 `cli.js train doctor` 正常。行为与直调逐条一致。
-  const args = domain === 'train' ? ['train', ...rest] : rest;
+  const args = domain === 'train' || domain === 'stats' ? [domain, ...rest] : rest;
   return { cliPath, args };
 }
 
