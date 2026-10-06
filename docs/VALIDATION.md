@@ -34,7 +34,7 @@
 - **90/10 价值分层 → 知行合一框架**——模型给 90% 智力（知），sofagent 补 10% 可靠执行（行），关键在「合一」；模型越强那 10% 越值钱。
 - **治理缺口的代价（三项联网核验）**——Gartner 2026-05：到 2027 年 40% 企业自主 Agent 将因治理缺口被降级/停用；MIT NANDA：95% gen-AI 部署零可衡量 ROI；Governance Decay：运行时约束被上下文压缩擦除后违规率 0%→38%。约束/治理是投产前提，非加分项。
 - **a16z 七法则映射**——「人比软件便宜」与 90/10 同频；Loops/Evals/冗员等五条本仓原生具备，[完整映射表见归档](./archive/validation-digest/README.md)。
-- **Sovereign AI 四层主权框架（头部机构 Neo-Lab 论）**——「主权是光谱不是开关」「先建评测集再谈微调」与本仓模型路由不自研、Benchmark 先行完全同构。（出处明细见 [v1.4.0 商业侧定位](./changelog/v1.4/v1.4.0.md)）
+- **Sovereign AI 四层主权框架**——「主权是光谱不是开关」「先建评测集再谈微调」与本仓模型路由不自研、Benchmark 先行完全同构（四层落点对照见 [v1.4.0 商业侧定位](./changelog/v1.4/v1.4.0.md)）
 - **评测集是受管资产（三源收敛）**——来源：真实失败与生产流量沉淀（非合成数据）；规模：20-50 个真实失败案例即可起步、随版本扩展（拖越久越难补）；形态：进版本控制、接 CI 跑（临时脚本形态 = 不可回归的评测 = 假评测）。与本仓既有 09-06「评测集所有权治理」为姊妹条：彼管归属，此管来源与形态。来源：Anthropic《Demystifying Evals》（IMA 收录）｜ DeepSeek Safety 官方技术报告（IMA 收录）｜ OpenRouter · https://openrouter.ai/blog/tutorials/ai-agent-regression-testing-after-a-prompt-or-model-change/
 - **硅基员工论（Org Graph / Ontology Runtime）**——「长期存活、固定领域、进组织编制」的 Agent 称为 Org Graph 节点，与常驻 Agent 定位字面对应；Ontology Runtime 是企业底座而非 API 网关。
 - **数字员工操作性定义**——四跨越（组织身份/岗位职责/事件驱动/结果负责）+ 结果负责三要素（可观测/可归因/可回滚），与审计/回溯能力对齐。
