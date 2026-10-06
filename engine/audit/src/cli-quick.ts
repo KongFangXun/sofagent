@@ -641,18 +641,26 @@ export function runCliQuick(argv: string[]): number {
     const checkEmptyBranchMessage = (): number | null => {
       try {
         // 惰性 require（对齐 demo/stats 的启动轻量纪律——空 diff 是少数路径）。
-        // 双候选解析：dist（CJS 无扩展名）与 vitest src 直跑（需 .ts 后缀）——
+        // 双候选解析：dist（CJS 无扩展名）优先，vitest src 直跑（.ts 后缀）兜底——
         // 与 continuous-sampler 的 resolveHealthWriter 同模式。
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const a9mod = require('./rules/rule-a9-no-injection.ts')
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          ?? require('./rules/rule-a9-no-injection');
-        const scanA9 = a9mod.scanA9 as (ctx: { diffFiles: DiffFile[]; commitMsg?: string }) => { status: string; details: string[] };
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const a19mod = require('./rules/rule-a19-commit-msg-quality.ts')
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          ?? require('./rules/rule-a19-commit-msg-quality');
-        const scanA19 = a19mod.scanA19 as (ctx: { commitMsg?: string }) => { status: string; details: string[] };
+        // ⚠️ 复验收口修正（v1.5.7 QA）：require 抛异常时 ?? 不生效（异常 ≠ null），
+        // 旧写法「require('.ts') ?? require('')」在 dist 态第一个 require 必抛
+        // MODULE_NOT_FOUND 直接进 catch 降级放行——消息面检查只在 vitest src 态
+        // 生效、npm/dist 安装态（用户真实形态）完全失效。必须逐候选 try。
+        const tryRequire = (id: string): unknown | undefined => {
+          try { return require(id); } catch { return undefined; }
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const a9mod = (tryRequire('./rules/rule-a9-no-injection') ?? tryRequire('./rules/rule-a9-no-injection.ts')) as
+          { scanA9: (ctx: { diffFiles: DiffFile[]; commitMsg?: string }) => { status: string; details: string[] } } | undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const a19mod = (tryRequire('./rules/rule-a19-commit-msg-quality') ?? tryRequire('./rules/rule-a19-commit-msg-quality.ts')) as
+          { scanA19: (ctx: { commitMsg?: string }) => { status: string; details: string[] } } | undefined;
+        if (!a9mod || !a19mod) {
+          throw new Error('A9/A19 规则模块双态（dist/src）均不可达——消息面检查前置缺失');
+        }
+        const scanA9 = a9mod.scanA9;
+        const scanA19 = a19mod.scanA19;
         // message 取被审 range 终点（与主链路 getLatestCommitMsg(resolveDiffEndpoint) 同源）
         const emptyBranchMsg = getLatestCommitMsg(resolveDiffEndpoint(diffRange)) ?? undefined;
         const msgCtx = { diffFiles: [] as DiffFile[], commitMsg: emptyBranchMsg };
@@ -666,7 +674,9 @@ export function runCliQuick(argv: string[]): number {
           for (const hit of msgHits) {
             console.log(`   ${hit}`);
           }
-          return 2;
+          // A9（注入，critical）→ exit 2（违规）；仅 A19（msg 质量，warning）→ exit 1
+          // （对齐退出码语义表：0 全过 / 1 警告 / 2 违规——与主链路 reporter 同口径）。
+          return a9.status === 'FAIL' ? 2 : 1;
         }
         return null;
       } catch (err) {
