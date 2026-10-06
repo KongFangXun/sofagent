@@ -1,7 +1,7 @@
 // export.test.ts · v1.4.4 第一章 · 语料导出三件套测试
 //
 // 覆盖（changelog 验收标准对齐）：
-// 1. 30 编号位零遗漏（27 实现 + 3 跳号占位 A12/A13/E3）
+// 1. 31 编号位零遗漏（28 实现 + 3 跳号占位 A12/A13/E3）
 // 2. reward_hint 段齐全（签名/权重/可判定性三件套）
 // 3. verifiers 三桶分桶正确（机器可判/需人审/启发式）
 // 4. GUIDE 锚点解析（五要素/三问判定/量化公式三段）
@@ -40,11 +40,11 @@ const repoRoot = join(here, '..', '..', '..', '..');
 // ────────────────────────────────────────────────────────────
 
 describe('规则语料导出（30 编号位）', () => {
-  it('all 范围 = 27 实现 + 3 占位 = 30 编号位（零遗漏）', () => {
+  it('all 范围 = 28 实现 + 3 占位 = 31 编号位（零遗漏）', () => {
     const all = [...defaultRules, ...extendedRules];
-    expect(all).toHaveLength(27); // 源头 27 条
+    expect(all).toHaveLength(28); // 源头 28 条
     const slots = allRuleSlots(all);
-    expect(slots).toHaveLength(30);
+    expect(slots).toHaveLength(31);
 
     // 跳号占位三件在位
     const codes = slots.map((s) => s.code);
@@ -66,7 +66,7 @@ describe('规则语料导出（30 编号位）', () => {
       'A12', 'A13', // 占位
       'A14', 'A15', 'A16', 'A17', 'A18', 'A19', 'A20', 'A21', 'A22', 'A23', 'A24',
       'E1', 'E2', 'E3', // E3 占位
-      'E4', 'E5', 'E6',
+      'E4', 'E5', 'E6', 'E7',
     ];
     for (const c of expected) expect(codes.has(c)).toBe(true);
     expect(codes.size).toBe(expected.length);
@@ -74,10 +74,10 @@ describe('规则语料导出（30 编号位）', () => {
 
   it('buildRuleCorpusBody(all) 的 counts 三数对账闭合', () => {
     const body = buildRuleCorpusBody('all', '1.4.4-test');
-    expect(body.counts.implemented).toBe(27);
+    expect(body.counts.implemented).toBe(28);
     expect(body.counts.mergedPlaceholders).toBe(3);
-    expect(body.counts.totalSlots).toBe(30);
-    expect(body.rules).toHaveLength(30);
+    expect(body.counts.totalSlots).toBe(31);
+    expect(body.rules).toHaveLength(31);
     expect(body.schemaVersion).toBe('v1');
     expect(body.engineVersion).toBe('1.4.4-test');
   });
@@ -134,13 +134,13 @@ describe('规则语料导出（30 编号位）', () => {
 // ────────────────────────────────────────────────────────────
 
 describe('verifiers 三桶清单', () => {
-  it('三桶总和 = 30（27 实现 + 3 跳号占位全量分桶——占位进机器可判桶）', () => {
+  it('三桶总和 = 31（28 实现 + 3 跳号占位全量分桶——占位进机器可判桶）', () => {
     const m = buildVerifiersManifest();
     const total =
       m.buckets.machineJudgeable.length +
       m.buckets.humanReview.length +
       m.buckets.heuristic.length;
-    expect(total).toBe(30);
+    expect(total).toBe(31);
   });
 
   it('git-diff 类规则全部进机器可判桶（可直接当 reward 函数接线）', () => {
@@ -428,14 +428,14 @@ describe('导出落盘与签名', () => {
     expect(r.files).toHaveLength(2);
     // JSON 可回读且计数闭合
     const parsed = JSON.parse(readFileSync(r.files[0]!, 'utf-8')) as { body: { counts: { totalSlots: number } }; hmac?: string };
-    expect(parsed.body.counts.totalSlots).toBe(30);
+    expect(parsed.body.counts.totalSlots).toBe(31);
     // YAML 非空且含关键字段
     const yaml = readFileSync(r.files[1]!, 'utf-8');
     expect(yaml).toContain('schemaVersion');
     expect(yaml).toContain('A12');
     // 审计事件（合规红线——导出行为受审计）
     expect(r.auditEvent.event).toBe('corpus_export');
-    expect(r.auditEvent.ruleCount).toBe(30);
+    expect(r.auditEvent.ruleCount).toBe(31);
     expect(typeof r.auditEvent.signed).toBe('boolean');
     rmSync(out, { recursive: true, force: true });
   });
@@ -450,7 +450,7 @@ describe('导出落盘与签名', () => {
   it('dryRun 不落盘', () => {
     const r = exportRuleCorpus({ dryRun: true });
     expect(r.files).toEqual([]);
-    expect(r.body.counts.totalSlots).toBe(30);
+    expect(r.body.counts.totalSlots).toBe(31);
   });
 });
 

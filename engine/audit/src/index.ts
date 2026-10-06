@@ -469,7 +469,7 @@ function parseArgs(argv: string[]): Args {
       console.log('');
       console.log('双入口对照:');
       console.log('  sofagent audit      quick 只读审计（17 条默认规则，秒级）');
-      console.log('  sofagent audit --full 完整引擎（--init / --diff <range> / 27 条规则）——详见 README「快速开始」');
+      console.log('  sofagent audit --full 完整引擎（--init / --diff <range> / 28 条规则）——详见 README「快速开始」');
       if (verbose) {
         console.log('\n完整参数列表:');
         console.log('  --diff <range>     git diff 范围（默认 HEAD~1..HEAD）');

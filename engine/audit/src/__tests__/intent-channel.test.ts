@@ -302,14 +302,19 @@ describe('第七章 · 规则可显式声明输入通道（默认结果通道）
     expect(ruleSupportsChannel(rule, 'intent')).toBe(true);
   });
 
-  it('test_默认通道回归_既有27条规则零声明_行为零变化', () => {
+  it('test_默认通道回归_意图通道零声明_行为零变化（v1.5.7 章八起 E7 声明 decision 通道）', () => {
     const all = [...defaultRules, ...extendedRules];
-    expect(all).toHaveLength(27);
-    // 逐条断言：全部走默认结果通道，无一条进入意图通道（本章不新增规则、不改判定）
+    expect(all).toHaveLength(28); // v1.5.7 章八 +E7（decision 通道，非 intent）
+    // 逐条断言：无一条进入意图通道（intent 仍 opt-in 零声明）；E7 的 decision 声明属第三通道不破坏本回归
     for (const rule of all) {
-      expect(rule.inputChannels, `${rule.id} 意外声明了输入通道`).toBeUndefined();
-      expect(resolveInputChannels(rule)).toEqual(['result']);
       expect(ruleSupportsChannel(rule, 'intent')).toBe(false);
+      if (rule.id === 'E7') {
+        // E7 显式声明 decision 通道（章八交付）——唯一例外，其余规则零声明
+        expect(rule.inputChannels).toEqual(['decision']);
+      } else {
+        expect(rule.inputChannels, `${rule.id} 意外声明了输入通道`).toBeUndefined();
+        expect(resolveInputChannels(rule)).toEqual(['result']);
+      }
     }
   });
 });
