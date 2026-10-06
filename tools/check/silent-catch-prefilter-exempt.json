@@ -112,6 +112,7 @@
   "engine/orchestrator/src/ontology/contracts.ts",
   "engine/orchestrator/src/ontology/index.ts",
   "engine/orchestrator/src/ontology/schema/index.ts",
+  "engine/orchestrator/src/refine-agent/image-meta.ts",
   "engine/orchestrator/src/refine-agent/quality-rule-set.ts",
   "engine/orchestrator/src/route/route-request.ts",
   "engine/orchestrator/src/router/slot-manager.ts",

@@ -2649,10 +2649,10 @@ scenario 312 "v1.3.9 交付六：MLflow agent 评估集成——13 指标映射 
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" ] || S312_OK=false
 grep -q "SCORE\|RATIONALE\|0..100\|clamp" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" 2>/dev/null || S312_OK=false
 $S312_OK && pass "MLflow 导出器在位" || fail "MLflow 集成缺失"
-scenario 313 "v1.3.9 交付七：Agentic Browser / Playwright——实现底座在位 × MCP 面已退役（对齐 v2.0.0 §七 裁定中间态 · 与 S396 不互斥：两个同名不同物文件 · 见 devlog 审查修复批 #15）"; S313_OK=true
-S313_F="$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts"; S313_PW=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const {TOOLS}=require(process.env.PROJECT_ROOT+'/engine/mcp/dist/tool-registry.js');process.stdout.write(TOOLS.some(t=>/^playwright_/.test(t.name))?'1':'0')" 2>/dev/null)
-[ -f "$S313_F" ] && grep -qE "navigate|click|screenshot|evaluate" "$S313_F" 2>/dev/null && [ "$S313_PW" = "0" ] || S313_OK=false
-$S313_OK && pass "Browser 实现底座在位且 MCP 面已退役（中间态与 v2.0.0 §七 一致）" || fail "Agentic Browser 中间态偏离裁定（实现底座丢失 或 MCP 面回潮）"
+scenario 313 "v1.3.9 交付七：Agentic Browser / Playwright——实现底座已删除 × MCP 面无回潮（v1.5.7 章二兑现 v2.0.0 §七 B 表终态：底座文件删除 + 三件图像能力迁 image-meta.ts；与 S396 不互斥：两个同名不同物文件 · 见 devlog 审查修复批 #15）"; S313_OK=true
+S313_F="$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts"; S313_IM="$PROJECT_ROOT/engine/orchestrator/src/refine-agent/image-meta.ts"; S313_PW=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const {TOOLS}=require(process.env.PROJECT_ROOT+'/engine/mcp/dist/tool-registry.js');process.stdout.write(TOOLS.some(t=>/^playwright_/.test(t.name))?'1':'0')" 2>/dev/null)
+[ ! -f "$S313_F" ] && [ -f "$S313_IM" ] && grep -q "degradeImageToText" "$S313_IM" 2>/dev/null && [ "$S313_PW" = "0" ] || S313_OK=false
+$S313_OK && pass "Browser 实现底座已删除且 MCP 面无回潮（终态与 v2.0.0 §七 一致；图像能力迁 image-meta.ts 在位）" || fail "Agentic Browser 终态偏离裁定（实现底座残留 或 MCP 面回潮 或 图像迁出缺失）"
 scenario 314 "v1.3.9 交付八：跨平台适配器（Cursor/Codex/Gemini CLI）——3 薄挂载"; S314_OK=true
 [ -f "$PROJECT_ROOT/.cursor/rules/sofagent.mdc" ] || S314_OK=false
 [ -f "$PROJECT_ROOT/AGENTS.md" ] || S314_OK=false
