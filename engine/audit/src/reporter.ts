@@ -50,7 +50,7 @@ export interface AuditResult {
  * @param exitCode 审计退出码（0/1/2）
  * @param ruleCount 参与本次审计的规则数（= 本跑检查项数）
  * @param totalRules 规则库注册总数（defaultRules + extendedRules；省略时退化为单数形式）
- * @returns 形如「━━━ sofagent 审计 · 17 项检查 · 27 条规则 · PASS ━━━」的签名行（均为运行时实数，非写死值）
+ * @returns 形如「━━━ sofagent 审计 · 17 项检查 · 28 条规则 · PASS ━━━」的签名行（均为运行时实数，非写死值）
  */
 export function productSignature(exitCode: number, ruleCount: number, totalRules?: number): string {
   const verdict = exitCode === 0 ? 'PASS' : exitCode === 1 ? 'WARN' : 'FAIL';

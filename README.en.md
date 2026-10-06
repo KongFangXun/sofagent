@@ -88,7 +88,7 @@ evolve) — works right after installation |
 |---|---|---|---|
 | Positioning | full-history secret scanning | generic commit-hook framework | Agent behavior audit harness |
 | Evidence | repo text patterns | your own scripts | git-diff hard evidence + Agent logs + decision trail |
-| Coverage | secret leaks | anything (DIY) | 27 rules: secrets / scope / injection / privilege / backdoors |
+| Coverage | secret leaks | anything (DIY) | 28 rules: secrets / scope / injection / privilege / backdoors / data products |
 | Deployment cost | Low — standalone binary, zero deps | Low — one CLI from your language ecosystem | Medium — a one-time `install.sh` on the enterprise device (you can also try it zero-config via npx first) |
 | Maintenance burden | Low — rules track upstream | Medium — custom scripts are yours to maintain | Medium — rules and hooks ship with this repo, but each version needs the hook reinstalled and config re-aligned |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both — focused on Agent governance |
@@ -149,7 +149,7 @@ together by the deliverables handed over in between**:
 - **On entry · generate judgment**: four steps — **map the workflow → build dual graphs → qualify AI nodes → deploy**. Dual graphs = business graph (system boundaries, data flows; read by humans) + ontology graph (shared semantic foundation; read by AI), turning the enterprise into a
   machine-readable structure; for every AI node, "what counts as done (merge_criteria) · who signs off (approver) · when it runs (trigger)" is judged here and frozen into the deliverables
 (workflow.yml + ontology + skills).
-- **After departure · retain judgment**: the FDE leaves, the judgment stays — audit triggers automatically on change events (commits) against the frozen criteria (evidence-tiered: 22 of the 27 rules run on git-diff hard evidence — see Core Features); daemon inspects 7×24, snapshots roll back,
+- **After departure · retain judgment**: the FDE leaves, the judgment stays — audit triggers automatically on change events (commits) against the frozen criteria (evidence-tiered: 24 of the 28 rules run on git-diff hard evidence — see Core Features); daemon inspects 7×24, snapshots roll back,
   experience distills back. The human leaves, governance doesn't.
 
 > 🔗 **Why they must be one thing**: the deliverables are a living state shared by both stages — written on entry, read during execution, written back during evolution (trial branches promoted to baseline, reflections distilled back). Without FDE, the constraint layer has no criteria to enforce;
@@ -187,13 +187,13 @@ the platform:
 |---|---|---|---|
 | **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; see "Upstream & plugin entries" below) — 7 lifecycle events incl. `tools/pre-execute` (per the vocabulary table in `engine/dsh-plugins/SEAMS.md`) |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
-| **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 27 rules, not call-level interception) |
+| **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 28 rules, not call-level interception) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
 
 - **Never assume capability parity — tiers differ in injection strength, not in "supported or not"** — DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text the Agent reads on its own (advisory). "Supports platform X" means the
   constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls
 into — full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
-- **Audit fallback is platform-agnostic** — `sofagent audit --install-hook` runs as a git hook; at every tier, every commit is audited automatically (audits with the 17 default rules out of the box; the full 25 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations
+- **Audit fallback is platform-agnostic** — `sofagent audit --install-hook` runs as a git hook; at every tier, every commit is audited automatically (audits with the 17 default rules out of the box; the full 28 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations
   hard-blocked. Constraints are advisory; auditing is mandatory (boundaries of that mandate: **not fail-closed by default** — `--no-verify` skips the first two defense layers, and
 post-commit only leaves a trace without blocking; bypassed commits do leave traces — see [LIMITATIONS
   §3](./docs/LIMITATIONS.md)).
@@ -257,7 +257,7 @@ npx -y -p sofagent sofagent audit
 > 💡 Only want the audit CLI without the full dependency tree? Install the scoped package instead: `npm i -g @sofagent/audit` (far smaller footprint; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
 
 > 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active — quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). `--init` installs the hook (still the same 17 default
->rules); the full 25 additionally require `extendedRulesEnabled: true` in `.sofagent/config.yml` — see [LIMITATIONS §3](./docs/LIMITATIONS.md).
+>rules); the full 28 additionally require `extendedRulesEnabled: true` in `.sofagent/config.yml` — see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
 > ⚠️ This step is a **one-off audit** (inside a single process) — it does not install a git hook, so later commits will not be auto-blocked. For continuous protection run `sofagent audit --init` (see Full install below).
 
@@ -388,11 +388,11 @@ npx -y -p sofagent sofagent audit --ruleset security   # load the security rules
 |---|---|
 | **Full doc index** (by intent) | [WIKI](./docs/WIKI.md) |
 | Install, use, troubleshoot | [HANDBOOK](./docs/HANDBOOK.md) |
-| Architecture & the 27 rules | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| Architecture & the 28 rules | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 5838 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 26 audit rules · fresh-eyes independent review continuously running.
+> 🧪 **Engineering credibility** (current): 5838 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review continuously running.
 > **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
 >the load-chain utility package and dsh-plugin-kit are outside this counting standard) — they are not the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account — see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever

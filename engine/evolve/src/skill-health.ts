@@ -185,7 +185,7 @@ function readDebtLedger(): Map<string, { lastVerifiedAt: string; bestScore: numb
       const e = JSON.parse(line) as { skillId: string; ts: string; score: number; bestScore: number };
       map.set(e.skillId, { lastVerifiedAt: e.ts, bestScore: e.bestScore });
     } catch {
-      /* 坏行跳过——台账读不炸主流程 */
+      /* 为何可静默：坏行跳过——台账读不炸主流程（skill-debt.jsonl 损坏行不阻断健康度计算，后续写入自然覆盖） */
     }
   }
   return map;
@@ -231,7 +231,7 @@ function countReferences(skillRoot: string, skillFile: string): number {
           const matches = text.match(stemRe);
           count += matches ? matches.length : 0;
         } catch {
-          /* 不可读跳过 */
+          /* 为何可静默：不可读文件跳过——引用计数是低分阈值信号非精确值，单文件读失败不改变退役判定（MAX_SCAN_FILES 截断同族降级） */
         }
       }
     }

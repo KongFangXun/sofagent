@@ -7,6 +7,7 @@
     "engine/orchestrator/src/exec/skill-snapshot.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
     "engine/orchestrator/src/loop/engineer-execute.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
     "engine/orchestrator/src/worklog/attribution.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
-    "engine/orchestrator/src/worklog/dream-sandbox.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）"
+    "engine/orchestrator/src/worklog/dream-sandbox.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
+    "engine/audit/src/industry-overlay.ts": "v1.3.7 交付的行业 overlay 自动发现（竞品吸收②）——本批仅 +3 行 SMB 键位（章一场景接入）；文件级零生产消费系既有形态（overlay 经 ruleset-loader 运行时按需加载非静态 import），按维护者裁定登记 SDK 面保留"
   }
 }

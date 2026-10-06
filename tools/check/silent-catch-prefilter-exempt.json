@@ -21,6 +21,7 @@
   "engine/core/src/slash-commands/index.ts",
   "engine/core/src/slash-registry.ts",
   "engine/core/src/stop-reason.ts",
+  "engine/core/src/tool-stats.ts",
   "engine/core/src/trace-reconcile/dsh-adapter.ts",
   "engine/dsh-plugins/cordis-plugin-sofagent-evolve/src/index.ts",
   "engine/dsh-plugins/cordis-plugin-sofagent-inject/src/index.ts",

@@ -44,6 +44,7 @@ export function readToolUsage(): ToolUsageRecordLike[] {
       try {
         return JSON.parse(l) as ToolUsageRecordLike;
       } catch {
+        /* 为何可静默：坏行跳过——遥测 jsonl 单行损坏不阻断统计（计数面容错，与 skill-debt 台账同族降级） */
         return null;
       }
     })
@@ -100,6 +101,7 @@ export function buildToolStats(registryToolNames?: string[]): ToolStatsReport {
       const reg = require('@sofagent/mcp/tool-registry') as { TOOLS: Array<{ name: string }> };
       all = reg.TOOLS.map((t) => t.name);
     } catch {
+      /* 为何可静默：mcp registry 动态 require 失败（L0→L4 依赖方向不可静态 import；dist 未构建）——零调用清单软降级为不可用，被调用/频次两视图不受影响 */
       all = undefined;
     }
   }

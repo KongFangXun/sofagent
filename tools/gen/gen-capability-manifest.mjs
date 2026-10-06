@@ -188,7 +188,7 @@ for (const entry of fs.readdirSync(path.join(REAL_ROOT, 'engine'), { withFileTyp
     const name = JSON.parse(fs.readFileSync(pkgJson, 'utf8')).name;
     if (typeof name === 'string' && name !== '') workspacePkgs.add(name);
   } catch {
-    // 坏 package.json 不中断——该目录名兜底进不了集合，引用它的条目会红
+    // 为何可静默：坏 package.json 不中断——该目录名兜底进不了集合，引用它的条目会被 C1 幽灵载体包断言红（fail-loud 由下游断言兜底，此处无需响亮）
   }
 }
 for (const c of capabilities) {

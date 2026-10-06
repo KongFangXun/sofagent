@@ -172,7 +172,7 @@ class McpServer {
     try {
       recordToolUsage(toolName, process.env.SOFAGENT_AGENT_ID ?? 'unknown');
     } catch {
-      /* 遥测失败不影响主路径 */
+      /* 为何可静默：遥测埋点失败不影响主路径（usageTrackerStats.silentFailures 已计数可观测，审计主流程零依赖遥测） */
     }
 
     try {
