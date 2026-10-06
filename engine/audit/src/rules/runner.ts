@@ -8,6 +8,8 @@ import type { LogEntry } from '@sofagent/core';
 import type { AuditConfig } from '@sofagent/core';
 import { BASELINE_RULE_NUMBERS } from '@sofagent/core';
 import type { AuditContext, RuleCheck, Rule } from './types';
+// v1.5.7 章八：决策日志输入源（只读——E7 消费）
+import { loadDecisionEntries } from '../inputs/decision-log-source';
 import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
@@ -32,7 +34,7 @@ import { assessGb48000Coverage, buildGb48000RuleCheck } from '../gb48000';
 export const GB48000_RULE_NAME = 'GB48000';
 
 /**
- * 规则分组（27 条 = 17 默认 + 10 扩展）
+ * 规则分组（28 条 = 17 默认 + 11 扩展）
  *
  * 默认规则（17 条，config.yml 中 enabled: true）：
  *   A1-A11, A18-A23
@@ -212,7 +214,10 @@ export function runRules(
   const auditHistory = history ?? loadHistory();
   // v1.5.3 第七章：AuditScope 主构造点——注入优先，否则本处构造一次（惰性，未读取不触 git）。
   const auditScope = scope ?? createAuditScope({ diffRange, commitMsg, task });
-  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, scope: auditScope, config, history: auditHistory, quickMode, ciMode };
+  // v1.5.7 章八：决策日志通道装配（第三输入路——与 history 同源 dataDir 解析；只读）。
+  // 容错纪律与 intent 通道同族：文件缺席 = 空数组（无决策可判），坏行由读侧跳过并告警。
+  const decisionEntries = loadDecisionEntries();
+  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, scope: auditScope, config, history: auditHistory, quickMode, ciMode, decisionEntries };
   const results: RuleCheck[] = [];
 
   // 根据 config.extendedRulesEnabled 决定运行哪些规则

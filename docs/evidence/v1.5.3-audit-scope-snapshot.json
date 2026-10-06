@@ -152,6 +152,13 @@
         "id": "E6",
         "status": "PASS",
         "details": []
+      },
+      {
+        "id": "E7",
+        "status": "PASS",
+        "details": [
+          "决策质量信号正常：FALLBACK_DEGRADE 0 次（< 阈值 5）"
+        ]
       }
     ]
   }

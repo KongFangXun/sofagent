@@ -206,7 +206,7 @@ export function resolveIntentSkipLogPath(dataDir?: string): string {
 /**
  * 规则输入通道解析（默认值**单源**）。
  *
- * 缺省（未声明 / 空数组）= `['result']`——**结果通道**。所有既有 27 条规则都走
+ * 缺省（未声明 / 空数组）= `['result']`——**结果通道**。所有既有 28 条规则都走
  * 这一支，行为零变化；声明含 `'intent'` 才消费 `AuditContext.intentEntries`（opt-in）。
  * 默认值只在本函数定义一处——勿在各消费点各自 `?? ['result']`（本仓历史高频事故：
  * 同一默认值多处重推，改一处漏一处）。
@@ -504,7 +504,9 @@ export function createIntentChannel(options: IntentChannelOptions = {}): IntentC
           filePath,
           validKinds: CHAIN_ENTRY_TYPES,
           kindField: ENTRY_TYPE_FIELD,
-          entryType: entry.channel,
+          // 通道枚举（AuditInputChannel）已扩 'decision'（v1.5.7 章八）——但 intent.jsonl
+          // 链的条目类型仍只有 intent/result 两值（decision 通道不落本文件），显式收窄。
+          entryType: entry.channel === 'intent' ? 'intent' : 'result',
           key,
           fingerprint,
           logLabel: '[intent-channel]',

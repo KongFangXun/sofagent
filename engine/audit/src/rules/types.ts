@@ -13,6 +13,8 @@ import type { AuditScope } from '../scope';
 // v1.5.3 第一章：ruleType 由单值字面量扩为共用联合类型（@sofagent/core 单一事实源）——
 // 两套规则引擎（tool-level / git-diff）共用同一套规则定义，触发时机类型同源。
 import type { RuleType } from '@sofagent/core';
+// v1.5.7 章八：决策日志通道的条目类型（与写侧共用 decision-schema 单一类型源）
+import type { DecisionLogEntry } from '../decision-schema';
 
 /**
  * 证据模式——规则依赖的输入来源
@@ -23,17 +25,21 @@ import type { RuleType } from '@sofagent/core';
 export type EvidenceMode = 'git-diff' | 'logs' | 'hybrid' | 'filesystem';
 
 /**
- * 审计输入通道（v1.5.1 第七章·审计输入双通道）
+ * 审计输入通道（v1.5.1 第七章双通道 → v1.5.7 章八三通道）
  *
- * - `result`：结果文本通道（git diff / 工具结果文本）——**既有唯一通道，且仍是默认通道**。
+ * - `result`：结果文本通道（git diff / 工具结果文本）——**既有唯一默认通道**。
  *   未声明 `inputChannels` 的规则行为零变化。
  * - `intent`：调用意图通道（宿主 `tools/pre-execute` / `tools/result` 事件流留痕：
  *   tool 名 + 参数摘要 + 会话标识 + 时间戳）——opt-in。参数级意图（`rm -rf` 的 path、
  *   写文件落点、外发 host）只在意图通道可见，结果文本通道看不出来。
+ * - `decision`：决策日志通道（`<dataDir>/audit/decision-log.jsonl` 既有落盘的只读
+ *   消费——18 类可问责决策留痕，v1.5.7 章八升为输入面正式一路）——opt-in。
+ *   消费纪律：仅当规则在 `inputChannels` 显式声明 `'decision'` 时才读
+ *   `AuditContext.decisionEntries`（E7 决策质量信号为首个消费规则）。
  *
- * 🔴 通道声明只描述**输入面**，不参与任何判定逻辑——本章不新增规则、不改规则判定。
+ * 🔴 通道声明只描述**输入面**，不参与任何判定逻辑。
  */
-export type AuditInputChannel = 'result' | 'intent';
+export type AuditInputChannel = 'result' | 'intent' | 'decision';
 
 /**
  * 意图条目（`<dataDir>/audit/intent.jsonl` 一行 = 一条留痕；v1.5.1 第七章）
@@ -201,6 +207,16 @@ export interface AuditContext {
    * 消费纪律：仅当规则在 {@link Rule.inputChannels} 显式声明 `'intent'` 时才应读取本字段。
    */
   intentEntries?: IntentEntry[];
+  /**
+   * v1.5.7 章八：决策日志通道输入面（`<dataDir>/audit/decision-log.jsonl` 的只读
+   * 解析结果——inputs/decision-log-source.ts 装配）。
+   *
+   * 缺省 `undefined` = 未接入决策通道（行为零变化——E7 等 opt-in 规则判 SKIPPED）。
+   * 消费纪律：仅当规则在 {@link Rule.inputChannels} 显式声明 `'decision'` 时才应读取
+   * 本字段；类型映射（18 类逐类消费声明）见 inputs/decision-log-source.ts 的
+   * DECISION_KIND_CONSUMPTION 表。
+   */
+  decisionEntries?: DecisionLogEntry[];
   /** v1.3.3 #8: quick 模式标记（cli-quick 零配置审计）——A3 见到跳过越界检查（无任务描述必然误报） */
   quickMode?: boolean;
   /**
@@ -290,7 +306,7 @@ export interface Rule {
    *
    * 缺省 `undefined`（= false）：样例为**描述性训练样本**（如「删除 .sofagent/config.yml」），
    * 非可执行夹具——加载时只做 schema + 矛盾断言，不做执行断言。
-   * 现状（v1.5.3 实测，v1.5.7 起 27 条）：5 条（A1/A2/A9/A20/A23）为**纯函数** scan、样例可执行，故标
+   * 现状（v1.5.3 实测，v1.5.7 章八起 28 条）：5 条（A1/A2/A9/A20/A23）为**纯函数** scan、样例可执行，故标
    * examplesExecutable；其余为描述性样本。⚠️ 纯度纪律：scan 读 cwd/fs/git（如 A18 调
    * `git ls-tree HEAD`）则**不得**标可执行——加载期断言须确定性，不得随运行目录抖动。
    */

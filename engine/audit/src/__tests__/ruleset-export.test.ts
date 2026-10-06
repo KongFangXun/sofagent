@@ -2,12 +2,12 @@
 // ruleset-export.test.ts · v1.5.2 章二 · 规则集导出单测
 //
 // 覆盖（changelog 章二验收标准逐条对号）：
-//   1. ruleset_export 导出 27 条默认规则 + 已加载扩展（JSON 格式）
+//   1. ruleset_export 导出 28 条默认规则 + 已加载扩展（JSON 格式）
 //   2. 双向可逆：导出物 → loadRulesetFile 读回 + validateRuleset 不报错
 //   3. 每条规则含训练消费元数据（rule_id / 意图 / 样例 / 级别）
 //   4. 导出物带版本号 + 内容指纹（指纹随内容变化）
 //   5. 每次导出审计留痕（读回临时 dataDir 的 history.jsonl，条目数与导出次数一致）
-//   6. 元数据表 27 条全覆盖
+//   6. 元数据表 28 条全覆盖
 //
 // 隔离纪律：所有落盘/留痕传临时目录（mkdtemp），**禁止污染开发者真实 ~/.sofagent**。
 // 自指规避：不硬编码规则样例中的密钥/外联串（避免本测试文件本身命中 A2/A20）。
@@ -32,11 +32,11 @@ import {
   RULESET_EXPORT_SCHEMA_VERSION,
 } from '../export/ruleset-export';
 
-/** 规则集 id 全集快照（27 条——成员增删须显式改本断言） */
+/** 规则集 id 全集快照（28 条——成员增删须显式改本断言；v1.5.7 章八 +E7） */
 const EXPECTED_IDS = [
   'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10', 'A11',
   'A18', 'A19', 'A20', 'A21', 'A22', 'A23',
-  'E1', 'E2', 'E4', 'E5', 'E6',
+  'E1', 'E2', 'E4', 'E5', 'E6', 'E7',
   'A14', 'A15', 'A16', 'A17', 'A24',
 ].sort();
 
@@ -64,18 +64,18 @@ afterEach(() => {
 // 一、导出范围 + 双向可逆（核心断言）
 // ────────────────────────────────────────────────────────────
 
-describe('规则集导出（27 条 · 双向可逆）', () => {
-  it('导出 27 条默认规则 + 扩展规则（id 集合快照）', () => {
+describe('规则集导出（28 条 · 双向可逆）', () => {
+  it('导出 28 条默认规则 + 扩展规则（id 集合快照）', () => {
     const dataDir = makeTmp('ruleset-export-data-');
     const outDir = makeTmp('ruleset-export-out-');
     const result = buildRulesetExport({ dataDir, outDir, rulesetVersion: 'test-1.0.0' });
 
     expect(result.ok).toBe(true);
-    expect(result.ruleCount).toBe(27);
-    expect(result.ruleset.rules).toHaveLength(27);
+    expect(result.ruleCount).toBe(28);
+    expect(result.ruleset.rules).toHaveLength(28);
     const ids = result.ruleset.rules.map((r) => r.id).sort();
     expect(ids).toEqual(EXPECTED_IDS);
-    // 27 条与注册表逐条对应（源与导出同源，无遗漏）
+    // 28 条与注册表逐条对应（源与导出同源，无遗漏）
     const registryIds = [...defaultRules, ...extendedRules].map((r) => r.id).sort();
     expect(ids).toEqual(registryIds);
   });
@@ -90,7 +90,7 @@ describe('规则集导出（27 条 · 双向可逆）', () => {
 
     // 读回（loadRulesetFile 内部即调用 validateRuleset —— 不报错即通过校验）
     const loaded: Ruleset = loadRulesetFile(filePath);
-    expect(loaded.rules).toHaveLength(27);
+    expect(loaded.rules).toHaveLength(28);
     const loadedIds = loaded.rules.map((r) => r.id).sort();
     expect(loadedIds).toEqual(EXPECTED_IDS);
 
@@ -152,13 +152,13 @@ describe('训练消费元数据（rule_id / 意图 / 样例 / 级别）', () => 
     }
   });
 
-  it('严重级别推导：critical → FAIL（8 条），其余 → WARN（18 条）', () => {
+  it('严重级别推导：critical → FAIL（8 条），其余 → WARN（20 条）', () => {
     const all = [...defaultRules, ...extendedRules];
     const meta = buildExportMetadata(all);
     const fails = meta.filter((m) => m.severity === 'FAIL').map((m) => m.ruleId).sort();
     // A1/A2/A9/A10/A20-A23 为 critical（index.ts 注册表 priority）
     expect(fails).toEqual(['A1', 'A10', 'A2', 'A20', 'A21', 'A22', 'A23', 'A9'].sort());
-    expect(meta.filter((m) => m.severity === 'WARN')).toHaveLength(19);
+    expect(meta.filter((m) => m.severity === 'WARN')).toHaveLength(20);
     for (const m of meta) {
       expect(m.severityBasis.length).toBeGreaterThan(0);
     }
@@ -178,16 +178,16 @@ describe('训练消费元数据（rule_id / 意图 / 样例 / 级别）', () => 
         expect(m.sampleViolationSource).toBe('synthesized');
       }
     }
-    // 当前 27 条全部自带样例（兜底分支不应触发）
+    // 当前 28 条全部自带样例（兜底分支不应触发）
     expect(meta.every((m) => m.sampleViolationSource === 'examples.match')).toBe(true);
   });
 
-  it('意图表 27 条全覆盖（断言 + 计数）', () => {
+  it('意图表 28 条全覆盖（断言 + 计数）', () => {
     const all = [...defaultRules, ...extendedRules];
-    expect(Object.keys(RULE_INTENTS)).toHaveLength(27);
+    expect(Object.keys(RULE_INTENTS)).toHaveLength(28);
     expect(() => assertIntentCoverage(all)).not.toThrow();
     const meta = buildExportMetadata(all);
-    expect(meta).toHaveLength(27);
+    expect(meta).toHaveLength(28);
     for (const m of meta) {
       expect(RULE_INTENTS[m.ruleId]).toBe(m.intent);
     }
@@ -254,7 +254,7 @@ describe('导出审计留痕', () => {
     expect(result.auditEvent.event).toBe('ruleset_export');
     expect(result.auditEvent.rulesetVersion).toBe('test-7.0.0');
     expect(result.auditEvent.fingerprint).toBe(result.fingerprint);
-    expect(result.auditEvent.ruleCount).toBe(27);
+    expect(result.auditEvent.ruleCount).toBe(28);
 
     const linesAfter = readFileSync(historyPath, 'utf-8').trim().split('\n').filter(Boolean);
     expect(linesAfter).toHaveLength(3);
@@ -264,7 +264,7 @@ describe('导出审计留痕', () => {
     const dataDir = makeTmp('ruleset-export-data-');
     const result = buildRulesetExport({ dataDir, dryRun: true, rulesetVersion: 'test-8.0.0' });
     expect(result.files).toEqual([]);
-    expect(result.ruleCount).toBe(27);
+    expect(result.ruleCount).toBe(28);
     // 未落盘任何 ruleset 产物
     expect(result.files).toHaveLength(0);
     // 审计留痕照写（每次导出进 history）
