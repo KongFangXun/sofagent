@@ -248,6 +248,55 @@ describe('decision-log emitDecision', () => {
     expect(parsed.kind).toBe('COMMONS');
     expect(parsed.evidence![0]).toContain('DANGEROUS');
   });
+
+  // ── v1.5.7 章一新增：DATA_PRODUCT kind（SMB 数据产物决策）──
+
+  it('DATA_PRODUCT kind 正确写入（E5 数据产物审计判定结论）', () => {
+    emitDecision(
+      makeInput({
+        kind: 'DATA_PRODUCT',
+        moment: 'ATTRIBUTION',
+        why: { text: '数据产物审计：report.csv 勾稽不一致（total 999 ≠ 明细和 300）', tags: ['e5', 'reconcile'] },
+        evidence: ['rule=E5', 'file=data/report.csv', 'claimed=999', 'detailSum=300'],
+        artifactRef: 'data/report.csv',
+      }),
+      testDir,
+    );
+    const filePath = getDecisionLogPath(testDir);
+    const parsed = JSON.parse(readFileSync(filePath, 'utf-8').trim().split('\n')[0]!) as DecisionLogEntry;
+    expect(parsed.kind).toBe('DATA_PRODUCT');
+    expect(parsed.moment).toBe('ATTRIBUTION');
+    expect(parsed.artifactRef).toBe('data/report.csv');
+    expect(parsed.evidence).toEqual(['rule=E5', 'file=data/report.csv', 'claimed=999', 'detailSum=300']);
+    expect(parsed.why.text).toContain('勾稽不一致');
+  });
+
+  it('DATA_PRODUCT kind 数据产物生成动作（ACT moment）正确写入', () => {
+    emitDecision(
+      makeInput({
+        kind: 'DATA_PRODUCT',
+        moment: 'ACT',
+        why: '生成 Q3 汇总报表 outputs/q3-summary.csv（源：raw/orders-2026Q3.csv，勾稽已过）',
+        artifactRef: 'outputs/q3-summary.csv',
+      }),
+      testDir,
+    );
+    const filePath = getDecisionLogPath(testDir);
+    const parsed = JSON.parse(readFileSync(filePath, 'utf-8').trim().split('\n')[0]!) as DecisionLogEntry;
+    expect(parsed.kind).toBe('DATA_PRODUCT');
+    expect(parsed.moment).toBe('ACT');
+  });
+
+  it('白名单一致性：DATA_PRODUCT 在 VALID_KINDS 内（写入不抛——双落点同步的回归锚）', () => {
+    // decision-schema.ts 的 DecisionKind union 与 decision-log.ts 的 VALID_KINDS
+    // 是双落点——本用例锁「类型面加了、白名单没加」的静默分叉（写入必抛 DecisionSchemaError）
+    expect(() =>
+      emitDecision(
+        { agentId: 'smb-agent', sessionId: 'sess-smb', kind: 'DATA_PRODUCT', moment: 'ACT', why: 'probe' },
+        testDir,
+      ),
+    ).not.toThrow();
+  });
 });
 
 function chmodSyncRecursive(dir: string): void {

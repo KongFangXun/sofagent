@@ -2,7 +2,7 @@
 // index.ts · 规则注册表
 // reporter 从此导入规则数组，循环调用——不再硬编码 import 每条规则
 // v0.97：铁律与审计分离——defaultRules (A1-A11) + extendedRules (E1-E4)
-// Last revised: v1.5.6——25 条注册：A1-A11 + A14-A24 + E1/E2/E4
+// Last revised: v1.5.7——26 条注册：A1-A11 + A14-A24 + E1/E2/E4/E5
 // ============================================================
 
 import type { Rule } from './types';
@@ -36,6 +36,8 @@ import { scanE1 } from './rule-e1-no-test-files';
 import { scanE2 } from './rule-e2-todo-undeclared';
 // E3 已在 v1.2.5 并入 A11（行数维度），不再独立存在
 import { scanE4 } from './rule-e4-low-comment-ratio';
+// v1.5.7 章一新增：E5 数据产物审计（SMB 场景——勾稽/溯源/口径三类判据）
+import { scanE5 } from './rule-e5-data-product';
 // v1.5.3 第二章：加载时样例断言（fail-closed）——引擎默认装载点接线（见本文件末尾调用）
 import { loadAuditRules } from '../rule-loader';
 
@@ -50,7 +52,7 @@ const DEF_A9 = ruleDefinition('A9')!;
 
 /** 默认规则（A1-A11 + A18-A23 = 17 条）——始终生效（实测口径，与 HANDBOOK 对齐）
  * 归属说明：A14-A17 不在默认规则——A14 知识库越权 / A15 不盲动 / A16 非授权文件变更 /
- *      A17 异常批量变更按实注册归 extendedRules（扩展 8 条 = A14-A17 + A24 + E1/E2/E4，共 25 条）。
+ *      A17 异常批量变更按实注册归 extendedRules（扩展 9 条 = A14-A17 + A24 + E1/E2/E4/E5，共 26 条）。
  *      A12（供应链安全）/ A13（文件权限）已永久跳号（并入 A11），编号不复用。
  * v1.1.5: A18 从 extendedRules 提升为 defaultRules
  *        评估：在 sofagent 自身仓库根目录跑 A18（排除 node_modules/.git/dist/.workbuddy/docs/archive）
@@ -82,17 +84,20 @@ export const defaultRules: Rule[] = [
   { name: 'A23 不逃路径', id: 'A23', number: 23, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA23, examples: { match: [['..', '..', 'etc', 'pass' + 'wd'].join('/')], notMatch: ['src/utils/path.ts 正常路径'] }, examplesExecutable: true, justification: '路径穿越/symlink 逃逸——越出工作区边界' },
 ];
 
-/** 扩展规则（E1-E4 + A14-A17 + A24 = 8 条）——默认不生效，需 config.extendedRulesEnabled = true
+/** 扩展规则（E1-E5 + A14-A17 + A24 = 9 条）——默认不生效，需 config.extendedRulesEnabled = true
  *
  * 编号规则：
  * - A14-A17 / A24：行为类扩展规则（沿用 A 系列编号，number = 规则号，与 defaultRules 同 namespace 但 A12-A13 已永久跳号，合并入 A11（语义部分重叠但不完全等价））
- * - E1-E4：引擎增强类扩展规则（E 系列，number = 200 + 序号，避免与 A 系列冲突）
+ * - E1-E5：引擎增强类扩展规则（E 系列，number = 200 + 序号，避免与 A 系列冲突）
  * v1.3.3 #11: priority 统一为 'extended'（扩展规则层） */
 export const extendedRules: Rule[] = [
   { name: 'E1 不落测试', id: 'E1', number: 201, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', scan: scanE1, examples: { match: ["src/production/some.test.ts"], notMatch: ["tests/some.test.ts"] }, justification: '测试文件被提交到生产目录' },
   { name: 'E2 TODO 未声明', id: 'E2', number: 202, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', scan: scanE2, examples: { match: ["新增 TODO 未在任务中声明"], notMatch: ["TODO 已在任务中声明"] }, justification: '新增 TODO 未声明——遗留未完成项' },
   // E3 已在 v1.2.5 并入 A11（行数维度），编号跳号
   { name: 'E4 不低注释', id: 'E4', number: 204, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', scan: scanE4, examples: { match: ["新增 300 行注释率 <5%"], notMatch: ["新增 100 行注释率正常"] }, justification: '新增大量代码注释率过低——维护性差' },
+  // v1.5.7 章一新增：E5 数据产物审计（SMB 场景扩展集 8→9）——三类判据：
+  // 数值勾稽（合计≠明细和 FAIL）/ 来源可溯（数值行缺 source 引用 WARN）/ 口径一致（同字段 unit 冲突 FAIL）
+  { name: 'E5 数据产物审计', id: 'E5', number: 205, evidenceMode: 'git-diff', ruleClass: '工程规范', priority: 'extended', ruleType: 'diff', scan: scanE5, description: 'SMB 场景数据产物审计——数值勾稽（合计/明细一致）+ 来源可溯（每个数字可回溯源数据）+ 口径一致（同名字段同口径）', examples: { match: ['数据文件 total 声明 999 与明细之和 300 不符（勾稽缺口）', 'report.csv 数值行无 source/来源 引用（溯源缺口）', 'amount.unit 一行标 CNY 一行标 USD（口径冲突）'], notMatch: ['total = 明细之和且各行带 source 引用（勾稽溯源双过）', 'src/index.ts 普通源码变更（非数据产物文件，不进判定面）', 'unit 大小写归一后一致（CNY/cny 不判冲突）'] }, justification: 'AI 生成数据产物（CSV/JSON/报表）数值勾稽不一致/来源不可溯/口径冲突——SMB 无代码仓库场景的数据质量底线' },
   { name: 'A14 知识库越权', id: 'A14', number: 14, evidenceMode: 'hybrid', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', scan: scanA14, examples: { match: ["访问工作流声明范围外的知识页面"], notMatch: ["访问声明范围内的知识页面"] }, justification: '知识库访问超出工作流声明范围' },
   { name: 'A15 不盲动', id: 'A15', number: 15, evidenceMode: 'hybrid', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', scan: scanA15, examples: { match: ["workflow 节点未声明 actions"], notMatch: ["workflow 节点声明了 actions"] }, justification: 'workflow 节点未声明可执行动作——无法审计' },
   { name: 'A16 非授权文件变更', id: 'A16', number: 16, evidenceMode: 'git-diff', ruleClass: '工程规范', priority: 'extended', ruleType: 'diff', scan: scanA16, description: '检测敏感目录/文件类型的非授权变更', examples: { match: ['修改非声明范围文件'], notMatch: ['修改声明范围内的文件'] }, justification: '非授权文件被修改（行为级）' },
@@ -113,7 +118,7 @@ export const rules: Rule[] = [...defaultRules, ...extendedRules];
 // 规则写错立刻爆，不靠人记（对齐 codex execpolicy "validated at load time"）。
 //
 // 报告导出供测试/CLI 核验覆盖面（loaded/executed/exempted）。
-// 25 条现状：全部带 match/notMatch 双夹具（存量，v1.4.0 起）；其中 5 条
+// 26 条现状：全部带 match/notMatch 双夹具（存量，v1.4.0 起）；其中 5 条
 // （A1/A2/A9/A20/A23）样例为**可执行夹具**（examplesExecutable），逐条过执行断言。
 // ⚠️ 纯度纪律：加载期执行断言要求 scan 为**纯函数**——A18 的 scanA18 经 `ctx.scope`
 // 取 HEAD 基线（`headTreeFiles()`，依赖 cwd 仓库基线而非规则自调 git）非纯，故**不标**

@@ -469,7 +469,7 @@ function parseArgs(argv: string[]): Args {
       console.log('');
       console.log('双入口对照:');
       console.log('  sofagent audit      quick 只读审计（17 条默认规则，秒级）');
-      console.log('  sofagent audit --full 完整引擎（--init / --diff <range> / 25 条规则）——详见 README「快速开始」');
+      console.log('  sofagent audit --full 完整引擎（--init / --diff <range> / 26 条规则）——详见 README「快速开始」');
       if (verbose) {
         console.log('\n完整参数列表:');
         console.log('  --diff <range>     git diff 范围（默认 HEAD~1..HEAD）');
@@ -1509,6 +1509,33 @@ async function main(): Promise<void> {
         }
       } catch {
         // 成本审计是附带维度，异常静默降级（不阻断主审计）
+      }
+    }
+  }
+
+  // v1.5.7 章一: 数据产物审计决策留痕（SMB 场景）——E5 命中时每条 finding 落一条
+  // kind=DATA_PRODUCT 记录（moment=ATTRIBUTION）。与 COST 写面同纪律：失败不阻断
+  // 主审计（规则结果已进 history.jsonl），但必须让人看见。查询面：queryByKind('DATA_PRODUCT')。
+  if (!args.json) {
+    const e5Findings = results.rules.filter(
+      (r) => r.id === 'E5' && (r.status === 'WARN' || r.status === 'FAIL'),
+    );
+    if (e5Findings.length > 0) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { emitDecision } = require('./decision-log');
+        for (const f of e5Findings) {
+          emitDecision({
+            agentId: 'sofagent-audit',
+            sessionId: `e5-${Date.now()}`,
+            kind: 'DATA_PRODUCT',
+            moment: 'ATTRIBUTION',
+            why: { text: f.details.join('；'), tags: ['e5', 'data-product', f.status === 'FAIL' ? 'fail' : 'warn'] },
+            evidence: [`rule=E5`, `status=${f.status}`, ...f.details.slice(0, 3)],
+          });
+        }
+      } catch (emitErr) {
+        console.warn(`⚠️ [sofagent] DATA_PRODUCT 决策留痕失败（规则结果已进 history，decision-log 查询面将看不到本次判定）: ${emitErr instanceof Error ? emitErr.message : String(emitErr)}`);
       }
     }
   }

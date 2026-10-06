@@ -12,21 +12,21 @@ describe('条目 7 · 规则注册表元数据快照（第 0 步——重构行�
   it('defaultRules 17 条（双计数锚之一）', () => {
     expect(defaultRules).toHaveLength(17);
   });
-  it('defaultRules + extendedRules = 25 条（双计数锚之二）', () => {
-    expect(defaultRules.length + extendedRules.length).toBe(25);
+  it('defaultRules + extendedRules = 26 条（双计数锚之二）', () => {
+    expect(defaultRules.length + extendedRules.length).toBe(26);
   });
   it('规则编号集合快照（A 系/E 系全量——编号推导重构的对照锚）', () => {
     const names = [...defaultRules, ...extendedRules].map((r) => r.name);
-    // 精确集合断言（A 系 22 + E 系 3；成员增删须显式改本快照）
+    // 精确集合断言（A 系 22 + E 系 4；成员增删须显式改本快照）
     expect(names.filter((n) => n.startsWith('A')).length).toBe(22);
-    expect(names.filter((n) => n.startsWith('E')).length).toBe(3);
+    expect(names.filter((n) => n.startsWith('E')).length).toBe(4);
     // name 唯一（注册表不变式）
-    expect(new Set(names).size).toBe(25);
+    expect(new Set(names).size).toBe(26);
   });
-  it('evidenceMode 分布快照（20 git-diff + 4 hybrid + 1 filesystem）', () => {
+  it('evidenceMode 分布快照（21 git-diff + 4 hybrid + 1 filesystem）', () => {
     const all = [...defaultRules, ...extendedRules];
     const count = (m: string) => all.filter((r) => (r as { evidenceMode?: string }).evidenceMode === m).length;
-    expect(count('git-diff')).toBe(20);
+    expect(count('git-diff')).toBe(21);
     expect(count('hybrid')).toBe(4);
     expect(count('filesystem')).toBe(1);
   });
@@ -35,7 +35,7 @@ describe('条目 7 · 规则注册表元数据快照（第 0 步——重构行�
     for (const r of all) {
       expect(ruleCode(r.number, r.name), `${r.name} 的 id 漂移`).toBe(r.id);
     }
-    expect(new Set(all.map((r) => r.id)).size).toBe(25);
+    expect(new Set(all.map((r) => r.id)).size).toBe(26);
   });
   // v1.4.8 条目 7 批三：原散落在各 rule-*.test.ts 的 evidenceMode / ruleClass 断言收口至此
   // （元数据断言的唯一集中地）——注册表 meta 全量逐条快照，成员/字段漂移须显式改本快照。
@@ -64,6 +64,7 @@ describe('条目 7 · 规则注册表元数据快照（第 0 步——重构行�
       'E1|E1 不落测试|201|git-diff|能力拐杖|extended',
       'E2|E2 TODO 未声明|202|git-diff|能力拐杖|extended',
       'E4|E4 不低注释|204|git-diff|能力拐杖|extended',
+      'E5|E5 数据产物审计|205|git-diff|工程规范|extended',
       'A14|A14 知识库越权|14|hybrid|能力拐杖|extended',
       'A15|A15 不盲动|15|hybrid|能力拐杖|extended',
       'A16|A16 非授权文件变更|16|git-diff|工程规范|extended',
