@@ -18,7 +18,7 @@
 - [二、知识安全](#二知识安全)
 - [三、编排安全](#三编排安全)
 - [四、审计与存储安全](#四审计与存储安全)
-  - [26 条审计规则完整清单（文档级 SSOT）](#26-条审计规则完整清单文档级-ssot)
+  - [27 条审计规则完整清单（文档级 SSOT）](#27-条审计规则完整清单文档级-ssot)
 - [五、工程安全](#五工程安全)
 - [六、LLM API Key 透明度](#六llm-api-key-透明度)
 - [七、FDE 职业道德](#七fde-职业道德)
@@ -334,51 +334,52 @@ sofagent audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 > 来源：Perplexity（CEO Aravind Srinivas · X 原帖）｜Simon Willison ·〈Agent 致命三要素〉（simonwillison.net）
 
-### 26 条审计规则完整清单（文档级 SSOT）
+### 27 条审计规则完整清单（文档级 SSOT）
 
-> 本表是全部 26 条规则的文档级单一事实源（代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已合并入 A11、E3 已并入 A11，编号不再使用。
+> 本表是全部 27 条规则的文档级单一事实源（代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已合并入 A11、E3 已并入 A11，编号不再使用。
 >
-> 📎 **与判定层的关系**：条数口径（**26 = 17 默认 + 9 扩展**）为当前 SSOT；判定化接管后的逐条去向见下方〈26 条规则的判定化归属〉，判据重述口径见 [v1.6.0 §二](./docs/changelog/v1.6/v1.6.0.md)。
+> 📎 **与判定层的关系**：条数口径（**27 = 17 默认 + 10 扩展**）为当前 SSOT；判定化接管后的逐条去向见下方〈27 条规则的判定化归属〉，判据重述口径见 [v1.6.0 §二](./docs/changelog/v1.6/v1.6.0.md)。
 
 **默认规则 17 条（始终生效）**：
 
-| 编号 | 名称 | 检测什么 | 判定 |
-|---|---|---|---|
-| A1 | 不碰敏感 | `.env` / `*.pem` / `id_rsa` 等敏感文件被修改 | FAIL |
-| A2 | 不泄密钥 | API Key（AWS、OpenAI、Anthropic、DeepSeek、GitHub、Stripe、Google、Slack）/ Token / JWT / 私钥模式泄漏 | FAIL |
-| A3 | 不改越界 | 修改文件路径与任务描述不匹配 | WARN |
-| A4 | 不删配置 | 配置文件被删除 | FAIL |
-| A5 | 不瞒真相 | commit message 为空或纯占位符 | WARN |
-| A6 | 不坏构建 | 构建配置文件异常改动 | WARN |
-| A7 | 不存盲改 | 被修改文件无读取记录（依赖 task/logs） | FAIL/WARN |
-| A8 | 不逃验证 | 构建文件变更后无测试记录 | FAIL/WARN |
-| A9 | 不纳注入 | 忽略指令/prompt 注入风险模式 | FAIL |
-| A10 | 不引毒源 | 依赖包黑名单 + typosquatting + postinstall 注入 | WARN |
-| A11 | 不滥资源 | 资源滥用（超大文件、大行数删除等） | WARN |
-| A18 | 垃圾文件 | 临时文件名模式的垃圾文件 | WARN |
-| A19 | msg 质量 | commit message 命中黑名单词或过短 | FAIL |
-| A20 | 不泄外联 | 数据外传（curl/wget POST、WebSocket、DNS 隧道） | FAIL |
-| A21 | 不植后门 | 持久化后门（LaunchAgent/systemd/crontab/注册表自启） | FAIL |
-| A22 | 不越权限 | 权限提升（全权限 chmod、sudoers、setuid） | FAIL |
-| A23 | 不逃路径 | 路径穿越 / symlink 逃逸 | FAIL |
+| 编号 | 名称 | 检测什么 | 判定 | OWASP ASI | MITRE ATLAS |
+|---|---|---|---|---|---|
+| A1 | 不碰敏感 | `.env` / `*.pem` / `id_rsa` 等敏感文件被修改 | FAIL | ASI06 | 待核 |
+| A2 | 不泄密钥 | API Key（AWS、OpenAI、Anthropic、DeepSeek、GitHub、Stripe、Google、Slack）/ Token / JWT / 私钥模式泄漏 | FAIL | ASI06 | 待核 |
+| A3 | 不改越界 | 修改文件路径与任务描述不匹配 | WARN | ASI03 | AML.T0051 |
+| A4 | 不删配置 | 配置文件被删除 | FAIL | ASI06 | 待核 |
+| A5 | 不瞒真相 | commit message 为空或纯占位符 | WARN | ASI09 | 待核 |
+| A6 | 不坏构建 | 构建配置文件异常改动 | WARN | ASI08 | 待核 |
+| A7 | 不存盲改 | 被修改文件无读取记录（依赖 task/logs） | FAIL/WARN | ASI09 | 待核 |
+| A8 | 不逃验证 | 构建文件变更后无测试记录 | FAIL/WARN | ASI08 | 待核 |
+| A9 | 不纳注入 | 忽略指令/prompt 注入风险模式 | FAIL | ASI01, ASI03 | AML.T0051 |
+| A10 | 不引毒源 | 依赖包黑名单 + typosquatting + postinstall 注入 | WARN | ASI04 | AML.T0020 |
+| A11 | 不滥资源 | 资源滥用（超大文件、大行数删除等） | WARN | ASI08 | 待核 |
+| A18 | 垃圾文件 | 临时文件名模式的垃圾文件 | WARN | ASI09 | 待核 |
+| A19 | msg 质量 | commit message 命中黑名单词或过短 | FAIL | ASI09 | 待核 |
+| A20 | 不泄外联 | 数据外传（curl/wget POST、WebSocket、DNS 隧道） | FAIL | ASI04 | AML.T0029 |
+| A21 | 不植后门 | 持久化后门（LaunchAgent/systemd/crontab/注册表自启） | FAIL | ASI05 | AML.T0051 |
+| A22 | 不越权限 | 权限提升（全权限 chmod、sudoers、setuid） | FAIL | ASI03 | 待核 |
+| A23 | 不逃路径 | 路径穿越 / symlink 逃逸 | FAIL | ASI03 | 待核 |
 
-**扩展规则 9 条（默认关闭，`extendedRulesEnabled: true` 启用）**：
+**扩展规则 10 条（默认关闭，`extendedRulesEnabled: true` 启用）**：
 
-| 编号 | 名称 | 检测什么 | 判定 |
-|---|---|---|---|
-| A14 | 知识库越权 | 访问超出工作流声明范围的知识库页面（事后审计） | WARN |
-| A15 | 不盲动 | workflow 节点未声明 actions | FAIL |
-| A16 | 非授权文件变更 | 非声明范围文件被修改（行为级） | FAIL |
-| A17 | 异常批量变更 | 单次提交变更文件数超阈值（filesystem 模式） | WARN |
-| A24 | 交付物落点 | 新增交付物类文件落点须在声明目录白名单内（默认空=全不检，opt-in；越界 FAIL） | FAIL |
-| E1 | 不落测试 | 测试文件被提交到生产目录 | WARN |
-| E2 | TODO 未声明 | 新增 TODO 未在任务中声明 | WARN |
-| E4 | 不低注释 | 新增 >200 行且注释率 <5% | WARN |
-| E5 | 数据产物审计 | SMB 数据产物（CSV/JSON）数值勾稽不一致（合计≠明细和）/ 数值行缺 source 引用 / 同字段 unit 口径冲突 | FAIL/WARN |
+| 编号 | 名称 | 检测什么 | 判定 | OWASP ASI | MITRE ATLAS |
+|---|---|---|---|---|---|
+| A14 | 知识库越权 | 访问超出工作流声明范围的知识库页面（事后审计） | WARN | ASI03 | 待核 |
+| A15 | 不盲动 | workflow 节点未声明 actions | FAIL | ASI03 | 待核 |
+| A16 | 非授权文件变更 | 非声明范围文件被修改（行为级） | FAIL | ASI02 | 待核 |
+| A17 | 异常批量变更 | 单次提交变更文件数超阈值（filesystem 模式） | WARN | ASI08 | 待核 |
+| A24 | 交付物落点 | 新增交付物类文件落点须在声明目录白名单内（默认空=全不检，opt-in；越界 FAIL） | FAIL | ASI03 | 待核 |
+| E1 | 不落测试 | 测试文件被提交到生产目录 | WARN | ASI09 | 待核 |
+| E2 | TODO 未声明 | 新增 TODO 未在任务中声明 | WARN | ASI09 | 待核 |
+| E4 | 不低注释 | 新增 >200 行且注释率 <5% | WARN | ASI09 | 待核 |
+| E5 | 数据产物审计 | SMB 数据产物（CSV/JSON）数值勾稽不一致（合计≠明细和）/ 数值行缺 source 引用 / 同字段 unit 口径冲突 | FAIL/WARN | ASI09 | 待核 |
+| E6 | 提示注入防护 | prompt 载体文件（SKILL/ FDE/ 目录 + SKILL.md/fde.md/role-*.md）新增行中的隐藏指令载荷（HTML 注释/零宽字符）、系统消息边界伪造、多轮持续角色操控（OWASP ASI03 对位；与 A9 单行注入评分判定面互补） | FAIL | ASI03 | AML.T0051 |
 
-### 26 条规则的判定化归属（判定层接管后的逐条去向）
+### 27 条规则的判定化归属（判定层接管后的逐条去向）
 
-> 上表是 26 条规则的**完整清单**（有什么 + 名称），本表是它们的**接管去向**（判定层就位后每条怎么触发），**名称不再重列、回指上表**。配套的架构边界与三维度增补见 [ARCHITECTURE · 审计规则面的判定化边界](./docs/ARCHITECTURE.md#审计规则面的判定化边界26-条规则--判定层接管)。
+> 上表是 27 条规则的**完整清单**（有什么 + 名称），本表是它们的**接管去向**（判定层就位后每条怎么触发），**名称不再重列、回指上表**。配套的架构边界与三维度增补见 [ARCHITECTURE · 审计规则面的判定化边界](./docs/ARCHITECTURE.md#审计规则面的判定化边界27-条规则--判定层接管)。
 
 判定层的接管不改变规则条数，只改触发方式：规则从「自带判定器」降为「判据声明 + 证据采集器」。**分界线是规则自身的语义类**——`ruleClass` 为业务底线者说的是「是不是」（密钥提交没有「大概」），判定模型只能**加签**不能**代签**；能力拐杖与工程规范说的是「够不够」（越界程度、记录充分性），判定层承担主判定并用概率压误报。「仍需确定性」列的取值：**刚性** = 确定性判定为唯一防线，语义层只能把 PASS 升为 ASK、不得把 FAIL 降为放行；加签 = 确定性判定保留，语义层可追加一级 ASK；
 **阈值须校准** = 确定性骨架保留、**语义型**常数换成带校准依据的概率阈值；**留代码** = 体内常数是**结构化输入的纯函数**（长度 / 行数 / 文件数 / 注释率），保持确定性判定、不判定化——改概率是白增一层不可审计的间接，其真实缺陷是「系数来源不可追溯」，修法是记来源而非改成概率；否 = 判定层承担主判定。
@@ -411,6 +412,7 @@ sofagent audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 | E2 | 能力拐杖 | Score/Noul：TODO 与任务声明的语义关联度 | 否 |
 | E4 | 能力拐杖 | 注释率下限是纯函数，**留代码**；注释有效性交判定层（Score） | 留代码 + 加签 |
 | E5 | 工程规范 | 勾稽容差与合计键匹配是纯函数，**留代码**；来源引用充分性交判定层（Score） | 留代码 + 加签 |
+| E6 | 业务底线 | 载荷正则（隐藏注释/零宽/边界伪造/持续操控）是纯函数，**留代码**；语义级注入意图交判定层（Score） | 留代码 + 加签 |
 
 **六条纪律**：
 
@@ -421,10 +423,10 @@ sofagent audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 5. **判不了不得塞进 ASK**——弃权须以独立态 `ABSTAIN` 留痕，并带三源归因（置信不足 / 域外 / 判据缺失）。混装进 ASK 会让「该调阈值」与「该补判据」两件事在留痕上不可区分。
 6. **门槛健康度两个极端都要告警**——门槛过严 ⇒ 全量落入 ASK（等于没有分流）；过松 ⇒ ASK 率趋近于零（形同虚设）。**门槛设错不报错，只会静默失效。**「降级为判据者仍受自测约束」同族：判据声明（正负样例 + 拦截理由）随规则全量在位，样例一旦与规则行为不符即 fail-closed 曝红。
 
-**三处结构盲区（不是第 26、27、28 条规则）。** 26 条规则的检查对象是**变更产物 / 动作形态 / 声明清单比对**三类（`A14` 越权访问 / `A20` 外传 / `A22` 提权 / `A23` 穿越属**动作形态**，`A15` / `A16` 属**声明清单比对**），按动作门的六维检查清单做覆盖扫描后，有三件事现有判定面完全没有人管：凭证范围（当前凭证是否为本任务的最小授权——A22 查「有没有提权」，查的是权限本身，缺的是权限与任务的匹配度）、
-**动作授权状态**（这个动作有没有走过该走的授权——审批链在审计面不可见）与**序列累积效应**（每个单步都合规、合起来的序列是否造成不可接受的系统性变化；含隐蔽升级）。盲区登记见 [ARCHITECTURE · 审计规则面的判定化边界](./docs/ARCHITECTURE.md#审计规则面的判定化边界26-条规则--判定层接管)。
+**三处结构盲区（不是第 27、28、29 条规则）。** 27 条规则的检查对象是**变更产物 / 动作形态 / 声明清单比对**三类（`A14` 越权访问 / `A20` 外传 / `A22` 提权 / `A23` 穿越属**动作形态**，`A15` / `A16` 属**声明清单比对**），按动作门的六维检查清单做覆盖扫描后，有三件事现有判定面完全没有人管：凭证范围（当前凭证是否为本任务的最小授权——A22 查「有没有提权」，查的是权限本身，缺的是权限与任务的匹配度）、
+**动作授权状态**（这个动作有没有走过该走的授权——审批链在审计面不可见）与**序列累积效应**（每个单步都合规、合起来的序列是否造成不可接受的系统性变化；含隐蔽升级）。盲区登记见 [ARCHITECTURE · 审计规则面的判定化边界](./docs/ARCHITECTURE.md#审计规则面的判定化边界27-条规则--判定层接管)。
 
-**三处盲区的本质是证据面缺口，不是规则面缺口——故 26 条的条数一条不动。** 规则 = 判据 + 证据；**事实不可观测时加规则，只会得到一条永远弃权或永远放行的假规则**，它增加的不是覆盖而是「**看起来覆盖了**」的假绿。三处均已在仓内有归属，不另开出处：
+**三处盲区的本质是证据面缺口，不是规则面缺口——故 27 条的条数一条不动。** 规则 = 判据 + 证据；**事实不可观测时加规则，只会得到一条永远弃权或永远放行的假规则**，它增加的不是覆盖而是「**看起来覆盖了**」的假绿。三处均已在仓内有归属，不另开出处：
 
 - **凭证范围** → 归口 [ARCHITECTURE · 权限四原则与零凭证沙箱](./docs/ARCHITECTURE.md#权限四原则与零凭证沙箱)第 1 条（**原则已在、判定未在**）。**证据面**随 v1.5.4 凭证 Vault 关闭（该版交付表补入**凭证范围声明**产出）；判定面折进 A22 不越权限的语义层（`A22-2`「凭证与任务的匹配度」）——不新增条数。
 - **动作授权状态** → **可闭合——缺的是记录完整性，不是通道**：门禁判决记录 `TOOL_GATE` 的类型声明是「拦截 / 放行 / 告警」三态，实现**只落「告警」一态**（放行与拦截不留痕）；人审支路 `hitl/resolved/*.json`（`approved` / `rejected`）已在落盘、已被治理报表消费，**仅审计规则面未消费它**。证据面归口 v1.5.1 审计输入面（补齐三态并与 `intent.jsonl` 对账）；判定面折进 A16 语义层（`A16-2`）——不新增条数。
@@ -433,7 +435,7 @@ sofagent audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 ### AST 规则引擎 SSOT（8+2）
 
-> 官方 AST 规则引擎（`sofagent-ruleset-ast`）——10 条示范规则（8 条代码 AST + 2 条 OWASP 语义），与上面 26 条 git-diff 规则同管线。规则代码在 `engine/rules/src/ast/rules/`（注册表 `engine/rules/src/ast/rules/index.ts` 的 `builtinAstRules`），触发条件以各文件 `description` 字段为准。
+> 官方 AST 规则引擎（`sofagent-ruleset-ast`）——10 条示范规则（8 条代码 AST + 2 条 OWASP 语义），与上面 27 条 git-diff 规则同管线。规则代码在 `engine/rules/src/ast/rules/`（注册表 `engine/rules/src/ast/rules/index.ts` 的 `builtinAstRules`），触发条件以各文件 `description` 字段为准。
 
 | 编号 | 名称 | 触发条件 | 代码位置 |
 |---|---|---|---|
@@ -762,7 +764,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 本节聚焦与安全策略直接相关的三条：
 
 1. **数据的主权属于客户**——在客户现场看到的数据，一个字节都不应该出现在不该出现的地方：不进 AI 训练数据（除非合同明确授权）、不进案例素材（除非客户书面同意）。sofagent 工程呼应：数据不出本机（§已知风险）+ 联邦查询可选（§一传输安全）+ sensitivity 分级（§二知识安全）+ 最小权限原则。
-2. **诚实报告结果，包括坏消息**——按结果收费的模式里最大的道德风险是粉饰结果。sofagent 工程呼应：审计模块 git diff 硬证据（26 条规则零 token 纯静态判定，不靠模型「自评」）+ HMAC 链防篡改（§四审计与存储安全）+ 运行时审计日志按 git 仓库隔离（FORGE 自托管路径与约束层侧 data-sovereignty / llm-calls 均已按 repo-hash 隔离；commit 级 history.jsonl 保持全局存储，见 §四）。
+2. **诚实报告结果，包括坏消息**——按结果收费的模式里最大的道德风险是粉饰结果。sofagent 工程呼应：审计模块 git diff 硬证据（27 条规则零 token 纯静态判定，不靠模型「自评」）+ HMAC 链防篡改（§四审计与存储安全）+ 运行时审计日志按 git 仓库隔离（FORGE 自托管路径与约束层侧 data-sovereignty / llm-calls 均已按 repo-hash 隔离；commit 级 history.jsonl 保持全局存储，见 §四）。
 3. **不制造依赖，不贩卖恐惧**——不故意把系统做成黑箱让客户永远离不开你；不夸大「不用 AI 就会死」的恐慌促成交易。sofagent 工程呼应：MIT 开源（客户可自主审计代码）+ 交付物（ontology/workflow/skills）客户可自主维护 + FDE 离场机制（§五工程安全 install.sh 行为说明：只写入 `~/.sofagent/`，不锁死客户环境）。
 
 > 其余三条（把被替代的人当回事 / 对不该做的事说不 / 记住你代表技术本身）属 FDE 个人职业操守范畴，非安全工程范畴，详见 FDE/GUIDE.md。
@@ -788,20 +790,31 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 |---|---|---|---|
 | ASI01 目标劫持 | 注入指令覆盖 Agent 目标（prompt 注入） | A9 不纳注入（正则+leet 归一化）+ AST `asi01-prompt-injection`（system prompt 载体扫描）+ `<untrusted>` 包裹（§三 8 层防护层 1） | A9 不覆盖 Unicode 同形字/Base64 编码注入（§三编码绕过注）；语义级检测未排期 |
 | ASI02 工具滥用 | 越权调用工具、参数投毒 | Sub Agent 工具集零重叠（§三）+ 工具参数后端强制校验（8 层防护层 3，git diff 硬证据）+ A16 非授权文件变更（扩展） | 工具层校验是 commit 时点，非运行时阻断 |
-| ASI03 身份与权限滥用 | Agent 冒用身份、越权访问资源 | A22 不越权限（chmod/sudoers/setuid）+ A23 不逃路径（路径穿越/symlink）+ A14 知识库越权（扩展，事后审计）+ config `--sign-config` 签名防篡改 | A14/A15 是 commit 时审计非运行时阻断（§四）；同机多 Agent 无身份隔离（LIMITATIONS） |
+| ASI03 身份与权限滥用 | Agent 冒用身份、越权访问资源 | A22 不越权限（chmod/sudoers/setuid）+ A23 不逃路径（路径穿越/symlink）+ A14 知识库越权（扩展，事后审计）+ config `--sign-config` 签名防篡改 + **E6 提示注入防护**（v1.5.7 章三新增，扩展——prompt 载体文件的隐藏指令载荷/边界伪造/多轮持续操控，补此前「注入载荷结构检测」空白） | A14/A15 是 commit 时审计非运行时阻断（§四）；同机多 Agent 无身份隔离（LIMITATIONS） |
 | ASI04 供应链投毒 | 恶意依赖、typosquatting、postinstall 注入 | A10 不引毒源（黑名单+typosquatting+postinstall）+ AST `asi04-sbom`（lockfile 生成 SBOM 对漏洞库）+ `no-dynamic-require` + install.sh 只 clone 官方仓 | 旧 automerge preview 版 uuid 传递依赖风险已随 v1.3.5 迁移 @automerge/automerge@^3.4.1 消解（§五） |
 | ASI05 意外代码执行 | RCE——Agent 执行了非预期代码 | AST `no-eval` + `no-child-process-shell`（动态参数 FAIL）+ A21 不植后门（自启动持久化）+ A5 不瞒真相 + 审计模块自身 execFileSync 数组传参无 shell | 审计是事后检测，无运行时沙箱拦截 |
 | ASI06 记忆与上下文投毒 | 篡改知识库/审计历史污染后续决策 | HMAC 链（§四：`~/.sofagent-key` 签名 + `--verify-chain`/`--doctor` 校验）+ `--sign-config` + USB federation HMAC 全量签名 + trust 可信分级（web+restricted 丢弃）+ sensitivity 双重过滤 | 无密钥时退化 hash chain 弱校验；同用户进程可读密钥重签（§四 HMAC 威胁模型边界） |
 | ASI07 智能体间通信攻击 | A2A/联邦链路伪造、窃听 | 联邦查询四层防线（§一：MCP 走 stdio 本地进程通信（无网络监听面） + channel 路由 + AES-256-GCM 加密 payload + sensitivity 双重过滤）+ 三条配对路径（6 位码+指纹人工确认防 MITM）+ 密钥 24h 轮换 | OpenClaw channel 自身 ws:// 无 TLS——应用层加密是唯一保密防线（§一审计结论）；仅覆盖 sofagent 联邦链路，不覆盖外部 A2A 协议 |
 | ASI08 级联失效 | 一个 Agent 失败拖垮整条链 | 快照回滚（`internal/checkpoint` + snapshot）+ 联邦查询离线降级（单 peer 5s 超时跳过，全离线退化本地）+ A11 不滥资源（超大文件/大删除）+ A8 不逃验证 | 无跨 Agent 编排级熔断器（单 Agent 循环失控熔断依赖 OpenClaw loopDetection） |
-| ASI09 人机信任滥用 | Agent 虚假汇报骗取人工批准 | 26 条规则 git diff 硬证据（不采信模型自评）+ A7 不存盲改（无读取记录的修改 FAIL）+ A5/A19 msg 质量 + entry-gate 🔴 高风险强制人工审批 + daemon 文件监控事后对账 | Agent 可伪造 task/logs（§四已知绕过路径）；HITL 依赖人真正审阅 |
+| ASI09 人机信任滥用 | Agent 虚假汇报骗取人工批准 | 27 条规则 git diff 硬证据（不采信模型自评）+ A7 不存盲改（无读取记录的修改 FAIL）+ A5/A19 msg 质量 + entry-gate 🔴 高风险强制人工审批 + daemon 文件监控事后对账 | Agent 可伪造 task/logs（§四已知绕过路径）；HITL 依赖人真正审阅 |
 | ASI10 流氓 Agent | Agent 脱离监管自主行动 | `--doctor` 定期体检（hook 完整性/dist 哈希/config 签名/未审计 commit 扫描）+ post-commit 对账（绕过 commit-msg 留痕）+ daemon fs-watch + CI 侧 `--diff` 独立兜底（hook 可绕 CI 不可绕）+ 基线规则不可禁用 | 全部是事后检测/体检模型，无运行时进程级监控（如 eBPF）；影子审计器劫持见 §四 v1.2.7 风险 |
 | — | **未覆盖面** | 以下三类当前无对应能力，企业强合规场景需外部措施补位：多租户身份隔离（**查询侧 v0 已随 v1.4.7 交付；写入侧隔离尚未落地**）/ 运行时沙箱拦截 / 外部 A2A 协议安全（通信面仅覆盖 sofagent 联邦链路） | — |
 | — | **NIST AI RMF / EU AI Act / SOC 2** | 未做正式对照（无认证与审计证据链），不做映射声明；上述框架的证据链开源版不提供，开源版不虚标 | — |
 
-> 📌 阅读提示：表中「§N」指本 SECURITY.md 对应章节；规则 A1-A24 + E1-E5 编号见 §四「26 条审计规则完整清单」；AST 规则见 §四「AST 规则引擎 SSOT」。
+> 📌 阅读提示：表中「§N」指本 SECURITY.md 对应章节；规则 A1-A24 + E1-E6 编号见 §四「27 条审计规则完整清单」；AST 规则见 §四「AST 规则引擎 SSOT」。
 >
 > 📌 本表是**能力对位表**而非认证声明——sofagent 未通过任何第三方安全认证，映射仅表示「对该威胁类别存在已披露的对策与边界」，不构成合规背书。
+
+### OWASP ASI 覆盖率进度（v1.5.7 章三登记）
+
+> **登记口径**：ASI 项 = 仓内存在**规则级/引擎级**对策（可 grep 实证），不含仅流程性对策。进度按「规则引擎覆盖面」计——流程对策（如 entry-gate、daemon 监控）在映射表中有、不重复计数。
+
+| 进度 | 说明 |
+|---|---|
+| **5/10 规则级覆盖**（v1.5.7 章三起） | 实测覆盖：**ASI01**（`engine/rules/src/ast/rules/asi01-prompt-injection.ts`）· **ASI03**（`engine/audit/src/rules/rule-e6-prompt-injection-guard.ts`，v1.5.7 章三新增）· **ASI04**（`engine/rules/src/ast/rules/asi04-sbom.ts`）· **ASI08**（`engine/orchestrator/src/sandbox/circuit-breaker.ts` 级联故障熔断）· **ASI10**（同 circuit-breaker 失控 agent 行为监控）；其余五项（ASI02/05/06/07/09）经既有规则面间接对位（映射见上表），无专属规则载体 |
+| 补条节奏 | v1.3.7 补 ASI08+ASI10 → v1.3.9 补 ASI01+ASI04 → **v1.5.7 章三补 ASI03**；下一候选 ASI06（记忆投毒）——其判定面依赖 v1.6.0 判据 schema 定稿后才有稳定载体（devlog 章三裁定） |
+| 双编号映射 | 27 条规则全部附 OWASP ASI + MITRE ATLAS 双编号（规则元数据 `owaspAsi`/`mitreAtlas` 字段，SSOT 见 §四清单表两列）；ATLAS 编号以 MITRE ATLAS 公开知识库为准，未确证项标「待核」不虚标 |
+
 
 
 ## 报告漏洞
