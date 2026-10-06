@@ -252,7 +252,6 @@
   "engine/orchestrator/src/orchestrator-compare.ts::#3::catch { /* */ }",
   "engine/orchestrator/src/orchestrator-compare.ts::#4::catch { /* */ }",
   "engine/orchestrator/src/orchestrator-compare.ts::#5::catch { /* */ }",
-  "engine/orchestrator/src/refine-agent/browser-tools.ts::#1::catch { // 视觉模型失败 → 降级（不抛——分析必须可用） }",
   "engine/orchestrator/src/refine-agent/optimization-loop.ts::#1::catch { // 审计写入失败不阻断优化循环 }",
   "engine/orchestrator/src/refine-agent/snapshot-manager.ts::#1::catch { // git 操作失败静默（回滚失败不致命——审计兜底） }",
   "engine/orchestrator/src/refine-agent/snapshot-manager.ts::#1::catch { // 文件不在 git 管理中 → 跳过 }",

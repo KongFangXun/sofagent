@@ -649,9 +649,9 @@
 // v1.4.0 交付九：MLflow 接线——logBenchmarkToMlflow 进公共 API（eval/mcp/外部脚本 import 用）
 /* @public */ export { logBenchmarkToMlflow, buildMetrics, llmAsJudge } from './benchmark/mlflow-exporter';
 /* @public */ export type { MlflowMetrics, MlflowRunResult } from './benchmark/mlflow-exporter';
-// v1.4.0 交付十：Agentic Browser——BrowserSession 进公共 API（mcp-server 注册 4 工具用）
-/* @public */ export { BrowserSession, analyzeScreenshot, degradeImageToText, readImageMeta } from './refine-agent/browser-tools';
-/* @public */ export type { BrowserDriver, BrowserAuditSink, BrowserSessionFactory } from './refine-agent/browser-tools';
+// v1.3.9 交付七：dsh-vision 视觉降级三件进公共 API（原随 Agentic Browser 交付；
+// v1.5.7 章二：浏览器实现底座退役删除，三件图像能力迁 image-meta.ts 保留）
+/* @public */ export { analyzeScreenshot, degradeImageToText, readImageMeta } from './refine-agent/image-meta';
 /* @public */ export type {
   EvaluateCaseInput,
   AgentExecutionContext,

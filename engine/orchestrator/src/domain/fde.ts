@@ -116,8 +116,9 @@
   validateOntologyDraft,
 } from '../fde/ontology-draft';
 /* @public */ export type { OntologyDraftJson } from '../fde/ontology-draft';
-/* @public */ export { BrowserSession, analyzeScreenshot, degradeImageToText, readImageMeta } from '../refine-agent/browser-tools';
-/* @public */ export type { BrowserDriver, BrowserAuditSink, BrowserSessionFactory } from '../refine-agent/browser-tools';
+// v1.5.7 章二：浏览器实现底座退役——BrowserSession 等四符号不再导出；
+// 三件图像能力（dsh-vision 视觉降级本体）改自 image-meta.ts 导出
+/* @public */ export { analyzeScreenshot, degradeImageToText, readImageMeta } from '../refine-agent/image-meta';
 /* @public */ export {
   captureFDESession,
   restoreFDESession,
