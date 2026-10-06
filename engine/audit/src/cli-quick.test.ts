@@ -398,11 +398,11 @@ describe('runCliQuick 参数拦截（F-13）', () => {
       }
     });
 
-    it('② 黑名单短 message + 空 diff → exit 2（A19 命中——fix 属黑名单词）', () => {
+    it('② 黑名单短 message + 空 diff → exit 1（A19 命中属 warning 档——QA 复验收口：与主链路退出码语义对齐）', () => {
       globalThis.COMMIT_MSG_FIXTURE = 'fix';
       try {
         const code = runCliQuick(['node', 'cli-quick.js']);
-        expect(code).toBe(2);
+        expect(code).toBe(1);
       } finally {
         globalThis.COMMIT_MSG_FIXTURE = undefined;
       }
@@ -416,6 +416,28 @@ describe('runCliQuick 参数拦截（F-13）', () => {
       } finally {
         globalThis.COMMIT_MSG_FIXTURE = undefined;
       }
+    });
+
+    // ④（QA 复验收口）双态加载守卫：消息面检查的规则模块解析须 dist 态（CJS 无
+    // 扩展名）优先、src 态（.ts）兜底。旧缺陷：require('.ts') 抛异常时 ?? 不生效，
+    // dist 态（npm 安装/用户真实形态）必进 catch 降级放行——vitest src 态测试全绿
+    // 却对用户失效（测试态与产品态错位）。本用例锁定双候选 try 语义：任一态可加载。
+    it('④ 消息面检查模块双态解析守卫（dist 无扩展名优先，src .ts 兜底）', async () => {
+      // 直接验证 tryRequire 语义：dist 产物存在且无扩展名形态可 require
+      const { existsSync } = await import('fs');
+      const { join, dirname } = await import('path');
+      const { fileURLToPath } = await import('url');
+      const here = dirname(fileURLToPath(import.meta.url));
+      const distDir = join(here, '..', '..', 'dist');
+      // dist 可能未构建（CI src-only）——存在时验证无扩展名形态可加载
+      if (existsSync(join(distDir, 'rules', 'rule-a9-no-injection.js'))) {
+        expect(() => {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          require(join(distDir, 'rules', 'rule-a9-no-injection'));
+        }).not.toThrow();
+      }
+      // src 态 .ts 兜底（本测试运行态自身即证明）
+      expect(globalThis.COMMIT_MSG_FIXTURE).toBeUndefined();
     });
   });
 

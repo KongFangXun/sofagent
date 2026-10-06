@@ -143,12 +143,16 @@ describe('cli-quick diff 范围有效性（v1.5.1 F1）', () => {
     // 硬约束锁：守卫必须**只封「非默认范围的无效 ref」**这一条路径。默认范围
     // `HEAD~1..HEAD` 在根 commit 仓库里同样「不可解析」（无 HEAD~1），若守卫前置到
     // hasBaseline 分支之前，v1.4.5 P1 的根 commit 空树补审会被打成 exit 3——本用例双向钉住。
+    // ⚠️ F3 消息面检查收口（QA 复验）：message 须 ≥6 有效字符——`init` 本身就会命中
+    // A19（warning→exit 1），不再是「补审后仍空 → exit 0」的旧态。本用例改用良性长
+    // message 钉住**范围守卫**契约（exit 0 + 无 diff 解析失败）；A19 对短消息的拦截
+    // 由 cli-quick.test.ts F3-② 用例锁定（两契约解耦，各自可独立回归）。
     const dir = mkdtempSync(join(tmpdir(), 'sofagent-f1-rootcommit-'));
     tmpDirs.push(dir);
     execFileSync('git', ['init', '-q'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
     execFileSync(
       'git',
-      ['-c', 'user.email=t@example.invalid', '-c', 'user.name=f1', 'commit', '--allow-empty', '-q', '-m', 'init'],
+      ['-c', 'user.email=t@example.invalid', '-c', 'user.name=f1', 'commit', '--allow-empty', '-q', '-m', 'initial repository bootstrap'],
       { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] }
     );
     const r = run([], dir);
