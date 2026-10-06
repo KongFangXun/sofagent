@@ -290,7 +290,7 @@ export interface Rule {
    *
    * 缺省 `undefined`（= false）：样例为**描述性训练样本**（如「删除 .sofagent/config.yml」），
    * 非可执行夹具——加载时只做 schema + 矛盾断言，不做执行断言。
-   * 现状（v1.5.3 实测）：25 条中 5 条（A1/A2/A9/A20/A23）为**纯函数** scan、样例可执行，故标
+   * 现状（v1.5.3 实测）：26 条中 5 条（A1/A2/A9/A20/A23）为**纯函数** scan、样例可执行，故标
    * examplesExecutable；其余为描述性样本。⚠️ 纯度纪律：scan 读 cwd/fs/git（如 A18 调
    * `git ls-tree HEAD`）则**不得**标可执行——加载期断言须确定性，不得随运行目录抖动。
    */

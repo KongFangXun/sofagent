@@ -60,6 +60,15 @@ import { REDACTION_PATTERNS } from '@sofagent/core';
  *   - LEGACY_CLEANUP：审计目录维护动作——按 30 天上限清理 `*.bak-*` / `*.broken-*`
  *     遗留备份（`engine/core/src/audit-dir-maintenance.ts` 写入）。属**观测/过程记录**，
  *     无「通过/拒绝」成对判决语义，故登记在 `check-paired-records.mjs` 的非判决豁免集内。
+ *
+ * v1.5.7 章一新增 DATA_PRODUCT（SMB 数据产物决策）：
+ *   - DATA_PRODUCT：AI 生成数据产物（CSV/JSON/报表）的审计决策留痕——数据产物
+ *     审计规则（E5 勾稽/溯源/口径）的判定结论与数据产物生成/修订动作走本 kind。
+ *     沿用 COST / COVERAGE / CREDENTIAL_RECONCILE 三次成例：新决策语义 → 新 kind
+ *     （SMB 场景的数据决策既非 ARTIFACT_EDIT 的代码产物编辑，也非 TOOL_GATE 的
+ *     工具门禁——单列 kind 方能按需聚合与举证）。
+ *   ⚠️ 属 `@public` 契约——新增成员须同批同步 `tools/check/public-api-baseline.json`
+ *     与 `decision-log.ts` 的 VALID_KINDS 白名单（双落点）。
  */
 export type DecisionKind =
   | 'SPEC_CHANGE'       // 改变需求/规格（范围变更）
@@ -78,7 +87,8 @@ export type DecisionKind =
   | 'COVERAGE'          // 对账覆盖动作（v1.5.0 章八 · trace 三源对账结果入 decision-log——说的和干的差在哪）
   | 'INVALIDATION'      // 结论失效标记（v1.5.2 章四 · append-only 追加的「失效是标记不是抹除」条目）
   | 'CREDENTIAL_RECONCILE' // 授权面 × 凭证面对账结论（v1.5.4 章七 · 台账级三类错位判定入链）
-  | 'LEGACY_CLEANUP'; // 遗留备份接管清理（v1.5.6 章二 · audit 目录 30 天上限清理动作留痕）
+  | 'LEGACY_CLEANUP'    // 遗留备份接管清理（v1.5.6 章二 · audit 目录 30 天上限清理动作留痕）
+  | 'DATA_PRODUCT';     // SMB 数据产物决策（v1.5.7 章一 · AI 生成数据产物的审计/生成决策留痕——E5 勾稽/溯源/口径判定结论走本 kind）
 
 /**
  * 判断时刻分类（v1.3.6 交付⑮ · decisions.jsonl 完整版 · OpenFDE 启发）。

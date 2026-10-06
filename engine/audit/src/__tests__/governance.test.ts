@@ -267,3 +267,82 @@ describe('只读辅助出口（v1.5.0 章一）', () => {
     expect(r.rows[0].versionId).toBe('ent-2-v2'); // 全局最新在前
   });
 });
+
+// ══════════════════════════════════════════════════════════
+// v1.5.7 章一 · SMB 场景治理 KPI 复用回归
+// ══════════════════════════════════════════════════════════
+// 验证：E5 数据产物审计的结果照常进 governance 统计——
+//   ① 安全边界触发率（boundary.topRules 含 E5 行——审计覆盖率/问题率对新规则同源聚合）
+//   ② DATA_PRODUCT 决策进 decision-log 读数（readDecisionEntries 可查）
+// 治理面板零改动复用的证据：E5 的 RuleCheck 形态与既有 25 条一致（id/number/status），
+// history.jsonl 的 ruleResults 聚合路径不感知规则身份。
+describe('SMB 场景治理 KPI 复用（v1.5.7 章一）', () => {
+  it('E5 数据产物审计结果进安全边界统计（topRules 含 E5 / 触发率含数据产物变更）', () => {
+    // 模拟一次 SMB 数据产物审计运行：E5 FAIL（勾稽不一致）落 history.jsonl
+    writeAuditHistory([
+      {
+        timestamp: '2026-09-16T10:00:00Z',
+        exitCode: 2,
+        ruleResults: [
+          { id: 'E5', number: 205, name: 'E5 数据产物审计', status: 'FAIL', details: ['data/report.csv: 数值勾稽不一致'] },
+        ],
+        diffFileCount: 1,
+        commitSha: 'smb-sha-1',
+      },
+      {
+        timestamp: '2026-09-16T11:00:00Z',
+        exitCode: 0,
+        ruleResults: [],
+        diffFileCount: 1,
+        commitSha: 'smb-sha-2',
+      },
+    ]);
+    const report = computeGovernanceKpis({ dataDir, now: FIXED_NOW });
+    // ① 触发率：2 变更 1 FAIL → 0.5
+    expect(report.boundary.totalChanges).toBe(2);
+    expect(report.boundary.triggerRate).toBe(0.5);
+    expect(report.boundary.blockRate).toBe(0.5);
+    // ② topRules：E5 进高危规则榜（新规则与既有规则同源聚合，无需治理面改动）
+    expect(report.boundary.topRules.length).toBeGreaterThan(0);
+    expect(report.boundary.topRules[0].rule).toBe('E5');
+    expect(report.boundary.topRules[0].name).toBe('E5 数据产物审计');
+    expect(report.boundary.topRules[0].failCount).toBe(1);
+    // ③ 覆盖率：SMB 数据变更（daemon 模式）同样计 commit 锚
+    expect(report.coverage.rate).toBe(1); // 2/2 有 sha
+  });
+
+  it('DATA_PRODUCT 决策条目可从 decision-log 读出（E5 命中留痕的消费面）', () => {
+    writeDecisionLog([
+      {
+        ts: '2026-09-16T10:00:00Z', agentId: 'sofagent-audit', sessionId: 'e5-1', kind: 'DATA_PRODUCT',
+        moment: 'ATTRIBUTION',
+        why: { text: 'data/report.csv: 数值勾稽不一致——键「total」合计声明 999 ≠ 明细之和 300', tags: ['e5', 'data-product', 'fail'] },
+        evidence: ['rule=E5', 'status=FAIL', 'file=data/report.csv'],
+      },
+    ]);
+    const entries = readDecisionEntries(dataDir);
+    const dp = entries.filter((e) => e.kind === 'DATA_PRODUCT');
+    expect(dp.length).toBe(1);
+    expect(dp[0].why.text).toContain('勾稽不一致');
+    expect(dp[0].evidence).toContain('rule=E5');
+  });
+
+  it('周报导出含 E5 触发行（SMB 老板一页纸对数据产物问题可见）', () => {
+    writeAuditHistory([
+      {
+        timestamp: '2026-09-16T10:00:00Z',
+        exitCode: 2,
+        ruleResults: [
+          { id: 'E5', number: 205, name: 'E5 数据产物审计', status: 'FAIL', details: ['口径冲突'] },
+        ],
+        diffFileCount: 1,
+        commitSha: 'smb-sha-3',
+      },
+    ]);
+    const report = computeGovernanceKpis({ dataDir, now: FIXED_NOW });
+    const md = formatGovernanceWeekly(report);
+    expect(md).toContain('E5');
+    expect(md).toContain('数据产物审计');
+    expect(md).toContain('高危规则');
+  });
+});

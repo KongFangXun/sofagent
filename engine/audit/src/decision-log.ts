@@ -101,6 +101,10 @@ const VALID_KINDS: readonly string[] = [
   // 留痕，core/audit-dir-maintenance.ts 写入）。观测/过程记录，无判决两侧，
   // 已在 check-paired-records.mjs 非判决豁免集登记（reason+trigger 齐备）。
   'LEGACY_CLEANUP',
+  // DATA_PRODUCT：v1.5.7 章一——SMB 数据产物决策（AI 生成 CSV/JSON/报表的审计判定
+  // 结论与产物生成/修订动作留痕，E5 勾稽/溯源/口径规则的决策面）。与
+  // decision-schema.ts 的 DecisionKind union 双落点同步——只改其一则运行时判非法 kind。
+  'DATA_PRODUCT',
 ];
 
 /** 合法 LoopPhase 集合 */

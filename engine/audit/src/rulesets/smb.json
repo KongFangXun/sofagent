@@ -1,0 +1,51 @@
+{
+  "name": "smb",
+  "version": "1.0.0",
+  "description": "SMB（中小企业）数据产物 overlay——数值勾稽 + 来源可溯 + 口径一致三类（v1.5.7 章一 · E5 的 JSON 规则集形态，供 --ruleset smb / industry overlay 通道加载）",
+  "author": "sofagent",
+  "homepage": "https://github.com/KongFangXun/sofagent",
+  "rules": [
+    {
+      "id": "smb-total-mismatch",
+      "name": "数值勾稽检测",
+      "description": "数据产物中「合计/总计/小计」行的数值与明细行之和不相符（AI 生成报表的典型错误——数字是编的）",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(合计|总计|小计|total|subtotal)\\s*[,:=]\\s*(-?\\d[\\d,]*\\.?\\d*)",
+      "filePattern": "\\.(csv|tsv|json|jsonl)$",
+      "message": "数据产物含合计声明——请核对合计与明细之和一致（勾稽）: {match}",
+      "examples": {
+        "match": ["合计,999", "total: 500"],
+        "notMatch": ["region,amount（表头行无合计声明）"]
+      }
+    },
+    {
+      "id": "smb-missing-source",
+      "name": "来源可溯检测",
+      "description": "携带数值的数据行缺少 source/来源 引用——AI 生成的每个数字须可回溯源数据",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(?i)^(?!.*(source|来源|src|origin)).*(?:amount|金额|数量|quantity|count)\\s*[,:=]\\s*\\d",
+      "filePattern": "\\.(csv|tsv|json|jsonl)$",
+      "message": "数据行缺来源引用（source/来源）——AI 生成数据须逐行可回溯源数据: {match}",
+      "examples": {
+        "match": ["amount=100", "金额:5000"],
+        "notMatch": ["amount=100, source: raw/q3.csv"]
+      }
+    },
+    {
+      "id": "smb-unit-conflict",
+      "name": "口径一致检测",
+      "description": "同一数据产物文件内同名字段的 unit/口径标注互相冲突（如一行 CNY 一行 USD——同名不同义）",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)([\\w-]+)[._]unit\\s*[:=]\\s*\"?([a-z%]+)\"?",
+      "filePattern": "\\.(json|jsonl|csv)$",
+      "message": "字段 unit 标注——同文件内同名字段须同口径（多标注不一致时须人工复核）: {match}",
+      "examples": {
+        "match": ["amount.unit: CNY", "price_unit: USD"],
+        "notMatch": ["无 unit 标注的普通数据行"]
+      }
+    }
+  ]
+}

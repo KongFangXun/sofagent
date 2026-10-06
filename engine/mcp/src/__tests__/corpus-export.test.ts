@@ -157,12 +157,12 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
     expect(text).toContain('编号位');
     const d = res.result?._meta?.data ?? {};
     expect(d.ok).toBe(true);
-    // 28 编号位（25 实现 + 3 跳号占位）
-    expect(d.rules.counts.totalSlots).toBe(28);
-    expect(d.rules.counts.implemented).toBe(25);
+    // 29 编号位（26 实现 + 3 跳号占位）
+    expect(d.rules.counts.totalSlots).toBe(29);
+    expect(d.rules.counts.implemented).toBe(26);
     expect(d.rules.counts.mergedPlaceholders).toBe(3);
-    // verifiers 三桶（机器可判 23 / 需人审 4 / 启发式 1）
-    expect(d.verifiers.buckets.machine).toBe(23);
+    // verifiers 三桶（机器可判 24 / 需人审 4 / 启发式 1）
+    expect(d.verifiers.buckets.machine).toBe(24);
     expect(d.verifiers.buckets.human).toBe(4);
     expect(d.verifiers.buckets.heuristic).toBe(1);
     // HMAC 签名在场（32 位十六进制）
@@ -205,7 +205,7 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
     const res = lastResponse();
     const d = res.result?._meta?.data ?? {};
     expect(d.ok).toBe(true);
-    expect(d.rules.counts.totalSlots).toBe(28);
+    expect(d.rules.counts.totalSlots).toBe(29);
   });
 
   it('audit 包缺席降级分支：auditEvent 置 null（源码契约锁——createRequire 绕过 mock，行为面归 e2e）', async () => {

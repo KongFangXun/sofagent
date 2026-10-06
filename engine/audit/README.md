@@ -207,11 +207,11 @@ sofagent audit --diff HEAD~1..HEAD --webhook feishu --webhook-url "https://open.
 | A22 不越权限 | 权限提升检测（全权限 chmod、sudoers 修改、setuid/setgid、owner 变更为特权用户） | FAIL | 业务底线 |
 | A23 不逃路径 | 路径穿越检测（三级以上目录穿越序列、symlink 逃逸） | FAIL | 业务底线 |
 
-### 扩展规则（A14-A17 + A24 + E1/E2/E4，共 8 条）
+### 扩展规则（A14-A17 + A24 + E1/E2/E4/E5，共 9 条）
 
-> ℹ️ E1-E4 内部规则 ID 为 201-204，预留 101-199 区间给未来默认规则扩展。E3 已并入 A11（行数维度），编号跳号。
+> ℹ️ E1-E5 内部规则 ID 为 201-205，预留 101-199 区间给未来默认规则扩展。E3 已并入 A11（行数维度），编号跳号。E5 为 v1.5.7 章一新增（SMB 数据产物审计）。
 
-A14-A17 + A24 + E1/E2/E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
+A14-A17 + A24 + E1/E2/E4/E5 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
 
 | 规则 | 判定 | 严重度 | 分级 |
 |------|------|:--:|------|
@@ -223,6 +223,7 @@ A14-A17 + A24 + E1/E2/E4 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=f
 | E1 不含测试文件 | 测试文件被提交到生产目录 | WARN | 能力拐杖 |
 | E2 TODO 未声明 | 新增 TODO 未在任务中声明 | WARN | 能力拐杖 |
 | E4 低注释率 | 新增 >200 行且注释率 < 5% | WARN | 能力拐杖 |
+| E5 数据产物审计 | SMB 场景：数值勾稽（合计≠明细和 FAIL）+ 来源可溯（数值行缺 source 引用 WARN）+ 口径一致（同字段 unit 冲突 FAIL） | FAIL/WARN | 工程规范 |
 
 > ⚠️ **A15 说明**：v1.1.3 起 A15 升级为 FAIL——workflow.yml 节点未声明 actions 时 FAIL（防 Agent 不声明 actions 绕过所有约束）。原 WARN 设计已废弃。
 
