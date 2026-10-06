@@ -88,7 +88,7 @@ evolve) — works right after installation |
 |---|---|---|---|
 | Positioning | full-history secret scanning | generic commit-hook framework | Agent behavior audit harness |
 | Evidence | repo text patterns | your own scripts | git-diff hard evidence + Agent logs + decision trail |
-| Coverage | secret leaks | anything (DIY) | 26 rules: secrets / scope / injection / privilege / backdoors |
+| Coverage | secret leaks | anything (DIY) | 27 rules: secrets / scope / injection / privilege / backdoors |
 | Deployment cost | Low — standalone binary, zero deps | Low — one CLI from your language ecosystem | Medium — a one-time `install.sh` on the enterprise device (you can also try it zero-config via npx first) |
 | Maintenance burden | Low — rules track upstream | Medium — custom scripts are yours to maintain | Medium — rules and hooks ship with this repo, but each version needs the hook reinstalled and config re-aligned |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both — focused on Agent governance |
@@ -134,7 +134,7 @@ What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
-- 🧱 **26 audit rules + 104 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 21 of the 26 rules run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs, active once an Agent is connected), 1 filesystem scan;
+- 🧱 **27 audit rules + 104 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 22 of the 27 rules run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs, active once an Agent is connected), 1 filesystem scan;
   log-based rules such as A7/A8 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design);
 evidence is based on local diffs; **not fail-closed by default** — the config can be tampered with and the hooks
   skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 25 = 17 default + 8 extensions)
@@ -149,7 +149,7 @@ together by the deliverables handed over in between**:
 - **On entry · generate judgment**: four steps — **map the workflow → build dual graphs → qualify AI nodes → deploy**. Dual graphs = business graph (system boundaries, data flows; read by humans) + ontology graph (shared semantic foundation; read by AI), turning the enterprise into a
   machine-readable structure; for every AI node, "what counts as done (merge_criteria) · who signs off (approver) · when it runs (trigger)" is judged here and frozen into the deliverables
 (workflow.yml + ontology + skills).
-- **After departure · retain judgment**: the FDE leaves, the judgment stays — audit triggers automatically on change events (commits) against the frozen criteria (evidence-tiered: 21 of the 26 rules run on git-diff hard evidence — see Core Features); daemon inspects 7×24, snapshots roll back,
+- **After departure · retain judgment**: the FDE leaves, the judgment stays — audit triggers automatically on change events (commits) against the frozen criteria (evidence-tiered: 22 of the 27 rules run on git-diff hard evidence — see Core Features); daemon inspects 7×24, snapshots roll back,
   experience distills back. The human leaves, governance doesn't.
 
 > 🔗 **Why they must be one thing**: the deliverables are a living state shared by both stages — written on entry, read during execution, written back during evolution (trial branches promoted to baseline, reflections distilled back). Without FDE, the constraint layer has no criteria to enforce;
@@ -187,7 +187,7 @@ the platform:
 |---|---|---|---|
 | **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; see "Upstream & plugin entries" below) — 7 lifecycle events incl. `tools/pre-execute` (per the vocabulary table in `engine/dsh-plugins/SEAMS.md`) |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
-| **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 26 rules, not call-level interception) |
+| **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 27 rules, not call-level interception) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
 
 - **Never assume capability parity — tiers differ in injection strength, not in "supported or not"** — DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text the Agent reads on its own (advisory). "Supports platform X" means the
@@ -215,7 +215,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## The Two FDE Harness Phases
 
-**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above — what this section adds is the **organizational reading**: together they are onboarding a digital employee (the after-departure side runs daemon patrols 24/7, every commit triggers the 26 audit rules including **AgentShield static scanning across five config surfaces**, snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
+**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above — what this section adds is the **organizational reading**: together they are onboarding a digital employee (the after-departure side runs daemon patrols 24/7, every commit triggers the 27 audit rules including **AgentShield static scanning across five config surfaces**, snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
 
 | Organizational act | sofagent equivalent |
 |---|---|
@@ -261,7 +261,7 @@ npx -y -p sofagent sofagent audit
 
 > ⚠️ This step is a **one-off audit** (inside a single process) — it does not install a git hook, so later commits will not be auto-blocked. For continuous protection run `sofagent audit --init` (see Full install below).
 
-Here is what it looks like when a known-format secret leak gets blocked (real output; A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#26-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys — other known formats included; generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). The screenshot on the first screen shows the A1 scenario (a .env sensitive-file commit blocked, exit 2); A2 secret-format detection is a separate rule, not repeated here.
+Here is what it looks like when a known-format secret leak gets blocked (real output; A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#27-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys — other known formats included; generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). The screenshot on the first screen shows the A1 scenario (a .env sensitive-file commit blocked, exit 2); A2 secret-format detection is a separate rule, not repeated here.
 
 **Full install** (Node.js ≥ 18, download and review before running) — **installed on the enterprise devices running the AI nodes**:
 
@@ -388,11 +388,11 @@ npx -y -p sofagent sofagent audit --ruleset security   # load the security rules
 |---|---|
 | **Full doc index** (by intent) | [WIKI](./docs/WIKI.md) |
 | Install, use, troubleshoot | [HANDBOOK](./docs/HANDBOOK.md) |
-| Architecture & the 26 rules | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| Architecture & the 27 rules | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 5769 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 26 audit rules · fresh-eyes independent review continuously running.
+> 🧪 **Engineering credibility** (current): 5809 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 26 audit rules · fresh-eyes independent review continuously running.
 > **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
 >the load-chain utility package and dsh-plugin-kit are outside this counting standard) — they are not the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account — see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever
