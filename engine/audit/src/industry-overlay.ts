@@ -24,6 +24,9 @@ export const INDUSTRY_OVERLAY_MAP: Record<string, string> = {
   government: 'government',
   gov: 'government',
   ai: 'ai',
+  // v1.5.7 章一新增：SMB（中小企业）场景——无代码仓库的纯数据节点部署
+  // （context.md 标注 industry: smb → 自动加载 smb overlay，叠加默认规则）
+  smb: 'smb',
 };
 
 export interface OverlayDecision {

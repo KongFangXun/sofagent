@@ -177,6 +177,19 @@ const REGISTRY = [
     ],
     exempt: undefined,
   },
+  {
+    family: '数据产物审计判定（DATA_PRODUCT）',
+    kind: 'DATA_PRODUCT',
+    // 二元对（N=2）：E5 数据产物审计的 FAIL / WARN 两态。v1.5.7 章一：index.ts
+    //   主审计对 E5 命中逐条留痕（moment=ATTRIBUTION），why.tags 携带 fail/warn
+    //   侧标签 + evidence 带 status= 行——两态字面量均在 writer 内可落。
+    states: ['FAIL', 'WARN'],
+    writers: [
+      // v1.5.7 章一：数据产物审计决策留痕（E5 勾稽/溯源/口径命中 → 挂链）
+      { file: 'engine/audit/src/index.ts' },
+    ],
+    exempt: undefined,
+  },
 ];
 
 // 非判决类 kind（观测/过程记录——天然无「两侧」语义）整类豁免。

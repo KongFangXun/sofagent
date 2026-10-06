@@ -39,7 +39,7 @@ export interface AuditConfig {
   testPatterns: string[];
   /** 「不改越界」阈值——不相关文件占比超过此比例时 WARN */
   carefulModifyThreshold: number;
-  /** 是否启用扩展规则（E1-E4 + A14-A17 + A24） */
+  /** 是否启用扩展规则（E1-E5 + A14-A17 + A24） */
   extendedRulesEnabled: boolean;
   /** 按规则名禁用——key 为 a1~a23/e1~e4，value 为 false 时禁用 */
   rules?: Record<string, boolean>;
