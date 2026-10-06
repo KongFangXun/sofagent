@@ -65,3 +65,30 @@
 /* @public */ export type { GateHistory, GateVerdict, NativeGateOptions } from './native-gate';
 /* @public */ export { buildProposerPrompt, parseProposalWithSafety, loadImpactLedger, loadFailureLedger } from './proposer';
 /* @public */ export type { ProposerInput, SkillProposal, ProposalWithSafety } from './proposer';
+
+// ── v1.5.7 章四：五维技能健康度 + 退役候选（SkillOps）──
+/* @public */ export {
+  recordSkillUsage,
+  readSkillUsage,
+  generateHealthReport,
+  renderHealthReport,
+  archiveSkill,
+  archiveSkillWithScore,
+  restoreSkill,
+  resolveSkillRoot,
+  resolveSkillArchiveDir,
+  resolveArchiveLedgerPath,
+  resolveSkillDebtPath,
+  resolveSkillUsagePath,
+  USAGE_SATURATION,
+  REFERENCE_SATURATION,
+  STALE_DAYS,
+  RETIREMENT_THRESHOLD,
+  RETIREMENT_USAGE_FLOOR,
+} from './skill-health';
+/* @public */ export type {
+  SkillUsageRecord,
+  SkillHealthDimensions,
+  SkillHealthReport,
+  ArchiveLedgerEntry,
+} from './skill-health';

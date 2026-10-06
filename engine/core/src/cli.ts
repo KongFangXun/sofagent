@@ -24,6 +24,7 @@ async function main() {
     console.log('  doctor --repair  自动修复可修复的问题（创建目录 / 安装依赖等）');
     console.log('  doctor --refresh 备份当前配置 → 重置默认 → 前后 diff 报告（写操作，留痕）');
     console.log('  doctor --archive 列出归档记忆事实（常规检索不可见，显式才查）');
+    console.log('  stats --tools tool 使用率三视图（被调用 / 零调用 / 频次分布——读 tool-usage.jsonl）');
     console.log('  verify        装后验证（11 个检查类别）');
     console.log('');
     console.log('Verify options:');
@@ -52,6 +53,20 @@ async function main() {
         ? runDoctorWithRepair(projectDir, true)
         : runDoctor(projectDir, { archive: wantArchive });
       process.exit(report.allOk ? 0 : 1);
+    }
+    // v1.5.7 章四：tool 使用率盘点三视图（读 mcp usage-tracker 落盘的 tool-usage.jsonl；
+    // core 只读文件不自 mcp import——依赖方向红线见 tool-stats.ts 头注）
+    case 'stats': {
+      if (!args.includes('--tools')) {
+        console.error('❌ stats 当前支持 --tools 视图（tool 使用率三视图）');
+        console.error('   用法: sofagent-core stats --tools');
+        process.exit(1);
+      }
+      const { buildToolStats, renderToolStats } = await import('./tool-stats');
+      const report = buildToolStats();
+      const registryAvailable = report.neverCalled.length > 0 || report.called.length >= 0; // registry 软可达时 neverCalled 已填；不可达时 buildToolStats 内部置空
+      console.log(renderToolStats(report, registryAvailable));
+      process.exit(0);
     }
     case 'verify': {
       // 重新解析 verify 的默认参数（跳过 'verify' 子命令名）

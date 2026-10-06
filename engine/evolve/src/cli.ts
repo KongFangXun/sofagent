@@ -13,6 +13,7 @@ async function main() {
     console.log('  run <path>     运行 Skill 优化（默认内置 native gate，零外部依赖）');
     console.log('  check <path>   扫描 Skill 文件安全性');
     console.log('  propose        生成 DSH 技能更新提案（F14 · v1.5.7——buildProposerPrompt 拼装 + 模型输出安全闸解析）');
+    console.log('  skill-health   五维技能健康度（v1.5.7 章四——report 出报告与退役候选 / archive 归档 / restore 回滚）');
     process.exit(0);
   }
 
@@ -156,9 +157,71 @@ async function main() {
       }
       break;
     }
+    // v1.5.7 章四：五维技能健康度（SkillOps）——report 出报告 + 退役候选，
+    // archive/restore 是退役动作（归档可回滚，人工确认制）
+    case 'skill-health': {
+      const action = args[1] ?? 'report';
+      const skillHealth = await import('./skill-health');
+
+      if (action === 'report') {
+        const flag = (name: string): string | undefined => {
+          const i = args.indexOf(`--${name}`);
+          return i !== -1 ? args[i + 1] : undefined;
+        };
+        const skillRoot = flag('root');
+        const report = skillHealth.generateHealthReport({ skillRoot });
+        if (args.includes('--json')) {
+          console.log(JSON.stringify(report, null, 2));
+        } else {
+          console.log(skillHealth.renderHealthReport(report));
+        }
+        process.exit(0);
+      }
+
+      if (action === 'archive') {
+        // 用法: skill-health archive <path> [--by <operator>] [--root <dir>]
+        const targetPath = args[2];
+        if (!targetPath) {
+          console.error('❌ skill-health archive 需要 <skill-file-path> 参数');
+          console.error('   用法: sofagent-evolve skill-health archive <path> [--by <operator>]（人工确认制——先看 report 再确认归档）');
+          process.exit(1);
+        }
+        const byIdx = args.indexOf('--by');
+        const confirmedBy = byIdx !== -1 ? (args[byIdx + 1] ?? 'manual') : 'manual';
+        const rootIdx = args.indexOf('--root');
+        const root = rootIdx !== -1 ? args[rootIdx + 1] : undefined;
+        try {
+          const entry = skillHealth.archiveSkillWithScore(targetPath, -1, confirmedBy, { skillRoot: root });
+          console.log(`✅ 已归档: ${entry.originalPath} → ${entry.archivedAs}（台账 ${skillHealth.resolveArchiveLedgerPath()}，可 skill-health restore 回滚）`);
+          process.exit(0);
+        } catch (err) {
+          console.error(`❌ 归档失败: ${(err as Error).message}`);
+          process.exit(1);
+        }
+      }
+
+      if (action === 'restore') {
+        // 用法: skill-health restore [path] [--root <dir>]
+        const targetPath = args[2];
+        const rootIdx = args.indexOf('--root');
+        const root = rootIdx !== -1 ? args[rootIdx + 1] : undefined;
+        try {
+          const entry = skillHealth.restoreSkill(targetPath, { skillRoot: root });
+          console.log(`✅ 已回滚: ${entry.archivedAs} → ${entry.originalPath}`);
+          process.exit(0);
+        } catch (err) {
+          console.error(`❌ 回滚失败: ${(err as Error).message}`);
+          process.exit(1);
+        }
+      }
+
+      console.error(`Unknown skill-health action: ${action}`);
+      console.error('Usage: sofagent-evolve skill-health <report|archive|restore> [options]');
+      process.exit(1);
+    }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-evolve <run|check|propose>');
+      console.error('Usage: sofagent-evolve <run|check|propose|skill-health>');
       process.exit(1);
   }
 }

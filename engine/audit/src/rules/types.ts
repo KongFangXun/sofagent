@@ -290,7 +290,7 @@ export interface Rule {
    *
    * 缺省 `undefined`（= false）：样例为**描述性训练样本**（如「删除 .sofagent/config.yml」），
    * 非可执行夹具——加载时只做 schema + 矛盾断言，不做执行断言。
-   * 现状（v1.5.3 实测）：26 条中 5 条（A1/A2/A9/A20/A23）为**纯函数** scan、样例可执行，故标
+   * 现状（v1.5.3 实测，v1.5.7 起 27 条）：5 条（A1/A2/A9/A20/A23）为**纯函数** scan、样例可执行，故标
    * examplesExecutable；其余为描述性样本。⚠️ 纯度纪律：scan 读 cwd/fs/git（如 A18 调
    * `git ls-tree HEAD`）则**不得**标可执行——加载期断言须确定性，不得随运行目录抖动。
    */
@@ -302,4 +302,18 @@ export interface Rule {
    * 条 7 批四收口后为唯一执行入口（check 旧路径已删除）。
    */
   scan(ctx: AuditContext): RuleScan;
+  /**
+   * v1.5.7 章三：OWASP Agentic Security Issues 编号映射（元数据回填，非判定逻辑）。
+   * 取值如 'ASI01'（目标劫持）/ 'ASI03'（提示注入防护）；一条规则可映射多个 ASI 项
+   * （逗号分隔）或多规则共映射同一项。证据来源：SECURITY.md〈OWASP ASI 对策表〉
+   * 逐行对照 + 规则判定面实测。未映射 = 无对位 ASI 项（留空不猜测）。
+   */
+  owaspAsi?: string;
+  /**
+   * v1.5.7 章三：MITRE ATLAS（Adversarial Threat Landscape for AI Systems）
+   * 攻击技术编号映射（元数据回填，非判定逻辑）。取值如 'AML.T0051'（注入）/
+   * 'AML.T0011'（资源开发）；证据来源以 MITRE ATLAS 公开知识库为准，
+   * 无法从公开知识确证的标「待核」。
+   */
+  mitreAtlas?: string;
 }
