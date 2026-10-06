@@ -352,7 +352,9 @@ export const TOOLS: ToolDef[] = [
     name: 'list_capabilities',
     // v1.4.0 修正：能力发现元工具不归任何角色面（原 roles:['ops'] 致专职收窄时被过滤，
     // Agent 首次连接拿不到能力地图——S59 回归抓出）。未打标 = 始终暴露（同动态工具机制）。
-    description: '返回完整能力清单（tools + resources）——Agent 首次连上时获取能力地图。',
+    // v1.5.7 章五：升级为「可拔能力地图」——tools/resources 之外返回 capabilities.json
+    // 的档位名 + 默认值 + 依赖级联 + 关档失效面 + shim 退役台账。
+    description: '返回完整能力清单（tools + resources + 可拔能力地图：档位/依赖级联/关档失效面）——Agent 首次连上时获取能力地图。',
     inputSchema: { type: 'object', properties: {} },
     // v1.4.8 条目 5 首批迁移：查表分发
     handler: (_args, _ctx?) => listCapabilities(),
