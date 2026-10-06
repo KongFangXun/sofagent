@@ -24,7 +24,7 @@
   · acceptance 373→**377** · 2026-09-26 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.3.md)
 - **v1.5.2** — 🔍 审计模块·对外开放面与判定语义：MCP audit 数据对外（`audit_query` 只读 + 事件订阅）· 约束导出外部可验（`ruleset_export`）· should-run 判定链 · 审计结论失效语义 · 网络出口治理面 · 事前授权补环 · DSH 插件 npm 首发面
 · 测试 5083→**5296**（+213，13 包 workspace（模块包）口径）· acceptance 367→**373** · MCP 新增 `audit_query`/`ruleset_export`（总数 107） · 2026-09-24 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.2.md)
-> 📌 **当前口径**：MCP tool 总数 **104**（v1.5.4 新增 `router_slots`，103→104；2026-09-26 浏览器四件套的 **MCP 面**（`playwright_*`）退役 107→103，实现底座保留待 v1.5.7 处置，裁定见 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md)；上方 107 为 v1.5.2 发版时点读数）
+> 📌 **当前口径**：MCP tool 总数 **104**（v1.5.4 新增 `router_slots`，103→104；2026-09-26 浏览器四件套的 **MCP 面**（`playwright_*`）退役 107→103，实现底座已于 v1.5.7 章二随可行性报告落盘一并退役删除，裁定见 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md)；上方 107 为 v1.5.2 发版时点读数）
 - **v1.5.1** — 🎬 编排模块·事件驱动（业务事件触发/设备 OTA/审计输入双通道/`sofagent demo`）· 测试 4903→**5083**（13 包 workspace 口径）· acceptance 357→**367** · 2026-09-22 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.1.md)
 - **v1.5.0** — 📊 治理模块·可见性与本体成熟（治理 KPI 面板/本体双时态/Validation Engine/trace 对账/FDE 陪跑期/DSH 插件事件接线）· MCP 104→105 tools · 测试 4805→**4903**（+98，13 包口径）· acceptance 352→**357** · 2026-09-19 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
 
@@ -53,6 +53,11 @@
 >
 > **`RegisterModelInput.verifyHash` 入参删除，`registerModel` 验哈希硬编码为 `true`**（供应链红线收口）：v1.5.1 披露的「注册路径可用 `verifyHash: false` 显式跳过验哈希」旁路（调用方恰是被约束方）已移除——注册 / 切换（switchModel）/ 回滚（rollbackWeightsVersion）三条版本切换路径统一为唯一强校验路径，无旁路。
 > **升级影响（行为变更）**：此前依赖 `verifyHash: false` 跳过权重哈希校验的注册调用将**直接失败**（哈希不匹配即拒绝注册，fail-closed）；MCP tool `model_register` 的 `verify_hash` 参数不再生效（schema 保留兼容、传入即被忽略，后续版本移除）。全仓三个调用点已同批适配（mcp/model-register、train/artifact-register、orchestrator/registerLocalEndpoint——最后一个本就不传该参数）。裁定链：维护者拍板「硬编码 true 为唯一路径」，该 API 语义变更随 v1.5.7 发版生效。
+
+> 🗑️ **API 退役公告（v1.5.7 待发版 · 浏览器实现底座删除与公开面 4 符号吊销）**
+>
+> **`@sofagent/orchestrator` 公开面吊销 4 符号**：`BrowserSession` / `BrowserDriver` / `BrowserAuditSink` / `BrowserSessionFactory`（`public-api-baseline` 同批移除，2549→2545）——实现底座 `engine/orchestrator/src/refine-agent/browser-tools.ts`（260 行）与其单测（204 行）已删除，对齐 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md) 裁定（「第四轮补 · orchestrator 侧能力库」）。触发链：[v1.5.7 第二章 UI 审计可行性报告](./docs/eval/ui-audit-feasibility.md)落盘（结论「不实做」）⇒ 四件套随之退役删除。
+> **升级影响（公开 API 删除）**：外部代码 import 上述 4 符号将编译失败——四件套自 MCP 面 2026-09-26 注销（107→103）后已零生产消费面，SDK 面台账零登记（`check-unwired-exports` 实测零命中），实际破坏面为零；历史实现可自 v1.4.x tag 取回。**保留不变**：三件图像能力 `analyzeScreenshot` / `readImageMeta` / `degradeImageToText`（dsh-vision 视觉降级本体，非四件套）迁 `engine/orchestrator/src/refine-agent/image-meta.ts`，`@public` 导出与基线条目原样保留（导出改指新模块，导入路径无需变更）。MCP 工具面无增删（仍 104）。
 
 - **v1.4.9** — 设备接入与数据承接：G9 设备注册/发现/心跳（Ed25519 身份 + 在线才派单/掉线改派）· G10 数据目录白名单授权读取 · G11 采集声明 opt-in 上行（WAL 加密暂存 + 断点续传 + 审计计量）· T7 router 过站 session 承接 · T8 敏感识别三层插槽（SDK 面，
   管线接线排期 v1.5.1）· T9 权重灰度 AB（SDK 面同上）· G5b 连接器注册 + G1 workflow 模板血缘 · T6 installer + T10 模型清单 · MCP 95→**104**（9 新）· 测试 4429→**4805** · 2026-09-17 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.9.md)

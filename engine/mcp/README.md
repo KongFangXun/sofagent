@@ -51,7 +51,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 
 ## 暴露的 Tools（104 个）
 
-> 🗑️ 浏览器四件套（`playwright_*`）已于 2026-09-26 注销（[v2.0.0 §七 B 表](../../docs/changelog/v2.0/v2.0.0.md) 裁定退役，UI 审计实做窗口已关）——107→103。
+> 🗑️ 浏览器四件套（`playwright_*`）已于 2026-09-26 注销（[v2.0.0 §七 B 表](../../docs/changelog/v2.0/v2.0.0.md) 裁定退役，UI 审计实做窗口已关）——107→103；v1.5.7 章二实现底座（orchestrator 侧 `browser-tools.ts`）一并退役删除（[可行性报告](../../docs/eval/ui-audit-feasibility.md)落盘触发）。
 
 > 完整清单（按域分组 + 每工具说明）见 [docs/API.md](../../docs/API.md)——由 tool-registry.ts 生成，门禁对账永不漂移。
 

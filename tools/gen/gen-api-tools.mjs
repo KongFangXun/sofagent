@@ -164,16 +164,18 @@ for (const g of GROUP_ORDER) {
 
 const doc = readFileSync(API_DOC, 'utf8');
 const START = '\n## 二、MCP 工具清单';
-const END = '\n---\n\n## 三、防漂移机制';
+// END 锚双形态兼容：3820c8fcf「砍切页横线」后 API.md 二/三节间不再带 ---（旧形态保留兼容——重生成写回统一为新形态）
+const END_LEGACY = '\n---\n\n## 三、防漂移机制';
+const END = '\n\n## 三、防漂移机制';
 const i = doc.indexOf(START);
-const j = doc.indexOf(END);
-if (i === -1 || j === -1) {
+const j = doc.indexOf(END_LEGACY) !== -1 ? doc.indexOf(END_LEGACY) + 1 : doc.indexOf(END) + 1;
+if (i === -1 || j === 0) {
   console.error('[gen-api-tools] API.md 锚点（二/三节标题）未找到——文档结构变更？中止不写。');
   process.exit(1);
 }
 const updated =
   doc.slice(0, i) +
-  `${START}（${tools.length} · 按产品能力域分组）\n\n> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——\`SOFAGENT_MCP_ROLES=audit,ops\` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）已于 2026-09-26 注销（v2.0.0 §七 B 表裁定退役，UI 审计实做窗口已关）。\n` +
+  `${START}（${tools.length} · 按产品能力域分组）\n\n> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——\`SOFAGENT_MCP_ROLES=audit,ops\` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（\`playwright_*\`）已于 2026-09-26 注销（v2.0.0 §七 B 表裁定退役，UI 审计实做窗口已关）；v1.5.7 章二实现底座一并退役删除（可行性报告落盘触发，公开面 4 符号吊销 breaking）。\n` +
   section +
   doc.slice(j);
 writeFileSync(API_DOC, updated);
