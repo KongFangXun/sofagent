@@ -261,7 +261,7 @@ npx -y -p sofagent sofagent audit
 
 > ⚠️ This step is a **one-off audit** (inside a single process) — it does not install a git hook, so later commits will not be auto-blocked. For continuous protection run `sofagent audit --init` (see Full install below).
 
-Here is what it looks like when a known-format secret leak gets blocked (real output; A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#25-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys — other known formats included; generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). The screenshot on the first screen shows the A1 scenario (a .env sensitive-file commit blocked, exit 2); A2 secret-format detection is a separate rule, not repeated here.
+Here is what it looks like when a known-format secret leak gets blocked (real output; A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#26-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys — other known formats included; generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). The screenshot on the first screen shows the A1 scenario (a .env sensitive-file commit blocked, exit 2); A2 secret-format detection is a separate rule, not repeated here.
 
 **Full install** (Node.js ≥ 18, download and review before running) — **installed on the enterprise devices running the AI nodes**:
 
@@ -392,7 +392,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # load the security rules
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 5778 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 26 audit rules · fresh-eyes independent review continuously running.
+> 🧪 **Engineering credibility** (current): 5769 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 26 audit rules · fresh-eyes independent review continuously running.
 > **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
 >the load-chain utility package and dsh-plugin-kit are outside this counting standard) — they are not the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account — see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever
