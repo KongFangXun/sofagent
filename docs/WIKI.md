@@ -12,7 +12,7 @@
 
 - [一、一句话](#一一句话)
 - [二、产品叙事：sofagent 是 FDE Harness 层（不造 Agent，嵌在 Agent 与模型之间做治理）](#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)
-- [能力全景（用「你遇到的事」说 · 3 分钟版）](#能力全景用你遇到的事说--3-分钟版)
+- [能力全景（用「你遇到的事」说 · 3 分钟版 · 三域分组：场景 FDEing / 判定 S1M / 治理 harness）](#能力全景用你遇到的事说--3-分钟版)
 - [三、核心概念](#三核心概念)
 - [四、架构全景](#四架构全景)
 - [五、文件地图](#五文件地图)
@@ -72,19 +72,31 @@ graph TB
 
 ## 能力全景（用「你遇到的事」说 · 3 分钟版）
 
-> 模块语言（注入/审计/回溯/沉淀/进化）是给开发者的；下面这张表用**用户任务语言**回答「到底能干什么」。状态：✅ 已发版 · 📋 排期中（未发版）——逐行核对至 v1.5.6（2026-10-04）。
+> 模块语言（注入/审计/回溯/沉淀/进化）是给开发者的；下面这张表用**用户任务语言**回答「到底能干什么」，并按**三域分组**（对齐 [ARCHITECTURE 三域口径](./ARCHITECTURE.md#双层架构约束层与生命周期主框架)——场景域=FDEing 打法 / 判定域=S1M / 治理域=harness；五域→三域映射见 [v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）。状态：✅ 已发版 · 📋 排期中（未发版）——逐行核对至 v1.5.6（2026-10-04）。
+
+**域一 · 场景（FDEing 打法——进场把判断写成文件）**
 
 | 你遇到的事 | sofagent 做什么 | 状态 |
 |---|---|---|
-| AI 改代码会不会把密钥/后门带上生产？ | 每次 commit 自动过 27 条安检，违规当场拦截（秒级、零配置） | ✅ |
-| AI 搞砸了怎么办？ | 每次变更自动存快照，一键回到任意时点 | ✅ |
 | 不知道该在哪些环节上 AI？ | FDE 四阶段：梳理业务流 → 三问判定 → 算清每个节点值多少钱 | ✅ |
 | AI 不懂我们公司的规矩？ | 规则写成机器可判定文件注入（五平台挂载，DSH 档逐工具可拦） | ✅ |
-| 老板问「AI 到底在干什么」？ | Dashboard 驾驶舱 + 治理 KPI 面板（六卡 + 合规报告导出） | ✅ |
 | 数据怕出门？ | 全部本地；训练数据脱敏后走自控通道；离线 USB 节点完全离线 | ✅/📋 |
 | AI 干久了会变强吗？ | 错题本 → 经验考核 → 晋级技能 → 微调内化（自进化闭环，可量化收益） | 📋 |
-| 出了事说不清谁干的？ | 每个决策 HMAC 留痕，第三方不装 sofagent 也能验证据 | ✅ |
 | 多台设备/多个 Agent 谁来管？ | 设备注册身份码 + 心跳派单 + 数据承接（多设备中间层） | ✅ |
+
+**域二 · 判定（S1M——判据、留痕、举证）**
+
+| 你遇到的事 | sofagent 做什么 | 状态 |
+|---|---|---|
+| AI 改代码会不会把密钥/后门带上生产？ | 每次 commit 自动过 28 条安检，违规当场拦截（秒级、零配置） | ✅ |
+| 出了事说不清谁干的？ | 每个决策 HMAC 留痕，第三方不装 sofagent 也能验证据 | ✅ |
+
+**域三 · 治理（harness——离场后 7×24 驻留）**
+
+| 你遇到的事 | sofagent 做什么 | 状态 |
+|---|---|---|
+| AI 搞砸了怎么办？ | 每次变更自动存快照，一键回到任意时点 | ✅ |
+| 老板问「AI 到底在干什么」？ | Dashboard 驾驶舱 + 治理 KPI 面板（六卡 + 合规报告导出） | ✅ |
 
 **一句话版**：进场帮你把业务摸清写成文件，离场后管住你的数字员工——干活有安检、出事能回滚、越用越懂你（进化闭环排期中，实证边界见 [LIMITATIONS](./LIMITATIONS.md)）、老板看得见、数据不出门。
 
@@ -103,7 +115,7 @@ graph TB
 | **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体数据的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **工作流** | 企业业务链路的完整流程 = Workflow，由业务节点（AI 节点 + Human 节点）交替组成 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **业务节点** | 工作流中的执行单元 = Node——AI 自动执行（Loop）或 Human 介入（审批/检查/兜底）；AI 节点 = 业务节点中经三问判定法识别为可 AI 化的部分 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
-| **审计模块** | git diff 驱动，27 条规则（17 默认 + 10 扩展），活跃编号 A1-A11 + A14-A24 + E1/E2/E4/E5/E6（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 | [27 条完整清单（SECURITY SSOT）](../SECURITY.md#27-条审计规则完整清单文档级-ssot) |
+| **审计模块** | git diff 驱动，28 条规则（17 默认 + 11 扩展），活跃编号 A1-A11 + A14-A24 + E1/E2/E4/E5/E6/E7（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 | [28 条完整清单（SECURITY SSOT）](../SECURITY.md#28-条审计规则完整清单文档级-ssot) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代工具链（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束层）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
@@ -217,7 +229,7 @@ graph TB
 
 | 包 | 职责 |
 |---|---|
-| `engine/audit/` | @sofagent/audit — 审计模块（git diff + 27 条规则） |
+| `engine/audit/` | @sofagent/audit — 审计模块（git diff + 28 条规则） |
 | `engine/core/` | @sofagent/core — 核心类型、HMAC 工具、memory-contract |
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排（v1.5.5（已发版）起节点内部将运行 SKILL.state 执行协议——P+Σt+ot 三输入结构化 state 协议，轨迹可弃行为可溯；@langchain/langgraph 已降 optionalDependencies，DSH 后端缺它可用） |
 | `engine/train/` | @sofagent/train — 后训模块（数据管道/训练编排/云端执行/eval 闭环） |
@@ -246,8 +258,8 @@ graph TB
 |---|---|
 | 当前版本 | **v1.5.6**（2026-10-04，✅ 已发版 · 存量收敛 · 单入口 CLI 与数据生命周期） |
 | 下一版 | **v1.5.7**（📋 规划中——审计模块 · 覆盖面扩展；以 [ROADMAP](./ROADMAP.md) 规划表为准） |
-| 测试覆盖 | 5809 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
-| 审计规则 | 27 条（17 默认 + 10 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#27-条审计规则完整清单文档级-ssot)） |
+| 测试覆盖 | 5838 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
+| 审计规则 | 28 条（17 默认 + 11 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)） |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
 
@@ -270,7 +282,7 @@ graph TB
 | 归域 | MCP 工具按**业务职能**分桶进五域的编制口径（增量化简记：域 +N = 该域条目数变化）——权威源 = `tool-registry.ts` 的 TOOLS 数组逐工具名分桶，与 `roles` 使用场景标签、`docs/API.md` 十能力域是三套不同标签，禁混用 | [ARCHITECTURE · 五域重算与三套标签声明](./ARCHITECTURE.md) |
 | 五域（消歧） | 两义：① **MCP 工具五域**——104 tools 按业务职能分的五个编制域（[ARCHITECTURE · 五域一环](./ARCHITECTURE.md)）；② **五域→三域映射**——v1.5.3 把旧五域叙事映射进现行三域（场景/判定/治理）的口径迁移表（[v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）。行文遇「五域」先辨指向 | 本条（消歧索引） |
 | 五（消歧） | 「五」字四义固定表述：**五种能力** = 约束层的注入·审计·回溯·沉淀·进化（[ARCHITECTURE §二](./ARCHITECTURE.md)）；**五模块** = 约束层内部的功能域编制（治理/执行/审计/编排/后训，模块不是产品线，[ARCHITECTURE 定位声明](./ARCHITECTURE.md)）；**五岗位** = FDE 职能离场后的企业常设化沉淀（工作流设计师/领域知识负责人/业务自建者/AI 治理者/Agent 运营负责人，[FDE/ROLES.md](../FDE/ROLES.md)）；**五要素** = 工作流梳理的深挖维度（[FDE/GUIDE §二](../FDE/GUIDE.md#二五要素深挖)）——四者不同物，行文须带全称 | 本条（消歧索引） |
-| FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理 → 判定 → 交付 → 养护」。名词位（岗位）/ 动词位（能力）禁混用 | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
+| FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理 → 判定 → 交付 → 养护」。名词位（岗位）/ 动词位（能力）禁混用。**首创声明**：FDEing 动词化与「万物皆可 FDEing」为本仓概念首创（行业验证的是「岗位→能力」——见 [VALIDATION · 五常设岗位](./VALIDATION.md)；首创面无第三方印证可引，如实标注） | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
 | 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | 约束层的英文 SSOT 称法（对外中文「约束层」、英文「Harness」同指一物）——"缰绳"，非"马" | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
@@ -335,7 +347,7 @@ graph TB
 | 团队批量部署 | [guides/team-deploy.md](./guides/team-deploy.md) |
 | 接入千问办公（QwenWork） | [guides/qwenwork-integration.md](./guides/qwenwork-integration.md)（MCP 确定可接 · Hook 拦截待实测） |
 | 了解多 Agent 团队协作协议 | [guides/team-collaboration-protocol.md](./guides/team-collaboration-protocol.md)（L2 协作底层协议 · v1.3.3） |
-| 节点级审计（DSH 事件流口径） | [guides/node-level-audit.md](./guides/node-level-audit.md)（27 条规则子集逐条判定） |
+| 节点级审计（DSH 事件流口径） | [guides/node-level-audit.md](./guides/node-level-audit.md)（28 条规则子集逐条判定） |
 | 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 开发/维护前端（Dashboard 等） | [guides/frontend-design-standard.md](./guides/frontend-design-standard.md)（设计标准 + 开发指南，改前端前必读） |
 | 在 DSH 中挂载 sofagent MCP | [guides/dsh-mcp-integration.md](./guides/dsh-mcp-integration.md)（v1.3.5 起 MCP 互通） |
@@ -365,7 +377,7 @@ graph TB
 |---|---|---|---|---|
 | 行业案例 / 研报数据 / 外部印证 | [VALIDATION](./VALIDATION.md) | 叙事·印证 | 案例不进 PHILOSOPHY——PHILOSOPHY 只引用结论（如「Harvey 筑起垂直壁垒」），数据与来源全在 VALIDATION | 以 `tools/check/doc-char-ratchet.json` 实测为准（三行制收录） |
 | 产品结论 / 设计哲学 / 论证 | [PHILOSOPHY](./PHILOSOPHY.md) | 叙事·论证 | 结论自带的最小论证可以，行业案例展开留给 VALIDATION | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
-| 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 27 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 | （SECURITY 面） |
+| 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 28 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 | （SECURITY 面） |
 | 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
 | 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
 | 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
