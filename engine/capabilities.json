@@ -1,0 +1,188 @@
+{
+  "//": "主干能力清单 · 唯一手写源（v1.5.7 章五）· 范式对齐 engine/dsh-plugins/plugins.json。tools/gen/gen-capability-manifest.mjs 据此做三类断言（幽灵名/遗漏级联/档位归属二义）+ 装配面两陷阱断言（插件 id 存在性 + 禁用未级联拒生成）。⚠️ 手改生成物 = 下一次生成即被覆盖——要改就改这里。⚠️ 域口径：前五项（注入·审计·回溯·沉淀·进化）= 约束层五能力（SSOT 见 docs/WIKI.md「能力全景」）；第六项「执行」= FORGE 编排面，属内部工具面、不计入五能力叙事——勿把两者混为一套枚举。每能力单元：id（全局唯一）/ domain（六域之一）/ carrier（载体包名）/ gate（开关档位名 + 默认值）/ env（环境变量档位——gate 为 settings 档位时的 env 形态可留空）/ dependsOn（依赖的能力 id 级联）/ disabledImpact（关档后失效面一句话）。shim 条目（kind=shim）：12 个旧命令转发 shim 的退役台账（触发条件 = 兼容期届满，动作 = 移除；名单 SSOT = docs/changelog/v1.5/v1.5.6.md 章一附录），不设 gate/dependsOn（它们不是可关档能力，是待移除契约）。",
+  "schemaVersion": 1,
+  "capabilities": [
+    {
+      "id": "inject-constraint-chain",
+      "domain": "注入",
+      "carrier": "@sofagent/inject",
+      "gate": { "name": "inject", "default": true },
+      "env": "SOFAGENT_CONTEXT_BUDGET_RATIO",
+      "dependsOn": [],
+      "disabledImpact": "宿主每次请求模型前不再注入四层加载链约束（SKILL/fde/think/knowledge）——Agent 裸奔执行，铁律与反思层全部缺席"
+    },
+    {
+      "id": "audit-rules-engine",
+      "domain": "审计",
+      "carrier": "@sofagent/audit",
+      "gate": { "name": "audit", "default": true },
+      "env": "SOFAGENT_AUDIT_ENABLED",
+      "dependsOn": [],
+      "disabledImpact": "git diff 零安检（27 条规则全停）——commit 不再被拦截，密钥/后门/注入载荷直上生产"
+    },
+    {
+      "id": "audit-acceptance-gate",
+      "domain": "审计",
+      "carrier": "@sofagent/audit",
+      "gate": { "name": "acceptanceGate", "default": true },
+      "env": "",
+      "dependsOn": ["audit-rules-engine"],
+      "disabledImpact": "Turn 停止验收判定不发生——验收不过也放行，交付物质量门失守（依赖审计引擎的判定源）",
+      "cascadeNote": "依赖 audit-rules-engine：acceptanceGate 关档时若 audit-rules-engine 仍开，判定源在场但验收门不判——合法；反之 audit-rules-engine 关档时 acceptanceGate 仍开 ⇒ 验收判定源缺失，级联要求同批关档"
+    },
+    {
+      "id": "audit-intent-channel",
+      "domain": "审计",
+      "carrier": "@sofagent/audit",
+      "gate": { "name": "intentChannel", "default": true },
+      "env": "",
+      "dependsOn": [],
+      "disabledImpact": "调用意图通道停摆——参数级意图（rm -rf 的 path、外发 host）不再留痕，事后举证只剩结果文本"
+    },
+    {
+      "id": "audit-decision-log-source",
+      "domain": "审计",
+      "carrier": "@sofagent/audit",
+      "gate": { "name": "decisionLogSource", "default": true },
+      "env": "",
+      "dependsOn": [],
+      "disabledImpact": "决策日志输入源断供——E7 决策质量信号规则无输入面，决策劣化趋势不可判"
+    },
+    {
+      "id": "snapshot-rollback",
+      "domain": "回溯",
+      "carrier": "@sofagent/core",
+      "gate": { "name": "rollbackOnError", "default": false },
+      "env": "",
+      "dependsOn": [],
+      "disabledImpact": "Agent 出错时不再按 git 快照逆序撤销——出事靠人工回滚（默认关档，显式开）"
+    },
+    {
+      "id": "audit-chain-integrity",
+      "domain": "回溯",
+      "carrier": "@sofagent/audit",
+      "gate": { "name": "chainIntegrity", "default": true },
+      "env": "SOFAGENT_REQUIRE_SIGNED_CONFIG",
+      "dependsOn": [],
+      "disabledImpact": "审计链完整性校验停摆——HMAC 链不再验签，篡改不可检"
+    },
+    {
+      "id": "think-reflection",
+      "domain": "沉淀",
+      "carrier": "@sofagent/think",
+      "gate": { "name": "think", "default": true },
+      "env": "",
+      "dependsOn": [],
+      "disabledImpact": "任务收尾不再自动写 think.md 反思条目——经验不沉淀，重复踩坑"
+    },
+    {
+      "id": "knowledge-distill",
+      "domain": "沉淀",
+      "carrier": "@sofagent/evolve",
+      "gate": { "name": "knowledgeDistill", "default": true },
+      "env": "",
+      "dependsOn": ["think-reflection"],
+      "disabledImpact": "知识蒸馏停摆——think.md 反思不进 knowledge/ 本体，加载链知识层空转",
+      "cascadeNote": "依赖 think-reflection：蒸馏的输入是反思条目——think-reflection 关档时本能力无输入源，级联要求同批关档或显式接受空转"
+    },
+    {
+      "id": "evolve-optimizer",
+      "domain": "进化",
+      "carrier": "@sofagent/evolve",
+      "gate": { "name": "evolve", "default": true },
+      "env": "SOFAGENT_EVOLVE_GATE",
+      "dependsOn": ["think-reflection"],
+      "disabledImpact": "经验自动进化停摆——optimize_skill/sustain 不再消费 audit 趋势，Skill 层冻结",
+      "cascadeNote": "依赖 think-reflection：进化器读 think.md 反思——同上级联纪律"
+    },
+    {
+      "id": "daemon-cron",
+      "domain": "进化",
+      "carrier": "@sofagent/daemon",
+      "gate": { "name": "daemon", "default": true },
+      "env": "SOFAGENT_HEALTH_PORT",
+      "dependsOn": [],
+      "disabledImpact": "7×24 巡检停止——健康监测与 webhook 推送缺席，失联/劣化无人值守"
+    },
+    {
+      "id": "forge-orchestration",
+      "domain": "执行",
+      "carrier": "@sofagent/orchestrator",
+      "gate": { "name": "forge", "default": true },
+      "env": "",
+      "dependsOn": [],
+      "disabledImpact": "FORGE 编排面停摆——fresh-eyes/release-gate 双 loop 不再驱动（内部工具面，不计五能力叙事）"
+    },
+    {
+      "id": "mcp-roles-narrow",
+      "domain": "执行",
+      "carrier": "@sofagent/mcp",
+      "gate": { "name": "mcpRoles", "default": true },
+      "env": "SOFAGENT_MCP_ROLES",
+      "dependsOn": [],
+      "disabledImpact": "L2 收窄档失守（设为 all 或清空）——104 tool 全量暴露，专职面收窄失效"
+    },
+    {
+      "id": "mcp-permission-guard",
+      "domain": "执行",
+      "carrier": "@sofagent/mcp",
+      "gate": { "name": "permissionGuard", "default": false },
+      "env": "SOFAGENT_PERMISSION_GUARD",
+      "dependsOn": [],
+      "disabledImpact": "tools/call 前置权限守卫缺席（默认关档，opt-in=1 启用）——无该守卫的部署面靠角色收窄兜底"
+    },
+    {
+      "id": "mcp-usage-tracking",
+      "domain": "执行",
+      "carrier": "@sofagent/mcp",
+      "gate": { "name": "usageTracking", "default": true },
+      "env": "SOFAGENT_USAGE_TRACKING",
+      "dependsOn": [],
+      "disabledImpact": "工具调用使用率遥测停写（=0 时零写入）——能力面使用率治理无数据源"
+    },
+    {
+      "id": "ontology-domain",
+      "domain": "注入",
+      "carrier": "@sofagent/ontology",
+      "gate": { "name": "ontology", "default": true },
+      "env": "",
+      "dependsOn": ["inject-constraint-chain"],
+      "disabledImpact": "本体域 12 工具不注册（entity/concept/知识检索）——FDE 梳理无本体底座",
+      "cascadeNote": "依赖 inject-constraint-chain：本体数据的消费面是注入链知识层——注入链关档时本体数据无人消费，级联要求同批处置"
+    },
+    {
+      "id": "fde-methodology",
+      "domain": "注入",
+      "carrier": "@sofagent/orchestrator",
+      "gate": { "name": "fde", "default": true },
+      "env": "",
+      "dependsOn": ["inject-constraint-chain"],
+      "disabledImpact": "FDE 方法论七引擎（compose/interview/classify/quantify/derive/distill/deploy）不注册——企业梳理链断供",
+      "cascadeNote": "依赖 inject-constraint-chain：FDE 交付物（workflow.yml/本体）的执行面是注入链——同上级联纪律"
+    },
+    {
+      "id": "commons-ring",
+      "domain": "注入",
+      "carrier": "@sofagent/orchestrator",
+      "gate": { "name": "commons", "default": true },
+      "env": "",
+      "dependsOn": ["inject-constraint-chain"],
+      "disabledImpact": "能力公地五环（发布/发现/调用/评价/退役）不注册——企业内能力流通断供",
+      "cascadeNote": "依赖 inject-constraint-chain：公地能力的调用约束经注入链——同上级联纪律"
+    }
+  ],
+  "shims": [
+    { "id": "shim-sofagent-audit", "carrier": "@sofagent/audit", "cli": "sofagent-audit", "source": "engine/audit/src/cli-quick.ts", "trigger": "兼容期届满（v1.5.6 章一 CLI 单入口收敛，一个 minor）", "action": "移除" },
+    { "id": "shim-sofagent-audit-full", "carrier": "@sofagent/audit", "cli": "sofagent-audit-full", "source": "engine/audit/src/index.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-core", "carrier": "@sofagent/core", "cli": "sofagent-core", "source": "engine/core/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-daemon", "carrier": "@sofagent/daemon", "cli": "sofagent-daemon", "source": "engine/daemon/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-eval", "carrier": "@sofagent/eval", "cli": "sofagent-eval", "source": "engine/eval/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-evolve", "carrier": "@sofagent/evolve", "cli": "sofagent-evolve", "source": "engine/evolve/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-ontology", "carrier": "@sofagent/ontology", "cli": "sofagent-ontology", "source": "engine/ontology/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-orchestrator", "carrier": "@sofagent/orchestrator", "cli": "sofagent-orchestrator", "source": "engine/orchestrator/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-orchestrator-compare", "carrier": "@sofagent/orchestrator", "cli": "sofagent-orchestrator-compare", "source": "engine/orchestrator/src/orchestrator-compare.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-think", "carrier": "@sofagent/think", "cli": "sofagent-think", "source": "engine/think/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-ab-test", "carrier": "@sofagent/ab-test", "cli": "sofagent-ab-test", "source": "engine/ab-test/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
+    { "id": "shim-sofagent-mcp", "carrier": "@sofagent/mcp", "cli": "sofagent-mcp", "source": "engine/mcp/src/mcp-server.ts", "trigger": "兼容期届满（同上）", "action": "移除" }
+  ]
+}

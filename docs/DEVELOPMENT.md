@@ -567,6 +567,16 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 > 文档行数预算的现行口径与各层上限以 `tools/check/check-docs.sh` 的 LIMIT_A/LIMIT_B/LIMIT_E 为准（A 层用户文档 / B 层参考文档 / E 层 guides，超标须按铁律归并或登记上调）。**不计入硬预算但必须有读数的面**（F 家族软警戒：索引与台账 / 技能源树 / FDE 手册与模板 / 经验沉淀 / 包级 README）同在该脚本 §4 尾部打印——「不进预算」不等于「不进视线」。计账归属本身由 §22 对账（每条排除项命中的文件必须落在某个计量桶内，否则判红）。
 
+### `SOFAGENT_*` 分流：功能门控 vs 配置参数（v1.5.7 章五）
+
+> 实测基线：`git grep -ohE 'SOFAGENT_[A-Z0-9_]+' -- 'engine/**' | sort -u | wc -l` = **95**（v1.5.7 章五施工时点；devlog 曾记 93/94 为旧快照）。判据——**改了它会改变「某能力在不在」的是功能门控（G）**，**只改能力行为参数的是配置参数（P）**。G 面进 `engine/capabilities.json`（主干能力清单 SSOT，`tools/gen/gen-capability-manifest.mjs` 守卫）；P 面不进清单。两面对账：清单内 env 字段 ↔ 本表 G 组逐项对应。
+
+| 类 | 名单（95 = G 23 + P 72） |
+|---|---|
+| **G 功能门控（23）** | `AUDIT_ENABLED` `PERMISSION_GUARD` `MCP_ROLES` `MCP_ROLES_STRICT` `USAGE_TRACKING` `EVOLVE_GATE` `SANITIZE` `SANITIZE_IPS` `GIT_DISABLED` `REQUIRE_SIGNED_CONFIG` `ALLOW_PLUGIN_RULES` `STATEFUL_EXEC` `TRACE_EVIDENCE` `REDACT_STRICT` `SCOPE_REQUIRED` `TRAIN_SANDBOX` `SANDBOX_EGRESS` `WEBHOOK_ALLOW_LOCALHOST` `DEBUG` `SINGLE_ENTRY` `INTERNAL` `INTERNAL_INIT` `CONFIRM_BACKUP`（均带 `SOFAGENT_` 前缀） |
+| **P 配置参数（72）** | 路径类：`DATA` `HOME` `DIR` `CONFIG` `PROJECT_ROOT` `REPO_ROOT` `REPO_LOCAL` `KEY_PATH` `SNAPSHOT_OUT` `AUDIT_ENTRY` `ENGINE_ENTRY` `SESSION_WORKSPACE` `HOME_ALLOWED_PREFIXES`；模型/端点类：`LLM` `LLM_` `LLM_A` `LLM_B` `LLM_API_KEY` `LLM_A_API_KEY` `LLM_BASE_URL` `LLM_ENGINEER(_API_KEY)` `LLM_REVIEWER(_API_KEY)` `LLM_GOAL_EVAL(_API_KEY)` `MODEL_` `MODEL_NAME` `MODEL_API_KEY` `MODEL_BASE_URL` `OLLAMA_ENDPOINT` `OLLAMA_MODEL` `L2_NER_ENDPOINT` `L2_NER_TIMEOUT_MS` `EXECUTION_BACKEND` `VIRTUAL_KEY`；任务/会话类：`TASK` `TASK_ID` `TASK_PROMPT` `SESSION_TASK_ID` `SESSION_TYPE` `AGENT_ID` `AGENT_NAME` `TENANT` `LABEL` `MACHINE_ID` `PERSONA_SOURCE` `PRE` `PRE_RC`；保留/容量类：`CONTEXT_BUDGET_RATIO` `CONTEXT_WINDOW_TOKENS` `REFRESH_KEEP` `RETENTION_DAYS` `RETENTION_MAX` `SPILL_TTL_DAYS` `CLEANUP_FREQUENCY` `AUDIT_TIMEOUT_MS` `HEALTH_PORT`；webhook 类：`WEBHOOK_URL` `WEBHOOK_DINGTALK` `WEBHOOK_FEISHU` `WEBHOOK_WECOM`；标记/杂项：`ACCEPTANCE_MARKER` `MARKER_START` `MARKER_END` `EVAL_GOLDEN_SET` `EGRESS_SECRET` `DSH_PERMISSION_MODE` `CLEANUP_ON_RECORD`（已死配置，v1.5.0 TASK-27 摘除）`NET_DENIED` `TOOL_DENIED` `TOOL_PENDING_APPROVAL`（均带 `SOFAGENT_` 前缀） |
+
+**双向一致纪律**：清单内 5 个 env 档位（`AUDIT_ENABLED`/`PERMISSION_GUARD`/`MCP_ROLES`/`USAGE_TRACKING`/`EVOLVE_GATE`）与 G 组逐项对得上；G 组其余 18 项属「清单外门控」（能力单元不可独立关档、或为安全 fail-closed 面不开放可拔声明——如 `SANITIZE`/`REQUIRE_SIGNED_CONFIG` 属安全底线不设关档）。新增 `SOFAGENT_*` 时先判 G/P：G 项须同批进 capabilities.json 并过生成器断言，P 项登记本表即可。
 
 ## 八、提交时审计 + 文件系统审计
 
