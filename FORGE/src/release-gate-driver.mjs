@@ -116,6 +116,23 @@ let globalRunDir = null;
 
 // 安全 teardown——所有退出路径（正常/catch/uncaughtException）共用。
 // 绝不抛错：teardown 自身失败只打日志，不掩盖原始退出原因。
+// ─── v1.5.7 章二承接批 #8：DSH 乱名空文件清理（启动 + 运行结束双时机）─────────
+// 原 v1.4.0 只有启动时清理（内联于 main）——运行期残留要等下一轮启动才收。
+// 抽出为函数，启动与运行结束（main 收尾、safeTeardownWorktree 之后）各清一次。
+// 失败不阻断（cleanup 永不掩盖原始退出原因——对齐 safeTeardownWorktree 语义）。
+async function cleanupDshStrayFiles(phase) {
+  try {
+    const { readdirSync, statSync, unlinkSync } = await import('node:fs');
+    const strays = readdirSync(REPO_ROOT).filter(
+      (f) => /^v\d+\.\d+\.\d+$/.test(f) && statSync(join(REPO_ROOT, f)).size === 0
+    );
+    if (strays.length > 0) {
+      for (const f of strays) unlinkSync(join(REPO_ROOT, f));
+      console.log(`   🧹 清理 DSH 残留空文件（${phase}）: ${strays.join(', ')}`);
+    }
+  } catch { /* cleanup 失败不阻断 */ }
+}
+
 function safeTeardownWorktree() {
   if (!globalWorktree || !globalRunDir) return;
   try {
@@ -2720,7 +2737,11 @@ function copyToDesktop(runDir, target) {
  *   日期 | run-id | 循环 | 步数 | acceptance | regression | coverage | 裁决 | → runs 指针
  */
 function appendLedger(dateStr, runId, steps, results, verdict, runDir) {
-  const relPath = runDir.replace(REPO_ROOT + '/', '');
+  // v1.5.7 章二承接批 #9（LEDGER ~/ 路径形态）：runDir 在 ~/.sofagent 下（不在 REPO_ROOT 内），
+  // 原 replace(REPO_ROOT+'/','') 不命中 → 新行落机器绝对路径（/Users/<user>/...，泄漏用户名级信息，
+  // check-open-boundary F-38 命中）。归一化：先试仓内相对化，否则家目录 → ~/（与 LEDGER :5 披露拍板一致）。
+  let relPath = runDir.replace(REPO_ROOT + '/', '');
+  if (path.isAbsolute(relPath)) relPath = relPath.replace(os.homedir() + '/', '~/');
   const line = [
     dateStr.padEnd(14),
     runId.padEnd(14),
@@ -3137,16 +3158,7 @@ async function main() {
   // DSH CLI 桥接 spawn 无 cwd 隔离（继承 REPO_ROOT）——DSH agent 工具行为可能在仓库根
   // 创建 vX.Y.Z 格式的 0 字节空文件（v1.3.7 已多次出现：08-19/08-24 release-gate 运行期，
   // 全仓代码无直接创建源 → LLM 执行版本相关命令误重定向）。启动时清理 0 字节残留。
-  try {
-    const { readdirSync, statSync, unlinkSync } = await import('node:fs');
-    const strays = readdirSync(REPO_ROOT).filter(
-      (f) => /^v\d+\.\d+\.\d+$/.test(f) && statSync(join(REPO_ROOT, f)).size === 0
-    );
-    if (strays.length > 0) {
-      for (const f of strays) unlinkSync(join(REPO_ROOT, f));
-      console.log(`   🧹 清理 DSH 残留空文件: ${strays.join(', ')}`);
-    }
-  } catch { /* cleanup 失败不阻断 */ }
+  await cleanupDshStrayFiles('启动');
 
   // ─── preflight-check 跑前自检 ───
   // 发版门禁单次跑 30-60 分钟（V 阶段 + 可能的 F 修复链），环境不健康时
@@ -3943,6 +3955,10 @@ async function main() {
   disarmSignalCleanup();
   // v1.3.6 交付⑩：正常结束清理 worktree（LEDGER 已在上方留行）
   safeTeardownWorktree();
+
+  // v1.5.7 章二承接批 #8（driver 乱名清理时机扩展）：启动清理之外补运行结束清理——
+  // 运行期 DSH 产生的 0 字节乱名残留不再留到下一轮启动才收（本轮结束时即清，工作树干净出闸）。
+  await cleanupDshStrayFiles('运行结束');
 
   // v1.3.9：正常结束清理心跳定时器（dry-run 不注册，null 守卫）——否则
   // 15s interval 阻止事件循环排空 → main return 后进程挂住。
