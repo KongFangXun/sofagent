@@ -58,6 +58,8 @@ driver 从你的**最终回复文本**中提取产物文件内容——你不在
 
 ## 判定：PASS / FAIL
 
+- **结果**：PASS（或 FAIL——🔴 必须为裸词独占一行，driver 据此行提取终裁；本行是机器解析的唯一裁决锚，禁止改写为「裁决要旨」「总体判定」「Conditional Pass」等任何变体措辞，禁止只写进表格或叙述句。条件与保留意见写进正文发现清单，本行只允许裸词）
+
 ## 依据
 - acceptance-test：PASS/FAIL（N 场景失败）
 - regression-checklist：PASS/FAIL（N 维度失败）
