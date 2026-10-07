@@ -29,7 +29,7 @@ solves:
 ---
 # FDE Skill · 唯一主入口（引擎底座 + FDE 方法论合一）
 
-> **三因子自我定位（一句话）**：本 Skill 是 FDEing × S1A 的执行面——**FDE 打法**（进场把判断写成文件：梳理→判定→交付→养护）× **S1M 判定**（判据、留痕、举证——判定底座本体排期 v1.6.0+，当前以 27 条审计规则的判定化边界为部分交付面）+ **harness 治理**（离场后 7×24 驻留：注入·审计·回溯·沉淀·进化五能力）。Agent 侧口径：你执行的是 FDE 打法，产出受 S1M 判定检验，全程在 harness 治理内。
+> **三因子自我定位**：本 Skill 是 FDEing × S1A 的执行面——**FDE 打法**（梳理→判定→交付→养护）× **S1M 判定**（判据/留痕/举证——判定底座排期 v1.6.0+，当前以 28 条审计规则的判定化边界为部分交付面）+ **harness 治理**（离场后 7×24 驻留）。Agent 侧：你执行 FDE 打法，产出受 S1M 判定检验，全程在 harness 治理内。
 
 > 本文件是 sofagent **唯一主入口**，随 skill 调用自动注入。人读方法论见 `FDE/GUIDE.md`；按阶段执行读 `skills/01-entry.md` ~ `skills/05-exit.md`。
 
@@ -43,8 +43,8 @@ solves:
 |---|---|---|
 | FDE Skill | 本 skill（方法论 + 约束注入） | ClawHub / SkillHub 分发，`bash install.sh` 装到本地 |
 | 企业底座 | 约束层全套（hooks + 数据 + MCP） | `bash install.sh`（企业设备） |
-| MCP Server | 104 tools 能力面（审计/审计查询与规则导出/本体/进化/训练/工作明细/PR 协同/设备注册/设备数据面/连接器/模板/session 承接） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
-| DSH 插件家族 | 7 款 cordis-plugin（6 款原子 + 1 款聚合整装） | `skillhub install cordis-plugin-sofagent-<名>`（整套用裸名 `cordis-plugin-sofagent`），详见 `AGENTS.md` |
+| MCP Server | 104 tools（审计/规则导出/本体/进化/训练/工作明细/PR 协同/设备/连接器/模板/session 承接） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
+| DSH 插件家族 | 7 款 cordis-plugin（6 原子 + 1 聚合整装） | `skillhub install cordis-plugin-sofagent-<名>`（整套用裸名），详见 `AGENTS.md` |
 | CLI | `sofagent` 命令（审计 / 快照 / 部署 / dashboard） | `bash install.sh` 装到 `~/.sofagent/bin/` |
 | Dashboard | Web 驾驶舱（工作明细 / 图谱 / 健康） | `sofagent web` 起本地服务，读 `data/` 运行时数据 |
 
@@ -60,7 +60,7 @@ solves:
 
 ## 📜 核心契约（不可违反）
 
-> 📜 **全文 SSOT**：[`core-rules.md`](./rules/core-rules.md#4-底线)（~30 行始终注入）——4 底线与 9 则铁律的**全文（含逐条释义）见该文件**，此处只留摘要。岗位规范按 task type 按需加载（`rules/role-audit.md` / `rules/role-fde.md` / `rules/role-orchestrate.md`）。
+> 📜 **全文 SSOT**：[`core-rules.md`](./rules/core-rules.md#4-底线)（~30 行始终注入）——4 底线与 9 则铁律全文见该文件。岗位规范按 task type 按需加载（`rules/role-*.md`）。
 
 ### 4 底线
 
@@ -132,7 +132,7 @@ solves:
 
 ## Agent 首次连接时（LUI-first）
 
-> 已连接 MCP Server：先调 `list_capabilities`（能力清单）+ `get_think`（count: 3，最近反思）+ `stats`（知识库现状）→ 再按下方路由表读对应子 Skill。未连接 MCP Server（纯 Skill 模式）：按「浓缩版全流程」执行，工具调用降级为人工操作。
+> 已连接 MCP Server：先调 `list_capabilities`（能力清单）+ `get_think`（count: 3）+ `stats`（知识库现状）→ 再按路由表读对应子 Skill。未连接（纯 Skill 模式）：按「浓缩版全流程」执行，工具调用降级为人工操作。
 
 
 ## 阶段路由（CRITICAL）
@@ -168,7 +168,7 @@ solves:
 | "知识库有什么" | 调 `stats` + `list_entities` → 展示 |
 | "帮我审计" | 调 `run_audit` → 展示 [sofagent] 审计结果 |
 | "数据安全怎么样" | 调 `data_sovereignty_report` → 展示 |
-| "沉淀经验 / 进化一下" | 跑 `sofagent orchestrator evolve` → think.md + decision-log + 错题本提取判断模式 → 置信度达标聚合成 skill 写入运行时目录（~/.sofagent/skill/custom/） |
+| "沉淀经验 / 进化一下" | 跑 `sofagent orchestrator evolve` → think.md + decision-log + 错题本提取判断模式 → 置信度达标聚合成 skill 写入运行时目录（`~/.sofagent/skill/custom/`） |
 | 完整速查 | skills/05-exit.md |
 
 
@@ -183,13 +183,13 @@ solves:
 | 知识库（7） | `search_knowledge` `list_entities` `stats` |
 | 本体数据（7） | `create_entity` `validate_ontology` `ontology_import` |
 | 评估优化（8） | `evaluate_output` `run_ab_test` `promote_ab`（强制人审） |
-| FDE 编排（11） | `fde_interview`（访谈结构化）`fde_classify`（三问判定）`fde_quantify`（量化+ROI）`fde_derive`（本体推导）`fde_distill`（三层沉淀）`fde_deploy`（组装部署）`fde_compose` `compose` `activate_workflow` `create_agent` |
-| Workflow/Agent（12） | `workflow_submit` `workflow_create` `workflow_node_add`（定时触发）`workflow_diff_preview` `workflow_gaps`（缺口查询）`route_workflow` `agent_identity` |
+| FDE 编排（11） | `fde_interview` `fde_classify` `fde_quantify` `fde_derive` `fde_distill` `fde_deploy`（访谈/三问/量化/推导/沉淀/部署）`fde_compose` `compose` `activate_workflow` `create_agent` |
+| Workflow/Agent（12） | `workflow_submit` `workflow_create` `workflow_node_add`（定时触发）`workflow_diff_preview` `workflow_gaps` `route_workflow` `agent_identity` |
 | 能力公地（6） | `commons_publish` `commons_search` `commons_invoke` |
 | PR 协同（3） | `pr_submit` `pr_review` `pr_merge`（合并强制 merge_criteria，未过走 HITL） |
 | 后训流水线 · 训练监控（4） | `train_status` `train_list` `train_diagnose`（失败诊断）`corpus_export`（语料导出） |
-| 后训流水线 · 注册与资产（13） | `model_register` `model_switch`（灰度）`train_submit` `train_budget`（超预算等人审）`train_compliance`（合规闸门）`train_deliverable`（FDE 交付包）…（全 17 个见 [API](../docs/API.md)） |
+| 后训流水线 · 注册与资产（13） | `model_register` `model_switch` `train_submit` `train_budget` `train_compliance` `train_deliverable` …（全 17 见 [API](../docs/API.md)） |
 | 验收（2） | `define_acceptance` `check_acceptance` |
-| 运维观测（17） | `health_check` `snapshot_restore`（强制人审）`worklog_query` `cost_query` `daemon_status` `device_register` `connector_register` `trace_reconcile`（跨层证据对账）…（全 17 个见 [API](../docs/API.md)） |
+| 运维观测（17） | `health_check` `snapshot_restore`（强制人审）`worklog_query` `cost_query` `daemon_status` `device_register` `connector_register` `trace_reconcile` …（全 17 见 [API](../docs/API.md)） |
 
-> 📌 **后训流水线的能力边界**：本仓负责**编排与治理**——任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务；**训练本身在外部执行环境进行，本仓不实现训练器**。
+> 📌 **后训流水线边界**：本仓负责**编排与治理**（任务提交/预算门禁/环境体检/提交前预检/失败诊断/语料导出/合规闸门/交付包/模型注册与灰度/推理服务）；**训练在外部环境执行，本仓不实现训练器**。

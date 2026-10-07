@@ -24,12 +24,12 @@
 | 6 | **Webhook 推送** | 飞书/钉钉/企微 webhook URL | 签名 | 审计结果 PASS/WARN/FAIL 三态推送 |
 | 7 | **标准数据推送接口** | 数据推送 API（约定 schema · schema 校验 + 敏感分拣双闸，企业合规拦截策略预留扩展）——MCP tool `data_push` 入口已接线（v1.4.8） | 企业凭证 | 企业存储/业务系统推送训练语料与知识数据 |
 
-各面详细配置见对应文档：MCP 见 [engine/mcp/README.md](../engine/mcp/README.md) · CLI/hook 见 [SECURITY.md](../SECURITY.md) · 平台挂载见 [AGENTS.md](../AGENTS.md) · Skill 分发见 [SKILL/SKILL.md](../SKILL/SKILL.md) · Webhook 见 [SECURITY §五·Daemon 监控边界](../SECURITY.md)（表内「审计结果推送」行）。
+各面配置见对应文档：MCP → [engine/mcp/README](../engine/mcp/README.md) · CLI/hook 与 Webhook（§五·Daemon 监控边界「审计结果推送」行）→ [SECURITY](../SECURITY.md) · 平台挂载 → [AGENTS](../AGENTS.md) · Skill 分发 → [SKILL/SKILL.md](../SKILL/SKILL.md)。
 标准数据推送接口（第七面）`data_push` 入口已接线（v1.4.8），详见 [v1.4.8 开发日志](./changelog/v1.4/v1.4.8.md)。
 
 ## 二、MCP 工具清单（104 · 按产品能力域分组）
 
-> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的审计（审计与合规）、回溯（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。
+> 十域按「一组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节承载审计（审计与合规）、回溯（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）；**注入**走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄以 roles 为准，分组是文档编制判断。
 >浏览器四件套（`playwright_*`）已于 2026-09-26 注销（v2.0.0 §七 B 表裁定退役，UI 审计实做窗口已关）；v1.5.7 章二实现底座一并退役删除（可行性报告落盘触发，公开面 4 符号吊销 breaking）。
 
 ### FDE 进场 · 六引擎（访谈 → 分类 → 量化 → 推导 → 沉淀 → 部署）（7）
@@ -55,7 +55,7 @@
 | `data_push` | ops | 标准数据推送入口——企业存储按约定 schema 推送训练语料/知识数据，经分拣闸（敏感档标记）+ 合规闸（拦截违规）双闸入库，拒绝留痕进审计链。 |
 | `corpus_export` | ops | 训练语料导出三件套——规则（28 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（六源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。 |
 | `device_data_push` | ops | 数据上行通道（G11）：设备门禁 → 采集声明校验（默认空=不上行，opt-in）→ 脱敏 → AES-256-GCM 加密入队（WAL 暂存断网不丢，游标续传不重传已 ack 段）→ 审计留痕 + 计量进 worklog。原始数据不出设备。 |
-| `trace_reconcile` | ops, fde | 跨层证据对账（trace reconcile）：DSH session trace（Agent 自述）vs git diff（独立事实）vs logs 声明集三源比对——产出差异清单（漏报/幻觉动作/瞒报四态）+ 一致率；可选模型层回溯链（推理 → 模型版本 → train_job → datasetHash）。对账结果入 decision-log（kind=COVERAGE）。 |
+| `trace_reconcile` | ops, fde | 跨层证据对账：DSH session trace（Agent 自述）vs git diff（独立事实）vs logs 声明集三源比对——差异清单（漏报/幻觉动作/瞒报四态）+ 一致率；可选模型层回溯链（推理 → 模型版本 → train_job → datasetHash）。结果入 decision-log（kind=COVERAGE）。 |
 | `audit_query` | audit | 审计数据只读查询——按时间/规则/exitCode 过滤读 history.jsonl，按 ts 查 decision-log 因果链（消费 causedBy 字段）。严格只读，不写任何审计链。（详→注-1） |
 | `ruleset_export` | audit | 规则集导出——25 条默认规则 + 已加载扩展规则导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。（详→注-2） |
 
@@ -81,9 +81,9 @@
 | `workflow_gaps` | ops | workflow 能力缺口分析——扫描 workflow-store 声明节点 vs worklog 实际执行，产出三类缺口清单（缺人/缺能力/待升级），可被商业平台消费转悬赏。纯读零写入。 |
 | `pr_submit` | agent | 提交 workflow 变更提案（PR）——open 态入库 + 贡献者登记（人/数字员工同标准权重，weight 须 0-1 数值、声明 ≤10 条）+ 可选 triggerBinding（启发式=suggested / 显式=confirmed，显式不被启发式覆盖）。 |
 | `pr_review` | agent | 审阅 PR——approve 进 reviewed（可合并）；reject 终态 rejected（拒因进 decision-log 负样本训练信号）。提交者不可自审（利益冲突拒绝）；verdict 精确匹配 approve/reject（大小写敏感）。 |
-| `pr_merge` | agent | 合并 PR——merge_criteria 判定（approver-review：reviewer≠submitter；confidence-min：confirmed=1.0/suggested=0.5/无=0 ≥ detail 阈值；未知 kind/detail 畸形判不过）fail-closed，未过挂起 HITL（human_confirmed 强制合并）。（详→注-1） |
-| `workflow_export` | agent | workflow 模板导出（G1 五件套）：workflow.yml + 本体数据 + MD 家族 + manifest（sha256 完整性）+ 血缘元数据（源企业/源版本/fork 层级/祖先链）。跨租户缺省剥离 private / result-only 节点（G6 联动，剥离计数入 manifest）。export 事件入血缘谱系 + 审计挂链。 |
-| `workflow_import` | agent | workflow 模板导入（G1 三闸 fail-closed）：结构闸（manifest + 必要件 + sha256 完整性核对）→ schema 校验门（zod 结构 + 可见性枚举 + cron 语法，与 CRUD 同门）→ 落地闸（冲突拒绝）。跨企业包检出 private/result-only 节点整包拒绝（G6 加固）。（详→注-4） |
+| `pr_merge` | agent | 合并 PR——merge_criteria 判定（approver-review：reviewer≠submitter；confidence-min：confirmed=1.0/suggested=0.5/无=0 ≥ detail 阈值；未知 kind/detail 判不过）fail-closed，未过挂起 HITL（human_confirmed 强制合并）。（详→注-1） |
+| `workflow_export` | agent | 模板导出（G1 五件套）：workflow.yml + 本体数据 + MD 家族 + manifest（sha256）+ 血缘元数据（源企业/源版本/fork 层级/祖先链）。跨租户缺省剥离 private/result-only 节点（G6，剥离计数入 manifest）；export 入血缘谱系 + 审计挂链。 |
+| `workflow_import` | agent | 模板导入（G1 三闸 fail-closed）：结构闸（manifest + 必要件 + sha256 核对）→ schema 门（zod 结构 + 可见性枚举 + cron 语法，与 CRUD 同门）→ 落地闸（冲突拒绝）。跨企业包含 private/result-only 节点即整包拒绝（G6）。（详→注-4） |
 
 > 注-1：（详→注-3）
 
@@ -131,7 +131,7 @@
 | `train_serve` | eval, ops | 推理服务生命周期——从权重目录拉起 vLLM/Ollama/OpenAI 兼容端点（/health 就绪探测 + 指数退避重试）+ 启停重启状态四操作；每次启停记 train_serve 审计事件（谁启的/哪个模型/哪个节点）。 |
 | `train_cloud` | eval, ops | 云 VM 执行面——注册云 VM（endpoint + 凭据引用走虚拟 key 边界，真实凭据不落明文）/ 列出 / 查状态 / 注销；远程 spawn 训练走 ssh 通道（stdout JSON 回流）+ 分拣闸（敏感档拦上云，依据入审计链）+ 失联止损 + 成本入预算。 |
 | `train_compliance` | eval, ops | 训练数据合规扫描——PII（姓名/手机号/身份证）+ 敏感字段（健康/财务）+ 企业专有名词三类风险项（复用 v1.4.4 redactor 红名单检测）；报告（发现项+严重度+处置建议）写训练集版本；严重级发现阻断训练提交；数据来源标记（企业提供/合成/公开语料）。 |
-| `router_session_push` | ops | router 过站 session 承接（T7 第七章）：exporter 标准 schema 校验（fail-closed 拒绝坏格式）→ 多轮展开（切窗/角色映射）→ 脱敏本地落盘（数据主权铁律——记录不出企业边界，幂等：同 sessionId 重复推送拒绝）→ usage 入 cost 台账（按模型/时段聚合）→ key 维度过站行为 HMAC 挂链（审计）。（详→注-5） |
+| `router_session_push` | ops | router 过站 session 承接（T7 第七章）：exporter schema 校验（fail-closed）→ 多轮展开（切窗/角色映射）→ 脱敏本地落盘（数据主权——不出企业边界；幂等：同 sessionId 重复推送拒绝）→ usage 入 cost 台账（按模型/时段聚合）→ key 维度行为 HMAC 挂链。（详→注-5） |
 
 > 注-5：会话续接五元组（执行器+员工身份+模型+工作目录+运行时）透传判定。
 
@@ -206,7 +206,7 @@
 
 ### 工具命名策略（v1.5.2）
 
-- 现状：tool 名统一 **verb_noun 无前缀**（如 run_audit / evaluate / stats）。历史上唯一带 `sofagent_` 前缀的 `sofagent_compose` 已于 v1.5.2 更名 `compose`（旧名别名兼容一版，见 mcp-server.ts 分派层）。
+- 现状：tool 名统一 **verb_noun 无前缀**（如 run_audit / evaluate / stats）；历史唯一带 `sofagent_` 前缀者（`sofagent_compose`）已于 v1.5.2 更名 `compose`（别名兼容一版，见 mcp-server.ts 分派层）。
 - 风险声明：MCP tool 名是宿主级命名空间。多 server 共存挂载（README「多平台挂载」场景）下，通用词 tool 名可能与其他 server 撞名——宿主侧去重改名（如 `run_audit_2`）后用户无法归因。
 - 整体前缀化（如全量加 `sofagent_` 前缀）属**破坏性变更**，不在常规迭代内做；评估与决策登记见 ROADMAP 既有章。
 
