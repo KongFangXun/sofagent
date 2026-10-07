@@ -809,8 +809,16 @@ function buildPrecheckEvidence(runDir, stepDef, target = '') {
         if (Array.isArray(data.changelog)) {
           lines.push(`  - changelog 模块（${data.changelog.length}，全量）:`);
           for (const m of data.changelog) {
-            lines.push(`    * ${m.title ?? '(无标题)'}`);
+            // v1.5.7 coverage P0-1 修复：此前只 push title，exempt / scenarioRefs 被丢弃
+            // → 非交付性章节（章二/章六）无法判 EXEMPT，被误报「零覆盖」。
+            const exMark = m.exempt ? ' [EXEMPT：非交付性章节，不计覆盖缺口]' : '';
+            const refs = Array.isArray(m.scenarioRefs) && m.scenarioRefs.length ? ` refs=${m.scenarioRefs.join(',')}` : '';
+            lines.push(`    * ${m.title ?? '(无标题)'}${exMark}${refs}`);
           }
+        }
+        if (data.meta?.exempt) {
+          lines.push(`  - 豁免规则：${data.meta.exempt.rule ?? ''}`);
+          lines.push(`  - 豁免关键词（标题命中即 EXEMPT）：${(data.meta.exempt.keywords ?? []).join('、')}`);
         }
         if (Array.isArray(data.scenarios)) {
           lines.push(`  - 场景索引（${data.scenarios.length}，全量）:`);
