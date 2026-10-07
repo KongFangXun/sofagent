@@ -37,6 +37,46 @@
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json",
+    "./domain/job": {
+      "types": "./dist/domain/job.d.ts",
+      "require": "./dist/domain/job.js",
+      "default": "./dist/domain/job.js"
+    },
+    "./domain/observe": {
+      "types": "./dist/domain/observe.d.ts",
+      "require": "./dist/domain/observe.js",
+      "default": "./dist/domain/observe.js"
+    },
+    "./domain/repro": {
+      "types": "./dist/domain/repro.d.ts",
+      "require": "./dist/domain/repro.js",
+      "default": "./dist/domain/repro.js"
+    },
+    "./domain/data": {
+      "types": "./dist/domain/data.d.ts",
+      "require": "./dist/domain/data.js",
+      "default": "./dist/domain/data.js"
+    },
+    "./domain/runtime": {
+      "types": "./dist/domain/runtime.d.ts",
+      "require": "./dist/domain/runtime.js",
+      "default": "./dist/domain/runtime.js"
+    },
+    "./domain/authoring": {
+      "types": "./dist/domain/authoring.d.ts",
+      "require": "./dist/domain/authoring.js",
+      "default": "./dist/domain/authoring.js"
+    },
+    "./domain/deliver": {
+      "types": "./dist/domain/deliver.d.ts",
+      "require": "./dist/domain/deliver.js",
+      "default": "./dist/domain/deliver.js"
+    },
+    "./domain/cloud": {
+      "types": "./dist/domain/cloud.d.ts",
+      "require": "./dist/domain/cloud.js",
+      "default": "./dist/domain/cloud.js"
+    },
     "./*": {
       "types": "./dist/*.d.ts",
       "require": "./dist/*.js",

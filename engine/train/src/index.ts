@@ -1,6 +1,9 @@
 // ============================================================
 // @sofagent/train · src/index.ts
 // ============================================================
+// v1.5.7 F32 迁移指引：新代码建议按域子路径导入
+// （@sofagent/train/domain/<job|observe|repro|data|runtime|authoring|deliver|cloud>，
+// 域 barrel 在 src/domain/）；根 barrel 为兼容面（导出集不变，零 breaking）。
 // train 是独立包，本 barrel 是 train 域全部 @public 导出的**唯一出口**
 // （101 个 export 块 / 562 个符号）。
 // 依赖方向单向：train → @sofagent/orchestrator（只经窄入口

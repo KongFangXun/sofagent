@@ -50,6 +50,46 @@
       "require": "./dist/federation/index.js",
       "default": "./dist/federation/index.js"
     },
+    "./domain/scheduler": {
+      "types": "./dist/domain/scheduler.d.ts",
+      "require": "./dist/domain/scheduler.js",
+      "default": "./dist/domain/scheduler.js"
+    },
+    "./domain/watch": {
+      "types": "./dist/domain/watch.d.ts",
+      "require": "./dist/domain/watch.js",
+      "default": "./dist/domain/watch.js"
+    },
+    "./domain/dream": {
+      "types": "./dist/domain/dream.d.ts",
+      "require": "./dist/domain/dream.js",
+      "default": "./dist/domain/dream.js"
+    },
+    "./domain/inspectors": {
+      "types": "./dist/domain/inspectors.d.ts",
+      "require": "./dist/domain/inspectors.js",
+      "default": "./dist/domain/inspectors.js"
+    },
+    "./domain/webhook": {
+      "types": "./dist/domain/webhook.d.ts",
+      "require": "./dist/domain/webhook.js",
+      "default": "./dist/domain/webhook.js"
+    },
+    "./domain/device": {
+      "types": "./dist/domain/device.d.ts",
+      "require": "./dist/domain/device.js",
+      "default": "./dist/domain/device.js"
+    },
+    "./domain/health": {
+      "types": "./dist/domain/health.d.ts",
+      "require": "./dist/domain/health.js",
+      "default": "./dist/domain/health.js"
+    },
+    "./domain/federation": {
+      "types": "./dist/domain/federation.d.ts",
+      "require": "./dist/domain/federation.js",
+      "default": "./dist/domain/federation.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

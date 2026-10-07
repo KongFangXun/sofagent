@@ -13,7 +13,47 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./domain/shared": {
+      "types": "./dist/domain/shared.d.ts",
+      "require": "./dist/domain/shared.js",
+      "default": "./dist/domain/shared.js"
+    },
+    "./domain/config": {
+      "types": "./dist/domain/config.d.ts",
+      "require": "./dist/domain/config.js",
+      "default": "./dist/domain/config.js"
+    },
+    "./domain/security": {
+      "types": "./dist/domain/security.d.ts",
+      "require": "./dist/domain/security.js",
+      "default": "./dist/domain/security.js"
+    },
+    "./domain/crypto": {
+      "types": "./dist/domain/crypto.d.ts",
+      "require": "./dist/domain/crypto.js",
+      "default": "./dist/domain/crypto.js"
+    },
+    "./domain/runtime": {
+      "types": "./dist/domain/runtime.d.ts",
+      "require": "./dist/domain/runtime.js",
+      "default": "./dist/domain/runtime.js"
+    },
+    "./domain/memory": {
+      "types": "./dist/domain/memory.d.ts",
+      "require": "./dist/domain/memory.js",
+      "default": "./dist/domain/memory.js"
+    },
+    "./domain/audit": {
+      "types": "./dist/domain/audit.d.ts",
+      "require": "./dist/domain/audit.js",
+      "default": "./dist/domain/audit.js"
+    },
+    "./domain/export": {
+      "types": "./dist/domain/export.d.ts",
+      "require": "./dist/domain/export.js",
+      "default": "./dist/domain/export.js"
+    }
   },
   "bin": {
     "sofagent-core": "dist/cli.js"
