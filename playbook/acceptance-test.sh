@@ -4260,6 +4260,24 @@ S408_OK=true; S408_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const r=process.e
 scenario 409 "v1.4.8 安全豁免面——A1 数据容器臂剔除 + 豁免边界双防 + A2 转义对抗锚（B 类防复发）"
 S409_OK=true; S409_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const r=process.env.PROJECT_ROOT; const fs=require('fs'); const bad=[]; const a1=fs.readFileSync(r+'/engine/audit/src/rules/rule-a1-sensitive-files.ts','utf8'); if(!/\.env\.json|\.env\.yaml|serverless\.env/.test(a1))bad.push('数据容器臂未剔除'); if(!a1.includes('必要非充分条件'))bad.push('豁免边界说明缺失'); const a2=fs.readFileSync(r+'/engine/audit/src/rules/rule-a2-secret-leak.ts','utf8'); if(!a2.includes('restoreHexEscapes'))bad.push('A2 转义还原缺失'); process.stdout.write(bad.length?('S409_FAIL:'+bad.join('|')):'ASSERT_OK');" 2>&1) || S409_OUT="S409_FAIL:crash"; grep -q ASSERT_OK <<< "$S409_OUT" || { echo "  ✗ S409: $S409_OUT"; S409_OK=false; }; $S409_OK && pass "v1.4.8 安全豁免面：env dump 载体不得静默 PASS + 豁免叠加边界 + A2 对抗锚" || fail "S409 锚点回潮——见上方 ✗ 行"
 
+# ── S410（v1.4.8 阶段十一）：Release body 卫生 ──
+# 判据：body 必含本版 changelog 链接（SOP 阶段十一步骤一 contains 断言），且不得含流程元说明。
+# v1.4.9 阶段三修复：本块此前位于文件尾部 exit 之后 = 不可达死代码（断言从未执行、且无 pass/fail
+# 上报）⇒ 现接线为正式场景（编号沿用 S410；S411/S412 号位不受影响）。
+scenario 410 "v1.4.8 阶段十一：Release body 卫生——changelog 链接在位 + 零流程元说明（gh 缺则 warn）"; S410_OK=true
+if command -v gh >/dev/null 2>&1; then
+  _rel_body=$(cd "$PROJECT_ROOT" && gh release view "v${SSOT_VER:-1.4.8}" --json body -q '.body' 2>/dev/null || echo "")
+  if [ -n "$_rel_body" ]; then
+    [[ "$_rel_body" == *docs/changelog/* ]] || { S410_OK=false; echo "  ✗ S410：release body 缺本版 changelog 链接"; }
+    grep -q -E "阶段六定稿必备项|GitHub Release body 同源" <<< "$_rel_body" && { S410_OK=false; echo "  ✗ S410：release body 含流程元说明"; }
+    $S410_OK && pass "Release body 卫生：changelog 链接在位 + 零流程元说明"
+  else
+    warn "S410：gh 可用但取不到 release（发版前属正常）——放行前复核"
+  fi
+else
+  warn "S410：gh 未安装（证据面缺失）——放行前复核"
+fi
+
 # ── S411（v1.4.9 bugfix 批二 P0-1）：hook 场景 treeSha 跨阶段错配回归锁（三态）──
 # ① 干净 commit 出「✓ [sofagent] 审计通过」且不含「未确认审计记录」；② soft-reset 换料重提
 # （同 message 不同内容 · --no-verify）不得再报「审计通过」（F-16 防线在位；此断言同时锁死被
@@ -4301,24 +4319,6 @@ P10_RC=$(grep -oE '^P10_RC=[0-9]+$' "$P10_LOG" | tail -1 | cut -d= -f2); P10_OK=
 grep -qE '已移除.*历史仍在' "$P10_LOG" || { P10_OK=false; echo "  ✗ P1-10②：输出缺「已移除…历史仍在」提示（降级把补救指引一起丢了）"; }
 rm -rf "$P10_TMP" "$P10_LOG"
 $P10_OK && pass "A1 方向分级：git rm .env → WARN 放行（exit ≤1）+「已移除」+「历史仍在」轮换指引" || fail "P1-10 方向分级回归（见上方 ✗ 行）"
-
-# ── S410（v1.4.8 阶段十一）：Release body 卫生 ──
-# 判据：body 必含本版 changelog 链接（SOP 阶段十一步骤一 contains 断言），且不得含流程元说明。
-# v1.4.9 阶段三修复：本块此前位于文件尾部 exit 之后 = 不可达死代码（断言从未执行、且无 pass/fail
-# 上报）⇒ 现接线为正式场景（编号沿用 S410；S411/S412 号位不受影响）。
-scenario 410 "v1.4.8 阶段十一：Release body 卫生——changelog 链接在位 + 零流程元说明（gh 缺则 warn）"; S410_OK=true
-if command -v gh >/dev/null 2>&1; then
-  _rel_body=$(cd "$PROJECT_ROOT" && gh release view "v${SSOT_VER:-1.4.8}" --json body -q '.body' 2>/dev/null || echo "")
-  if [ -n "$_rel_body" ]; then
-    [[ "$_rel_body" == *docs/changelog/* ]] || { S410_OK=false; echo "  ✗ S410：release body 缺本版 changelog 链接"; }
-    grep -q -E "阶段六定稿必备项|GitHub Release body 同源" <<< "$_rel_body" && { S410_OK=false; echo "  ✗ S410：release body 含流程元说明"; }
-    $S410_OK && pass "Release body 卫生：changelog 链接在位 + 零流程元说明"
-  else
-    warn "S410：gh 可用但取不到 release（发版前属正常）——放行前复核"
-  fi
-else
-  warn "S410：gh 未安装（证据面缺失）——放行前复核"
-fi
 
 # ── S413-S417（v1.4.9 阶段四 B 类分发）：新交付面行为锁 ──
 # 来源：v1.4.9 一~十二章新面（设备接入 / 连接器 / 血缘 / 敏感识别插槽 / 门禁解析链）此前零锚。
