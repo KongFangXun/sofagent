@@ -135,10 +135,10 @@ What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🏠 **Stay resident after departure**—the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit**—`npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
-- 🧱 **28 audit rules + 104 MCP tools**—secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 22/28 run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs, active once an Agent is connected), 1 filesystem scan;
+- 🧱 **28 audit rules + 104 MCP tools**—secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 22/28 run on git-diff hard evidence (effective locally), 5 hybrid (4 diff + Agent logs, 1 decision-log channel), 1 filesystem scan;
  log-based rules such as A7/A8 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped—fail-fast design);
 evidence is based on local diffs; **not fail-closed by default**—the config can be tampered with and the hooks
- skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 25 = 17 default + 8 extensions)
+ skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 28 = 17 default + 11 extensions)
 - 🛡️ **Automatic snapshot rollback**—auto-archived after eaudit, one-click restore to any snapshot when something breaks
 
 ## What is the FDE Harness
@@ -150,7 +150,7 @@ together by the deliverables handed over in between**:
 - **On entry · generate judgment**: four steps—**map the workflow → build dual graphs → qualify AI nodes → deploy**. Dual graphs = business graph (system boundaries, data flows; read by humans) + ontology graph (shared semantic foundation; read by AI), turning the enterprise into a
  machine-readable structure; for eAI node, "what counts as done (merge_criteria) · who signs off (approver) · when it runs (trigger)" is judged here and frozen into the deliverables
 (workflow.yml + ontology + skills).
-- **After departure · retain judgment**: the FDE leaves, the judgment stays—audit triggers automatically on change events (commits) against the frozen criteria (evidence-tiered: 24 of the 28 rules run on git-diff hard evidence—see Core Features); daemon inspects 7×24, snapshots roll back,
+- **After departure · retain judgment**: the FDE leaves, the judgment stays—audit triggers automatically on change events (commits) against the frozen criteria (evidence-tiered: 22 of the 28 rules run on git-diff hard evidence—see Core Features); daemon inspects 7×24, snapshots roll back,
  experience distills back. The human leaves, governance doesn't.
 
 > 🔗 **Why they must be one thing**: the deliverables are a living state shared by both stages—written on entry, read during execution, written back during evolution (trial branches promoted to baseline, reflections distilled back). Without FDE, the constraint layer has no criteria to enforce;
@@ -193,10 +193,10 @@ the platform:
 
 > 注-1：see "Upstream & plugin entries" below)—7 lifecycle events incl. `tools/pre-execute` (per the vocabulary table in `engine/dsh-plugins/SEAMS.md`)
 
-- **Never assume capability parity—tiers differ in injection strength, not in "supported or not"**—DSH intercepts per tool call, OpenClaw injects once per session, and on eother host constraints ride along as Skill text the Agent reads on its own (advisory). "Supports platform X" means the
+- **Never assume capability parity—tiers differ in injection strength, not in "supported or not"**—DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text (advisory). "Supports platform X" means the
  constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls
 into—full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
-- **Audit fallback is platform-agnostic**—`sofagent audit --install-hook` runs as a git hook; at etier, ecommit's audited automatically (audits with the 17 default rules out of the box; the full 28 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations
+- **Audit fallback is platform-agnostic**—`sofagent audit --install-hook` runs as a git hook; at every tier, every commit's audited automatically (audits with the 17 default rules out of the box; the full 28 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations
  hard-blocked. Constraints are advisory; auditing is mandatory (boundaries of that mandate: **not fail-closed by default**—`--no-verify` skips the first two defense layers, and
 post-commit only leaves a trace without blocking; bypassed commits do leave traces—see [LIMITATIONS
  §3](./docs/LIMITATIONS.md)).
@@ -218,7 +218,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## The Two FDE Harness Phases
 
-**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**: together they're onboarding a digital employee (the after-departure side runs daemon patrols 24/7, ecommit triggers the 28
+**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**: together they're onboarding a digital employee (the after-departure side runs daemon patrols 24/7, every commit triggers the 28
 audit rules including **AgentShield static scanning across five config surfaces**, snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
 
 | Organizational act | sofagent equivalent |
@@ -280,7 +280,7 @@ bash bootstrap.sh && rm bootstrap.sh
 > 🔒 Supply-chain trust: tag pinning + sha256 verification + fail-closed + self-anchored hash re-verification (see [SECURITY.md](SECURITY.md), remote-install section); ⚠️ audit logs are plaintext on disk by default—enterprise deployments should enable encryption-at-rest.
 
 ```bash
-sofagent audit --init   # install the git hook—ecommit's audited from now on
+sofagent audit --init   # install the git hook—every commit's audited from now on
 sofagent audit --doctor  # verify the environment (optional)
 ```
 
@@ -323,7 +323,7 @@ the installed UI is the source of truth.)</sub></p>
 > ⚠️ **Dashboard availability boundary**: all three entries ship with the **`install.sh`-installed state**; a package installed via `npm i @sofagent/audit` does **not** contain the dashboard static assets (`tools/dashboard/` isn't distributed—the root `files` list keeps only root-level
 >essentials). npm-only installs get the CLI + MCP surface; **for the Dashboard use the full install** (bootstrap.sh / install.sh).
 
-> 👁️ **Agent's view**: with hooks installed, ecommit triggers an audit—PASS prints a short echo then passes (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there's no separate GUI on the Agent side (see [PHILOSOPHY
+> 👁️ **Agent's view**: with hooks installed, every commit triggers an audit—PASS prints a short echo then passes (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there's no separate GUI on the Agent side (see [PHILOSOPHY
 >§2](./docs/PHILOSOPHY.md#%E7%B3%BB%E7%BB%9F%E6%9A%B4%E9%9C%B2%E7%9A%84%E8%83%BD%E5%8A%9Bagent-%E8%A7%86%E8%A7%92)).
 
 <p align="center"><img src="docs/assets/usage-path-en.svg" alt="Usage path: trial → team → enterprise → self-running" width="85%" /></p>

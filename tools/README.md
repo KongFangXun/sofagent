@@ -42,7 +42,7 @@
 | `check/check-seam-contract.mjs` | 插件适配层 seam 契约门禁（正向：插件 seam ∈ `engine/dsh-plugins/SEAMS.md` 词汇表；DSH 三处 seam 逐条一致 + description 不滞后；反向：词汇表每条在**真实宿主**里 grep 到定义处，宿主缺席打印 `SKIP` 不静默通过；双向对账拦「漏写 seam」；（详→注-1） | CI / 新增或改插件后 |
 | `check/check-seam-drift.mjs` | 宿主 seam 词表漂移巡检（登记本 vs 宿主实测差集：宿主有词表未登 / 词表登宿主已废 等三面判定；`SEAMS.md` 只保证 sofagent 侧四载体自洽，本巡检防「宿主破坏性升级后词表静默过期」——**只提示不阻断**，`--strict` 供 CI 收紧） | 宿主升级后 / 定期（默认非阻断） |
 | `check/check-template-drift.sh` | 模板漂移检测（三断言：模板与实现同步对账） | 发版 SOP 阶段六 |
-| `../engine/audit/src/rulesets/*.json`（跨模块指针，**非 tools/ 内文件**） | 行业 overlay 规则包（ai / fintech / government / medical 四件；overlay 按 `context.md` 的 `industry:` 字段加载，机制见 `FDE/GUIDE.md` §5.9） | FDE 进场标注行业时（v1.4.8 第2批修正：此前登记的是仓内不存在的 `tools/check/` 下伪路径，真实文件在 engine/ 侧） |
+| `../engine/audit/src/rulesets/*.json`（跨模块指针，非 tools/ 内文件） | 行业 overlay 规则包（ai/fintech/government/medical 四件；按 `context.md` 的 `industry:` 加载，机制见 `FDE/GUIDE.md` §5.9） | FDE 进场标注行业时（v1.4.8 修正：原登记 `tools/check/` 伪路径，实际在 engine/ 侧） |
 | `check/dependency-direction.sh` | 依赖方向架构测试（build 序列 13 包边界：核心层←约束层←适配层←展示层；读同目录 `dependency-direction.yml` SSOT——含 `rhythm` 版本节奏段） | CI / 改包依赖后 |
 | `check/check-silent-catch.mjs` | 静默吞错扫描（关键路径空 catch 只拦新增，存量见 `silent-catch-baseline.json` 基线） | CI / 改错误处理时 |
 | `check/check-paired-records.mjs` | 判决类记录成对门禁（N 态判据：声明 N 态即须落 N 态。登记表 = 脚本内 REGISTRY（判决家族 × N 态 × 生产写入点）；三判定：①缺侧 ②未登记判决写入点（新增判决 kind 必须同批登记配对侧）③非判决豁免集与 DecisionKind 枚举对账；盲区显式登记（RULE_TOGGLE/ESCALATE_REPORT/COST 各带理由+触发条件）；（详→注-2） | pre-push 第 3j 步 / 新增判决类 kind 后 |
@@ -65,7 +65,7 @@
 | `check/check-shell-injection.sh` | 命令注入静态扫（engine 源码面：execSync 模板插值/字符串拼接注入形态——v1.4.3 安全修复批防线） | CI |
 | `check/check-action-pins.sh` | GitHub Actions SHA pin 对账（uses: 完整 commit SHA 与行内注释 tag 指向一致性，离线降级 exit 0） | CI / 发版前 / 定期 |
 | `check/check-storefront.sh` | 仓外门面对账（GitHub description/homepage/topics 数字 vs 仓内实数；离线 SKIP 可见不假绿） | CI（离线 SKIP 不阻断）/ 发版 SOP 阶段八/九 |
-| `check/check-npm-claims.mjs` | registry 实测声称对账（活文档面 `npm view <pkg> dist-tags` 与「dist-tags 当前为 …」两种形态的值声称 vs `npm view --prefer-online` 在线真值——无 `npm view` 时回退行内被引用包名，有值无包名判盲区；≥3 轮重试 + 子进程 timeout；离线 SKIP 可见不假绿；（详→注-5） | CI（pre-push 步骤 3i · 离线 SKIP 不阻断）/ 改 README/docs 后 ）|
+| `check/check-npm-claims.mjs` | registry 实测声称对账（活文档面 `npm view <pkg> dist-tags` 与「当前为 …」两种值声称 vs `--prefer-online` 真值——无 npm view 时回退行内包名，有值无包名判盲区；≥3 重试 + timeout；离线 SKIP 不假绿；（详→注-5） | CI（pre-push 3i · 离线 SKIP 不阻断）/ 改 README/docs 后 |
 | `check/npm-claims-exempt.json` | npm 实测声称豁免台账（`check-npm-claims.mjs` 消费：行级 `{file, anchor, reason}` 锚串豁免——锚须文件内唯一、当前仍是命中行、理由栏须实质，三条硬校验任一不成立即 exit 2；**当前为空 = 无豁免债的正常态**） | 被 check-npm-claims.mjs 消费 |
 | `check/check-shellcheck.sh` | 全仓 shellcheck（**CI 同口径**：按 shell shebang 扫全仓含无扩展名 hook；`-s bash -S warning -e SC2034/SC1090/SC1091`）——补 CI 与本地扫描面口径差 |
 | `check/check-forge-branches.sh` | 分支收编标记对账（tag `forge-merged-*` / 分支名 `-merged-YYYYMMDD` 双形态判定；未标记分支 INFO 四要素列出供人工确认，输出字符级截断防 U+FFFD） | 发版 SOP / 定期 |
@@ -79,22 +79,22 @@
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
 | `check/doc-postcheck.mjs` | **文档落盘后自检（排障非门禁）**：五项机械判据聚合既有口径——U+FFFD/ 墙式行格/ 字符数棘轮与抬头块（doc-char-ratchet 同判据）/ 标题粘连（「正文。## 标题」同行——行内代码剥离 + 格式说明豁免，正负样本 `--se…| 文档落盘后即时快检（全量防线仍归 doc-discipline / check-docs / check-anchors / check-table-shape / doc-score，不替代） |
 | `check/vitest-setup.mjs` | 全局测试隔离（预置 SOFAGENT_DATA 到 tmp，防测试污染真实 HOME——被 5 个 engine/*/vitest.config.ts setupFiles 引用） | vitest 自动挂载 |
-| `check/check-cross-package-relative.mjs` | 越包相对引用守卫（相对 import/require 解析后越出**包根**即 FAIL；现存 6 条豁免 = 6 处清单 SSOT 对账测试读 `plugins.json`，登记在 `cross-package-relative-exempt.json`。（详→注-6） | CI（pre-push 步骤 2e）/ 改 dsh-plugins 后 / `--selftest` |
+| `check/check-cross-package-relative.mjs` | 越包相对引用守卫（相对 import/require 越出**包根**即 FAIL；6 条豁免 = 清单 SSOT 对账测试读 `plugins.json`，登记在 exempt 台账。（详→注-6） | CI（pre-push 2e）/ 改 dsh-plugins 后 / `--selftest` |
 | `check/cross-package-relative-exempt.json` | 越包相对引用存量豁免台账（被 `check-cross-package-relative.mjs` 消费；集合相等判定——新增/漂移/陈旧均红） | 被 check-cross-package-relative.mjs 消费 |
-| `check/check-legacy-knowledge-path.mjs` | 知识库旧路径残留守卫（v1.2.1 前的旧知识库落点写法，**连写 + 分离**双形态；扫描面 = git tracked 文件；非注释面对账 `knowledge-legacy-path-exempt.json`，注释面可见不阻塞，历史冻结区豁免，本守卫自身两个文件的引用归「装置面」逐次可见打印；退出码 0 绿 / 1 违规 / 2 检查器失明） | CI（check-docs §18）/ 改 knowledge 路径解析后 / `--selftest` |
+| `check/check-legacy-knowledge-path.mjs` | 知识库旧路径残留守卫（v1.2.1 前写法，**连写+分离**双形态；扫描 git tracked 文件；非注释面对账 `knowledge-legacy-path-exempt.json`，注释面可见不阻塞，冻结区豁免，守卫自身两文件归「装置面」；退出码 0 绿 / 1 违规 / 2 失明） | CI（check-docs §18）/ 改 knowledge 路径后 / `--selftest` |
 | `check/knowledge-legacy-path-exempt.json` | 知识库旧路径存量豁免台账（被 `check-legacy-knowledge-path.mjs` 消费；逐文件逐计数相等判定） | 被 check-legacy-knowledge-path.mjs 消费 |
-| `check/doc-discipline.sh` | 对外文档写作纪律门禁（v1.4.9 P2-27）：依据 `CONTRIBUTING.md`「文档措辞 / 禁考古 / 来源块溯源 / changelog 写作」规范，把**正则可判定**的三面收进 CI —— **Face 1** 内部工单/审查代号（`F-xx`/`P0-xx`/`P1-xx`/`P2-xx`/`P3-xx`/`D-n`/`G-n`）（详→注-7） | pre-push · 改对外文档后 |
+| `check/doc-discipline.sh` | 对外文档写作纪律门禁（P2-27）：依据 CONTRIBUTING「措辞/禁考古/来源块溯源/changelog 写作」规范，把**正则可判定**的三面收进 CI——**Face 1** 内部工单/审查代号（`F-xx`/`P0-xx` 等）（详→注-7） | pre-push · 改对外文档后 |
 | `check/source-block-exempt.txt` | 来源块溯源存量台账（被 `doc-discipline.sh` Face 3b 消费；逐文件逐类别计数**集合相等**判定——新增 / 漂移 / 陈旧均红。格式 `<类别>TAB<文件>TAB<计数>`，类别 ∈ {缺链接, 缺日期}；用 `.txt` 而非 `.json`，因消费方是 bash 而 macOS 不自带 jq。（详→注-8） | 被 doc-discipline.sh Face 3b 消费 |
-| `check/check-prepush-checklist.mjs` | pre-push 检查项清单对账（v1.4.9 G-16：`pre-push-check.sh` 里 `#   + <脚本名>` 清单声明的脚本名 **⊆ 实际被调用的脚本名**——子集非相等，实现多于清单合法；守「**声明了 X、实现里没有 X**」缺陷类（G-12 / G-11 同族）。清单提取为空 / 调用面提取为空 / 提取器能力探针失效 ⇒ exit 2 失明；（详→注-9） | pre-push 第 1b 步 / 改 pre-push 检查项后 / `--selftest` |
-| `check/check-mjs-comment-backtick.mjs` | mjs/js 注释可执行反引号守卫：注释行反引号串首 token 形似仓内脚本路径或 npm/node/bash 命令头 = 危险——bash 误跑该文件时会把注释串当命令替换**真执行**（实锤：check-prepush-checklist.mjs 头部注释串曾让 bash 跑完整套 pre-push 防线数分钟）。退出码 0 绿 / 1 有违规（改单引号）/ 2 引擎故障 | check-tool-health 第 ⑨ 项 / 新写 .mjs 注释含反引号路径串后 |
+| `check/check-prepush-checklist.mjs` | pre-push 检查项清单对账（G-16：清单声明的脚本名 **⊆ 实际调用**——子集关系，实现多于清单合法；守「声明了 X、实现没有 X」缺陷类。清单/调用面提取为空或探针失效 ⇒ exit 2 失明；（详→注-9） | pre-push 第 1b 步 / 改检查项后 / `--selftest` |
+| `check/check-mjs-comment-backtick.mjs` | mjs/js 注释可执行反引号守卫：注释行反引号串首 token 形似脚本路径或 npm/node/bash 命令头 = 危险——bash 误跑时把注释串当命令替换**真执行**（实锤：曾让 bash 跑完整套 pre-push 防线数分钟）。退出码 0 绿 / 1 违规（改单引号）/ 2 引擎故障 | tool-health 第 ⑨ 项 / 新写 .mjs 注释含反引号路径串后 |
 | `check/check-gate-inventory.sh` | 门禁清单覆盖对账（**登记 ≠ 调用**：`tools/check/` 全体守卫 ⊆ 真实调用面——抓「脚本写好、登记在册、零调用点」的**孤儿守卫**，其红态无人知晓）。（详→注-10） | pre-push 第 1c 步 / 新增或搬迁 tools/check/ 守卫后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
 | `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 徽章的「被 Awesome 仓收录」声称变成可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 `search/code` API，防超大 README 假阴性），输出 OK / MISSING / SKIP。（详→注-11） | 被 check-storefront 消费（需 gh 环境） |
-| `check/lib/unwired-reachability.mjs` | **生产可达判定内核**（被 `check-unwired-exports.sh --since` 调用 · v1.5.4 收紧批）：把「非测试代码里出现过该符号」升级为**生产可达**——① `import type` / 纯类型注解位不计接线 ② 追链可达（一跳有调用、上一跳无人用 ⇒ 断链）③ 破循环自证（A 的锚点落在零接线的 B 体内不算自证）；（详→注-12） |
+| `check/lib/unwired-reachability.mjs` | **生产可达判定内核**（`--since` 调用 · v1.5.4 收紧）：把「出现过该符号」升级为**生产可达**——① `import type`/类型注解位不计 ② 追链可达（一跳有调用、上一跳无人用 ⇒ 断链）③ 破循环自证（锚点落零接线体内不算）；（详→注-12） |
 | `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
-| `check/check-table-shape.mjs` | 表格形态门禁（四断言）：① 超列——格数 > 表头列数（GFM 丢弃多余格）；② 孤儿行——含 `\|` 但无「表头 + 分隔线」归属，渲染成裸管道；③ 悬空注标——`（详→注-N）` 无对应 `> 注-N：` 定义；④ 断句格——拆注格切口未落句读符。内建 10 样本自检（含负样本）；存量见 `table-shape-baseline.json` | CI / 改 .md 表格后 / 发版 SOP |
+| `check/check-table-shape.mjs` | 表格形态门禁（四断言）：① 超列（格数 > 表头列数，GFM 丢格）；② 孤儿行（含 `\|` 无「表头+分隔线」归属）；③ 悬空注标（`（详→注-N）` 无定义）；④ 断句格（拆注格切口未落句读符）。内建 10 样本自检；存量见 `table-shape-baseline.json` | CI / 改 .md 表格后 / 发版 SOP |
 | `check/lib/prompt-fork-lint.mjs` | **任务书零分支 lint**（被 `check-dev-prompt.sh` 调用 · 检查项 5）：禁「方案 A/B」「二选一」「视情况而定」「由你决定」——交给执行方的任务书不得留选择（出题方须先比完并选定一条）。带**两条实测豁免**（否定语境 + 行哈希台账）与**内置自检**（判据被改坏即 `exit 3`）；（详→注-13） |
-| `check/table-shape-baseline.json` | 表格形状**存量台账**（被 `check-table-shape.mjs` 消费；只拦新增。签名 = 行内容归一化后 sha256 前 16 位——**不用行号**：行号随编辑漂移即静默放行；**不存行原文**：表格单元格常含正则/安全词，落原文会触发 A9 注入检测自指） | 被 check-table-shape.mjs 消费（`--update-baseline` 重生成） |
+| `check/table-shape-baseline.json` | 表格形状**存量台账**（只拦新增。签名 = 行归一化后 sha256 前 16 位——**不用行号**（编辑漂移即静默放行）；**不存原文**（表格常含正则/安全词，落原文触发 A9 自指） | 被 check-table-shape 消费（`--update-baseline` 重生成） |
 | `check/prompt-fork-baseline.json` | 任务书零分支 lint 的**豁免台账**（被 `prompt-fork-lint.mjs` 消费；签名 = 行内容归一化后 sha256 前 16 位——**不用行号**（行号漂移即静默放行，同 table-shape-baseline 理据）；每条须带理由，变更进 review）。 |
 | `check/claims-sdk-ledger.json` | check-claims A 组「新增件零消费阻断」的豁免台账（SDK 面登记：刻意保留的新增件逐条带理由；签名 = 文件路径；变更进 review）。 |
 | `check/doc-ratchet.json` | 核心文档**可读性棘轮台账**（被 `doc-discipline.sh` Face 5 消费：墙式行/墙式格实测值**只许降不许升**——治「内容只进不出」；键 = 逐文档实测计数，`_meta` 记口径，与 `lib/readability-count.mjs` 注释同源）。 |
@@ -105,7 +105,7 @@
 | `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件（上一 tag 后有改动或本轮暂存）零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine` + `tools`（`playbook/` 剔出：行为锁本质是测试）；（详→注-14） | CI / 改 SECURITY 测绘数字或 hook 时 |
 | `check/doc-score.mjs` | 文档质量六维评分器（准确/精简/结构/排版/可读/淘汰六维，各维 = 通过项/总项 × 10；机械项调既有门禁、人工项读本版 devlog「文档质量评分」留痕，未确认即按不通过计 fail-closed；任一维 <8 或低于基线即不可放行） | pre-push 第 3k 步 / 发版 SOP |
 | `check/doc-score-baseline.json` | 文档质量六维评分基线（逐维下限 + floor 8 + 建档日期；只许升不许降） | 被 doc-score.mjs 消费 |
-| `gen/gen-capability-manifest.mjs` | capabilities.json 可拔契约断言器（C1 幽灵名/C2 遗漏级联/C3 档位二义/C4 结构/C5 域封闭/C6 env 形态/C7 shim 台账 + 装配面两陷阱；失明自检 exit 2 拒假绿——F19 门禁盲区元台账首实例） | node tools/gen/gen-capability-manifest.mjs（CI / 改 capabilities.json 后） |
+| `gen/gen-capability-manifest.mjs` | capabilities.json 可拔契约断言器（C1 幽灵名/C2 级联/C3 档位二义/C4 结构/C5 域封闭/C6 env 形态/C7 shim 台账 + 装配面两陷阱；失明自检 exit 2 拒假绿——F19 首实例） | CI / 改 capabilities.json 后 |
 | `check/check-sop-integrity.mjs` | 发版 SOP 阶段文件完整性守卫（A1 失明自检 / A2 SOP-ANCHOR 锚链 / A3 结构 pin 三元组 / A4 最小形态——治阶段文件被静默截断而门禁全绿） | CI / 改 releasing/ 阶段文件后 |
 | `check/sop-integrity-baseline.json` | SOP 阶段文件结构基线台账（11 阶段文件三元组 + 附件豁免；改阶段文件结构时同批更新） | 被 check-sop-integrity.mjs 消费 |
 
@@ -115,11 +115,11 @@
 > 注-4：豁免 = 能力/阶段版本门槛（`vX.Y.Z+`·`vX.Y.Z 起`·`低于`·`达到`）/ 文件头版本标识 / 机器注释 / 机器字面量（引号或命令内的版本号，逐处摘除）/ 台账锚串；带 `--selftest` 正反例夹具 + `--list-exempt` 列豁免行）
 > 注-5：已知债走 `check/npm-claims-exempt.json`，锚须文件内唯一且当前仍是命中行、理由栏须实质，所豁免声称改为真值即 exit 2 强制摘除；退出码 0 一致 / 1 失配 / 2 失明·台账非法·有值无包名）
 > 注-6：v1.5.2 章九二轮起 6 款原子插件改用**包名**引用 `@sofagent/dsh-plugin-kit`，旧「相对引用 plugin-kit」形态已收口——`--selftest` 探针 B 显式断言其为 0，防回潮；退出码 0 绿 / 1 违规 / 2 检查器失明）
-> 注-7：、**Face 2** 本机私有路径（`/Users/<name>/`、`/home/<name>/`、`~/Desktop/`、`~/Documents/`；锚定路径起点，防 `/tmp/…/home/…` 类假阳性）、**Face 3** 来源块溯源纪律（3a 阻断：`> 📖/📐 来源：` 行内出现内部会议纪要 / 内部复盘等内部件——内部件没有公开出处，写进溯源块即虚假溯源；3b 集合相等台账 `source-block-exempt.txt`——缺链接 / 缺原文发布日的逐文件计数，**新增即红、清理后须同步改小**）。
+> 注-7：**Face 2** 本机私有路径（`/Users/<name>/` 等；锚定路径起点，防 `/tmp/…/home/…` 假阳性）、**Face 3** 来源块溯源（3a 阻断：来源行内出现内部会议纪要/复盘等内部件即虚假溯源；3b 集合相等台账 `source-block-exempt.txt`——缺链接/缺日期逐文件计数，**新增即红、清理后改小**）。
 > 注-7（续）：扫描面 = 根级 `*.md` + `docs/**/*.md`；**装置面** `CONTRIBUTING.md`（纪律定义必须引用被禁模式本身）与**历史冻结区** `docs/{changelog,archive,evidence}/**` 豁免。**范围诚实披露**：changelog 的写作纪律不在本门禁判定面（全量含历史代号，纳入会全红且只能靠篡改历史变绿），维持人工 SOP。退出码 0 绿 / 1 违规 / 2 检查器失明（扫描面 <5 个文档或台账缺失即拒判，防「读不到当零违规」）
 > 注-8：数字**只许随真实清理下调**——「只调数字不清理」= 假绿，与文档预算「只调警戒线不归并 = 不合格」同罪）
 > 注-9：退出码 0 绿 / 1 有未接线声明 / 2 检查器失明）
-> 注-10：口径四项显式声明：脚本面认裸名且**剔注释行** · 文档面只认 `tools/check/` 路径化引用 · **登记表与 `docs/changelog/v*` 历史记述不在任何面内**（描述守卫 ≠ 调用守卫）· 区分大小写。豁免写 `playbook/.gate-inventory-exempt`（`文件名:理由`，理由不可为空）。**语料装载完整性对账**（清单件数 ≡ 语料件数 ∧ 语料行数 ≡ 非空件行数之和）把「漏载某个面」这一整类故障变成 exit 2，而非静默把真接线误判成孤儿。退出码 0 绿 / 1 有孤儿或陈旧豁免 / 2 失明
+> 注-10：口径四项：脚本面认裸名**剔注释行** · 文档面只认 `tools/check/` 路径化引用 · **登记表与 changelog 历史记述不在面内**（描述守卫 ≠ 调用守卫）· 区分大小写。豁免写 `playbook/.gate-inventory-exempt`（`文件名:理由`，理由必填）。**语料装载完整性对账**（清单件数 ≡ 语料件数 ∧ 行数 ≡ 非空件行数和）把「漏载面」变 exit 2，不静默误判孤儿。退出码 0 绿 / 1 孤儿或陈旧豁免 / 2 失明
 > 注-11：能力边界：依赖 gh CLI + 网络，封闭环境恒 SKIP = 断言未生效（不假绿也不假红）。退出码 0 = 无 MISSING / 1 = 存在 MISSING
 > 注-12：输出区分「有接线 / 零接线 / 一跳断链 / 循环自证」；内建自检 P1/P2/P3，内核缺失或无 node 一律 `exit 2`（拒绝把内核故障伪装成通过）。
 > 注-13：**只管落盘物**：basename 不含 `prompt` 的文件 SKIP 并打印原因（沟通阶段允许多方案 + 推荐）。判据 / 失效模式分析见其文件头。
@@ -153,14 +153,14 @@
 |---|---|---|
 | `release/bump-version.sh` | 版本号 bump（SSOT 联动 253+ 处） | 发版 SOP 阶段九 |
 | `release/pre-push-check.sh` | 推送前完整检查（CI 等价聚合 22+ 检查位：（详→注-15） | git push 前 |
-| `release/heavy-gate-receipt.sh` | 长跑门禁「一次跑、多环节复用」凭据（`acceptance-test.sh` 单跑 9~15 分钟，而阶段三/四/五会反复跑同一内容 ⇒ 最高 5 倍耗时且零新信息；凭据台账落 `.sofagent/heavy-gate-receipts.log`）。子命令 `fingerprint` / `verify` / `record` / `show`；（详→注-16） | 发版 SOP 阶段五脚本层 |
+| `release/heavy-gate-receipt.sh` | 长跑门禁「一次跑、多环节复用」凭据（acceptance 单跑 9~15 分钟，阶段三/四/五反复跑同一内容 ⇒ 最高 5 倍耗时零新信息；台账落 `.sofagent/heavy-gate-receipts.log`）。子命令 `fingerprint`/`verify`/`record`/`show`；（详→注-16） | 发版 SOP 阶段五 |
 | `release/publish-packages.sh` | npm 分批发布（依赖拓扑序）：`@sofagent/*` scope 包（含 `dsh-plugin-kit`——目录由根 `package.json` 的 workspaces 构建查表解析，不再按命名约定猜）+ 七款 DSH 插件（清单由 `plugins.json` 驱动、原子款在前 suite 在后）；（详→注-17） | 发版 SOP 阶段九 |
 | `release/sign-config.mjs` | config.yml HMAC-SHA256 签名颁发（读 `~/.sofagent-key`，DP-2） | 安装后 |
 | `release/gitdata-push.mjs` | Git Data API 推送备选通道（blobs→trees→commits→refs，https 断连绕行） | push 502 时 |
 | `release/npm-publish-with-retry.sh` | npm publish 单点（含重复发布豁免判定）——把 `.github/workflows/release.yml` 两个 job 各自内联的「E409 + E404 形态豁免 + registry 二次确认」逻辑收口为单点（此前逐字重复、改一处漏一处）；v1.5.5 阶段三 F 项 | 发版 SOP 阶段九 |
 
 > 注-15：检查位清单以 `tools/release/pre-push-check.sh` 头部 `#   + <脚本名>` 段为准（此处不复述，防双事实源；`check-prepush-checklist.mjs` 已对账「清单 ⊆ 实现」）；`--quick` 跳过 test/build，`--minimal` 结构性快检；v1.4.0 由根目录移入）
-> 注-16：指纹为**工作区内容树对象 sha**（临时 index + `git add -A` + `write-tree`——**内容寻址**，故 `git commit` 不使其过期）。四道防线：内容指纹 · 原始日志须在位非空 · 日志须真有绿灯摘要（`log_looks_green`）· `record --pre <指纹>` 钉住长跑**开始前**的内容（中途改文件 ⇒ 拒落凭据 exit 3）。退出码 0 可复用 / 2 失明拒绝假绿 / 3 需重跑。凭据库 `.sofagent/heavy-gate-receipts.log`（已 gitignore ⇒ 自指回避）
+> 注-16：指纹为**内容树对象 sha**（临时 index + `git add -A` + `write-tree`，内容寻址——`git commit` 不使其过期）。四道防线：内容指纹 · 日志在位非空 · 日志有绿灯摘要 · `record --pre <指纹>` 钉住长跑前内容（中途改文件 ⇒ exit 3 拒凭据）。退出码 0 可复用 / 2 失明拒假绿 / 3 需重跑。凭据库 `.sofagent/heavy-gate-receipts.log`（gitignore ⇒ 自指回避）
 > 注-17：裸名总包 `sofagent` 不在此脚本（SOP 步骤八单独发）；支持 `SOFAGENT_PUBLISH_TAG` dist-tag 分道（施工期 `--tag alpha`）
 
 ## 五、forge/
@@ -226,7 +226,7 @@
 | `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（引用路径/函数是否真实存在；历史档案漂移单列 🕘 不计失败） | **参数化按需工具**：必须传 `<file.md>`，可加 `--strict` 强制历史档案按严格口径判；无参数时报用法错并 exit 1——CI 无处传参。生成 prompt 后手动跑 |
 | `check/sync-test-count.sh` | 测试数多文档一键同步（实测值回写各文档声称位） | **写文档的收口工具**，不是检查器——发版 SOP 数字收口阶段人工触发 |
 | `check/resolve-section.sh` | 行号 → markdown 段落归属解析器（防「行号冒充归属」） | **排障工具非门禁**：自动化版在扫描面为 0 时会静默通过（死分支形态），故刻意不接 check-guards/CI。挂载于 `docs/changelog/releasing/03-quality-loop.md` / `04-review-system.md` |
-| `check/doc-postcheck.mjs` | 文档落盘后自检（五项机械判据：U+FFFD / 墙式行格按台账拦新增 / 字符数棘轮 / 抬头块 / 标题粘连；`--fix` 折行 · `--changed` 查变更面 · `--selftest` 正负样本） | **排障工具非门禁**：判定面按参数收敛，扫描面为 0 时静默通过是预期形态（同 resolve-section 口径），全量防线由宿主门禁承担。挂载于 `docs/changelog/releasing/06-doc-finalize.md`〈三道闸〉 |
+| `check/doc-postcheck.mjs` | 文档落盘后自检（五项：U+FFFD / 墙式行格拦新增 / 字符数棘轮 / 抬头块 / 标题粘连；`--fix` 折行 · `--changed` 变更面 · `--selftest`） | **排障工具非门禁**：判定面按参数收敛，扫描面为 0 静默通过是预期形态（同 resolve-section），全量防线由宿主门禁承担。挂载于 `06-doc-finalize.md`〈三道闸〉 |
 | `check/check-forge-branches.sh` | FORGE 分支收编标记对账（未标记的 `forge/*` 分支四要素列出） | 输出为 **INFO 级**（未标记分支需人工确认后补标记），由 `playbook/acceptance-test.sh` 人工链调用 |
 | `check/check-interface-roadmap.mjs` | 接口编号承载对账（G1-G14 接口编号 ↔ ROADMAP/开发日志的真实承载版本；C1-C5 FAIL + C6 WARN，防「编号标了版本、版本却没承载它」） | **需 `--spec <商业机制文档>` 参数**：无参数时打印 SKIP 并 exit 0（SKIP 不算通过）。spec 属商业侧文档、不进开源仓——CI 无处传参，只在商业侧对账时人工跑 |
 | `maintenance/prune-spill.mjs` | spill 临时文件 TTL 回收（>5MB diff 落盘的密钥类内容按保留期清理） | 独立工具（cron/手动） |
