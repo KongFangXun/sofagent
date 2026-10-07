@@ -63,7 +63,7 @@ grep -c "ARCHITECTURE.md" README.md # 期望: ≥ 1
 # 子项 e: 当前版本条目不含审查元信息（原维度 48e）
 LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+'); sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次" && echo "⚠️ CHANGELOG 当前版本含审查元信息" || true
 # 子项 f: ROADMAP 版本头描述与当前版本一致（原维度 48a）
-grep -m1 -E "^> v[0-9]+\.[0-9]+\.[0-9]+ · .*· (✅ 已发版|⏳)" docs/ROADMAP.md | grep -qE "后训模块|数据与评估|FDE Harness|六引擎|IM 桥|执行模块" || echo "⚠️ ROADMAP 版本头描述可能错配" # 关键词随发版同步（v1.5.4 起含「执行模块」族）；行号锚改内容锚——头部图区块曾使 :4 漂移
+grep -m1 -E "^> v[0-9]+\.[0-9]+\.[0-9]+ · .*· (✅ 已发版|⏳)" docs/ROADMAP.md | grep -qE "后训模块|数据与评估|FDE Harness|六引擎|IM 桥|执行模块|单入口|存量收敛|数据面" || echo "⚠️ ROADMAP 版本头描述可能错配" # 关键词随发版同步（v1.5.4 起含「执行模块」族，v1.5.6 起含「单入口/存量收敛/数据面」族）；行号锚改内容锚——头部图区块曾使 :4 漂移
 # 子项 g: SECURITY.md 旧描述清理（原维度 48d）
 grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 推辞过时" || true
 # 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式） 防御（定谳尾判假）：`[ ] && echo ⚠️` 在健康态（相等）时 `[ ]` 返 1 → 整维度 exit=1 假红，改显式 if、健康态显式 exit 0
@@ -1379,7 +1379,7 @@ grep -q "13812345678" engine/scripts/verify.sh || echo "⚠️ verify.sh 脱敏�
 (
 # ① quick 规则数声称对账（防 #1）：README 声称与 dist 实测一致
 README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" ] || echo "⚠️ README quick 规则数口径漂移"
-node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==25)process.exit(1)" || echo "⚠️ dist 规则数非 17/25，README 同步"
+node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==28)process.exit(1)" || echo "⚠️ dist 规则数非 17/28，README 同步" # v1.5.7 E5/E6/E7 落地后全量 25→28（S360/S474 同口径）
 # ② check-version MCP 数含 ARCHITECTURE 能力总览（防 #3/#14）
 bash tools/check/check-version.sh > /tmp/cv.log 2>&1; grep -qE "60 tools|MCP 工具数" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE" # 注：48→60（52+8 新 tool），数字勿写死——check-version 自身会跟 SSOT
 node -e "const fs=require('fs');const s=fs.readFileSync('docs/ARCHITECTURE.md','utf8');const reg=require('./engine/mcp/dist/tool-registry.js');const actual=Object.keys(reg.TOOLS||reg).length||60;s.split('\n').forEach(l=>{const mm=l.match(/（([0-9]+) tools）/);if(!mm)return;const v=+mm[1];if(v!==actual&&!/v1.[0-3].[0-9]/.test(l))console.log('⚠️ ARCHITECTURE tools 数漂移:',mm[0],'实际',actual)})" # 注：动态对账代替写死 48；行级版本豁免（含 v1.x.y 的历史演进行不算漂移——27=该时点真实数）
