@@ -134,9 +134,10 @@ if [ "$LOAD_ONLY" = false ]; then
     "FORGE/src/fresh-eyes-cost.test.mjs"
   )
 
-  # 已知失败的测试文件——parseVerdict fallback 逻辑变更后未同步测试
-  # 后续修复后从此列表移除（同 check-version MCP 误报的处理模式）
-  KNOWN_FAIL=("FORGE/src/release-gate-driver.test.mjs")
+  # 已知失败清单已清空——原条目 release-gate-driver.test.mjs 曾因「测试漂移」入列
+  # （断言的历史代码形态随源码演进而失效 + 相对路径 ENOENT），修复后移出。
+  # 若再入列须附根因注释与修复计划，禁止无注释长期驻留（静默跳过 = 假绿温床）。
+  KNOWN_FAIL=()
 
   for tf in "${TEST_FILES[@]}"; do
     if [ ! -f "$tf" ]; then
@@ -145,9 +146,9 @@ if [ "$LOAD_ONLY" = false ]; then
       continue
     fi
 
-    # 跳过已知失败（输出 ⚠ 不算 FAIL）
+    # 跳过已知失败（输出 ⚠ 不算 FAIL）——空数组 + set -u 用 ${arr[@]+...} 形态
     IS_KNOWN=false
-    for kf in "${KNOWN_FAIL[@]}"; do
+    for kf in ${KNOWN_FAIL[@]+"${KNOWN_FAIL[@]}"}; do
       [ "$tf" = "$kf" ] && IS_KNOWN=true && break
     done
 
