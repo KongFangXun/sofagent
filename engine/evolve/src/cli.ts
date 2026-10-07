@@ -88,6 +88,13 @@ async function main() {
         console.log(`  安全裁决: ❌ 拒绝进 gate——模型产物无可解析提案（verdict=${result.safety.verdict}）`);
         process.exit(1);
       }
+      // 章四遥测闭环（v1.5.7）：提案解析成功即一次技能库使用——落 skill-usage.jsonl
+      //   （写入面 recordSkillUsage，五维健康度的 usage/recency 维数据源）。失败不
+      //   best-effort 吞错（try 包裹），记录失败不阻断提案链路。
+      try {
+        const { recordSkillUsage } = await import('./skill-health');
+        recordSkillUsage(`propose:${result.proposal.targetSkillPath}`, 'evolve-cli-propose');
+      } catch { /* 遥测失败不阻断提案链 */ }
       console.log(`  提案: ${result.proposal.title}`);
       console.log(`  目标: ${result.proposal.targetSkillPath}`);
       console.log(`  溯源: ${result.proposal.solves.length} 条`);
