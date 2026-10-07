@@ -32,7 +32,7 @@ import {
   readFileSync, writeFileSync, mkdirSync, existsSync, statSync,
   appendFileSync, readdirSync, copyFileSync, createWriteStream,
 } from 'fs';
-import { join, resolve, dirname, basename } from 'path';
+import { join, resolve, dirname, basename, isAbsolute as _pathIsAbsolute } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
@@ -2741,7 +2741,7 @@ function appendLedger(dateStr, runId, steps, results, verdict, runDir) {
   // 原 replace(REPO_ROOT+'/','') 不命中 → 新行落机器绝对路径（/Users/<user>/...，泄漏用户名级信息，
   // check-open-boundary F-38 命中）。归一化：先试仓内相对化，否则家目录 → ~/（与 LEDGER :5 披露拍板一致）。
   let relPath = runDir.replace(REPO_ROOT + '/', '');
-  if (path.isAbsolute(relPath)) relPath = relPath.replace(os.homedir() + '/', '~/');
+  if (_pathIsAbsolute(relPath)) relPath = relPath.replace(os.homedir() + '/', '~/');
   const line = [
     dateStr.padEnd(14),
     runId.padEnd(14),
