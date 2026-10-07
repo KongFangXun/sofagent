@@ -59,7 +59,7 @@ check_npm() {
 echo ""
 echo "🟢 通用工具库"
 echo "─────────────────────────────────────────────────────────────"
-check_npm "js-yaml" "5.4.2"
+check_npm "js-yaml" "5.4.3"
 check_npm "zod" "4.6.5"
 check_npm "archiver" "8.0.0"
 # ⚠️ 上方「当前版本」为脚本硬编码基线——升级依赖后必须同步更新（v1.4.1 教训：
