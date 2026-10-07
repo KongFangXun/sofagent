@@ -2002,19 +2002,19 @@ grep -q "audit_query" engine/mcp/src/tool-registry.ts && ! grep -q "decision-que
 # d: B3 分层口径可加总——README 双语 22+5+1 形态不许漂（中文 22 条+5 条需数据面；英文 22/28+5 hybrid）
 grep -q "22 条基于 git diff 硬证据" README.md && grep -q "5 条需数据面" README.md && grep -q "22/28 run on git-diff" README.en.md && echo "✅ B3 双语分层口径一致" || { echo "❌ B3 分层口径漂移"; FAIL=1; }
 # e: B4 装配先于消费反模式——decision-log 只在 E7 活跃集装配（懒加载不许回退为无条件 load）
-node -e "const L=require('fs').readFileSync('engine/audit/src/rules/runner.ts','utf8').split('\n').filter(l=>!l.trim().startsWith('//'));const s=L.join('\n');const lazy=/rulesToRun\.some\(\(r\) => r\.id === 'E7'\)/.test(s);const pos1=s.indexOf('rulesToRun'),pos2=s.indexOf('loadDecisionEntries()');process.exit(lazy&&pos2>pos1?0:1)" && echo "✅ B4 decision-log 懒加载（装配后于消费者判定）" || { echo "❌ B4 无条件装配回潮"; FAIL=1; }
+node tools/check/lib/dim147-checks.js b4 && echo "✅ B4 decision-log 懒加载（装配后于消费者判定）" || { echo "❌ B4 无条件装配回潮"; FAIL=1; }
 # f: B5 注释计数对账——runner/index 头注释计数与实测一致（11 扩展/28 全量）
 grep -q "扩展规则（11 条" engine/audit/src/rules/runner.ts && grep -q "28 条全量规则" engine/audit/src/rules/runner.ts && echo "✅ B5 注释口径=实测" || { echo "❌ B5 注释计数回潮"; FAIL=1; }
 # g: B7 归档件链接可达——doc-slim 全部相对链接逐条验证（迁移纪律的机械锚）
-node -e "const fs=require('fs'),path=require('path');const dir='docs/archive/doc-slim';let bad=0;for(const f of fs.readdirSync(dir)){const p=path.join(dir,f);const s=fs.readFileSync(p,'utf8');for(const m of s.matchAll(/\]\((\.{2,}\/[^)#]+)/g)){const t=path.normalize(path.join(dir,m[1]));if(!fs.existsSync(t)){bad++;console.log('坏链:',f,m[1])}}}process.exit(bad?1:0)" && echo "✅ B7 归档件链接零坏" || { echo "❌ B7 归档链接坏"; FAIL=1; }
+node tools/check/lib/dim147-checks.js b7 && echo "✅ B7 归档件链接零坏" || { echo "❌ B7 归档链接坏"; FAIL=1; }
 # h: B6/O2 英文词边界抽检——README.en 无 eother/etier/ecommit 类截断残骸
 [ -z "$(grep -nE 'eother|etier|[^a-z]ecommit' README.en.md 2>/dev/null)" ] && echo "✅ B6 英文无截断残骸" || { echo "❌ B6 英文截断残骸回潮"; FAIL=1; }
 # i: B8 双态解析——tryRequire 形态在位（禁止 ?? 兜底回潮）
 grep -q "tryRequire\|逐个 try" engine/audit/dist/cli-quick.js 2>/dev/null || grep -q "tryRequire" engine/audit/src/cli-quick.ts && echo "✅ B8 双态逐 try 在位" || { echo "❌ B8 双态解析回潮"; FAIL=1; }
 # j: 归并自 #4——ruleClass SSOT ↔ README 逐条比对（归一化两侧 A/E 编号+分级再 diff，零差异）
-diff <(grep -E "name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*name: '((A|E)[0-9]+)[^']*'.*ruleClass: '([^']+)'.*/\1 \3/" | sort) <(grep -E "^\| (A|E)[0-9]+ " engine/audit/README.md | awk -F'|' '{n=split($2,arr," "); id=arr[1]; cls=$(NF-1); gsub(/^[ \t]+|[ \t]+$/,"",id); gsub(/^[ \t]+|[ \t]+$/,"",cls); print id, cls}' | sort) >/dev/null && echo "✅ j: ruleClass SSOT↔README 零差异" || { echo "❌ j: ruleClass 分级漂移"; FAIL=1; }
+node tools/check/lib/dim147-checks.js j && echo "✅ j: ruleClass SSOT↔README 零差异" || { echo "❌ j: ruleClass 分级漂移"; FAIL=1; }
 # k: 归并自 #4——规则口径硬断言（现口径 28 = 17 默认 + 11 扩展；原 #4 的 25/17+8 已陈旧由本断言替代）
-node -e "const src=require('fs').readFileSync('engine/audit/src/rules/index.ts','utf8');const cnt=re=>{const m=src.match(re);return m?(m[0].match(/name:\s*'(A|E)[0-9]+/g)||[]).length:-1};const d=cnt(/export const defaultRules[\s\S]*?^\];/m),e=cnt(/export const extendedRules[\s\S]*?^\];/m);process.exit(d===17&&e===11?0:1)" && echo "✅ k: 规则口径 17+11=28 一致" || { echo "❌ k: 规则口径漂移（≠17+11）"; FAIL=1; }
+node tools/check/lib/dim147-checks.js k && echo "✅ k: 规则口径 17+11=28 一致" || { echo "❌ k: 规则口径漂移（≠17+11）"; FAIL=1; }
 # l: 归并自 #4——AUDIT_PRIORITY 派生导出向后兼容（单源化后外部查询形态不破）
 node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20'))process.exit(1)" && echo "✅ l: AUDIT_PRIORITY 兼容导出在位" || { echo "❌ l: 兼容导出缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度147:FAIL"; exit 1; }; echo "维度147:PASS"
