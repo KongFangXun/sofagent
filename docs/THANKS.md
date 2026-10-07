@@ -54,6 +54,8 @@
 - **[Harness-Zero](https://arxiv.org/abs/2609.24974)** — harness 蒸馏：微调摊销层的外部实证
 - **[HackProbe](https://arxiv.org/abs/2609.04665)** — RSI 监控器与 harness 无关：监控方在被测系统之外
 - **[RSI Claim-Testing Checklist](https://github.com/sunghunkwag/recursive-self-improvement)** · Intelligence Research Project — RSI 主张检验清单：改进必须递归
+- **[ImproveAnyTask](https://arxiv.org/abs/2610.06347)** — 后训练 harness 全自动迭代，无人手
+- **[MESH-Harness](https://arxiv.org/abs/2610.05300)** — 权重不动，bandit 重组 harness 模块
 - **[Calibrated Decision Models for Pentesting](https://arxiv.org/abs/2609.28940)** — 判定件在安全域的裁定落点
 - **[JEVQA](https://arxiv.org/abs/2609.24395)** — 判定件跨域零样本替代实证（音视频域）
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 长文档中段注意力衰减，500 字原则源头
@@ -96,29 +98,35 @@
 - **[Confidence-Aware Routing](https://arxiv.org/abs/2510.01237)** · Nandakishor M — 统一置信度驱动四路径路由，与 L0/L1/L2+第三态同构
 - **[DeepRAG](https://arxiv.org/abs/2503.08213)** · Nandakishor M — 从零自建 embedding 模型参考
 - **[System One Models & Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** · TypeSafe AI — RLCD、三原语提出方；「校准优先于偏好」
-- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线；@2026-10-02 v0.3.24
+- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线；@2026-10-07 v0.3.29
 - **[kev](https://github.com/jaredpalmer/kev)** · Jared Palmer — Jev 架构型开源复刻（0.8B/4B/9B 全尺寸）
 - **[Bespoke Nimble](https://github.com/bespokelabsai/nimble)** · Bespoke Labs — 2,676 条对比式样本构造法（「数据质量 > 参数量」）
 - **Jev 接口复刻族**（SemIf / NanoJev / Jevlike / LocalJev / JEV-mini）— 对照件候选与路线对照
-- **[decider](https://github.com/Mapika/decider)** · Mapika — 校准工程最深的复现家族（ECE 0.288→0.071）；@2026-09-30 1.8.1
+- **[decider](https://github.com/Mapika/decider)** · Mapika — 校准工程最深的复现家族（ECE 0.288→0.071）；@2026-10-07 1.8.2
 - **[CLM](https://github.com/Contrastive-LM/CLM)** · Contrastive-LM — 双塔对比式路线对照（公开 scaling-law 拟合）
 - **[JevK5](https://github.com/allebee/jevk5)** · allebee — 独立开源替代；蒸馏 LoRA 合并权重同批开源
 - **[OpenThai-SystemOne](https://github.com/iapp-technology/openthai-systemone)** · iApp — 泰/英双语 0.8B，契约兼容成本品类默认
 - **[AutoJev-27B](https://github.com/denis-pplx/autojev)** · denis-pplx —「自主 agent 全程建成」活体样本；披露 ECE 三列
 - **[RSI-Jev](https://github.com/Shanghua-Gao/RSI-Jev)** · Shanghua Gao — RSI 循环直接造判定件；v4.0-VL 读图（自报）
 - **[AgentJev](https://github.com/malevrigns/agent-jev)** · malevrigns —「去 LM head」形态正例（置换等变判定头）
+- **[FRIDA-Decisions](https://github.com/ai-forever/FRIDA-Decisions)** · SberAI — 一次编码打包全问，序构造性无关（转述）
+- **[AnyJev](https://github.com/nokia-applied-research/AnyJev)** · Nokia — 读出校准免训练两件套：先验除法+旋转平均（自报）
 - **[TensorFlow.js](https://github.com/tensorflow/tfjs)** + [tfjs-models](https://github.com/tensorflow/tfjs-models) · Google — 一套 API 四后端+模型即 npm 包的十年先例
 - **[Verdict / rlcd-modernbert-151m](https://huggingface.co/heman10x/rlcd-modernbert-151m)** · Heman10x-NGU —「编码器+判定头」最早可复算建仓时点（2026-09-17）
-- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-09-29 榜首 Imajev-4B
-- **[AgentGovBench](https://github.com/agentic-control-plane/agentgovbench)** + **[ST-WebAgentBench](https://github.com/segev-shlomov/ST-WebAgentBench)** — 治理对照基准两件套（CuP 双轴指标）
+- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-10-07 站点面 v1.5.4 榜首 cygnet（release 面仍 v1.4.2，六面不同步）
+- **[AgentGovBench](https://github.com/agentic-control-plane/agentgovbench)** + **[ST-WebAgentBench](https://github.com/segev-shlomov/ST-WebAgentBench)** — 治理对照基准两件套（CuP 双轴指标）；其「Harness honesty」修订公开固化：制造证据不计分、**空审计日志不算通过**、报错场景留在分母
 - **[NIST 官方标准面](https://www.nist.gov/artificial-intelligence/ai-agent-standards-initiative)**（CAISSI 三支柱 + RFI + NCCoE 四功能域 + AI 800 系列）— agent = 非人类身份 principal；双身份令牌
 - **[Jev-Mem](https://arxiv.org/abs/2609.23986)** — System One 控制面管 agentic memory
 - **[jev-harness-lab](https://github.com/Aitejiu/jev-harness-lab)** · Aitejiu — 判定件 harness 内可用面黑箱评测
 - **[JevAdvBench](https://arxiv.org/abs/2609.31142)** — 判定件对抗基准（被攻击决策对干净决策打分）
 - **[LAVOIR](https://arxiv.org/abs/2609.30706)** — 判定件「该问什么」扩展（VOI 槽位；已开源）
+- **[JEVal](https://arxiv.org/abs/2610.03935)** — 双语 36 数据集判定件基准：证据可解最强（自报）
+- **[候选覆盖与拒答迁移](https://arxiv.org/abs/2610.03387)** — 源域校准保不住目标操作点：跨域须重校
 - **严格适当评分规则** · Gneiting & Raftery 等 — RLCD 数学正确性依据：诚实报告校准概率才取最大期望奖励
 - **[Sys1Cal-v1](https://arxiv.org/abs/2609.35342)** — 判定件概率**数值含义**专用数据集（全变差距离评分）
 - **[PACT](https://arxiv.org/abs/2609.35865)** — 单 token 判定的**校准感知训练**：四项免新标注训练项
+- **[SanSi](https://arxiv.org/abs/2610.07730)** — 层内循环后仍单次 readout：非自回归算力分配
+- **[Readout Stability](https://arxiv.org/abs/2610.07716)** — 菜单换而文本不变，缓存首过分布已定后验（自报）
 - **[Your-LM-Is-Already-a-Decision-Model](https://github.com/ntlm1686/Your-language-model-is-already-a-decision-model)** · ntlm1686 — **训练必要性对照**：未微调 9B 与 Jev 互有胜负（自测）
 
 ### 认知与反馈
