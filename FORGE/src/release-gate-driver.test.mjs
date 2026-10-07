@@ -907,6 +907,24 @@ describe('buildPrecheckEvidence（DSH 证据注入）', () => {
     expect(out).not.toContain('acceptance.md 内容');
   });
 
+  it('changelog 模块注入 exempt + scenarioRefs（v1.5.7 coverage P0-1 防回归）', () => {
+    writeFileSync(join(tmpRoot, 'coverage-precheck.json'), JSON.stringify({
+      meta: {
+        modules: 2, scenarios: 1, changelogPath: 'x',
+        exempt: { count: 1, keywords: ['UI 层审计前置评估'], rule: '标题命中即 EXEMPT' },
+      },
+      changelog: [
+        { title: '一、SMB 场景审计扩展', scenarioRefs: ['S474'] },
+        { title: '二、UI 层审计前置评估（不实做 · 可行性报告）', exempt: true, scenarioRefs: ['S313'] },
+      ],
+      scenarios: [{ num: 474, label: '474', title: 'x' }],
+    }));
+    const out = buildEv(tmpRoot, { precheck: true, inputs: ['coverage-precheck.json'] });
+    expect(out).toContain('[EXEMPT');
+    expect(out).toContain('refs=S313');
+    expect(out).toContain('豁免关键词');
+  });
+
   it('注入文本含「precheck 证据」标题（worker 可识别为判定依据）', () => {
     writeFileSync(join(tmpRoot, 'regression-precheck.json'), JSON.stringify({
       meta: { dims: 1 }, dims: { '1': { num: 1, title: 'x', exitCode: 0, output: '' } },
