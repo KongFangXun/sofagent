@@ -382,6 +382,10 @@ if [ -n "$SINCE_TAG" ]; then
           s = bname[i]
           # 别名形态 `internal as public` 取公开名（在去空白之前判，避免 as 落在名字内部误切）
           if (s ~ /[[:space:]]as[[:space:]]/) sub(/^.*[[:space:]]as[[:space:]]/, "", s)
+          # 块内单成员的 `type X` 内联类型前缀剥除（v1.5.7 收口）：export 块成员
+          #   `  type CheckpointRecord,` 历史提取拼成伪符号 typeCheckpointRecord——
+          #   成员行带缩进，前缀匹配须允许前导空白（BSD awk sub 不跨行首空白）
+          if (s ~ /^[[:space:]]*type[[:space:]][A-Za-z$_]/) sub(/^[[:space:]]*type[[:space:]]+/, "", s)
           gsub(/[[:space:]]/, "", s); gsub(/,$/, "", s)
           if (s != "" && s !~ /^\/\//) print s
         }
@@ -434,6 +438,31 @@ if [ -n "$SINCE_TAG" ]; then
       echo -e "  ${RED}✗${NC} 提取器故障：新增导出名不是合法标识符（awk 状态机悬开，把注释/测试文本当符号采集）——拒绝把提取器故障伪装成零接线判定"
       printf '%s\n' "$_np_bad" | head -5 | sed 's/^/      /'
       exit 2
+    fi
+  fi
+
+  # 🔴 重排识别（v1.5.7 收口）：diff 新增行 ≠ 真新增符号。barrel 重排/导出块
+  #   改写（先例：F32 orchestrator 7 组 domain barrel，166 个存量符号的
+  #   export {} 行全变新增行）会把存量符号误收进 S 集——S 集膨胀后「S 外存活
+  #   消费者」几乎不可达，成片误报循环自证/一跳断链（实测 81dfaf222 时点
+  #   --since v1.5.6 全绿，179 ✗ 全为重排连带，非真欠账；全量模式亦绿）。
+  #   判据：符号在 SINCE_TAG 时点的 engine 源码中已存在 ⇒ 重排/挪位，滤出 S 集。
+  #   真新增符号（tag 时点零命中）不受影响。
+  if [ -n "$NEW_PUBLICS" ]; then
+    _REARRANGED=0
+    _KEPT=""
+    while IFS= read -r _np_sym; do
+      [ -z "$_np_sym" ] && continue
+      if git grep -ql -- "$_np_sym" "${SINCE_TAG}" -- 'engine/**.ts' 2>/dev/null; then
+        _REARRANGED=$((_REARRANGED + 1))
+      else
+        _KEPT="${_KEPT}${_np_sym}
+"
+      fi
+    done <<< "$NEW_PUBLICS"
+    if [ "$_REARRANGED" -gt 0 ]; then
+      echo -e "  ℹ️ 重排识别：${_REARRANGED} 个符号在 ${SINCE_TAG} 时点已存在（barrel 重排/导出块改写连带），不计入新增集 S"
+      NEW_PUBLICS="$(printf '%s' "$_KEPT")"
     fi
   fi
 
