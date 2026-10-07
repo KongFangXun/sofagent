@@ -174,7 +174,7 @@ export function mergedPlaceholder(code: string, number: number, note: string): R
   };
 }
 
-/** 29 编号位全集：26 实现 + 3 占位（A12/A13/E3） */
+/** 31 编号位全集：28 实现 + 3 占位（A12/A13/E3；v1.5.7 E5/E6/E7 落地后 29→31） */
 export function allRuleSlots(implemented: Rule[]): RuleExportEntry[] {
   return [
     ...implemented.map(toRuleExportEntry),

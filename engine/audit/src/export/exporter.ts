@@ -59,7 +59,7 @@ export function buildRuleCorpusBody(
 ): RuleCorpusBody {
   const pool: Rule[] =
     scope === 'default' ? defaultRules : scope === 'extended' ? extendedRules : [...defaultRules, ...extendedRules];
-  // 29 编号位全集只在 all 范围给（default/extended 范围不含跳号占位——
+  // 31 编号位全集只在 all 范围给（default/extended 范围不含跳号占位——
   // 编号空间完整性是全量导出的验收口径）
   const entries = scope === 'all' ? allRuleSlots(pool) : pool.map((r) => toEntry(r));
   const implemented = entries.filter((e) => e.status === 'implemented').length;
