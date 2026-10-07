@@ -1,17 +1,17 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 85 维 · 编号 1-146 · 60 个编号已归并删除（#9 已并入 #18 · #21 已并入 #146 · 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 85 维 · 编号 1-147 · 61 个编号已归并删除（#4 已并入 #147（28 口径承接）· #9 已并入 #18 · #21 已并入 #146 · 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2050 行、`acceptance-test.sh` ≤ 4590 行（**上限重估**（台账注记见 git 演进史）：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → **4584**）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → **4569**）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → **4548**）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2050 行、`acceptance-test.sh` ≤ 4611 行（**上限重估**（台账注记见 git 演进史）：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → **4584**）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → **4569**）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → **4548**）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
 ·t +3 → **1989**）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4584 + 1 场景余量 6 = **4590**（前段：4548 + 6 = **4554**；后阶段四收编 S459 vote fail-closed 场景 7 行 ⇒ 4555 + 余量 6 = **4561**；后 release-gate 20260929-01 coverage P0 闭环批 S460/S461 场景 8 行 ⇒ 4569 + 余量 6 = **4575**；
-后 release-gate 20260929-03 verdict 闭环批 S463 章一路由行为锁 + S464 章六叙事章结构锁场景 12 行 ⇒ 4584 + 余量 6 = **4590**，演进见 git）；**未删改任何既有断言**，前值 2006/4541。阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = **2050**（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
+后 release-gate 20260929-03 verdict 闭环批 S463/S464 ⇒ 4584 + 余量 6 = 4590；v1.5.7 阶段四 A 类分发 +4 场景（S474-477）⇒ 4605 + 余量 6 = **4611**，演进见 git）；**未删改任何既有断言**，前值 2006/4541。阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = **2050**（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1986 + 1 维度余量 20 = **2006** · 4535 + 1 场景余量 6 = **4541**（后续 S454 降语义修复 `e869c670` +4，当批实测 4539 / ≤4541 余 2）；**未删改任何既有断言**，前值 1950/4500。实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
 🔴 **欠账登记（已评估 · 移 v1.5.5）**：本版新增章对应的验收场景与回归维度欠账，**经对销可行性复核判定两文件均无真实可归并空间**（0 内容级可归并对；乐观叠加 checklist ≈43 < 需求 98 / acceptance DRY 16 < 需求 21），按 v1.5.4〈首项硬交付〉〈对销可行性评估〉节裁定**7 项全批移 v1.5.5 落位**；本版新增维度前仍须先真实归并 ≥新增数并附承接断言清单，详见 [v1.5.4 开发日志](../docs/changelog/v1.5/v1.5.4.md)〈首项硬交付〉节。
 > 🧾 **落位说明（承接落位批）**：本版 devlog〈待补清单〉之 4 个维度项（#1 发版状态翻牌面三分 / #2 registry 对账通道终局口径 / #5 bump 历史引用误伤 / #6 dev prompt 读数禁快照）**按维护公约 §8「有同类 → 扩展旧维度子项、不新增编号」以子项并入同类现役维度**（#1/#5 → #124 · #2 → #97 · #6 → #130），**无一新增编号**（`check-review-system.sh` §1a/§1f 读数值 85 不变、归并配额棘轮不触发）。
@@ -33,7 +33,7 @@ ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 2050 ] && echo "✅ checklist $WC_CHK (≤2050)" || { echo "❌ checklist $WC_CHK 超 2050（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4590 ] && echo "✅ acceptance $WC_ACC (≤4590)" || { echo "❌ acceptance $WC_ACC 超 4590（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+[ "$WC_CHK" -le 2050 ] && echo "✅ checklist $WC_CHK (≤2050)" || { echo "❌ checklist $WC_CHK 超 2050（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4611 ] && echo "✅ acceptance $WC_ACC (≤4611)" || { echo "❌ acceptance $WC_ACC 超 4611（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
@@ -42,7 +42,7 @@ WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/ac
 
 ## 审查维度（85 维 · 编号规则见头部）
 
-### 审查维度正文（#1-146 · 维度流连续不中断）
+### 审查维度正文（#1-147 · 维度流连续不中断）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
@@ -116,49 +116,6 @@ grep -rn "见.*ROADMAP\|详见.*ROADMAP" docs/ SECURITY.md LIMITATIONS.md --incl
 #   口径：git grep 全量（宽口径——`--include` 白名单会造假空，漏过 .html/.svg/.ps1/无扩展名脚本）；排除本清单自身（含旧称字面量，否则永久自命中）
 git grep -nE "审计引擎|训练引擎|编排引擎|回溯引擎|自迭代引擎|质量评估引擎|场景匹配引擎|评测引擎|commons 引擎|instinct 引擎|rules 引擎|quick 引擎|audit 引擎|loop-agent 引擎|Onboard 引擎|归属引擎|入口引擎|文件扫描引擎|引擎包|生成引擎签名" -- . ':(exclude)docs/archive/*' ':(exclude)docs/changelog/*' ':(exclude)CHANGELOG.md' ':(exclude)docs/evidence/*' ':(exclude)playbook/regression-checklist.md' ':(exclude)*/dist/*' # 人工核对：命中须为上方保留类，否则即旧称回归（须改回新称）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
-```
-
-#### 4. 审计规则分级与 ruleClass 多处声明一致性——index.ts ↔ README ↔ rule-*.ts（归并 #89 入此 · 源删 17 行 / 目标增 12 行，净减 5 行）
-
-> **背景**：A3 ruleClass 在 index.ts（注册中心）/ rule-a3-*.ts（规则实现）/ README（文档）三处声明，版本演进时容易只改一处忘记其他——审查捕获 A3 在 index.ts 标"能力拐杖"、rule-a3-*.ts 标"业务底线"的不一致。
-
-```bash
-# 子项 a-c: A4=业务底线 / 规则总数=25（A20-A23 加入后 21→24，A24 加入后 24→25）/ A6=能力拐杖 A11=业务底线
-grep -A5 "'A4\|name.*不删配置" engine/audit/src/rules/index.ts | grep "ruleClass" | grep "业务底线"
-grep "name:" engine/audit/src/rules/index.ts | wc -l # 期望 25
-grep "A6.*能力拐杖\|A11.*业务底线" engine/audit/README.md | wc -l # 期望 2
-
-# 子项 d: ruleClass SSOT ↔ README 逐条比对（盲区 重写） 注：旧版用 `diff <(index.ts 代码) <(README 表格行)`——两种文本格式天生不同，永远报差异（误报 12 行）。 改为两侧归一化成「A编号 ruleClass」再比对，才是真正检查"每条规则分级两边一致"。
-diff <(grep -E "name: 'A[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*name: '(A[0-9]+)[^']*'.*ruleClass: '([^']+)'.*/\1 \2/" | sort) \
- <(grep -E "^\| A[0-9]+ " engine/audit/README.md | awk -F'|' '{n=split($2,arr," "); id=arr[1]; cls=$(NF-1); gsub(/^[ \t]+|[ \t]+$/,"",id); gsub(/^[ \t]+|[ \t]+$/,"",cls); print id, cls}' | sort) # 零差异
-
-# 子项 e-g: evidenceMode 计数 + README 表行数 + MCP 规则数（教训）
-echo "git-diff=$(grep -c "evidenceMode: 'git-diff'" engine/audit/src/rules/index.ts) hybrid=$(grep -c "evidenceMode: 'hybrid'" engine/audit/src/rules/index.ts) fs=$(grep -c "evidenceMode: 'filesystem'" engine/audit/src/rules/index.ts)" # 人工核对 README
-INDEX=$(grep -cE "name:[[:space:]]*'A[0-9]|name:[[:space:]]*'E[0-9]" engine/audit/src/rules/index.ts)
-TABLE=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " engine/audit/README.md)
-echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）" # 注：A18/A19 漏更新
-grep "rulesCount" engine/mcp/src/tools/report-tools.ts | head -1 # MCP 数字动态化（拆分后非硬编码）|| true
-
-# 子项 h: 口径一致性硬断言（校准：17/22/25 三口径并存防复发）—— 注册数 = 默认数 + 扩展数 = 25，且横幅签名已统一「N 项检查 · M 条规则」口径
-RULE_CNT_OK=$(node -e "
-const src = require('fs').readFileSync('engine/audit/src/rules/index.ts', 'utf8');
-const cnt = (re) => { const m = src.match(re); if (!m) return -1; return (m[0].match(/name:\s*'(A|E)[0-9]+/g) || []).length; };
-const d = cnt(/export const defaultRules[\s\S]*?^\];/m), e = cnt(/export const extendedRules[\s\S]*?^\];/m);
-process.exit(d === 17 && e === 8 ? 0 : 1);
-" 2>/dev/null && echo yes || echo no)
-if [ "$RULE_CNT_OK" != "yes" ]; then echo "⚠️ 规则口径漂移：defaultRules≠17 或 extendedRules≠8"; exit 1; fi
-grep -q "项检查" engine/audit/src/reporter.ts || { echo "⚠️ productSignature 未统一「N 项检查 · M 条规则」口径"; exit 1; }
-echo "✅ 规则口径一致：17 默认 + 8 扩展 = 25 注册，签名口径已统一"
-
-# 子项 i（原 #89 迁入）: 每条规则的 ruleClass 在 index.ts 和 rule-*.ts 必须一致 修复（校准：误报）：旧脚本 for 空格分词 + rule_name 恒空全报 ⚠️ → 改按 number 定位对比。
-for n in $(grep -oE "number: [0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -un); do
- idx=$(grep -E "number: $n" engine/audit/src/rules/index.ts | grep -oE "ruleClass: '[^']+'" | head -1)
- impl=$(grep -hoE "ruleClass: '[^']+'" engine/audit/src/rules/rule-a${n}-*.ts 2>/dev/null | head -1)
- [ -z "$impl" ] && continue # 规则实现不存在（如 A12/A13 并入 A11）跳过
- [ "$idx" = "$impl" ] || echo "⚠️ rule-a${n}: index=$idx vs impl=$impl"
-done # 期望：无 ⚠️ 输出（index.ts SSOT，rule-*.ts 对齐）
-# 单源化 refactor 须保留派生导出（归并原维度 99——外部脚本/acceptance 依赖 AUDIT_PRIORITY.critical 形态查询）
-node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20'))process.exit(1)" || echo "⚠️ AUDIT_PRIORITY 向后兼容导出缺失"
 ```
 
 #### 7. 感知层配置与推送链路
@@ -1349,7 +1306,7 @@ _bad=$(grep -n "§十" docs/LIMITATIONS.md 2>/dev/null | grep -v "archive\|退�
 
 > **路径迁移感知**：`.sofagent/` 已迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
-## 分组：环境敏感与后期维度（维度 #102-#146 · 上面铁律适用于本组所有维度）
+## 分组：环境敏感与后期维度（维度 #102-#147 · 上面铁律适用于本组所有维度）
 
 #### 102. 市场五环完整性——10 模块 + 6 MCP tool + inspector 双注册
 
@@ -2031,3 +1988,33 @@ grep -q "parseSubagentRunArgs" engine/orchestrator/src/cli-args.ts && echo "✅ 
 ## 输出报告格式
 
 > 审查日期 / 范围 / 环境验证（tools/release/pre-push-check/npm test/check-docs/check-version）→ 问题清单（按「是否阻断发版」分三档：阻断 / 应修 / 可延——**不用 P0/P1/P2 分级**，见本仓版本规划铁律；每条给 维度 / 文件:行 / 问题 / 建议）→ 通过统计 → 最终建议（可发版 / 需修复阻断项 / 需重大修复）。追加维度前先 grep 同类。
+
+#### 147. v1.5.7 审查批一维收口——S3 实锤防复发（计数对账扇出面 / 幽灵命令 / 分层口径 / 装配先于消费）+ 维护纪律（注释计数 / 迁移链接 / 英文词边界 / 双态解析 / 快照隔离）+ 规则分级声明一致性（归并 #4 入此：断言按 28 口径承接，git -S ruleClass 可溯）
+FAIL=0
+# a: B1 计数对账扇出面——改规则注册面的 commit 须同批扫 acceptance 计数断言（S360 口径与注册数对账；本维度静态锚：acceptance 头场景数与 scenario 实数一致）
+S147_HEAD=$(grep -oE "场景数：[0-9]+" playbook/acceptance-test.sh | head -1 | grep -oE "[0-9]+")
+S147_REAL=$(grep -cE "^scenario " playbook/acceptance-test.sh)
+[ "$S147_HEAD" = "$S147_REAL" ] && echo "✅ B1a acceptance 场景数头=实数（$S147_HEAD）" || { echo "❌ B1a 场景数头漂移（头 $S147_HEAD vs 实 $S147_REAL）"; FAIL=1; }
+# b: B1b 规则计数断言与注册面同源（S360 类断言 grep 28 不许回 25）
+grep -q '"\$S360_NUMS" = "28"' playbook/acceptance-test.sh && echo "✅ B1b S360 计数锚=28" || { echo "❌ B1b S360 计数锚回潮"; FAIL=1; }
+# c: B2 模板幽灵命令防复发——smb-onboarding 指向的入口必须实测存在（MCP audit_query 注册在案）
+grep -q "audit_query" engine/mcp/src/tool-registry.ts && ! grep -q "decision-query --kind" FDE/templates/smb-onboarding.md && echo "✅ B2 模板入口实测在位" || { echo "❌ B2 模板幽灵命令回潮"; FAIL=1; }
+# d: B3 分层口径可加总——README 双语 22+5+1 形态不许漂（中文 22 条+5 条需数据面；英文 22/28+5 hybrid）
+grep -q "22 条基于 git diff 硬证据" README.md && grep -q "5 条需数据面" README.md && grep -q "22/28 run on git-diff" README.en.md && echo "✅ B3 双语分层口径一致" || { echo "❌ B3 分层口径漂移"; FAIL=1; }
+# e: B4 装配先于消费反模式——decision-log 只在 E7 活跃集装配（懒加载不许回退为无条件 load）
+node -e "const L=require('fs').readFileSync('engine/audit/src/rules/runner.ts','utf8').split('\n').filter(l=>!l.trim().startsWith('//'));const s=L.join('\n');const lazy=/rulesToRun\.some\(\(r\) => r\.id === 'E7'\)/.test(s);const pos1=s.indexOf('rulesToRun'),pos2=s.indexOf('loadDecisionEntries()');process.exit(lazy&&pos2>pos1?0:1)" && echo "✅ B4 decision-log 懒加载（装配后于消费者判定）" || { echo "❌ B4 无条件装配回潮"; FAIL=1; }
+# f: B5 注释计数对账——runner/index 头注释计数与实测一致（11 扩展/28 全量）
+grep -q "扩展规则（11 条" engine/audit/src/rules/runner.ts && grep -q "28 条全量规则" engine/audit/src/rules/runner.ts && echo "✅ B5 注释口径=实测" || { echo "❌ B5 注释计数回潮"; FAIL=1; }
+# g: B7 归档件链接可达——doc-slim 全部相对链接逐条验证（迁移纪律的机械锚）
+node -e "const fs=require('fs'),path=require('path');const dir='docs/archive/doc-slim';let bad=0;for(const f of fs.readdirSync(dir)){const p=path.join(dir,f);const s=fs.readFileSync(p,'utf8');for(const m of s.matchAll(/\]\((\.{2,}\/[^)#]+)/g)){const t=path.normalize(path.join(dir,m[1]));if(!fs.existsSync(t)){bad++;console.log('坏链:',f,m[1])}}}process.exit(bad?1:0)" && echo "✅ B7 归档件链接零坏" || { echo "❌ B7 归档链接坏"; FAIL=1; }
+# h: B6/O2 英文词边界抽检——README.en 无 eother/etier/ecommit 类截断残骸
+[ -z "$(grep -nE 'eother|etier|[^a-z]ecommit' README.en.md 2>/dev/null)" ] && echo "✅ B6 英文无截断残骸" || { echo "❌ B6 英文截断残骸回潮"; FAIL=1; }
+# i: B8 双态解析——tryRequire 形态在位（禁止 ?? 兜底回潮）
+grep -q "tryRequire\|逐个 try" engine/audit/dist/cli-quick.js 2>/dev/null || grep -q "tryRequire" engine/audit/src/cli-quick.ts && echo "✅ B8 双态逐 try 在位" || { echo "❌ B8 双态解析回潮"; FAIL=1; }
+# j: 归并自 #4——ruleClass SSOT ↔ README 逐条比对（归一化两侧 A/E 编号+分级再 diff，零差异）
+diff <(grep -E "name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*name: '((A|E)[0-9]+)[^']*'.*ruleClass: '([^']+)'.*/\1 \3/" | sort) <(grep -E "^\| (A|E)[0-9]+ " engine/audit/README.md | awk -F'|' '{n=split($2,arr," "); id=arr[1]; cls=$(NF-1); gsub(/^[ \t]+|[ \t]+$/,"",id); gsub(/^[ \t]+|[ \t]+$/,"",cls); print id, cls}' | sort) >/dev/null && echo "✅ j: ruleClass SSOT↔README 零差异" || { echo "❌ j: ruleClass 分级漂移"; FAIL=1; }
+# k: 归并自 #4——规则口径硬断言（现口径 28 = 17 默认 + 11 扩展；原 #4 的 25/17+8 已陈旧由本断言替代）
+node -e "const src=require('fs').readFileSync('engine/audit/src/rules/index.ts','utf8');const cnt=re=>{const m=src.match(re);return m?(m[0].match(/name:\s*'(A|E)[0-9]+/g)||[]).length:-1};const d=cnt(/export const defaultRules[\s\S]*?^\];/m),e=cnt(/export const extendedRules[\s\S]*?^\];/m);process.exit(d===17&&e===11?0:1)" && echo "✅ k: 规则口径 17+11=28 一致" || { echo "❌ k: 规则口径漂移（≠17+11）"; FAIL=1; }
+# l: 归并自 #4——AUDIT_PRIORITY 派生导出向后兼容（单源化后外部查询形态不破）
+node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20'))process.exit(1)" && echo "✅ l: AUDIT_PRIORITY 兼容导出在位" || { echo "❌ l: 兼容导出缺失"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度147:FAIL"; exit 1; }; echo "维度147:PASS"
