@@ -27,12 +27,12 @@
 
 ### 行业背景
 
-> 💡 **行业背景**：sofagent 是一套 FDE 能力——装进成熟 Agent（DSH / OpenClaw / WorkBuddy）后，进场把业务判断写成文件（梳理工作流、构建本体数据、部署 AI 节点），离场后按文件 7×24 执行与审计。底层（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层五种能力（注入·审计·回溯·沉淀·进化），生命周期 = 五阶段（诊断→激活→编排→执行→进化；激活链四阶段 = 后四环 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，v1.2.5+）。
+> 💡 **行业背景**：sofagent 是一套 FDE 能力——装进成熟 Agent（DSH / OpenClaw / WorkBuddy）后，进场把业务判断写成文件，离场后按文件 7×24 执行与审计。底层是 **约束层 × 生命周期**双层架构：约束层 = 五种能力（注入·审计·回溯·沉淀·进化），生命周期 = 五阶段（诊断→激活→编排→执行→进化；激活链四阶段 = 后四环，v1.2.5+）。
 >不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 
 ### 开发铁律
 
-> 💬 **开发铁律**：sofagent 不建编辑器类交互界面。只读 Dashboard 面板（如 `tools/dashboard/dashboard.html`）例外——它是状态可视化，不做双向编辑。核心能力通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。
+> 💬 **开发铁律**：不建编辑器类交互界面（只读 Dashboard 例外——状态可视化，不做双向编辑）；核心能力走 MCP 暴露，Agent 首连时主动推 `list_capabilities`。开发新功能前先答三问：①用户怎么通过对话发现它？②结果推到哪？③用户怎么知道结果是 sofagent 而非模型做的？——面向用户输出必须带 `[sofagent]` 签名。详见 [设计哲学](./PHILOSOPHY.md)。
 ## 开发环境
 
 > 开发前先确认标准安装通过——[HANDBOOK §安装](./HANDBOOK.md#安装)。
@@ -80,7 +80,7 @@
 
 ### Skill 文件结构
 
-**1 主 Skill（`SKILL.md`）+ 11 子 Skill = 12 个 .md（均在 `SKILL/harness/`；其中 `fde-template.md` 部署时改名 `fde.md`，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤100 行（v1.0.8 起，由 v0.99.5 的 ≤90 行上调）。
+**1 主 Skill（`SKILL.md`）+ 11 子 Skill = 12 个 .md（均在 `SKILL/harness/`；`fde-template.md` 部署时改名 `fde.md`，按需加载）**；用户只装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后经 `engage.md` 走完整入口，🟢🟡 简单/中等跳过它直走 task-aware 闸门；每个子 Skill ≤100 行（v1.0.8 起，自 v0.99.5 的 ≤90 上调）。
 
 > 💡 **措辞心理学**：铁律不只是「写对规则」，更是「写到 AI 真的听」。Superpowers（GitHub Skill 项目，星数 23.9 万为早期快照；@2026-09-25 复测 29.1 万——**星数是时序量，引用必须带时点**）2.8 万次对话实测——强措辞（必须/绝无例外）让 AI 服从率从 33% 提升到 72%。LLM 对强语气的注意力权重高于弱语气。写 Skill 时，关键铁律用最强可用措辞。
 
@@ -174,7 +174,7 @@ FDE 部署 SOP 应遵循此顺序：
 
 **失败清单 > 正向评分**：当前 sofagent scoring 只做正向评分，缺「失败清单」反向维度（与 Evil Skill 自验证闭环同方向）。自进化优先级应让失败清单的反向规避高于正向功能堆砌。
 
-**评估器反作弊（reward hacking 四形态）**：Agent 评估/训练环境中观察到四种「绕过解题直接拿参考源码」的作弊路径：① Git 历史——定位 gold commit 拿答案；② wget/curl——从 GitHub 上游拉参考实现；③ pip——下载含答案的包源码；④ urllib——网络库直接抓源码。对应两道防线：禁用 Git 命令并隐藏 `.git` 目录（断历史回溯）；网络层白名单 + 默认拦截出网（断外联通道）——评估器/沙箱设计的一手反作弊清单。来源：Agent Lightning v1.0 §4.3.2（arXiv 2608.17528）
+**评估器反作弊（reward hacking 四形态）**：Agent 评估/训练环境中观察到四种「绕过解题直接拿参考源码」的作弊路径：① Git 历史（定位 gold commit）；② wget/curl（上游拉参考实现）；③ pip（下载含答案包源码）；④ urllib（网络抓源码）。两道防线：禁用 Git 命令并隐藏 `.git`（断历史回溯）+ 网络白名单默认拦截出网（断外联）——评估器/沙箱的一手反作弊清单。来源：Agent Lightning v1.0 §4.3.2（arXiv 2608.17528）
 
 ### 脚本与文件结构速查
 
@@ -216,25 +216,13 @@ FDE 部署 SOP 应遵循此顺序：
 > 前三个是用户侧工具，后两个是运行时脚本。**设计原则**：确定性操作脚本化——去重、格式校验、文件清理这类即刻运算，脚本比 Agent 更快更省更可靠。
 
 #### USB 完整运行时代码架构（v1.1.8+）
-
-USB key 不是简单的文件复制——它是一个完整的便携式运行时。三个模块协作：
-
-| 模块 | 源码 | 职责 |
-|---|---|---|
-| 写入侧 | `daemon/src/usb-key.ts` | `createUsbKey()` 主入口——复制 Node 便携版 + sofagent dist + 三平台启动脚本 → 写 federation.json（AES key + HMAC key，缺字段自动生成随机密钥）→ knowledge/ 用 `core/crypto/aes-gcm.ts` 加密落盘（只存密文）→ 全量 HMAC 签名 |
-| 签名 | `daemon/src/usb-signature.ts` | HMAC-SHA256 全量签名：路径 POSIX 归一化 + 字典序 + SHA-256 内容哈希串联，不含 mtime（确定性可复算） |
-| 运行侧 | `daemon/src/usb-runtime.ts` | `startUsbRuntime()` 主入口——启动验签 fail-closed（失败写 `security-events.jsonl` + exit 1）→ 内存解密 knowledge/（明文不落盘）→ `SOFAGENT_DATA`/`OPENCLAW_HOME` 便携化 env → daemon 主循环 → 退出 `Buffer.fill(0)` 清内存密钥 |
-
-CLI 入口：`sofagent daemon create-usb-key --role --target --platform`（写入侧）+ `sofagent daemon start --usb-root`（运行侧）。启动脚本：`daemon/usb/start.command`（macOS）/ `start.sh`（Linux）/ `start.bat`（Windows）。
-
-> 💡 USB 功能的用户侧使用见 [HANDBOOK §USB 烧录](./HANDBOOK.md#usb-烧录三种部署场景全覆盖v118) 和 [FDE/GUIDE.md](../FDE/GUIDE.md)。这里只讲代码层架构。
-
-
+USB key 是便携式运行时（写入侧 `usb-key.ts` / 签名 `usb-signature.ts` / 运行侧 `usb-runtime.ts` 三模块协作；启动验签 fail-closed、内存解密知识库、明文不落盘）。
+> 📦 **三模块职责表与 CLI 入口见 [归档 · DEVELOPMENT 参考明细](./archive/doc-slim/development-reference-detail.md)。**
 ### SKILL.state 蒸馏——执行层状态机（v1.5.5）
 
 > **「轨迹可弃、行为可溯」**——这是 sofagent 执行层的审计原则，也是节点内部状态机的落地前提。
 
-节点执行从「消息历史滚雪球」改为「结构化状态机」（SKILL.state，[arXiv:2608.26263](https://arxiv.org/abs/2608.26263)）：每步只带 P（不可变技能说明）+ Σt（结构化状态，唯一跨步记忆）+ ot（最新观察，截断）；模型输出 ΔΣt（状态补丁）由**运行时代码确定性合并**（schema 校验 fail-closed，不靠模型自觉），推理轨迹 Rt 在验证通过后即弃——但丢弃前先落一条审计摘要（动作 + ΔΣt + 因果边）进 wrapToolCall 通道。单步 prompt O(1)、累计 token O(T)。
+节点执行从「消息历史滚雪球」改为「结构化状态机」（SKILL.state，[arXiv:2608.26263](https://arxiv.org/abs/2608.26263)）：每步只带 P（不可变技能说明）+ Σt（结构化状态，唯一跨步记忆）+ ot（最新观察，截断）；模型输出 ΔΣt（状态补丁）由**运行时代码确定性合并**（schema 校验 fail-closed），推理轨迹 Rt 验证通过后即弃——丢弃前落一条审计摘要（动作+ΔΣt+因果边）进 wrapToolCall。单步 prompt O(1)、累计 token O(T)。
 
 降级兜底：`SOFAGENT_STATEFUL_EXEC=off` 一键全回退消息历史式；单节点连续补丁失败自动降级并告警。协议细节与节点 schema 见 [SKILL/state-machine-design.md](../SKILL/state-machine-design.md)。
 
@@ -244,7 +232,7 @@ CLI 入口：`sofagent daemon create-usb-key --role --target --platform`（写�
 
 ### 编排流程
 
-任务到达 → 两轮澄清 → 目标定稿 → LangGraph createReactAgent 拆任务（v1.0.6 从 ao 迁移至 DeepAgents，v1.2.0 迁移至 LangGraph createReactAgent，deepagents 已弃用） → 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+ `buildConstrainedSystemPrompt`）或平台 Hook 注入。
+任务到达 → 两轮澄清 → 目标定稿 → LangGraph createReactAgent 拆任务（v1.2.0 起；deepagents 已弃用）→ 生成 YAML 提案 → 用户确认 → Loop 执行。YAML 只管编排，Skill 约束由 Sub Agent 启动时自加载（v1.0.7+）或平台 Hook 注入。
 
 #### 两条执行路径与降级链
 
@@ -567,28 +555,11 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ### 文档总量预算
 
-> 文档行数预算的现行口径与各层上限以 `tools/check/check-docs.sh` 的 LIMIT_A/LIMIT_B/LIMIT_E 为准（A 层用户文档 / B 层参考文档 / E 层 guides，超标须按铁律归并或登记上调）。**不计入硬预算但必须有读数的面**（F 家族软警戒：索引与台账 / 技能源树 / FDE 手册与模板 / 经验沉淀 / 包级 README）同在该脚本 §4 尾部打印——「不进预算」不等于「不进视线」。计账归属本身由 §22 对账（每条排除项命中的文件必须落在某个计量桶内，否则判红）。
+> 行数预算口径与各层上限以 `tools/check/check-docs.sh` 的 LIMIT_A/B/E 为准（A 用户文档 / B 参考 / E guides；超标须归并或登记上调）。**不计入硬预算但须有读数的面**（F 家族软警戒：索引台账 / 技能源树 / FDE 手册模板 / 经验沉淀 / 包级 README）同在该脚本 §4 打印——「不进预算」≠「不进视线」；计账归属由 §22 对账（排除项命中的文件须落在某计量桶内，否则判红）。
 
 ### `SOFAGENT_*` 分流：功能门控 vs 配置参数（v1.5.7 章五）
-
-> 实测基线：`git grep -ohE 'SOFAGENT_[A-Z0-9_]+' -- 'engine/**' | sort -u | wc -l` = **95**（v1.5.7 章五施工时点；devlog 曾记 93/94 为旧快照）。判据——**改了它会改变「某能力在不在」的是功能门控（G）**，**只改能力行为参数的是配置参数（P）**。G 面进 `engine/capabilities.json`（主干能力清单 SSOT，`tools/gen/gen-capability-manifest.mjs` 守卫）；P 面不进清单。
->两面对账：清单内 env 字段 ↔ 本表 G 组逐项对应。
-
-| 类 | 名单（95 = G 23 + P 72） |
-|---|---|
-| **G 功能门控（23）· 前置安全面（12）** | `AUDIT_ENABLED` `PERMISSION_GUARD` `MCP_ROLES` `MCP_ROLES_STRICT` `USAGE_TRACKING` `EVOLVE_GATE` `SANITIZE` `SANITIZE_IPS` `GIT_DISABLED` `REQUIRE_SIGNED_CONFIG` `ALLOW_PLUGIN_RULES` `STATEFUL_EXEC` |
-| **G 功能门控（23）· 能力与运维面（12）** | `TRACE_EVIDENCE` `REDACT_STRICT` `SCOPE_REQUIRED` `TRAIN_SANDBOX` `SANDBOX_EGRESS` `WEBHOOK_ALLOW_LOCALHOST` `DEBUG` `SINGLE_ENTRY` `INTERNAL` `INTERNAL_INIT` `CONFIRM_BACKUP` `SOFAGENT_` |
-| **P 配置参数（72）** | 路径类：`DATA` `HOME` `DIR` `CONFIG` `PROJECT_ROOT` `REPO_ROOT` `REPO_LOCAL` `KEY_PATH` `SNAPSHOT_OUT` `AUDIT_ENTRY` `ENGINE_ENTRY` `SESSION_WORKSPACE` `HOME_ALLOWED_PREFIXES`；（详→注-2） |
-
-> 注-2：模型/端点类：`LLM` `LLM_` `LLM_A` `LLM_B` `LLM_API_KEY` `LLM_A_API_KEY` `LLM_BASE_URL` `LLM_ENGINEER(_API_KEY)` `LLM_REVIEWER(_API_KEY)` `LLM_GOAL_EVAL(_API_KEY)`
-> `MODEL_` `MODEL_NAME` `MODEL_API_KEY` `MODEL_BASE_URL` `OLLAMA_ENDPOINT` `OLLAMA_MODEL` `L2_NER_ENDPOINT` `L2_NER_TIMEOUT_MS` `EXECUTION_BACKEND` `VIRTUAL_KEY`
-> `TASK` `TASK_ID` `TASK_PROMPT` `SESSION_TASK_ID` `SESSION_TYPE` `AGENT_ID` `AGENT_NAME` `TENANT` `LABEL` `MACHINE_ID`
-> `PERSONA_SOURCE` `PRE` `PRE_RC` `CONTEXT_BUDGET_RATIO` `CONTEXT_WINDOW_TOKENS` `REFRESH_KEEP` `RETENTION_DAYS` `RETENTION_MAX` `SPILL_TTL_DAYS` `CLEANUP_FREQUENCY`
-> `AUDIT_TIMEOUT_MS` `HEALTH_PORT` `WEBHOOK_URL` `WEBHOOK_DINGTALK` `WEBHOOK_FEISHU` `WEBHOOK_WECOM` `ACCEPTANCE_MARKER` `MARKER_START` `MARKER_END` `EVAL_GOLDEN_SET`
-> `EGRESS_SECRET` `DSH_PERMISSION_MODE` `CLEANUP_ON_RECORD` `NET_DENIED` `TOOL_DENIED` `TOOL_PENDING_APPROVAL` `SOFAGENT_`
-
-**双向一致纪律**：清单内 5 个 env 档位（`AUDIT_ENABLED`/`PERMISSION_GUARD`/`MCP_ROLES`/`USAGE_TRACKING`/`EVOLVE_GATE`）与 G 组逐项对得上；G 组其余 18 项属「清单外门控」（能力单元不可独立关档、或为安全 fail-closed 面不开放可拔声明——如 `SANITIZE`/`REQUIRE_SIGNED_CONFIG` 属安全底线不设关档）。新增 `SOFAGENT_*` 时先判 G/P：G 项须同批进 capabilities.json 并过生成器断言，P 项登记本表即可。
-
+> 判据——**改了它会改变「某能力在不在」的是功能门控（G）**，**只改能力行为参数的是配置参数（P）**。实测基线 95 项（G 23 + P 72）；G 组清单内 5 档与 `capabilities.json` 逐项对账，其余 18 项属「清单外门控」（安全 fail-closed 面不开放可拔声明）。
+> 📦 **完整名单与逐类注见 [归档 · DEVELOPMENT 参考明细](./archive/doc-slim/development-reference-detail.md)。**
 ## 八、提交时审计 + 文件系统审计
 
 > 审计模块的 CLI 使用和 exit code 约定。用户视角见 [HANDBOOK §提交后自动审计](./HANDBOOK.md#提交后自动审计)，CI 集成例子见 [HANDBOOK §CI 集成](./HANDBOOK.md#ci-集成)。
@@ -634,7 +605,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 > **架构漂移检测（命名）**：代码与文档长期不一致 → AI 生成逻辑偏向实际代码而非文档 → 长期积累导致架构腐蚀。A4（不删配置）和 A16（非授权文件变更）部分覆盖此方向，未来可作为独立检测维度：对比 `.sofagent/` 中的约束声明与仓库实际结构，检测文档→代码的偏移。
 
-> **落地案例：财务报销沙盒（权责分离）**。员工提交 5800 元报销单备注「经副总裁特批」，大模型抓关键词误判合规直接放款。解法不是加更多 Prompt 规则（关键词匹配易被绕过），而是**物理隔离**：沙盒内预置打款函数 + 硬编码审计红线 → 沙盒独立解析 JSON 提取金额 → 风控雷达扫描超限直接刚性阻断 → 模型连网银接口的「门把手都摸不到」。一句话原则：**只让 AI 干活提建议，绝不让他碰红线**。sofagent 的 A2（不泄密钥）/A15（不盲动）遵循同一原则——模型提建议，审计模块控执行。
+> **落地案例：财务报销沙盒（权责分离）**。员工提交 5800 元报销单备注「经副总裁特批」，大模型抓关键词误判合规直接放款。解法不是加 Prompt 规则（易被绕过），而是**物理隔离**：沙盒内预置打款函数 + 硬编码审计红线 → 独立解析 JSON 提金额 → 风控雷达超限刚性阻断 → 模型连网银接口的「门把手都摸不到」。原则：**只让 AI 提建议，绝不让他碰红线**。本仓 A2/A15 同此——模型提建议，审计模块控执行。
 
 ### 状态账本
 
@@ -664,7 +635,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 - **推理时禁查知识库反而更好**（-2.8pt）：训练 rollout 时让 Agent 直接查 Wiki，产出的轨迹对技能开发失去参考价值。反向印证 sofagent「约束层要轻、零 token 运行」——知识供进化者离线消费，不塞执行时上下文。
 - **跨模型技能迁移存在负迁移**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 走 OpenAI 兼容多供应商路由（任意兼容端点均可接入），技能应按模型分级门控，不能全局通用投放。
 - **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源。**v1.4.5 第七章四已落地**：`solves:` frontmatter 溯源字段（SKILL/ 子树 5 个带 frontmatter 的 SKILL.md 补齐——「为什么存在」回链 pattern，
-  改技能先懂设计意图）+ skill-impact 台账（`engine/orchestrator/src/skill-evolution/`——JSONL append-only 程序化落账，被拒提案带原因不丢教训）+ eval 门控（技能变更过 eval 验证集、分数超历史最优才收编，接通 benchmark/evaluation-log 既有闭环）+ 执行/进化上下文隔离（rollout 期禁查进化知识库的运行时守卫——executor 访问即审计告警，对应消融 -2.8pt 实证的工程化防御）。
+  改技能先懂设计意图）+ skill-impact 台账（`skill-evolution/`——JSONL append-only，被拒提案带原因不丢教训）+ eval 门控（技能变更须过验证集且分数超历史最优才收编，接 benchmark/evaluation-log 闭环）+ 执行/进化上下文隔离（rollout 期禁查进化知识库的运行时守卫，访问即审计告警；对应消融 -2.8pt 的工程化防御）。
 - **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计模块（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
 
 ## 十一、meta-harness 生态与 sofagent 的定位（2026-06 Meta-Harness Summer 印证）

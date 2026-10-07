@@ -44,16 +44,16 @@
 | **v1.5.2** | **🔍 审计模块 · 对外面与判定语义**：MCP audit 数据对外（audit_query 只读 + 事件订阅推送）· 约束导出与证据链外部可验（ruleset_export 双向可逆 + verify-chain 独立验签）· should-run 五问判定链 · 结论失效语义 · 出口治理面 · 事前授权补环 · DSH 插件 npm 首发（kit + 七款）| [v1.5.2](./changelog/v1.5/v1.5.2.md) |
 | **v1.5.1** | **⚡ 编排模块 · 事件驱动**：业务事件触发（四源 + on: 订阅 + 死信重放）· 理解债务应对 · AI 异常总线 · 设备 OTA + 任务下发二期 · 审计输入双通道 · sofagent demo| [v1.5.1](./changelog/v1.5/v1.5.1.md) |
 | **v1.5.0** | 🛡️ 治理模块 · 可见性与本体成熟：治理 KPI 面板 · 本体数据双时态 · Ontology Validation Engine · 决策因果链消费 · FDE 陪跑期补全 · 跨层证据对账 · 存量清扫收尾 · 命名债务清扫 · DSH 插件事件接线 · MCP 104→105 · 测试 4805→4903 · acceptance 352→357 | [v1.5.0](./changelog/v1.5/v1.5.0.md) |
-| **v1.4.9** | **📡 设备接入与数据承接**：G9 设备注册/发现/心跳 · G10 数据目录白名单授权读取 · G11 采集声明 opt-in 上行 · T7 router 过站 session 承接 · T8 敏感识别三层插槽 · T9 权重灰度 AB · G5b 连接器注册 · G1 workflow 模板血缘 · MCP 95→**104** · 测试 4429→**4805** | [v1.4.9](./changelog/v1.4/v1.4.9.md) |
-| **v1.4.8** | **🔌 插件管控与工程效能**：插件来源白名单 · 应用级工具策略 · 多 Agent 协作阵型库 · 自动上下文压缩 · shell 提权分级 · 成本 quota 事前门禁 · 依赖方向架构测试 · 自研进化 gate · 执行机制纪律批 · MCP 95→**95** · 测试 4279→**4429** | [v1.4.8](./changelog/v1.4/v1.4.8.md) |
-| **v1.4.7** | **🔌 商业平台接口版**：读写接口（G2 / G4 / G6 / G7 / G13 / G14）· 交付三件（workflow 烧 USB / G8 首部署 cron / 上岗 prompt）· 云训练执行收口 · 三接线 · 测试 4107→**4279** · acceptance 311→328 · MCP 84→**95** | [v1.4.7](./changelog/v1.4/v1.4.7.md) |
-| **v1.4.6** | **🚀 后训模块 · 分布式与云端**：多卡/多机训练（gpu.count/nodes + schema v2 存量兼容 + GPU 双轴拓扑 + NCCL 诊断）· 云 VM 执行面 · 标准数据推送接口 · 边界收缩（约 −1.2k 行）· 测试 4055→4088 · acceptance 305→311 · MCP 83→84 | [v1.4.6](./changelog/v1.4/v1.4.6.md) |
-| **v1.4.5** | **🚀 后训模块 · 服务与持续**：train_serve 推理服务 · 持续后训练三触发与回退保护 · train_compliance 合规闸门 · train_deliverable 交付包 · 保留策略归档 · 后训 Quickstart · 进化实证收口 · 可靠性加固批 · 测试 3753→4055 · acceptance 304→305 · MCP 80→83 | [v1.4.5](./changelog/v1.4/v1.4.5.md) |
-| **v1.4.4** | **🚀 后训模块 · 信号与部署闭环**：训练语料导出三件套 · 企业专属模型本地权重部署（manifest + sha256 篡改拒绝 + rollback-weights）· 训练产物→注册自动衔接 · 多基座对比 · 决策因果链与先例检索 · CI 供应链全 SHA 固定 · 五能力叙事定稿 · 测试 3619→3753 · acceptance 294→304 · MCP 79→80 | [v1.4.4](./changelog/v1.4/v1.4.4.md) |
-| **v1.4.3** | **🚀 后训模块 · 运行与需求 + 审计聚合指标**：训练监控 + GPU 队列 · train_diagnose 七类诊断 · 训练沙箱 + 设备打包 · 需求推导 + RL 配方模板 · 审计聚合 --stats · 训练反作弊基线 · 存量清扫五件 · 测试 3349→3619 · acceptance 276→294 · MCP 76→79 | [v1.4.3](./changelog/v1.4/v1.4.3.md) |
-| **v1.4.2** | **🚀 后训模块 · 数据与评估 + FDE Harness 层**：数据管道（多源接入 + 质量闸门 + 脱敏）· dataset_version 版本台账 · eval 闭环 · 环境管理 + train_doctor · dry-run 与算力外推 · 训练报告 · FDE 六件 · 测试 3202→3349 · acceptance 271→276 · MCP 67→76 | [v1.4.2](./changelog/v1.4/v1.4.2.md) |
-| **v1.4.1** | **🚂 后训模块 · 地基 八大块**：train-job 编排 · train_job 审计 HMAC 链 · enterpriseId 隔离 · 可复现指纹 · 权重 HMAC 签名 · 中断回收 · 崩溃恢复 · 安全基线 · train_submit · Metal reward 收敛验证 · 双栈契约文档 · 测试 2981→3222 · MCP 66→67 | [v1.4.1](./changelog/v1.4/v1.4.1.md) |
-| **v1.4.0** | 📊 Web 工作明细页 + 图谱栏 + 成本审计（cost_query）+ DSH 插件 9 款 + OpenClaw 插件 4 款 + Dashboard 产品化 + 联邦查询 E2E + MLflow + Agentic Browser + 工具角色分层 + MCP 自动配置 · 测试 2903→2981 · MCP 61→66 | [v1.4.0](./changelog/v1.4/v1.4.0.md) |
+| **v1.4.9** | **📡 设备接入与数据承接**：… · MCP 95→**104**  · 测试 4429→**4805** | [v1.4.9](./changelog/v1.4/v1.4.9.md) |
+| **v1.4.8** | **🔌 插件管控与工程效能**：… · 测试  · MCP 95→**95**  · 测试 4279→**4429** | [v1.4.8](./changelog/v1.4/v1.4.8.md) |
+| **v1.4.7** | **🔌 商业平台接口版**：… · 测试 4107→**4279**  · acceptance 311→328  · MCP 84→**95** | [v1.4.7](./changelog/v1.4/v1.4.7.md) |
+| **v1.4.6** | **🚀 后训模块 · 分布式与云端**：… · 测试 4055→4088  · acceptance 305→311  · MCP 83→84 | [v1.4.6](./changelog/v1.4/v1.4.6.md) |
+| **v1.4.5** | **🚀 后训模块 · 服务与持续**：… · 测试 3753→4055  · acceptance 304→305  · MCP 80→83 | [v1.4.5](./changelog/v1.4/v1.4.5.md) |
+| **v1.4.4** | **🚀 后训模块 · 信号与部署闭环**：… · 测试 3619→3753  · acceptance 294→304  · MCP 79→80 | [v1.4.4](./changelog/v1.4/v1.4.4.md) |
+| **v1.4.3** | **🚀 后训模块 · 运行与需求 + 审计聚合指标**：… · 测试 3349→3619  · acceptance 276→294  · MCP 76→79 | [v1.4.3](./changelog/v1.4/v1.4.3.md) |
+| **v1.4.2** | **🚀 后训模块 · 数据与评估 + FDE Harness 层**：… · 测试 3202→3349  · acceptance 271→276  · MCP 67→76 | [v1.4.2](./changelog/v1.4/v1.4.2.md) |
+| **v1.4.1** | **🚂 后训模块 · 地基八大块**：… · 测试 2981→3222  · MCP 66→67 | [v1.4.1](./changelog/v1.4/v1.4.1.md) |
+| **v1.4.0** | 📊 Web 工作明细页 + 图谱栏 + 成本审计 + DSH 插件 9  · MCP 自动配置  · 测试 2903→2981  · MCP 61→66 | [v1.4.0](./changelog/v1.4/v1.4.0.md) |
 | **v1.3.x** | **运行时审计闭环 + L1-L3 组织协作 + 引擎接口外化 + 自进化种子**：v1.3.0 运行时审计最小闭环 → v1.3.4 L3 组织能力市场 + 编排/执行分离 → v1.3.6 引擎接口外化完整版 → v1.3.9 AST 规则引擎 + meta-harness + FORGE driver 切 DSH（逐版见 CHANGELOG） | [CHANGELOG](../CHANGELOG.md) |
 | **v1.0.x–v1.2.x** | **奠基三线**：审计模块奠基与双节点架构（v1.0.x）→ 编排切 LangGraph + Dream Cycle（v1.1.x）→ 激活链全线打通 + 三入口产品（v1.2.x）——逐版明细见 CHANGELOG | [CHANGELOG](../CHANGELOG.md) |
 
