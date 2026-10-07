@@ -1,7 +1,7 @@
 // ============================================================
 // usage-tracker.test.ts · tool 使用率遥测测试（v1.5.7 章四）
-// 覆盖：四字段完整性 / 断言不含参数内容字段 / 开关关闭零写入 /
-// 无网络路径（静态断言模块源码无 fetch/http import）
+// 覆盖：六字段完整性（含 status/durationMs 发版前 delta）/ 断言不含参数内容字段 /
+// 开关关闭零写入 / 无网络路径（静态断言模块源码无 fetch/http import）
 // 隔离纪律：SOFAGENT_DATA 指向临时目录
 // ============================================================
 
@@ -33,17 +33,50 @@ afterAll(() => {
   rmSync(dataDir, { recursive: true, force: true });
 });
 
-describe('四字段完整性（schemaVersion + tool + ts + sessionId）', () => {
-  it('落盘一行恰含四字段——无第五个键', () => {
+describe('六字段完整性（schemaVersion + tool + ts + sessionId + status + durationMs）', () => {
+  it('落盘一行恰含六字段——无第七个键', () => {
     recordToolUsage('list_rules', 'session-abc');
     const line = readFileSync(resolveToolUsagePath(), 'utf-8').trim().split('\n').at(-1)!;
     const rec = JSON.parse(line);
-    expect(Object.keys(rec).sort()).toEqual(['schemaVersion', 'sessionId', 'tool', 'ts'].sort());
+    expect(Object.keys(rec).sort()).toEqual(
+      ['schemaVersion', 'sessionId', 'status', 'tool', 'ts', 'durationMs'].sort(),
+    );
     expect(rec.schemaVersion).toBe(TOOL_USAGE_SCHEMA_VERSION);
     expect(rec.schemaVersion).toBe(1);
     expect(rec.tool).toBe('list_rules');
     expect(rec.sessionId).toBe('session-abc');
     expect(rec.ts).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/); // ISO 8601
+  });
+
+  it('status / durationMs 显式传值如实落盘（成功 + 耗时）', () => {
+    recordToolUsage('run_audit', 's-ok', 'ok', 123);
+    const rec = JSON.parse(readFileSync(resolveToolUsagePath(), 'utf-8').trim().split('\n').at(-1)!);
+    expect(rec.status).toBe('ok');
+    expect(rec.durationMs).toBe(123);
+  });
+
+  it('status=error（守卫拦截/角色拒绝/未知工具/执行异常）如实落盘', () => {
+    recordToolUsage('blocked_tool', 's-err', 'error', 7);
+    const rec = JSON.parse(readFileSync(resolveToolUsagePath(), 'utf-8').trim().split('\n').at(-1)!);
+    expect(rec.status).toBe('error');
+    expect(rec.durationMs).toBe(7);
+  });
+
+  it('未传 status/durationMs 时取缺省（ok / 0）——旧调用点零破坏', () => {
+    recordToolUsage('legacy_call', 's-legacy');
+    const rec = JSON.parse(readFileSync(resolveToolUsagePath(), 'utf-8').trim().split('\n').at(-1)!);
+    expect(rec.status).toBe('ok');
+    expect(rec.durationMs).toBe(0);
+  });
+
+  it('durationMs 非法值（负数 / NaN / 小数）归一并取整为非负整数', () => {
+    recordToolUsage('t-neg', 's', 'ok', -5);
+    recordToolUsage('t-nan', 's', 'ok', Number.NaN);
+    recordToolUsage('t-frac', 's', 'ok', 12.7);
+    const lines = readFileSync(resolveToolUsagePath(), 'utf-8').trim().split('\n').slice(-3);
+    expect(JSON.parse(lines[0]!).durationMs).toBe(0);
+    expect(JSON.parse(lines[1]!).durationMs).toBe(0);
+    expect(JSON.parse(lines[2]!).durationMs).toBe(13);
   });
 
   it('多次调用逐行追加（append-only）', () => {
@@ -73,7 +106,7 @@ describe('隐私红线：断言不含参数/内容字段', () => {
   });
 
   it('recordToolUsage 签名不接受内容参数（编译期红线——行为断言：多余实参不入盘）', () => {
-    // @ts-expect-error 多传一个内容参数——运行时 JS 会忽略（函数只收 tool, sessionId），断言其不落盘
+    // @ts-expect-error 多传一个内容参数——运行时 JS 会忽略（函数只收 tool/sessionId/status/durationMs），断言其不落盘
     recordToolUsage('t2', 's', { secret: 'should-not-persist' });
     const lines = readFileSync(resolveToolUsagePath(), 'utf-8').trim().split('\n');
     const last = JSON.parse(lines.at(-1)!);
