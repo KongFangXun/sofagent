@@ -41,7 +41,8 @@ graph TD
 
 ### 双层架构：约束层与生命周期（主框架）
 
-**三域视角**（产品身份口径，v1.5.3；交付状态：场景域 ✅ 已交付 · 治理域 ✅ 已交付 · 判定域 📋 排期 v1.6.0–v1.9.0）：导读层「双层架构」是**治理域（harness 治理层，已交付）**的架构展开；场景域首句=「**万物皆可 FDEing 的场景框架**」（工程层 FDEing 进场把判断写成文件——业务图谱/本体数据/激活链，详见 [§一 激活链](#一激活链架构v125-phase-1-4-已交付)）；判定域（S1M 判定层，判据/留痕/举证——28 条规则 × 判定层接管见 [§三 审计规则面的判定化边界](#审计规则面的判定化边界28-条规则--判定层接管)；判定层本体排期 v1.6.0–v1.9.0，当前以 28 条规则的判定化边界为部分交付面）。
+**三域视角**（产品身份口径，v1.5.3；交付状态：场景域 ✅ 已交付 · 治理域 ✅ 已交付 · 判定域 📋 排期 v1.6.0–v1.9.0）：导读层「双层架构」是**治理域（harness 治理层，已交付）**的架构展开；场景域首句=「**万物皆可 FDEing 的场景框架**」（工程层 FDEing 进场把判断写成文件——业务图谱/本体数据/激活链，详见 [§一 激活链](#一激活链架构v125-phase-1-4-已交付)）；
+判定域（S1M 判定层，判据/留痕/举证——28 条规则 × 判定层接管见 [§三 审计规则面的判定化边界](#审计规则面的判定化边界28-条规则--判定层接管)；判定层本体排期 v1.6.0–v1.9.0，当前以 28 条规则的判定化边界为部分交付面）。
 三因子↔本架构对位（工程/判定/治理 ↔ 场景/判定/治理域）与五域→三域映射表：[v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)（本档只留指针；架构术语 SSOT 仍是本档 + PHILOSOPHY，见 [WIKI 术语声明](./WIKI.md)）。
 
 **这是理解 sofagent 最关键的一张图**——之前只有「约束层五种能力」（**能力视角**：怎么保证做对）。激活链（四阶段 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）引入后，产品在「治理」之外多了一条**流程视角**（企业 AI 从诊断到自动运行怎么走）：
@@ -326,7 +327,9 @@ graph TB
 | **v1.3.5** | MCP 自进化+运维闭环（A/B 实验 run_ab_test / promote_ab 人审晋升 + 快照 snapshot_list / snapshot_restore 人审恢复）+ instinct→skill 自动进化（三源提取 + 置信度评分 + /evolve 聚合）+ FDE 运维五件 + DSH MCP 互通 |
 | **v1.3.6** | 引擎接口外化——Workflow 标准格式 + 运行容器 / Ontology Schema 注册 / 模型注册 + 灰度切换 / SubAgent 托管 SDK / 训练协议三约定 + 预算控制 / 机器可判定验收 / 路由决策可解释性 / 可靠性五件（worktree 隔离 + 双闸验证 + 疲劳度检测 + 分级降级 + decisions.jsonl）· MCP 60 tools |
 | **v1.3.7** | SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 虚拟 key / 独立进程 / A-B 双跑）· 场景驱动权限 · AgentShield 五类扫描 · 行业 overlay 四套 · 断路器行为监控 · ontology 生命周期 |
-| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1。**现状标注（F48-② · v1.5.7）**：密钥缺失时 daemon 启动打一次性引导提示（crypto-init WARN，明文兼容不阻断）；附链面（task/logs · think.md · knowledge/）**仍明文**——静态加密当前仅覆盖 history.jsonl 主链，权威清单见 LIMITATIONS）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固 |
+| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1。**现状标注（F48-② · v1.5.7）**：密钥缺失时 daemon 启动打一次性引导提示（crypto-init WARN，明文兼容不阻断）；（详→注-1） |
+
+> 注-1：附链面（task/logs · think.md · knowledge/）**仍明文**——静态加密当前仅覆盖 history.jsonl 主链，权威清单见 LIMITATIONS）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（`checkHistoryChainDetailed`）· HMAC key 强校验 · 签名基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` CLI）· CLI 版本一致性自检。
 >详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
@@ -589,7 +592,8 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 
 核心设计决策：**审计必须外置。** Anthropic 发现 Claude 内部存在 J-space——AI 自己知道控制不住自己。所以不信任 Agent 自我报告，只看 git diff 硬证据。
 
-**判定机制外置与超限即拒（行业四源收敛）**：判定/审计机制必须在被约束方够不到的位置，且上限触发时须硬拒绝而非静默降级。四源同构——Anthropic AAR 训练与评测物理隔离；NVIDIA Sentry 带外监控（BlueField-4 DPU）；智谱 ZCode 事件反证「证据保管方=被审计方」失效（删除只能自述、无第三方核验）；Codex 826 事件暴露同握「写日志+删日志」权限即审计链源头失效。拒绝语义：Laya choice 超限静默截断（对照 NanoJev 抛异常）、METR 可疑度超阈即阻断转人工——超限即拒、失败要响亮是可选择的工程立场。本段补节首「为什么外置」的物理形态与失败语义；四源逐条展开见 VALIDATION。
+**判定机制外置与超限即拒（行业四源收敛）**：判定/审计机制必须在被约束方够不到的位置，且上限触发时须硬拒绝而非静默降级。四源同构——Anthropic AAR 训练与评测物理隔离；NVIDIA Sentry 带外监控（BlueField-4 DPU）；智谱 ZCode 事件反证「证据保管方=被审计方」失效（删除只能自述、无第三方核验）；Codex 826 事件暴露同握「写日志+删日志」权限即审计链源头失效。拒绝语义：Laya choice 超限静默截断（对照 NanoJev 抛异常）、METR 可疑度超阈即阻断转人工——超限即拒、失败要响亮是可选择的工程立场。
+本段补节首「为什么外置」的物理形态与失败语义；四源逐条展开见 VALIDATION。
 
 > 来源：Anthropic AAR 技术报告（arXiv 2608.28945，2026-09-27）｜NVIDIA Open Agent Safety Platform（2026-09-27/28）｜智谱 ZCode 整改公告（IT之家 2026-09-28）｜Codex 用户报告（Hacker News 2026-09-27）｜Laya choice 缺陷解剖（2026-09-22）｜METR Notes（metr.org，2026-09-27）
 
@@ -623,6 +627,8 @@ graph LR
 完整的行业对标（Palantir OAG 五层映射、Ledger-Views-Policy 对照、DeerFlow / Omnigent / DataFlow 等）见 [VALIDATION](./VALIDATION.md)（**行业印证 SSOT**）与 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型)。
 
 > 💡 **规则编号说明**：A1–A11 + A18–A23 为默认规则（17 条），A14–A17 + A24 + E1/E2/E4/E5/E6/E7 为扩展规则（11 条，需 opt-in），全量 28 条（17 默认 + 11 扩展）。**28 条规则完整清单（文档级 SSOT）见 [SECURITY.md → 28 条审计规则完整清单](../SECURITY.md#28-条审计规则完整清单文档级-ssot)**，逐条行为表见 `engine/audit/README.md`。A12/A13 已在 v0.99.4 合并入 A11，E3 已在 v1.2.5 并入 A11，编号不再使用。
+>
+>
 
 **审计的三重定位**：
 

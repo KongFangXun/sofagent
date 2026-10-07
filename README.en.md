@@ -7,11 +7,10 @@
 <!-- H1 & banner split: the H1 is the repo name and semantic anchor (search engines / no-image environments / screen readers); the banner carries the visuals -->
 
 <p align="center">
-  <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <!-- ⚠️ bump version: manually sync this badge version (Version-vX.Y.Z) -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.6-16B8F3" alt="Version" /></a>
-  <a href="https://www.npmjs.com/package/sofagent"><img src="https://img.shields.io/npm/v/sofagent" alt="npm version" /></a>
+  <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.6-16B8F3" /></a>
+  <img src="https://img.shields.io/npm/v/sofagent" />
 </p>
 
 <p align="center"><sub><a href="./README.md">简体中文</a> | English</sub></p>
@@ -37,9 +36,11 @@
 > 💬 **One-sentence version**: on entry, it maps your business and writes it down as files; after it leaves, every time your digital employee touches code or files, the change passes a security check, leaves a record, and saves a snapshot — traceable and roll-backable when things go wrong.
 
 > 🏢 **The organizational lens**: the bottleneck of AI adoption has shifted from "is the model smart enough" to "can the organization dare to onboard it" — does it fit the org chart, does it get an account, how is performance measured, what happens when it errs. sofagent is the onboarding system for
->digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how — the accumulation mechanism iterates with use; current empirical boundaries in [LIMITATIONS](./docs/LIMITATIONS.md)), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
+>digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how — the accumulation mechanism iterates with use; current empirical boundaries in
+>[LIMITATIONS](./docs/LIMITATIONS.md)), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
 
-> 🧩 **The three-factor framing**: sofagent is a **governance layer for FDE deliverables with a built-in Harness** — the engineering layer (FDEing) and the governance layer (harness) are shipped, while the judgment layer (S1M) is scheduled for v1.6.0–v1.9.0 — FDEing is the engineering layer (turning FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
+> 🧩 **The three-factor framing**: sofagent is a **governance layer for FDE deliverables with a built-in Harness** — the engineering layer (FDEing) and the governance layer (harness) are shipped, while the judgment layer (S1M) is scheduled for v1.6.0–v1.9.0 — FDEing is the engineering layer (turning
+>FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
 >from generation; its foundation is under construction across v1.6.0–v1.9.0, with the declaration landing in v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities — today's main landing points). Each layer sits in its own place; see "Core Features".
 
 **An open-source FDE Harness layer** (FDE = Forward Deployed Engineer, the engineer who embeds models into real enterprise
@@ -185,10 +186,12 @@ the platform:
 
 | Tier | Platform | Constraint injection | Mounting method |
 |---|---|---|---|
-| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; see "Upstream & plugin entries" below) — 7 lifecycle events incl. `tools/pre-execute` (per the vocabulary table in `engine/dsh-plugins/SEAMS.md`) |
+| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available;（详→注-1） |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
 | **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 28 rules, not call-level interception) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
+
+> 注-1：see "Upstream & plugin entries" below) — 7 lifecycle events incl. `tools/pre-execute` (per the vocabulary table in `engine/dsh-plugins/SEAMS.md`)
 
 - **Never assume capability parity — tiers differ in injection strength, not in "supported or not"** — DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text the Agent reads on its own (advisory). "Supports platform X" means the
   constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls
@@ -215,7 +218,8 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## The Two FDE Harness Phases
 
-**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above — what this section adds is the **organizational reading**: together they are onboarding a digital employee (the after-departure side runs daemon patrols 24/7, every commit triggers the 28 audit rules including **AgentShield static scanning across five config surfaces**, snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
+**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above — what this section adds is the **organizational reading**: together they are onboarding a digital employee (the after-departure side runs daemon patrols 24/7, every commit triggers the 28
+audit rules including **AgentShield static scanning across five config surfaces**, snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
 
 | Organizational act | sofagent equivalent |
 |---|---|
@@ -261,7 +265,9 @@ npx -y -p sofagent sofagent audit
 
 > ⚠️ This step is a **one-off audit** (inside a single process) — it does not install a git hook, so later commits will not be auto-blocked. For continuous protection run `sofagent audit --init` (see Full install below).
 
-Here is what it looks like when a known-format secret leak gets blocked (real output; A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#28-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys — other known formats included; generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). The screenshot on the first screen shows the A1 scenario (a .env sensitive-file commit blocked, exit 2); A2 secret-format detection is a separate rule, not repeated here.
+Here is what it looks like when a known-format secret leak gets blocked (real output; A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#28-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys — other known formats
+included; generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). The screenshot on the first screen shows the A1
+scenario (a .env sensitive-file commit blocked, exit 2); A2 secret-format detection is a separate rule, not repeated here.
 
 **Full install** (Node.js ≥ 18, download and review before running) — **installed on the enterprise devices running the AI nodes**:
 

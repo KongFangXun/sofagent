@@ -15,8 +15,10 @@
 > 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/` 下对应版本目录中（如 `v1.5/`、`v1.6/`–`v1.9/`、`v2.0/`），**不纳入本索引**；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。
 
 - **v1.5.6** — 🧭 存量收敛·单入口与数据面——2026-10-04 已发版：CLI 单入口收敛（13 bin → `sofagent <域> <动作>` 单入口 + 12 个旧命令 shim 兼容期）· 数据生命周期治理（记忆二级分层与归档轮转 · 审计链历史段归档 · 遗留备份接管 · doctor 数据目录健康度 · 沉淀记忆项目作用域）·
-  运维与安全文档注入（SECURITY/ROADMAP/WIKI 三档状态与边界随版同步）· 文档与安装面修复批（21 项——单入口措辞收敛/文档结构修正/安装持久化，逐项代号见开发日志） · MCP 工具 104→**104**（无新增）· 测试 5642→**5661**（+19，13 包）· acceptance 478→**479**（断言数口径；场景数 395→397，双口径说明见[开发日志·测试数明细](./docs/changelog/v1.5/v1.5.6.md#实现纪要2026-10-02--10-04--四波次)） · [开发日志](./docs/changelog/v1.5/v1.5.6.md)
-- **v1.5.5** — ⚡ 执行模块·执行状态机与按需加载——2026-10-01 已发版：全节点执行状态机（SKILL.state 收编：ΔΣt 代码合并·轨迹可弃行为可溯·全局降级开关）· Tool search 按需加载（BM25+中文 2-gram top-5·权限面不受影响）· 多 Agent 阵型调度（六阵型三态装配·handoffs 落 decision-log）· 编排依赖治理（langgraph 降 optional·dsh-only 零静态传染）· README 理念主线重写（万物皆可 FDEing 三层各归其位）——MCP 工具 104→**104**（无新增）· 测试 5569→**5642**（+73，13 包）
+  运维与安全文档注入（SECURITY/ROADMAP/WIKI 三档状态与边界随版同步）· 文档与安装面修复批（21 项——单入口措辞收敛/文档结构修正/安装持久化，逐项代号见开发日志） · MCP 工具 104→**104**（无新增）· 测试 5642→**5661**（+19，13 包）· acceptance 478→**479**（断言数口径；
+场景数 395→397，双口径说明见[开发日志·测试数明细](./docs/changelog/v1.5/v1.5.6.md#实现纪要2026-10-02--10-04--四波次)） · [开发日志](./docs/changelog/v1.5/v1.5.6.md)
+- **v1.5.5** — ⚡ 执行模块·执行状态机与按需加载——2026-10-01 已发版：全节点执行状态机（SKILL.state 收编：ΔΣt 代码合并·轨迹可弃行为可溯·全局降级开关）· Tool search 按需加载（BM25+中文 2-gram top-5·权限面不受影响）· 多 Agent 阵型调度（六阵型三态装配·handoffs 落 decision-log）· 编排依赖治理（langgraph 降 optional·dsh-only 零静态传染）· README 理念主线重写（万物皆可 FDEing 三层各归其位）——MCP 工具 104→**104**（无新增）·
+  测试 5569→**5642**（+73，13 包）
   · acceptance 388→**395** · [开发日志](./docs/changelog/v1.5/v1.5.5.md)
 - **v1.5.4** — 🎯 执行模块·模型路由与凭证验证——2026-09-30 已发版：路由决策链（三级路由/敏感强制本地/本地不可用硬拒）· 凭证隔离 Vault（代码层取不到 token）· 多实例自验证表决 · AI 节点治理接入 · 授权/凭证对账——MCP 工具 103→**104** · 测试 5408→**5569**（+161，13 包）
   · acceptance 377→**388** · [开发日志](./docs/changelog/v1.5/v1.5.4.md)
@@ -52,12 +54,15 @@
 > 🔶 **破坏性变更公告（v1.5.7 待发版 · F53 注册路径验哈希旁路移除）**
 >
 > **`RegisterModelInput.verifyHash` 入参删除，`registerModel` 验哈希硬编码为 `true`**（供应链红线收口）：v1.5.1 披露的「注册路径可用 `verifyHash: false` 显式跳过验哈希」旁路（调用方恰是被约束方）已移除——注册 / 切换（switchModel）/ 回滚（rollbackWeightsVersion）三条版本切换路径统一为唯一强校验路径，无旁路。
-> **升级影响（行为变更）**：此前依赖 `verifyHash: false` 跳过权重哈希校验的注册调用将**直接失败**（哈希不匹配即拒绝注册，fail-closed）；MCP tool `model_register` 的 `verify_hash` 参数不再生效（schema 保留兼容、传入即被忽略，后续版本移除）。全仓三个调用点已同批适配（mcp/model-register、train/artifact-register、orchestrator/registerLocalEndpoint——最后一个本就不传该参数）。裁定链：维护者拍板「硬编码 true 为唯一路径」，该 API 语义变更随 v1.5.7 发版生效。
+> **升级影响（行为变更）**：此前依赖 `verifyHash: false` 跳过权重哈希校验的注册调用将**直接失败**（哈希不匹配即拒绝注册，fail-closed）；MCP tool `model_register` 的 `verify_hash` 参数不再生效（schema 保留兼容、传入即被忽略，后续版本移除）。全仓三个调用点已同批适配（mcp/model-register、train/artifact-register、orchestrator/registerLocalEndpoint——最后一个本就不传该参数）。
+>裁定链：维护者拍板「硬编码 true 为唯一路径」，该 API 语义变更随 v1.5.7 发版生效。
 
 > 🗑️ **API 退役公告（v1.5.7 待发版 · 浏览器实现底座删除与公开面 4 符号吊销）**
 >
-> **`@sofagent/orchestrator` 公开面吊销 4 符号**：`BrowserSession` / `BrowserDriver` / `BrowserAuditSink` / `BrowserSessionFactory`（`public-api-baseline` 同批移除，2549→2545）——实现底座 `engine/orchestrator/src/refine-agent/browser-tools.ts`（260 行）与其单测（204 行）已删除，对齐 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md) 裁定（「第四轮补 · orchestrator 侧能力库」）。触发链：[v1.5.7 第二章 UI 审计可行性报告](./docs/eval/ui-audit-feasibility.md)落盘（结论「不实做」）⇒ 四件套随之退役删除。
-> **升级影响（公开 API 删除）**：外部代码 import 上述 4 符号将编译失败——四件套自 MCP 面 2026-09-26 注销（107→103）后已零生产消费面，SDK 面台账零登记（`check-unwired-exports` 实测零命中），实际破坏面为零；历史实现可自 v1.4.x tag 取回。**保留不变**：三件图像能力 `analyzeScreenshot` / `readImageMeta` / `degradeImageToText`（dsh-vision 视觉降级本体，非四件套）迁 `engine/orchestrator/src/refine-agent/image-meta.ts`，`@public` 导出与基线条目原样保留（导出改指新模块，导入路径无需变更）。MCP 工具面无增删（仍 104）。
+> **`@sofagent/orchestrator` 公开面吊销 4 符号**：`BrowserSession` / `BrowserDriver` / `BrowserAuditSink` / `BrowserSessionFactory`（`public-api-baseline` 同批移除，2549→2545）——实现底座 `engine/orchestrator/src/refine-agent/browser-tools.ts`（260 行）与其单测（204 行）已删除，
+>对齐 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md) 裁定（「第四轮补 · orchestrator 侧能力库」）。触发链：[v1.5.7 第二章 UI 审计可行性报告](./docs/eval/ui-audit-feasibility.md)落盘（结论「不实做」）⇒ 四件套随之退役删除。
+> **升级影响（公开 API 删除）**：外部代码 import 上述 4 符号将编译失败——四件套自 MCP 面 2026-09-26 注销（107→103）后已零生产消费面，SDK 面台账零登记（`check-unwired-exports` 实测零命中），实际破坏面为零；历史实现可自 v1.4.x tag 取回。
+>**保留不变**：三件图像能力 `analyzeScreenshot` / `readImageMeta` / `degradeImageToText`（dsh-vision 视觉降级本体，非四件套）迁 `engine/orchestrator/src/refine-agent/image-meta.ts`，`@public` 导出与基线条目原样保留（导出改指新模块，导入路径无需变更）。MCP 工具面无增删（仍 104）。
 
 - **v1.4.9** — 设备接入与数据承接：G9 设备注册/发现/心跳（Ed25519 身份 + 在线才派单/掉线改派）· G10 数据目录白名单授权读取 · G11 采集声明 opt-in 上行（WAL 加密暂存 + 断点续传 + 审计计量）· T7 router 过站 session 承接 · T8 敏感识别三层插槽（SDK 面，
   管线接线排期 v1.5.1）· T9 权重灰度 AB（SDK 面同上）· G5b 连接器注册 + G1 workflow 模板血缘 · T6 installer + T10 模型清单 · MCP 95→**104**（9 新）· 测试 4429→**4805** · 2026-09-17 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.9.md)

@@ -107,7 +107,7 @@ graph TB
 
 | 概念 | 一句话 | 详情 |
 |---|---|---|
-| **FDE Harness** | 对外的产品身份：**FDE 方法论 × Harness 工程**——同一件事的两个阶段：FDE 进场生成判断（哪里上 AI、做好标准、谁拍板），冻结成交付物（workflow.yml + 本体数据）；约束层离场驻留判断（按交付物 7×24 执行、进化时写回），装进成熟 Agent（DSH / OpenClaw / WorkBuddy）；装上它的 Agent 即以 FDE 方式作业，离场后留一套能持续维护的 AI 化资产 | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
+| **FDE Harness** | 对外的产品身份：**FDE 方法论 × Harness 工程**——同一件事的两个阶段：FDE 进场生成判断（哪里上 AI、做好标准、谁拍板），冻结成交付物（workflow.yml + 本体数据）；约束层离场驻留判断（按交付物 7×24 执行、进化时写回），装进成熟 Agent（DSH / OpenClaw / WorkBuddy）；（详→注-1） | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
 | **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层五种能力（注入·审计·回溯·沉淀·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——五种能力各自覆盖其中哪些维度 | [ARCHITECTURE 导读层 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；五种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#一这是什么定位与边界) |
@@ -121,6 +121,8 @@ graph TB
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束层）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
 | **激活链** | FDE 交付物→企业工作流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
 | **data/** | ~/.sofagent/data/ SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/；用户配置入口为项目级 `.sofagent/config.yml`（data/config/ 是 daemon 运行时产物，非用户配置面） | [DEVELOPMENT §数据文件架构](./DEVELOPMENT.md) |
+
+> 注-1：装上它的 Agent 即以 FDE 方式作业，离场后留一套能持续维护的 AI 化资产
 
 
 ## 四、架构全景
@@ -218,12 +220,14 @@ graph TB
 | `docs/COMMUNITY.md` | 社区现状、贡献路径、公开数据 |
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
-| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/` `v1.5/` `v2.0/`）——⚠️ 早期版本日志含审查元信息等非产品文档内容，不代表产品能力声明；阅读须知（含清理门槛与"已开发/已排期"标记口径）见 [changelog/README](./changelog/README.md)。规划中版本的排期见 [ROADMAP](./ROADMAP.md) |
+| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/` `v1.5/` `v2.0/`）——⚠️ 早期版本日志含审查元信息等非产品文档内容，不代表产品能力声明；阅读须知（含清理门槛与"已开发/已排期"标记口径）见 [changelog/README](./changelog/README.md)。（详→注-2） |
 | `docs/changelog/releasing.md` | **发版 SOP**——十一阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
 | `docs/reports/` | 一次性扫描/治理动作的报告归档（与 `docs/evidence/` 分工：evidence 存可持续引用的证据本体，reports 存某次动作的过程报告——如 commons 退役扫描 JSON） |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
+
+> 注-2：规划中版本的排期见 [ROADMAP](./ROADMAP.md)
 
 ### engine/ 模块包清单
 
@@ -271,6 +275,7 @@ graph TB
 
 ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语**定义处 = [ARCHITECTURE.md](./ARCHITECTURE.md)（单一 SSOT）**；[PHILOSOPHY.md](./PHILOSOPHY.md) 为论证处（引用 ARCHITECTURE 定义，不另立定义）——**约束层**（一个层五种能力：注入·审计·回溯·沉淀·进化，FORGE 为内部工具）；**产品身份三层口径**（工程层 FDEing
 / 判定层 S1M / 治理层 harness）见 [README · 三因子口径](../README.md)，身份公式定稿 **FDEing × S1A（S1A = S1M + Harness）** 的 SSOT = [PHILOSOPHY · 身份口径](./PHILOSOPHY.md)——与架构术语是同一事物的两个视角，架构术语以本声明指定的 SSOT 为准；
+
 **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.5/`
 为**当前版本目录**（内容为各版本变更记录；后续排期内容**不代表已交付能力**）。**后训模块归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
 
@@ -281,9 +286,9 @@ graph TB
 | FDE | Forward Deployed Engineer——进场生成判断、部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
 | 归域 | MCP 工具按**业务职能**分桶进五域的编制口径（增量化简记：域 +N = 该域条目数变化）——权威源 = `tool-registry.ts` 的 TOOLS 数组逐工具名分桶，与 `roles` 使用场景标签、`docs/API.md` 十能力域是三套不同标签，禁混用 | [ARCHITECTURE · 五域重算与三套标签声明](./ARCHITECTURE.md) |
 | 五域（消歧） | 两义：① **MCP 工具五域**——104 tools 按业务职能分的五个编制域（[ARCHITECTURE · 五域一环](./ARCHITECTURE.md)）；② **五域→三域映射**——v1.5.3 把旧五域叙事映射进现行三域（场景/判定/治理）的口径迁移表（[v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）。行文遇「五域」先辨指向 | 本条（消歧索引） |
-| 五（消歧） | 「五」字四义固定表述：**五种能力** = 约束层的注入·审计·回溯·沉淀·进化（[ARCHITECTURE §二](./ARCHITECTURE.md)）；**五模块** = 约束层内部的功能域编制（治理/执行/审计/编排/后训，模块不是产品线，[ARCHITECTURE 定位声明](./ARCHITECTURE.md)）；**五岗位** = FDE 职能离场后的企业常设化沉淀（工作流设计师/领域知识负责人/业务自建者/AI 治理者/Agent 运营负责人，[FDE/ROLES.md](../FDE/ROLES.md)）；**五要素** = 工作流梳理的深挖维度（[FDE/GUIDE §二](../FDE/GUIDE.md#二五要素深挖)）——四者不同物，行文须带全称 | 本条（消歧索引） |
-| FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理 → 判定 → 交付 → 养护」。名词位（岗位）/ 动词位（能力）禁混用。**首创声明**：FDEing 动词化与「万物皆可 FDEing」为本仓概念首创（行业验证的是「岗位→能力」——见 [VALIDATION · 五常设岗位](./VALIDATION.md)；首创面无第三方印证可引，如实标注） | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
-| 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
+| 五（消歧） | 「五」字四义固定表述：**五种能力** = 约束层的注入·审计·回溯·沉淀·进化（[ARCHITECTURE §二](./ARCHITECTURE.md)）；**五模块** = 约束层内部的功能域编制（治理/执行/审计/编排/后训，模块不是产品线，[ARCHITECTURE 定位声明](./ARCHITECTURE.md)）；（详→注-3） | 本条（消歧索引） |
+| FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理 → 判定 → 交付 → 养护」。名词位（岗位）/ 动词位（能力）禁混用。**首创声明**：FDEing 动词化与「万物皆可 FDEing」为本仓概念首创（行业验证的是「岗位→能力」——见 [VALIDATION · 五常设岗位](./VALIDATION.md)；（详→注-4） | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
+| 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。（详→注-5） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | 约束层的英文 SSOT 称法（对外中文「约束层」、英文「Harness」同指一物）——"缰绳"，非"马" | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE 导读层 · 双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |
@@ -298,6 +303,10 @@ graph TB
 | release-gate-loop | FORGE 的发版闸门闭环（acceptance-test + regression + 审查报告） | [FORGE/SKILL/release-gate-loop/SKILL.md](../FORGE/SKILL/release-gate-loop/SKILL.md) |
 | ToolGate | Agent 工具调用的前置门禁（A2 密钥/A9 注入/A14 越权等规则） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | data/ | v1.2.1 SSOT 运行时数据目录（安装后实际位于 ~/.sofagent/data/），替换旧 .sofagent/ | [DEVELOPMENT §数据文件架构](./DEVELOPMENT.md) |
+
+> 注-3：**五岗位** = FDE 职能离场后的企业常设化沉淀（工作流设计师/领域知识负责人/业务自建者/AI 治理者/Agent 运营负责人，[FDE/ROLES.md](../FDE/ROLES.md)）；**五要素** = 工作流梳理的深挖维度（[FDE/GUIDE §二](../FDE/GUIDE.md#二五要素深挖)）——四者不同物，行文须带全称
+> 注-4：首创面无第三方印证可引，如实标注）
+> 注-5：已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧）
 
 
 ## 八、导航：按你的意图选路

@@ -45,7 +45,7 @@
 |---|---|---|
 | AgentGovBench | NIST AI RMF 映射的治理基准——48 场景八类（身份传播/逐用户策略/委托溯源/范围继承/限流级联/审计完整性/fail-closed 纪律/跨租户隔离）；宣称测「模型周围的治理层」而非模型本身；自带 vanilla 基线 13/48 vs 治理完备 46/48 落差读数 | 与本仓「治理层不是模型」定位同题；八类场景可反查：身份传播/审计完整性/fail-closed 三类对应本仓 §二 #1/#4/#9 已覆盖面，限流级联/跨租户隔离对应多租户治理排期面（v2.x）——**待核**（场景到规则的逐条映射未实跑） |
 | ST-WebAgentBench | ICLR 2026；CuP 指标 = 任务完成 × 政策合规**双轴**；3057 政策实例；三层政策层级 组织>用户>任务 | 「完成度与合规分列」与判定底座「分布内外分列」纪律同族；三层政策层级可对照本仓 config 三级 fallback + 任务级 scope——对照是叙事层，非跑分 |
-| NIST CAISI（AI Agent Standards Initiative） | 三支柱 + NCCoE 概念文件四功能域（Identification / Authorisation / Delegation / Logging）；Delegation 要求委派链可回溯到责任人、Logging 要求每次工具调用关联到委派者 | 四功能域反查：Identification/Authorisation/Logging 对应 §二 #1/#4 已覆盖；Delegation 委派链（ORCHESTRATION 决策 + causedBy 因果边）部分覆盖——委派到「人」的绑定待 v1.6.0+ 判定底座（**待核**） |
+| NIST CAISI（AI Agent Standards Initiative） | 三支柱 + NCCoE 四功能域（Identification/Authorisation/Delegation/Logging）；Delegation 要求委派链可回溯责任人、Logging 要求每次工具调用关联委派者 | 四功能域反查：Identification/Authorisation/Logging 对应 §二 #1/#4 已覆盖；Delegation 委派链（ORCHESTRATION + causedBy 因果边）部分覆盖——委派到人的绑定待 v1.6.0+ 判定底座（**待核**） |
 
 ## 维护规则
 

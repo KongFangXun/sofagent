@@ -300,7 +300,8 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1M**（FDEing × S1M
 
 > 引入版本：v1.1.8（已落地）。
 
-`history.jsonl` 自 v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）。有密钥时每条记录签名，Agent 无法在无密钥情况下伪造签名；无密钥时降级为 SHA-256 hash chain（Agent 可重算整链，仅事后可追溯非强防篡改）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainDetailed()` 校验链完整性。**自 v1.5.5 起写入侧默认生成密钥**：首次写审计历史时若 `~/.sofagent-key` 缺失，自动生成 32 字节随机密钥（hex，Shannon 熵 ≈4.0）并原子落盘 0600——默认安装开箱即为签名链，无需人工配置。
+`history.jsonl` 自 v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）。有密钥时每条记录签名，Agent 无法在无密钥情况下伪造签名；无密钥时降级为 SHA-256 hash chain（Agent 可重算整链，仅事后可追溯非强防篡改）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainDetailed()` 校验链完整性。
+**自 v1.5.5 起写入侧默认生成密钥**：首次写审计历史时若 `~/.sofagent-key` 缺失，自动生成 32 字节随机密钥（hex，Shannon 熵 ≈4.0）并原子落盘 0600——默认安装开箱即为签名链，无需人工配置。
 
 > 🔑 **密钥默认姿态（v1.5.5）**：读/校验路径（`--doctor` 的 `validateHmacKey`、`--verify-chain`）**不生成**密钥、无磁盘副作用；仅写入侧签名入口生成。且当历史中已存在已签名记录而密钥文件丢失时，写入侧拒绝自动生成新密钥并在 stderr 明示——新密钥会使全部旧签名失配，而校验侧对「失配 + 环境指纹一致」判篡改（红），会把自己误报成「检测到篡改痕迹」。此时请恢复原密钥（`~/.sofagent-key` 备份 / 保管库），或人工裁定后重建链。**备份密钥是运维必做项**：丢失即该段历史不可强校验。
 
@@ -541,7 +542,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 | 绕过方式 | 检测手段 | 缓解 |
 |---|---|---|
-| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 装三层防线（pre-commit + commit-msg + post-commit，v1.4.2）：绕过 commit-msg 的 commit 由 post-commit 对账——命中拦截记录时输出「疑似绕过」并留痕 history.jsonl，未命中输出 INFO 且可用 `--verify-commit <SHA>` 复核；定期 `--doctor` 检查未审计 commit；CI 侧 `sofagent audit --diff` 兜底。**加密态边界（v1.5.0）**：静态加密开启后 history.jsonl 为密文（`SOFAGENT-AGE-V1` 前缀），明文对账不可用——post-commit 降级为显式提示（全密文态提示依赖 CI 兜底；混合态只对明文行对账），`--no-verify` 检测在加密态依赖 CI 兜底 |
+| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 装三层防线（pre-commit + commit-msg + post-commit，v1.4.2）：绕过 commit-msg 的 commit 由 post-commit 对账——命中拦截记录时输出「疑似绕过」并留痕 history.jsonl，未命中输出 INFO 且可用 `--verify-commit <SHA>` 复核；（详→注-1） |
 | `git add -f .sofagent/`（审计数据强制入库） | ✅ v1.4.2 起三层防线拦截——pre-commit 在 commit 对象生成前将 .sofagent/ 移出暂存区（主防线，对当次 commit 直接生效）；commit-msg 阶段再兜一次（护磁盘 index 防后续 commit 卷入）；post-commit 扫 HEAD tree 命中即告警 | pre-commit reset 失败（index.lock 竞态）时 fail-loud 拒绝 commit（宁可 false-retry 不可静默入库）；CI 侧 `--diff` 仍可发现已入库残留 |
 | 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中） |
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
@@ -554,6 +555,8 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 | 密钥字符串拼接形态（拆两半用 `+` 相邻摆放） | ✅ v1.4.1 起拦截——A2 合并同行相邻字面量后检测 | 已默认拦截，无需额外缓解 |
 | 密钥放环境变量/模板变量（`${env.KEY}` / `process.env.KEY`） | ✅ 不构成泄漏——密钥本体不在 diff 内容中，属合法引用形态，A2 放行是设计行为 | 无需缓解（这是推荐做法：密钥走 .env + .gitignore） |
 
+> 注-1：定期 `--doctor` 检查未审计 commit；CI 侧 `sofagent audit --diff` 兜底。**加密态边界（v1.5.0）**：静态加密开启后 history.jsonl 为密文（`SOFAGENT-AGE-V1` 前缀），明文对账不可用——post-commit 降级为显式提示（全密文态提示依赖 CI 兜底；混合态只对明文行对账），`--no-verify` 检测在加密态依赖 CI 兜底
+
 > ⚠️ 以上绕过路径均依赖 Agent 的「自觉」——这是 sofagent 架构级别的信任模型选择：审计模块是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 
 > ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）——缓解措施（CI 侧独立校验 config 完整性 / 文件权限锁及其局限）见下方「详细缓解步骤」。
@@ -563,12 +566,14 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > 💡 **`hardenedMode` 配置项尚未实现**（代码中不存在此字段）——一键全规则基线化的便捷配置排入 ROADMAP 评估，当前需手动按上述方式逐条锁定。
 
 > ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。
->**CI 侧 `sofagent audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。**例外（v1.5.5 补披露）**：上述「基线缺失即显性报错」在**三层防线中的 commit-msg 阶段为告警 + 放行本次**（首装后未建基线属正常态，不阻断提交；pre-commit 阶段为 `exit 1` 阻断）——信任锚仍只由显式命令建立，两个阶段的差异是「阻断 vs 告警」而非「校验 vs 不校验」。
+>**CI 侧 `sofagent audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。
+>**例外（v1.5.5 补披露）**：上述「基线缺失即显性报错」在**三层防线中的 commit-msg 阶段为告警 + 放行本次**（首装后未建基线属正常态，不阻断提交；pre-commit 阶段为 `exit 1` 阻断）——信任锚仍只由显式命令建立，两个阶段的差异是「阻断 vs 告警」而非「校验 vs 不校验」。
 
 > ⚠️ **超大 diff 的 spill 落盘面（v1.3.9 能力 · 补齐计划见 ROADMAP · 如实披露）**：单文件 diff 超 5MB 时引擎溢出到磁盘再分块读回（`engine/core/src/diff-parser.ts`）。落盘位置经 `getDataDir()` SSOT 解析链（显式 `SOFAGENT_DATA` > 环境变量 > `~/.sofagent/data/`），**恒在引擎数据目录而非被审仓库内**——v1.4.3 已修复旧实现「spill 落 CWD 会被对方仓库 commit 卷入」的跨仓泄漏面；
 >目录权限 0700（spill 可能含密钥类 diff 内容）。读回上限 64MB：以内全量扫描（oversized 不置位，无审计盲区），超限截断置位并注入 WARN，落盘件保留供按需取回。**残余面**：spill 文件含明文 diff 内容（sanitize 管道不覆盖 spill 原文），强合规场景建议将 `~/.sofagent/data/spill/` 纳入加密卷覆盖范围并定期清理。
 
-> ⚠️ **Webhook SSRF——DNS 解析复验与残余 TOCTOU（v1.4.5 披露）**：webhook 推送 URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped IPv4 全段拒绝）之外，新增**DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，实际解析到的 A/AAAA 记录任一落在私网段仍拒绝——堵「域名看着公共、解析结果内网」的 DNS rebinding 式 SSRF。**豁免面披露（v1.5.7 F38）**：`SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1` 显式设置时跳过上述 SSRF 检查（本地联调用）——豁免生效的每次推送均有 stderr 告警与通道健康留痕（audit 侧 `webhook.ts` / daemon 侧 `webhook/index.ts` 同口径），不静默放行。
+> ⚠️ **Webhook SSRF——DNS 解析复验与残余 TOCTOU（v1.4.5 披露）**：webhook 推送 URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped IPv4 全段拒绝）之外，新增**DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，实际解析到的 A/AAAA 记录任一落在私网段仍拒绝——堵「域名看着公共、解析结果内网」的 DNS rebinding 式 SSRF。
+>**豁免面披露（v1.5.7 F38）**：`SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1` 显式设置时跳过上述 SSRF 检查（本地联调用）——豁免生效的每次推送均有 stderr 告警与通道健康留痕（audit 侧 `webhook.ts` / daemon 侧 `webhook/index.ts` 同口径），不静默放行。
 >DNS 查询失败按拒绝处理（fail-closed：无法证明安全即不推送）。**残余窗口（如实声明）**：复验与实际 fetch 是两次独立解析，存在微小 TOCTOU 窗口——本防线拦「配置时刻就指向内网」的静态攻击面，动态 rebind 收敛至两次解析窗口内，属纵深防御增量而非绝对边界。
 
 > ⚠️ **history.jsonl 的 beforeAfter 字段脱敏（端到端验证）**：审计条目的 `actionGovernance.beforeAfter`（变更前/后值摘要，从 diff 提取、截断至 200 字符）是新增落盘面——密钥可能混入。
@@ -648,7 +653,9 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 #### 远程安装（curl | bash）信任模型（v1.4.3 披露）
 
 一行安装（`curl ... bootstrap.sh | bash`）的行业通用信任链是「HTTPS 传输 + GitHub 账号安全」，**无代码签名**——若 raw.githubusercontent 通道或仓库账号被劫持，下载的脚本可被替换为任意代码。sofagent 自 v1.4.3 起在此模型上追加一层：**bootstrap.sh 内嵌发版时硬编码的 sha256（install.sh + 6 个 lib 文件共 7 个哈希），下载内容与发版时不一致即 fail-closed 拒绝执行**——劫持者即使控制传输通道，也无法在不改哈希（哈希在 bootstrap.sh 自身内，
-用户 curl 到的那份）的情况下替换安装载荷。残余信任面如实披露：① 用户 curl 到的 bootstrap.sh 本身仍无签名（首跳信任，与全行业一致）；② 哈希随发版更新，若发版流程被攻破（哈希与载荷同被替换）校验失效——此层防御针对传输劫持，不针对供应链根攻破；③ 高安全场景建议 `git clone` + 审查后 `bash install.sh`，绕开首跳信任。**边界重申（v1.5.7）：哈希锚与载荷同源（都在发版侧产出）——本机制防传输劫持、不防源头替换**；独立校验通道（release 页公示哈希 / attestation）已登记 [ROADMAP 探索方向](./docs/ROADMAP.md) 排期评估。
+
+用户 curl 到的那份）的情况下替换安装载荷。残余信任面如实披露：① 用户 curl 到的 bootstrap.sh 本身仍无签名（首跳信任，与全行业一致）；② 哈希随发版更新，若发版流程被攻破（哈希与载荷同被替换）校验失效——此层防御针对传输劫持，不针对供应链根攻破；③ 高安全场景建议 `git clone` + 审查后 `bash install.sh`，绕开首跳信任。**边界重申（v1.5.7）：哈希锚与载荷同源（都在发版侧产出）——本机制防传输劫持、不防源头替换**；
+独立校验通道（release 页公示哈希 / attestation）已登记 [ROADMAP 探索方向](./docs/ROADMAP.md) 排期评估。
 
 #### 源码审查
 
@@ -814,7 +821,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 
 | 进度 | 说明 |
 |---|---|
-| **5/10 规则级覆盖**（v1.5.7 章三起） | 实测覆盖：**ASI01**（`engine/rules/src/ast/rules/asi01-prompt-injection.ts`）· **ASI03**（`engine/audit/src/rules/rule-e6-prompt-injection-guard.ts`，v1.5.7 章三新增）· **ASI04**（`engine/rules/src/ast/rules/asi04-sbom.ts`）· **ASI08**（`engine/orchestrator/src/sandbox/circuit-breaker.ts` 级联故障熔断）· **ASI10**（同 circuit-breaker 失控 agent 行为监控）；其余五项（ASI02/05/06/07/09）经既有规则面间接对位（映射见上表），无专属规则载体 |
+| **5/10 规则级覆盖**（v1.5.7 章三起） | 实测覆盖：ASI01（`engine/rules/src/ast/rules/asi01-prompt-injection.ts`）· ASI03（`engine/audit/src/rules/rule-e6-prompt-injection-guard.ts`，v1.5.7 章三新增）· **ASI04**（`engine/rules/src/ast/rules/asi04-sbom.ts`）· **ASI08**（`engine/orchestrator/src/sandbox/circuit-breaker.ts` 级联故障熔断）· **ASI10**（同 circuit-breaker 失控 agent 行为监控）；其余五项（ASI02/05/06/07/09）经既有规则面间接对位（映射见上表），无专属规则载体 |
 | 补条节奏 | v1.3.7 补 ASI08+ASI10 → v1.3.9 补 ASI01+ASI04 → **v1.5.7 章三补 ASI03**；下一候选 ASI06（记忆投毒）——其判定面依赖 v1.6.0 判据 schema 定稿后才有稳定载体（devlog 章三裁定） |
 | 双编号映射 | 28 条规则全部附 OWASP ASI + MITRE ATLAS 双编号（规则元数据 `owaspAsi`/`mitreAtlas` 字段，SSOT 见 §四清单表两列）；ATLAS 编号以 MITRE ATLAS 公开知识库为准，未确证项标「待核」不虚标 |
 
