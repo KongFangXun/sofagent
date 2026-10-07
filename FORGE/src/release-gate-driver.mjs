@@ -809,7 +809,13 @@ function buildPrecheckEvidence(runDir, stepDef, target = '') {
         if (Array.isArray(data.changelog)) {
           lines.push(`  - changelog 模块（${data.changelog.length}，全量）:`);
           for (const m of data.changelog) {
-            lines.push(`    * ${m.title ?? '(无标题)'}`);
+            // 20261007-04 修复：注入层曾只打 title——machineVerdict/exempt/scenarioRefs
+            // 全部丢弃，coverage worker 看不到机器豁免判定（run-04 实锤 mv=EXEMPT 在
+            // precheck 里却被判 P0）。机器判定字段必须随行注入，prompt 的硬消费才有
+            // 数据可消费。
+            const mv = m.machineVerdict ? ` 〚machineVerdict=${m.machineVerdict}〛` : '';
+            const refs = Array.isArray(m.scenarioRefs) && m.scenarioRefs.length ? ` 〚锚:${m.scenarioRefs.join(',')}〛` : '';
+            lines.push(`    * ${m.title ?? '(无标题)'}${mv}${refs}`);
           }
         }
         if (Array.isArray(data.scenarios)) {
@@ -2372,7 +2378,9 @@ function parseChangelogModules(changelogRelPath) {
     let body = '';
     for (let j = i + 1; j < lines.length && !/^##\s/.test(lines[j]); j++) body += lines[j] + '\n';
     const refs = new Set();
-    for (const r of body.matchAll(/S(\d{1,3}[a-z]?)(?:\s*[-–~]\s*S?(\d{1,3}[a-z]?))?/g)) {
+    // 20261007-04 修复：S1M/SSO/S3 等产品词被当场景号误抓（章六实锤锚了无关的
+    // S1「Fresh install」）——数字后不得紧跟字母（S1M 的 M 排除 S1）。
+    for (const r of body.matchAll(/S(\d{1,3})(?![a-zA-Z0-9])[a-z]?(?:\s*[-–~]\s*S?(\d{1,3}[a-z]?))?/g)) {
       refs.add('S' + r[1]);
       if (r[2]) {
         const a = parseInt(r[1], 10), b = parseInt(r[2], 10);
