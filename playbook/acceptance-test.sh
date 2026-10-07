@@ -3513,15 +3513,15 @@ $S359_OK && pass "run-05 P1 批闭环锚点在位（承诺排期化/悬空引用
 scenario 360 "v1.4.3 闸门 run-06 verdict P1 误报批定谳——规则数 25 双口径锚点 + 维度 9 探针 A+E 全口径 + PASS 场景级断言输出"
 # 定谳背景：①规则数「25 条」正确（探针漏 E 系列的误报已修）②158 残留已清（仅标题遗留已改）③pass() 已透传描述
 S360_OK=true
-# 规则数 25：代码 SSOT（number 字段计数）与文档声称对齐
+# 规则数 28：代码 SSOT（number 字段计数）与文档声称对齐
 # v1.5.3 D1 双引擎统一后：3 条规则（A1/A2/A9）number 改用 DEF_*.number 共享源引用——字面量计数恒 22。
 # 口径改为「name A+E 计数」（与 S360_PROBE 同源双锚，任一漂移即红）。
 S360_NUMS=$(grep -oE "name:[[:space:]]*'[AE][0-9]+" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" | wc -l | tr -d ' ')
-[ "$S360_NUMS" = "25" ] || S360_OK=false  # index.ts 注册 25 条（17 默认 + 8 扩展；DEF 引用与字面量统一按 name 计）
-grep -q "25 条审计规则\|25 条规则" "$PROJECT_ROOT/README.md" || S360_OK=false  # README 对外口径 25
-# 维度 9 探针全口径：A+E 合计应 25（修后回归锚点，防探针再漏 E 系列）
+[ "$S360_NUMS" = "28" ] || S360_OK=false  # index.ts 注册 28 条（17 默认 + 11 扩展；DEF 引用与字面量统一按 name 计）
+grep -q "28 条审计规则\|28 条规则" "$PROJECT_ROOT/README.md" || S360_OK=false  # README 对外口径 28
+# 维度 9 探针全口径：A+E 合计应 28（修后回归锚点，防探针再漏 E 系列）
 S360_PROBE=$(grep -oE "name:[[:space:]]*'[AE][0-9]+" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" | wc -l | tr -d ' ')
-[ "$S360_PROBE" = "25" ] || S360_OK=false  # 探针 pattern 含 A+E 双系列
+[ "$S360_PROBE" = "28" ] || S360_OK=false  # 探针 pattern 含 A+E 双系列
 # 🔴 BRE 转义陷阱二阶（run-07 冒烟实测）：\[ 在 BSD grep BRE 里不是字面 [， 仍是字符类括号——「转义写法」的 pattern 反而匹配未转义普通文本，断言语义 写反（匹配新形态=自毙）。凡字面匹配含方括号的文本必须 grep -F + 变量拼接。
 
 S360_OLDPROBE="name:[[:space:]]*'A[0-9]+"

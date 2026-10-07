@@ -109,7 +109,7 @@ rules:
 - [ ] 每个 🔄 数据节点有审计声明（勾稽 / 溯源 / 口径三列填齐）
 - [ ] E5 审计验证过（故意造错被拦 → exit 2）
 - [ ] 治理面板可访问（老板能自己看六卡）
-- [ ] 数据产物决策留痕可查（`sofagent audit decision-query --kind DATA_PRODUCT`）
+- [ ] 数据产物决策留痕可查（MCP `audit_query` 查 DATA_PRODUCT 类决策，或 CLI `sofagent audit --stats --json` 看 decision 通道；决策面入口对照 `docs/changelog/v1.5/v1.5.6.md` audit 域子命令映射）
 - [ ] 交接文档落客户平台（本模板 + enterprise-profile + 部署方案 SMB 变体）
 
 > **填写纪律**：与 `delivery-report.md` 同——诚实记录。数据节点的「审计验证过」必须是实测（造错被拦），不能是「应该能拦」。
