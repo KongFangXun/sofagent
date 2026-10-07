@@ -36,7 +36,7 @@
 | 想理解架构设计 | [架构文档](./ARCHITECTURE.md) |
 | 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐**；全文通读约 30 分钟，各节导读段约 5 分钟） |
 
-> 📁 **项目文件导航**：根目录 8 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）、
+> 📁 **项目文件导航**：根目录 8 个 .md 各司其职——[README.md](../README.md)（概览）、[README.en.md](../README.en.md)（英文）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）、
 >[AGENTS.md](../AGENTS.md)（Codex 适配薄挂载，四层加载链入口）、[GEMINI.md](../GEMINI.md)（Gemini CLI 适配薄挂载）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。
 
 
@@ -72,13 +72,13 @@
 - **每次变更都被管住**：25 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
 - **数据面自己会瘦身**（v1.5.6）：运行时数据不再只增不减——事实记忆二级分层 + 冷热归档、审计链历史段归档（**归档 ≠ 删除**：链只追加，归档 = 移走历史段 + 锚点重算）、遗留备份按 30 天策略清理并留痕；`sofagent core doctor` 报数据目录健康度，`--archive` 显式查归档事实。
 - **经验不串项目**（v1.5.6）：审批入池的沉淀记忆默认钉到**当前项目**（按仓库解析），跨项目与用户全局不自动共享；复用走显式导出/导入 + 血缘与审批留痕。
-- **规则自测、写错即曝**（v1.5.3）：审计规则统一为一套引擎（tool-level 与 git-diff 共用同一份定义、两种触发时机），**每条规则强制携带正负样例**（必须命中 / 必须不命中），加载时断言 fail-closed——规则写错当场拒载，不靠人记；多规则命中取最严，FAIL 报文附替代建议。运维侧同版补 **doctor 修复闭环**：`sofagent core doctor --refresh` 先备份、再一键重置到默认、出前后 diff 报告。
-- **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN 四阶段完整交付）。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+- **规则自测、写错即曝**（v1.5.3）：审计规则统一为一套引擎（tool-level 与 git-diff 共用同一定义、两种触发时机），**每条规则强制携带正负样例**（必须命中/必须不命中），加载时断言 fail-closed——写错当场拒载；多规则命中取最严，FAIL 报文附替代建议。运维侧同版补 **doctor 修复闭环**：`sofagent core doctor --refresh` 先备份、再一键重置默认、出前后 diff 报告。
+- **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是躺在磁盘上的静态文件——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带 HITL 与审计地自动跑。从「交给企业一堆文档」变成「交给企业一个会自己跑的系统」（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）。详见 [激活链设计](./guides/fde-activation-chain.md)。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
-- **📡 训练信号与部署闭环**（v1.4.4）：`corpus_export` 语料导出三件套（规则/FDE 方法论/带标签样本，28 编号位 + reward 骨架 + 脱敏聚合）；企业专属模型本地权重部署（`model_register source: 'local-path'` + sha256 篡改拒绝 + rollback-weights 版本回滚）；训练产物→注册自动衔接（train done + eval pass → model_register）；`train compare` 多基座 ROI 排序；决策因果链与先例检索（`causedBy` 因果边）；
+- **📡 训练信号与部署闭环**（v1.4.4）：`corpus_export` 语料导出三件套（规则/FDE 方法论/带标签样本，28 编号位 + reward 骨架 + 脱敏聚合）；企业专属模型本地权重部署（`model_register source: 'local-path'` + sha256 篡改拒绝 + rollback-weights 回滚）；训练产物→注册自动衔接（train done + eval pass）；`train compare` 多基座 ROI 排序；决策因果链与先例检索（`causedBy` 因果边）；
   CI 供应链全 SHA 固定 + dashboard 完全离线。详见 [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md)。
-- **🔍 引擎纵深**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；MLflow agent 评估（13 指标 + LLM-as-Judge）；
+- **🔍 引擎纵深**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；MLflow agent 评估（13 指标 + LLM-as-Judge）；
   Agentic Browser（v1.3.9 曾交付，2026-09-26 随 v2.0.0 §七 裁定退役——不再在役）；跨平台适配器（Cursor/Codex/Gemini CLI）；ATTRIBUTION 归因 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复。明细见 [开发日志](./changelog/v1.3/v1.3.9.md)。
 
 **全程——不分相位的底座能力：**
@@ -176,11 +176,11 @@ cd sofagent && bash install.sh
 | `hermes` | Skill symlink + `SOUL.md` 种子指令 |
 | 不指定 | 只写 `~/.sofagent/`，不修改任何平台目录（平台无关安装） |
 
-> 📌 **DSH 不在此表内**——它不经 `install.sh --platform` 接入，而是由宿主 profile 的 `bundles` 挂载 6 款原子插件（见 [README · 多平台挂载](../README.md) 与 [`engine/dsh-plugins/SEAMS.md`](../engine/dsh-plugins/SEAMS.md)）。本表列的是 `install.sh` 的平台参数分支，不是「支持哪些宿主」的全集；完整宿主矩阵见[加载链 HOOK](../engine/hooks/sofagent-load-chain/HOOK.md)。
+> 📌 **DSH 不在此表内**——它不经 `install.sh --platform` 接入，而是由宿主 profile 的 `bundles` 挂载 6 款原子插件（见 [README · 多平台挂载](../README.md) 与 [`engine/dsh-plugins/SEAMS.md`](../engine/dsh-plugins/SEAMS.md)）。本表为 `install.sh` 平台参数分支，非「支持哪些宿主」全集；完整宿主矩阵见[加载链 HOOK](../engine/hooks/sofagent-load-chain/HOOK.md)。
 
 #### 装之前：只认官方通道
 
-> ⚠️ **别从镜像装。**官方发布渠道只有三处——**GitHub 仓库**、**npm**（带 scope 的 `@sofagent/*`；单入口裸名包 `sofagent`——见下节说明）、**插件市场**（ClawHub 与 SkillHub 双生态），全部安装方式见 [README](../README.md)。第三方镜像、聚合仓库、二次打包的「一键脚本」不在发布链内：它们可能钉在已撤销的历史版本上，或改写了安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，被改写等于交出宿主控制权。
+> ⚠️ **别从镜像装。**官方发布渠道仅三处——**GitHub 仓库**、**npm**（scope 包 `@sofagent/*`；单入口裸名 `sofagent`，见下节）、**插件市场**（ClawHub 与 SkillHub 双生态），安装方式见 [README](../README.md)。第三方镜像/聚合仓库/二次打包「一键脚本」不在发布链内：可能钉在已撤销版本或改写安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，被改写等于交出宿主控制权。
 >
 > 已下架的旧代理包：npm 裸名包 `sofagent-audit`（无 scope）是本项目的旧代理包，已于 2026-09-26 下架——正式包名是带 scope 的 `@sofagent/audit`。
 
@@ -463,7 +463,7 @@ jobs:
 | 严格 | `--strict` | 任何警告都 exit 2 | 0/2 |
 | CI | `--ci` | = `--silent`（CI 友好输出，无交互提示） | 0/1/2 |
 
-模式可叠加——CI 流水线需零容忍时用 `--diff HEAD --ci --strict`（v1.0.5 起 `--ci` 不再隐含 `--strict`）。未知参数处置：可能承载安全语义的拼错形态（如 `--rulesets` 复数、`--ruleset=security` 等号写法）会 **exit 2 直接中断**（用法错误，非审计发现——2 同时承载「有违规」与「用法错误」，环境异常另有专用码 3/4，见上文「提交后自动审计」节）；纯未知 flag 仅告警不中断，合法参数表见 `--help`。
+模式可叠加——CI 零容忍用 `--diff HEAD --ci --strict`（v1.0.5 起 `--ci` 不再隐含 `--strict`）。未知参数：可能承载安全语义的拼错形态（如 `--rulesets` 复数、`--ruleset=security` 等号写法）**exit 2 直接中断**（用法错误，非审计发现——2 同时承载「有违规」与「用法错误」，环境异常另有 3/4，见「提交后自动审计」节）；纯未知 flag 仅告警不中断，合法参数见 `--help`。
 
 
 ## 进化：知识自动沉淀
@@ -486,8 +486,8 @@ jobs:
 
 | 产品线 | 是什么 | 从哪进 | 前置要求 |
 |---|---|---|---|
-| **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor`（环境体检）→ `fde_interview`（五要素）→ `train_submit`（提交）；CLI：`sofagent orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`（模板库一览）；（详→注-1） | GPU 环境（CUDA/显存/框架）——`bash tools/train/train-env-init.sh` 一键装；基座模型手动放置或推理服务拉取；反作弊双防线随 install 默认落盘 |
-| **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行模块：访谈结构化 → 三问判定 → 量化 ROI → 本体推导 → 三层沉淀 → 组装部署 | MCP：`fde_interview`（先跑——五要素采集，`prompts_only: true` 拿访谈话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`；产物落 `data/fde/<企业>/` | 无环境硬依赖（纯规则引擎——LLM 可选辅助）；企业标识必填（`enterprise_id`） |
+| **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor` → `fde_interview`（五要素）→ `train_submit`；CLI：`sofagent orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`；（详→注-1） | GPU 环境（CUDA/显存/框架）——`bash tools/train/train-env-init.sh` 一键装；基座模型手动放置或推理服务拉取；反作弊双防线随 install 默认落盘 |
+| **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行模块：访谈→三问→量化 ROI→本体推导→三层沉淀→组装部署 | MCP：`fde_interview`（先跑——五要素采集，`prompts_only: true` 拿访谈话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`；产物落 `data/fde/<企业>/` | 无环境硬依赖（纯规则引擎——LLM 可选辅助）；企业标识必填（`enterprise_id`） |
 | **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent daemon start`） |
 
 > 注-1：监控：`train_status` / `train_list` / 失败走 `train_diagnose`
@@ -510,7 +510,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent mcp`，当前口径 104 个 tool——以 `engine/mcp/src/tool-registry.ts` 实数为准）。DSH 用户用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent mcp`，即可在 DSH 会话里调用 sofagent 的全部能力——审计查询、知识库检索、A/B 实验、快照时间线等。
+sofagent 本身即一个 MCP server（stdio，bin `sofagent mcp`，当前 104 个 tool——以 `engine/mcp/src/tool-registry.ts` 实数为准）。DSH 用户用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent mcp`，即可调用全部能力——审计查询、知识库检索、A/B 实验、快照时间线等。
 
 **配置方法、字段说明（`cordis.yml` 挂载示例）、两种 command 写法、安全边界（破坏性 tool 强制人审）与验证状态，整节见 [DSH MCP 互通指南](./guides/dsh-mcp-integration.md)。**
 
@@ -664,7 +664,7 @@ sofagent orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 ### 概念速查
 
-上述术语（Harness 中间件、约束层 × 生命周期双层架构、约束层五种能力（注入·审计·回溯·沉淀·进化）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。
+上述术语（Harness 中间件、双层架构、约束层五种能力、激活链四阶段、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台、FDE 等）已在上方各幕详述，此处仅速查。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。
 核心 = **约束层（五种能力）× 生命周期（诊断→激活→编排→执行→进化）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 
