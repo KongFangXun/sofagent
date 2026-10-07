@@ -14,8 +14,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync, appendFileSync, readdirSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { join, isAbsolute } from 'path';
+import { tmpdir, homedir } from 'os';
 
 // ─── 反射访问未导出的内部函数 ───────────────────────────────
 
@@ -244,12 +244,14 @@ function createAppendLedger(ledgerPath, repoRoot) {
   const { fullBody } = extractFunctionBody(SOURCE_CODE, 'appendLedger');
   const modifiedBody = fullBody
     .replaceAll('LEDGER_PATH', '_ledgerPath')
-    .replaceAll('REPO_ROOT', '_repoRoot');
+    .replaceAll('REPO_ROOT', '_repoRoot')
+    .replaceAll('_pathIsAbsolute', '_pathIsAbsolute')
+    .replaceAll('os.homedir()', '_homedir');
   const wrapper = new Function(
-    '_ledgerPath', '_repoRoot', 'appendFileSync', 'join',
+    '_ledgerPath', '_repoRoot', 'appendFileSync', 'join', '_pathIsAbsolute', '_homedir',
     modifiedBody + '\nreturn appendLedger;'
   );
-  return wrapper(ledgerPath, repoRoot, appendFileSync, join);
+  return wrapper(ledgerPath, repoRoot, appendFileSync, join, isAbsolute, homedir);
 }
 
 describe('appendLedger', () => {
@@ -813,15 +815,16 @@ describe('F 链零 commit 校验（两轮假 PASS 根治）', () => {
     expect(SOURCE_CODE).toContain('fBranchCommitCount === 0');
     // 校验必须在 auditPassed 判定之后、收敛 break 之前
     const guardIdx = SOURCE_CODE.indexOf('if (auditPassed && fBranchCommitCount === 0)');
-    const convergeIdx = SOURCE_CODE.indexOf("audit gate 通过（无违规），F 修复链收敛");
+    const convergeIdx = SOURCE_CODE.indexOf('audit gate 通过 + 失败步骤产物复验翻绿，F 修复链收敛');
     expect(guardIdx).toBeGreaterThan(-1);
     expect(convergeIdx).toBeGreaterThan(guardIdx);
   });
 
   it('DIM_TIMEOUT_OVERRIDE 覆盖 #49/#106/#110（超时误报 ERR 防复发）', () => {
+    // 当前档位（v1.4.8 run-01/02 + run-05 实测上调后）：49=120s · 106/110=300s（含全量 check-test-count + check-version）
     expect(SOURCE_CODE).toContain('49: 120_000');
-    expect(SOURCE_CODE).toContain('106: 150_000');
-    expect(SOURCE_CODE).toContain('110: 150_000');
+    expect(SOURCE_CODE).toContain('106: 300_000');
+    expect(SOURCE_CODE).toContain('110: 300_000');
   });
 });
 
@@ -960,16 +963,17 @@ describe('buildInputsEvidence（run-19 verdict 零证据根因）', () => {
 
   it('consolidate 三输入 → 全部注入 + 合计预算随输入数缩放（run-08 三修）', () => {
     // run-08 实证：固定总额 20000 下 12 份分片报告静默截断（s8~s12 未审），
-    // verdict 升格 P1-10。修法：总额 = inputs.length × 12000（硬顶 150000）。
-    // 本用例构造 >12000 字符的第一输入验证截断仍发生（单文件上限不变），
-    // 且三输入总额 36000 足够三份小文件全部完整注入。
-    const big = 'x'.repeat(13_000);
+    // verdict 升格 P1-10。修法演进：inputs.length × 12000 → v1.4.8 上调为
+    // max(40_000, inputs.length × 30_000)（硬顶 400_000），单文件上限 40_000。
+    // 本用例构造 >40_000 字符的第一输入验证截断仍发生（单文件上限不变），
+    // 且三输入总额 90_000 足够三份小文件全部完整注入。
+    const big = 'x'.repeat(45_000);
     writeFileSync(join(tmpRoot, 'acceptance.md'), big);
     writeFileSync(join(tmpRoot, 'regression.md'), 'R');
     writeFileSync(join(tmpRoot, 'coverage.md'), 'C');
     const out = buildEv(tmpRoot, { inputs: ['acceptance.md', 'regression.md', 'coverage.md'] });
     expect(out).toContain('acceptance.md');
-    expect(out).toContain('截断');
+    expect(out).toContain('中段省略');
     expect(out).toContain('regression.md');
   });
 
@@ -1171,9 +1175,11 @@ describe('run-05 三修（fail-closed 注入口径 + 证据审读预算 + 超时
     expect(BUDGET_CODE).not.toContain("'verdict':       100,");
   });
 
-  it('dim 111 超时 override 150s→240s（run-05 实测全量 test-count >150s）', () => {
-    expect(SOURCE_CODE).toContain('111: 240_000,');
+  it('dim 111 超时 override（全量 test-count 档位，防超时误报 ERR 回退）', () => {
+    // 档位演进：150s（初版）→ 240s（run-05 实测 >150s）→ 600s（20260918 run-02 实测单项 288s）
+    expect(SOURCE_CODE).toContain('111: 600_000,');
     expect(SOURCE_CODE).not.toContain('111: 150_000,');
+    expect(SOURCE_CODE).not.toContain('111: 240_000,');
   });
 });
 
@@ -1317,7 +1323,7 @@ describe('run-07 四修：acceptance 分片证据注入（buildShardEvidence）'
   });
 });
 
-describe('run-07 四修：verdict 注入预算提升（6000→12000）', () => {
+describe('run-07 四修：verdict 注入预算提升（6000→12000，v1.4.8 再上调 40K 保头尾）', () => {
   it('stage6-report.md 7397 字符（run-07 实测体量）全量注入不截断', () => {
     const { fullBody } = extractFunctionBody(SOURCE_CODE, 'buildInputsEvidence');
     const wrapper = new Function(
@@ -1328,13 +1334,15 @@ describe('run-07 四修：verdict 注入预算提升（6000→12000）', () => {
     const tmpRoot = join(tmpdir(), 'rg-b12000-' + Date.now());
     mkdirSync(tmpRoot, { recursive: true });
     try {
-      const big = '# stage6\n'.repeat(900); // 7200+ 字符，超旧值 6000、低于新值 12000
+      const big = '# stage6\n'.repeat(900); // 7200+ 字符，超旧值 6000、低于当前单文件 40_000
       writeFileSync(join(tmpRoot, 'stage6-report.md'), big);
       const out = buildEv(tmpRoot, { inputs: ['stage6-report.md'] });
       expect(out).not.toContain('…（截断');
+      expect(out).not.toContain('中段省略');
       // 截断提示以字符计量并显式注明（防 V 字节/字符误读复发）
       expect(SOURCE_CODE).toContain('字符数非字节数');
-      expect(SOURCE_CODE).toContain('12_000');
+      // 单文件上限现为 40_000（v1.4.8 run-02 上调，覆盖实测最大产物全量）
+      expect(SOURCE_CODE).toContain('Math.min(40_000, budget)');
     } finally {
       rmSync(tmpRoot, { recursive: true, force: true });
     }
@@ -1688,8 +1696,10 @@ describe('run-08 二修：ANSI 剥离 + 语义化尾部提取', () => {
 describe('run-08 P0-1：core CLI --doctor flag 别名路由', () => {
   it('源码级：--doctor flag 归一到 doctor 子命令', () => {
     const cliSrc = readFileSync(new URL('../../engine/core/src/cli.ts', import.meta.url), 'utf-8');
-    // flag 别名路由必须存在（rawArgs[0] === '--doctor' → 'doctor'）
-    expect(cliSrc).toContain("rawArgs[0] === '--doctor' ? 'doctor'");
+    // flag 别名路由必须存在（v1.5.6 章四扩展为 --doctor/--refresh 双 flag 路由器：
+    // isFlagRouter 命中后按 flag 归一子命令，--doctor → doctor / --refresh → doctor refresh）
+    expect(cliSrc).toContain("rawArgs[0] === '--doctor'");
+    expect(cliSrc).toContain('isFlagRouter');
   });
 
   it('行为级：--doctor 输出 post-commit 检测行（dist 实测，场景 28 断言回放）', () => {
@@ -1715,7 +1725,7 @@ describe('run-08 P0-1：core CLI --doctor flag 别名路由', () => {
 });
 
 describe('run-08 P0-1：acceptance-test.sh WARN 计数口径', () => {
-  const SH = readFileSync(new URL('../playbook/acceptance-test.sh', import.meta.url), 'utf-8');
+  const SH = readFileSync(new URL('../../playbook/acceptance-test.sh', import.meta.url), 'utf-8');
 
   it('warn() 计数 WARNED（不再静默蒸发）', () => {
     // warn() 行内含 WARNED 计数（${YELLOW} 的 } 会截断 [^}]*——用行级断言）
