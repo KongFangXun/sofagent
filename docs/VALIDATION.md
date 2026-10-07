@@ -270,6 +270,9 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 
 > 来源：Google Developers Blog ·〈The Anatomy of Harness Engineering〉｜OpenAI · Astra 对齐叫停决定（本仓经媒体转述收录，未复算官方声明）｜hugozhu.site ·〈别配置 Agent 了，给它岗位〉
 
+- **完成认证锚定环境终态（Outcome），文本声明≠完成（三源）**——验收须查环境终态而非执行者自报：Anthropic 评测方法论把评测基本单位定义为 Task（输入+成功标准）/ Trial / Transcript / **Outcome（环境终态）**，明确「文本声明≠完成」——Agent 自报的任务完成声明不构成完成认证，须以环境终态为裁决锚（文件已写入、服务已响应、状态机已迁移）；配套区分 Capability（允许低通过率爬坡）与 Regression（应接近 100% 防退化）两类评测，成熟任务「毕业」转入回归集。Transactional Outbox 式「期望 vs 观测」效果查证位是其工程化形态：未观测不默认成功——审计从记账升级为闭环确认。与上条正交：彼管「验收维度须独立于能力」，此管「完成状态语义须锚定终态证据」。
+> 来源：Anthropic《Demystifying Evals》· https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents （IMA 收录；转述交叉：Agent评测三源合篇 2026-10-07）｜ Transactional Outbox 效果查证位（Agentic 发布篇 2026-09）
+
 
 ## 六、反面案例 / 证伪记录
 

@@ -79,13 +79,38 @@
     },
     {
       "file": "docs/LIMITATIONS.md",
-      "anchor": "v1.5.5 补充（CLI 侧已对齐）",
+      "anchor": "v1.5.5 补充（CLI 已对齐）",
       "reason": "局限披露的时点指针（该项限制在 v1.5.5 起已被修复对齐）——LIMITATIONS 的读者须知道该条目描述的是修复前的历史边界还是当前边界"
     },
     {
       "file": "playbook/fresh-eyes-calibration.md",
       "anchor": "## 阶段四校准（run-01 收编",
       "reason": "校准笔记的 runDir 出处指针（FORGE/SKILL/fresh-eyes-loop/runs/2026/10/01/run-01）——run 编号在此是可复算定位键非跑批叙事；删它 ⇒ 校准条目无法回溯原始审查证据"
+    },
+    {
+      "file": "docs/changelog/releasing/06-doc-finalize.md",
+      "anchor": "（v1.5.7 文档减重批实测 · 效率差一个量级）",
+      "reason": "SOP 手法优先级的批次出身注——实测效率对比结论有效，出身标签待文档治理批统一去标签化（本批不扩权）"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "（v1.5.7 · S3 实锤批 + 文档减重批）",
+      "reason": "校准档案的批次出处注——校准内容有效，出处标签待校准档案治理批统一处理（本批不扩权）"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "#### 147. v1.5.7 审查批一维收口",
+      "reason": "回归维度编号标题的批次出身注——维度断言本体有效（git -S ruleClass 可溯），标题出身标签待回归清单治理批去标签化（本批不扩权）"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "后 release-gate 20260929-03 verdict 闭环批 S463/S464",
+      "reason": "行数警戒线历史账（前值/演进台账叙事）——regression-checklist 文件头本就是增量账本体，历史读数属合法台账面（非规则正文考古）"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "dist 规则数非 17/28，README 同步",
+      "reason": "断言行内注释的版本口径（17 默认/28 总规则数对账）——能力版本门槛类（对齐『vX.Y.Z+ 起支持』豁免判据），非出身考古"
     }
   ],
   "exemptAnchors_spec": {
