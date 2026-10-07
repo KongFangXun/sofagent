@@ -5,8 +5,7 @@
 //
 // 判定面（v1.5.3 自测 schema 对齐——正负样例见注册表 examples）：
 //   · 窗口：本次审计读到的 decision-log 全集内 FALLBACK_DEGRADE 条目数
-//     （含 INVALIDATION 标记排除前的原始计数？——否：标记条目按下游读数
-//     纪律排除，但 FALLBACK_DEGRADE 本身不是标记类，不受影响）；
+//     （INVALIDATION 标记条目按下游读数纪律排除；FALLBACK_DEGRADE 非标记类，不受影响）；
 //   · 阈值：≥ 5 条降级记录 ⇒ WARN（高频 = 主判定面不稳：LLM 不可用 /
 //     引擎超时 / 降级链频繁触发——审计结论此时建立在降级执行之上，
 //     决策质量有系统性劣化风险）；
@@ -19,7 +18,7 @@
 // evidenceMode: logs（纯日志判定——decision-log 属留痕数据面，非 diff）。
 // ============================================================
 
-import type { AuditContext, RuleScan, RuleStatus } from './types';
+import type { AuditContext, RuleScan } from './types';
 import type { DecisionLogEntry } from '../decision-schema';
 
 /** 降级高频阈值（窗口内 FALLBACK_DEGRADE 条数 ≥ 此值 ⇒ WARN） */
