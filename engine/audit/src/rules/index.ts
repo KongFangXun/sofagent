@@ -89,7 +89,7 @@ export const defaultRules: Rule[] = [
   { name: 'A23 不逃路径', id: 'A23', number: 23, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA23, examples: { match: [['..', '..', 'etc', 'pass' + 'wd'].join('/')], notMatch: ['src/utils/path.ts 正常路径'] }, examplesExecutable: true, justification: '路径穿越/symlink 逃逸——越出工作区边界', owaspAsi: 'ASI03', mitreAtlas: '待核' },
 ];
 
-/** 扩展规则（E1-E5 + A14-A17 + A24 = 9 条）——默认不生效，需 config.extendedRulesEnabled = true
+/** 扩展规则（E1-E2 + E4-E7 + A14-A17 + A24 = 11 条）——默认不生效，需 config.extendedRulesEnabled = true
  *
  * 编号规则：
  * - A14-A17 / A24：行为类扩展规则（沿用 A 系列编号，number = 规则号，与 defaultRules 同 namespace 但 A12-A13 已永久跳号，合并入 A11（语义部分重叠但不完全等价））

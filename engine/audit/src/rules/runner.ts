@@ -39,14 +39,14 @@ export const GB48000_RULE_NAME = 'GB48000';
  * 默认规则（17 条，config.yml 中 enabled: true）：
  *   A1-A11, A18-A23
  *
- * 扩展规则（9 条，需主动开启 extensions.enabled: true）：
+ * 扩展规则（11 条，需主动开启 extendedRulesEnabled: true）：
  *   A14-A17, A24, E1-E2, E4-E5
  *
  * 规则数口径(统一）：
  *   - 17 条默认规则（normal run，config.yml extendedRulesEnabled=false）
- *   - 27 条全量规则（config fallback 到 safeDefaults 时 extendedRulesEnabled=true，
+ *   - 28 条全量规则（config fallback 到 safeDefaults 时 extendedRulesEnabled=true，
  *     fail-closed 保护——宁可多查不漏查）
- *   - 26 个规则源文件（rules/ 目录 rule-*.ts 与 26 条规则一一对应，不含 *.test.ts）
+ *   - 27 个规则源文件（rules/ 目录 rule-*.ts 与 27 条规则对应；E3 已并入 A11，非一一对应，不含 *.test.ts）
  *   - 目录另有 6 个支撑文件（index.ts 注册表 / types.ts / runner.ts / skill-safety 三件套之 engine+reporter+rules）——非规则文件不计入口径
  *   - 9 条基线规则（不可禁用）
  *
@@ -216,14 +216,19 @@ export function runRules(
   const auditScope = scope ?? createAuditScope({ diffRange, commitMsg, task });
   // v1.5.7 章八：决策日志通道装配（第三输入路——与 history 同源 dataDir 解析；只读）。
   // 容错纪律与 intent 通道同族：文件缺席 = 空数组（无决策可判），坏行由读侧跳过并告警。
-  const decisionEntries = loadDecisionEntries();
-  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, scope: auditScope, config, history: auditHistory, quickMode, ciMode, decisionEntries };
-  const results: RuleCheck[] = [];
-
+  // v1.5.7 发版前修复（S3-F4）：E7 未进 defaultRules（默认 17 条不含它）时不再加载
+  // decision-log——59MB/10 万行级文件的全量读取只应发生在真有消费者的一轮（实测
+  // 默认路径白付 411ms 且无任何规则消费）。E7 在活跃集才装配；未装配时 E7 自身按
+  // 既有契约 SKIPPED 不误报（rule-e7 头注释）。
   // 根据 config.extendedRulesEnabled 决定运行哪些规则
   const rulesToRun: Rule[] = config?.extendedRulesEnabled
     ? rules
     : defaultRules;
+  const decisionEntries = rulesToRun.some((r) => r.id === 'E7')
+    ? loadDecisionEntries()
+    : undefined;
+  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, scope: auditScope, config, history: auditHistory, quickMode, ciMode, decisionEntries };
+  const results: RuleCheck[] = [];
 
   // 根据 config.rules 按规则名禁用
   const rulesConfig = config?.rules;
