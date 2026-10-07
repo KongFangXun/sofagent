@@ -318,7 +318,7 @@ graph TB
 
 | 版本 | 关键能力 |
 |---|---|
-| **基座（v1.2.0）** | FDE 常驻部署 · AI 节点自动化 · 26 条规则行为审计（v1.5.7 起为 27 条）（零 token 纯静态）· 一键回滚 · 平台无关核心约束 · AI 知识库自动积累 · Ontology 本体数据 · USB 一键烧录 · 安全联邦多设备互查 · 4 个 Sub Agent · daemon + A/B 调度器 · MCP Server · FDE 四阶段十二步 · sustain 模式（逐项见 [HANDBOOK](./HANDBOOK.md) 与 [开发日志](./changelog/)） |
+| **基座（v1.2.0）** | FDE 常驻部署 · AI 节点自动化 · 28 条规则审计（基座 v1.2.0 时 26 条；零 token 纯静态）· 一键回滚 · 平台无关核心约束 · AI 知识库自动积累 · Ontology 本体数据 · USB 一键烧录 · 安全联邦多设备互查 · 4 个 Sub Agent · daemon + A/B 调度器 · MCP Server · FDE 四阶段十二步 · sustain 模式（逐项见 [HANDBOOK](./HANDBOOK.md) 与 [开发日志](./changelog/)） |
 | **v1.2.9** | 三个入口产品（npx 零配置审计 CLI + 规则市场 `--ruleset` + GitHub Action）· FORGE Driver 短任务化 + Checkpoint/Resume worker 级断点 + PM2 守护进程 |
 | **v1.3.0** | 运行时审计最小闭环（wrapToolCall middleware + tool-gate 动态拦截 + 运行时审计日志）· 决策审计（emitDecision + HMAC 链 + kind-wise 查询）· 规则透明化（`list_rules` MCP tool）· 危险操作 HITL 钩子 · 双规则系统统一（`ruleType`）· 激活链 Phase 4 收尾（SUSTAIN 全闭环）· 外部记忆后端 Path A（可选，缺省关闭）· 进化链路写保护 |
 | **v1.3.1** | Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）· 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 副作用幂等）· Agent 身份码 Ed25519 · Benchmark 评测 · 工具审批四模式 · LLM 调用级 Trace · L4 渐进加载 · 跨设备审计轨迹聚合 |

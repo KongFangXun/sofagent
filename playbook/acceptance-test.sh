@@ -888,7 +888,10 @@ set +e; $CLI --diff --cached --silent >/dev/null 2>&1; rc_leet=$?; set -e
 git rm --cached -f unicode-test.js leet-test.js >/dev/null 2>&1 || true; rm -f unicode-test.js leet-test.js
 # S90 同款路径修正（与 S25 同根因）：损坏行测试改 SOFAGENT_DATA 隔离——旧断言查 repo-local 旧路径（v1.2.1 前）必空，产品 SSOT 写 ${SOFAGENT_DATA}/audit/
 
-S90_DATA=$(mktemp -d /tmp/sofagent-acc-hist90-XXXX)
+# v1.5.7 修复：mktemp 落 ${TMPDIR}（与 sanitizeDataPrefix 白名单的 os.tmpdir() 同源）——
+# 原 /tmp/... 在 macOS 是 /private/tmp 的 symlink，path.resolve 不跟随 symlink，
+# 前缀匹配落空 → F24-4 越界 fail-loud exit≠0/1 → doctor 容忍断言误红。
+S90_DATA=$(mktemp -d "${TMPDIR:-/tmp}/sofagent-acc-hist90-XXXX")
 cd "$TMP_REPO"
 echo "test" > normal.txt && git add normal.txt
 SOFAGENT_DATA="$S90_DATA" $CLI --diff --cached --task "gen history" >/dev/null 2>&1 || true
@@ -1484,7 +1487,7 @@ scenario 164 "文档锚点与跨文件链接可达性——TOC 锚点/代码路�
 for p in install.sh engine/think/src/think-generator.ts; do test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }; done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-scenario 165 "关键数字跨文档一致性——测试数 / 规则数 25 / acceptance 场景数动态对账"; S165_OK=true
+scenario 165 "关键数字跨文档一致性——测试数 / 规则数 28 / acceptance 场景数动态对账"; S165_OK=true
 TEST_COUNT=""
 if [ -f "$PROJECT_ROOT/tools/check/test-count.sh" ]; then
   #   解析 TOTAL_TESTS= 行取真值——不能取「输出第一个数字」：test-count.sh 首行是 序列化提示（物理内存 8GB ≤ 8GB），首数字=8 是垃圾值（曾致本场景假红/假绿）
@@ -1497,7 +1500,7 @@ else
   fail "无法取得测试数真值（tools/check/test-count.sh 未产出 TOTAL_TESTS=）——拒绝以「读不到就跳过」收场"
   S165_OK=false
 fi
-for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do assert_numbers_all_equal "$f" 25 '[0-9]+[[:space:]]*(条|个)[[:space:]]*规则|[0-9]+[[:space:]]*rules' "规则数" || S165_OK=false; done
+for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do assert_numbers_all_equal "$f" 28 '[0-9]+[[:space:]]*(条|个)[[:space:]]*规则|[0-9]+[[:space:]]*rules' "规则数" || S165_OK=false; done
 # acceptance 场景数动态计算（防止每次加场景后硬编码漂移）
 S165_SCEN_COUNT=$(grep -oE 'scenario [0-9]+[a-z]? "' "$SCRIPT_DIR/acceptance-test.sh" | wc -l | tr -d ' ' || echo 0)
 S165_SCEN_COUNT=${S165_SCEN_COUNT:-0}
@@ -3145,7 +3148,10 @@ echo "# base" > base.md; git add base.md; git commit -qm "base" 2>/dev/null || t
 echo "# wip" > wip.md; git add wip.md
 s345_run() { # $1=JSON → 输出 stub 捕获的 --task
   export S345_TASK_FILE="$S345_STUB/task.txt"; : > "$S345_TASK_FILE"
-  printf '%s' "$1" | PATH="$S345_STUB/bin:$PATH" bash "$S345_HOOK" >/dev/null 2>&1
+  # v1.5.7：hook 三级解析修复后普通仓不再走 PATH 假 binary（F29 语义）——测试台架
+  # 经 SOFAGENT_AUDIT_CMD 显式旁路注入 stub（hook 新增的显式覆盖通道，只降解析
+  # 优先级不降审计语义；无此旁路时 stub 目录不会被命中）。
+  printf '%s' "$1" | PATH="$S345_STUB/bin:$PATH" SOFAGENT_AUDIT_CMD="sofagent-audit" bash "$S345_HOOK" >/dev/null 2>&1
   cat "$S345_TASK_FILE" 2>/dev/null || true
 }
 # ① 等号形式 --message="fix: update"（第四轮真问题：旧正则抽取为空）
@@ -3552,14 +3558,14 @@ done
 $S361_OK && pass "lock 零本地部署树路径（dsh 六包 registry 解析齐）" || fail "本地部署树路径回潮——CI 将 TS2307 三红（对照 8c8517b5 根因修复）"
 $S361_PKG_OK && pass "package.json 零本地路径（dsh-deployed 0 + /Users/ 0）" || fail "package.json 本地部署树路径回潮——红线 2（依赖零本地路径）失守：清除 overrides 段内 /Users/ 绝对路径"
 # v1.4.4 十模块验收场景（S362-S370 · run-01 P0-1 闭环，对齐 S330/S341 零覆盖补测先例；行为面 dist 直调实跑后落场景，静态面 grep 锚点） S362 · v1.4.4 章一①：训练语料导出——28 编号位 + 占位三件 + reward_hint 三件套
-scenario 362 "v1.4.4 章一：训练语料导出——规则 28 编号位（25 实现 + A12/A13/E3 占位 merged-into-A11）+ 逐规则 reward_hint（signature/severityWeight/verifiability）"; S362_OK=true
+scenario 362 "v1.4.4 章一：训练语料导出——规则 31 编号位（28 实现 + A12/A13/E3 占位 merged-into-A11）+ 逐规则 reward_hint（signature/severityWeight/verifiability）"; S362_OK=true
 S362_OUT=$(node -e "
 (async () => {
   const { buildRuleCorpusBody } = await import('$PROJECT_ROOT/engine/audit/dist/export/exporter.js');
   const body = buildRuleCorpusBody('all');
   let bad = 0;
-  if (body.counts.totalSlots !== 28) bad++;               // 28 编号位（表下注 A 口径）
-  if (body.counts.implemented !== 25) bad++;              // 25 条已实现
+  if (body.counts.totalSlots !== 31) bad++;               // 31 编号位（28 实现 + 3 跳号占位；v1.5.7 E5/E6/E7 落地后 28→31）
+  if (body.counts.implemented !== 28) bad++;              // 28 条已实现（25 + E5/E6/E7）
   if (body.counts.mergedPlaceholders !== 3) bad++;        // 3 条跳号占位
   const ph = body.rules.filter(r => r.status === 'merged-into-A11').map(r => r.code).sort();
   if (ph.join(',') !== 'A12,A13,E3') bad++;               // 占位恰为三跳号位
@@ -3571,7 +3577,7 @@ S362_OUT=$(node -e "
 })().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('9999'); });
 " 2>/dev/null)
 [ "$S362_OUT" = "0" ] || { echo "  ✗ 语料导出断言未过数=$S362_OUT"; S362_OK=false; }
-$S362_OK && pass "语料导出 28 编号位 + 占位三件 + reward_hint 全齐（dist 直调）" || fail "语料导出回退——编号位/占位/reward_hint 断言见 ✗ 行"
+$S362_OK && pass "语料导出 31 编号位（28 实现）+ 占位三件 + reward_hint 全齐（dist 直调）" || fail "语料导出回退——编号位/占位/reward_hint 断言见 ✗ 行"
 # S363 · v1.4.4 章一②：方法论导出 + 脱敏管线闭环（替换/剥离/验漏）
 scenario 363 "v1.4.4 章一：GUIDE 方法论三锚点导出 + 通用脱敏管线——实体替换 + verifyNoLeak 闭环"; S363_OK=true
 S363_OUT=$(node -e "

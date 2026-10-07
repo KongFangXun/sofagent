@@ -152,6 +152,18 @@ _resolve_audit_dist() {
       return 0
     fi
   fi
+  # ①.5 npm root -g 顶层安装（v1.5.7 修复，acceptance S321/S345 实测——原序 ②c 在
+  #     ③ 之前，全局 sofagent 总包内嵌的旧版 @sofagent/audit 副本（实测内嵌 1.5.2 /
+  #     顶层 1.5.6）先被 wrapper-resolve 命中，聚合哈希 ≠ 信任锚（锚由
+  #     audit-baseline-sync --global 按**顶层**口径计算）⇒ 主流安装形态（总包+独立包
+  #     并存）下正常审计被「可能被投毒」假拦。顶层 npm-root-g 与锚同口径，先试之；
+  #     ②c 降为兜底，内嵌副本与锚不符时照旧拦截——宁可假拦不可假绿的语义不变）。
+  _NPM_ROOT=$(npm root -g 2>/dev/null | head -1 || true)
+  if [ -n "$_NPM_ROOT" ] && [ -f "$_NPM_ROOT/@sofagent/audit/dist/index.js" ]; then
+    AUDIT_GLOBAL_DIST="$_NPM_ROOT/@sofagent/audit/dist/index.js"
+    AUDIT_GLOBAL_SRC="npm-root-g"
+    return 0
+  fi
   # ② command -v 解析 bin 入口，读其包装/shebang 指向的真实 dist。
   #    按可信度排序尝试三个 bin（sofagent-audit 直链包内 dist 最干净；
   #    sofagent 总包是转发壳，实测可内嵌与顶层不同版本的依赖副本——
@@ -180,7 +192,7 @@ _resolve_audit_dist() {
         return 0
       fi
     done
-    # ②c 转发壳内嵌 require.resolve（最后兜底：直接安装 @sofagent/audit 且
+    # ②c 转发壳内嵌 require.resolve（③ 落空后的兜底：直接安装 @sofagent/audit 且
     # 非标准布局时。注意此时命中的可能是总包内嵌副本——版本落后于顶层
     # 独立包时以基线口径为准拦截并给出刷新指引，宁可假拦不可假绿）
     _RESOLVED=$(node -e '
@@ -204,18 +216,19 @@ _resolve_audit_dist() {
       return 0
     fi
   done
-  # ③ npm root -g 下 @sofagent/audit/dist/index.js（与 commit-msg hook 解析式同源）
-  _NPM_ROOT=$(npm root -g 2>/dev/null | head -1 || true)
-  if [ -n "$_NPM_ROOT" ] && [ -f "$_NPM_ROOT/@sofagent/audit/dist/index.js" ]; then
-    AUDIT_GLOBAL_DIST="$_NPM_ROOT/@sofagent/audit/dist/index.js"
-    AUDIT_GLOBAL_SRC="npm-root-g"
-    return 0
-  fi
   return 1
 }
 
 if [ "$_REPO_IS_SOFA" -eq 1 ]; then
   AUDIT_CMD=(node "$AUDIT_DIST")
+elif [ -n "${SOFAGENT_AUDIT_CMD:-}" ]; then
+  # 显式覆盖通道（acceptance S321/S345 测试台架专用）：解析序修复后普通仓恒走
+  # 三级解析/PATH 真引擎，PATH stub 不再被命中——测试需要替换审计入口以捕获
+  # --task 透传参数，经本变量显式注入（值=空格分词的命令前缀）。该通道**只降
+  # 解析优先级**，不降审计语义：注入的命令照常收 --diff/--task/--commit-msg
+  # 全量参数，退出码照常过白名单 fail-closed（0/1/2 之外仍拒绝 commit）。
+  # shellcheck disable=SC2206
+  AUDIT_CMD=($SOFAGENT_AUDIT_CMD)
 else
   if _resolve_audit_dist; then
     AUDIT_DIST="$AUDIT_GLOBAL_DIST"
@@ -306,7 +319,7 @@ if [ "$_REPO_IS_SOFA" -eq 1 ] && [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; th
       exit 1
     fi
   fi
-elif [ -n "$AUDIT_GLOBAL_DIST" ]; then
+elif [ -n "${AUDIT_GLOBAL_DIST:-}" ]; then
   # ── 普通仓 + 全局安装形态：全局口径聚合哈希校验 ──────────────────────
   # 对齐 commit-msg hook 全局分支：聚合哈希（dist/**/*.js 排序逐文件哈希再
   # 聚合）vs audit-global-dist-hash.txt。不引入源码指纹信号——指纹基线是
@@ -352,8 +365,11 @@ elif [ -n "$AUDIT_GLOBAL_DIST" ]; then
   fi
 else
   # ── 普通仓 + 解析失败形态：SKIP（必须打印，不得静默）─────────────────
-  # 走到这里 = 三级解析全落空但 PATH 上有 sofagent-audit（执行面照旧）。
-  echo "⚠️ [sofagent] SKIP：未启用审计器本体完整性校验——全局审计器路径三级解析均未命中，执行面走 PATH 上的 sofagent-audit"
+  if [ -n "${SOFAGENT_AUDIT_CMD:-}" ]; then
+    echo "⚠️ [sofagent] SKIP：SOFAGENT_AUDIT_CMD 显式旁路生效（测试台架形态）——审计器本体完整性校验不适用"
+  else
+    echo "⚠️ [sofagent] SKIP：未启用审计器本体完整性校验——全局审计器路径三级解析均未命中，执行面走 PATH 上的 sofagent-audit"
+  fi
 fi
 
 # ── 6. .sofagent/ ignore 兜底 ────────────────────────────────────────────

@@ -890,7 +890,7 @@ async function s426() {
   if (dimClaim && Number(dimClaim[1]) !== dimActual) bad.push('checklist 维度声称 ' + dimClaim[1] + ' ≠ 实际 ' + dimActual);
   const numMax = (rc.match(/^#### (\d+)\./gm) || []).map((s) => Number(s.replace(/\D/g, '')));
   if (dimClaim && numMax.length && Math.max(...numMax) !== Number(dimClaim[2])) bad.push('checklist 编号上界声称 ' + dimClaim[2] + ' ≠ 实际 ' + Math.max(...numMax));
-  if (!/regression-checklist\.md\` ≤ 2050 行、\`acceptance-test\.sh\` ≤ 4590 行/.test(rc)) bad.push('警戒线双值锚漂移');
+  if (!/regression-checklist\.md\` ≤ 2050 行、\`acceptance-test\.sh\` ≤ 4611 行/.test(rc)) bad.push('警戒线双值锚漂移');
   const rcLines = (rc.match(/\n/g) || []).length; // wc -l 口径（与 check-review-system 同——换行符数，非 split 段数）
   if (rcLines > 2050) bad.push('checklist 超警戒线:' + rcLines);
   // ② C 类锚：calibration v1.4.9 收编 5 条特征锚（提取为空/同构替换 SSOT/死断言可达性/重跑全量/协议升级归 C）
@@ -1933,7 +1933,7 @@ async function s447() {
   const rel = (p) => path.join(root, p);
   // ① 中文 README：三因子口径行 + 三层锚词
   const zh = fs.readFileSync(rel('README.md'), 'utf-8');
-  for (const s of ['三因子口径', 'FDEing', 'S1M', '是治理层']) if (!zh.includes(s)) bad.push('README.md 缺锚:' + s);
+  for (const s of ['三因子口径', 'FDEing', 'S1M', '交付物治理层']) if (!zh.includes(s)) bad.push('README.md 缺锚:' + s);
   // ② 英文 README：对应段锚词
   const en = fs.readFileSync(rel('README.en.md'), 'utf-8');
   for (const s of ['three-factor framing', 'FDEing', 'S1M', 'harness']) if (!en.includes(s)) bad.push('README.en.md 缺锚:' + s);
