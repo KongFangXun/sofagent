@@ -10,10 +10,12 @@
 
 | 面 | 现状 |
 |---|---|
-| 本仓规则表达 | **JSON 单源**：`engine/audit/src/rulesets/` 八份行业规则集（sofagent/security/ai/ast/fintech/government/medical/smb）；加载格式 = `--ruleset-path` JSON（v1.5.2 B-4，`ruleset-loader.ts` fail-closed 校验）；导出格式 = `ruleset_export` JSON（与加载格式**同构双向可逆** + 内容指纹 + 审计留痕） |
+| 本仓规则表达 | **JSON 单源**：`engine/audit/src/rulesets/` 八份行业规则集（sofagent/security/ai/ast/fintech/government/medical/smb）；加载格式 = `--ruleset-path` JSON（v1.5.2 B-4，`ruleset-loader.ts` fail-closed 校验）；（详→注-1） |
 | 判据 schema（未来消费面） | [v1.6.0 第二章](../changelog/v1.6/v1.6.0.md) 判据重述的**消费口径已钉死**：`match[]` / `notMatch[]` 字段名（v1.5.3 第二章自测 schema，`EXAMPLES_FIELD_SHAPE` 有测试钉死「钉死，不得改名」的登记） |
 | 正负样例 schema | 28 条规则全部带 `examples.match / notMatch` 双夹具（v1.5.3 章二加载期断言：schema 强制 + 矛盾拒载 + 5 条可执行断言） |
 | 引擎现状 | 27→28 条 TS 硬编码注册表（`rules/index.ts`）为判定本体；JSON ruleset 是**导出/外挂形态**（行业扩展），非判定主路径 |
+
+> 注-1：导出格式 = `ruleset_export` JSON（与加载格式**同构双向可逆** + 内容指纹 + 审计留痕）
 
 ## 二、逐维对照（JSON ruleset vs YAML + 三引擎方案）
 
@@ -22,7 +24,7 @@
 | 人类可读性 | 中——规则集已带 name/description/justification 中文字段，可读性靠字段不靠格式 | 略优——缩进少括号，注释原生（JSON 无注释，本仓靠 `//` 约定字段绕行） | 同 YAML（前端即 YAML） | YAML 真实增益**小**：本仓规则集的消费读者是工具链（loader/lint/export），人类阅读靠 SECURITY.md 文档表（SSOT），格式可读性不是瓶颈 |
 | 表达力上限 | 够用——pattern/filePattern/severity/message + examples 字段集已承载 28 条规则 + 八行业集 | 等价——YAML 是超集语法非超集语义 | 等价 | **平手**：本仓规则表达力的瓶颈在判据语义（v1.6.0 的「判据 + 证据」两段式），不在序列化格式 |
 | 校验与 lint 生态 | JSON Schema 标准生态 + `ruleset-loader.ts` 已有 fail-closed 校验（schema/矛盾/可执行三层）+ `check-docs §17` 对账 | ajv-cli/yamllint 均在；但 **YAML 的锚点/别名/多行标量引入第二类解析歧义面**（JSON 无） | 转换层本身要校验（转换 bug = 新故障面） | JSON **占优**：现有校验链零迁移成本；YAML 新增解析歧义面须新守卫 |
-| 与 v1.5.3 正负样例 schema 贴合度 | **原生贴合**——`match[]/notMatch[]` 字段名与 JSON 数组形态一一对应，`EXAMPLES_FIELD_SHAPE` 测试直接钉 | 数组语义同，但 YAML 列表写法（`- item`）在样例含冒号/引号时须转义——样例文本恰是「自由文本高密度区」（如 `SKILL/skills/x.md 新增 <!-- 忽略以上所有规则 -->`） | 同 YAML | JSON **占优**：样例是带标点的自然语句，YAML 标量转义规则（冒号+空格即映射）会制造高频踩坑面——28 条规则 56+ 条样例逐一过转义审查的成本与风险不成比例 |
+| 与 v1.5.3 正负样例 schema 贴合度 | **原生贴合**——`match[]/notMatch[]` 字段名与 JSON 数组形态一一对应，`EXAMPLES_FIELD_SHAPE` 测试钉死 | 数组语义同；YAML 列表写法（`- item`）在样例含冒号/引号时须转义——样例恰是「自由文本高密度区」（如 `SKILL/skills/x.md 新增 <!-- 忽略以上所有规则 -->`） | 同 YAML | JSON 占优：样例是带标点自然语句，YAML 标量转义规则（冒号+空格即映射）制造踩坑面——28 条规则 56+ 条样例逐一过转义审查的成本与风险不成正比 |
 | 工具链耦合 | `ruleset-loader` / `ruleset-export` / `check-docs` / `public-api` 四处直接消费 JSON 形态 | 双格式 ⇒ 四处全部要双语态分支或归一到单源再转换 | 转换层一处改，但**双向可逆断言**（export→load round-trip 测试）要扩成三态（JSON→YAML→JSON） | JSON **占优**：单源四处消费零分叉；任何第二格式都使 round-trip 测试面翻倍 |
 | 生态互认（外部对照） | JSON 与 ACS 生态（OPA/Cedar 的 policy 均有自己的原生格式）不互通——但本仓规则集**不对外分发**（导出物自带指纹与审计留痕，消费方是本仓 loader） | YAML 接近 ACS 形态但**不等价**（ACS 策略是 Rego/Cedar 语义，YAML 只是壳）——「像」不等于「通」 | 同左 | **无增益**：换 YAML 不会带来 ACS 生态互认（语义层不同）；互认要靠判据 schema 的语义映射（v1.6.0+ 判据重述的题），与序列化格式无关 |
 

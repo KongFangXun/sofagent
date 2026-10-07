@@ -31,9 +31,11 @@
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
-| 4 | **静态加密只覆盖 `history.jsonl`**——`decision-log.jsonl` / `intent.jsonl` / `intent-skips.jsonl` 及附链目录（forge-runs / checkpoint / model-registry / task/logs / think.md / knowledge/）仍明文。<br>（边界：密钥删除/损坏后新记录回明文——doctor 可检出、ENCRYPTION_DEGRADED 事件留痕） | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
+| 4 | **静态加密只覆盖 `history.jsonl`**——`decision-log.jsonl` / `intent.jsonl` / `intent-skips.jsonl` 及附链目录（forge-runs / checkpoint / model-registry / task/logs / think.md / knowledge/）仍明文。（详→注-1） | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#-单平台用户建议) |
 | 6 | **联邦 USB 路径的 HMAC 密钥分发有同介质风险**——密钥若与 `federation.json` 同放 USB 等可移动介质，攻击者取得介质即可伪造 `.sig` 验签。**建议**：密钥走独立渠道（密码管理器 / 加密邮件）分发，不与 federation.json 同介质。 | [SECURITY §一 → HMAC key 分发安全](../SECURITY.md) |
+
+> 注-1：<br>（边界：密钥删除/损坏后新记录回明文——doctor 可检出、ENCRYPTION_DEGRADED 事件留痕）
 
 > ✅ **已解决的历史问题**（不再计入当前边界）：
 > - ~~audit ↔ daemon 循环依赖~~（v1.2.3 消除，见 §八）
@@ -342,7 +344,8 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 > **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），Agent 可在篡改后重算整条链——hash chain 仅提供**事后可追溯性，非强防篡改**。
 >
-> v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`，chmod 600），有密钥时强校验——但仅防**其他 OS 用户**篡改（密钥 600 只挡跨用户），**同用户运行的被审计进程仍可读密钥重算整链**，故对「Agent 本体」这一威胁主体不是强防篡改；无密钥时降级为 SHA-256 hash chain（此时篡改检测是**弱校验**——手改后重算整链即可通过，FAIL 可被抹成 PASS）。自 v1.5.5 起写入侧默认生成密钥（首次写审计历史时自动生成并 0600 落盘，默认安装开箱即签名链）；弱校验态只剩「密钥丢失且历史已有签名」与「legacy 未签名历史」两种，企业 SOP 应强制备份密钥并周期体检。
+> v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`，chmod 600），有密钥时强校验——但仅防**其他 OS 用户**篡改（密钥 600 只挡跨用户），**同用户运行的被审计进程仍可读密钥重算整链**，故对「Agent 本体」这一威胁主体不是强防篡改；无密钥时降级为 SHA-256 hash chain（此时篡改检测是**弱校验**——手改后重算整链即可通过，FAIL 可被抹成 PASS）。自 v1.5.5 起写入侧默认生成密钥（首次写审计历史时自动生成并 0600 落盘，默认安装开箱即签名链）；
+>弱校验态只剩「密钥丢失且历史已有签名」与「legacy 未签名历史」两种，企业 SOP 应强制备份密钥并周期体检。
 >
 > **密钥生命周期边界**：① 弱密钥（<16 字节 / 低熵 / 常见弱模式）**拒绝签名**（fail-closed，不再降级弱签）；② 泄露后有销毁路径 `--revoke-key`（确认交互 → overwrite-then-delete → KEY_REVOKED 事件自证销毁时刻）；③ **轮换后的旧链不可复验**仍待解（链校验侧按「历史不可复验（黄）」处理——轮换涉及全链重签语义，排期见 ROADMAP）。
 >
@@ -380,7 +383,8 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 > ⚠️ **A9 正则层编码绕过局限**：覆盖面、不覆盖的绕过形态与缓解状态，**单一真相源见 [SECURITY §三 编排安全](../SECURITY.md#三编排安全) 的 A9 声明**（含与 Onboard L3 的职责边界），此处不重述以免两处口径分裂。
 
-> ⚠️ **A9 commit msg 检测 quick 模式已生效（v1.3.8 修复）**：quick 模式（`npx sofagent audit`，零配置审计最近一次 commit）**自动读取最近一次 commit 的 message**（`git log -1`），A9 commit msg 注入检测生效；commit msg 取不到时（如空仓库 / git 不可用）A9 由引擎按无输入处理（标跳过）。 同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。
+> ⚠️ **A9 commit msg 检测 quick 模式已生效（v1.3.8 修复）**：quick 模式（`npx sofagent audit`，零配置审计最近一次 commit）**自动读取最近一次 commit 的 message**（`git log -1`），A9 commit msg 注入检测生效；commit msg 取不到时（如空仓库 / git 不可用）A9 由引擎按无输入处理（标跳过）。
+>同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。
 >A3 越界检查需 `--init` 安装 git hook 走完整引擎，或手动 `sofagent audit --diff <range> --commit-msg <msg>`。
 >
 > ℹ️ **range 模式 commitMsg 取范围终点（v1.4.4 修复）**：此前 quick 模式 range 审计（`sofagent audit HEAD~3..HEAD` 类调用）的 commitMsg 输入面写死字面 HEAD，与被审计 range 脱钩——终点携带注入载荷漏检、HEAD 的 message 污染在审区间误报。现 commitMsg 经 `resolveDiffEndpoint()` 取 range 终点（与 diff 面同源），回归测试见 engine/audit/src/cli-quick-range.test.ts。
@@ -461,7 +465,8 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道。即：Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限——该门禁是约定不是机制。
 
-> v1.5.7 F52 更新（快照指纹已加 / 人审通道仍缺）：快照文件现已带 HMAC 指纹——`snapshots.json` 每个条目写入时签名（复用 audit-history 的 `~/.sofagent-key` 同一密钥 + stableStringify 稳定序列化，零第二套基建）、restore 读取时验签，失配 fail-closed 拒绝恢复（含 blob 池偷换检测——改内容不动索引同样暴露）；存量无签名快照按 legacy 兼容放行、恢复时 console.warn 显式提示「无法确认其未被篡改」。**但 `human_confirmed` 本身仍是同 call 自报布尔，无带外确认通道**——带外通道（复用仓内既有 HITL 机制）登记排期，落地前本披露继续有效。裁定前请勿把该门禁当作安全边界。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
+> v1.5.7 F52 更新（快照指纹已加 / 人审通道仍缺）：快照文件现已带 HMAC 指纹——`snapshots.json` 每个条目写入时签名（复用 audit-history 的 `~/.sofagent-key` 同一密钥 + stableStringify 稳定序列化，零第二套基建）、restore 读取时验签，失配 fail-closed 拒绝恢复（含 blob 池偷换检测——改内容不动索引同样暴露）；存量无签名快照按 legacy 兼容放行、恢复时 console.warn 显式提示「无法确认其未被篡改」。
+>**但 `human_confirmed` 本身仍是同 call 自报布尔，无带外确认通道**——带外通道（复用仓内既有 HITL 机制）登记排期，落地前本披露继续有效。裁定前请勿把该门禁当作安全边界。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
 
 > v1.5.5 补充（CLI 侧已对齐）：CLI 路径 `sofagent audit --revert <sha>` 的确认函数（`engine/audit/src/index.ts` 的 `confirm()`）此前在**非 TTY 下自动确认**（Agent / CI / 管道等非交互环境下静默放行），强度**弱于**常规路径与 MCP 侧硬门控；现改为非 TTY 下**拒绝执行**并打印显式放行方式，仅显式传 `--yes` 才放行。两侧现同为「无显式授权即不放行」——**CLI 侧是机制（默认拒绝），MCP 侧仍是约定（调用方自报）**，落差只在 MCP 侧。
 

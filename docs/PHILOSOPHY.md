@@ -266,7 +266,8 @@ sofagent 用三条制度把「判断权不可外包」落成防线，与「反�
 
 sofagent 的审计能力 Gate + 硬规则正是这类锚点：审计只信 git diff 一手证据（不容争辩），fde.md 业务底线不可被 Agent 覆盖（冻结节点），问题定义与验收终裁权留在人类（图谱外的判断）。人类终裁因此不只是一句宣言，而是一组**写死在优化器碰不到之处的锚点**。
 
-> 📖 [C.A.E. Goodhart · Problems of Monetary Management: The U.K. Experience](https://www.rba.gov.au/publications/confs/1975/goodhart.html) · [C.E. Perez · From Loop Engineering to Graph Engineering?](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)
+> 📖 [C.A.E. Goodhart · Problems of Monetary Management: The U.K. Experience](https://www.rba.gov.au/publications/confs/1975/goodhart.html) · [C.E. Perez · From Loop Engineering to Graph
+>Engineering?](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)
 
 ### 拒绝权——不确定就不输出
 
