@@ -25,7 +25,7 @@ import { registerEvolvedTools } from './tools/evolution-dynamic-bridge';
 // v1.5.0 TASK-26：tools/call 前置权限守卫（opt-in——SOFAGENT_PERMISSION_GUARD=1）
 import { guardToolCall, isPermissionGuardEnabled } from './tools/permission-guard';
 // v1.5.7 章四：tool 调用使用率遥测（本地 jsonl——不含参数/内容，默认开 SOFAGENT_USAGE_TRACKING=0 可关）
-import { recordToolUsage } from './usage-tracker';
+import { recordToolUsage, type ToolCallStatus } from './usage-tracker';
 // 工具结果类型（sendTool 消费面）
 import { type ToolResult } from './tools/audit-tools';
 
@@ -166,14 +166,12 @@ class McpServer {
     const toolName = canonicalName;
     const args = (params.arguments ?? {}) as Record<string, unknown>;
 
-    // v1.5.7 章四：调用遥测埋点——try/catch 包裹失败静默（recordToolUsage 内部
-    // 还有第二层 catch 兜底），绝不吞主流程错误、绝不阻断调用。
+    // v1.5.7 章四：调用遥测埋点（成功/失败 + 耗时，发版前 delta 补 status/durationMs）——
+    // 分派前起表，finally 统一落盘（含各失败返回路径与异常路径）。
     // 会话标识取 SOFAGENT_AGENT_ID（对齐 agent-identity 惯例）；不可达 = 'unknown'。
-    try {
-      recordToolUsage(toolName, process.env.SOFAGENT_AGENT_ID ?? 'unknown');
-    } catch {
-      /* 为何可静默：遥测埋点失败不影响主路径（usageTrackerStats.silentFailures 已计数可观测，审计主流程零依赖遥测） */
-    }
+    const startedAt = Date.now();
+    const sessionId = process.env.SOFAGENT_AGENT_ID ?? 'unknown';
+    let callStatus: ToolCallStatus = 'ok';
 
     try {
       // v1.5.0 TASK-26：权限守卫前置判定（opt-in）——risk 定级 → policy 判定 →
@@ -181,6 +179,7 @@ class McpServer {
       if (isPermissionGuardEnabled()) {
         const verdict = await guardToolCall(toolName);
         if (!verdict.allowed) {
+          callStatus = 'error';
           this.sendError(id, -32602, verdict.blockReason ?? '权限守卫拦截');
           return;
         }
@@ -190,6 +189,7 @@ class McpServer {
       const dynamicTool = getDynamicTool(toolName);
       if (dynamicTool) {
         const r = await dynamicTool.handler(args);
+        if (isToolError(r)) callStatus = 'error';
         this.sendTool(id, { text: `[sofagent] ${toolName} 调用完成`, data: r });
         return;
       }
@@ -198,6 +198,7 @@ class McpServer {
       const activeRoles = getActiveRoles();
       const staticTool = TOOLS.find((t) => t.name === toolName);
       if (staticTool && activeRoles !== null && !isToolExposed(staticTool.roles, activeRoles)) {
+        callStatus = 'error';
         this.sendError(id, -32602, `工具 ${toolName} 未在当前角色集（${activeRoles.join(',')}）暴露——设 ${'SOFAGENT_MCP_ROLES'}=all 恢复全量`);
         return;
       }
@@ -210,12 +211,24 @@ class McpServer {
         if (renamed && !isToolError(outcome)) {
           outcome.text = `${outcome.text}\nℹ️ ${requestedName} 已更名 ${canonicalName}（别名兼容一版）`;
         }
+        const isErr = 'error' in outcome ? false : !!outcome.isError;
+        if (isErr) callStatus = 'error';
         this.sendTool(id, outcome, 'error' in outcome ? undefined : outcome.isError);
         return;
       }
+      callStatus = 'error';
       this.sendError(id, -32602, `Unknown tool: ${toolName}`);
     } catch (err) {
+      callStatus = 'error';
       this.sendTool(id, { text: `[sofagent] 工具执行出错: ${err instanceof Error ? err.message : String(err)}`, data: { error: true } });
+    } finally {
+      // 遥测落盘（try/catch 包裹失败静默——recordToolUsage 内部还有第二层 catch 兜底），
+      // 绝不吞主流程错误、绝不阻断调用；关闭开关时内部零写入早退。
+      try {
+        recordToolUsage(toolName, sessionId, callStatus, Date.now() - startedAt);
+      } catch {
+        /* 为何可静默：遥测埋点失败不影响主路径（usageTrackerStats.silentFailures 已计数可观测，审计主流程零依赖遥测） */
+      }
     }
   }
 

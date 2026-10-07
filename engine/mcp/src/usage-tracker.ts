@@ -4,9 +4,13 @@
 // 每次 tool 调用追加一行到 {dataDir}/tool-usage.jsonl。
 //
 // 🔐 隐私红线（devlog 章四原文）：
-//   字段仅 schemaVersion + tool 名 + ISO 时间戳 + 会话标识——
+//   字段仅 schemaVersion + tool 名 + ISO 时间戳 + 会话标识 + status + durationMs——
 //   **不含调用参数与结果内容**。纯本地存储、零网络上报路径
 //   （对齐数据主权铁律「记忆/日志/决策记录永不离开本地」）。
+//
+// status / durationMs（v1.5.7 章四发版前 delta）：调用成败与耗时是**元数据非内容**——
+//   只有频次时「调用千次皆失败」与「千次皆成功」同形，不足以支撑退役/加码决策；
+//   补两字段后成功率与耗时分布可见。同版未发版 ⇒ schemaVersion 不升、无迁移。
 //
 // schemaVersion 是前置件（对齐 ROADMAP「数据 schema 迁移管道」纪律：
 // 首个破坏性 schema 变更时才有迁移锚）。
@@ -21,6 +25,9 @@ import { appendFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { loadEnvConfig } from '@sofagent/core';
 
+/** 调用结果状态（成功 / 失败——含守卫拦截、角色拒绝、未知工具、执行异常） */
+export type ToolCallStatus = 'ok' | 'error';
+
 /** 遥测记录——一行 JSONL。⚠️ 字段集钉死：加字段 = schema 变更，须 bump schemaVersion */
 export interface ToolUsageRecord {
   /** schema 版本（破坏性变更的迁移锚） */
@@ -31,6 +38,10 @@ export interface ToolUsageRecord {
   ts: string;
   /** 会话标识（agent-identity 会话；不可达时 'unknown'，不猜测） */
   sessionId: string;
+  /** 调用结果：ok = 正常返回；error = 守卫拦截 / 角色拒绝 / 未知工具 / 执行异常 */
+  status: ToolCallStatus;
+  /** 调用耗时（毫秒，非负整数——分派点起止时钟差） */
+  durationMs: number;
 }
 
 /** 遥测 schema 版本（当前 1） */
@@ -52,10 +63,16 @@ export function resolveToolUsagePath(): string {
 /**
  * 记一次 tool 调用（追加一行 JSONL）。
  *
- * 隐私纪律：入参只有 tool 名与 sessionId——**没有也不接受参数/结果内容**
- * （接口签名层面杜绝内容字段进入遥测面）。失败静默计数不抛错。
+ * 隐私纪律：入参只有 tool 名、sessionId 与两个**元数据**字段（status / durationMs）——
+ * **没有也不接受参数/结果内容**（接口签名层面杜绝内容字段进入遥测面）。
+ * 失败静默计数不抛错。
  */
-export function recordToolUsage(tool: string, sessionId: string): void {
+export function recordToolUsage(
+  tool: string,
+  sessionId: string,
+  status: ToolCallStatus = 'ok',
+  durationMs = 0,
+): void {
   if (!isUsageTrackingEnabled()) return;
   try {
     const record: ToolUsageRecord = {
@@ -63,6 +80,8 @@ export function recordToolUsage(tool: string, sessionId: string): void {
       tool,
       ts: new Date().toISOString(),
       sessionId: sessionId === '' ? 'unknown' : sessionId,
+      status: status === 'error' ? 'error' : 'ok',
+      durationMs: Number.isFinite(durationMs) && durationMs > 0 ? Math.round(durationMs) : 0,
     };
     const p = resolveToolUsagePath();
     if (!existsSync(dirname(p))) {
