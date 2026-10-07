@@ -2453,7 +2453,14 @@ async function runCoveragePrecheck(runDir, target) {
     exemptKeywords = readFileSync(exemptPath, 'utf-8').split('\n').map((l) => l.trim()).filter((l) => l !== '' && !l.startsWith('#'));
   }
   for (const m of changelogModules) {
-    if (exemptKeywords.some((k) => (m.title || '').includes(k))) m.exempt = true;
+    if (exemptKeywords.some((k) => (m.title || '').includes(k))) {
+      m.exempt = true;
+      // 20261007-03 假收敛修复（D-2）：exempt 判定机器化——命中豁免词的模块直接标
+      // machineVerdict='EXEMPT'，coverage worker 须照抄（prompt 同批改硬消费：
+      // meta.changelog[].machineVerdict==='EXEMPT' ⇒ 跳过对账标 EXEMPT 不计缺口，
+      // 不再依赖 LLM 自由裁量——run-02/03 两轮 coverage 判读漂移的根因）。
+      m.machineVerdict = 'EXEMPT';
+    }
   }
 
   // v1.4.8 run-02（coverage P0-3）：合并逐场景执行结果——旧 precheck 只有声明清单，
@@ -3875,9 +3882,36 @@ async function main() {
     }
 
     if (auditPassed) {
-      console.log(`\n  [F/${round}] audit gate 通过（无违规），F 修复链收敛`);
+      // 🔴 20261007-03 假收敛修复（D-1）：audit 只审「修复 commit 的 diff 干净」，
+      // 不证明「当初 FAIL 的判断层步骤已翻绿」——run-03 实锤 coverage.md 仍是
+      // BLOCK（P0 在案）却因 audit 过而 verdict=PASS（status.json results 三列
+      // regression=FAIL coverage=FAIL 与 verdict 自相矛盾）。收敛判定升级为双门槛：
+      // ① audit 过（原门槛）② 失败步骤产物复验翻绿——任一失败步骤的产物文件
+      // 用 extractVerdictKeyword 重读仍非 PASS ⇒ 不收敛，继续下一轮 F 链。
+      const failedStepsRecheck = [];
+      for (const stepName of Object.keys(results)) {
+        const stepResult = results[stepName];
+        if (stepResult === 'FAIL') {
+          const artifact = stepName === 'acceptance' ? 'acceptance.md'
+            : stepName === 'regression' ? 'regression.md' : 'coverage.md';
+          const artifactPath = join(runDir, artifact);
+          if (existsSync(artifactPath)) {
+            const reread = extractVerdictKeyword(readFileSync(artifactPath, 'utf-8'));
+            if (reread !== 'PASS') failedStepsRecheck.push(`${stepName}=${reread || 'SKIP'}`);
+          } else {
+            failedStepsRecheck.push(`${stepName}=产物缺失`);
+          }
+        }
+      }
+      if (failedStepsRecheck.length > 0) {
+        console.warn(`\n  🔴 [F/${round}] 双门槛拦截：audit 过但失败步骤未翻绿——${failedStepsRecheck.join(' / ')}。不判收敛（F 修的是「当初判 FAIL 的对象」，产物未重验翻绿 = 修复未闭环），继续下一轮`);
+        auditPassed = false;
+      }
+    }
+    if (auditPassed) {
+      console.log(`\n  [F/${round}] audit gate 通过 + 失败步骤产物复验翻绿，F 修复链收敛`);
       verdict = 'PASS';
-      reason = `F 修复链 Round ${round} 后 audit 通过`;
+      reason = `F 修复链 Round ${round} 后 audit 通过且失败步骤复验翻绿`;
       // v1.3.0 run-21 修复：F 收敛后同步 verdict.md——否则文件仍是 V 阶段 FAIL 文本，
       // 监控端读 verdict.md(FAIL) 与 status.json(PASS) 矛盾（run-21 实测）。
       // 追加收敛记录而非覆盖（保留 V 阶段 FAIL 依据可追溯）。

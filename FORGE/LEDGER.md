@@ -411,4 +411,4 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 
 2026-10-07     | 20261007-02    | release-gate | 7    | SKIP       | PASS       | FAIL     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-07/run-02
 
-2026-10-07     | 20261007-03    | release-gate | 7    | SKIP       | FAIL       | FAIL     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-07/run-03
+2026-10-07     | 20261007-03    | release-gate | 7    | SKIP       | FAIL       | FAIL     | 无效·假收敛（主 session 裁定：audit 过但 coverage BLOCK 未复验翻绿；D-1 双门槛修复后重跑） | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-07/run-03
