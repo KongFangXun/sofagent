@@ -1,0 +1,72 @@
+name: acceptance
+
+# ============================================================
+# acceptance · 验收测试**非阻塞**接线（v1.5.7 ROADMAP 探索方向落地）
+# ------------------------------------------------------------
+# 触发面：**只在 schedule（每周一次）+ workflow_dispatch（手动）**。
+#   不接 push / pull_request —— 验收全量批次单跑约 ≥7 分钟，进常规
+#   开发回路会拖慢 PR 反馈却不抓回归（回归由 verify / pr-check 覆盖）。
+# 非阻塞形态：job 级 `continue-on-error: true` —— 验收失败**不判红工作流**，
+#   也不是 required check。本 job 的退出码 = 失败场景数，仅作红/绿信号与
+#   artifact 取证，不阻断任何其它流程（对齐 docs/ROADMAP.md 探索方向
+#   「acceptance CI 接线（非阻塞 job）」）。
+# 运行形态：跑**本分支构建出的 dist**（非 npx 已发布版本）——先 npm ci + build，
+#   再用 playbook/acceptance-test.sh 跑验收，stdout 归档为 artifact + Job Summary。
+# 参数说明：acceptance-test.sh 仅有 --cli-only / --agent-only / --all 三档
+#   （无「只读 / 快速」档），按「无更轻量档则跑全量」约定跑默认全量。
+# ============================================================
+on:
+  schedule:
+    # 每周一 04:00 UTC（北京 12:00）——错开 verify.yml 的 03:00，避免与全量 job 抢 runner
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+# 最小权限：本 job 只读检出 + 跑测试 + 上传 artifact，不需要写权限
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    # 🔴 非阻塞核心：验收失败不判红工作流（非 required check）——只为信号与取证。
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          # 与 verify.yml 对齐 Node 22（Node 18 下 @langchain/core Web Crypto 不稳定）
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # npm/cli#4828：macOS 生成的 lock 在 Linux CI 缺 rollup 原生 binary
+      - name: Fix rollup native binary (npm/cli#4828)
+        run: npm install @rollup/rollup-linux-x64-gnu --no-save || true
+
+      - name: Build workspace
+        run: npm run build
+
+      # 全量验收（脚本退出码 = 失败场景数）。`set +e` 取值后按原码退出：
+      # 失败只让本 job 标红（continue-on-error 兜住，工作流不判红），日志照常归档。
+      - name: Run acceptance test
+        run: |
+          set +e
+          bash playbook/acceptance-test.sh > acceptance.log 2>&1
+          rc=$?
+          set -e
+          echo "验收退出码（= 失败场景数）: ${rc}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -n 40 acceptance.log >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+
+      # if: always() —— 失败现场的 artifact 比成功时更值钱
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: acceptance-report
+          path: acceptance.log
+          if-no-files-found: warn
