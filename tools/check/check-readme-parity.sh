@@ -236,6 +236,22 @@ if [ "$SEC_WORD_FAILS" -gt 0 ]; then
   FAILS=$((FAILS + SEC_WORD_FAILS))
 fi
 
+# ── ⑥ 英文门面压缩残形 lint（v1.5.8 §三.7 / BUG-23 根治）──────────────
+# 背景：bb8c98d65「文档减重」把 every change 压成了 echange 等 6 处残形，首屏即病句；
+# 本脚本「只比对结构不比对文本」的设计原则对此天然零防线。残形是有限可枚举的机械事故
+# （e+单词开头吞字），黑名单 grep 即拦；英文 README 是站外搜索引擎主索引面。
+EN_COMPRESSED=$(grep -nE "\b(etime|echange|emistake|eAgent|ehe |efter|eceives|ecognit|everytime|auditsevery)\b" "$EN_README" 2>/dev/null || true)
+if [ -n "$EN_COMPRESSED" ]; then
+  echo "$EN_COMPRESSED" | while IFS= read -r _c_hit; do
+    echo "  ❌ [⑥英文压缩残形] ${_c_hit}"
+  done
+  FAILS=$((FAILS + $(echo "$EN_COMPRESSED" | grep -c .)))
+  ASSERTS=$((ASSERTS + 1))
+else
+  echo "  ✓ [⑥英文压缩残形] README.en 零命中"
+  ASSERTS=$((ASSERTS + 1))
+fi
+
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$FAILS" -gt 0 ]; then

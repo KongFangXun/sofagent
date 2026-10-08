@@ -175,3 +175,53 @@ if [[ -f "${VERDICT_PATH}" ]]; then
   cat "${VERDICT_PATH}"
   echo "--- end ---"
 fi
+
+# ─── §三.6 收尾终态断言（v1.5.8 BUG-24/25 根治：发布完成的机器定义）────────
+# 三条件全绿才算 release 完成：① 工作树干净 ② tag == HEAD（tag 必须打在全绿终态树上）
+# ③ 门禁复跑取真实退出码（禁管道取 $?）。任一不满足 ⇒ orchestrator 以非零退出——
+# 「红状态越过 pre-push 进入已发版主干」与「tag 打在半成品树」自此被机器拦截。
+# （全门禁复跑由 pre-push-check.sh 承担，本处断言其两轻量代行 + 干净态 + tag 位置；
+#   完整版收尾以 bash tools/release/pre-push-check.sh 人工/CI 复跑为准。）
+echo ""
+echo "── 收尾终态断言（§三.6）──"
+CLOSEOUT_FAIL=0
+
+# ① 工作树干净
+if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+  echo "  ❌ [终态①工作树] 存在未提交改动："
+  git status --porcelain | head -5 | sed 's/^/     /'
+  CLOSEOUT_FAIL=$((CLOSEOUT_FAIL + 1))
+else
+  echo "  ✓ [终态①工作树] 干净"
+fi
+
+# ② tag 位置（若已打 tag：vX.Y.Z^{commit} 必须等于 HEAD；未打 tag 时跳过不判）
+LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+if [[ -n "${LATEST_TAG}" ]]; then
+  TAG_COMMIT=$(git rev-parse "${LATEST_TAG}^{commit}" 2>/dev/null || true)
+  HEAD_COMMIT=$(git rev-parse HEAD 2>/dev/null || true)
+  if [[ "${TAG_COMMIT}" != "${HEAD_COMMIT}" ]]; then
+    BEHIND=$(git rev-list --count "${LATEST_TAG}..HEAD" 2>/dev/null || echo "?")
+    echo "  ❌ [终态②tag] ${LATEST_TAG} 落后 HEAD ${BEHIND} commit——tag 不是发布终态锚点（下版起 tag 必须打在收尾树上；已发布 tag 禁止移动，由下版承载）"
+    CLOSEOUT_FAIL=$((CLOSEOUT_FAIL + 1))
+  else
+    echo "  ✓ [终态②tag] ${LATEST_TAG} == HEAD"
+  fi
+else
+  echo "  ⏭️  [终态②tag] 尚无 tag（发布中正常态，跳过）"
+fi
+
+# ③ 轻量门禁代行（完整版走 pre-push-check.sh——本处只断言两道与收尾最相关的）
+VER_CHECK=$(bash tools/check/check-version.sh > /dev/null 2>&1; echo $?)
+if [[ "${VER_CHECK}" != "0" ]]; then
+  echo "  ❌ [终态③门禁] check-version 退出码 ${VER_CHECK}（完整复跑：bash tools/release/pre-push-check.sh）"
+  CLOSEOUT_FAIL=$((CLOSEOUT_FAIL + 1))
+else
+  echo "  ✓ [终态③门禁] check-version 绿（完整门禁集以 pre-push-check.sh 为准）"
+fi
+
+if [[ ${CLOSEOUT_FAIL} -gt 0 ]]; then
+  echo "  🔴 收尾终态断言：${CLOSEOUT_FAIL} 项不满足——release 未达成机器定义的完成态"
+  exit 3
+fi
+echo "  ✅ 收尾终态断言：三条件全绿——release 达成机器定义的完成态"

@@ -359,6 +359,7 @@ export function generateQuickOutput(
   //   「未检查 ≠ 通过」措辞属既有校准产物，一字不动（见上方 QUICK_SKIP_HINT）。
   parts.push('');
   parts.push('ⓘ 下一步：默认只跑 17 条规则（扩展规则默认关闭，config 启用）——规则集用 --ruleset 加载');
+  parts.push('ⓘ 装完整版（hook 自动审计 + 快照回滚）：sofagent audit --init');
 
   // 产品签名
   parts.push('');
@@ -568,6 +569,17 @@ export function runCliQuick(argv: string[]): number {
         warnedFlags.add(arg);
       }
     }
+  }
+
+  // ── v1.5.8 BUG-39：未构建仓库内运行引导（与 umbrella 入口同款语义，不新写文案体系）──
+  // 直跑 node engine/audit/dist/cli-quick.js（不经 umbrella）时，@sofagent/core 未
+  // 链接/未构建会抛 MODULE_NOT_FOUND 裸栈——在此前置拦截给出可执行指引。
+  try {
+    require.resolve('@sofagent/core');
+  } catch {
+    console.error('[sofagent] 检测到在仓库内直跑且实现依赖尚未安装/构建——请先在仓库根执行：npm install && npm run build');
+    console.error('[sofagent] 或使用免安装入口：npx -y -p @sofagent/audit sofagent-audit');
+    return 3;
   }
 
   // 1. 检测 git 仓库

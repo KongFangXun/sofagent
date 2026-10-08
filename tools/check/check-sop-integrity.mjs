@@ -43,6 +43,35 @@ if (all.length < baseline.minFiles || stage.length < baseline.minStageFiles) {
   process.exit(2);
 }
 
+// ── A0 · SOP 断言互校（v1.5.8 BUG-11 根治：同一动作的断言口径跨文件必须唯一）──
+// 背景：三份 SOP 对「release body changelog 链接」给出互斥断言（09 相对 vs 06/11 绝对），
+// 执行者按错误条款行事会撞另一份的断言。机制：提取各文件内 contains("…") 断言目标，
+// 按语义键（链接形态族）分组——同一族内「相对路径形态」与「绝对 URL 形态」并存 ⇒ 违规。
+{
+  const linkAssertions = []; // {file, kind: 'relative'|'absolute'}
+  for (const f of stage) {
+    const text = fs.readFileSync(path.join(DIR, f), 'utf8');
+    for (const line of text.split('\n')) {
+      // 只认「断言/指令」形态：contains 字面量或加粗指令（**相对链接**/**绝对链接**）；
+      // 「相对形态已废」「仓内相对链接」等描述态不属断言面，不参与互斥判定。
+      if (line.includes('contains("](./docs/changelog/') || line.includes('**相对链接**')) {
+        linkAssertions.push({ file: f, kind: 'relative' });
+      }
+      if (line.includes('contains("blob/main/docs/changelog/') || line.includes('**绝对链接**')) {
+        linkAssertions.push({ file: f, kind: 'absolute' });
+      }
+    }
+  }
+  const kinds = new Set(linkAssertions.map((a) => a.kind));
+  if (kinds.size > 1) {
+    const rel = linkAssertions.filter((a) => a.kind === 'relative').map((a) => a.file);
+    const abs = linkAssertions.filter((a) => a.kind === 'absolute').map((a) => a.file);
+    errors.push(
+      `A0 断言互校：release body changelog 链接口径跨文件互斥——相对形态出现于 ${[...new Set(rel)].join(', ')}，绝对形态出现于 ${[...new Set(abs)].join(', ')}（须归一为绝对口径，见 06-doc-finalize）`,
+    );
+  }
+}
+
 for (const f of stage) {
   const lines = fs.readFileSync(path.join(DIR, f), 'utf8').split('\n');
   const rows = lines.filter((l) => ROW_RE.test(l)).length;

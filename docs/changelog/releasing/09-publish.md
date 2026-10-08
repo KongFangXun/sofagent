@@ -518,7 +518,7 @@ version --prefer-online` + `for p in $(node -p "require('./engine/dsh-plugins/pl
 > `> 🔗 尾链：本段与 GitHub Release body 同源；发布时由阶段九三道工序生成，此处不重复。`
 > **两段都要剥**（只剥顶部会漏）。自检命令同步扩为：
 > `grep -nE "阶段六定稿必备项|数字取值说明|\.\./releasing/|Release body 同源" body.md` 应为空。
-> 另：body **必须**含指向本版 changelog 的相对链接（阶段十一步骤一以 `contains("](./docs/changelog/")` 断言）。
+> 另：body **必须**含指向本版 changelog 的**绝对链接**（`blob/main/docs/changelog/…`），阶段十一步骤一以 `contains("blob/main/docs/changelog/")` 断言（🔴 相对形态已废——release 页解析为 404，v1.5.4 起实测固化绝对口径，见 06-doc-finalize 三条硬口径）。
 
 
 **工序〇 · 拉上一版结构骨架（生成前置，非收尾确认）**：`gh release view v上一版 --json body -q '.body'` 提取 **H2 骨架（节名+节序）与要素清单**（TL;DR (EN)/Install 三块/深入了解表）——上一版实际发布物是 body 结构的 **SSOT**，本版骨架照此生成。禁止跳过本工序直接按 06 格式规范文字生成（范本文字与实际发布物的结构差异要到这一步才对齐）。
