@@ -269,6 +269,27 @@ sofagent 的审计能力 Gate + 硬规则正是这类锚点：审计只信 git d
 > 📖 [C.A.E. Goodhart · Problems of Monetary Management: The U.K. Experience](https://www.rba.gov.au/publications/confs/1975/goodhart.html) · [C.E. Perez · From Loop Engineering to Graph
 >Engineering?](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)
 
+### 错误成本决定约束投入
+
+约束不是越严越好——**在某处投入多少约束，由「这里错了会怎样」决定**。同一家企业里有的 AI 环节能无人值守、有的必须人审三道，差别通常不在技术难度，而在错误是否可逆。
+
+这条原则在本仓已有两处在跑的机制，缺的只是一句话把它说破：
+
+| 机制 | 落点 | 行为 |
+|---|---|---|
+| 进场审计按错误成本排序 | `tools/audit/audit-questionnaires/generic.json` 第二段 | 「哪个环节最容易出错？出错的代价？」——错误成本作为 ROI 分子，决定先审哪一处 |
+| 规则严重度加权 | `engine/audit/src/export/rule-schema.ts` `severityWeightOf()` | 按 priority 分级赋权，资源分配跟严重度对齐 |
+
+同一判据在五个互不相干的原始来源里各自独立出现：
+
+- **代码审查分层**——按风险分层审核，审查投入匹配错误成本
+- **本体工程**——金融（资金损失）→ 政务（公信力）→ 电网（安全事故）→ 军事（不可逆后果）构成错误成本谱系，越不可逆显式约束优先级越高
+- **技术选型**——按错误成本选高精度还是低成本路线，不追技术时髦
+- **交互形态**——转账、审批、排产这类高错误成本场景，开放发散的对话框几乎不可用
+- **适任判定**——一件事能否交给 AI，落点之一正是「失败是否易发现、可回滚」
+
+> 📖 [Addy Osmani（Google 首席工程师）· Agentic Code Review](https://addyosmani.com/blog/agentic-code-review/)
+
 ### 拒绝权——不确定就不输出
 
 执行可以试错，判断不能。当 Agent 无法在不猜测的前提下完成判断时，正确动作是**拒绝输出、并说清缺什么**，而不是用一个自信的答案填空。这不是洁癖：Databricks 发布其企业本体层（Genie Ontology）时把这条写成了产品取舍——「当上下文缺失时，AI 会用猜测填补空缺；而在财务、运营或销售场景，**一个自信的错误答案往往比没有答案更糟**」。
