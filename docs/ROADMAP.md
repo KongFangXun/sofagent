@@ -168,6 +168,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 | 方向 | 一句话 |
 |---|---|
+| **`SOFA_*` legacy 环境变量别名移除窗口** | config-loader 双轨回退（`SOFAGENT_*` 新名 → `SOFA_*` 旧名）中的旧名别名，v1.4.3 起仅为向后兼容保留——移除窗口定在 v2.0.0 前最后一个 minor 版（届时以 breaking change 公告并给迁移表；LIMITATIONS 双轨披露段已指向本行） |
 | **安装载荷独立校验通道（v1.5.7 F38 登记）** | bootstrap.sh 内嵌哈希与安装载荷同源（都在发版侧产出）——防传输劫持、不防源头替换。方向：release 页公示哈希 / provenance attestation，让用户可从第二通道交叉核对（排期评估，未排具体版本） |
 | **dashboard.html 拆分评估（v1.5.7 F39 登记）** | `tools/dashboard/dashboard.html` 单文件实测约 2997/3000 行（check-dashboard MAX_LINES 顶格附近）——维护风险随行数增长。拆分须与发版 SOP 容量约束协同（单文件形态是安装态分发前提），排期评估 |
 | **自带净水设备的水龙头（v3.x+ 远景）** | Subagent 支持挂载外部精调小模型（约束层提供路由与加载插槽），零投喂、本地推理、离线可用 |

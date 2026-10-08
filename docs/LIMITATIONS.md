@@ -336,6 +336,8 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >         # ⚠️ 若本步骤接管道（tee/grep 等），先 set -o pipefail——否则审计失败码被管道末端退出码遮蔽
 > ```
 
+> 🧯 **企业 CI 兜底一站式（三条分散防线的合并速查）**：本文件有三处分散描述同一主题——① `--no-verify` 可绕过本地 hook 前两层防线（§三开头披露）；② hook 物理删除/`core.hooksPath` 迁移后本地防线静默失效（§三 hook 安装边界）；③ CI 侧 `sofagent audit --diff` 是唯一防「同用户篡改 config」的手段（§三 config 篡改披露）。合并成一段可照抄的结论：**本地 hook（pre-commit/commit-msg/post-commit）只是第一道门，凡不能被本地环境绕过的防线必须在 CI 重跑一次**——CI 以独立身份 checkout + `sofagent audit --diff HEAD~1..HEAD --ci`（exit code 非零即 block merge），`--no-verify` 提交、hook 被删、config 被篡改三种本地失守形态全部被 CI 侧兜住。上面的 GitHub Actions YAML 即完整可抄模板；仓库自托管示例见 `.github/workflows/sofagent-audit.yml`。
+
 > **审计日志防篡改边界**：`history.jsonl` 完整性靠 hash chain（`audit-history.ts`），Agent 篡改后可重算整链——hash chain 仅**事后可追溯，非强防篡改**。
 >
 > v1.1.8 起支持 HMAC-SHA256 签名（`~/.sofagent-key`，600），有密钥时强校验——但仅防**跨 OS 用户**篡改；**同用户进程仍可读密钥重算整链**，对「Agent 本体」非强防篡改。无密钥时降级 SHA-256 hash chain（**弱校验**——重算整链即可把 FAIL 抹成 PASS）。v1.5.5 起写入侧默认生成密钥（0600 落盘，开箱即签名链）；
@@ -401,7 +403,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >**取证注意**：SKIPPED ≠ 通过——跳过的规则本次未检查，事后取证不能把「N 条跳过」读成「N 条无问题」；攻击者理论上可用显眼但无害的 critical 命中（如 A1 诱饵文件名）制造「审计抓到问题了」的表象，同时掩盖后续层规则未跑的事实。需要完整逐规则结果时，修复 critical 违规后重新审计即可获得全量执行。规则分层见 SECURITY.md「28 条审计规则」与 engine/audit/src/rules/runner.ts fast-fail 段。
 
 > ⚠️ **config-loader 环境变量死开关披露（v1.4.3）**：`SofaEnvConfig` 中 `sanitizeEnabled` / `sanitizeIpsEnabled` / `cleanupFrequency` / `auditEnabled` 四字段**加载但无生产消费点**——企业 IT 设 `SOFAGENT_SANITIZE=...`、`SOFAGENT_AUDIT_ENABLED=...` 等**不改变任何行为**（已在 config-loader.ts 标 @deprecated）。
->实际生效面：脱敏管道常开（不受开关控制）、审计由 config.yml `rules:{...}` 控制（不构成第二通道）、清理走 cleanup.sh（其保留策略读 `SOFAGENT_RETENTION_DAYS`/`SOFAGENT_RETENTION_MAX`，v1.4.3 起认 SOFAGENT_ 新名、SOFA_ 旧名兼容）。
+>实际生效面：脱敏管道常开（不受开关控制）、审计由 config.yml `rules:{...}` 控制（不构成第二通道）、清理走 cleanup.sh（其保留策略读 `SOFAGENT_RETENTION_DAYS`/`SOFAGENT_RETENTION_MAX`，v1.4.3 起认 SOFAGENT_ 新名、SOFA_ 旧名兼容）。`SOFA_*` 为 legacy 兼容别名（config-loader `resolveEnvVar`/`resolveBoolEnv` 先读 `SOFAGENT_*`、未设置再回退 `SOFA_*`），弃用时间点见 [ROADMAP 探索方向](./ROADMAP.md#探索方向)的移除窗口登记。
 
 > ⚠️ **边界：hook 安装位置尊重 git core.hooksPath（v1.4.5 修复披露）**——`--init` / `--install-hook` 安装三层防线时，若仓库配置了 `core.hooksPath`（自定义 hook 目录，如 husky / pre-commit 框架所设），hook 文件安装到该目录而非 `.git/hooks/` 默认位。
 >此为 git 原生语义的正确尊重而非 bug，但两个推论要知道：① 卸载 `core.hooksPath` 指向目录（或切回 `.git/hooks/`）时，此前安装的 sofagent hook 不随之迁移——审计可能静默失效，需重新 `--init`；② `--doctor` 的 hook 完整性检查按 `core.hooksPath` 解析当前生效目录，历史遗留的 `.git/hooks/commit-msg` 旧文件不在检查面内。行为锁见 engine/audit hook-install 测试 T1。
@@ -570,8 +572,9 @@ sofagent audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/tas
 | 文件 | 实测体量 | 维护风险 | 拆分去向 |
 |---|---|---|---|
 | `playbook/acceptance-test.sh` | 505,801 字符 / 4,611 行 | 单文件承载 401 场景——新增场景持续增厚；bash 无模块化，场景间复用靠函数 | 按域拆多文件 + driver 汇编——**须与发版 SOP 容量约束协同**（发版门禁引用单文件路径），排期评估 |
-| `tools/dashboard/dashboard.html` | 297,721 字符 / 2,997 行 | 单文件 HTML（check-dashboard MAX_LINES 3000 顶格附近，余量 3 行）——新增能力无空间 | 拆分评估已登记 [ROADMAP · 探索方向](./ROADMAP.md)（单文件形态是安装态分发前提，拆分须与分发方式协同） |
+| `tools/dashboard/dashboard.html` | 297,721 字符 / 2,997 行 | 单文件 HTML（check-dashboard MAX_LINES 3000 顶格附近，余量 3 行）；内联 style 194/210 逼近上限（check-dashboard 实测）——新增能力无空间 | 拆分评估已登记 [ROADMAP · 探索方向](./ROADMAP.md)（单文件形态是安装态分发前提，拆分须与分发方式协同；内联 style 类化改造同条登记，待拆分评估一并处置） |
 | `engine/audit/src/index.ts` | 103,980 字符 / 2,062 行 | CLI 入口 + 审计主流程单文件——改动面集中，review 噪声大 | 按子命令拆模块（`src/cli/` 目录化）——低风险机械拆分，排期评估 |
+| `install.sh` | 1,791 行（v1.5.8 登记） | 安装器单文件——哈希钉定/rescue/bootstrap/平台分发多职责合一 | 本版不拆分；与上述同族登记，拆分去向排期评估 |
 
 ### 审计 A7 检测可靠性边界 / bash 重复代码债 / 架构概念过载 / 缺少恢复路径
 
