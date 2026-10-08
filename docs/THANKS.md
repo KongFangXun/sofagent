@@ -84,7 +84,7 @@
 - **[bubblewrap](https://github.com/containers/bubblewrap)** · containers — OS 级沙箱原语
 - **[LangChain middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/custom)** · LangChain — wrapToolCall：运行时审计精确接入点
 - **[EnkryptAI Secure MCP Gateway](https://mintlify.wiki/enkryptai/secure-mcp-gateway)** · EnkryptAI — 安全护栏 + audit_only 模式
-- **[Agent Client Protocol (ACP)](https://github.com/Agent-Client-Protocol/spec)** — LSP 式开放协议
+- **[Agent Client Protocol (ACP)](https://agentclientprotocol.com)** — LSP 式开放协议
 - **[DataFlow](https://github.com/OpenDCAI/DataFlow)** · 北京大学 DCAI — 独立用「Harness」命名的第三方佐证
 - **[ChatDemo](https://github.com/OpenFDEAI/ChatDemo)** · OpenFDEAI — FDE 术语同源
 - **[PenguinHarness](https://github.com/Prism-Shadow/penguin-harness)** · Yaowei Zheng — Benchmark 与工具审批四模式参考
