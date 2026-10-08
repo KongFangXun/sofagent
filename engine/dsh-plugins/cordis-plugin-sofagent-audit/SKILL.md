@@ -4,12 +4,12 @@ slug: cordis-plugin-sofagent-audit
 version: 1.5.7
 displayName: cordis-plugin-sofagent-audit
 description: >
-  变更机器审阅 + 验收硬门禁——25 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）（seam: tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping）——桥接 @sofagent/audit runRules——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
+  变更机器审阅 + 验收硬门禁——28 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）（seam: tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping）——桥接 @sofagent/audit runRules——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
 ---
 
 # cordis-plugin-sofagent-audit
 
-变更机器审阅 + 验收硬门禁——25 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）（seam: tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping）
+变更机器审阅 + 验收硬门禁——28 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）（seam: tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping）
 
 ## 用途
 

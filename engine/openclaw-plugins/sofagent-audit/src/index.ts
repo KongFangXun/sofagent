@@ -1,6 +1,6 @@
 // sofagent-audit · OpenClaw 原生插件（code-plugin）
 // 变更机器审阅：before_tool_call 拦截危险工具（rm -rf / git push / git reset --hard 等）
-// + sofagent_audit 工具跑 25 规则 + git diff 硬证据审计（复用 @sofagent/audit 模块，平台无关零重写）。
+// + sofagent_audit 工具跑 28 规则 + git diff 硬证据审计（复用 @sofagent/audit 模块，平台无关零重写）。
 // 对应 DSH 插件 cordis-plugin-sofagent-audit 的 OpenClaw 形态（同引擎、不同宿主 hook 事件面）。
 // API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
 
@@ -116,12 +116,12 @@ let configuredRoot: string | undefined;
     logger.error?.('[sofagent-audit] before_tool_call 注册失败:', err instanceof Error ? err.message : String(err));
   }
 
-  // 2) registerTool：sofagent_audit——跑 25 规则 + git diff 审计
+  // 2) registerTool：sofagent_audit——跑 28 规则 + git diff 审计
   try {
     api.registerTool?.(
       {
         name: 'sofagent_audit',
-        description: 'sofagent 变更审计——对工作区跑 25 规则（git diff 硬证据 + 敏感文件/密钥/路径规则），返回结构化审计结果',
+        description: 'sofagent 变更审计——对工作区跑 28 规则（git diff 硬证据 + 敏感文件/密钥/路径规则），返回结构化审计结果',
         parameters: {
           type: 'object',
           properties: {

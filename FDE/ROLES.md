@@ -9,7 +9,7 @@
 | Workflow Designer | 工作流设计师 | ①梳理（五要素 + 三问） | 约束层：fdeing 流程、本体建模 | Greenhouse 各部门「创新负责人」重画端到端流程 |
 | Domain Anchor | 领域知识负责人 | ①梳理 + ③养护（知识资产） | 约束层：ontology、think.md、knowledge/ | Walmart 岗位「数字孪生」应对轮岗知识流失 |
 | Citizen Builder | 业务自建者 | ②部署（业务自建档） | 平台层：模板 fork、六引擎工作台 | DevRev 零技术销售运营做出 CRM Bot |
-| AI Guardian | AI 治理者 | ③养护（审计面） | 约束层：25 规则 + HMAC + 快照回溯（已交付） | Scale AI 专职团队对 Agent 系统做攻击测试 |
+| AI Guardian | AI 治理者 | ③养护（审计面） | 约束层：28 规则 + HMAC + 快照回溯（已交付） | Scale AI 专职团队对 Agent 系统做攻击测试 |
 | Agent Shepherd | Agent 运营负责人 | ③养护（运维面） | 约束层：daemon 巡检 + 插件生命周期（已交付） | Bolt.new 中央角色管 Agent 托管与异常下线 |
 
 三条读法：

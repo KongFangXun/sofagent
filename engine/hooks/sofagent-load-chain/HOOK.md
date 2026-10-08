@@ -31,7 +31,7 @@ metadata:
 | **③ Skill 自觉加载** | SKILL.md 随 Agent 调用注入 | **自觉（软约束）** | WorkBuddy / Codex / Claude |
 | **④ harness 代码级拼入** | `buildConstrainedSystemPrompt` 构建 system prompt | **强（代码保证）** | npm API 自建 Agent |
 
-> 约束注入的强度随形态递减，但**审计模块（git diff 25 规则）在所有形态一样硬**——约束是建议性的，审计是强制性的。
+> 约束注入的强度随形态递减，但**审计模块（git diff 28 规则）在所有形态一样硬**——约束是建议性的，审计是强制性的。
 
 ---
 
@@ -69,9 +69,9 @@ DSH 原生支持 **8 个生命周期 hook，全部为瀑布流（Waterfall）可
 
 | 宿主 | 约束注入 | 审计拦截 | 支持等级 |
 |------|---------|---------|:--:|
-| **DSH（DeepSeek Harness）** | **①** 生命周期 hook——`tools/pre-execute` 等 8 事件，**逐工具调用可拦** | 插件 `…-audit`：25 规则 + git diff，运行时拦截 | **完整** |
+| **DSH（DeepSeek Harness）** | **①** 生命周期 hook——`tools/pre-execute` 等 8 事件，**逐工具调用可拦** | 插件 `…-audit`：28 规则 + git diff，运行时拦截 | **完整** |
 | **OpenClaw** | **②** bootstrap hook（会话级注入）+ 插件 `…-inject` | 加载链 Hook + 插件 `…-audit`；另走 git hook 兜底 | **完整** |
-| **Claude Code** | **③** Skill 自觉加载 | 工具调用时机触发共享拦截脚本（`~/.claude/settings.json`）——**内容为提交级 25 规则，非调用级拦截** | 支持 |
+| **Claude Code** | **③** Skill 自觉加载 | 工具调用时机触发共享拦截脚本（`~/.claude/settings.json`）——**内容为提交级 28 规则，非调用级拦截** | 支持 |
 | **Cursor** | **③** Skill 自觉加载 + `.cursor/rules/sofagent.mdc` | 同上（`~/.cursor/hooks.json`） | 支持 |
 | **WorkBuddy** | **③** Skill 自觉加载 | 走 git hook（提交前） | 支持 |
 | **自建 Agent（npm API）** | **④** `@sofagent/inject` 的 `buildConstrainedSystemPrompt` 代码级拼入 | MCP `run_audit` / git hook | 支持 |

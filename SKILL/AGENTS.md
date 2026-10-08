@@ -42,7 +42,7 @@
 
 | 插件 | 职责（桥接实况） | seam |
 |---|---|---|
-| `cordis-plugin-sofagent-audit` | 变更机器审阅 + 验收硬门禁（25 规则 + git diff 硬证据 + Turn 停止验收判定——吸收原 gate 验收面，开关独立）——桥接 `@sofagent/audit runRules` | tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping |
+| `cordis-plugin-sofagent-audit` | 变更机器审阅 + 验收硬门禁（28 规则 + git diff 硬证据 + Turn 停止验收判定——吸收原 gate 验收面，开关独立）——桥接 `@sofagent/audit runRules` | tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping |
 | `cordis-plugin-sofagent-rollback` | 出错逆序撤销（git snapshot → effect disposer）——桥接 `@sofagent/core getHistoryFilePath` | effect 注册/卸载 |
 | `cordis-plugin-sofagent-inject` | 启动注入企业约束（四层加载链）——桥接 `@sofagent/inject buildConstrainedSystemPrompt` | apply(ctx) |
 | `cordis-plugin-sofagent-evolve` | 经验沉淀（think.md 反思 + Dream Cycle）——桥接 `@sofagent/think generateThinkEntry` | 任务结束 hook |
