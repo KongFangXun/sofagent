@@ -593,7 +593,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 口径细则：
 - **空历史降级**：变更总数为 0 时触发率/阻断率输出 `null`（不硬凑 0——「无数据」与「零触发」语义不同）
-- **下钻说明**：每条触发记录的 17 条默认规则逐条 ruleResults 可查（`history.jsonl` 原始记录 + `--verify-chain` 完整性校验）——Top 5 规则可下钻到具体 commit 与证据
+- **下钻说明**：每条触发记录的默认 17 条（A1–A11 + A18–A23）逐条 ruleResults 可查（`history.jsonl` 原始记录 + `--verify-chain` 完整性校验）——Top 5 规则可下钻到具体 commit 与证据
 - **机器可读**：`--stats --json` 输出纯净 JSON（企业 SIEM/监控平台消费）；聚合结果同步落盘 `data/dashboard/audit-stats.json`（Dashboard 面板化消费 v1.5.0）
 - **只读铁律**：聚合层永不写 `history.jsonl`（HMAC 链完整性是审计信任根基——聚合前后文件字节级一致）
 
