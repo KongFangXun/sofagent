@@ -1738,6 +1738,8 @@ grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在
 
 > 发版四坑实录：① bootstrap.sh INSTALL_SHA256 回填走「tag 后算哈希再回填再重打 tag」两次 tag 往返——预计算 HEAD 哈希与 URL bump 同 commit 可让 tag 一次打自洽（install.sh/lib 无改动时 lib 哈希不变免回填）；② GitHub Marketplace listing 勾选自动延续（v1.4.2 起每版勾选后 listing 关联保持），版本页出现新版号即免网页操作；
 >③ ClawHub verify 的 `security.status_not_clean` 可能是既有状态（1.4.3 时代已存在）——发布前先快照对照，新引入才需处置；④ 同一文件多处 Edit 并行调用发生读写竞态（5 处只落 2 处）——同文件多编辑必须串行。
+>⑤ `bump-version.sh` 的 sed 替换式**模式侧锚了 `^# ` 而替换侧未回写** ⇒ 行首标记被吞（shell 脚本头注释裸化 = bash 执行时首词当命令）——改替换式必须核对替换侧是否回写全部前导标记。
+>⑥ CI 的 `bash -eo pipefail` 下**管道内 grep 无匹配**即整管道非零 ⇒ 脚本以无关名义硬失败（`head -N | grep` 属「位置敏感 + 无兜底」双重脆弱：扫描面改全文件并补 `|| true`）；⑦ source-linked 分发（ClawHub package）拉的是**仓库 ref** ⇒ gitignored 构建产物（`dist/`）不在其中，发布前须**本地 build**。
 
 ```bash
 (
@@ -1760,6 +1762,10 @@ PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff 
 MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent); MKT_RC=$?; if [ $MKT_RC -ne 0 ]; then echo "🟡 网络不可达（curl exit $MKT_RC）——marketplace 对照跳过（网络态非仓库问题，有网时人工复核）"; elif echo "$MKT_HTML" | grep -q "$(node -p "require('./package.json').version")"; then echo "✅ marketplace 版本页已含本版"; else echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"; fi  # ③ Marketplace 版本页含本版号即免网页勾选（自动延续）
 # ④ ClawHub 快照纪律：发布前 verify 落盘（clawhub skill verify <slug> > /tmp/clawhub-pre.json）对照处置；④b pending scan 显旧版+suspicious≠失败，转正判据走 API（clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>）
 grep -q "prefer-online" docs/changelog/releasing/09-publish.md && grep -q "prefer-online" docs/changelog/releasing/11-post-publish.md && echo "✅ SOP 对账命令守卫在位" || echo "❌ SOP 对账命令退化为裸查询"  # ⑤ npm 对账带 --prefer-online（裸查询吃缓存误报漏发）
+# ⑨ 发版域新增纪律三守卫在位（⑤⑥⑦ 的机械对账）
+grep -q "替换侧是否回写" docs/changelog/releasing/07-tool-health.md && echo "✅ bump 替换式前导回写纪律在位（07）" || echo "❌ bump 替换式前导回写纪律缺失"
+grep -q "必须 rerun" docs/changelog/releasing/09-publish.md && echo "✅ publish 后 rerun 强制动作在位（09）" || echo "❌ publish 后 rerun 强制动作缺失"
+grep -q "先本地 build 再发布" docs/changelog/releasing/10-distribute.md && echo "✅ OpenClaw 先 build 前置在位（10）" || echo "❌ OpenClaw build 前置缺失"
 # ⑥ 构建拓扑序干净态自洽（本地 dist 残留会掩盖乱序）⑦ 环境特异失败先模拟 CI 干净态（三类排查序）⑧ 工具降级分支 fail-loud（降级必须可见）
 node -e "const s=require('./package.json').scripts.build; const order=['inject','core','ontology','rules','audit','eval','think','evolve','orchestrator','train','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); if(short.startsWith('dsh-plugins/')||short.startsWith('openclaw-plugins/')) continue; const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 14 包拓扑序（dsh-plugins/openclaw-plugins 家族序由 check-cross-package-relative.mjs 独立钉住，不在此面）"
 grep -q "rm -rf engine/\*/dist" docs/changelog/releasing/09-publish.md && echo "✅ 干净态排查法已写入 SOP" || echo "❌ 干净态排查法从 SOP 丢失"

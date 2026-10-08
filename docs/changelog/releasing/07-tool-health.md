@@ -34,7 +34,7 @@
 
 #### 三 · 三脚本对照检查
 
-① pre-push-check.sh 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？② bump-version.sh --dry-run 必须验证为纯只读（跑完后 `git diff --stat` 零改动）。（check↔bump 结构对照与 check-version 分母已由步骤一 脚本覆盖）。
+① pre-push-check.sh 的检查项数量是否和 CHANGELOG/ROADMAP 声明的一致？② bump-version.sh --dry-run 必须验证为纯只读（跑完后 `git diff --stat` 零改动）——**且必须先 commit 再跑**（工作区有未提交改动时 `git diff` 分不清 dry-run 污染与正当改动）。③ **改 bump 的 sed 替换式时必须核对替换侧是否回写全部前导标记**（`# ` / `<!--`）——模式侧锚了 `^# ` 而替换侧漏写，会把注释行改成裸文本（shell 脚本头裸化 ⇒ bash 执行时首词当命令跑）；bump 尾部有 shell 头形态探针兜底，但改替换式时的**人工核对**才是第一道防线。（check↔bump 结构对照与 check-version 分母已由步骤一 脚本覆盖）。
 🔴 **先 commit 再跑 dry-run 验证**：dry-run 的「纯只读检测」需要干净基线——工作区有未提交改动时 `git diff --stat` 分不清「dry-run 污染」与「正当改动」，误判后执行 `git checkout -- .` 会**误撤全部未提交改动**。正确顺序：**先 `git commit` 收编当前改动 → 再跑 dry-run → 确认 diff 零改动** 
 
 | # | 完成 | 步骤 | 验证方式 |
