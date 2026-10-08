@@ -9,8 +9,8 @@
 // 子路径挂点：package.json exports "./domain/shared"。
 // ============================================================
 /* @public */ export { VERSION } from '../shared/constants';
-/* @public */ export { BASELINE_RULE_KEYS, BASELINE_RULE_NUMBERS } from '../shared/rule-constants';
-/* @public */ export type { BaselineRuleKey } from '../shared/rule-constants';
+/* @public */ export { BASELINE_RULE_KEYS, BASELINE_RULE_NUMBERS, CURRENT_RULE_KEYS, CURRENT_RULE_COUNT } from '../shared/rule-constants';
+/* @public */ export type { BaselineRuleKey, CurrentRuleKey } from '../shared/rule-constants';
 /* @public */ export { SECRET_PATTERNS, REDACTION_PATTERNS, DOMAIN_WHITELIST, DANGEROUS_SCRIPT_CMDS, DATA_URI_PATTERN, stripDataUris } from '../shared/secret-patterns';
 /* @internal */ export type { RuleType } from '../shared/rule-types';
 /* @internal */ export { RULE_DEFINITIONS, ruleDefinition } from '../shared/rule-definitions';

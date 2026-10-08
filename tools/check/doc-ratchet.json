@@ -63,10 +63,6 @@
     "wall": 0,
     "cell": 0
   },
-  "tools/README.md": {
-    "wall": 0,
-    "cell": 0
-  },
   "docs/API.md": {
     "wall": 0,
     "cell": 0
@@ -117,5 +113,9 @@
     "note14": "阶段九 pre-push 终验：VALIDATION/ROADMAP/PHILOSOPHY/driver.md/LEDGER/SECURITY 的 wall/cell 实测上调——来源=本版交付内容（VALIDATION 四缺口登记 / ROADMAP 探索方向提入 / PHILOSOPHY 自进化谱系 / driver 事故教训 / LEDGER 勘误行 / SECURITY 数据主权与密钥姿态三批），非文件清理回归；未删任何内容",
     "note15": "文档瘦身批（2026-10-02）：ARCHITECTURE wall 1→0（reflow 折墙式行，内容零损失）；ROADMAP cell 7→4（三个超长格拆注为 注-38/39/40，切口落在句读符上、定义行同文件在位，内容零损失，cell 回到基线 4）"
   },
-  "SKILL/SKILL.md": {}
+  "SKILL/SKILL.md": {},
+  "tools/check/README.md": {
+    "wall": 1,
+    "cell": 0
+  }
 }

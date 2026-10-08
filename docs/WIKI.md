@@ -192,7 +192,7 @@ graph TB
 ## 五、文件地图
 
 > 💡 **FDE/ 是给人看的部署流程文档；SKILL/ 是给 Agent 读的行为约束文件。新 Skill 放 SKILL/。**
-> ✍️ 署名关联：本仓文档署名（孔放勋 / KongFangXun）与 GitHub 账号 [`KongFangXun`](https://github.com/KongFangXun) 为同一作者——提交统一用 `user.name=KongFangXun`（约定见 [CONTRIBUTING](./CONTRIBUTING.md)）。
+> ✍️ 署名关联：本仓文档署名与 GitHub 账号 [`KongFangXun`](https://github.com/KongFangXun) 为同一作者（孔放勋）——提交统一用 `user.name=KongFangXun`（约定见 [CONTRIBUTING](../CONTRIBUTING.md)）。
 
 ### 根目录（重要性排序）
 

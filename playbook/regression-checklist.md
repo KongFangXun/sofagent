@@ -2005,7 +2005,7 @@ S147_REAL=$(grep -cE "^scenario " playbook/acceptance-test.sh)
 grep -q '"\$S360_NUMS" = "28"' playbook/acceptance-test.sh && echo "✅ B1b S360 计数锚=28" || { echo "❌ B1b S360 计数锚回潮"; FAIL=1; }
 # c: B2 模板幽灵命令防复发——smb-onboarding 指向的入口必须实测存在（MCP audit_query 注册在案）
 grep -q "audit_query" engine/mcp/src/tool-registry.ts && ! grep -q "decision-query --kind" FDE/templates/smb-onboarding.md && echo "✅ B2 模板入口实测在位" || { echo "❌ B2 模板幽灵命令回潮"; FAIL=1; }
-# d: B3 分层口径可加总——README 双语四档式不许漂（中文 22 条+4 条 hybrid+1 条 filesystem+1 条走 decision-log；英文 22/28+5 hybrid）（v1.5.8 BUG-05 四档式同步：S477 已同批换锚，本行同批对齐）
+# d: B3 分层口径可加总——README 双语四档式不许漂（中文 22 条+4 条 hybrid+1 条 filesystem+1 条走 decision-log；英文 22/28+5 hybrid）（四档式同步换锚：S477 已同批换锚，本行同批对齐）
 grep -q "22 条基于 git diff" README.md && grep -q "4 条 hybrid" README.md && grep -q "1 条 filesystem" README.md && grep -q "1 条走 decision-log" README.md && grep -q "22/28 run on git-diff" README.en.md && echo "✅ B3 双语分层口径一致" || { echo "❌ B3 分层口径漂移"; FAIL=1; }
 # e: B4 装配先于消费反模式——decision-log 只在 E7 活跃集装配（懒加载不许回退为无条件 load）
 node tools/check/lib/dim147-checks.js b4 && echo "✅ B4 decision-log 懒加载（装配后于消费者判定）" || { echo "❌ B4 无条件装配回潮"; FAIL=1; }
