@@ -21,7 +21,7 @@
 - [核心特性](#核心特性)
 - [什么是 FDE Harness](#什么是-fde-harness)
 - [多平台挂载](#多平台挂载)
-- [v1.5.6：存量收敛（单入口 + 数据面）](#v156存量收敛单入口--数据面)
+- [v1.5.7：审计覆盖面扩展与能力面治理](#v157审计覆盖面扩展与能力面治理)
 - [FDE Harness 两阶段](#fde-harness-两阶段)
 - [安装](#安装)
 - [使用](#使用)
@@ -111,10 +111,10 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **治理层 · harness**（离场 · 驻留判断——「harness 治理」，按交付物 7×24 执行，进化时写回）：
 
-- 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，7×24 在线守护（commit 时触发审计），人离场治理不离开
-- 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（实测：quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
-- 🧱 **规则与安全面：28 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截；fail-fast 设计（critical 层命中后其余规则跳过）、默认非 fail-closed（配置可被篡改、hook 可被 --no-verify 跳过——绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
-- 🔧 **工具与能力面：104 个 MCP tool + 证据两档**——28 条规则中 22 条基于 git diff 硬证据（本地即生效）、5 条需数据面（4 需 Agent 日志、1 走 decision-log；编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)，边界见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
+- 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，commit 时触发审计，人离场治理不离开
+- 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（quick 约 1.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
+- 🧱 **规则与安全面：28 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截；fail-fast（critical 命中后其余跳过）、默认非 fail-closed（绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
+- 🔧 **工具与能力面：104 个 MCP tool + 证据两档**——28 条规则中 22 条基于 git diff（本地生效）、5 条需数据面（4 需 Agent 日志、1 走 decision-log，清单见 [SECURITY](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## 什么是 FDE Harness
@@ -156,18 +156,19 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.5.6：存量收敛（单入口 + 数据面）
+## v1.5.7：审计覆盖面扩展与能力面治理
 
-🧭 **一个入口、一份干净的数据面**（✅ 已发版 · 2026-10-04）——命令从 13 条收成一条，运行时数据从「只增不减」变成有生命周期：
+🔍 **审计扩到没有代码仓库的企业**（⏳ 待发版 · 开发完成 2026-10-08）——SMB 三判据 + 审计输入面三规则 + 浏览器退役 + 能力治理地基：
 
 | 能力 | 一句话 |
 |---|---|
-| **CLI 单入口收敛** | 13 bin 收口为 `sofagent <域> <动作>`；12 旧命令转兼容期 shim（可用 + 弃用提示） |
-| **数据生命周期治理** | 事实记忆二级分层 + 冷热归档轮转；审计链历史段归档（**归档 ≠ 删除**）；遗留备份 30 天清理留痕；doctor 增数据目录健康节 |
-| **沉淀记忆项目作用域** | 经验默认钉到项目，跨项目/全局不自动共享；复用走显式导出导入 + 血缘与审批留痕 |
-| **运维与安全文档注入（R6）** | 四文档口径注入；LIMITATIONS 新增「S1M 判定失灵面」 |
+| **SMB 场景审计（E5）** | 数据处理 / 报表生成：勾稽 · 溯源 · 口径三判据 × 三形态；决策类型 `DATA_PRODUCT`（17→18 值） |
+| **审计输入面三规则（25→28 条）** | E6 提示注入防护 · E7 决策质量信号（FALLBACK ≥5 WARN）；决策日志升为审计输入源 |
+| **浏览器底座退役** | 四件套删除（v2.0 窗口兑现），图像三件迁 `image-meta.ts`；S313 断言反转 |
+| **能力面治理与可拔契约** | 技能健康度五维 + 归档回滚闭环；遥测补 status/durationMs；可拔契约 18 单元 + `SOFAGENT_*` 门控分流 |
+| **评估三件** | UI 审计可行性=不实做 · 国标对位 5 标准 10 差距 · ACS YAML=不采纳 |
 
-> 📌 完整变更与验收证据见 [v1.5.6 开发日志](./docs/changelog/v1.5/v1.5.6.md)；旧版能力段见 [CHANGELOG](./CHANGELOG.md)。
+> 📌 完整证据见 [v1.5.7 开发日志](./docs/changelog/v1.5/v1.5.7.md)；旧版能力段见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE Harness 两阶段
 
@@ -180,7 +181,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | 组织记忆 | 知识沉淀（think.md 反思 + knowledge/） |
 | 培训体系 | 经验→考核→晋级的自进化链（v1.5.8 排期） |
 | 试错容错 | 快照回滚 + 能力基线版本线（v1.5.9 排期） |
-| 劳动合同边界 | 可拔契约与主干能力清单（**未排期**——规划表中暂无对应版本条目） |
+| 劳动合同边界 | 可拔契约与主干能力清单（v1.5.7 交付：18 单元 + `SOFAGENT_*` 门控分流） |
 
 > 📚 **想深入**：[FDE/GUIDE](./FDE/GUIDE.md)（四阶段十二步）· [ARCHITECTURE](./docs/ARCHITECTURE.md)（五能力与模块）· [PHILOSOPHY](./docs/PHILOSOPHY.md)（设计禁区）· [FDE/README](./FDE/README.md)（Skill 体系）；完整导航见 [WIKI](./docs/WIKI.md)。
 

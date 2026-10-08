@@ -23,7 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.6: Consolidation (One Entry Point + Data Surface)](#v156-consolidation-one-entry-point--data-surface)
+- [v1.5.7: Audit Coverage Expansion & Capability Governance](#v157-audit-coverage-expansion--capability-governance)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -203,18 +203,19 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.6: Consolidation (One Entry Point + Data Surface)
+## v1.5.7: Audit Coverage Expansion & Capability Governance
 
-🧭 **One entry point, one clean data surface** (✅ released · 2026-10-04)—thirteen commands collapse into one, and runtime data gains a lifecycle:
+🔍 **Audit extends to enterprises without repositories** (⏳ pending · 2026-10-08)—SMB scenarios, three new audit-input rules, browser retirement, capability-governance foundations:
 
 | Capability | One-liner |
 |---|---|
-| **Single-entry CLI** | 13 bins collapse into `sofagent <domain> <action>` (15 domains + reserved words); the 12 legacy commands become forwarding shims for one compatibility minor |
-| **Data lifecycle governance** | Fact-memory sharding + hot/cold archiving; audit-chain history-segment archiving (archiving ≠ deletion); legacy-backup cleanup policy; doctor data-directory health section |
-| **Project scope for distilled memory** | Distilled experience is pinned to the project (resolved by repo)—no silent cross-project or global sharing; reuse goes through explicit export/import with lineage and approval traces |
-| **Ops & security doc injection (R6)** | Wording injected across HANDBOOK / LIMITATIONS / SECURITY / DEVELOPMENT; LIMITATIONS gains an "S1M verdict blind spots" entry |
+| **SMB scenario audit (E5)** | Data-processing & report scenarios; reconciliation · traceability · consistency × three forms; decision type `DATA_PRODUCT` (17→18) |
+| **Three audit-input rules (25→28)** | E6 prompt-injection defense · E7 decision-quality signals (FALLBACK ≥5 → WARN); decision log as formal audit input |
+| **Browser runtime retirement** | Four-piece suite deleted (v2.0 window honored); image capabilities preserved in `image-meta.ts`; S313 flipped |
+| **Capability governance & pluggable contracts** | Five-dimension skill health + archive-rollback loop; telemetry gains status/durationMs; pluggable contracts (18 units) + `SOFAGENT_*` gating |
+| **Three assessments** | UI audit feasibility = not building · standard mapping (5 standards, 10 gaps) · ACS YAML = not adopted |
 
-> 📌 Full changes and acceptance evidence: [v1.5.6 devlog](./docs/changelog/v1.5/v1.5.6.md); older capability sections in [CHANGELOG](./CHANGELOG.md).
+> 📌 Full evidence: [v1.5.7 devlog](./docs/changelog/v1.5/v1.5.7.md); older sections in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
@@ -228,7 +229,7 @@ audit rules including **AgentShield static scanning across five config surfaces*
 | Organizational memory | Knowledge distillation (think.md reflection + knowledge/) |
 | Training pipeline | Experience → exam → promotion self-evolution chain (scheduled v1.5.8) |
 | Fault tolerance | Snapshot rollback + capability baseline timeline (scheduled v1.5.9) |
-| Employment contract boundary | Pluggable contracts & core capability registry (**not yet scheduled**—no matching version entry in the roadmap) |
+| Employment contract boundary | Pluggable contracts & core capability registry (delivered in v1.5.7: 18 units + `SOFAGENT_*` gating) |
 
 | Go deeper | Where |
 |---|---|
