@@ -20,8 +20,8 @@
 /* @public */ export { VERSION } from './shared/constants';
 
 // ── 基线规则常量（单一事实源）──
-/* @public */ export { BASELINE_RULE_KEYS, BASELINE_RULE_NUMBERS } from './shared/rule-constants';
-/* @public */ export type { BaselineRuleKey } from './shared/rule-constants';
+/* @public */ export { BASELINE_RULE_KEYS, BASELINE_RULE_NUMBERS, CURRENT_RULE_KEYS, CURRENT_RULE_COUNT } from './shared/rule-constants';
+/* @public */ export type { BaselineRuleKey, CurrentRuleKey } from './shared/rule-constants';
 
 // ── 密钥检测正则单一事实源（A2 + ToolGate 共用）──
 // v1.2.5: 扩展为全规则共享库——新增 REDACTION_PATTERNS / DOMAIN_WHITELIST / DANGEROUS_SCRIPT_CMDS

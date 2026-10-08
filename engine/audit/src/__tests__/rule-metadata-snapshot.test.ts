@@ -7,6 +7,21 @@
 import { describe, expect, it } from 'vitest';
 import { defaultRules, extendedRules } from '../rules';
 import { ruleCode } from '../rules/assemble';
+import { CURRENT_RULE_KEYS } from '@sofagent/core';
+
+describe('config 面规则 key 一致性（v1.5.8 BUG-03——core CURRENT_RULE_KEYS ↔ audit 注册表互锁）', () => {
+  it('CURRENT_RULE_KEYS 与注册表 id 集合（小写化）完全一致', () => {
+    const registryIds = [...defaultRules, ...extendedRules].map((r) => r.id.toLowerCase());
+    expect(new Set(registryIds).size).toBe(28);
+    expect([...CURRENT_RULE_KEYS].sort()).toEqual([...new Set(registryIds)].sort());
+  });
+  it('CURRENT_RULE_KEYS 共 28 条且不含退役编号（a12/a13/e3）', () => {
+    expect(CURRENT_RULE_KEYS).toHaveLength(28);
+    expect(CURRENT_RULE_KEYS).not.toContain('a12' as never);
+    expect(CURRENT_RULE_KEYS).not.toContain('a13' as never);
+    expect(CURRENT_RULE_KEYS).not.toContain('e3' as never);
+  });
+});
 
 describe('条目 7 · 规则注册表元数据快照（第 0 步——重构行为锚）', () => {
   it('defaultRules 17 条（双计数锚之一）', () => {

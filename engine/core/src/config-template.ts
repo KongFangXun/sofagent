@@ -51,7 +51,7 @@ audit:
   # loopCheckMaxRounds: 20
 
   # 按规则名禁用——取消注释即可关闭指定规则
-  # 可用 key（25 条现行规则）: a1-a11, a14-a24, e1-e2, e4
+  # 可用 key（28 条现行规则，SSOT=core shared/rule-constants.ts CURRENT_RULE_KEYS）: a1-a11, a14-a24, e1, e2, e4, e5, e6, e7
   # （a12/a13 已并入 a11、e3 已并入 a11——填退役编号会触发「未知规则名」告警并忽略）
   # 显式 false 禁用，未列或 true 表示启用
   # rules:

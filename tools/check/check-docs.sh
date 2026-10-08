@@ -639,9 +639,13 @@ INDEX_TS_COUNT=${INDEX_TS_COUNT:-0}
 INDEX_TS_COUNT=$(echo "$INDEX_TS_COUNT" | tr -d '[:space:]')
 
 # C. 主 README 声称的规则数（从 "25 条规则" 这种措辞提取）
-MAIN_README_COUNT=$(grep -oE "[0-9]+ 条规则" README.md 2>/dev/null | head -1 | grep -oE "^[0-9]+" || true)
+# v1.5.8 BUG-07：去 head -1（README 内第二/三处漂移永久失明）——改全量提取，
+# 任一处 ≠ SSOT 即 FAIL；同时把两个已发布门面（audit 包 description / glama.json）纳入对账。
+MAIN_README_COUNTS=$(grep -oE "[0-9]+ 条规则" README.md 2>/dev/null | grep -oE "^[0-9]+" || true)
+MAIN_README_COUNT=$(echo "$MAIN_README_COUNTS" | sort -u | head -1)
 MAIN_README_COUNT=${MAIN_README_COUNT:-0}
 MAIN_README_COUNT=$(echo "$MAIN_README_COUNT" | tr -d '[:space:]')
+MAIN_README_MULTI=$(echo "$MAIN_README_COUNTS" | sort -u | wc -l | tr -d '[:space:]')
 
 echo "  audit/README.md 规则表行数: $AUDIT_README_COUNT"
 echo "  rules/index.ts 注册规则数:   $INDEX_TS_COUNT"
@@ -652,8 +656,23 @@ if [ "$AUDIT_README_COUNT" != "$INDEX_TS_COUNT" ]; then
   ASSERTS=$((ASSERTS + 1)); echo "  ❌ audit/README ($AUDIT_README_COUNT) ≠ index.ts ($INDEX_TS_COUNT)"
   MISMATCH=$((MISMATCH + 1))
 fi
+if [ "$MAIN_README_MULTI" != "1" ] && [ "$MAIN_README_MULTI" != "0" ]; then
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 主 README 内「N 条规则」多值并存（$(echo $MAIN_README_COUNTS | tr '\n' ' ')）"
+  MISMATCH=$((MISMATCH + 1))
+fi
 if [ "$MAIN_README_COUNT" != "0" ] && [ "$MAIN_README_COUNT" != "$INDEX_TS_COUNT" ]; then
   ASSERTS=$((ASSERTS + 1)); echo "  ❌ 主 README ($MAIN_README_COUNT) ≠ index.ts ($INDEX_TS_COUNT)"
+  MISMATCH=$((MISMATCH + 1))
+fi
+# v1.5.8 BUG-07：已发布门面 description 对账（audit 包 + glama.json——此前零覆盖）
+AUDIT_PKG_N=$(node -e 'const d=require("./engine/audit/package.json").description; const m=d.match(/(\d+) discipline rules/); console.log(m?m[1]:"0")' 2>/dev/null || echo 0)
+if [ "$AUDIT_PKG_N" != "0" ] && [ "$AUDIT_PKG_N" != "$INDEX_TS_COUNT" ]; then
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ engine/audit/package.json description ($AUDIT_PKG_N discipline rules) ≠ index.ts ($INDEX_TS_COUNT)"
+  MISMATCH=$((MISMATCH + 1))
+fi
+GLAMA_N=$(node -e 'const d=require("./glama.json").description; const m=d.match(/(\d+) audit rules/); console.log(m?m[1]:"0")' 2>/dev/null || echo 0)
+if [ "$GLAMA_N" != "0" ] && [ "$GLAMA_N" != "$INDEX_TS_COUNT" ]; then
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ glama.json description ($GLAMA_N audit rules) ≠ index.ts ($INDEX_TS_COUNT)"
   MISMATCH=$((MISMATCH + 1))
 fi
 if [ "$MISMATCH" -eq 0 ]; then

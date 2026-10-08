@@ -26,7 +26,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { atomicWriteSync } from './shared/atomic-write';
 import { getHmacKey, stableStringify } from './audit-history';
 import { getConfigFile } from './data-paths';
-import { BASELINE_RULE_KEYS } from './shared/rule-constants';
+import { BASELINE_RULE_KEYS, CURRENT_RULE_KEYS } from './shared/rule-constants';
 import { resolveEnvBool, resolveEnvNumber } from './shared/env';
 
 /**
@@ -823,17 +823,14 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     // ⚠️ 同步要求：新增 A 类规则时，此处必须同步追加
     //    权威源见 sofagent/audit/src/rules/runner.ts AUDIT_PRIORITY
     //    v1.2.5: A20-A23 加入 knownKeys（BASELINE_RULE_KEYS 已含 a20-a23）
-    const knownKeys = new Set([
-      ...BASELINE_RULE_KEYS,
-      'a3', 'a4', 'a5', 'a6', 'a7', 'a8',
-      'a14', 'a15', 'a16', 'a17', 'a18', 'a19',
-      'e1', 'e2', 'e3', 'e4',
-    ]);
+    // v1.5.8: knownKeys 从 CURRENT_RULE_KEYS 派生（单一来源，新增规则自动进清单）——
+    // 此前手写两处清单互不一致（e1-e2,e4 vs e1-e4 含退役 e3），且缺 e5/e6/e7。
+    const knownKeys = new Set<string>(CURRENT_RULE_KEYS);
     for (const key of Object.keys(merged.rules)) {
       if (!knownKeys.has(key.toLowerCase())) {
         // v1.3.8 P1-B3：未知规则名 WARN 补 [sofagent] 产品前缀（console.warn 走 stderr）——
         // 此前无产品前缀；用户误配 a99 全绿零感知。
-        console.warn(`[sofagent] ⚠️ config.yml: 未知规则名 "${key}" → 已忽略（已知: a1-a11, a14-a24, e1-e4）——请检查拼写，误配将静默失效`);
+        console.warn(`[sofagent] ⚠️ config.yml: 未知规则名 "${key}" → 已忽略（已知: ${CURRENT_RULE_KEYS.join(", ")}）——请检查拼写，误配将静默失效`);
       }
     }
   }

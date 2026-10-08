@@ -319,6 +319,32 @@ else
     done <<< "$_LISTED_OUT"
   fi
 fi
+# ── §三.4 规则数门面对账（v1.5.8 BUG-01/07 根治：全仓活文档五变体零残留）──
+# 规则 ID 集合 SSOT = engine/audit/src/rules/index.ts 注册表；本断言扫全仓活区
+# 五种旧口径变体（25 条 / 27 条规则 / 24 git-diff / 20 条纯 git-diff / 17 默认 + 8），
+# 排除：冻结区（docs/changelog/v1.0–v1.5 已发版 + docs/archive）、dist 构建产物、
+# 装置面（regression-checklist 自证探针 / LEDGER 历史裁定 / releasing SOP 历史收编表 /
+# dream-cycle 测试夹具 / 联邦 fixture 已同步）。
+echo ""
+echo "── 规则数口径五变体全仓扫描（活区零残留断言）──"
+STALE_HITS=$(grep -rnE "25 条|25条|25 discipline rules|27 条规则|24 git-diff|20 条纯 git-diff|20 条零 token|17 默认 \+ 8 扩展|17 默认 \+ 8\)" . \
+  --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=.workbuddy --exclude-dir=.sofagent \
+  2>/dev/null \
+  | grep -vE "docs/changelog/v1\.[0-5]/|docs/archive/|playbook/regression-checklist|FORGE/LEDGER|releasing/06-doc-finalize|releasing/11-post-publish|dream-cycle|audit-root-cause|rule-metadata-snapshot|governance\.test|dataset-builder|check-readme-parity|check-docs\.sh:6[0-9][0-9]|federation-e2e|dual-device-federation" \
+  | grep -vE "25 条历史|不是第 25|第 25、26、27" \
+  | grep -vE "check-storefront\.sh:|check-docs\.sh:|tool-registry\.ts:158|27 个规则源文件|acceptance-test\.sh:35[0-9][0-9]:# |acceptance-test\.sh:150[0-9]:# " || true)
+if [ -n "$STALE_HITS" ]; then
+  echo "$STALE_HITS" | while IFS= read -r _hit; do
+    echo "  ❌ [rule-count] $_hit"
+  done
+  _STALE_N=$(echo "$STALE_HITS" | grep -c . || true)
+  FAILS=$((FAILS + _STALE_N))
+  ASSERTS=$((ASSERTS + 1))
+else
+  echo "  ✓ [rule-count] 活区五种旧口径变体零命中"
+  ASSERTS=$((ASSERTS + 1))
+fi
+
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$FAILS" -gt 0 ]; then

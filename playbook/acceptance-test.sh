@@ -1500,7 +1500,10 @@ else
   fail "无法取得测试数真值（tools/check/test-count.sh 未产出 TOTAL_TESTS=）——拒绝以「读不到就跳过」收场"
   S165_OK=false
 fi
-for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do assert_numbers_all_equal "$f" 28 '[0-9]+[[:space:]]*(条|个)[[:space:]]*规则|[0-9]+[[:space:]]*rules' "规则数" || S165_OK=false; done
+# v1.5.8 BUG-07：① 正则扩为「N 条 <0-6 字> 规则」（覆盖「25 条审计规则」非紧邻形态——
+# 此前 25 残留全在非紧邻形态里，门禁恒绿假放行）；② 扫描面扩 6 文件（WIKI/DEVELOPMENT/
+# API/VALIDATION + 双语 README）。冻结区（docs/changelog/v1.0-v1.5、docs/archive）不在扫描面。
+for f in README.md README.en.md docs/ARCHITECTURE.md docs/HANDBOOK.md docs/WIKI.md docs/DEVELOPMENT.md docs/API.md docs/VALIDATION.md; do assert_numbers_all_equal "$f" 28 '[0-9]+[[:space:]]*(条|个)[^0-9]{0,6}规则|[0-9]+[[:space:]]*rules' "规则数" || S165_OK=false; done
 # acceptance 场景数动态计算（防止每次加场景后硬编码漂移）
 S165_SCEN_COUNT=$(grep -oE 'scenario [0-9]+[a-z]? "' "$SCRIPT_DIR/acceptance-test.sh" | wc -l | tr -d ' ' || echo 0)
 S165_SCEN_COUNT=${S165_SCEN_COUNT:-0}
@@ -4599,8 +4602,8 @@ scenario 476 "v1.5.7 章五·可拔契约行为锁——capabilities.json 18 单
 node -e 'const fs=require("fs"),{execFileSync}=require("child_process"),RP=process.env.PROJECT_ROOT,R=p=>fs.readFileSync(RP+p,"utf8"),bad=[];const cap=JSON.parse(R("/engine/capabilities.json"));if((cap.capabilities||[]).length!==18)bad.push("能力单元≠18（"+(cap.capabilities||[]).length+"）");if((cap.shims||[]).length!==12)bad.push("shim 台账≠12（"+(cap.shims||[]).length+"）");const gen=R("/tools/gen/gen-capability-manifest.mjs");if(!/C1|幽灵/.test(gen))bad.push("生成器缺幽灵名断言");if(!/exit(\s*=|\s*\()?\s*2|process\.exit\(2\)/.test(gen))bad.push("生成器缺失明自检 exit 2");if(!fs.existsSync(RP+"/tools/check/check-forms.mjs"))bad.push("check-forms 缺失");for(const [pkg,n] of [["train",310],["core",308],["daemon",188]]){try{const root=Object.keys(require(RP+`/engine/${pkg}/dist/index.js`)).length;const doms=fs.readdirSync(RP+`/engine/${pkg}/dist/domain`).filter(f=>f.endsWith(".js"));const uni=new Set;for(const d of doms)Object.keys(require(RP+`/engine/${pkg}/dist/domain/${d}`)).forEach(k=>uni.add(k));if(root!==n||uni.size!==n)bad.push(`${pkg} barrel 等价破（root=${root} uni=${uni.size} 期望=${n}）`);}catch(e){bad.push(pkg+" barrel require 失败 "+e.message.slice(0,40));}}console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q "^OK" || S476_OK=false
 $S476_OK && pass "章五可拔契约 + 域级 barrel 等价行为锁" || fail "章五契约面或 barrel 等价回潮"
 
-scenario 477 "v1.5.7 章七·国标对位 + 章九·ACS 评估结论锁——agent-audit-gap.md 5 标准 10 差距两态在位（覆盖/部分/待核，不虚标）/ policy-expression-evaluation.md 结论=不采纳 + 六维对照在位 / 分层口径与权威源一致（README 22+5+1=28）"; S477_OK=true
-node -e 'const fs=require("fs"),RP=process.env.PROJECT_ROOT,R=p=>fs.readFileSync(RP+p,"utf8"),bad=[];const gap=R("/docs/standards/agent-audit-gap.md");if(!/NIST|GB\/T/.test(gap))bad.push("国标对位缺标准锚");if(!/待核/.test(gap))bad.push("两态结论缺「待核」标注");const acs=R("/docs/guides/policy-expression-evaluation.md");if(!/不采纳/.test(acs))bad.push("ACS 结论漂移");const rm=R("/README.md");if(!/22 条基于 git diff 硬证据/.test(rm)||!/5 条需数据面/.test(rm))bad.push("README 分层口径漂移");console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q "^OK" || S477_OK=false
+scenario 477 "v1.5.7 章七·国标对位 + 章九·ACS 评估结论锁——agent-audit-gap.md 5 标准 10 差距两态在位（覆盖/部分/待核，不虚标）/ policy-expression-evaluation.md 结论=不采纳 + 六维对照在位 / 分层口径与权威源一致（README 四档式 22+4+1+1=28）"; S477_OK=true
+node -e 'const fs=require("fs"),RP=process.env.PROJECT_ROOT,R=p=>fs.readFileSync(RP+p,"utf8"),bad=[];const gap=R("/docs/standards/agent-audit-gap.md");if(!/NIST|GB\/T/.test(gap))bad.push("国标对位缺标准锚");if(!/待核/.test(gap))bad.push("两态结论缺「待核」标注");const acs=R("/docs/guides/policy-expression-evaluation.md");if(!/不采纳/.test(acs))bad.push("ACS 结论漂移");const rm=R("/README.md");if(!/22 条基于 git diff/.test(rm)||!/4 条 hybrid/.test(rm)||!/1 条 filesystem/.test(rm)||!/1 条走 decision-log/.test(rm))bad.push("README 分层口径漂移");console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q "^OK" || S477_OK=false
 $S477_OK && pass "章七国标对位 + 章九 ACS 结论 + 分层口径锁" || fail "章七/九或口径回潮"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 

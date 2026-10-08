@@ -307,6 +307,21 @@ run_scenario_guard() {
     echo -e "  ${GREEN}✓ changelog v1.2.6.md（行 ${CHG126_LINENO}）：历史冻结 ${CHG126_CLAIMED} 场景（v1.2.6 发版时 SSOT，不与当前比对）${NC}"
   fi
 
+  # ⑥ CHANGELOG.md / ROADMAP.md 的「acceptance 场景 NNN 全绿」声称（v1.5.8 BUG-04 补充项：
+  #    量纲统一为「场景 NNN（断言 MMM/MMM）」后，场景值纳入守卫——此前两处声称零守卫，
+  #    483/401 两值并存即源于此。冻结区纪律：CHANGELOG 历史版本行（v1.5.6 及以前）写的是
+  #    断言口径不扫，只扫 v1.5.7 起「场景 NNN」新体例。
+  CL_SCN_MATCHES=$(grep -nE 'acceptance 场景 [0-9]+ 全绿' CHANGELOG.md docs/ROADMAP.md 2>/dev/null)
+  if [ -n "$CL_SCN_MATCHES" ]; then
+    while IFS= read -r _cl_ln; do
+      [ -n "$_cl_ln" ] || continue
+      _cl_file=$(echo "$_cl_ln" | cut -d: -f1)
+      check_scenario_doc "${_cl_file}（acceptance 场景声称）" "${_cl_file}" \
+        "$(echo "$_cl_ln" | cut -d: -f1)" \
+        "$(echo "$_cl_ln" | grep -oE '场景 [0-9]+ 全绿' | grep -oE '[0-9]+' | head -1)"
+    done <<< "$CL_SCN_MATCHES"
+  fi
+
   # ⑤ ROADMAP.md「场景数 SSOT 口径」段的「当前值 NNN」（v1.4.9 G-4 补：该声称此前**零守卫**）
   #    实测它已静默漂移：ROADMAP 段写「当前值 338」而 SSOT（acceptance 头部声明）= 339
   #    （批三 P1-10 加了回归锁 S412 后没人回填）——数字声称在文档里却没有任何断言，正是 G-4 的缺口形态。
@@ -1486,6 +1501,18 @@ else
       echo -e "  ${GREEN}✓ --fix：本次无漂移，未写任何文件${NC}"
     fi
   fi
-  emit_coverage_verbose "$((PASS + FAIL))"
+  # ── v1.5.8 BUG-08 接线：场景数守卫上移进默认主路径（此前仅 --scenarios-only 触发，
+  #    pre-push 用的 --quiet 与默认路径都不调用 ⇒ 守卫判定正确却零阻断——clause
+  #    without enforcement = defect。守卫内部已 QUIET 兼容（FAIL 恒打印），此处
+  #    无条件调用；守卫 FAIL ⇒ exit 1（覆盖 quiet 契约：quiet 下 FAIL 也必须非零）。──
+  run_scenario_guard
+  if [ "$SCEN_FAIL" -gt 0 ]; then
+    echo -e "${RED}场景数守卫：${SCEN_FAIL} 项 FAIL（含在本次门禁结果内）${NC}"
+    exit 1
+  fi
+  if [ "$QUIET" = false ]; then
+    echo -e "${GREEN}✓ 场景数守卫：全过（SSOT 对账一致）${NC}"
+  fi
+  emit_coverage_verbose "$((PASS + FAIL + SCEN_PASS + SCEN_FAIL))"
   exit 0
 fi
