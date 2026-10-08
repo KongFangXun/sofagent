@@ -16,7 +16,7 @@
     "cell": 1
   },
   "docs/PHILOSOPHY.md": {
-    "wall": 1,
+    "wall": 0,
     "cell": 0
   },
   "docs/VALIDATION.md": {
@@ -101,7 +101,7 @@
     "rule": "实测值 ≤ 基线 = 绿；任何文件 wall/cell 高于基线 = 红；文件清零后从本表移除；新增核心文档须先测基线再登记",
     "scope": "核心文档面（用户必经路径）；changelog/archive/evidence 为冻结区不适用",
     "note": "2026-09-28 文档治理批：全量折行 + THANKS 判据级压缩后首次收紧——总墙式行 261→17（-244），墙式格 34→34（下一批：表格单元格内容压缩）",
-    "updated": "2026-09-30-f",
+    "updated": "2026-10-08",
     "note2": "FORGE/LEDGER 为运行台账（append-only 数据面）：表格结构不可折，锁现状防恶化；tools/README、evidence 双语已清零可从台账移除",
     "note3": "2026-09-28 内容压缩批：VALIDATION 台账化（6+3 节归档）/ ARCHITECTURE §七 10 节归位 / ROADMAP 表格拆注 / evidence 双语清零 / 新增 11 文件入册",
     "note4": "2026-09-28-c 结构批：ARCHITECTURE 章序重排（一~八顺序）、PHILOSOPHY §一 5 节并段、GUIDE 头部 25→8、重复论证收敛",
@@ -115,7 +115,8 @@
     "note12": "v1.5.5 阶段二收口：README.en 理念重写墙式 6→3（3 处真实折行）；ARCHITECTURE/LIMITATIONS/SECURITY/ROADMAP 为 v1.5.5 五章施工+翻牌净增 1-3 行墙（表格行/引用段，登记=认债不放宽语义）——实测重置，diff 记录债变化",
     "note13": "阶段六定稿：checklist wall 1→3（#146 归并注记+警戒线演进两行散文）与 CHANGELOG wall 0→1（v1.5.5 索引行）为真实交付内容——实测重置认债",
     "note14": "阶段九 pre-push 终验：VALIDATION/ROADMAP/PHILOSOPHY/driver.md/LEDGER/SECURITY 的 wall/cell 实测上调——来源=本版交付内容（VALIDATION 四缺口登记 / ROADMAP 探索方向提入 / PHILOSOPHY 自进化谱系 / driver 事故教训 / LEDGER 勘误行 / SECURITY 数据主权与密钥姿态三批），非文件清理回归；未删任何内容",
-    "note15": "文档瘦身批（2026-10-02）：ARCHITECTURE wall 1→0（reflow 折墙式行，内容零损失）；ROADMAP cell 7→4（三个超长格拆注为 注-38/39/40，切口落在句读符上、定义行同文件在位，内容零损失，cell 回到基线 4）"
+    "note15": "文档瘦身批（2026-10-02）：ARCHITECTURE wall 1→0（reflow 折墙式行，内容零损失）；ROADMAP cell 7→4（三个超长格拆注为 注-38/39/40，切口落在句读符上、定义行同文件在位，内容零损失，cell 回到基线 4）",
+    "note16": "2026-10-08 知识库候选落盘批：PHILOSOPHY 基线 1→0 属纠偏而非本批清理——实测 HEAD 版本 wall 已为 0，台账记 1 是陈旧上限（债已还而账未改）。本批落盘未新增任何墙式行。按 rule「文件清零后从本表移除」本可摘除该条目，此处保留 0/0 是更严的选：本批正向 PHILOSOPHY 注入新内容，留册才能让新增行持续受棘轮约束（覆盖面断言只盯未登记的负债文件）。ARCHITECTURE 本批 wall/cell 均持平（1/4），台账未动"
   },
   "SKILL/SKILL.md": {}
 }

@@ -5,12 +5,12 @@
   "SECURITY.md": 50717,
   "CONTRIBUTING.md": 12526,
   "docs/API.md": 15443,
-  "docs/ARCHITECTURE.md": 86794,
+  "docs/ARCHITECTURE.md": 87469,
   "docs/COMMUNITY.md": 2412,
   "docs/DEVELOPMENT.md": 31988,
   "docs/HANDBOOK.md": 32772,
   "docs/LIMITATIONS.md": 41987,
-  "docs/PHILOSOPHY.md": 33582,
+  "docs/PHILOSOPHY.md": 34328,
   "docs/ROADMAP.md": 19183,
   "docs/THANKS.md": 12971,
   "docs/VALIDATION.md": 20655,
@@ -29,6 +29,6 @@
     "opening_rule": "抬头块 = H1 到首个 `## ` 之间的正文；字数只计文本字符，剔除装饰行（HTML 标签行 / 纯图片 / 纯徽章 / HTML 注释 / `---`）与 YAML front matter。超限处置三选一：下沉正文 / 精简 / 淘汰。",
     "origin": "文档瘦身批（2026-09-29）：口径由「物理行数」换成「字符数」（用户裁定：行数是坏指标，控字数不控行数）。基线 = 换算时点实测值。",
     "consumed_by": "doc-discipline.sh Face 6（字数棘轮）+ Face 7（抬头块闸）",
-    "note": "v1.5.5 阶段二收口重置：净增为五章施工真实内容（SECURITY 跨境/驻留维度、README 双语理念重写、devlog 验收打勾、ROADMAP/WIKI 翻牌）——登记=认债；下版按棘轮只降不升；v1.5.7 上调（21999→22269，+270）：sop-integrity 守卫 + 基线台账两条 README 登记为 check-tool-health ⑦ 强制收录项（不登记即门禁红）——先按结构性去重精简两行（347→145 / 300→120 字符，wall/cell 棘轮同批转绿），余 270 为真实新增登记不可再压"
+    "note": "v1.5.5 阶段二收口重置：净增为五章施工真实内容（SECURITY 跨境/驻留维度、README 双语理念重写、devlog 验收打勾、ROADMAP/WIKI 翻牌）——登记=认债；下版按棘轮只降不升；v1.5.7 上调（21999→22269，+270）：sop-integrity 守卫 + 基线台账两条 README 登记为 check-tool-health ⑦ 强制收录项（不登记即门禁红）——先按结构性去重精简两行（347→145 / 300→120 字符，wall/cell 棘轮同批转绿），余 270 为真实新增登记不可再压；2026-10-08 知识库候选落盘上调 PHILOSOPHY 33582→34328（+746，「错误成本决定约束投入」节）与 ARCHITECTURE 86794→87469（+675，「工作制品须有版本化锚点」段）——KB 蒸馏候选落盘正当新增，对齐 8d9c96ebe「VALIDATION 知识库候选落盘正当新增 +574（铁律上调不删内容）」先例；两处新增在投稿前已折行至单行 ≤300 字符，wall/cell 实测未升（Face 5 可读性棘轮未被本批带出）"
   }
 }
