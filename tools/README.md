@@ -77,7 +77,7 @@
 | `check/public-api.mjs` | public API 变更检测门禁（@public 符号集 vs 基线，未 bump 即 FAIL；v1.3.9 四） | CI / 发版前 |
 | `check/public-api-baseline.json` | @public 符号集基线（13 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
-| `check/doc-postcheck.mjs` | **文档落盘后自检（排障非门禁）**：五项机械判据聚合既有口径——U+FFFD/ 墙式行格/ 字符数棘轮与抬头块（doc-char-ratchet 同判据）/ 标题粘连（「正文。## 标题」同行——行内代码剥离 + 格式说明豁免，正负样本 `--se…| 文档落盘后即时快检（全量防线仍归 doc-discipline / check-docs / check-anchors / check-table-shape / doc-score，不替代） |
+| `check/doc-postcheck.mjs` | **文档落盘后自检（排障非门禁）**：五项机械判据聚合既有口径——U+FFFD/ 墙式行格/ 字符数棘轮与抬头块·doc-char-ratchet 同判据/ 标题粘连·「正文。## 标题」同行——行内代码剥离 + 格式说明豁免，正负样本 `--se…| 文档落盘后即时快检（全量防线仍归 doc-discipline / check-docs / check-anchors / check-table-shape / doc-score，不替代） |
 | `check/vitest-setup.mjs` | 全局测试隔离（预置 SOFAGENT_DATA 到 tmp，防测试污染真实 HOME——被 5 个 engine/*/vitest.config.ts setupFiles 引用） | vitest 自动挂载 |
 | `check/check-cross-package-relative.mjs` | 越包相对引用守卫（相对 import/require 越出**包根**即 FAIL；6 条豁免 = 清单 SSOT 对账测试读 `plugins.json`，登记在 exempt 台账。（详→注-6） | CI（pre-push 2e）/ 改 dsh-plugins 后 / `--selftest` |
 | `check/cross-package-relative-exempt.json` | 越包相对引用存量豁免台账（被 `check-cross-package-relative.mjs` 消费；集合相等判定——新增/漂移/陈旧均红） | 被 check-cross-package-relative.mjs 消费 |
@@ -94,7 +94,7 @@
 | `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
 | `check/check-table-shape.mjs` | 表格形态门禁（四断言）：① 超列（格数 > 表头列数，GFM 丢格）；② 孤儿行（含 `\|` 无「表头+分隔线」归属）；③ 悬空注标（`（详→注-N）` 无定义）；④ 断句格（拆注格切口未落句读符）。内建 10 样本自检；存量见 `table-shape-baseline.json` | CI / 改 .md 表格后 / 发版 SOP |
 | `check/lib/prompt-fork-lint.mjs` | **任务书零分支 lint**（被 `check-dev-prompt.sh` 调用 · 检查项 5）：禁「方案 A/B」「二选一」「视情况而定」「由你决定」——交给执行方的任务书不得留选择（出题方须先比完并选定一条）。带**两条实测豁免**（否定语境 + 行哈希台账）与**内置自检**（判据被改坏即 `exit 3`）；（详→注-13） |
-| `check/table-shape-baseline.json` | 表格形状**存量台账**（只拦新增。签名 = 行归一化后 sha256 前 16 位——**不用行号**（编辑漂移即静默放行）；**不存原文**（表格常含正则/安全词，落原文触发 A9 自指） | 被 check-table-shape 消费（`--update-baseline` 重生成） |
+| `check/table-shape-baseline.json` | 表格形状**存量台账**（只拦新增。签名 = 行归一化后 sha256 前 16 位——**不用行号**·编辑漂移即静默放行；**不存原文**——表格常含正则/安全词，落原文触发 A9 自指） | 被 check-table-shape 消费（`--update-baseline` 重生成） |
 | `check/prompt-fork-baseline.json` | 任务书零分支 lint 的**豁免台账**（被 `prompt-fork-lint.mjs` 消费；签名 = 行内容归一化后 sha256 前 16 位——**不用行号**（行号漂移即静默放行，同 table-shape-baseline 理据）；每条须带理由，变更进 review）。 |
 | `check/claims-sdk-ledger.json` | check-claims A 组「新增件零消费阻断」的豁免台账（SDK 面登记：刻意保留的新增件逐条带理由；签名 = 文件路径；变更进 review）。 |
 | `check/doc-ratchet.json` | 核心文档**可读性棘轮台账**（被 `doc-discipline.sh` Face 5 消费：墙式行/墙式格实测值**只许降不许升**——治「内容只进不出」；键 = 逐文档实测计数，`_meta` 记口径，与 `lib/readability-count.mjs` 注释同源）。 |

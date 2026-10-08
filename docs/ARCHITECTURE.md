@@ -327,9 +327,9 @@ graph TB
 | **v1.3.5** | MCP 自进化+运维闭环（A/B 实验 run_ab_test / promote_ab 人审晋升 + 快照 snapshot_list / snapshot_restore 人审恢复）+ instinct→skill 自动进化（三源提取 + 置信度评分 + /evolve 聚合）+ FDE 运维五件 + DSH MCP 互通 |
 | **v1.3.6** | 引擎接口外化——Workflow 标准格式 + 运行容器 / Ontology Schema 注册 / 模型注册 + 灰度切换 / SubAgent 托管 SDK / 训练协议三约定 + 预算控制 / 机器可判定验收 / 路由决策可解释性 / 可靠性五件（worktree 隔离 + 双闸验证 + 疲劳度检测 + 分级降级 + decisions.jsonl）· MCP 60 tools |
 | **v1.3.7** | SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 虚拟 key / 独立进程 / A-B 双跑）· 场景驱动权限 · AgentShield 五类扫描 · 行业 overlay 四套 · 断路器行为监控 · ontology 生命周期 |
-| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1。**现状标注（F48-② · v1.5.7）**：密钥缺失时 daemon 启动打一次性引导提示（crypto-init WARN，明文兼容不阻断）；（详→注-1） |
+| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密· 能力交付：纯 TS AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1。**现状标注（F48-② · v1.5.7）**：密钥缺失时 daemon 启动打一次性引导提示（crypto-init WARN，明文兼容不阻断）；（详→注-1） |
 
-> 注-1：附链面（task/logs · think.md · knowledge/）**仍明文**——静态加密当前仅覆盖 history.jsonl 主链，权威清单见 LIMITATIONS）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固
+> 注-1：附链面（task/logs · think.md · knowledge/）**仍明文**——静态加密当前仅覆盖 history.jsonl 主链，权威清单见 LIMITATIONS · Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（`checkHistoryChainDetailed`）· HMAC key 强校验 · 签名基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` CLI）· CLI 版本一致性自检。
 >详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。

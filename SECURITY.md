@@ -651,7 +651,7 @@ v1.3.5 交付 4b 起，CRDT 依赖已从旧包 `automerge@1.0.1-preview.7`（pre
 
 > **有网络面，已核验**：`serve-dashboard.mjs` 是真实 HTTP 服务面（非纯静态），三项核验——① 默认绑定 `127.0.0.1`（`DASHBOARD_HOST || '127.0.0.1'`，局域网共享须显式 `DASHBOARD_HOST=0.0.0.0` opt-in）；
 >② dashboard.html 零外链 CDN（38 图标 SVG 内嵌 @2026-09-27 实测，数法：`grep -oE '\.bi-[^:]+::before' tools/dashboard/dashboard.html | sort -u`，断网可用——与 v2.0.0 离线 USB 节点叙事对齐）；③ 服务无密钥/凭据面（只读 `~/.sofagent/data/` 快照文件，无写操作、无鉴权需求）。
-> **GitHub Actions 供应链面**：9 个 workflow 29 处 `uses:` 全部 pin 40 位 SHA + 注释 tag（@2026-10-07 实测；口径 = 脚本正则逐文件计数、排除注释行；逐文件：acceptance 3 / daemon-linux 1 / daemon-macos 1 / pr-check 9 / release 4 / shellcheck 2 / sofagent audit 2 / verify 5 / windows 2。
+> **GitHub Actions 供应链面**：9 个 workflow 29 处 `uses:` 全 pin 40 位 SHA + 注释 tag（@2026-10-07 实测；口径 = 脚本正则逐文件计数、排除注释行；逐文件：acceptance 3 / daemon-linux 1 / daemon-macos 1 / pr-check 9 / release 4 / shellcheck 2 / sofagent audit 2 / verify 5 / windows 2）。
 >⚠️ 直接 `grep "uses:"` 会多算 1 处（`pr-check.yml` 有含该词的注释行），**另根 `action.yml` 1 处**同口径 pin（合计 27）；`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（**扫描面含根 `action.yml`**；离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
 
 

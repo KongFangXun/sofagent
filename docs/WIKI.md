@@ -227,7 +227,7 @@ graph TB
 | `engine/mcp/` | @sofagent/mcp — MCP Server · **104 个 tool**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 为 SSOT；各版增量见 [API 工具清单](./API.md) 与 [CHANGELOG](../CHANGELOG.md)；插件家族 MCP 面另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（工具包，非模块包口径） |
 | `engine/scripts/` | 运维脚本集（10 顶层 .sh + lib/ + windows/ .ps1；口径 = `ls engine/scripts/*.sh`）——安装/卸载/验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
-| `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 合并批 10→7）——6 原子（audit · rollback · inject · evolve · daemon · fde）+ 1 聚合E/公地三域厚插件））+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
+| `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 合并批 10→7）——6 原子（audit · rollback · inject · evolve · daemon · fde）+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
 | 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 [ARCHITECTURE §27 源码包](./ARCHITECTURE.md)（口径见 §六） |
@@ -272,7 +272,7 @@ graph TB
 | 归域 | MCP 工具按**业务职能**分桶进五域（域 +N = 条目数变化）——权威源 = `tool-registry.ts` 的 TOOLS 分桶，与 `roles` 标签、`docs/API.md` 十能力域是三套不同标签，禁混用 | [ARCHITECTURE · 五域重算与三套标签声明](./ARCHITECTURE.md) |
 | 五域（消歧） | 两义：① **MCP 工具五域**——104 tools 按业务职能分的五个编制域（[ARCHITECTURE](./ARCHITECTURE.md)）；② **五域→三域映射**——v1.5.3 的口径迁移表（[v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）。遇「五域」先辨指向 | 本条（消歧索引） |
 | 五（消歧） | 「五」字四义固定表述：**五种能力** = 约束层的注入·审计·回溯·沉淀·进化（[ARCHITECTURE §二](./ARCHITECTURE.md)）；**五模块** = 约束层内部的功能域编制（治理/执行/审计/编排/后训，模块不是产品线，[ARCHITECTURE 定位声明](./ARCHITECTURE.md)）；（详→注-3） | 本条（消歧索引） |
-| FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理→判定→交付→养护」；名词位（岗位）/动词位（能力）禁混用。**首创**：动词化与「万物皆可 FDEing」为本仓首创（行业验证的是「岗位→能力」，见 [VALIDATION](./VALIDATION.md)；详→注-4） | [README](../README.md#什么是-fde-harness) |
+| FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理→判定→交付→养护」；名词位（岗位）/动词位（能力）禁混用。**首创**：动词化与「万物皆可 FDEing」为本仓首创（行业验证的是「岗位→能力」，见 [VALIDATION](./VALIDATION.md)（详→注-4）） | [README](../README.md#什么是-fde-harness) |
 | 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。（详→注-5） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | 约束层的英文 SSOT 称法（对外中文「约束层」、英文「Harness」同指一物）——"缰绳"，非"马" | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
@@ -290,7 +290,7 @@ graph TB
 | data/ | v1.2.1 SSOT 运行时数据目录（安装后实际位于 ~/.sofagent/data/），替换旧 .sofagent/ | [DEVELOPMENT §数据文件架构](./DEVELOPMENT.md) |
 
 > 注-3：**五岗位** = FDE 职能的企业常设化（设计师/知识负责人/自建者/治理者/运营，[FDE/ROLES.md](../FDE/ROLES.md)）；**五要素** = 梳理深挖维度（[FDE/GUIDE §二](../FDE/GUIDE.md#二五要素深挖)）——四者不同物，行文须带全称
-> 注-4：首创面无第三方印证可引，如实标注）
+> 注-4：首创面无第三方印证可引，如实标注
 > 注-5：同名对：`routeRequest`（orchestrator/workflow 语义路由）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧）
 
 
@@ -311,8 +311,9 @@ graph TB
 ### 了解 FDE Harness（产品 → 理念 → 路线）
 
 > 前四项（README / PHILOSOPHY / VALIDATION / ROADMAP）与〈阅读路径 3 分钟版〉同一组，不重列；补充一件：**激活链**（交付物怎么自己跑起来）→ [guides/fde-activation-chain.md](./guides/fde-activation-chain.md)（v1.2.5+）。
-| 作为 FDE 进场部署 | [HANDBOOK.md](./HANDBOOK.md) |
-| 找效果证据/案例 | [docs/evidence/](./evidence/) |
+
+- 作为 FDE 进场部署 → [HANDBOOK.md](./HANDBOOK.md)
+- 找效果证据/案例 → [docs/evidence/](./evidence/)
 
 ### 部署 / 集成 / 开发
 
