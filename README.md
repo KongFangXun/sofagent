@@ -114,7 +114,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，commit 时触发审计，人离场治理不离开
 - 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（quick 约 1.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
 - 🧱 **规则与安全面：28 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截；fail-fast（critical 命中后其余跳过）、默认非 fail-closed（绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
-- 🔧 **工具与能力面：104 个 MCP tool + 证据两档**——28 条规则中 22 条基于 git diff（本地生效）、5 条需数据面（4 需 Agent 日志、1 走 decision-log，清单见 [SECURITY](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）
+- 🔧 **工具与能力面：104 个 MCP tool + 证据分档**——28 条规则中 22 条基于 git diff（本地生效、零 token）、4 条 hybrid（diff + Agent 日志）、1 条 filesystem 扫描、1 条走 decision-log（清单见 [SECURITY](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## 什么是 FDE Harness
@@ -147,7 +147,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 |---|---|---|---|
 | **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 6 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合可选）——`tools/pre-execute` 等 7 个生命周期事件（词汇表见 `engine/dsh-plugins/SEAMS.md`） |
 | **完整挂载** | OpenClaw | ✅ **每会话注入一次** | Hook 注入四层约束 + 断路器 + 4 款 OpenClaw 插件 |
-| **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 25 规则，非调用级拦截） |
+| **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 28 规则，非调用级拦截） |
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
 
 - **别假设能力对齐——档位差的是注入强度，不是「有没有」**：DSH 逐工具调用可拦，OpenClaw 每会话注入一遍，其余宿主靠 Agent 自觉读 Skill 文本。「支持某平台」= 约束资产在该平台可用，**≠ 强度与他平台相同**；跨宿主迁移前先看目标宿主落在哪档，矩阵见 [加载链 HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
@@ -158,7 +158,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 ## v1.5.7：审计覆盖面扩展与能力面治理
 
-🔍 **审计扩到没有代码仓库的企业**（⏳ 待发版 · 开发完成 2026-10-08）——SMB 三判据 + 审计输入面三规则 + 浏览器退役 + 能力治理地基：
+🔍 **审计扩到没有代码仓库的企业**——SMB 三判据 + 审计输入面三规则 + 浏览器退役 + 能力治理地基：
 
 | 能力 | 一句话 |
 |---|---|

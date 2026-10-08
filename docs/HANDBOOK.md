@@ -212,7 +212,7 @@ cd sofagent && bash install.sh
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
 | Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计模块可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#-windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
-| `sofagent audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 8 条（A14–A17 + A24 + E1/E2/E4）需开启，全量 25 条） |
+| `sofagent audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 11 条（A14–A17 + A24 + E1/E2/E4/E5/E6/E7）需开启，全量 28 条） |
 
 ### 验证装好了
 
@@ -367,7 +367,7 @@ Agent 先判断任务复杂度：
 
 ### 提交后自动审计
 
-Agent 改完代码 commit 了——`sofagent audit` 扫描 git diff 对照 25 条审计规则（17 默认启用：A1-A11 + A18-A23；8 扩展 opt-in：A14-A17 + A24 + E1/E2/E4）逐条判定：
+Agent 改完代码 commit 了——`sofagent audit` 扫描 git diff 对照 28 条审计规则（17 默认启用：A1-A11 + A18-A23；11 扩展 opt-in：A14-A17 + A24 + E1/E2/E4/E5/E6/E7）逐条判定：
 
 ```bash
 cd engine/audit && npm ci && npm run build
@@ -656,7 +656,7 @@ sofagent orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 ### 审计规则
 
-当前共 25 条审计规则（A1-A11、A14-A24 + E1-E2/E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
+当前共 28 条审计规则（A1-A11、A14-A24 + E1/E2/E4/E5/E6/E7），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
 
 ### 审计聚合指标口径
 

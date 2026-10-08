@@ -116,7 +116,7 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 
 - **注入包本体 = 交付物**：落 runDir 存档（`injection-prompt.md`），不得只存在于对话——审计链要求每次注入可追溯。
 - **注入即授权改仓 + 跑测试**：主任务必须显式携带**越界清单**（不做 push / tag / publish、不动 FORGE 源码与审查视角定义、不改 devlog 勾选、不自称收编——复验收编是主 session 职责）。
-- **执行产生的 commit 过审计钩子**（25 条规则 + HMAC 链，机制强制非纪律约束）。
+- **执行产生的 commit 过审计钩子**（28 条规则 + HMAC 链，机制强制非纪律约束）。
 
 ## 执行器实现提示（`--worker` 单步链路）
 

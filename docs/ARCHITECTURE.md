@@ -694,7 +694,7 @@ graph LR
 
 决策日志路径：`data/audit/decision-log.jsonl`（history.jsonl 同级兄弟文件）。Agent 只能经 `emitDecision` 落盘——**受控写铁律**。
 
-**评估即需求（Eval as Spec）**：Agent 系统中传统 PRD 正被评估用例取代——先定义「什么算做对了」（可量化、可执行的验收标准），让 Agent 在靶子里自主循环收敛，而非先写 PRD 再照做。sofagent 的审计就是这个理念的工程骨架：28 条规则 = 28 条可执行的验收标准（22 条纯 git-diff 零 token 确定性判定 + 5 条非纯 git-diff：4 条 hybrid 需 Agent 日志 + 1 条 filesystem 扫除），每次 commit 自动跑一轮回归——不是「写完看看对不对」，
+**评估即需求（Eval as Spec）**：Agent 系统中传统 PRD 正被评估用例取代——先定义「什么算做对了」（可量化、可执行的验收标准），让 Agent 在靶子里自主循环收敛，而非先写 PRD 再照做。sofagent 的审计就是这个理念的工程骨架：28 条规则 = 28 条可执行的验收标准（22 条纯 git-diff 零 token 确定性判定 · 4 条 hybrid 需 Agent 日志 · 1 条 filesystem 扫除 · 1 条 logs 走 decision-log），每次 commit 自动跑一轮回归——不是「写完看看对不对」，
 是「不满足标准就进不了主干」。这与 fresh-eyes 独立审查、release-gate 验收闭环同构：把「做完了的判定」（What + Done）从人的主观审查变成代码的确定性裁决。评估驱动的约束比提示词约束更坚固——提示词会被模型吞噬，可执行约束不会。
 
 **审计的三重身份与 E2E Harness**：sofagent 审计同时承担 Code Review 三环节——Review（静态分析，A3/A4/A5/A7 需理解意图的规则）/ Verification（规则校验，A1/A2/A9/A10 纯 pattern 匹配，确定性 100% 可复现）/ Gate（exit code 0/1/2 → 放行/WARN/阻断 commit）；

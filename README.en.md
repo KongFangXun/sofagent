@@ -33,21 +33,21 @@
 
 ## What is this
 
-> 💬 **One-sentence version**: on entry, it maps your business and writes it down as files; after it leaves, etime your digital employee touches code or files, the change passes a security check, leaves a record, and saves a snapshot—traceable and roll-backable when things go wrong.
+> 💬 **One-sentence version**: on entry, it maps your business and writes it down as files; after it leaves, every time your digital employee touches code or files, the change passes a security check, leaves a record, and saves a snapshot—traceable and roll-backable when things go wrong.
 
 > 🏢 **The organizational lens**: the bottleneck of AI adoption has shifted from "is the model smart enough" to "can the organization dare to onboard it"—does it fit the org chart, does it get an account, how is performance measured, what happens when it errs. sofagent is the onboarding system for
->digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for echange), organizational memory (compounding know-how—the accumulation mechanism iterates with use; current empirical boundaries in
->[LIMITATIONS](./docs/LIMITATIONS.md)), and fault tolerance (emistake reversible). Install sofagent before you give AI an employee ID.
+>digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every exchange), organizational memory (compounding know-how—the accumulation mechanism iterates with use; current empirical boundaries in
+>[LIMITATIONS](./docs/LIMITATIONS.md)), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
 
 > 🧩 **The three-factor framing**: sofagent is a **governance layer for FDE deliverables with a built-in Harness**—the engineering layer (FDEing) and the governance layer (harness) are shipped, while the judgment layer (S1M) is scheduled for v1.6.0–v1.9.0—FDEing is the engineering layer (turning
 >FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
 >from generation; its foundation is under construction across v1.6.0–v1.9.0, with the declaration landing in v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities—today's main landing points). Each layer sits in its own place; see "Core Features".
 
 **An open-source FDE Harness layer** (FDE = Forward Deployed Engineer, the engineer who embeds models into real enterprise
-operations; a *harness* is the governance layer that keeps eAgent change audited and reversible—see the
+operations; a *harness* is the governance layer that keeps every Agent change audited and reversible—see the
 "[What is the FDE Harness](#what-is-the-fde-harness)" section)—embedded between mature Agents (DSH / OpenClaw / WorkBuddy)
 and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it
-writes the business judgment down as files (workflow, ontology data, AI-node deployment); after departure, it audits echange against those files.
+writes the business judgment down as files (workflow, ontology data, AI-node deployment); after departure, it audits every exchange against those files.
 
 Five Harness capabilities (inject · audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard).
 
@@ -64,7 +64,7 @@ sofagent doesn't build the Agent—it delivers the layer that keeps any Agent go
 <p align="center">
  <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training /
 governance / execution modules" width="860" /><br/>
- <sub>Constrain Agent behavior · Audit echange · Distill experience (five-module structure: governance module released in v1.5.0 · execution module released in v1.5.4/v1.5.5; full interactive
+ <sub>Constrain Agent behavior · Audit every exchange · Distill experience (five-module structure: governance module released in v1.5.0 · execution module released in v1.5.4/v1.5.5; full interactive
 version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 </p>
 
@@ -205,7 +205,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## v1.5.7: Audit Coverage Expansion & Capability Governance
 
-🔍 **Audit extends to enterprises without repositories** (⏳ pending · 2026-10-08)—SMB scenarios, three new audit-input rules, browser retirement, capability-governance foundations:
+🔍 **Audit extends to enterprises without repositories**—SMB scenarios, three new audit-input rules, browser retirement, capability-governance foundations:
 
 | Capability | One-liner |
 |---|---|

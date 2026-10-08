@@ -29,7 +29,7 @@
 - **确定性迁移主线**——刚性业务规则三段迁移（prompt 软约束 → 知识层结构化 → 代码层 100% 强制）：「桩径不能小于 600mm 这类刚性要求必须 100% 执行，AI 只能大概率，代码才能一定」。
 - **知行合一注脚**——「知而不行只是未知」：破局不是叠加规则，是让系统理解规则目的并在事前拦截——与约束注入链 + 审计硬证据的双向设计同构。
 - **黑盒症结**——企业 AI 落地常败于「无法证明结果正确」；sofagent 审计把黑盒变白盒（git diff 硬证据、可溯源可复核）。
-- **编排兜底**——LLM 不可用时确定性规则引擎照常守门（25 条规则中 20 条纯 git-diff、零 token）：纪律不绑定任何单一模型的可用性。
+- **编排兜底**——LLM 不可用时确定性规则引擎照常守门（28 条规则中 22 条纯 git-diff、零 token）：纪律不绑定任何单一模型的可用性。
 - **反去人化命题**——human-in-the-loop 不是能力缺陷，是「可靠优先于自主」的差异化优势（主体性护栏不可外包）。
 - **90/10 价值分层 → 知行合一框架**——模型给 90% 智力（知），sofagent 补 10% 可靠执行（行），关键在「合一」；模型越强那 10% 越值钱。
 - **治理缺口的代价（三项联网核验）**——Gartner 2026-05：到 2027 年 40% 企业自主 Agent 将因治理缺口被降级/停用；MIT NANDA：95% gen-AI 部署零可衡量 ROI；Governance Decay：运行时约束被上下文压缩擦除后违规率 0%→38%。约束/治理是投产前提，非加分项。
@@ -59,7 +59,7 @@ BCG 访谈 50+ 家 AI 领先公司归纳出五种新角色原型——工作流�
 
 ### 测量者转型：从「月底审计报表」到「每次 AI 行动留日志」（Cloudflare 实证）
 
-Cloudflare CEO 把工作角色分三类（Builder/Seller/Measurer），**Measurer 最先被 AI 逼近**；测量类岗位减少但「测量」无处不在——以前月底一张审计报表，以后**每次 AI 行动都留日志**。判断工作安全度不看岗位名称，看承担的角色：被重新定价的是「输入完整、标准清楚、结果可验证的具体任务」——sofagent 审计同构（输入=git diff、标准=25 条规则、结果=PASS/FAIL 可验证），正是测量者形态的工程化。
+Cloudflare CEO 把工作角色分三类（Builder/Seller/Measurer），**Measurer 最先被 AI 逼近**；测量类岗位减少但「测量」无处不在——以前月底一张审计报表，以后**每次 AI 行动都留日志**。判断工作安全度不看岗位名称，看承担的角色：被重新定价的是「输入完整、标准清楚、结果可验证的具体任务」——sofagent 审计同构（输入=git diff、标准=28 条规则、结果=PASS/FAIL 可验证），正是测量者形态的工程化。
 
 > 📖 [Matthew Prince · How I Choose Which Cloudflare Employees to Replace With AI](https://www.wsj.com/articles/cloudflare-ceo-how-i-choose-which-cloudflare-employees-to-replace-with-ai)
 
@@ -208,7 +208,7 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构系统之�
 ### Palantir 落地路径（Red Loop / KLM / Apollo / FDE）与双 MCP 体系
 
 一句话判据：Palantir 官方把 Ontology 定义为「**可运行的业务契约**」（Data+Logic+Action+Security 四合一，「表达企业彼此关联的复杂**决定**，而不是数据」）；KLM 范式 = 智能/控制分离 + 把规则动作边界放模型外；Red Loop 写回五机制（幂等/回执/补偿/审计/人工接管）与 Durable Execution + WAL + HITL 逐一对位；
-双 MCP 体系把「改结构」（proposal 人工门）与「改数据」（受控 Action）拆成两条治理通道——每个 action type 独立暴露为 MCP 工具 = **审计粒度到单个业务动作**，与「25 条规则按变更类型切分」同构。Snowflake 反向「自下而上」路径（数仓长出本体栈，Cortex Sense 47%→83%）与 Palantir 互为外部佐证——**本体 = 运行时 context 层被多家独立复现**；其 Action 语义缺失恰是审计 + HITL 的主场。
+双 MCP 体系把「改结构」（proposal 人工门）与「改数据」（受控 Action）拆成两条治理通道——每个 action type 独立暴露为 MCP 工具 = **审计粒度到单个业务动作**，与「28 条规则按变更类型切分」同构。Snowflake 反向「自下而上」路径（数仓长出本体栈，Cortex Sense 47%→83%）与 Palantir 互为外部佐证——**本体 = 运行时 context 层被多家独立复现**；其 Action 语义缺失恰是审计 + HITL 的主场。
 
 纳德拉「学习循环」（Token 资本复利，2800 万浏览）四要素与 sofagent 能力面逐项对齐：「可以外包一项任务甚至一份工作，但永远无法外包学习过程」——模型可换、平台可换，企业积累的约束规则与审计历史不动。深读全文见 [归档](./archive/validation-deep/architecture-mapping.md)。
 

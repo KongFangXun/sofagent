@@ -395,7 +395,7 @@ FORGE/SKILL/fresh-eyes-loop/
 >
 > **一句话分界线：看「谁决定下一步」**——节点是 Agent 还是 Workflow，不看节点里装了什么（大模型调用、工具调用、子 Agent 都只是积木），只看下一步去哪由谁决定：**模型现场决定 = Agent；代码提前写死 = Workflow**。生产环境主流打法 = 「骨架确定、关节灵活」：Workflow 锁死主流程，需要灵活判断的节点才嵌 Agent（对应下方「Workflow 的混合架构」）。完整论证见 [DEVELOPMENT.md · 控制权分配](../../docs/DEVELOPMENT.md)。
 
-> 💡 **「翻译官不应该有决策权」——智能与控制分离**：LLM 的不可替代价值是把模糊自然语言翻译成结构化意图；但写操作确认、权限校验、状态流转——所有需要确定性的控制——必须握在系统代码手里，不交给概率性模型（你无法 100% 确定模型不会把一句模棱两可的话判成「用户确认了」）。sofagent 的落点即审计的 20/25 条纯 git-diff 规则（零 token、不调 LLM、100% 确定性）：**模型产出意图，系统决定放行**。
+> 💡 **「翻译官不应该有决策权」——智能与控制分离**：LLM 的不可替代价值是把模糊自然语言翻译成结构化意图；但写操作确认、权限校验、状态流转——所有需要确定性的控制——必须握在系统代码手里，不交给概率性模型（你无法 100% 确定模型不会把一句模棱两可的话判成「用户确认了」）。sofagent 的落点即审计的 22/28 条纯 git-diff 规则（零 token、不调 LLM、100% 确定性）：**模型产出意图，系统决定放行**。
 
 **工具集设计约束**：每个 Sub Agent 的工具集应零重叠、无歧义——工具功能描述不能模糊交叉。当工具数上百时，瓶颈不在模型推理而在工具描述歧义。工具注册的静态重叠检测已在位——tool-registry 以 name 全局唯一测试守卫（tool-bijection 双射前提）。
 
@@ -409,7 +409,7 @@ Maker-Checker 分离）即该理论的产品化落地。
 
 > 💡 **Graph Engineering 实操四纪律**
 >
-> **① 节点不全是 Agent。** 节点分三类：Agent 节点（要语义判断的）、工具节点（跑编译器/结构校验——普通代码更便宜更稳定）、人工节点（合并主干这类关键操作交给人）。四节点状态机即活例：engineer/reviewer = Agent，audit = 工具节点（20 条纯 git-diff 零 token），human_confirm = 人工。
+> **① 节点不全是 Agent。** 节点分三类：Agent 节点（要语义判断的）、工具节点（跑编译器/结构校验——普通代码更便宜更稳定）、人工节点（合并主干这类关键操作交给人）。四节点状态机即活例：engineer/reviewer = Agent，audit = 工具节点（22 条纯 git-diff 零 token），human_confirm = 人工。
 >
 > **② 汇合比并行更难。** 难点不是怎么出去，是怎么回来——哪些结果必须全部到齐、哪些只看关键结果、超时后是停止还是带「尚未确认」标记继续。既不能等全部完成（最慢的拖垮整张图），也不能投票放行（两票通过就假装漏洞不存在）。v1.3.1 并行波次的显式汇合条件见其实现（[v1.3.1 开发日志](../changelog/v1.3/v1.3.1.md)）。
 >
@@ -446,7 +446,7 @@ flowchart LR
 | `routeAfterHuman` | 非 running→END；running（驳回）→engineer | engineer / END |
 | `routeFromStart` | 正常→engineer；resume→指定节点 | 四节点之一 |
 
-**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A11、A14-A24 + E1-E2/E4（共 25 条）规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit
+**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A11、A14-A24 + E1/E2/E4/E5/E6/E7（共 28 条）规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit
 做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
 
 ### 状态契约：LoopArtifacts
@@ -484,7 +484,7 @@ sofagent 的编排模块天然就是一张**控制图（Control Graph）**——
 | Graph Engineering 构件 | sofagent 对应实现 | 源码位置 |
 |------|------|------|
 | **控制图 Control Graph**（node=state, edge=transition, guard edge 守门） | `StateGraph` 四节点 `START→engineer→audit→reviewer→human_confirm→END`，`routeAfterAudit`/`routeAfterHuman` 条件路由，WARN 透传为 guard 放行 | `engine/orchestrator/src/loop/graph.ts` |
-| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A24 + E1-E2/E4，共 25 条），不信任 Agent 自报，比"只看 PR 号"更硬。**Grounding 三必要条件**（Carlos E. Perez）：① audit 规则不可篡改 = ground-truth ② `acceptance-test.sh` = 冻结验收标准 ③ 用户 task 来自系统外部 | `@sofagent/audit` |
+| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A24 + E1/E2/E4/E5/E6/E7，共 28 条），不信任 Agent 自报，比"只看 PR 号"更硬。**Grounding 三必要条件**（Carlos E. Perez）：① audit 规则不可篡改 = ground-truth ② `acceptance-test.sh` = 冻结验收标准 ③ 用户 task 来自系统外部 | `@sofagent/audit` |
 | **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `engine/orchestrator/src/graph/checkpoint.ts` |
 | **数据图 Data Graph**（知识图谱/血缘） | 蓄水池（知识库 `knowledge/`） + 市政规划（Ontology，Ledger-Views-Policy）——与编排控制图正交 | `knowledge/` + Ontology 层 |
 | **Org Graph（稳定角色）** | 四节点（engineer/audit/reviewer/human_confirm）是稳定角色——不随任务变化；变动的是节点内的 Work Graph 子拓扑 | `engine/orchestrator/src/loop/graph.ts` |
