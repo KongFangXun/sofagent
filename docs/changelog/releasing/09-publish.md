@@ -235,6 +235,16 @@ git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
 ```
 
 > ⚠️ **发布窗口的 verify 红是预期形态**：bump commit 上 verify 工作流装 `@sofagent/audit@<本版>`，npm 尚未发布该版本——供应链 fail-closed（不降级 @latest）按设计拒绝。判别：此点位 verify 红 ≠ 阻断项（pr-check 等其余 workflow 全绿即可继续）；publish 后重跑该 verify run 应转绿（发布链收尾动作）。上一版同点位的「绿」是 fail-open 假绿（v1.5.2 起修复）。
+>
+> 🔴 **publish 完成后必须 rerun 首轮红项——这是「时序固有」与「真回归」的唯一分界动作**：
+> 「verify 红 = 时序固有」是**假设**不是结论，唯一证伪方式 = publish 全部完成后 `gh run rerun <run-id> --failed`
+> 再核该 run：转绿 ⇒ 假设成立；**仍红 ⇒ 红点已变成另一个真回归**，必须照步骤四「CI 失败三分类」
+> 定位修复（禁以「已判定时序固有」为由放行）。实测：同一 run 首轮红是 npm 未发布（时序固有），
+> rerun 后暴露的却是 install.sh 在 `bash -eo pipefail` 下因 `head -2 | grep` 无匹配而失败（真回归）
+> ——**不 rerun 就会把真回归当已知时序放过**。
+> 同理 **Release workflow 首跑失败**后：先按「已知坑①（E404）」核 npm 侧二次确认，再走本地重发 +
+> `gh run rerun <run-id> --failed` 收口；rerun 转绿才算发布链完成（Release 的 publish job 有幂等豁免分支，
+> 重跑不会重复发布）。
 
 ## 步骤四：push main + 等 CI 全绿 ☐
 

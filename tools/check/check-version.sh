@@ -1997,6 +1997,23 @@ if $F6_RELEASED; then
     echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），活文档无「待发版」残留（changelog/archive 的历史标注不计）"
     CHECKS=$((CHECKS + 1))
   fi
+  # F6 扩展 3：**当前 SSOT 版本的 devlog 头部**不得残留发布前状态语义。
+  # 根因：F6 的扫描面用 `-not -path '*/changelog/*'` 排除 changelog（历史日志豁免「待发版」误报）
+  #   ——但**当前版本的 devlog 不是历史**：它与 tag 同版，头部状态词（已排期 / 尚未实现 /
+  #   不代表当前可用能力）在发版后同样须翻转。实测：devlog 头部一路挂着发布前语义直到
+  #   阶段十一才被发现（SOP 有口头要求、无机械守卫 = 未通电的承诺）。
+  _F6_CUR_DEVLOG="${PROJECT_ROOT}/docs/changelog/v$(echo "${SSOT_VERSION}" | cut -d. -f1,2)/v${SSOT_VERSION}.md"
+  if [ -f "${_F6_CUR_DEVLOG}" ]; then
+    _F6_STALE=$(head -14 "${_F6_CUR_DEVLOG}" | grep -nE '📋 \*\*已排期|尚未实现|不代表当前可用能力' || true)
+    if [ -n "${_F6_STALE}" ]; then
+      echo -e "  ${RED}✗${NC} 已发版态但当前版本 devlog 头部仍含发布前状态语义（发版翻转遗漏·F6 扩展 3）："
+      echo "${_F6_STALE}" | sed "s#^#      v${SSOT_VERSION}.md:#"
+      ERRORS=$((ERRORS + 1))
+    else
+      echo -e "  ${GREEN}✓${NC} 当前版本 devlog（v${SSOT_VERSION}）头部无发布前状态语义残留"
+      CHECKS=$((CHECKS + 1))
+    fi
+  fi
 else
   echo -e "  ${YELLOW}⏭️${NC} 开发态（tag/npm 均未达 v${SSOT_VERSION}）——活文档「待发版」为 bump→tag 间合法中间态，跳过（§27 同口径）"
   SKIPS=$((SKIPS + 1))
