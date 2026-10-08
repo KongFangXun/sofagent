@@ -274,7 +274,7 @@ describe('只读辅助出口（v1.5.0 章一）', () => {
 // 验证：E5 数据产物审计的结果照常进 governance 统计——
 //   ① 安全边界触发率（boundary.topRules 含 E5 行——审计覆盖率/问题率对新规则同源聚合）
 //   ② DATA_PRODUCT 决策进 decision-log 读数（readDecisionEntries 可查）
-// 治理面板零改动复用的证据：E5 的 RuleCheck 形态与既有 25 条一致（id/number/status），
+// 治理面板零改动复用的证据：E5 的 RuleCheck 形态与既有 28 条一致（id/number/status），
 // history.jsonl 的 ruleResults 聚合路径不感知规则身份。
 describe('SMB 场景治理 KPI 复用（v1.5.7 章一）', () => {
   it('E5 数据产物审计结果进安全边界统计（topRules 含 E5 / 触发率含数据产物变更）', () => {

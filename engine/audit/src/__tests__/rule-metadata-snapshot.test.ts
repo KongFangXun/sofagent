@@ -1,7 +1,7 @@
 // ============================================================
 // rule-metadata-snapshot.test.ts · 注册表元数据快照（v1.4.8 深模块条目 7 第 0 步）
 // ============================================================
-// 25 条规则 name/number/evidenceMode/ruleClass/priority/examples 全量快照——
+// 28 条规则 name/number/evidenceMode/ruleClass/priority/examples 全量快照——
 // 条目 7（meta 单源 + scan 装配）重构前后的行为锚：重构后本测试零改动必须仍绿。
 // ============================================================
 import { describe, expect, it } from 'vitest';
