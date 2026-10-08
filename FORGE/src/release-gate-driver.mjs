@@ -3586,7 +3586,11 @@ async function main() {
   //   （SOFAGENT_ACCEPTANCE_LOG 可覆盖路径），driver 兜底主动执行。
   if (!skipVPhase && args.judgmentOnly) {
     const accOutPath = join(runDir, 'acceptance.md');
-    let accRawPath = process.env.SOFAGENT_ACCEPTANCE_LOG || join(REPO_ROOT, 'acceptance-raw.log');
+    // v1.5.8 BUG-26：默认落点从仓库根（REPO_ROOT）改为 runDir——仓库根落日志会污染
+    // 工作树（曾在主工作树仓库根遗留 acceptance-raw.log，.gitignore:95 只是兜底）。
+    // runDir 是本 run 的既有产物目录，与其余 acceptance-raw.log 读写点同址、天然复用；
+    // SOFAGENT_ACCEPTANCE_LOG 显式覆盖仍最高优先。
+    let accRawPath = process.env.SOFAGENT_ACCEPTANCE_LOG || join(runDir, 'acceptance-raw.log');
     if (!existsSync(accRawPath)) {
       // 脚本层未预跑：driver 主动执行 acceptance（一次性，结果落盘 acceptance-raw.log 供复用）
       console.log('[driver] --judgment-only：未找到脚本层预跑日志，主动执行 acceptance-test.sh（一次性）...');
