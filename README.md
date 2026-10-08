@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.6-16B8F3" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.7-16B8F3" /></a>
   <img src="https://img.shields.io/npm/v/sofagent" />
 </p>
 
@@ -64,7 +64,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **五分钟沙箱演示**（v1.5.1 已交付；沙箱隔离、真实文件零接触）：`npx -y -p sofagent sofagent audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕链路（`--speed fast` 为 60 秒版；产物落 `$SOFAGENT_DATA/demo`，不触碰被审仓库）。
 
-> 版本说明：v1.5.6 已发版（2026-10-04）；npm 可安装最新版 `@sofagent/audit@1.5.6`。
+> 版本说明：v1.5.7 已发版（2026-10-08）；npm 可安装最新版 `@sofagent/audit@1.5.7`。
 
 ## 该不该装？
 
@@ -212,7 +212,7 @@ npx -y -p sofagent sofagent audit
 **完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.6/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.7/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh          # 先看一眼脚本内容，确认安全
 bash bootstrap.sh && rm bootstrap.sh
 ```

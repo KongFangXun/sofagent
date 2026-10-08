@@ -48,8 +48,8 @@
 | `check/check-paired-records.mjs` | 判决类记录成对门禁（N 态判据：声明 N 态即须落 N 态。登记表 = 脚本内 REGISTRY（判决家族 × N 态 × 生产写入点）；三判定：①缺侧 ②未登记判决写入点（新增判决 kind 必须同批登记配对侧）③非判决豁免集与 DecisionKind 枚举对账；盲区显式登记（RULE_TOGGLE/ESCALATE_REPORT/COST 各带理由+触发条件）；（详→注-2） | pre-push 第 3j 步 / 新增判决类 kind 后 |
 | `check/check-fresh-eyes-artifacts.mjs` | fresh-eyes-loop 产物契约守闸（harness 注入形态的机械停止条件等价面：校验 runDir 产物存在性 + schema + 计数一致性；`--self-test` 自检） | harness 执行形态跑完轮后（会话内人工/主任务协议步骤） |
 | `check/check-home-resolution-parity.mjs` | 家目录解析口径对照共享守卫（harness 因 layer 0 · `allow: []` **不能** import core，只能本地重实现 `resolveEngineHome()`——本守卫断言两侧**同输入同输出**；（详→注-3） | 改 harness 或 core 的家目录解析后 · pre-push |
-| `check/check-sop-integrity.mjs` | 发版 SOP 阶段文件完整性守卫——钉**结构面**不判内容：A1 失明自检（扫到的文件数 / 阶段文件数低于基线 ⇒ exit 2，路径漂移即假绿温床）；A2 锚链完整（11 个阶段文件各带 `SOP-ANCHOR`，锚内阶段号须与文件名序号一致，prev/next 指向的阶段须存在）；A3 结构 pin（每份阶段文件的「步骤表行数 / 步骤标题数 / 正文小节数」三元组须等于基线——**静默删步骤行、删 `## 步骤X：` 标题、删正文小节、批量截断当场红**）；A4 最小形态（步骤面不成形 ⇒ 疑似截断）。附件类非 `NN-` 前缀文件 A2~A4 不适用 | 改发版 SOP 阶段文件后 / 发版 SOP |
-| `check/sop-integrity-baseline.json` | 发版 SOP 阶段文件结构基线（`check-sop-integrity.mjs` 消费：`minFiles` / `minStageFiles` / `a4MinRows` / `a4MinHeadings` 四项阈值 + 11 个阶段文件的结构三元组 + `indexExempt` 附件类豁免清单；**改阶段文件结构时须同批更新基线**——与 `check-forms` 的 `EXPECTED_COUNTS` 同款，改的是基线不是守卫） | 被 check-sop-integrity.mjs 消费 |
+| `check/check-sop-integrity.mjs` | 发版 SOP 阶段文件完整性守卫（A1 失明自检 / A2 SOP-ANCHOR 锚链 / A3 结构三元组 pin / A4 最小形态——治阶段文件被静默截断而门禁全绿） | CI / 改 releasing/ 阶段文件后 |
+| `check/sop-integrity-baseline.json` | SOP 阶段文件结构基线台账（11 阶段文件三元组 + 附件豁免；改阶段文件结构时同批更新） | 被 check-sop-integrity.mjs 消费 |
 | `check/silent-catch-baseline.json` | 静默吞错存量基线（`check-silent-catch.mjs` 消费，新增即红） | 被 check-silent-catch.mjs 消费 |
 | `check/silent-catch-io-ledger.json` | 外部 IO catch 四分类台账（F9 v1.5.7：69 处外部 IO 的 catch 分层登记——吞错清零补结构化日志的对照账本） | 被 check-silent-catch.mjs 消费 |
 | `check/check-archaeology.sh` | 规则文档禁考古守卫（`releasing.md` + `releasing/*.md` + `SKILL/**` + `playbook/**` 正文禁带出身：版本号 / 日期 / 跑批编号（run-N·第N轮·Round N）/ 出身标签；（详→注-4） | pre-push / 改规则文档后 |

@@ -9,7 +9,7 @@
 <p align="center">
  <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main" /></a>
  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
- <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.6-16B8F3" /></a>
+ <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.7-16B8F3" /></a>
  <img src="https://img.shields.io/npm/v/sofagent" />
 </p>
 
@@ -70,7 +70,7 @@ version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 
 </details>
 
-> **Version note**: v1.5.6 was released (2026-10-04); the latest installable npm version is `@sofagent/audit@1.5.6`.
+> **Version note**: v1.5.7 was released (2026-10-08); the latest installable npm version is `@sofagent/audit@1.5.7`.
 
 ## Should you install it?
 
@@ -273,7 +273,7 @@ Generic secret shapes are intentionally out of scope, a conservative design agai
 **Full install** (Node.js ≥ 18, download and review before running)—**installed on the enterprise devices running the AI nodes**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.6/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.7/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh     # review the script first, confirm it's safe
 bash bootstrap.sh && rm bootstrap.sh
 ```
