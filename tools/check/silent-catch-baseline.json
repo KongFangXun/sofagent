@@ -30,7 +30,7 @@
   "engine/audit/src/rules/rule-a2-secret-leak.ts::#1::catch { // debug 留痕自身绝不抛错（诊断面不能反过来破坏审计主流程） }",
   "engine/audit/src/rules/rule-a2-secret-leak.ts::#1::catch { // normalize 在极少数情况下可能失败（无效 surrogate pair），保留原值继续 }",
   "engine/audit/src/rules/rule-a7-read-before-write.ts::#1::catch { // trace 读取失败静默回落 logs 兜底（harness 缺席是常态而非异常） }",
-  "engine/audit/src/rules/skill-safety-engine.ts::#1::catch { /* 跳过无法读取的目录 */ }",
+  "engine/audit/src/skill-safety/engine.ts::#1::catch { /* 跳过无法读取的目录 */ }",
   "engine/audit/src/ruleset-loader.ts::#1::catch { // 加载失败只跳过描述 }",
   "engine/audit/src/ruleset-loader.ts::#2::catch { // 加载失败只跳过描述 }",
   "engine/audit/src/stats.ts::#1::catch { /* 坏行跳过（容忍——不中断聚合） */ }",

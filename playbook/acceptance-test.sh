@@ -2503,7 +2503,7 @@ grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S2
 grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S293_OK=false
 grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/tool-output-budget.mjs" || S293_OK=false
 grep -q "已完成轮禁止重开" "$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/loop.md" || S293_OK=false  # resume 越轮守卫（v1.5.3 载体：loop.md 状态接续纪律）
-grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/rules/skill-safety-rules.ts" || S293_OK=false  # rm-rf 豁免（skill-safety 侧）
+grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/skill-safety/rules.ts" || S293_OK=false  # rm-rf 豁免（skill-safety 侧）
 grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" || S293_OK=false  # rm-rf 豁免（shield 侧）
 grep -q "仅需 Node.js" "$PROJECT_ROOT/docs/archive/validation-deep/harness-vendors.md" || S293_OK=false  # finding-04 措辞修复（锚随 VALIDATION 台账化压缩迁 archive/validation-deep——内容在、只搬家，锚随之改指；dcc9fb79 治理批）
 $S293_OK && pass "driver 超时+resume 守卫+rm-rf 同源+VALIDATION 措辞在位" || fail "阶段四基建加固缺件"

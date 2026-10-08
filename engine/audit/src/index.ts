@@ -127,8 +127,8 @@ export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanit
 export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
 export { generateDailyReport, generateWeeklyReport, generateMonthlyReport, generateReport, aggregateStats } from './report-generator';
 export type { GeneratedReport, ReportKind } from './report-generator';
-export { findFiles, scanFile } from './rules/skill-safety-engine';
-export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
+export { findFiles, scanFile } from './skill-safety/engine';
+export type { SafetyResult, SafetyRule } from './skill-safety/rules';
 // Re-export webhook 推送（mcp-server.ts 从 audit 消费 pushAuditResult）
 export { pushAuditResult } from './webhook';
 export type { WebhookPlatform } from './webhook';

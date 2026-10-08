@@ -3,7 +3,7 @@
 //
 // L3 组织能力公地的安全门——第三方 Skill 发布/安装前静态扫描。
 // 复用 @sofagent/evolve 的 scanSkillSafety()（核心实现在 @sofagent/audit
-// 的 skill-safety-{engine,rules,reporter}.ts），不新写扫描逻辑。
+// 的 src/skill-safety/ 三件（v1.5.8 迁自 rules/skill-safety-*.ts）），不新写扫描逻辑。
 //
 // 双触发（发布者侧 + 调用者侧）：
 //   - 发布侧：scanForPublish() —— commons_publish 时扫（发布者自己写的 Skill）

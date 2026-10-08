@@ -56,9 +56,9 @@
 /* @public */ export type { SnapshotEntry } from '@sofagent/core';
 
 // ── Skill 安全审查（v1.1.3: 供 @sofagent/evolve 等外部包使用） ──
-/* @public */ export { findFiles, scanFile } from './rules/skill-safety-engine';
-/* @public */ export { COMPILED_RULES, SCANNABLE_EXTENSIONS, VERSION as SKILL_SAFETY_VERSION } from './rules/skill-safety-rules';
-/* @public */ export type { SafetyHit, SafetyRule, SafetyResult } from './rules/skill-safety-rules';
+/* @public */ export { findFiles, scanFile } from './skill-safety/engine';
+/* @public */ export { COMPILED_RULES, SCANNABLE_EXTENSIONS, VERSION as SKILL_SAFETY_VERSION } from './skill-safety/rules';
+/* @public */ export type { SafetyHit, SafetyRule, SafetyResult } from './skill-safety/rules';
 /* @public */ export {
   printFileResult,
   printTerminalSummary,
@@ -66,7 +66,7 @@
   printQuietOutput,
   printError,
   showHelp,
-} from './rules/skill-safety-reporter';
+} from './skill-safety/reporter';
 
 // ── AgentShield 五类配置面扫描（v1.1.3 同批实现，此前未进公共面 → README 声称无调用点） ──
 /* @public */ export { createAgentShield, DEFAULT_KNOWN_AGENTS } from './agent-shield';

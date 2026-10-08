@@ -1,8 +1,8 @@
 // ============================================================
-// skill-safety-reporter.ts · Skill 安全审查——输出格式化
+// reporter.ts（原 rules/skill-safety-reporter.ts · v1.5.8 BUG-18 迁至 src/skill-safety/）· Skill 安全审查——输出格式化
 // ============================================================
 
-import { type SafetyHit, type SafetyResult } from './skill-safety-rules';
+import { type SafetyHit, type SafetyResult } from './rules';
 import { log } from '../logger';
 
 const RED = '\x1b[0;31m';

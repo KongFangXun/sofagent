@@ -1,10 +1,10 @@
 // ============================================================
-// skill-safety-engine.ts · Skill 安全审查——文件扫描逻辑
+// engine.ts（原 rules/skill-safety-engine.ts · v1.5.8 BUG-18 迁至 src/skill-safety/）· Skill 安全审查——文件扫描逻辑
 // ============================================================
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { join, extname } from 'path';
-import { COMPILED_RULES, SCANNABLE_EXTENSIONS, type SafetyHit } from './skill-safety-rules';
+import { COMPILED_RULES, SCANNABLE_EXTENSIONS, type SafetyHit } from './rules';
 
 /**
  * 递归找出所有需扫描的文件。
