@@ -8,7 +8,7 @@
 
 ---
 
-## 步骤一：Skill 分发 ☐
+## 步骤一：Skill 分发 ☑
 
 > 🔴 **执行环境提示**：本阶段所有 `for` 循环与变量展开命令**必须在 bash 下执行**
 > （`bash <<'BSH' … BSH` 或存成 .sh 再跑）。zsh 不对未加引号的 `$MULTILINE_VAR` 做空白分词
@@ -50,7 +50,7 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ---
 
-## 步骤二：DSH plugin 分发（每版必做） ☐
+## 步骤二：DSH plugin 分发（每版必做） ☑
 
 > **背景**：SkillHub 支持 DeepSeek Harness plugin 分发。sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent*`，**7 个**：6 款原子 audit/rollback/inject/evolve/daemon/fde + 1 款聚合 `cordis-plugin-sofagent`——款数以 glob 实测为准，曾为 10 后经归并收口）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 侧七款同为发布物，两条通道并行不互替，
 >可用性前置见下方「DSH plugin 分发铁律」）。
@@ -91,7 +91,7 @@ done
 > - 分发通道真相源：**DSH plugin = SkillHub + npm 双通道**——`skillhub install cordis-plugin-sofagent*` 是 SkillHub 侧的安装与发现通道；**npm 侧七款同样是发布物**（逐款上 registry 见 [09-publish「步骤八·补」](./09-publish.md)），故「npm 可装」不再是禁语。
 >⚠️ 但 npm 通道的**可用性前置**是干净 DSH 环境逐款实装四段验证（挂载 → seam 订阅 → helpers.call 引擎包解析 → 事件触发产出）——**不满足「单独可用」的不得发布**，故文档声称 npm 可装前须先有该验证留证。⚠️ 且**前置之前置**：适配层基座包 `@sofagent/dsh-plugin-kit` 须先在 npm 侧发布（六款原子插件以包名依赖它），否则四段验证的第三步「引擎包解析」必挂 `MODULE_NOT_FOUND`
 
-## 步骤二·a：OpenClaw plugin 分发（每版必做）
+## 步骤二·a：OpenClaw plugin 分发（每版必做） ☑
 
 > **背景**：OpenClaw plugin 家族（约束层能力在 OpenClaw 生态的插件形态）**每版都要在 ClawHub plugins 发布**——与 DSH plugin 家族（SkillHub）分属两个生态：**ClawHub = OpenClaw 运行时 / SkillHub = DSH 运行时，各发各的**。clawhub CLI 已支持 `package publish`（code-plugin / bundle-plugin）。
 
@@ -136,7 +136,7 @@ done
 
 ---
 
-## 步骤二·b：GitHub Marketplace 分发（每版必做） ☐
+## 步骤二·b：GitHub Marketplace 分发（每版必做） ☑
 
 > **背景**：sofagent 的 GitHub Action 形态（action.yml）已上线 GitHub Marketplace（listing：`github.com/marketplace/actions/sofagent`，Primary=Code review / Secondary=Utilities）。marketplace 版本列表跟随 release——**每次发新版，release 发布时必须勾选 Publish to Marketplace**，否则该版本不出现在 marketplace 版本页。
 >
@@ -162,7 +162,7 @@ done
 
 ---
 
-## 步骤三：设备端安装 ☐
+## 步骤三：设备端安装 ☑
 
 ```bash
 # 1. 全局包更新（audit + core）
@@ -194,7 +194,7 @@ done
 
 ---
 
-## 步骤四：npm 渠道门面检查（每版必做） ☐
+## 步骤四：npm 渠道门面检查（每版必做） ☑
 
 > **定位**：npm 是实测主分发渠道（`@sofagent/audit` 月下载 4848 vs 43 star，113:1），但门面投入曾全部压在 GitHub——渠道门面错配（审查实证）。本步骤每版分发时固定巡检 npm / GitHub / 官网三个「被找到」入口。仓内数字断言（description 工具数/插件数/homepage https）由 `bash tools/check/check-storefront.sh` 守护，此处补齐它不覆盖的面：
 

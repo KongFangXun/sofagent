@@ -744,7 +744,7 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 > 验证脚本放 `$V`（node ESM），**必须 `SOFAGENT_DATA=<临时目录>`** 隔离数据落盘，别写真实 `~/.sofagent/`。
 > 四段判据与观察点（fakeCtx 用鸭子类型提供 `provide / on / get('tools') / settings / dynamicCordisRunner`）：
 > - ① **挂载**：`(mod.default).default.apply(fakeCtx)`（CJS 互操作要逐层解 `default`）返回复合 disposer 且幂等；`provide` 收到 `sofagent.<short>`，`meta.id` == 包名、`version` == 本版；宿主 API 缺席时**不得**留假 disposer。
-> - ② **seam 订阅**：订阅事件集**逐字等于** `plugins.json` 的 `seamHandlers`（多一个=幽灵订阅，少一个=假接线）；非 seam 款（daemon / fde / suite）期望 0，suite 期望转发 7 个（六原子之和）。
+> - ② **seam 订阅**：订阅事件集**逐字等于** `plugins.json` 的 `seamHandlers`（多一个=幽灵订阅，少一个=假接线）；**非 seam 款（daemon / fde）期望 0**；**suite 期望转发「原子款 seam 之和」**（当前 6 原子 ⇒ 7；生命周期事件如 `dispose` 不计入 seam 集）。🔴 实测修正：原文把 suite 与 daemon/fde 并列写「期望 0」又在同句写「suite 期望 7」——**同句自相矛盾**，照前半句判会把 suite 的正确转发误判为「幽灵订阅」。
 > - ③ **引擎包解析**：触发 handler 观察有无 `MODULE_NOT_FOUND`——**这是 kit 依赖桥的本命测试**（kit 未先发则此处必挂）；fde 另验 `resolveBridges()` 的 `resolved` 非空、`failed` 为空。
 > - ④ **事件触发产出**：真造输入看真产出——audit 危险命令返回 `{kind:'deny'}`、`tools/result` 失败结果落 `<dataDir>/audit/`（decision-log.jsonl + intent.jsonl）、inject 的 `agent/pre-step` 返回 messages 多一条、evolve 的 `session/event`+`turn/end` 落 `think.md`、fde 角色工具注册数 > 0、suite 的 `SuiteReport.loaded == 6` 且 `failed` 为空。
 >
