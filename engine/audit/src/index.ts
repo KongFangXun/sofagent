@@ -1941,7 +1941,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
     }
   }
 
-  // fail-fast 汇总（v1.5.7 L10）：被跳过规则的说明集中输出于此一处，逐条行不再重复。
+  // fail-fast 汇总（v1.5.7 L10）：早退未执行项的说明集中输出于此一处，逐条行不再重复。
   // 规则清单直接取自 SKIPPED 结果的规则码（`id` 优先，插件/规则集条目回退 ruleCode）。
   if (skippedRules.length > 0) {
     const codes = skippedRules.map((r) => r.id ?? ruleCode(r.number, r.name));
