@@ -467,11 +467,14 @@ if [[ -d "$SH_DIR" ]] || [[ -f "$FDE_SH" ]]; then
     # 🔴 锚定「行首 # 注释 + 版本号在行尾」——正文里的历史沿革引用（如
     #    「易失源目录检测（v1.5.2）」「安装包边界（v1.5.2）：」）不得抬号：那描述的是
     #    功能引入版本，非当前版本锚。此前无锚点全局替换会把它们改成当前版（历史误伤）。
+    # 🔴 替换侧必须回写行首前导 `# `——模式侧锚了 `^# ` 而替换侧漏写，会把注释行
+    #    改成裸文本（`# xxx.sh · 描述 · v1.5.7` → `xxx.sh · 描述 · v1.5.7`），bash 执行
+    #    该脚本时把首词当命令跑。六脚本实测中招（install.sh + daemon 五件）。
     sh_new=$(echo "$sh_new" | sed \
-      -e "s/^# \(.*\)（v${OLD_3SEG}）$/\1（v${NEW_3SEG}）/" \
-      -e "s/^# \(.*\)（v${OLD_2SEG}）$/\1（v${NEW_2SEG}）/" \
-      -e "s/^# \(.*\)· v${OLD_3SEG}$/\1· v${NEW_3SEG}/" \
-      -e "s/^# \(.*\)· v${OLD_2SEG}$/\1· v${NEW_2SEG}/")
+      -e "s/^# \(.*\)（v${OLD_3SEG}）$/# \1（v${NEW_3SEG}）/" \
+      -e "s/^# \(.*\)（v${OLD_2SEG}）$/# \1（v${NEW_2SEG}）/" \
+      -e "s/^# \(.*\)· v${OLD_3SEG}$/# \1· v${NEW_3SEG}/" \
+      -e "s/^# \(.*\)· v${OLD_2SEG}$/# \1· v${NEW_2SEG}/")
     if [[ "$sh_new" != "$sh_content" ]]; then
       if [[ $sh_count -eq 0 ]]; then
         echo -e "  ${GREEN}✓${NC} VERSION=\"$OLD_2SEG\" → VERSION=\"$NEW_2SEG\""
@@ -839,6 +842,20 @@ if ! $DRY_RUN; then
     echo -e "  ${RED}🔴 bump 破坏了文件头形态（check-archaeology.sh 报红）——检查本脚本的替换式是否吞掉了行首前导标记（# / <!--），修复后重跑${NC}"
     exit 1
   fi
+  # ── shell 头形态探针（check-archaeology 扫描面不含 .sh——实测盲区）──
+  # check-archaeology 只扫规则文档（releasing/SKILL/playbook），engine/scripts/*.sh
+  # 与 install.sh 不在其面内：bump 把 shell 头注释改成裸文本（`# xxx.sh · … · vX.Y.Z`
+  # → `xxx.sh · … · vX.Y.Z`）时守卫全绿而产品脚本已被破坏（bash 执行把首词当命令）。
+  # 判据：shell 头部出现「行首非 #、且含 `xxx.sh · `」的裸行 = 形态被破坏。
+  _sh_broken=$(grep -lE '^[a-z][a-z0-9-]* [a-z][a-z0-9-]*\.sh · ' \
+    "$PROJECT_ROOT"/engine/scripts/*.sh "$PROJECT_ROOT/install.sh" 2>/dev/null || true)
+  if [[ -n "$_sh_broken" ]]; then
+    echo -e "  ${RED}🔴 bump 破坏了 shell 头注释形态——以下文件头部出现裸文本行（丢失行首 #）：${NC}"
+    echo "$_sh_broken" | sed 's/^/      /'
+    echo -e "  ${RED}    修法：恢复行首 '# '，并检查本脚本 [6/13] 段的替换式替换侧是否回写了 '# ' 前导${NC}"
+    exit 1
+  fi
+  echo -e "  ${GREEN}✓ 回归探针: shell 头形态完整（engine/scripts/*.sh + install.sh 无裸文本行）${NC}"
 fi
 
 # ── 手动检查提醒（v1.0 新增，bump-version 盲区防护）────────
