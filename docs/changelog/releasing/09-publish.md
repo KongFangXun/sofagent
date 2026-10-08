@@ -49,7 +49,7 @@ grep -n '@sofagent/[a-z-]*@[0-9]' action.yml | grep -v "$(node -p "require('./pa
 
 ---
 
-## 步骤一：本地安装（本机自装） ☐
+## 步骤一：本地安装（本机自装） ☑
 
 > 全部验证通过、准备发布时，先把最新版装到本机——全局 npm 和本地 Skill 同步。这是发布前最后一道自用验证。
 
@@ -78,7 +78,7 @@ sofagent-audit --doctor
 
 ---
 
-## 步骤二：发布前检查 ☐
+## 步骤二：发布前检查 ☑
 
 > push 前不模拟 CI 跑的检查 = 每次都 push→红叉→修→push 循环。以下检查**本地先跑一遍全绿再 push**。
 
@@ -222,7 +222,7 @@ echo "npm 包洁净度 + 类型检查完成"
 
 ---
 
-## 步骤三：push 前置检查（双 SHA 分叉防御） ☐
+## 步骤三：push 前置检查（双 SHA 分叉防御） ☑
 
 > Git Data API 推送会造成远端/本地「同 tree 双 SHA」——直接 push 会被 rejected (fetch first)。本地代理死时用 `git -c http.proxy= -c https.proxy= push` 直连。
 
@@ -246,7 +246,7 @@ git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
 > `gh run rerun <run-id> --failed` 收口；rerun 转绿才算发布链完成（Release 的 publish job 有幂等豁免分支，
 > 重跑不会重复发布）。
 
-## 步骤四：push main + 等 CI 全绿 ☐
+## 步骤四：push main + 等 CI 全绿 ☑
 
 > **tag 先行策略**：先 push main → 等 CI 全绿验证 → 才打 tag。tag 一定指向 CI 验证过的 commit，不会 tag 了之后才发现 CI 红。
 >
@@ -308,7 +308,7 @@ done
 
 > ⚠️ **bump 批 commit 前必跑 `git status --porcelain` 检视暂存面**：bump 涉数百文件，惯用 `git add -A` 会把**旁生目录**（实测：audit-baseline-sync 在无 SOFAGENT_HOME 时把锚文件写进 `./undefined/`）一并收入。检视发现非 bump 目标路径即先清（`git rm -r --cached <dir>` + 删目录 + 产品侧登记修复）。
 
-## 步骤五：版本 bump + 安装入口随版同步 ☐
+## 步骤五：版本 bump + 安装入口随版同步 ☑
 
 > 🔴 **本步骤是全流程唯一的 bump 时点**——阶段二~八全程 `package.json` 保持上一版号（SOP 设计的待发版中间态，见 [02 步骤一](./02-dev.md)）。SSOT 升级落在本步骤，且必须与安装入口 URL、bootstrap 哈希、状态翻牌**同一个 commit** 收口，才能「tag 前自洽」（tag 指向的必须是已 bump 的 commit）。
 
@@ -423,7 +423,7 @@ node tools/check/check-anchors.mjs           # 锚点完整性
 
 ---
 
-## 步骤六：git tag + push tag ☐
+## 步骤六：git tag + push tag ☑
 
 ```bash
 # ── tag 前确认 ──
@@ -456,7 +456,7 @@ fi
 
 ---
 
-## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp） ☐
+## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp） ☑
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 `@sofagent/*` 与裸名总包在步骤八手动 publish（13 个手动 `@sofagent/*` = 11 个引擎模块包 + `load-chain` + `dsh-plugin-kit`，加裸名总包 `sofagent` 共 **14 包**——包数口径以步骤八头部为准）；
 >**另有七款 DSH 插件**（`cordis-plugin-sofagent-*`，裸名、目录在 `engine/dsh-plugins/`）同样在步骤八手动 publish——见「步骤八·补」。
@@ -601,7 +601,7 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
 > ⑤ 🔴 **bump 批推送前必须重跑全量门禁**（尤其 check-archaeology——发版链的门禁全绿在 pre-push 阶段，bump 批之后若只跑 check-version 就推，archaeology/forms/docs 的回归会带病出门。实测：bump 手工补漏的批量替换吃掉 SKILL 六件头部 H1 前缀，E3 判据回归直到发版后自查才暴露）。
 > ⑥ 发版窗口的中间 commit 红不可避免（翻牌批/registry 传播在触发批的下一拍）——**能合 commit 的翻牌动作与触发批同 commit 推送**（如 CHANGELOG 索引翻牌并入 frontmatter 修复批），缩小提交列表上的红叉窗口；收尾后逐 commit 复盘红叉是否全部有时序解释。
 
-## 步骤八：npm 手动 publish 其余 14 包（含裸名总包）+ 七款 DSH 插件 ☐
+## 步骤八：npm 手动 publish 其余 14 包（含裸名总包）+ 七款 DSH 插件 ☑
 
 > 🔴 **dist-tag 口径（撤策后 · 现行）**：下方每处 `npm publish --access public`（含「步骤八·补」的七款插件）**一律不加 `--tag`**——落默认 `latest`。历史分道说明见步骤七「dist-tag 分道」节（已撤策存档，不再执行）。
 
@@ -718,7 +718,7 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 > 🔴 **E409「previously staged version」处理**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**staged 版本约 5 分钟内自动 finalize**（多版实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。
 >处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
 
-### 步骤八·补：七款 DSH 插件（`cordis-plugin-sofagent-*`） ☐
+### 步骤八·补：七款 DSH 插件（`cordis-plugin-sofagent-*`） ☑
 
 > 🔴 **为什么必须单独补一段**：上方 `@sofagent/*` 循环只筛该 scope 前缀 **+ `engine/<pkg>` 布局**，而这七款的
 > 包名是**裸名** `cordis-plugin-sofagent*`、目录在 `engine/dsh-plugins/<id>`——两者都不匹配 ⇒ 上方循环会
