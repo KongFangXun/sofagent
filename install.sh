@@ -723,8 +723,13 @@ if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/nu
   # （随引擎版本演进，维护在 engine/audit/hooks/commit-msg 首行）。
   _hook_src="${SCRIPT_DIR}/engine/audit/hooks/commit-msg"
   if [ -f "$_hook_src" ] && [ -f ".git/hooks/commit-msg" ]; then
-    _src_ver=$(head -2 "$_hook_src" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    _dst_ver=$(head -2 ".git/hooks/commit-msg" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    # 🔴 全文件扫描 + `|| true` 兜底（勿退回 `head -2` 位置敏感形态）：hook 模板首部
+    #    除版本行外还可能插其他注释行（实测：F55 的 `# SOFAGENT_ENGINE_ENTRY=…` 插在
+    #    版本行之前，把版本行从第 2 行挤到第 3 行）——`head -2` 扫描面随即失效；且
+    #    CI 的 `bash -eo pipefail` 下 grep 无匹配会令整条管道非零 ⇒ install.sh 直接
+    #    以「hook 版本对账」之名失败退出（本段设计本意是「只提示不阻断」）。
+    _src_ver=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' "$_hook_src" 2>/dev/null | head -1 || true)
+    _dst_ver=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' ".git/hooks/commit-msg" 2>/dev/null | head -1 || true)
     if [ -n "$_src_ver" ] && [ -n "$_dst_ver" ] && [ "$_src_ver" != "$_dst_ver" ]; then
       warn "  已装 hook 版本（${_dst_ver}）落后于引擎源（${_src_ver}）——行为差异以引擎源为准"
       warn "  重装命令: sofagent-audit --install-hook（其他装过本 hook 的仓库需逐个重装）"
