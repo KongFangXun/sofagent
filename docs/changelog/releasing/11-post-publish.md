@@ -20,7 +20,8 @@
 #### 三 · 审查三文档回写
 
 发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。
-⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——场景数改后立即拦截 DEVELOPMENT/LIMITATIONS 漂移，勿拖到 pre-push 才暴露） 
+⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——场景数改后立即拦截 DEVELOPMENT/LIMITATIONS 漂移，勿拖到 pre-push 才暴露）
+⚠️ **改了 `regression-checklist.md` / `acceptance-test.sh` 的行数后立即跑 `bash tools/check/check-literals.sh`**——这两个文件的行数在 `playbook/dev-prompt-checklist.md` 有**声称值对账**（`check-literals` 的 `checklist-regression-lines` / `checklist-acceptance-lines` 两条 error 级断言），不同步即红且**本地门禁不跑这条时无法自察**（实测：本阶段回写 #130 维度加 6 行后 CI 才红）。行数声称与内容改同批，勿留到下一版。 
 
 | # | 完成 | 步骤 | 验证方式 |
 |:--:|:--:|------|------|
