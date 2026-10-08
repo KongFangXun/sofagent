@@ -23,6 +23,14 @@ export const DEFAULT_CONFIDENCE_THRESHOLD = 0.7;
 /** 出现次数饱和值：≥3 次视为充分复现 */
 export const OCCURRENCE_SATURATION = 3;
 
+/** 考核态置信度乘子（v1.5.8 章四：verified 加权 / failed 减权——落数表 #12）
+ *  结合方式 = 置信度乘法项（base × multiplier），结果截断到 [0,1]：
+ *  verified → ×1.25（考核双成功背书，置信度上调）
+ *  failed   → ×0.5（考核未达成，降权防复发入池）
+ *  unexamined → ×1（中性，不参与加权） */
+export const VERIFIED_CONFIDENCE_MULTIPLIER = 1.25;
+export const FAILED_CONFIDENCE_MULTIPLIER = 0.5;
+
 /** 评分后的 instinct */
 export interface ScoredInstinct extends InstinctItem {
   /** 置信度 [0,1] */
@@ -49,6 +57,22 @@ export function scoreInstinct(item: InstinctItem): ScoredInstinct {
     passRate,
     confidence: coverage * passRate,
   };
+}
+
+/**
+ * 考核态加权评分（v1.5.8 章四：置信度加考核态输入维）。
+ * 单调性保证：verified 必升（×1.25）、failed 必降（×0.5）、unexamined 不变——
+ * 结果截断 [0,1]。静态接口（不动 base 计算面）。
+ */
+export function applyExamStatusWeight(
+  confidence: number,
+  examStatus: 'unexamined' | 'verified' | 'failed',
+): number {
+  const multiplier =
+    examStatus === 'verified' ? VERIFIED_CONFIDENCE_MULTIPLIER
+      : examStatus === 'failed' ? FAILED_CONFIDENCE_MULTIPLIER
+        : 1;
+  return Math.min(1, Math.max(0, confidence * multiplier));
 }
 
 /**

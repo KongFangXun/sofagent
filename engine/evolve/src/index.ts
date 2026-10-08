@@ -62,6 +62,78 @@
 // v1.4.8 ⑩/⑩-2：自研 gate 验证器 + Skill Proposer（四角色合拢）
 // ============================================================
 /* @public */ export { runNativeGate } from './native-gate';
+/* ── v1.5.8 章一：域验证器三档 + 评测集谱系 ── */
+/* @public */ export {
+  judgeAdmission,
+  defaultTierForUnregistered,
+  gateStrengthOf,
+  isGateStrengthNonDecreasing,
+  detectStagnation,
+  loadRegistry,
+  initializeRegistryProtected,
+  computeContentHash,
+  MODEL_JUDGE_REVIEW_SAMPLE_RATE,
+  STAGNATION_ROUNDS,
+  STAGNATION_IMPROVEMENT_THRESHOLD,
+} from './domain-verifier-registry';
+/* @public */ export type {
+  VerifierTier,
+  DomainVerifierEntry,
+  DomainVerifierRegistryFile,
+  AdmissionVerdict,
+  GateStrength,
+  EvalRoundReading,
+  StagnationVerdict,
+  RegistryLoad,
+} from './domain-verifier-registry';
+/* @public */ export {
+  registerEvalSetProvenance,
+  succeedEvalSet,
+  stripAnswerKey,
+  verifyContaminationSelfReport,
+  safetySuiteVerdict,
+  computeEvalSetHash,
+} from './eval-provenance';
+/* @public */ export type { EvalSetProvenance, ProvenanceLedger, EvalSetItem } from './eval-provenance';
+/* ── v1.5.8 章二：三层晋级判据 ── */
+/* @public */ export {
+  judgePromotion,
+  judgeDemotion,
+  judgeEvidenceGates,
+  recordPromotionDecision,
+  recordBenefitMetrics,
+  evolutionCostGate,
+  noopDecisionWriter,
+  PROMOTION_FREQUENCY_THRESHOLD,
+  PROMOTION_PERSISTENCE_DAYS,
+  PROMOTION_VERIFICATION_PASSRATE,
+  PROMOTION_TRAIN_PASSRATE,
+  FREQUENCY_WINDOW_DAYS,
+  CALIBRATION_EPSILON,
+} from './promotion-policy';
+/* @public */ export type {
+  PromotionInput,
+  PromotionVerdict,
+  EvidenceGatesInput,
+  EvidenceGatesVerdict,
+  EvolutionBenefitMetrics,
+  BenefitMetricsRecord,
+  PromotionLedgerEntry,
+  DecisionWriter,
+} from './promotion-policy';
+/* ── v1.5.8 章五：RL 训练治理 ── */
+/* @public */ export {
+  emptyTrainingPolicySet,
+  judgePolicyHits,
+  combineGates,
+} from './training-policy';
+/* @public */ export type {
+  TrainingPolicySet,
+  TrajectoryRuleHit,
+  PolicyHitVerdict,
+} from './training-policy';
+/* @public */ export { shapeRewardPenalty, recordShaping } from './reward-shaping';
+/* @public */ export type { PenaltySignal, RewardShapingResult, ShapingLedgerEntry } from './reward-shaping';
 /* @public */ export type { GateHistory, GateVerdict, NativeGateOptions } from './native-gate';
 /* @public */ export { buildProposerPrompt, parseProposalWithSafety, loadImpactLedger, loadFailureLedger } from './proposer';
 /* @public */ export type { ProposerInput, SkillProposal, ProposalWithSafety } from './proposer';

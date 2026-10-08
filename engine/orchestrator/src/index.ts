@@ -1031,6 +1031,38 @@
   evolveInstincts,
   resolveCustomSkillDir,
 } from './instinct/evolver';
+/* ── v1.5.8 章三/四：instinct 池持久化 / 导出器 / 考核器（经 ./instinct 子路径 barrel 消费）── */
+/* @public */ export {
+  instinctPoolPath,
+  appendToPool,
+  readPool,
+  filterByTenant,
+  exportInstinctRecords,
+  buildLineageAnchor,
+  generateExamQuestion,
+  assessExamination,
+  decideSedimentation,
+  checkDoNotCapture,
+  checkCorroborationGate,
+  applyExamResultToPoolItem,
+  applyExamStatusWeight,
+  VERIFIED_CONFIDENCE_MULTIPLIER,
+  FAILED_CONFIDENCE_MULTIPLIER,
+} from './instinct';
+/* @public */ export type {
+  StoredInstinct,
+  ExamStatus,
+  ExportedTrainingRecord,
+  ExportOptions,
+  ExportResult,
+  InstinctLineageAnchor,
+  ExamQuestion,
+  ExamResult,
+  ExamVote,
+  DoNotCaptureRecord,
+  DoNotCaptureKind,
+  CorroborationPendingRecord,
+} from './instinct';
 /* @public */ export type { EvolveOptions, EvolveResult, EvolvedSkill } from './instinct/evolver';
 /* @public */ export {
   appendFailure,

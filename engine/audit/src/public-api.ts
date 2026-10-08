@@ -163,7 +163,7 @@
 
 // ── 训练语料导出（MCP corpus_export 经包 main 入口消费此面）──
 /* @public */ export { exportRuleCorpus, generateVerifiers, buildRuleCorpusBody, signBody, jsonToYaml } from './export/exporter';
-/* @public */ export { buildVerifiersManifest, buildVerifiersWithOverrides } from './export/reward-mapping';
+/* @public */ export { buildVerifiersManifest, buildVerifiersWithOverrides, severityWeightOf } from './export/reward-mapping';
 /* @public */ export type { RuleExportEntry, RuleCorpusBody, RuleCorpusExport, Verifiability, RewardHint } from './export/rule-schema';
 
 // ── 规则集导出（v1.5.2 章二 · MCP `ruleset_export` 消费面）──

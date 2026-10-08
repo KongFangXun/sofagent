@@ -113,7 +113,7 @@ export { parseDiff, checkLogs, loadConfig, VERSION } from '@sofagent/core';
 // 训练语料导出（MCP corpus_export 经 require('@sofagent/audit') 消费此面）
 export { exportRuleCorpus, generateVerifiers } from './export/exporter';
 export { buildRuleCorpusBody, signBody, jsonToYaml } from './export/exporter';
-export { buildVerifiersManifest, buildVerifiersWithOverrides } from './export/reward-mapping';
+export { buildVerifiersManifest, buildVerifiersWithOverrides, severityWeightOf } from './export/reward-mapping';
 export type {
   RuleCorpusBody,
   RuleCorpusExport,

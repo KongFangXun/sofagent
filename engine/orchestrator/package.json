@@ -121,6 +121,11 @@
       "require": "./dist/router/decision-dispatch.js",
       "default": "./dist/router/decision-dispatch.js"
     },
+    "./instinct": {
+      "types": "./dist/instinct/index.d.ts",
+      "require": "./dist/instinct/index.js",
+      "default": "./dist/instinct/index.js"
+    },
     "./domain/workflow": {
       "types": "./dist/domain/workflow.d.ts",
       "require": "./dist/domain/workflow.js",
