@@ -14,7 +14,7 @@
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
 > 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/` 下对应版本目录中（如 `v1.5/`、`v1.6/`–`v1.9/`、`v2.0/`），**不纳入本索引**；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。
 
-- **v1.5.7** — 🔍 审计模块·覆盖面扩展与能力面治理——⏳ 待发版（完成 2026-10-08）：SMB 场景审计（勾稽/溯源/口径三判据）· 审计规则 25→**28 条**（E5 数据产物 / E6 提示注入 / E7 决策质量）· 决策类型 17→**18 值**· 浏览器底座退役 · 能力面治理（SkillOps 五维 + 遥测 status/durationMs + 可拔契约 18 单元）· 评估三件（UI=不实做 / 国标 5 标准 10 差距 / ACS=不采纳）
+- **v1.5.7** — 🔍 审计模块·覆盖面扩展与能力面治理——2026-10-08 已发版：SMB 场景审计（勾稽/溯源/口径三判据）· 审计规则 25→**28 条**（E5 数据产物 / E6 提示注入 / E7 决策质量）· 决策类型 17→**18 值**· 浏览器底座退役 · 能力面治理（SkillOps 五维 + 遥测 status/durationMs + 可拔契约 18 单元）· 评估三件（UI=不实做 / 国标 5 标准 10 差距 / ACS=不采纳）
   ——MCP **104** · 测试 5661→**5842**（+181，workspace 13 包）· acceptance **483** 全绿· [开发日志](./docs/changelog/v1.5/v1.5.7.md)
 - **v1.5.6** — 🧭 存量收敛·单入口与数据面——2026-10-04 已发版：CLI 单入口收敛（13 bin → 单入口 + 12 shim）· 数据生命周期治理（记忆分层归档 · 审计链历史段归档 · doctor 数据健康度 · 记忆项目作用域）· 文档与安装面修复批（21 项）——MCP **104** · 测试 5642→**5661**（13 包）· acceptance **479**（场景 397，双口径见[开发日志](./docs/changelog/v1.5/v1.5.6.md#实现纪要2026-10-02--10-04--四波次)） · [开发日志](./docs/changelog/v1.5/v1.5.6.md)
 - **v1.5.5** — ⚡ 执行模块·执行状态机与按需加载——2026-10-01 已发版：全节点执行状态机 · Tool search 按需加载（BM25+中文 2-gram）· 多 Agent 阵型调度（六阵型三态）· 编排依赖治理（langgraph 降 optional）· README 理念主线重写——MCP **104** · 测试 5569→**5642**（13 包）· acceptance 388→**395** · [开发日志](./docs/changelog/v1.5/v1.5.5.md)
@@ -48,13 +48,13 @@
 >**升级影响（行为变更）**：此前在 `fde.md` 设 `data_cleanup_on_record: true` 的用户，写入后按 1/N 概率自动清理的行为不再发生——需要自动清理请显式调度 `engine/scripts/cleanup.sh`，保留策略用 `SOFAGENT_RETENTION_DAYS` / `SOFAGENT_RETENTION_MAX`（消费点 `engine/scripts/cleanup.sh`）。完整披露见 [LIMITATIONS §七](./docs/LIMITATIONS.md)。
 > ② **`@sofagent/train` 导出 `routeRequest` 更名为 `canaryRouteRequest`**（同名消歧）：orchestrator 另有同名 `routeRequest`（`@sofagent/orchestrator/workflow` 语义路由）——同名不同物，裸符号 grep 接线断言会假阳性。该导出零生产消费者，破坏面为零；消费侧（仅测试）已同步更名。同名导出矩阵见 [WIKI 术语表](./docs/WIKI.md)。
 
-> 🔶 **破坏性变更公告（v1.5.7 待发版 · F53 注册路径验哈希旁路移除）**
+> 🔶 **破坏性变更公告（v1.5.7 · F53 注册路径验哈希旁路移除）**
 >
 > **`RegisterModelInput.verifyHash` 入参删除，`registerModel` 验哈希硬编码为 `true`**（供应链红线收口）：v1.5.1 披露的「注册路径可用 `verifyHash: false` 显式跳过验哈希」旁路（调用方恰是被约束方）已移除——注册 / 切换（switchModel）/ 回滚（rollbackWeightsVersion）三条版本切换路径统一为唯一强校验路径，无旁路。
 > **升级影响（行为变更）**：此前依赖 `verifyHash: false` 跳过权重哈希校验的注册调用将**直接失败**（哈希不匹配即拒绝注册，fail-closed）；MCP tool `model_register` 的 `verify_hash` 参数不再生效（schema 保留兼容、传入即被忽略，后续版本移除）。全仓三个调用点已同批适配（mcp/model-register、train/artifact-register、orchestrator/registerLocalEndpoint——最后一个本就不传该参数）。
 >裁定链：维护者拍板「硬编码 true 为唯一路径」，该 API 语义变更随 v1.5.7 发版生效。
 
-> 🗑️ **API 退役公告（v1.5.7 待发版 · 浏览器实现底座删除与公开面 4 符号吊销）**
+> 🗑️ **API 退役公告（v1.5.7 · 浏览器实现底座删除与公开面 4 符号吊销）**
 >
 > **`@sofagent/orchestrator` 公开面吊销 4 符号**：`BrowserSession` / `BrowserDriver` / `BrowserAuditSink` / `BrowserSessionFactory`（`public-api-baseline` 同批移除，2549→2545）——实现底座 `engine/orchestrator/src/refine-agent/browser-tools.ts`（260 行）与其单测（204 行）已删除，
 >对齐 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md) 裁定（「第四轮补 · orchestrator 侧能力库」）。触发链：[v1.5.7 第二章 UI 审计可行性报告](./docs/eval/ui-audit-feasibility.md)落盘（结论「不实做」）⇒ 四件套随之退役删除。
