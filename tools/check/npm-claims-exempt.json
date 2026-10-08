@@ -8,7 +8,18 @@
     "🔴 反例纪律：禁止为了转绿把能改的声称加进来。加一条豁免 = 宣称该声称暂不改为真值，须能在理由栏里说清「为何现在不能改」。",
     "窗口态豁免已移除（本版 publish 完成后）：README 双语版本说明行的声称值已与 registry latest 相等（1.5.6），回到在线对账管辖——豁免是「待清债」不是常态，债清了即移出（同 v1.5.5 轮 F5 先例）。"
   ],
-  "exemptAnchors": [],
+  "exemptAnchors": [
+    {
+      "file": "README.md",
+      "anchor": "版本说明：v1.5.7 已发版（2026-10-08）",
+      "reason": "发版窗口态：bump 批已把版本说明行翻 v1.5.7（本版发布物本体），registry latest 仍是 1.5.6——publish 完成后声称即与真值相等，本条须同批摘除（债清即移出，非永久口子；v1.5.5 轮 F5 同款先例）"
+    },
+    {
+      "file": "README.en.md",
+      "anchor": "Version note**: v1.5.7 was released (2026-10-08)",
+      "reason": "同 README.md 条（英文侧对称）——发版窗口态豁免，publish 后同批摘除"
+    }
+  ],
   "exemptAnchors_spec": {
     "形态": "{ file, anchor, reason } 三条——**不是**「文件+行号」",
     "为何不用行号": "行号随任何编辑漂移，漂移即静默失效或静默误放行（失明且失声）。锚串漂移可被检出，故锚定到「行内锚串」。",
