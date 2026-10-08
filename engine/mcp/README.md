@@ -87,7 +87,7 @@ SOFAGENT_MCP_ROLES=audit sofagent mcp
 
 | Tool | 语义 |
 |------|------|
-| `run_audit` | 全量审计规则跑批（25 条规则 + HMAC 链） |
+| `run_audit` | 全量审计规则跑批（28 条规则 + HMAC 链） |
 | `audit_file` | 单文件定点审计（不改链） |
 | `audit_query` | 审计数据只读查询（history 三维过滤 + decision 因果链，不写链） |
 | `ruleset_export` | 规则集导出（默认规则 + 扩展 → 标准 JSON，双向可逆 + 内容指纹） |
@@ -96,7 +96,7 @@ SOFAGENT_MCP_ROLES=audit sofagent mcp
 | `data_sovereignty_report` | 数据主权审计报告 |
 | `audit_data_change` | 数据变更审计（表/行级追溯） |
 | `notify_session` | 会话通知（审计事件面） |
-| `list_rules` | 规则清单（25 条——名称/分级/启用态） |
+| `list_rules` | 规则清单（28 条——名称/分级/启用态） |
 | `audit_trail` | 审计链查询（HMAC 校验 + 时间窗过滤） |
 
 完整文档见主仓库：https://github.com/KongFangXun/sofagent

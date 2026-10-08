@@ -18,7 +18,7 @@
       "gate": { "name": "audit", "default": true },
       "env": "SOFAGENT_AUDIT_ENABLED",
       "dependsOn": [],
-      "disabledImpact": "git diff 零安检（27 条规则全停）——commit 不再被拦截，密钥/后门/注入载荷直上生产"
+      "disabledImpact": "git diff 零安检（28 条规则全停）——commit 不再被拦截，密钥/后门/注入载荷直上生产"
     },
     {
       "id": "audit-acceptance-gate",

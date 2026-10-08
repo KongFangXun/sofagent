@@ -1072,7 +1072,7 @@ FDE_HARNESS_COUNT=$(grep -c "FDE Harness" "$README" 2>/dev/null || true); FDE_HA
 [ "$FDE_HARNESS_COUNT" -ge 1 ] || { fail "README 'FDE Harness' 完全消失（品牌主身份丢失，期望 ≥1）"; S120_OK=false; }
 grep -qE '(约束层|Harness)' "$README" || { fail "README 缺 '约束层/Harness' 身份描述"; S120_OK=false; }
 grep -qE '(审计|audit)' "$README" || { fail "README 缺 '审计' 身份描述"; S120_OK=false; }
-# v1.2.9 技术描述移入 ARCHITECTURE.md，改为检查 ARCHITECTURE（措辞已从 README 的"审计模块核心规则零 token"改为 ARCHITECTURE 的"20 条纯 git-diff 零 token"）
+# v1.2.9 技术描述移入 ARCHITECTURE.md，改为检查 ARCHITECTURE（措辞已从 README 的"审计模块核心规则零 token"改为 ARCHITECTURE 的"22 条纯 git-diff 零 token"）
 grep -qE '(纯\s*git-diff|零\s*token|不调\s*LLM)' "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE 缺 '零 token' 审计描述"; S120_OK=false; }
 # v1.3.0 README 不再列历史版本号，检查当前版本标记即可 v1.4.1 校准：原写死 'v1\.3\.|v1\.2\.9' 在版本演进后必然漂移——改动态对账根 package.json SSOT 2 段版本
 README_VER_MARK=$(node -p "require('$PROJECT_ROOT/package.json').version.split('.').slice(0,2).join('.')")
@@ -2003,7 +2003,7 @@ grep -q "ruleType: 'tool'" "$PROJECT_ROOT/engine/rules/src/rules/tool-injection.
 grep -q "ruleType: 'diff'" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" || S228_OK=false
 # 共享检测逻辑（SECRET_PATTERNS 统一来源）
 grep -q "SECRET_PATTERNS" "$PROJECT_ROOT/engine/core/src/shared/secret-patterns.ts" || S228_OK=false
-$S228_OK && pass "双规则统一（tool 3 条 ruleType + diff 25 条 ruleType + SECRET_PATTERNS 共享）"
+$S228_OK && pass "双规则统一（tool 3 条 ruleType + diff 28 条 ruleType + SECRET_PATTERNS 共享）"
 scenario 229 "v1.3.0 交付 2 shouldAllow 拦截 API（InterceptVerdict + requireApproval）"; S229_OK=true
 # shouldAllow 函数存在
 grep -q "export function shouldAllow" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false

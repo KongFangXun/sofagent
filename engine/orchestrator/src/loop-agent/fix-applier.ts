@@ -3,7 +3,7 @@
 // ============================================================
 //
 // L3 定位 → LLM 生成修复方案（FixProposal）→ 应用 → 审计模块卡关
-// （调 @sofagent/audit runRules 跑 25 条规则）→ PASS 进 L5 / FAIL 回滚。
+// （调 @sofagent/audit runRules 跑 28 条规则）→ PASS 进 L5 / FAIL 回滚。
 //
 // 安全网：改错了不致命——审计模块用 git diff 硬证据拦。
 // FAIL 回滚用 git checkout（Agent 目录是 git 管理的）。
@@ -445,7 +445,7 @@ async function rollbackFiles(files: string[], rootDir: string, fileOpsDeps?: Fil
   }
 }
 
-/** 审计卡关（调 @sofagent/audit runRules 跑 25 条规则） */
+/** 审计卡关（调 @sofagent/audit runRules 跑 28 条规则） */
 async function runAuditGate(
   files: string[],
   rootDir: string,
@@ -487,7 +487,7 @@ async function runAuditGate(
       return { passed: true, violations: [] };
     }
 
-    // 调 runRules（复用 audit 包的 parseDiff + 25 条规则）
+    // 调 runRules（复用 audit 包的 parseDiff + 28 条规则）
     const { parseDiff } = await import('@sofagent/core');
     const diffFiles = parseDiff(diffOutput);
     const result = runRules(diffFiles, [], 'onboard-l4-fix', false, true);

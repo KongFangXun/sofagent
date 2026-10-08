@@ -293,7 +293,7 @@ export function buildExportedRuleset(
 /**
  * 规则集导出入口——构造 → 落盘 → 审计留痕（MCP `ruleset_export` / CLI 复用）。
  *
- * 导出内容 = 25 条默认规则（defaultRules 17）+ 扩展规则（extendedRules 8）。
+ * 导出内容 = 17 条默认规则（defaultRules）+ 扩展规则（extendedRules 11，共 28 条）。
  * 导出物 = 与 `--ruleset-path` 加载格式同构的 Ruleset JSON（双向可逆）。
  *
  * @param opts 导出选项（测试须传临时 dataDir/outDir，避免污染真实数据目录）

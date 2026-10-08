@@ -1,7 +1,7 @@
 {
   "name": "@sofagent/audit",
   "version": "1.5.7",
-  "description": "Commit-time audit for AI coding agents — scans git diff against 25 discipline rules (secret leaks, out-of-scope edits, injection, permission lines), tamper-evident chain + snapshots. CLI: `npx -y -p @sofagent/audit` or via the sofagent single entry.",
+  "description": "Commit-time audit for AI coding agents — scans git diff against 28 discipline rules (secret leaks, out-of-scope edits, injection, permission lines), tamper-evident chain + snapshots. CLI: `npx -y -p @sofagent/audit` or via the sofagent single entry.",
   "main": "./dist/public-api.js",
   "types": "dist/public-api.d.ts",
   "exports": {

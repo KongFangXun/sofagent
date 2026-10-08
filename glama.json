@@ -1,7 +1,7 @@
 {
   "$schema": "https://glama.ai/mcp/schemas/server.json",
   "name": "sofagent",
-  "description": "Open-source FDE Harness for AI coding agents — agent governance & audit layer: 25 audit rules, tamper-evident chain, snapshots, 104 MCP tools. Constrain every agent change; audit it against frozen business judgment.",
+  "description": "Open-source FDE Harness for AI coding agents — agent governance & audit layer: 28 audit rules, tamper-evident chain, snapshots, 104 MCP tools. Constrain every agent change; audit it against frozen business judgment.",
   "maintainers": [
     "KongFangXun"
   ]

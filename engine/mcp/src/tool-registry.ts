@@ -193,7 +193,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'run_audit',
     roles: ['audit'],
-    description: '对 git diff 运行全量审计（25 条规则），返回结构化审计报告。',
+    description: '对 git diff 运行全量审计（28 条规则），返回结构化审计报告。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2186,7 +2186,7 @@ export const TOOLS: ToolDef[] = [
     // v1.5.2 章二：规则集导出——默认规则 + 扩展规则 → 标准 JSON（导出格式即加载格式，双向可逆）
     name: 'ruleset_export',
     roles: ['audit'],
-    description: '规则集导出——25 条默认规则 + 已加载扩展规则导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。边界：list_rules 只列规则清单、corpus_export 导出训练语料三件套——本 tool 导出「规则面标准 JSON」供第三方零转换消费。',
+    description: '规则集导出——17 条默认规则 + 11 条扩展规则（共 28 条）+ 已加载 overlay 导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。边界：list_rules 只列规则清单、corpus_export 导出训练语料三件套——本 tool 导出「规则面标准 JSON」供第三方零转换消费。',
     inputSchema: {
       type: 'object',
       properties: {
