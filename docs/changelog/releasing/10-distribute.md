@@ -98,6 +98,7 @@ done
 > **前置（缺一不可）**：
 > - 登录态：先 `clawhub whoami` 确认已登录（发布走 ClawHub 账号）
 > - **源码已 push**：ClawHub 发布是 **source-linked 机制**——发布时从 `github:KongFangXun/sofagent@main:<plugin目录>` 拉源码，**必须先 push 到 GitHub 再发布**（dry-run 可验证映射，真实发布依赖远端文件存在）
+> - 🔴 **先本地 build 再发布**：`dist/` 是 gitignored 构建产物（仓库 ref 内不存在），ClawHub source-linked 从 GitHub 拉源码 ⇒ 未 build 时逐款报 `declares openclaw.runtimeExtensions entry ./dist/index.js, but that file is missing from the package`。发布前逐款 `( cd engine/openclaw-plugins/<name> && npm run build )`（四款都要，别只 build 一款就整批发）
 > - **`openclaw.build.openclawVersion` 必填**：package.json 的 `openclaw.build.openclawVersion`（= 当前 OpenClaw 版本，`npm view openclaw version` 查）——缺失时 dry-run 报「required for external code plugins」
 > - **双 manifest 版本一致**：ClawHub 校验 `package.json` 与 `openclaw.plugin.json` 两层 version 必须一致且 = 目标版本——bump 后先跑 `bash tools/check/check-version.sh`（9c 段已覆盖双 manifest），漂移直接被拒
 > - 先 `--dry-run` 验证格式与 source 映射，再真实发布
