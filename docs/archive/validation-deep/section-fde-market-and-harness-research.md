@@ -1,6 +1,6 @@
 # VALIDATION 印证归档 · FDE 市场面 + Harness 研究（v1.5.7 文档减重）
 
-> 原属 `docs/VALIDATION.md`，按 [06-doc-finalize 步骤④](../../releasing/06-doc-finalize.md)「>3 行印证全文须在 docs/archive/validation-deep/ 有归档件、原地留摘要 + 指针」迁出，**原文逐字保真**。
+> 原属 `docs/VALIDATION.md`，按 [06-doc-finalize 步骤④](../../changelog/releasing/06-doc-finalize.md)「>3 行印证全文须在 docs/archive/validation-deep/ 有归档件、原地留摘要 + 指针」迁出，**原文逐字保真**。
 
 ## 1 · 原 `docs/VALIDATION.md` L246-253
 
