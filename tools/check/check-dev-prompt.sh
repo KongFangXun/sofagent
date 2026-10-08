@@ -45,7 +45,7 @@
 # 标记：
 #   ✅ 一致
 #   ⚠️  路径缺前缀（engine/ FORGE/ 等，含跨多级简写）→ 警告，不计错误
-#   📋 待新建／待归档／迁移改名目标（该引用本就应当尚不存在）→ 不计错误
+#   📋 待新建／待归档／迁移改名目标／纠错语境（该引用本就应当尚不存在）→ 不计错误
 #   🗑  已退场（文档声明该路径/函数已移除，本就应当不存在）→ 不计错误
 #   ⚠️  ℹ️  🔄 缺前缀／相对路径描述／运行时产物或非纯路径 → 跳过或警告
 #   ❌ 真不一致（路径错位／文件不存在／函数未找到定义／快照行数漂移）
@@ -80,6 +80,16 @@
 #   ⑨ 报「同源」是断言，须有据：同名项另有 N 处时只报「另有 X，是否同源需人工确认」，
 #      不得写成「实际位于 X」——实锤目录清单里恰好同名的无关目录（docs/archive 之于
 #      FORGE/lessons/archive/）被断言成迁移去处。
+#   ⑩ 纠错语境豁免在**路径面**同样成立（此前只有检查项 6 符号面有）：文档写
+#      「`x.ts` 路径不存在 / 实现在 `y.ts`」是在纠错，不是在犯错，报 ❌ 是把纠错动作
+#      当错误计数。判据仅取「不存在」收尾成断言的两路形态（同格内紧随 / 表格下一格开头），
+#      「不存在则创建」这类条件句不豁免——豁免放宽即假绿。
+#   ⑪ 「修改」引用的文件不存在，不等于文档错：前序规划版的「涉及文件（预估）」表若已把
+#      该路径声明为「新建」，本版写「修改」正是计划链自洽的形态（两版都没发版时文件自然
+#      还不存在）。原实现只在本文件内找「新建」标记 ⇒ 恒假红且改文档也消不掉。
+#      补法 = 跨版「新建」索引（只读 docs/changelog/v*/ 表内的动作格→文件格映射）。
+#      🔴 索引只接管「文件不存在」这一支：**「路径错位」不豁免**——同名文件在别处是路径
+#      写错，必须报（纪律③）。
 # ============================================================
 
 set -o pipefail
@@ -255,7 +265,9 @@ fi
 TMPFILE=$(mktemp /tmp/check-dev-prompt.XXXXXX)
 ERRFILE=$(mktemp /tmp/check-dev-prompt-err.XXXXXX)
 IDXFILE=$(mktemp /tmp/check-dev-prompt-idx.XXXXXX)
-trap 'rm -f "$TMPFILE" "$ERRFILE" "$IDXFILE"' EXIT
+# 跨版「新建」索引（下文构建）——先置空以便 trap 在早期退出路径上也安全（set -u）
+NEWFILE_IDX=""
+trap 'rm -f "$TMPFILE" "$ERRFILE" "$IDXFILE" "$NEWFILE_IDX"' EXIT
 
 # 🔴 v1.2.6 修复：NODE 未设置时 "$NODE" 展开为空 → node 步骤静默失败 →
 # TMPFILE 为空 → 三项检查全跳过 = 虚假绿色（零 ❌ 但实际什么都没查）。
@@ -485,6 +497,31 @@ function isPendingRef(ref, line, refIndex) {
       || isArrowTarget(line, refIndex);
 }
 
+// 🔴 纠错/勘误语境：该行本身就在声明「这个引用是错的 / 该路径不存在」——
+//    再把它报成 ❌ 是把文档的**纠错动作**当成文档的**错误**（重复计数）。
+//    检查项 6（符号归属）早有同类豁免（ATTR_EXEMPT_RE），路径面一直缺 ⇒ 补上。
+//    实锤形态（v1.5.7）：
+//      ① 涉及文件表的说明列：「…`list_capabilities` 实现在该文件…；`tools/list-capabilities.ts` 路径不存在」
+//      ② 陈旧面回写清单：「| 10 | 五 | `…/list-capabilities.ts` 修改 | 不存在；实现在 `report-tools.ts`… | 已回写真实路径 |」
+//    判据两路，都要求「不存在」收尾成**断言**——「不存在则创建」这类条件句不算：
+//      ① 引用后 ≤40 个非「|」字符内出现「（路径）不存在」+ 断言收尾符
+//      ② 表格行：紧邻的下一格以「（路径）不存在」开头 + 断言收尾符
+//    只影响「不存在」时的归类；路径存在时仍走 ✅，与纪律⑧ 一致。
+//    字符类刻意写显式空白（[ \t]）而非 \s：本仓有一道扫门禁脚本「活代码残留 \s」的守卫
+//       （BSD sed 不支持 \s），不为它添新命中。
+var ERRATUM_ASSERT = "(?:[；;，,。）)．.]|[ \t]|$)";
+function isErratumRef(line, refIndex, ref) {
+  var at = line.indexOf(ref, refIndex);
+  if (at < 0) return false;
+  var tail = line.slice(at + ref.length);
+  if (new RegExp("^[^|]{0,40}?(?:路径)?不存在" + ERRATUM_ASSERT).test(tail)) return true;
+  if (!/^[ \t]*\|/.test(line)) return false;
+  var seg = tail.indexOf("|");
+  if (seg < 0) return false;
+  var nextCell = tail.slice(seg + 1).split("|")[0] || "";
+  return new RegExp("^[ \t*`]*(?:路径)?不存在" + ERRATUM_ASSERT).test(nextCell);
+}
+
 function lineCtx(line) {
   if (/修改|升级|更新|改动/.test(line)) return "modify";
   // v1.3.9 补：相对路径描述——行内含「相对/同目录/import ./」等语境词时，
@@ -514,7 +551,10 @@ lines.forEach(function(line) {
       if (!seen[k]) {
         seen[k] = 1;
         var planned = isPendingRef(p, line, m.index);
-        console.log("P|" + p + "|" + (planned ? "planned" : (isRetiredRef(line, m.index, p) ? "retired" : c)));
+        var ctx = planned ? "planned"
+          : (isRetiredRef(line, m.index, p) ? "retired"
+          : (isErratumRef(line, m.index, p) ? "erratum" : c));
+        console.log("P|" + p + "|" + ctx);
       }
     }
   });
@@ -676,6 +716,39 @@ find engine tools FORGE SKILL FDE docs playbook \
   -not -path "*/node_modules/*" -not -path "*/dist/*" \
   \( -type f -o -type d \) 2>/dev/null | sort > "$IDXFILE"
 
+# ─── 跨版「新建」索引 ───
+# 场景：前序规划版在「涉及文件（预估）」表里把某路径声明为**新建**，本版对同一路径写**修改**。
+# 计划链自洽（本版施工时该文件已由前序版造出），但两版都尚未发版 ⇒ 该文件当下确实不存在。
+# 原实现只在本文件内找「新建」标记 ⇒ 该引用落 ❌「文件不存在」，且**改文档也消不掉**
+# （「修改」是正确写法）——恒假红。判据：路径逐字命中任一 devlog 表内「新建族」动作格
+# 所辖文件格 ⇒ 归 📋 待新建。
+# 🔴 只管「文件不存在」这一支：「路径错位」（同名文件在别处）不在其列——那是路径写错，必须报。
+# 🔴 只读 docs/changelog/v*/ 下的规划日志，不引入任何外部真相源；索引本身不做存在性预筛
+#    （文件若已存在就走 ✅ 分支，永远到不了这里）。
+NEWFILE_IDX=$(mktemp /tmp/check-dev-prompt-newidx.XXXXXX)
+"$NODE" -e '
+var fs = require("fs"), path = require("path");
+var root = "docs/changelog", out = {};
+fs.readdirSync(root).forEach(function(d) {
+  if (!/^v[0-9]/.test(d)) return;
+  var dir = path.join(root, d);
+  if (!fs.statSync(dir).isDirectory()) return;
+  fs.readdirSync(dir).forEach(function(f) {
+    if (!/\.md$/.test(f)) return;
+    fs.readFileSync(path.join(dir, f), "utf8").split("\n").forEach(function(line) {
+      if (!/^[ \t]*\|/.test(line)) return;
+      var cells = line.split("|");
+      for (var i = 1; i < cells.length; i++) {
+        if (!/^[ \t*`]*(待?新建|新文件|新增)[ \t*`]*$/.test(cells[i])) continue;
+        var re = /`([^`]+)`/g, m;
+        while ((m = re.exec(cells[i - 1] || ""))) out[m[1]] = 1;
+      }
+    });
+  });
+});
+Object.keys(out).forEach(function(k) { console.log(k); });
+' > "$NEWFILE_IDX" 2>/dev/null || true
+
 # 按【路径后缀】反查：真实路径以 /<引用> 结尾 ⇒ 引用是跨多级简写（非错位）
 suffix_hits() {
   local clean="${1%/}" pat
@@ -751,6 +824,11 @@ while IFS='|' read -r tag ref c || [ -n "$tag" ]; do
     elif [ -n "$pfx" ]; then
       printf '  ⚠️  %s -> %s%s (缺前缀 %s)\n' "$ref" "$pfx" "$clean" "$pfx"
       WARNINGS=$((WARNINGS + 1))
+    elif [ "$c" = "erratum" ]; then
+      # 纠错/勘误语境：该行本身就在声明「这个引用是错的 / 该路径不存在」——文档的纠错动作，
+      # 不是文档的错误。检查项 6 早有同类豁免，此处补齐路径面（判据见提取器 isErratumRef）。
+      printf '  📋 %s (纠错语境：文档声明该路径不存在)\n' "$ref"
+      PLANNED=$((PLANNED + 1))
     elif [ "$c" = "planned" ]; then
       printf '  📋 %s (待新建)\n' "$ref"
       PLANNED=$((PLANNED + 1))
@@ -766,10 +844,16 @@ while IFS='|' read -r tag ref c || [ -n "$tag" ]; do
           # 🔴 模块迁移/错位：该处不存在但同名文件在别处——必须报错并点明去处，
           # 不得落「待新建」静默放行（历史实锤：train 拆包后旧路径 orchestrator/src/train/*）
           printf '  %s %s -> 路径错位（该处不存在；同名文件另有：%s，是否同源需人工确认）\n' "$EMARK" "$ref" "$(echo "$base" | tr '\n' ' ')"
+          mark_err
+        elif [ -n "$NEWFILE_IDX" ] && grep -Fxq "$clean" "$NEWFILE_IDX" 2>/dev/null; then
+          # 前序规划版的「涉及文件（预估）」表已把该路径声明为「新建」——本版写「修改」是对的，
+          # 只是两版都尚未发版 ⇒ 文件当下不存在。判据见 NEWFILE_IDX 构建处。
+          printf '  📋 %s (待新建·前序规划版已声明新建)\n' "$ref"
+          PLANNED=$((PLANNED + 1))
         else
           printf '  %s %s -> 文件不存在\n' "$EMARK" "$ref"
+          mark_err
         fi
-        mark_err
       fi
     fi
   fi
