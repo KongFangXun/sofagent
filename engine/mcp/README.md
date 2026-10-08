@@ -57,13 +57,13 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 
 | Tool | 说明 |
 |------|------|
-| `run_audit` | 对 git diff 跑全量审计规则（A1-A11、A14-A24 + E1-E2/E4，共 25 条），返回结构化报告 |
+| `run_audit` | 对 git diff 跑全量审计规则（A1-A11、A14-A24 + E1-E2/E4-E7，共 28 条——v1.5.7 新增 E5 SMB 数据产物 / E6 提示注入 / E7 决策质量），返回结构化报告 |
 | `get_think` | 读取 think.md 最近 N 条反思条目 |
 | `write_think` | 向 think.md 追加一条反思记录 |
 | `device_register` / `device_list` | G9 设备注册面（v1.4.9）：Ed25519 验签注册 + 清单在线态 |
 | `worklog_query` / `cost_query` / `fde_*` / `train_*` / `snapshot_*` / `ontology_*` / `pr_*` / `workflow_*` / `data_push` / … | 其余 103 个——审计/编排/后训/治理/成本/知识/PR 生命周期/workflow CRUD/数据推送各域，见 API.md 分域清单 |
 
-> 注：A12/A13 已在 v0.99.4 合并入 A11（不滥资源），编号不再使用。
+> 注：A12/A13 已在 v0.99.4 合并入 A11（不滥资源），编号不再使用。v1.5.7 章四起 `report_tools --stats --tools` 提供三视图工具使用率（含 `status` 成败与 `durationMs` 耗时——退役决策数据面）。
 
 ---
 
