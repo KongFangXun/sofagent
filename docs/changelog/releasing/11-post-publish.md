@@ -139,10 +139,11 @@ sofagent-core --doctor             # 期望全部通过
 #      「现在在哪」节本版叙事行、当前版本 devlog 头、各文档头状态行。
 #   ② **bump 时已翻**（本步骤只复核不重做）：文档头 `> vX.Y.Z · 日期 · ✅ 已发版`（20+ 个 .md）、
 #      CHANGELOG 索引行、WIKI 状态表、ROADMAP 顶栏第一二行与目录锚点。
-#   ③ **本步骤不翻**（属步骤十五「发版即移出」面）：ROADMAP「规划版本」表的本版行状态列——
-#      该行整行要移入「迭代历程」表，翻牌是多余动作（06-doc-finalize 定谳：bump 时保持
-#      「✅ 开发完成（⏳ 待发版）」）。该列**不计入** check-version 第 26/27 项 ⇒
-#      「§26 全绿但规划表仍写待发版」是正常窗口态，不是漏翻。
+#   ③ ROADMAP「规划版本」表的本版行——**两时点**（与 06 触点 #15 同口径）：bump 至 publish
+#      完成前保持「✅ 开发完成（⏳ 待发版）」是正确窗口态；**publish 完成后状态词即翻**
+#      「✅ 已发版（日期）」（实测口径——check-version 活文档残留守卫以已发版事实为判据）；
+#      **整行移入「迭代历程」表**的结构性动作归步骤十五。bump 时段「§26 全绿但规划表仍写
+#      待发版」是正常窗口态，不是漏翻；publish 后仍写待发版才是漏翻。
 # 🔴 翻牌批裹挟防御：多 session 并发时 `git add <翻牌文件>` 会把并行 session
 #    在该文件工作区的未提交 hunk（如测试数预改 4805→4807）一并裹挟进翻牌 commit → 远端 CI
 #    报测试数漂移红（本地因含对方改动看不到）。防御：翻牌 commit 前 `git diff --cached` 逐 hunk
@@ -203,7 +204,7 @@ bash tools/check/check-version.sh        # 期望全绿
 
 ### 发版后追加 fix 批（tag 已定、不重打）
 
-> 发版后阶段十一期间发现的**非安装入口**缺陷（tag 指向的 bump 自洽无恙），不必重打 tag——修复 commit 直接推 main，随下一版发布。实走此路径 4 个 fix（插件 projectRoot / orchestrator 上游钉 / README 发布命令 / ClawHub 不可变揭示的滞留项）。
+> 发版后阶段十一期间发现的**非安装入口**缺陷（tag 指向的 bump 自洽无恙），不必重打 tag——修复 commit 直接推 main，随下一版发布。**边界判据（rerun 暴露的真回归落点）**：真回归若落在**安装入口链文件**（install.sh / bootstrap.sh / lib 哈希）⇒ 升级项目负责人裁决是否重打 tag（tag 锚定的安装内容自洽被破坏）；落在其他文件（tag 内安装链自洽）⇒ 直接推 main 随下版——同 tag 后 hotfix 判据，无灰区。实走此路径 4 个 fix（插件 projectRoot / orchestrator 上游钉 / README 发布命令 / ClawHub 不可变揭示的滞留项）。
 
 **判据（是否需要重打 tag）**：
 - **不重打**：缺陷不在 tag 锚定的安装入口链上（`install.sh` / `bootstrap.sh` / npm tag `latest` 指向的包内容）——tag 是用户安装锚点，只要锚定内容自洽，main 上的后续修复属下一版范畴

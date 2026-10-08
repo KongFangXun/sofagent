@@ -45,7 +45,7 @@ acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system +
 
 ## 版本裁定声明（所有轮次适用）
 目标版本={TARGET_VERSION}；HEAD 以每轮 git rev-parse 实测为准（记下并终核未被击穿）；package.json=上一版号是待发版中间态（合法）。
-预期合法输出形态（不修）：维度 130 的 ⏳/🟡 · 维度 7 ⏸️ · coverage EXEMPT。
+预期合法输出形态（不修）：**当前最高维**（取 checklist 头部实数，勿写死）的 ⏳/🟡 · 待发版维 ⏸️ · coverage EXEMPT。
 
 ## 执行序列
 ① 重跑前置三查 → 按 [05-release-gate §重跑前置三查] 全文执行（断点归档 / run 定位 / 冻结确认）

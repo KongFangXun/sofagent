@@ -26,7 +26,7 @@
 #### 二 · 新增文件类型排查
 
 **新增文件类型/目录排查**（脚本管不住的增量判断）：本版本有没有新增文件类型（`.yaml`/`.toml`/`.json5`）？→ check-version.sh 是否需要加检查项？bump-version.sh 是否需要加对应 bump 步骤？本版本有没有新增目录？→ find 排除规则是否需要更新？文件迁移？→ regression-checklist 路径是否需要更新？shellcheck 扫描范围与 CI 一致性。归档排除规则完整性。**新增排障工具须在 SOP 登记用法与定位**（登记防孤儿——不登记的新脚本过几版就没人知道为什么存在；
-参照 resolve-section.sh 挂载于 [03](./03-quality-loop.md) / [04](./04-review-system.md)；check-storefront.sh 仓外门面对账挂载于 [09 步骤二](./09-publish.md)；check-forge-branches.sh 分支收编对账挂载于 [03 铁律三](./03-quality-loop.md)；**check-sop-integrity.mjs** SOP 阶段文件完整性（锚链/结构 pin/截断）挂载于 pre-push-check 4c 块 + [本阶段步骤十](./11-post-publish.md)）
+参照 resolve-section.sh 挂载于 [03](./03-quality-loop.md) / [04](./04-review-system.md)；check-storefront.sh 仓外门面对账挂载于 [09 步骤二](./09-publish.md)；check-forge-branches.sh 分支收编对账挂载于 [03 铁律三](./03-quality-loop.md)；**check-sop-integrity.mjs** SOP 阶段文件完整性（锚链/结构 pin/截断）挂载于 pre-push-check 4c 块 + [阶段十一步骤十](./11-post-publish.md)）
 
 | # | 完成 | 步骤 | 验证方式 |
 |:--:|:--:|------|------|
@@ -39,7 +39,7 @@
 
 | # | 完成 | 步骤 | 验证方式 |
 |:--:|:--:|------|------|
-| 四 | | **🔴 `npm run build` 重建 dist 产物**（源码改了 dist 没改 = CLI 版本号不对）。🔴 **rebuild 后必须重置 dist 基线** | `node engine/audit/dist/index.js --help` 显示正确版本 + 基线同步后 commit 放行 |
+| 四 | | **🔴 `npm run build` 重建 dist **🔴 `npm run build` 重建 dist 产物**（源码改了 dist 没改 = CLI 版本号不对）。🔴 **rebuild 后必须重置 dist 基线**** | `node engine/audit/dist/index.js --help` 显示正确版本 + 基线同步后 commit 放行 |
 
 #### 四 · 🔴 `npm run build` 重建 dist
 
@@ -50,7 +50,7 @@
 |:--:|:--:|------|------|
 | 五 | | **跨文档锚点校验** | `node tools/check/check-anchors.mjs` 全绿 |
 | 六 | | **🔴 hook 端到端实测**（见下方脚本） | 拦截 exit 2 + 放行 exit 0 |
-| 七 | | **shell 变量定界守卫**（`tools/` 下全部 `.sh` 中 `$VAR` 后紧跟**非 ASCII 字符** → 变量名被吞，set -u 崩溃 / 无 set -u 时静默展开为空）。⚠️ 危害主形态是**变量静默展开为空**（无 set -u 时不报错，只在输出里丢值，常藏在仅失败分支触发的行里）——不是只有 set -u 崩溃一种形态 | `bash tools/check/check-cjk-var.sh` 全绿 |
+| 七 | | **shell 变量定界守卫**（`tools/` 下全部 `.sh` 中 `$VAR` 后紧跟**非 ASCII 字符** → 变量名被吞，set -u 崩溃 / 无 set -u 时静默展开为空）。⚠️ 危害主形态是**变量静默展开为空**（无 set -u 时不报错，只在输出里丢值，常藏在仅失败分支触发的行里）——不是只有 set -u 崩溃一种形态。**同族第二形态：管道无匹配 + pipefail**——`… \| grep X` 在 `bash -eo pipefail`（CI 形态）下无匹配即整管道非 0 → 脚本以无关名义硬失败（实测：install.sh `head -2 \| grep` 炸）——凡新增 `\| grep`/`\| head` 类管道，要么补 `\|\| true` 兜底要么确保匹配面恒存在 | `bash tools/check/check-cjk-var.sh` 全绿 |
 | 八 | | **🔴 防线失明自检** | 正常态 RC=0 且注入矩阵全报红；人为让 perl 失效重跑必须 RC≠0 |
 
 #### 八 · 🔴 防线失明自检

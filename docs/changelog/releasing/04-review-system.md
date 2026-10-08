@@ -147,7 +147,7 @@ bash tools/check/check-guards.sh --inject
 
 #### 一 · 跑一致性门禁
 
-`bash tools/check/check-review-system.sh`——脚本自动核对六组声称值 vs 实际值（checklist 头部/正文维度数、编号查重、双文档行数警戒线、checklist 自校验段警戒线同步、acceptance 场景数与编号唯一性、S 编号交叉引用闭环、fresh-eyes 行数、check-version 分母自洽）（v1.4.8 起已接入 pre-push-check 3c 与 pr-check CI，日常 push 即拦）
+`bash tools/check/check-review-system.sh`——脚本自动核对六组声称值 vs 实际值（checklist 头部/正文维度数、编号查重、双文档行数警戒线、checklist 自校验段警戒线同步、acceptance 场景数与编号唯一性、S 编号交叉引用闭环、fresh-eyes 行数、check-version 分母自洽）（已接入 pre-push-check 3c 与 pr-check CI，日常 push 即拦）
 
 
 > 审查文档自身也会过时——脚本管得住「声称 N ≠ 实际 N」这类数字漂移，管不住「维度内容过时」；后者靠步骤二的人工通读。`acceptance-test.sh` 的场景数和覆盖范围必须与 changelog 功能点对齐。
