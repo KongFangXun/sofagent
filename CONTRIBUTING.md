@@ -184,6 +184,8 @@ bash install.sh && bash engine/scripts/verify.sh
 
 代码主要由 AI 模型辅助生成，作者做产品决策和终审。PR 经 AI review 后作者终审。**Co-maintainer 诱因**：合入 5 个 PR → Admin；贡献跨平台修复 → README 留名；完成英文翻译 → 英文文档 Owner。
 
+> 📌 **提交者身份约定**：统一使用 `git config user.name KongFangXun`（与 GitHub 账号 [KongFangXun](https://github.com/KongFangXun) 一致；文档署名「孔放勋」与该账号为同一作者，关联说明见 [WIKI · 文件地图](./docs/WIKI.md#五文件地图)）。历史 11 条 `author=test` 提交与 `孔放勋`/`KongFangXun` 双身份并存属早期工具配置残留，**不改写历史**（冻结），本约定自登记起对新提交生效。
+
 ## 开发环境 + 发版
 
 ```bash

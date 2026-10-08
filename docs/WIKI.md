@@ -178,7 +178,7 @@ graph TB
 约束层（工作环境）       Graph（流程拓扑）         Loop（反馈改进）
 ┌─────────────────┐     ┌──────────────────┐      ┌─────────────────────┐
 │ 约束注入链 + 加载链│ ──→ │ 编排模块（内部）     │ ──→  │ FORGE（fresh-eyes +   │
-│ 审计能力（25规则）│     │ LangGraph ReactAgent│      │ release-gate-loop）+  │
+│ 审计能力（28规则）│     │ LangGraph ReactAgent│      │ release-gate-loop）+  │
 │ daemon（文件监控） │     │ 多Agent 任务拆解     │      │ sustain（进化能力）    │
 │ data/（状态持久） │     │                     │      │ eval 反馈闭环         │
 │ ToolGate（权限）  │     │                     │      │                      │
@@ -192,6 +192,7 @@ graph TB
 ## 五、文件地图
 
 > 💡 **FDE/ 是给人看的部署流程文档；SKILL/ 是给 Agent 读的行为约束文件。新 Skill 放 SKILL/。**
+> ✍️ 署名关联：本仓文档署名（孔放勋 / KongFangXun）与 GitHub 账号 [`KongFangXun`](https://github.com/KongFangXun) 为同一作者——提交统一用 `user.name=KongFangXun`（约定见 [CONTRIBUTING](./CONTRIBUTING.md)）。
 
 ### 根目录（重要性排序）
 
