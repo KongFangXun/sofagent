@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// orchestrator CLI · v1.5.6
+// orchestrator CLI · v1.5.7
 //
 // loop 子命令 v1.3.7 升级：默认走 LangGraph StateGraph 节点级流转
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
-// 恢复。旧版串行路径（--legacy）已按弃用公告在 v1.5.6 移除。
+// 恢复。旧版串行路径（--legacy）已按弃用公告在 v1.5.7 移除。
 
 import { join } from 'path';
 // v1.5.4 第四章：多实例交叉表决的**生产调用点**——`vote` 子命令经 HITL 处理器

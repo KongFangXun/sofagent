@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// core CLI · v1.5.6
+// core CLI · v1.5.7
 
 // flag 别名路由（run-08 P0-1）：--doctor 是用户高频习惯写法（audit CLI 同名 flag
 // 已路由到 runDoctor）——core 此前只认裸词子命令，手滑写 --doctor 会得到
 // Unknown subcommand，验收场景 28 即因此 WARN（输出无 post-commit 字样，
 // 被误判为 doctor 检测缺失，实则检测一直在）。flag → 子命令归一，两种写法都可用。
-// v1.5.6 章四：同款把裸 --refresh 归一为 doctor refresh（写操作，兑现 audit CLI
+// v1.5.7 章四：同款把裸 --refresh 归一为 doctor refresh（写操作，兑现 audit CLI
 // `index.ts` 的「--refresh 自动路由」承诺——core 侧亦不报未知参数）。
 const rawArgs = process.argv.slice(2);
 const isFlagRouter = rawArgs[0] === '--doctor' || rawArgs[0] === '--refresh';

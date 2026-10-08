@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # bootstrap.sh · sofagent 一行安装入口（装在企业跑 AI 节点的设备上）
 # 钉值纪律：钉值始终指向已发布 tag（与 INSTALL_URL 同 tag 自洽）——发版窗口期维持上一已发版 tag 值 + 哈希待阶段九打 tag 回填，发版后即指向本版 tag。install.sh 行数随版本演进，此处不自述（行数数字永远会漂，删除优于维护）。
-# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.6/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
+# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.7/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
 # 离线：./bootstrap.sh --local /path/to/install.sh
 # 透传：curl ... | bash -s -- --base-only
 set -euo pipefail
 # ERR trap 品牌兜底：崩溃时用户看到产品信息而非裸 bash 报错（v1.3.2 P0-B1/P2-37）
 trap 'echo "❌ sofagent bootstrap 失败（exit $?）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"' ERR
-# v1.3.5 #31: 锁定已发布 tag（当前 refs/tags/v1.5.6）——main 浮动导致装到的版本不可复现；
+# v1.3.5 #31: 锁定已发布 tag（当前 refs/tags/v1.5.7）——main 浮动导致装到的版本不可复现；
 #   升级时改此 tag 与 README 安装段同步。
-INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.6/install.sh"
+INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.7/install.sh"
 # ════════════════════════════════════════════════════════════════════════
 # v1.4.3 P2-f（F-07）：下载完整性校验（curl | bash 信任模型加固）
 # install.sh 是将被 bash 直接执行的代码——下载通道（HTTPS 上的 raw.githubusercontent）
@@ -24,16 +24,16 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #      机器校验见 tools/check/check-version.sh 第 20 项（lib 哈希逐一对账）。
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
-INSTALL_SHA256="08cdcf20515ac9bd495c9b0edbfff4154d5d525ee83c9f6475a062f53b871818"  # v1.5.6 tag:install.sh
+INSTALL_SHA256="2fdf63845210fd30af21cf4e4e7c81e88282b06738fbdf902bc3fa6eaeaf38bb"  # v1.5.7 tag:install.sh
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。
-LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.6/engine/scripts/lib"
+LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.7/engine/scripts/lib"
 LIB_FILES="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh daemon-lib.sh config.sh"
 # lib 文件 sha256（与 LIB_FILES 顺序一一对应；file-deploy.sh / post-install.sh
 # 沿用上一版起值（v1.5.4 周期 lib 零改动——git diff v1.5.3..HEAD --stat -- engine/scripts/lib/ 为空）；
 # 下版 lib 有改动时按头部 for 循环命令重算回填）
-LIB_SHA256S="3e9e4c30c2c26b57601e3e39c003e722eb522fae690cdd74311e2ceff3740809
+LIB_SHA256S="e0b1c5b9f291d558f6f0450f41bc185d68ed50d0aae02005852186a997b9f2c0
 d6560792bb88472e30ab12ed4d86614226c280501d7858b8683ebfc647919a42
 ac0e900fc904cec0b5530baf0ee64934591b7ff3b710b46a9f6f5d317b113461
 d41703698ef480d9166aee69a4fddd61338dd89e7956890dfd4d9d6c138bae3e

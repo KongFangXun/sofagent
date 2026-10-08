@@ -1,5 +1,5 @@
 // ============================================================
-// execution-state/index.ts · v1.5.6 章五 · LangGraph 惰性加载守卫
+// execution-state/index.ts · v1.5.7 章五 · LangGraph 惰性加载守卫
 // ============================================================
 // 存在理由：@langchain/langgraph 自 orchestrator dependencies 降为
 //   optionalDependencies（对齐 root F-18 体例）后，「dsh-only 裁剪安装态零

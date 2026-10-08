@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-verify · 装后验证脚本（TypeScript 版）——入口文件
-// v1.5.6 从 sofagent/audit/src/verify.ts 迁出
+// v1.5.7 从 sofagent/audit/src/verify.ts 迁出
 // ============================================================
 // 验证 sofagent 安装完整性（11 个检查类别 §1-§11，~48 项动态）。
 // 由 engine/scripts/verify.sh（bash 版，行数以 `wc -l engine/scripts/verify.sh` 实测为准）+ windows/verify.ps1 合并而来，
