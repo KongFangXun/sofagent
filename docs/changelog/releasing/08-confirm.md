@@ -26,7 +26,7 @@
 
 #### 二 · 冻结窗口重验（门禁时点纪律）
 
-门禁基线表必须是**冻结窗口内的终态实测**——跑之前先过独占窗口三查（同 [01-review 步骤 0](./01-review.md)：git status 文件数 / 近 5 分钟 mtime / 当日 memory 日志他人痕迹），任一命中说明仍有 session 在写仓库，基线表标注「时点快照」并等收尾后重跑。多 session 并行期各阶段的绿都是时点值，只有冻结窗口内跑出的绿才算放行依据；测试数有疑漂先跑 `bash tools/check/sync-test-count.sh --dry-run` 预览归属（谁的测试谁同步），勿抢改在途数值。
+门禁基线表必须是**冻结窗口内的终态实测**——跑之前先过独占窗口三查（git status 文件数 / 近 5 分钟 mtime / 当日 memory 日志他人痕迹），任一命中说明仍有 session 在写仓库，基线表标注「时点快照」并等收尾后重跑。多 session 并行期各阶段的绿都是时点值，只有冻结窗口内跑出的绿才算放行依据；测试数有疑漂先跑 `bash tools/check/sync-test-count.sh --dry-run` 预览归属（谁的测试谁同步），勿抢改在途数值。
 
 > 🔴 **发布 prompt 防漂移铁律**：生成发布 prompt 时，**gh release 段必须逐字引用 [09-publish.md 步骤七](./09-publish.md)「Release Note 生成 → 自检 → 上一版结构对照（三道工序）」的命令模板**（`--title "vX.Y.Z — {emoji 主题短语}"` + 生成后自检 + 上一版结构对照），**禁止凭记忆手写简化**——凭记忆手写会把标题简化成裸 `--title "vX.Y.Z"`，丢掉「vX.Y.Z — emoji 短语」的既有惯例。生成完对照 09-publish.md 逐段核对一次再交接。
 >
