@@ -2037,7 +2037,7 @@ if [[ -n "${CHANGELOG_TOP_VERSION}" ]] && [[ "${CHANGELOG_TOP_VERSION}" != "${PK
   # e. README 徽章版本号必须等于根 package.json 版本（v1.5.7 F41 追加——防 bump 漏改徽章）
   PKG_VERSION=$(node -e "try{process.stdout.write(require(process.argv[1]).version||'')}catch{}" "${PROJECT_ROOT}/package.json" 2>/dev/null)
   for _readme in README.md README.en.md; do
-    _badge_v=$(grep -oE 'Version-v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/${_readme}" 2>/dev/null | head -1 | sed 's/Version-//')
+    _badge_v=$(grep -oE 'Version-v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/${_readme}" 2>/dev/null | head -1 | sed 's/Version-v//')
     if [ -n "${_badge_v}" ] && [ "${_badge_v}" = "${PKG_VERSION}" ]; then
       echo -e "  ${GREEN}✓${NC} ${_readme} 徽章 Version-v${_badge_v} = package.json ${PKG_VERSION}"
       CHECKS=$((CHECKS + 1))
