@@ -345,6 +345,24 @@ else
   ASSERTS=$((ASSERTS + 1))
 fi
 
+# 无「条」形态家族（v1.5.8 BUG-01 补充：workflows/插件 SKILL/agent-shield 等 26 处曾用「25 规则」裸形态）
+STALE_HITS2=$(grep -rnE "25 规则|25 rules|25 discipline" . \
+  --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=.workbuddy --exclude-dir=.sofagent \
+  2>/dev/null \
+  | grep -vE "docs/changelog/v1\.[0-5]/|docs/archive/|playbook/regression-checklist|FORGE/LEDGER|releasing/06-doc-finalize|releasing/11-post-publish|dream-cycle|audit-root-cause|dataset-builder|governance\.test|rule-metadata-snapshot|check-readme-parity|check-storefront" \
+  || true)
+if [ -n "$STALE_HITS2" ]; then
+  echo "$STALE_HITS2" | while IFS= read -r _hit2; do
+    echo "  ❌ [rule-count-bare] $_hit2"
+  done
+  _STALE_N2=$(echo "$STALE_HITS2" | grep -c . || true)
+  FAILS=$((FAILS + _STALE_N2))
+  ASSERTS=$((ASSERTS + 1))
+else
+  echo "  ✓ [rule-count-bare] 无「条」裸形态旧口径零命中"
+  ASSERTS=$((ASSERTS + 1))
+fi
+
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$FAILS" -gt 0 ]; then
