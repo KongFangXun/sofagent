@@ -1775,6 +1775,13 @@ grep -qF "读数禁快照" playbook/dev-prompt-checklist.md && grep -qF "活读�
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
+>⑧ 验收已勾但能力未接线——新增 `@public` 符号/判定函数须 grep 生产调用点 ≥1 才许勾验收（judgeAdmission 案：符号+barrel 在位、optimize() 零调用照勾）；
+>⑨ 行为锁计数锚随能力变更升锚须同 commit 注记依据（S476 core barrel 308→310：有意新增导出，root=uni 等价仍成立）；
+>⑩ 声称 fail-closed 的 if 分支不得为空块——只读位检查空注释案（双向无动作=假防线）；
+>⑪ 单一来源数字不得在文案复写第二份——reward-shaping basis 硬编码权重读数案；
+>⑫ devlog 章交付表与涉及文件表同文件口径必须一致（第五种数据源 vs 旁挂适配器并存案）；
+>⑬ 复验禁用旧提取快照——大文件断言复跑须按当前文件重提取（旧 /tmp 提取物假红案）。
+
 #### 131. 后训服务与持续收口批防复发——train 五新面/进化实证/retention 加固/链锚一维收口（阶段四来源提取 A/B 合流 · 行为面已由单测锁：serve 21/compliance 19/deliverable 20/retention 15/session 17+2 用例）
 
 ```bash
