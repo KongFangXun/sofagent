@@ -91,7 +91,9 @@ function docLines(f) {
 // ============================================================
 function d1_1() {
   const r = run('bash', ['tools/check/check-test-count.sh', '--quiet']);
-  const ok = r.out.trim().endsWith('OK');
+  // 判据 = 退出码 0 且输出含独立 OK 行（--quiet 模式下 OK 之后仍有场景守卫输出行，
+  // 原 endsWith('OK') 恒假 → rc=0 也被判未绿。判行不判尾，与 check-claims 同款修法）。
+  const ok = r.rc === 0 && /^OK$/m.test(r.out);
   return { pass: ok, detail: ok ? '文档声称测试数 == 实测（SSOT）' : `check-test-count 未绿（rc=${r.rc}）` };
 }
 function d1_2() {
