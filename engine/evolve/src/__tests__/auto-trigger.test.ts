@@ -31,7 +31,18 @@ import {
   recordFailure,
   clearFailureCache,
 } from '../failure-ledger';
+import { initializeRegistryProtected } from '../domain-verifier-registry';
 import { isEvolveAvailable } from '../evolve-integration';
+
+/** 写一份 deterministic 档登记表（skill-a → 全自动准入） */
+function writeRegistry(dir: string, domains: string[]): void {
+  initializeRegistryProtected(dir, domains.map((domain) => ({
+    domain,
+    tier: 'deterministic' as const,
+    basis: 'test-fixture',
+    registeredAt: '2026-01-01T00:00:00Z',
+  })));
+}
 
 describe('auto-trigger', () => {
   let tmpDir: string;
@@ -41,6 +52,8 @@ describe('auto-trigger', () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-at-'));
     originalData = process.env.SOFAGENT_DATA;
     vi.stubEnv('SOFAGENT_DATA', tmpDir);
+    // 准入门 fixture：skill-a 登记 deterministic 档（既有行为测试按全自动准入路径走）
+    writeRegistry(tmpDir, ['skill-a']);
     clearFailureCache();
     vi.mocked(isEvolveAvailable).mockReturnValue(false);
   });
@@ -180,6 +193,103 @@ describe('auto-trigger', () => {
       });
       expect(result.triggered).toBe(true);
       expect(result.skipReason).toContain('失败');
+    });
+  });
+
+  // ════════════════════════════════════════
+  // optimize() — 进化准入门（v1.5.8 章一接线）
+  // ════════════════════════════════════════
+
+  describe('optimize — 进化准入门', () => {
+    it('磁盘无登记表 → fail-closed 不启动进化（skipReason 含「准入登记表不可用」）', async () => {
+      const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-at-noreg-'));
+      try {
+        const result = await optimize({
+          skillId: 'skill-a',
+          failureMode: 'format-mismatch',
+          admission: { dataDir: emptyDir },
+        });
+        expect(result.triggered).toBe(false);
+        expect(result.skipReason).toContain('准入登记表不可用');
+        expect(result.skipReason).toContain('fail-closed');
+      } finally {
+        fs.rmSync(emptyDir, { recursive: true, force: true });
+      }
+    });
+
+    it('human-only 档 → 零自动晋升：达阈值也阻断（skipReason 含「准入门阻断」+ admissionVerdict 随行）', async () => {
+      // 达阈值：先记 2 次，optimize 内部记第 3 次
+      for (let i = 0; i < 2; i++) {
+        recordFailure({
+          timestamp: `2025-01-0${i + 1}T00:00:00Z`,
+          skillId: 'skill-human',
+          failureMode: 'format-mismatch',
+          reason: 'test',
+          source: 'test',
+        });
+      }
+      const hitlDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-at-hitl-'));
+      try {
+        initializeRegistryProtected(hitlDir, [{
+          domain: 'skill-human',
+          tier: 'human-only',
+          basis: '开放式产出域——强制 HITL',
+          registeredAt: '2026-01-01T00:00:00Z',
+        }]);
+        const result = await optimize({
+          skillId: 'skill-human',
+          failureMode: 'format-mismatch',
+          admission: { dataDir: hitlDir },
+        });
+        expect(result.triggered).toBe(false);
+        expect(result.skipReason).toContain('准入门阻断');
+        expect(result.skipReason).toContain('human-only');
+        expect(result.admissionVerdict?.action).toBe('human-only');
+      } finally {
+        fs.rmSync(hitlDir, { recursive: true, force: true });
+      }
+    });
+
+    it('model-judge 档 → action=auto-with-review ≠ auto：阻断待采样人审', async () => {
+      const mjDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-at-mj-'));
+      try {
+        initializeRegistryProtected(mjDir, [{
+          domain: 'skill-mj',
+          tier: 'model-judge',
+          basis: 'LLM 评分域——评分 + 采样人审',
+          registeredAt: '2026-01-01T00:00:00Z',
+        }]);
+        const result = await optimize({
+          skillId: 'skill-mj',
+          failureMode: 'format-mismatch',
+          admission: { dataDir: mjDir },
+        });
+        expect(result.triggered).toBe(false);
+        expect(result.skipReason).toContain('准入门阻断');
+        expect(result.skipReason).toContain('auto-with-review');
+      } finally {
+        fs.rmSync(mjDir, { recursive: true, force: true });
+      }
+    });
+
+    it('未登记域 → fail-closed 按最高档 human-only 阻断', async () => {
+      const result = await optimize({
+        skillId: 'skill-unregistered',
+        failureMode: 'format-mismatch',
+      });
+      expect(result.triggered).toBe(false);
+      expect(result.skipReason).toContain('准入门阻断');
+      expect(result.skipReason).toContain('human-only');
+    });
+
+    it('deterministic 档 → 放行进主流程（skipReason 不含「准入门」）', async () => {
+      const result = await optimize({
+        skillId: 'skill-a', // beforeEach fixture：deterministic
+        failureMode: 'format-mismatch',
+      });
+      expect(result.triggered).toBe(false); // 未达阈值被阈值门拦，非准入门
+      expect(result.skipReason ?? '').not.toContain('准入门');
+      expect(result.skipReason ?? '').not.toContain('准入登记表');
     });
   });
 

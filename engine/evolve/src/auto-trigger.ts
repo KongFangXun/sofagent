@@ -14,7 +14,8 @@
 // ============================================================
 
 import { evolutionCostGate } from './promotion-policy';
-import type { QuotaConfig, QuotaUsage } from '@sofagent/core';
+import { loadRegistry, judgeAdmission } from './domain-verifier-registry';
+import { loadEnvConfig, type QuotaConfig, type QuotaUsage } from '@sofagent/core';
 import {
   recordFailure,
   getRepeatedFailures,
@@ -47,6 +48,8 @@ export interface OptimizeInput {
   ruleTriggered?: string;
   /** 进化循环成本门（可选——传入即在启动前过 v1.4.8 quota 事前门禁；超预算不启动） */
   quota?: { config: QuotaConfig | null | undefined; usage: QuotaUsage };
+  /** 进化准入门（可选——登记表所在 SOFAGENT_DATA 目录；缺省用进程内既有 data-dir 解析） */
+  admission?: { readonly dataDir?: string };
 }
 
 /** optimize() 输出结果 */
@@ -65,6 +68,8 @@ export interface OptimizeResult {
   skipReason?: string;
   /** 成本门禁判定（传入 quota 时随行——WARN/HARD 双模式处置原文） */
   quotaVerdict?: { action: string; reason?: string };
+  /** 准入门判定（admission.action !== 'auto' 阻断时随行——域档位分流留痕） */
+  admissionVerdict?: { action: string; tier?: string; domain?: string; reason?: string };
 }
 
 /**
@@ -103,6 +108,29 @@ export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
     ruleTriggered: input.ruleTriggered,
   };
   recordFailure(record);
+
+  // 1.5 进化准入门（v1.5.8 章一：域档位三档分流——human-only 零自动晋升、
+  //     model-judge 需采样人审、未登记 fail-closed；只有 deterministic → auto 才进主流程。
+  //     失败仍先入 ledger——阻断不等于不记账，HITL 路径依赖失败留痕。）
+  const reg = loadRegistry(input.admission?.dataDir ?? loadEnvConfig().dataDir);
+  if (!reg.ok) {
+    return {
+      triggered: false,
+      skillId: input.skillId,
+      failureMode: input.failureMode,
+      skipReason: `准入登记表不可用（${reg.reason}）——fail-closed 不启动进化`,
+    };
+  }
+  const admission = judgeAdmission(input.skillId, reg.entries);
+  if (admission.action !== 'auto') {
+    return {
+      triggered: false,
+      skillId: input.skillId,
+      failureMode: input.failureMode,
+      skipReason: `准入门阻断（域=${input.skillId} 档位判定 action=${admission.action} reason=${admission.basis}）——进化循环不启动`,
+      admissionVerdict: { action: admission.action, tier: admission.tier, domain: admission.domain, reason: admission.basis },
+    };
+  }
 
   // 2. 查连续同类失败次数
   const patterns = getFailurePatternsBySkill(input.skillId);
