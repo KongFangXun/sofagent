@@ -504,7 +504,7 @@ jobs:
 
 ### 进化模块（沉淀机制随使用迭代）
 
-进化模块 = eval（三维评分：精确匹配 / 语义相似 / 规则合规）+ ab-test（current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升）+ evolve（复用审计规则做安全审查与集成优化；原 skillopt，v1.4.8 更名）+ think（基于 diff + 审计结果自动生成反思条目，append-only）。
+进化模块 = eval（三维评分：精确匹配 / 语义相似 / 规则合规）+ ab-test（current vs candidate 并行对比，晋升须过四道证据门槛：留出集优先 + 严格优于历史最佳 + 单变量可归因 + 校准不退化——v1.5.8 晋级判据）+ evolve（复用审计规则做安全审查与集成优化；原 skillopt，v1.4.8 更名）+ think（基于 diff + 审计结果自动生成反思条目，append-only）。
 
 > 📖 **多设备同步**：v1.1.0 起支持轻量多设备——经验共享（knowledge/ + think.md）跨设备同步。4 种方案（iCloud / NAS / Dropbox / git submodule）见 [多设备同步指南](./guides/multi-device-sync.md)。
 
