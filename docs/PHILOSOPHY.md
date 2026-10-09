@@ -41,7 +41,8 @@ sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束�
 
 **③ 底层实现（约束层）：sofagent 的约束层保证每次变更可审计、可回滚、可进化。**
 
-约束注入链是骨架里的钢筋，审计能力是质检——开发者才需要往下看。审计能力 28 条规则按实现方式分 22 条纯 git-diff（零 token、不调 LLM）+ 4 条混合需 Agent 日志 + 1 条文件系统扫描 + 1 条 logs 走 decision-log（启用方式为 17 默认 + 11 扩展，SSOT 见 [SECURITY](../SECURITY.md)）；**约束层（五种能力：注入·审计·回溯·沉淀·进化）× 生命周期（诊断→激活→编排→执行→进化）**双层架构覆盖从治理到自运转。FORGE 自迭代工具链是项目内部开发工具（**FORGE = 项目内部自迭代工具链，非产品能力**；
+约束注入链是骨架里的钢筋，审计能力是质检——开发者才需要往下看。审计能力 28 条规则按实现方式分 22 条纯 git-diff（零 token、不调 LLM）+ 4 条混合需 Agent 日志 + 1 条文件系统扫描 + 1 条 logs 走 decision-log（启用方式为 17 默认 + 11 扩展，SSOT 见 [SECURITY](../SECURITY.md)）；**约束层（五种能力：注入·审计·回溯·沉淀·进化）× 生命周期（诊断→激活→编排→执行→进化）**双层架构覆盖从治理到自运转。
+FORGE 自迭代工具链是项目内部开发工具（**FORGE = 项目内部自迭代工具链，非产品能力**；
 本文档中 FORGE 的后续出现均指此，见 [WIKI 术语表](./WIKI.md)）。本文档以下九章讲的就是这套底层实现（约束层）的设计哲学。
 
 
@@ -268,6 +269,27 @@ sofagent 的审计能力 Gate + 硬规则正是这类锚点：审计只信 git d
 
 > 📖 [C.A.E. Goodhart · Problems of Monetary Management: The U.K. Experience](https://www.rba.gov.au/publications/confs/1975/goodhart.html) · [C.E. Perez · From Loop Engineering to Graph
 >Engineering?](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)
+
+### 错误成本决定约束投入
+
+约束不是越严越好——**在某处投入多少约束，由「这里错了会怎样」决定**。同一家企业里有的 AI 环节能无人值守、有的必须人审三道，差别通常不在技术难度，而在错误是否可逆。
+
+这条原则在本仓已有两处在跑的机制，缺的只是一句话把它说破：
+
+| 机制 | 落点 | 行为 |
+|---|---|---|
+| 进场审计按错误成本排序 | `tools/audit/audit-questionnaires/generic.json` 第二段 | 「哪个环节最容易出错？出错的代价？」——错误成本作为 ROI 分子，决定先审哪一处 |
+| 规则严重度加权 | `engine/audit/src/export/rule-schema.ts` `severityWeightOf()` | 按 priority 分级赋权，资源分配跟严重度对齐 |
+
+同一判据在五个互不相干的原始来源里各自独立出现：
+
+- **代码审查分层**——按风险分层审核，审查投入匹配错误成本
+- **本体工程**——金融（资金损失）→ 政务（公信力）→ 电网（安全事故）→ 军事（不可逆后果）构成错误成本谱系，越不可逆显式约束优先级越高
+- **技术选型**——按错误成本选高精度还是低成本路线，不追技术时髦
+- **交互形态**——转账、审批、排产这类高错误成本场景，开放发散的对话框几乎不可用
+- **适任判定**——一件事能否交给 AI，落点之一正是「失败是否易发现、可回滚」
+
+> 📖 [Addy Osmani（Google 首席工程师）· Agentic Code Review](https://addyosmani.com/blog/agentic-code-review/)
 
 ### 拒绝权——不确定就不输出
 

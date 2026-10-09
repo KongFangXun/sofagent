@@ -753,6 +753,16 @@ sofagent 的回溯实现是自有的 FileCheckpointer（五条并发安全规矩
 
 > 📖 [LangChain · langgraph](https://github.com/langchain-ai/langgraph)
 
+**工程参照：工作制品须有版本化锚点。** 快照与回滚只能回到**已被记下的那一刻**——拿不到可被运行时比对的锚点，就等于没有版本，回溯能力随之归零。
+
+锚点的要求是**内容可比对**（内容寻址摘要、修订号 + 文件清单），不是「文件还在不在」：以存在性当证据，会在内容已变而路径未变时静默失效——失败形态是给出「一切正常」的假绿，而不是报错。本仓这套锚点由自研同构 Git 引擎的 SHA-256 内容寻址 + v2 内容池去重承担。
+
+三条互不相干的来源把同一条要求推成了行业默认：**Git 式工作制品管理**把每个需求及其产出像提交一样存储，变更时从最近有效版本分支、只重做变更部分；**Cursor 的「项目」**要在长任务里协调大量子 Agent、跨机同步共享上下文，版本与归属必须先于协作解决；**LangChain Deep Agents** 允许在长线程里把 `skills_metadata` 设为 `None` 重载新增或变更的技能。
+
+最后一条是最硬的证据：连技能加载这种本该静态的东西，一旦进了长任务都必须回答「运行中发现制品已经变了怎么办」。
+
+> 📖 [LangChain · Revamping skills in Deep Agents](https://www.langchain.com/blog/revamping-skills-in-deep-agents) · [Cursor · Changelog: Projects](https://cursor.com/changelog/projects)
+
 ### ⚙️ FORGE 自迭代工具链（内部）
 
 大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 LangGraph createReactAgent 的四节点状态机（`engineer → audit → reviewer → human_confirm`）+ FileCheckpointer 断点续跑 + 上下文四层防御。
