@@ -18,12 +18,12 @@
 | `docs/COMMUNITY.md` | 社区现状、贡献路径、公开数据 |
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
-| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/` `v1.5/` `v2.0/`）——⚠️ 早期版本日志含审查元信息等非产品文档内容，不代表产品能力声明；阅读须知（含清理门槛与"已开发/已排期"标记口径）见 [changelog/README](./changelog/README.md)。（详→注-2） |
+| `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/` `v1.5/` `v2.0/`）——⚠️ 早期版本日志含审查元信息等非产品文档内容，不代表产品能力声明；阅读须知（含清理门槛与"已开发/已排期"标记口径）见 [changelog/README](../../changelog/README.md)。（详→注-2） |
 | `docs/changelog/releasing.md` | **发版 SOP**——十一阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
 | `docs/reports/` | 一次性扫描/治理动作的报告归档（与 `docs/evidence/` 分工：evidence 存可持续引用的证据本体，reports 存某次动作的过程报告——如 commons 退役扫描 JSON） |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
 
-> 注-2：规划中版本的排期见 [ROADMAP](./ROADMAP.md)
+> 注-2：规划中版本的排期见 [ROADMAP](../../ROADMAP.md)
 

@@ -29,7 +29,7 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 
 一行安装（`curl ... bootstrap.sh | bash`）的行业信任链是「HTTPS 传输 + GitHub 账号安全」，**无代码签名**——通道或账号被劫持时下载脚本可被替换。sofagent 自 v1.4.3 起追加一层：**bootstrap.sh 内嵌发版时硬编码的 sha256（install.sh + 6 个 lib 共 7 个哈希），与发版时不一致即 fail-closed 拒绝执行**——劫持者即使控制传输通道，也无法在不改哈希（哈希在 bootstrap.sh 自身内，用户 curl 到的那份）的情况下替换安装载荷。残余信任面如实披露：① 用户 curl 到的 bootstrap.sh 本身仍无签名（首跳信任，与全行业一致）；② 哈希随发版更新，若发版流程被攻破（哈希与载荷同被替换）校验失效——此层防御针对传输劫持，不针对供应链根攻破；③ 高安全场景建议 `git clone` + 审查后 `bash install.sh`，绕开首跳信任。**边界重申（v1.5.7）：哈希锚与载荷同源（都在发版侧产出）——本机制防传输劫持、不防源头替换**；
 
-独立校验通道（release 页公示哈希 / attestation）已登记 [ROADMAP 探索方向](./docs/ROADMAP.md) 排期评估。
+独立校验通道（release 页公示哈希 / attestation）已登记 [ROADMAP 探索方向](../../ROADMAP.md) 排期评估。
 
 #### 源码审查
 
