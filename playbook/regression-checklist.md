@@ -1846,6 +1846,14 @@ grep -q "computeRepoHash" engine/core/src/repo-hash.ts && grep -q "computeRepoHa
 git grep -q "SOFAGENT_MCP_ROLES" -- docs/API.md && grep -q "reduceAuditHistory" engine/audit/src/audit-reducer.ts && grep -q "exportProvTurtle" engine/audit/src/audit-reducer.ts && echo "✅ 专职面 + 留痕双层" || echo "❌ audit 面缺失"
 # j: 接线登记机制（新接线符号须在监控表——不登记=交付未完成）
 for s in createSshTrainChannel chainDualChannelEvent gateDataPush; do grep -q "$s" tools/check/check-unwired-exports.sh || echo "❌ $s 未登记监控表"; done; echo "✅ 接线登记机制（上方零失败）") 2>&1 | tee "/tmp/regress-dim133-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim133-$$.log" && { rm -f "/tmp/regress-dim133-$$.log"; echo "维度133收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim133-$$.log"; echo "维度133收口:PASS"
+
+# j: 规则数全线清偿防复发（五变体 + 无条裸形态活区零命中 · 门面与目录收录同步）
+grep -q "28 discipline rules" engine/audit/package.json || { echo "❌ j: npm 门面规则数回潮"; FAIL=1; }
+grep -q "28 audit rules" glama.json || { echo "❌ j: MCP 目录规则数回潮"; FAIL=1; }
+STALE=$(grep -rnE "25 条|25条|25 discipline rules|27 条规则|24 git-diff|20 条纯 git-diff" . \
+  --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=.workbuddy --exclude-dir=.sofagent 2>/dev/null \
+  | grep -vE "docs/changelog/v1\.[0-5]/|docs/archive/|playbook/regression-checklist|FORGE/LEDGER|releasing/0[61]|releasing/1[01]|dream-cycle|audit-root-cause|check-storefront|check-readme-parity|check-docs\.sh|tool-registry\.ts:1[0-9][0-9]|acceptance-test\.sh:[0-9]+:#|federation-e2e|dual-device|__tests__/.*\.test\.ts" | head -3)
+[ -z "$STALE" ] || { echo "❌ j: 规则数旧口径回潮：$STALE"; FAIL=1; }
 ```
 
 #### 136. 依赖方向架构测试防复发——13 包边界清单 + 注入自测三态
