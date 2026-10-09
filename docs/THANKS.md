@@ -4,7 +4,7 @@
 
 > sofagent 站在巨人肩膀上。以下每个项目与作者，都在某个设计决策里留下痕迹。
 
-> v1.5.8 · 2026-10-09（UTC）· ⏳ 待发版 · 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ✅ 已发版 · 孔放勋
 >
 > 收录纪律：一条一行——名字 · 链接 · 启发（≤25 字）；全文分析见 [`archive/validation-deep/thanks-extended.md`](./archive/validation-deep/thanks-extended.md)。
 

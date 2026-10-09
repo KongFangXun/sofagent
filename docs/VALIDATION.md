@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.8 · 2026-10-09（UTC）· ⏳ 待发版 · 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ✅ 已发版 · 孔放勋
 
 > **本文档从四个维度回答一个问题：行业有没有独立验证 sofagent 的直觉？** ① 方法论——约束层为什么是刚需；② 生态位——sofagent 在 Agent 三层模型中的位置；③ 架构——行业框架怎么独立复现 sofagent 的选择；④ 市场——技术判断有没有被买单。四维同指一结论：**不管 Agent 怎么搭、在哪跑，它需要一个独立的约束层。**
 > 收录纪律（doc-slim 批起）：正文每条印证 = 一句判据 + 出处链接（≤3 行）；成篇深论证全文归档 [`docs/archive/validation-deep/`](./archive/validation-deep/README.md)。
