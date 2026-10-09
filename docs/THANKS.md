@@ -92,6 +92,7 @@
 - **[Control the Harness, Control the Cost](https://arxiv.org/abs/2609.28919)** — 未调优 harness 默认值 = 成本与治理一并交出去
 - **[Self-Healing Harness](https://arxiv.org/abs/2609.24130)** — 准入门控：提议在内、门在外、持久化由门决定
 - **[RegenHarness](https://arxiv.org/abs/2609.27612)** — evidence-gated RSI；改进无权降低门强度
+- **[The Harness as the Only Mutable Surface](https://arxiv.org/abs/2610.10629)** — 自进化只有收敛在运行时 harness 内才「可复核」（被审对象不消失）；含实测的计量准入门（第三方论文、本仓未复算）
 
 ### 判定与校准
 
@@ -102,7 +103,7 @@
 - **[System Switch](https://arxiv.org/abs/2610.09683)** — 双件系统：闸门开才把控制权交给慢 VLM
 - **[DeepRAG](https://arxiv.org/abs/2503.08213)** · Nandakishor M — 从零自建 embedding 模型参考
 - **[System One Models & Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** · TypeSafe AI — RLCD、三原语提出方；「校准优先于偏好」
-- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线；@2026-10-08 PyPI 面 0.4.0
+- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线；@2026-10-09 PyPI 面 0.4.1
 - **[kev](https://github.com/jaredpalmer/kev)** · Jared Palmer — Jev 架构型开源复刻（0.8B/4B/9B 全尺寸）
 - **[Bespoke Nimble](https://github.com/bespokelabsai/nimble)** · Bespoke Labs — 2,676 条对比式样本构造法（「数据质量 > 参数量」）
 - **Jev 接口复刻族**（SemIf / NanoJev / Jevlike / LocalJev / JEV-mini）— 对照件候选与路线对照
@@ -118,7 +119,7 @@
 - **[AnyJev](https://github.com/nokia-applied-research/AnyJev)** · Nokia — 读出校准免训练两件套：先验除法+旋转平均（自报）
 - **[TensorFlow.js](https://github.com/tensorflow/tfjs)** + [tfjs-models](https://github.com/tensorflow/tfjs-models) · Google — 一套 API 四后端+模型即 npm 包的十年先例
 - **[Verdict / rlcd-modernbert-151m](https://huggingface.co/heman10x/rlcd-modernbert-151m)** · Heman10x-NGU —「编码器+判定头」最早可复算建仓时点（2026-09-17）
-- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-10-07 站点面 v1.5.4 榜首 cygnet（release 面仍 v1.4.2，六面不同步）
+- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-10-09 站点面 v1.5.7 榜首 cygnet（release 面仍 v1.4.2，六面不同步）
 - **[AgentGovBench](https://github.com/agentic-control-plane/agentgovbench)** + **[ST-WebAgentBench](https://github.com/segev-shlomov/ST-WebAgentBench)** — 治理对照基准两件套（CuP 双轴指标）；其「Harness honesty」修订公开固化：制造证据不计分、**空审计日志不算通过**、报错场景留在分母
 - **[NIST 官方标准面](https://www.nist.gov/artificial-intelligence/ai-agent-standards-initiative)**（CAISSI 三支柱 + RFI + NCCoE 四功能域 + AI 800 系列）— agent = 非人类身份 principal；双身份令牌
 - **[Jev-Mem](https://arxiv.org/abs/2609.23986)** — System One 控制面管 agentic memory
@@ -134,6 +135,9 @@
 - **[SanSi](https://arxiv.org/abs/2610.07730)** — 层内循环后仍单次 readout：非自回归算力分配
 - **[Readout Stability](https://arxiv.org/abs/2610.07716)** — 菜单换而文本不变，缓存首过分布已定后验（自报）
 - **[Your-LM-Is-Already-a-Decision-Model](https://github.com/ntlm1686/Your-language-model-is-already-a-decision-model)** · ntlm1686 — **训练必要性对照**：未微调 9B 与 Jev 互有胜负（自测）
+- **[One Word Opens the Gate](https://arxiv.org/abs/2610.12292)** — **护栏件的输入侧攻击面**：类型化判定件被放进 agent 当闸门后，「选项通道」上一个词即可开门 ⇒ 闸门件自身也是攻击面，不只是判据面（第三方论文、本仓未复算）
+- **[TypedBench](https://arxiv.org/abs/2610.11392)** — 非生成式接口的「**校准 / 框架敏感性 / 成本**」三维独立基准（第三方基准、本仓未复算；其读数未进本仓对照表）
+- **[Can Jev be Your Q or Policy in RL?](https://arxiv.org/abs/2610.11692)** — 判定件不生成文本、直接返回校准的类型化概率 ⇒ 试作 RL 的 Q / policy：非自回归路线在强化学习侧的能力边界（第三方论文、本仓未复算）
 
 ### 认知与反馈
 
@@ -141,6 +145,9 @@
 - **[When AI builds itself](https://www.anthropic.com/institute/recursive-self-improvement)** · Anthropic — 代码生成不再是瓶颈，人工审查成新堵点
 - **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化参考（现由自研 gate 验证器替代）
 - **[Satya Nadella at Microsoft Build](https://pod.wave.co/podcast/latent-space-the-ai-engineer-podcast/satya-nadella-no-priors-x-latent-space-crossover-special-at-microsoft-build)** · Satya Nadella —「Every company will have its own private eval」
+- **[Verification and Self-Improvement in Agentic AI](https://arxiv.org/abs/2610.10611)** — 一个性能分数分不清「搜得更久 / 得到更多支持 / 改了怎么提议与验证」三种改进机制；用有界验证把它拆开（第三方论文、本仓未复算）
+- **[ReSI: Recursive Safety Improvement](https://arxiv.org/abs/2610.12233)** — 递归自改进从理论走向实践后，安全对齐须随频繁更新持续保持（第三方论文、本仓未复算）
+- **[Who Verifies the Verifier?](https://arxiv.org/abs/2610.11464)** — 自改进循环里每一次「它是不是真的变好了」都由验证器回答 ⇒ **验证器自身必须可检查**，且与 agent 共同演化（第三方论文、本仓未复算）
 
 
 ## 工具与实践
