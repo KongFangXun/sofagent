@@ -221,8 +221,9 @@ export function loadRegistry(dataDir: string): RegistryLoad {
   let raw: string;
   try {
     const st = statSync(path);
-    if (!(st.mode & 0o222)) {
-      // 只读位在位——正常保护态
+    if (st.mode & 0o222) {
+      // 写权限位仍在位——保护面未就位，fail-closed 拒载（只读位在位才继续读）
+      return { ok: false, reason: `登记表写权限位未清除（mode=${(st.mode & 0o777).toString(8)}）——保护面未就位，fail-closed 拒载`, path };
     }
     raw = readFileSync(path, 'utf8');
   } catch (err) {

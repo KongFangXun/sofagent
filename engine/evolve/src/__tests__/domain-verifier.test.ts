@@ -156,6 +156,21 @@ describe('章一 · 登记表保护面（可写面之外 + 篡改校验）', () 
     rmSync(dir2, { recursive: true, force: true });
   });
 
+  it('写权限位未清除 → fail-closed 拒载（保护面未就位不读内容）', () => {
+    const dirW = mkdtempSync(join(tmpdir(), 'sofagent-verify-writable-'));
+    initializeRegistryProtected(dirW, ENTRIES);
+    const path = join(dirW, 'protected', 'domain-verifiers.json');
+    chmodSync(path, 0o644); // 模拟只读位被解锁（内容未动、哈希仍一致）
+    const load = loadRegistry(dirW);
+    expect(load.ok).toBe(false);
+    if (!load.ok) {
+      expect(load.reason).toContain('写权限位未清除');
+      expect(load.reason).toMatch(/mode=\d+/); // reason 带实际 mode 八进制
+    }
+    chmodSync(path, 0o444);
+    rmSync(dirW, { recursive: true, force: true });
+  });
+
   it('钉哈希计算确定性（同输入同哈希；变一字符即变）', () => {
     const h1 = computeContentHash(ENTRIES);
     const h2 = computeContentHash([...ENTRIES]);

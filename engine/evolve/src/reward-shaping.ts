@@ -46,7 +46,7 @@ export function shapeRewardPenalty(
   return {
     signals,
     totalPenalty,
-    basis: `命中 ${signals.length} 条训练期策略轨迹——惩罚权重经 @sofagent/audit severityWeightOf 折算（critical=1.0/warning=0.6/extended=0.4/crutch=0.3），reward 判据以减项形态随数据集交付`,
+    basis: `命中 ${signals.length} 条训练期策略轨迹——惩罚权重经 @sofagent/audit severityWeightOf 折算（以规则严重级实时取值——单一来源，此处不重复钉数字），reward 判据以减项形态随数据集交付`,
   };
 }
 

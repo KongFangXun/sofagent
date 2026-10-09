@@ -1,8 +1,9 @@
 // instinct/index.ts · instinct 域 barrel（v1.5.8 章三/四对外消费面）
 //
-// 子路径导出 ./instinct 的入口——既有四件（extractor/scorer/evolver/failure-log）
-// 随本版新增四件（store/exporter/examiner + 测试目录）一并从本 barrel 出。
-// 跨包消费（train 包 instinct-source / evolve 侧）走包名子路径，禁相对深引。
+// 子路径导出 ./instinct 的入口——既有 extractor/scorer 两域 + 本版新增
+// store/exporter/examiner/exam-queue 从本 barrel 出；evolver/failure-log 不经
+// 本 barrel（走根入口既有导出）。跨包消费（train 包 instinct-source /
+// evolve 侧）走包名子路径，禁相对深引。
 
 /* @public */ export { extractInstincts, normalizePattern, patternId } from './extractor';
 /* @public */ export { examQueuePath, enqueueExamAction, readExamQueue } from './exam-queue';
