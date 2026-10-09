@@ -204,7 +204,11 @@ const SKIP_TITLE_PREFIXES = ['Release Notes', '⚡ Install', '实现纪要'];
 // 待明确事项、实现纪要——它们不交付可拔能力，打形态标注会污染 A7 非功能 pin 对账。
 // 判据：章体无「问题诊断/实现 / 交付」段即元章节；历史 devlog 同族（v1.5.6/v1.5.7 均含）。
 const SKIP_TITLES = new Set(['定位', '背景', '依赖', '与后续版本的依赖', '待明确事项', '实现纪要']);
-const isSkippedTitle = (title) => SKIP_TITLES.has(title) || SKIP_TITLE_PREFIXES.some((p) => title.startsWith(p));
+// 发版过程记录节（「阶段N · <阶段名>」）同属元章节——它们是「本版怎么发的」的过程留痕，
+// 不交付可拔能力；按模式登记而非逐个枚举阶段名（否则每个新阶段都要再改一次判据）。
+const RELEASE_STAGE_RE = /^阶段[一二三四五六七八九十]+\s*·/;
+const isSkippedTitle = (title) =>
+  SKIP_TITLES.has(title) || SKIP_TITLE_PREFIXES.some((p) => title.startsWith(p)) || RELEASE_STAGE_RE.test(title);
 // A8 判定面（**宽**）：标题里出现标记 ⇒ 必须校验其目标。
 // 与 A2 的豁免面**解耦**是硬要求：两面共用一个谓词时，「标记写在末尾括注内 / 括注外」
 // 会决定它是否被校验——同一个不存在的版本号写括注内判红、写括注外完全免检（实测 P-d）。
