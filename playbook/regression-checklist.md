@@ -1781,6 +1781,7 @@ grep -qF "读数禁快照" playbook/dev-prompt-checklist.md && grep -qF "活读�
 >⑪ 单一来源数字不得在文案复写第二份——reward-shaping basis 硬编码权重读数案；
 >⑫ devlog 章交付表与涉及文件表同文件口径必须一致（第五种数据源 vs 旁挂适配器并存案）；
 >⑬ 复验禁用旧提取快照——大文件断言复跑须按当前文件重提取（旧 /tmp 提取物假红案）。
+>⑭ `set -o pipefail` 下 `producer | grep -q` 是假红源——grep 命中即退出 ⇒ 上游 SIGPIPE(141) ⇒ 整管道非零；输出越短越易命中故「时红时绿」。修法：`grep -q X <<< "$(producer)"`（先捕获，producer 不进管道）。同族：`cmd | head -N | grep` 无匹配 + pipefail。
 
 #### 131. 后训服务与持续收口批防复发——train 五新面/进化实证/retention 加固/链锚一维收口（阶段四来源提取 A/B 合流 · 行为面已由单测锁：serve 21/compliance 19/deliverable 20/retention 15/session 17+2 用例）
 

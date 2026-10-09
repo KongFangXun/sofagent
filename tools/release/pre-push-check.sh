@@ -707,7 +707,12 @@ if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
 
   # 4b. 文档声称测试数 vs 实际值一致性（P1-3 根治 · v1.1.7 起）
   echo -e "\n  ${BOLD}文档测试数一致性（check-test-count.sh）...${NC}"
-  if bash tools/check/check-test-count.sh --quiet 2>/dev/null | grep -q "^OK$"; then
+  # 🔴 SIGPIPE 防御（本脚本 set -uo pipefail）：`producer | grep -q` 中 grep 命中即退出，
+  #    上游收 SIGPIPE(141) ⇒ pipefail 下整管道非零 ⇒ **假红**。输出越短越易命中，
+  #    故本项时红时绿（实测同一命令独立跑 rc=0、pre-push 内 rc=141）。
+  #    修法：先捕获输出再匹配，不让 producer 进管道。
+  _ctc_out=$(bash tools/check/check-test-count.sh --quiet 2>/dev/null || true)
+  if grep -q "^OK$" <<< "$_ctc_out"; then
     check_pass "check-test-count.sh（文档声称数 = 实际值）"
   else
     check_fail "check-test-count.sh 检测到文档测试数漂移"
@@ -798,7 +803,7 @@ fi
 # ════════════════════════════════════════
 echo -e "\n${BOLD}── 9. Tag message 校验 ──${NC}"
 SSOT_VERSION=$(node -e "console.log(require('./package.json').version)" 2>/dev/null) || true
-if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VERSION}" 2>/dev/null; then
+if [ -n "$SSOT_VERSION" ] && grep -q "v${SSOT_VERSION}" <<< "$(git tag -l "v${SSOT_VERSION}" 2>/dev/null || true)"; then
   TAG_MSG=$(git tag -l "v${SSOT_VERSION}" --format='%(subject)' 2>/dev/null || true)
   if grep -q "${SSOT_VERSION}" <<< "$TAG_MSG"; then
     check_pass "Tag v${SSOT_VERSION} message 含版本号"
