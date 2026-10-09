@@ -9,7 +9,7 @@
 <p align="center">
  <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main" /></a>
  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
- <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.7-16B8F3" /></a>
+ <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.8-16B8F3" /></a>
  <img src="https://img.shields.io/npm/v/sofagent" />
 </p>
 
@@ -23,7 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.7: Audit Coverage Expansion & Capability Governance](#v157-audit-coverage-expansion--capability-governance)
+- [v1.5.8: Evolution Module · Admission Gates & Data Plane](#v158-evolution-module--admission-gates--data-plane)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -219,20 +219,6 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 > 📌 Full evidence: [v1.5.8 dev log](./docs/changelog/v1.5/v1.5.8.md); older capability sections: [CHANGELOG](./CHANGELOG.md).
 
-## v1.5.7: Audit Coverage Expansion & Capability Governance
-
-🔍 **Audit extends to enterprises without repositories**—SMB scenarios, three new audit-input rules, browser retirement, capability-governance foundations:
-
-| Capability | One-liner |
-|---|---|
-| **SMB scenario audit (E5)** | Data-processing & report scenarios; reconciliation · traceability · consistency × three forms; decision type `DATA_PRODUCT` (17→18) |
-| **Three audit-input rules (25→28)** | E6 prompt-injection defense · E7 decision-quality signals (FALLBACK ≥5 → WARN); decision log as formal audit input |
-| **Browser runtime retirement** | Four-piece suite deleted (v2.0 window honored); image capabilities preserved in `image-meta.ts`; S313 flipped |
-| **Capability governance & pluggable contracts** | Five-dimension skill health + archive-rollback loop; telemetry gains status/durationMs; pluggable contracts (18 units) + `SOFAGENT_*` gating |
-| **Three assessments** | UI audit feasibility = not building · standard mapping (5 standards, 10 gaps) · ACS YAML = not adopted |
-
-> 📌 Full evidence: [v1.5.7 devlog](./docs/changelog/v1.5/v1.5.7.md); older sections in [CHANGELOG](./CHANGELOG.md).
-
 ## The Two FDE Harness Phases
 
 **How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**: together they're onboarding a digital employee (the after-departure side runs daemon patrols 24/7, every commit triggers the 28
@@ -289,7 +275,7 @@ Generic secret shapes are intentionally out of scope, a conservative design agai
 **Full install** (Node.js ≥ 18, download and review before running)—**installed on the enterprise devices running the AI nodes**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.7/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.8/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh     # review the script first, confirm it's safe
 bash bootstrap.sh && rm bootstrap.sh
 ```

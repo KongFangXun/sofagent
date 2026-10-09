@@ -1,5 +1,5 @@
 // ============================================================
-// audit-decision-writer.ts · decision-log 写入软依赖收口（v1.5.7 章二）
+// audit-decision-writer.ts · decision-log 写入软依赖收口（v1.5.8 章二）
 //
 // 背景：core 是零上层依赖的底座（依赖方向单向 audit → core），**不得静态 import
 // @sofagent/audit**。但 core 侧确有两处需要写 decision-log 留痕：

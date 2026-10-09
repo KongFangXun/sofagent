@@ -1,5 +1,5 @@
 // ============================================================
-// execution-state/metrics.ts · v1.5.7 章一 · 全局度量落盘
+// execution-state/metrics.ts · v1.5.8 章一 · 全局度量落盘
 // ============================================================
 // 每节点 token 曲线（对齐论文 O(1) 平线）/ 轮次稳定性 / 结果质量对比
 // （stateful vs legacy）落 data/evolution/stateful-metrics.jsonl——

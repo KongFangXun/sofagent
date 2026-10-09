@@ -1,10 +1,10 @@
-// ── API 分级契约（v1.5.7 四）────────────────────────────
+// ── API 分级契约（v1.5.8 四）────────────────────────────
 // `/* @public */`：公开 API——semver 锁定，变更必须 bump 版本 + CHANGELOG 记录
 //                 （外部依赖方与跨平台适配器只许 import 这一层）
 // `/* @internal */`：内部 API——不承诺稳定性，破坏性变更无需 bump
 // 未标记的导出视为 @public（保守默认：宁可多承诺不可漏承诺）
 // ────────────────────────────────────────────────────────
-// v1.5.7 F32 迁移指引：新代码建议按域子路径导入
+// v1.5.8 F32 迁移指引：新代码建议按域子路径导入
 // （@sofagent/daemon/domain/<scheduler|watch|dream|inspectors|webhook|device|health|federation>，
 // 域 barrel 在 src/domain/）；根 barrel 为兼容面（导出集不变，零 breaking）。
 /**

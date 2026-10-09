@@ -1,5 +1,5 @@
 // ============================================================
-// domain/workflow.ts · 编排域（workflow/crud/dispatch/route/router/runtime/graph/middleware/compat + 编排核心散件）——域级 barrel（v1.5.7 F32）
+// domain/workflow.ts · 编排域（workflow/crud/dispatch/route/router/runtime/graph/middleware/compat + 编排核心散件）——域级 barrel（v1.5.8 F32）
 // ------------------------------------------------------------
 // 只 re-export 本域符号（源码引用只写相对路径）。
 // 根 barrel（src/index.ts）保持不变——零 breaking；新代码建议按域子路径

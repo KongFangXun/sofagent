@@ -1,5 +1,5 @@
 // ============================================================
-// execution-state/protocol.ts · v1.5.7 章一 · SKILL.state 执行协议核心
+// execution-state/protocol.ts · v1.5.8 章一 · SKILL.state 执行协议核心
 // ============================================================
 // 协议六要素的实现核心（P 恒定 / Σt 唯一记忆 / ot 仅最新 / ΔΣt 代码合并
 // 校验 fail-closed / Rt 弃前落审计摘要 / executionMode 双模式）。

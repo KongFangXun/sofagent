@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.7 · 2026-10-08（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ⏳ 待发版 · 孔放勋
 
 > 给开发者的内部机制文档——本文讲 sofagent 内部怎么跑：Skill 结构、编排模块、反思闭环、数据架构。普通用户看 [Handbook](./HANDBOOK.md)，设计决策看 [Architecture](./ARCHITECTURE.md)。
 

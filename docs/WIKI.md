@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.7 · 2026-10-08（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ⏳ 待发版 · 孔放勋
 
 > sofagent 是开源（MIT）的 **FDE Harness 层**——不造 Agent，给宿主 Agent（DSH / OpenClaw / WorkBuddy）加一层治理。本文档是项目全局索引入口。
 > 人类与 AI Agent 均可读；**Agent 查实现路径直接跳 [§五 文件地图](#五文件地图)**；English: [README.en.md](../README.en.md)。阅读路径见 [§八](#八导航按你的意图选路)；文档分工见 [§九](#九文档分工与体量纪律)。
@@ -249,8 +249,8 @@ graph TB
 
 | 项 | 值 |
 |---|---|
-| 当前版本 | **v1.5.7**（2026-10-08，✅ 已发版 · 审计覆盖面扩展与能力面治理） |
-| 下一版 | **v1.5.8**（🔧 已开发 · ⏳ 待发版——进化模块 · 准入门与数据面；以 [ROADMAP](./ROADMAP.md) 版本表为准） |
+| 当前版本 | **v1.5.8**（2026-10-09，⏳ 待发版 · 进化模块 · 准入门与数据面） |
+| 下一版 | **v1.5.9**（📋 规划中——写面审计与能力基线 · 进化面插件化；以 [ROADMAP](./ROADMAP.md) 为准） |
 | 测试覆盖 | 5946 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
 | 审计规则 | 28 条（17 默认 + 11 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)） |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
@@ -306,7 +306,7 @@ graph TB
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构 + 三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·沉淀·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射 + 行业坐标（Sovereign AI 四层主权落点）。
 - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
-- **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.5.7。
+- **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.5.8。
 
 **30 分钟深度路径**（承接 3 分钟全景）：① [ARCHITECTURE](./ARCHITECTURE.md) §一~§二 + [PHILOSOPHY](./PHILOSOPHY.md) §一（读双层架构与"不替代 Agent"论证，~15 分钟）
 → ② [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ③ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
@@ -384,4 +384,4 @@ graph TB
 | 开发者内部机制 | [DEVELOPMENT](./DEVELOPMENT.md) | 参考 | 内部实现与数据架构；维护者对账数据归档不进正文 | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
 **单一权威源禁二份纪律**：任何清单/数字/规则在仓内出现第二处时，必须一处为权威源、其余标注「引用自哪里」——不维护第二份完整副本（防止与权威源漂移；存量漂移由 check-docs §15 全仓扫描兜底）。
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.5.7 · 孔放勋 · 2026-10-08。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.5.8 · 孔放勋 · 2026-10-09。

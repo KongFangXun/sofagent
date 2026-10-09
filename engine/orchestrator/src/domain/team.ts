@@ -1,5 +1,5 @@
 // ============================================================
-// domain/team.ts · 团队协作域（team/hitl/formations/onboard）——域级 barrel（v1.5.7 F32）
+// domain/team.ts · 团队协作域（team/hitl/formations/onboard）——域级 barrel（v1.5.8 F32）
 // ------------------------------------------------------------
 // 只 re-export 本域符号（源码引用只写相对路径）。
 // 根 barrel（src/index.ts）保持不变——零 breaking；新代码建议按域子路径

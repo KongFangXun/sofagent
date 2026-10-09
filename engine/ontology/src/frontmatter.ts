@@ -1,6 +1,6 @@
 // ============================================================
 // frontmatter.ts · Markdown 头信息（frontmatter）解析单源
-// v1.5.7 批 19：三处同名/近名实现收敛为一处——
+// v1.5.8 批 19：三处同名/近名实现收敛为一处——
 //   · engine/mcp/src/tools/knowledge-page.ts  parseFrontmatter（导出）
 //   · engine/ontology/src/merge-engine.ts     parseFrontmatter（私有）
 //   · engine/ontology/src/query.ts            parseFrontmatterSafe（私有，近名）

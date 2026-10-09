@@ -1,5 +1,5 @@
 // ============================================================
-// skill-health.ts · 五维技能健康度 + 退役候选生成（v1.5.7 章四）
+// skill-health.ts · 五维技能健康度 + 退役候选生成（v1.5.8 章四）
 //
 // 研究收编（Google《Towards a Systems Foundation for Agentic Skills》
 // arXiv:2608.29596 SkillOps 五维治理）：SKILL 库只进不出是技能熵单调递增——

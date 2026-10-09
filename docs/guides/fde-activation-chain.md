@@ -1,6 +1,6 @@
 # FDE 交付物激活链 — 从静态交付到自运转企业 Agent
 
-> v1.5.7 · 2026-10-08（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ⏳ 待发版 · 孔放勋
 >
 > 状态：Phase 1-4（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）全部已实现。灵感来源：用户提出「FDE Harness 读自己的交付物，自动生成企业 sub-agent」。
 

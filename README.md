@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.7-16B8F3" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.8-16B8F3" /></a>
   <img src="https://img.shields.io/npm/v/sofagent" />
 </p>
 
@@ -21,7 +21,7 @@
 - [核心特性](#核心特性)
 - [什么是 FDE Harness](#什么是-fde-harness)
 - [多平台挂载](#多平台挂载)
-- [v1.5.7：审计覆盖面扩展与能力面治理](#v157审计覆盖面扩展与能力面治理)
+- [v1.5.8：进化模块 · 准入门与数据面](#v158进化模块--准入门与数据面)
 - [FDE Harness 两阶段](#fde-harness-两阶段)
 - [安装](#安装)
 - [使用](#使用)
@@ -173,20 +173,6 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 > 📌 完整证据见 [v1.5.8 开发日志](./docs/changelog/v1.5/v1.5.8.md)；旧版能力段见 [CHANGELOG](./CHANGELOG.md)。
 
-## v1.5.7：审计覆盖面扩展与能力面治理
-
-🔍 **审计扩到没有代码仓库的企业**——SMB 三判据 + 审计输入面三规则 + 浏览器退役 + 能力治理地基：
-
-| 能力 | 一句话 |
-|---|---|
-| **SMB 场景审计（E5）** | 数据处理 / 报表生成：勾稽 · 溯源 · 口径三判据 × 三形态；决策类型 `DATA_PRODUCT`（17→18 值） |
-| **审计输入面三规则（25→28 条）** | E6 提示注入防护 · E7 决策质量信号（FALLBACK ≥5 WARN）；决策日志升为审计输入源 |
-| **浏览器底座退役** | 四件套删除（v2.0 窗口兑现），图像三件迁 `image-meta.ts`；S313 断言反转 |
-| **能力面治理与可拔契约** | 技能健康度五维 + 归档回滚闭环；遥测补 status/durationMs；可拔契约 18 单元 + `SOFAGENT_*` 门控分流 |
-| **评估三件** | UI 审计可行性=不实做 · 国标对位 5 标准 10 差距 · ACS YAML=不采纳 |
-
-> 📌 完整证据见 [v1.5.7 开发日志](./docs/changelog/v1.5/v1.5.7.md)；旧版能力段见 [CHANGELOG](./CHANGELOG.md)。
-
 ## FDE Harness 两阶段
 
 **两阶段的分工与不可分性**见上文〈[什么是 FDE Harness](#什么是-fde-harness)〉——本节补**组织侧读法**：两阶段合起来就是给数字员工办入职的全流程（离场侧自动动作：daemon 7×24 巡检 · 每次 commit 触发 28 条审计（含 **AgentShield 五类配置面静态扫描**）· 快照可回滚 · 进化时试验分支晋升与反思蒸馏写回交付物）。
@@ -229,7 +215,7 @@ npx -y -p sofagent sofagent audit
 **完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.7/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.8/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh          # 先看一眼脚本内容，确认安全
 bash bootstrap.sh && rm bootstrap.sh
 ```

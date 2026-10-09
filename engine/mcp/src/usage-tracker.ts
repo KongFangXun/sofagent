@@ -1,5 +1,5 @@
 // ============================================================
-// usage-tracker.ts · MCP tool 调用使用率遥测（v1.5.7 章四）
+// usage-tracker.ts · MCP tool 调用使用率遥测（v1.5.8 章四）
 //
 // 每次 tool 调用追加一行到 {dataDir}/tool-usage.jsonl。
 //
