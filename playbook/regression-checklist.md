@@ -2003,6 +2003,7 @@ grep -q "parseSubagentRunArgs" engine/orchestrator/src/cli-args.ts && echo "✅ 
 > 审查日期 / 范围 / 环境验证（tools/release/pre-push-check/npm test/check-docs/check-version）→ 问题清单（按「是否阻断发版」分三档：阻断 / 应修 / 可延——**不用 P0/P1/P2 分级**，见本仓版本规划铁律；每条给 维度 / 文件:行 / 问题 / 建议）→ 通过统计 → 最终建议（可发版 / 需修复阻断项 / 需重大修复）。追加维度前先 grep 同类。
 
 #### 147. v1.5.7 审查批一维收口——S3 实锤防复发（计数对账扇出面 / 幽灵命令 / 分层口径 / 装配先于消费）+ 维护纪律（注释计数 / 迁移链接 / 英文词边界 / 双态解析 / 快照隔离）+ 规则分级声明一致性（归并 #4 入此：断言按 28 口径承接，git -S ruleClass 可溯）
+```bash
 FAIL=0
 # a: B1 计数对账扇出面——改规则注册面的 commit 须同批扫 acceptance 计数断言（S360 口径与注册数对账；本维度静态锚：acceptance 头场景数与 scenario 实数一致）
 S147_HEAD=$(grep -oE "场景数：[0-9]+" playbook/acceptance-test.sh | head -1 | grep -oE "[0-9]+")
@@ -2031,3 +2032,4 @@ node tools/check/lib/dim147-checks.js k && echo "✅ k: 规则口径 17+11=28 �
 # l: 归并自 #4——AUDIT_PRIORITY 派生导出向后兼容（单源化后外部查询形态不破）
 node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20'))process.exit(1)" && echo "✅ l: AUDIT_PRIORITY 兼容导出在位" || { echo "❌ l: 兼容导出缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度147:FAIL"; exit 1; }; echo "维度147:PASS"
+```
