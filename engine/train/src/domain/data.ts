@@ -194,3 +194,14 @@
   DistillPairResult,
   DistillIngestRecord,
 } from '../distill-pairs';
+/* @public */ export {
+  ingestInstinctSource,
+  mergeForDatasetBuild,
+  extractLineageAnchor,
+  INSTINCT_SOURCE_COLUMNS,
+} from '../instinct-source';
+/* @public */ export type {
+  InstinctSourceRecord,
+  InstinctIngestResult,
+  InstinctDatasetAnchor,
+} from '../instinct-source';
