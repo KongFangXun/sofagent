@@ -344,7 +344,9 @@ else
   # 🔴 排序去重强制 LC_ALL=C：UTF-8 collation 会把不同汉字串判为相等，`sort -u` 随即
   # **静默丢关键词**（实测同一份 11 条关键词表在 UTF-8 下只剩 9 条 ⇒ 少查 2 项、缺口被掩盖，
   # 表现为「UTF-8 跑出 3 个缺口 / C 跑出 5 个缺口」的假分歧——真相是 UTF-8 那版漏查）。
-  ALL_KW=$(printf '%s\n%s\n' "$DEVLOG_KW" "$CHANGELOG_KW" | grep -vE '^[[:space:]]*$' | grep -vE '^[0-9]+$' | LC_ALL=C sort -u || true)
+  # 纯数字与版本号串（`v1.5.8` / `1.5.8`）一并滤除——它们是版本元信息、不是交付短语；
+  # 不过滤则「CHANGELOG 当前版本行的 **vX.Y.Z** 加粗」会被当关键词，本版零新增场景时必假红。
+  ALL_KW=$(printf '%s\n%s\n' "$DEVLOG_KW" "$CHANGELOG_KW" | grep -vE '^[[:space:]]*$' | grep -vE '^[0-9]+$' | grep -vE '^v?[0-9]+(\.[0-9]+)+$' | LC_ALL=C sort -u || true)
 
   if [ -z "$ALL_KW" ]; then
     warn "当前版本（v${CUR_VER}）未提取到交付关键词——devlog 章标题/CHANGELOG 版本行格式变化？人工确认"
