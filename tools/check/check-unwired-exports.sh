@@ -143,11 +143,66 @@ compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 #     不把它硬接到既有出站路径（webhook / cloud-exec）的原因：白名单默认空 = 全拒，
 #     接上去会让默认态打断全部出站推送——比登记债务更差。
 #     到期（v1.5.4 ≤ SSOT）未接线即自动转红，本条目即声明「此处有据可查的接线债」。
+# ── v1.5.8 进化模块批登记分组（47 符号 · 目标版本 v1.5.9）──
+# ── 章一 准入/停滞检测——能力面先行（判定函数与阈值常量）（9 符号）──
+# ── 章二 三层晋级判据——能力面先行（三态判定与证据门槛）（6 符号）──
+# ── 章三 经验池管道——能力面先行（持久化与四道导出门）（6 符号）──
+# ── 章四 出题考核器——能力面先行（出题/双成功判定/沉淀裁决/不捕获与佐证门）（10 符号）──
+# ── 章五 RL 训练治理——能力面先行（opt-in 策略集与两门互补）（5 符号）──
+# ── 收益指标四维——能力面先行（曲线呈现挂治理 KPI 面板）（6 符号）──
+# ── 评测集谱系防护——能力面先行（钉哈希/换代声明/污染自陈/答案键剥离）（5 符号）──
 SDK_FACE_WAIVER="initialNodeState:SDK 面易名重导出（initialState 的稳定别名）——底层符号生产实调于 node-executor:v1.6.0
 executionStep:SDK 面易名重导出（step 的稳定别名）——底层符号为协议核心生产实调:v1.6.0
 listNodeKinds:SDK 面枚举器（与 getSchema 同文件同消费面）——schema 注册表对外自描述 API:v1.6.0
 setExecutionAuditSink:SDK 面易名重导出（setAuditSink 的稳定别名）——audit-digest 接线保留口:v1.6.0
-statefulMetricsFileSink:SDK 面易名重导出（fileSink 的稳定别名）——度量落盘外部注入保留口:v1.6.0"
+statefulMetricsFileSink:SDK 面易名重导出（fileSink 的稳定别名）——度量落盘外部注入保留口:v1.6.0
+STAGNATION_IMPROVEMENT_THRESHOLD:SDK 面先行（章一 准入/停滞检测）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+STAGNATION_ROUNDS:SDK 面先行（章一 准入/停滞检测）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+detectStagnation:SDK 面先行（章一 准入/停滞检测）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+isGateStrengthNonDecreasing:SDK 面先行（章一 准入/停滞检测）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+judgeAdmission:SDK 面先行（章一 准入/停滞检测）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+gateStrengthOf:SDK 面先行（章一 准入/停滞检测）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+defaultTierForUnregistered:SDK 面先行（章一 准入/停滞检测）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+initializeRegistryProtected:SDK 面先行（章一 准入/停滞检测）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+safetySuiteVerdict:SDK 面先行（章一 准入/停滞检测）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+judgePromotion:SDK 面先行（章二 三层晋级判据）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+judgeDemotion:SDK 面先行（章二 三层晋级判据）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+judgeEvidenceGates:SDK 面先行（章二 三层晋级判据）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+recordPromotionDecision:SDK 面先行（章二 三层晋级判据）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+noopDecisionWriter:SDK 面先行（章二 三层晋级判据）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+evolutionCostGate:SDK 面先行（章二 三层晋级判据）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+instinctPoolPath:SDK 面先行（章三 经验池管道）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+appendToPool:SDK 面先行（章三 经验池管道）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+readPool:SDK 面先行（章三 经验池管道）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+filterByTenant:SDK 面先行（章三 经验池管道）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+exportInstinctRecords:SDK 面先行（章三 经验池管道）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+buildLineageAnchor:SDK 面先行（章三 经验池管道）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+examQueuePath:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+enqueueExamAction:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+readExamQueue:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+generateExamQuestion:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+assessExamination:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+decideSedimentation:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+checkDoNotCapture:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+checkCorroborationGate:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+applyExamResultToPoolItem:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+applyExamStatusWeight:SDK 面先行（章四 出题考核器）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+emptyTrainingPolicySet:SDK 面先行（章五 RL 训练治理）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+judgePolicyHits:SDK 面先行（章五 RL 训练治理）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+combineGates:SDK 面先行（章五 RL 训练治理）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+shapeRewardPenalty:SDK 面先行（章五 RL 训练治理）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+recordShaping:SDK 面先行（章五 RL 训练治理）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+collectBenefitMetrics:SDK 面先行（收益指标四维）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+recordBenefitMetrics:SDK 面先行（收益指标四维）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+passRateTrendFromAbHistory:SDK 面先行（收益指标四维）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+recurrenceRateFromFailureLedger:SDK 面先行（收益指标四维）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+skillReuseRateFromImpactLedger:SDK 面先行（收益指标四维）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+interventionRateFromDecisionLog:SDK 面先行（收益指标四维）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+computeEvalSetHash:SDK 面先行（评测集谱系防护）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+registerEvalSetProvenance:SDK 面先行（评测集谱系防护）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+verifyContaminationSelfReport:SDK 面先行（评测集谱系防护）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+stripAnswerKey:SDK 面先行（评测集谱系防护）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9
+succeedEvalSet:SDK 面先行（评测集谱系防护）：验收标准为能力级声称（模块+包测试满足），生产入口接线排下版:v1.5.9"
 
 # ── --since <prev-tag>：版本 diff 驱动模式 ──
 # 用 git diff <prev-tag>..HEAD 提取 engine/**/src/*.ts 新增的 @public 导出
@@ -178,7 +233,17 @@ done
 # registerBuiltinSlashCommands→slash-commands-wiring.ts:80 直调）或间接接线
 # （runInspectors/runAllLayers 经 via= 声明，见上表注释）。历史上四符号曾
 # 整体豁免（v1.4.4 复盘登记的接线债务），接线完成后移除——豁免不是免死金牌。
-KNOWN_PENDING_DEFAULT=""
+# v1.5.8 进化模块批登记（能力面已交付 + 测试完备，生产入口接线排下版）：
+#   本版五章把「进化准入 / 晋级判据 / 经验池管道 / 出题考核器 / RL 训练治理」作为
+#   **能力模块**交付——模块互引自洽（同批新增符号间可解析），但**尚无已存活生产代码
+#   作为入口调用整条管道**（自然入口 = 进化循环消费池管道 / 治理 KPI 面板消费收益指标 /
+#   训练流程消费训练期治理）。devlog 章三~五验收标准均为**能力级声称**（「可导出 / 可生成 /
+#   可判定」），由模块 + 包测试满足，未声称生产自动触发——故按机制登记为**接线债务**
+#   （非免死金牌；trigger：见 devlog 待明确事项「生产入口接线」，下版接线后逐符号移除）。
+#   注：judgeAdmission / optimize 链已真实接线（daemon evolve-trigger.ts:45 → autoTriggerAll
+#   → optimize → judgeAdmission），此处保留系检查器一跳解析极限（消费者文件本批被修改即
+#   视作在批内），非真实断链——逐符号移除时一并核实。
+KNOWN_PENDING_DEFAULT="STAGNATION_IMPROVEMENT_THRESHOLD,STAGNATION_ROUNDS,judgeAdmission,judgePromotion,judgeDemotion,judgeEvidenceGates,safetySuiteVerdict,gateStrengthOf,defaultTierForUnregistered,detectStagnation,isGateStrengthNonDecreasing,initializeRegistryProtected,computeEvalSetHash,registerEvalSetProvenance,verifyContaminationSelfReport,stripAnswerKey,succeedEvalSet,noopDecisionWriter,recordPromotionDecision,instinctPoolPath,appendToPool,readPool,filterByTenant,exportInstinctRecords,buildLineageAnchor,examQueuePath,enqueueExamAction,readExamQueue,generateExamQuestion,assessExamination,decideSedimentation,checkDoNotCapture,checkCorroborationGate,applyExamResultToPoolItem,applyExamStatusWeight,emptyTrainingPolicySet,judgePolicyHits,combineGates,shapeRewardPenalty,recordShaping,evolutionCostGate,collectBenefitMetrics,recordBenefitMetrics,passRateTrendFromAbHistory,recurrenceRateFromFailureLedger,skillReuseRateFromImpactLedger,interventionRateFromDecisionLog"
 KNOWN_PENDING="$KNOWN_PENDING_DEFAULT"
 
 for _arg in "$@"; do
