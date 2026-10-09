@@ -204,6 +204,21 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
+## v1.5.8: Evolution Module · Admission Gates & Data Plane
+
+⚡ **Two gates on evolution + the data plane from experience to training**—so an Agent can't drift out of control by rewriting itself:
+
+| Capability | One-liner |
+|---|---|
+| **Evolution admission gates** | Domain-verifier three-tier routing (`deterministic` / `model-judge` / `human-only`): only domains where verification is cheaper than generation evolve automatically; unregistered domains fail-closed at the strictest tier |
+| **Three-tier promotion policy** | Frequency × persistence × verification as pure functions → inject-lease / skill-semi-persistent / fine-tune-amortized; promotion must clear four evidence gates (holdout-first · strictly beat historical best · single-variable attributable · calibration non-degrading) |
+| **Experience pool → training pipeline** | instinct pool exports high-confidence + examined records as training rows (with lineage anchor and source-authenticity mark); the train-side adapter normalizes them and builds datasets mixed with external sources |
+| **Examiner** | Generates verification questions from instinct; only answer-correct **and** reproduction-verified items are marked `verified` and enter the pool; scorer independence is a hard gate |
+| **RL training governance** | Policy hits during training fold penalties by rule severity (via the existing `severityWeightOf` single source — no second mapping) |
+| **Rule count 25→28 fully reconciled** | Docs / code comments / npm facade / dashboard all synced; five-variant gate prevents regression |
+
+> 📌 Full evidence: [v1.5.8 dev log](./docs/changelog/v1.5/v1.5.8.md); older capability sections: [CHANGELOG](./CHANGELOG.md).
+
 ## v1.5.7: Audit Coverage Expansion & Capability Governance
 
 🔍 **Audit extends to enterprises without repositories**—SMB scenarios, three new audit-input rules, browser retirement, capability-governance foundations:
