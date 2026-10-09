@@ -172,6 +172,28 @@ describe('章二 · 台账与四指标', () => {
   });
 });
 
+describe('章二 · quota 接线进化循环入口（optimize 前置门）', () => {
+  it('传入超预算 quota → optimize 不启动进化循环（block 即返）', async () => {
+    const { optimize } = await import('../auto-trigger');
+    const r = await optimize({
+      skillId: 'test-skill',
+      failureMode: 'audit-FAIL',
+      quota: { config: { maxTokens: 100, period: 'daily', mode: 'HARD' }, usage: { usedTokens: 500 } },
+    });
+    expect(r.triggered).toBe(false);
+    expect(r.skipReason).toContain('成本门禁阻断');
+    expect(r.quotaVerdict?.action).toBe('block');
+  });
+
+  it('未传 quota → 行为不变（可选门——单机零配置直通）', async () => {
+    const { optimize } = await import('../auto-trigger');
+    const r = await optimize({ skillId: 's', failureMode: 'f' });
+    expect(r.quotaVerdict).toBeUndefined(); // 零侵入：不传不过门
+    // triggered 可 false（未达重复阈值）——关键是未因 quota 被 skip
+    expect(r.skipReason ?? '').not.toContain('成本门禁');
+  });
+});
+
 describe('章二 · 成本 quota 门禁（无第二套预算）', () => {
   it('超预算 HARD → 进化循环不允许启动（复用 core checkQuota）', () => {
     const cfg = { maxTokens: 1000, period: 'daily' as const, mode: 'HARD' as const };

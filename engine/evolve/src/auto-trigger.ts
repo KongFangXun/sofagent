@@ -13,6 +13,8 @@
 // optimize() 是本版本新建的核心 API（evolve 之前无此函数）。
 // ============================================================
 
+import { evolutionCostGate } from './promotion-policy';
+import type { QuotaConfig, QuotaUsage } from '@sofagent/core';
 import {
   recordFailure,
   getRepeatedFailures,
@@ -43,6 +45,8 @@ export interface OptimizeInput {
   correctApproach?: string;
   /** 触发的规则（可选） */
   ruleTriggered?: string;
+  /** 进化循环成本门（可选——传入即在启动前过 v1.4.8 quota 事前门禁；超预算不启动） */
+  quota?: { config: QuotaConfig | null | undefined; usage: QuotaUsage };
 }
 
 /** optimize() 输出结果 */
@@ -59,6 +63,8 @@ export interface OptimizeResult {
   validationResult?: ValidationResult;
   /** 跳过原因（未触发时） */
   skipReason?: string;
+  /** 成本门禁判定（传入 quota 时随行——WARN/HARD 双模式处置原文） */
+  quotaVerdict?: { action: string; reason?: string };
 }
 
 /**
@@ -70,6 +76,22 @@ export interface OptimizeResult {
  * @returns 优化结果
  */
 export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
+  // 0. 进化循环成本门（v1.5.8 章一：纳入 v1.4.8 quota 事前门禁——超预算按 WARN/HARD 处置，无第二套预算）
+  let quotaVerdict: { action: string; reason?: string } | undefined;
+  if (input.quota) {
+    const gate = evolutionCostGate(input.quota.config, input.quota.usage);
+    quotaVerdict = { action: gate.quotaVerdict.action, reason: 'reason' in gate.quotaVerdict ? gate.quotaVerdict.reason : undefined };
+    if (!gate.allowed) {
+      return {
+        triggered: false,
+        skillId: input.skillId,
+        failureMode: input.failureMode,
+        skipReason: `成本门禁阻断（${gate.quotaVerdict.action}）——进化循环不启动`,
+        quotaVerdict,
+      };
+    }
+  }
+
   // 1. 记录失败到 failure-ledger
   const record: FailureRecord = {
     timestamp: new Date().toISOString(),

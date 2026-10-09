@@ -133,6 +133,15 @@
   PolicyHitVerdict,
 } from './training-policy';
 /* @public */ export { shapeRewardPenalty, recordShaping } from './reward-shaping';
+/* ── v1.5.8 章二补强：四指标取数器（既有台账——零新数据源）── */
+/* @public */ export {
+  passRateTrendFromAbHistory,
+  recurrenceRateFromFailureLedger,
+  skillReuseRateFromImpactLedger,
+  interventionRateFromDecisionLog,
+  collectBenefitMetrics,
+} from './benefit-metrics';
+/* @public */ export type { OptionalMetric } from './benefit-metrics';
 /* @public */ export type { PenaltySignal, RewardShapingResult, ShapingLedgerEntry } from './reward-shaping';
 /* @public */ export type { GateHistory, GateVerdict, NativeGateOptions } from './native-gate';
 /* @public */ export { buildProposerPrompt, parseProposalWithSafety, loadImpactLedger, loadFailureLedger } from './proposer';

@@ -5,6 +5,8 @@
 // 跨包消费（train 包 instinct-source / evolve 侧）走包名子路径，禁相对深引。
 
 /* @public */ export { extractInstincts, normalizePattern, patternId } from './extractor';
+/* @public */ export { examQueuePath, enqueueExamAction, readExamQueue } from './exam-queue';
+/* @public */ export type { ExamQueueLogEntry } from './exam-queue';
 /* @public */ export type { InstinctItem, ExtractOptions } from './extractor';
 /* @public */ export {
   scoreInstinct,
