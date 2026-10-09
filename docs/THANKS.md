@@ -136,7 +136,7 @@
 - **[Readout Stability](https://arxiv.org/abs/2610.07716)** — 菜单换而文本不变，缓存首过分布已定后验（自报）
 - **[Your-LM-Is-Already-a-Decision-Model](https://github.com/ntlm1686/Your-language-model-is-already-a-decision-model)** · ntlm1686 — **训练必要性对照**：未微调 9B 与 Jev 互有胜负（自测）
 - **[One Word Opens the Gate](https://arxiv.org/abs/2610.12292)** — **护栏件的输入侧攻击面**：类型化判定件被放进 agent 当闸门后，「选项通道」上一个词即可开门 ⇒ 闸门件自身也是攻击面，不只是判据面（第三方论文、本仓未复算）
-- **[TypedBench](https://arxiv.org/abs/2610.11392)** — 非生成式接口的「**校准 / 框架敏感性 / 成本**」三维独立基准（第三方基准、本仓未复算；其读数未进本仓对照表）
+- **[TypedBench](https://arxiv.org/abs/2610.11392)** — 非生成式接口的「**校准 / 框架敏感性 / 成本**」三维独立基准（第三方基准、本仓未复算）
 - **[Can Jev be Your Q or Policy in RL?](https://arxiv.org/abs/2610.11692)** — 判定件不生成文本、直接返回校准的类型化概率 ⇒ 试作 RL 的 Q / policy：非自回归路线在强化学习侧的能力边界（第三方论文、本仓未复算）
 
 ### 认知与反馈
