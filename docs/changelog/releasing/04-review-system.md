@@ -102,12 +102,12 @@ major/minor 发版或多文档大批量改动后，按 [playbook/doc-fresh-revie
 ## fresh-eyes-review 风格守护自检（步骤五 必跑）
 
 ```bash
-# 1. 行数守护：不超过 530 行——本文件只写「视角 + 纪律」纯审查输入；校准笔记在
+# 1. 行数守护：不超过 545 行——本文件只写「视角 + 纪律」纯审查输入；校准笔记在
 #    fresh-eyes-calibration.md（维护者档案，worker 不加载），新增校准不涨本文件行数。
 #    超线处置：校准段紧凑化（保语义压行数，不删视角）；上调警戒线改本段两处数字
 #    （check-review-system.sh 动态提取此处「不超过 N 行」，本段是 SSOT）。
 WC=$(wc -l < playbook/fresh-eyes-review.md)
-[ "$WC" -gt 530 ] && echo "🔴 行数膨胀（$WC > 530）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
+[ "$WC" -gt 545 ] && echo "🔴 行数膨胀（$WC > 545）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
 
 # 2. 反清单化守护：不应出现精确检查命令（fresh-eyes-review 是留白式直觉审查，不是 checklist）
 CMD_COUNT=$(grep -cE '(grep|bash|npm|wc -l|test -)' playbook/fresh-eyes-review.md || echo 0)
@@ -128,9 +128,11 @@ bash tools/check/check-guards.sh --inject
 #    · check-version.sh 注释面。逐份过三查：
 #    ① 引用真实性（vendored 上游/PROVENANCE/被引脚本在位）② 无硬编码快照读数（行数/计数一律动态写法——
 #    实锤：doc-fresh-review 的「2938 行」漂到 2955 才被发现）③ 无双源数值（表格声明"以 X 为 SSOT"
-#    却又写死现值——实锤：review-system.md 的「当前上限 530 行」）。
+#    却又写死现值——实锤：review-system.md 的行数上限曾写死现值）。
 #    命中即修，同批提交；无需改动时零提交收场（合规也是一种结论）。
 ```
+
+> 📌 **警戒线上调记录**：530 → 545（v1.5.8 阶段四）。依据：新增「视角十六跨源叠合独占面」为真增量（非重复维度、非工具可覆盖），经维护者批准上调；三判据已过（新增内容为独立判别面，无同主题既有维度可归并）。此段两处数字是 SSOT，check-review-system.sh 动态提取校验。
 
 > 💡 **什么时候 `git diff` 显示无变更也是正常的**：如果所有预料外发现都属于"可精确描述的具体问题模式"，它们全部进了 regression-checklist，fresh-eyes-review 本版本无需更新。零变更 = 审查体系稳定，不是遗漏。
 
@@ -166,6 +168,6 @@ bash tools/check/check-guards.sh --inject
 | 二 | 分发落地——A/B 类有明确处置（新增维/并入既有/已有覆盖三类去向逐条标注），C 类进 calibration | 草稿每条有「建议落点」列；`git log --oneline -- playbook/fresh-eyes-calibration.md \| head -2` 有本版 commit |
 | 三 | 覆盖率确认在**分发后**跑（分发前跑的绿不算数） | check-review-system RC=0，且执行时点在分发 commit 之后 |
 | 四 | 瘦身判据记录在案——即使「零新增维」也要有记录（三判据检查了什么、为何无需归并），空白≠通过 | 草稿或 changelog 内有 `[瘦身判据记录 vX.Y.Z]` 段 |
-| 五 | 校准零膨胀——fresh-eyes-review 行数 ≤530（以步骤五自检段「不超过 N 行」为 SSOT）、视角数稳定（校准笔记只进 calibration，不进 review） | `wc -l playbook/fresh-eyes-review.md` + 视角数对账 |
+| 五 | 校准零膨胀——fresh-eyes-review 行数 ≤545（以步骤五自检段「不超过 N 行」为 SSOT）、视角数稳定（校准笔记只进 calibration，不进 review） | `wc -l playbook/fresh-eyes-review.md` + 视角数对账 |
 
 > **跨阶段门**：阶段五入口前置核对——执行 release-gate 前主 session 快速过一遍本表第 1 项（正式草稿在位）。上道门漏了的，下道门要能拦住。

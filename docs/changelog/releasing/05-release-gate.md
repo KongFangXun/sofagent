@@ -25,7 +25,7 @@ verdict=FAIL → 执行 session 按「修复批协议」分诊修复 → 复绿 
 
 #### 一 · 脚本层直跑（零 LLM）
 
-acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health + check-dashboard（dashboard.html 结构门禁）依次跑，全绿才进判断层；红项由执行 session 按「修复批协议」修复后复跑复绿。长跑门禁（acceptance）**先查凭据复用**——见 ②
+acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health + check-dashboard（dashboard.html 结构门禁）依次跑，全绿才进判断层；红项由执行 session 按「修复批协议」修复后复跑复绿。长跑门禁（acceptance）**先查凭据复用**——凭据四道防线口径见 tools/release/heavy-gate-receipt.sh 的 record 动作与 acceptance-test.sh --pre 实现
 
 
 
@@ -49,10 +49,10 @@ acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system +
 
 ## 执行序列
 ① 重跑前置三查 → 按 [05-release-gate §重跑前置三查] 全文执行（断点归档 / run 定位 / 冻结确认）
-② 脚本层 → 按 [05-release-gate §步骤二] 全文执行（六门禁 + acceptance --pre 落凭据）
-③ 判断层 → 按 [05-release-gate §步骤三]（driver --judgment-only · 仓库冻结 · 独占窗口）
-④ 持续轮询 → 按 [05-release-gate §步骤四]（前台 120s · 严禁挂后台）
-⑤ verdict 分支 → 按 [05-release-gate §步骤五]（PASS 不写 LEDGER / FAIL 修复批协议 / ERROR 双查）
+② 脚本层 → 按 [05-release-gate §一 · 脚本层直跑] 全文执行（六门禁 + acceptance 全量落凭据；--pre 属 tools/release/heavy-gate-receipt.sh 的 record 动作，非 acceptance 参数）
+③ 判断层 → 按 [05-release-gate §判定与循环]（driver --judgment-only · 仓库冻结 · 独占窗口）
+④ 持续轮询 → 按 [05-release-gate §监控 session 与主 session 的分工协议 · 前台轮询纪律]（前台短命令轮询 · 严禁挂后台）
+⑤ verdict 分支 → 按 [05-release-gate §判定与循环 + §四 · FAIL 修复批]（PASS 不写 LEDGER / FAIL 修复批协议 / ERROR 双查）
 修复批协议 SSOT = [auto-converge-protocol.md]；红线摘要：不改断言迁就 / 不删检查消音 / 不绕审计钩子 / 只动 FAIL 项涉及文件。
 
 ## 最终汇报
