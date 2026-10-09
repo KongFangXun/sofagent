@@ -1500,10 +1500,7 @@ else
   fail "无法取得测试数真值（tools/check/test-count.sh 未产出 TOTAL_TESTS=）——拒绝以「读不到就跳过」收场"
   S165_OK=false
 fi
-# v1.5.8 BUG-07：① 正则扩为「N 条 <0-6 字> 规则」（覆盖「25 条审计规则」非紧邻形态——
-# 此前 25 残留全在非紧邻形态里，门禁恒绿假放行）；② 扫描面扩 6 文件（WIKI/DEVELOPMENT/
-# API/VALIDATION + 双语 README）。冻结区（docs/changelog/v1.0-v1.5、docs/archive）不在扫描面。
-for f in README.md README.en.md docs/ARCHITECTURE.md docs/HANDBOOK.md docs/WIKI.md docs/DEVELOPMENT.md docs/API.md docs/VALIDATION.md; do assert_numbers_all_equal "$f" 28 '[0-9]+[[:space:]]*(条|个)[^0-9]{0,6}规则|[0-9]+[[:space:]]*rules' "规则数" || S165_OK=false; done
+for f in README.md README.en.md docs/ARCHITECTURE.md docs/HANDBOOK.md docs/WIKI.md docs/DEVELOPMENT.md docs/API.md docs/VALIDATION.md; do assert_numbers_all_equal "$f" 28 '[0-9]+[[:space:]]*(条|个)[^0-9]{0,6}规则|[0-9]+[[:space:]]*rules' "规则数" || S165_OK=false; done  # 正则含非紧邻形态（N 条审计规则）；扫描面 8 文件；冻结区不在面内
 # acceptance 场景数动态计算（防止每次加场景后硬编码漂移）
 S165_SCEN_COUNT=$(grep -oE 'scenario [0-9]+[a-z]? "' "$SCRIPT_DIR/acceptance-test.sh" | wc -l | tr -d ' ' || echo 0)
 S165_SCEN_COUNT=${S165_SCEN_COUNT:-0}

@@ -1501,10 +1501,8 @@ else
       echo -e "  ${GREEN}✓ --fix：本次无漂移，未写任何文件${NC}"
     fi
   fi
-  # ── v1.5.8 BUG-08 接线：场景数守卫上移进默认主路径（此前仅 --scenarios-only 触发，
-  #    pre-push 用的 --quiet 与默认路径都不调用 ⇒ 守卫判定正确却零阻断——clause
-  #    without enforcement = defect。守卫内部已 QUIET 兼容（FAIL 恒打印），此处
-  #    无条件调用；守卫 FAIL ⇒ exit 1（覆盖 quiet 契约：quiet 下 FAIL 也必须非零）。──
+  # ── 场景数守卫上移进默认主路径（此前仅 --scenarios-only 触发 ⇒ pre-push --quiet 零阻断；
+  #    clause without enforcement = defect。守卫 QUIET 兼容，FAIL ⇒ exit 1）──
   run_scenario_guard
   if [ "$SCEN_FAIL" -gt 0 ]; then
     echo -e "${RED}场景数守卫：${SCEN_FAIL} 项 FAIL（含在本次门禁结果内）${NC}"
