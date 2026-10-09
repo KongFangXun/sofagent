@@ -414,6 +414,19 @@
   BuildAndPersistResult,
   SampleSanitizeFn,
 } from './dataset-builder';
+// instinct 源（v1.5.8 章三）：文件/DB 之外的第三入口——旁挂适配器，
+// 归一到 IngestRecord 后与外部源混合进同一个 buildDataset（builder 零改动）
+/* @public */ export {
+  ingestInstinctSource,
+  mergeForDatasetBuild,
+  extractLineageAnchor,
+  INSTINCT_SOURCE_COLUMNS,
+} from './instinct-source';
+/* @public */ export type {
+  InstinctSourceRecord,
+  InstinctIngestResult,
+  InstinctDatasetAnchor,
+} from './instinct-source';
 /* @public */ export {
   datasetVersionsPath,
   recordDatasetVersion,
@@ -644,6 +657,7 @@
   DryrunCheck,
   DryrunResult,
   DryrunInput,
+  InstinctSourceCheck,
 } from './train-dryrun';
 /* @public */ export {
   sigmoid,

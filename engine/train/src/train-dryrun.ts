@@ -14,20 +14,34 @@
 //   ④ 算力外推：pilot 数据点 → sigmoid 缩放律拟合 → 目标规模性能/
 //      成本外推（复用 scale-curve；外推成本超预算 → 告警——预算控制
 //      事前化衔接 v1.4.1 train-budget）
+//   ⑤ instinct 源混合构建（可选输入 · v1.5.8 章三）：传入 instinctRecords 时
+//      归一后与外部源记录合并进**同一个** buildDataset（旁挂接入，builder 零改动）
 //
 // 复用来源：
 //   - data-ingest（章一）：ingestFile 按扩展名路由四源
 //   - dataset-builder（章一）：buildDataset / inferColumnMapping
 //   - dataset-validator（章一）：validateDataset / requiredFieldsOf
 //   - scale-curve（本版章五）：fitSigmoid / extrapolate / suggestNextPilotCompute
+//   - instinct-source（v1.5.8 章三）：ingestInstinctSource / mergeForDatasetBuild
 //
 // 可测试性：纯函数 + 文件系统 fixture（临时目录小 CSV）——零真实训练。
+//
+// v1.5.8 章三架构决策的落地形态：instinct 源是**旁挂适配器**，接入点选在
+// 本文件（train-dryrun = 数据集构建的生产消费面），dataset-builder.ts 零改动
+// ——它的入参 IngestRecord[] 对来源完全无感，混合构建天然成立。
 
 import { existsSync } from 'fs';
 import { ingestFile } from './data-ingest';
 import { buildDataset, inferColumnMapping, type DatasetAlgorithm } from './dataset-builder';
 import { validateDataset, requiredFieldsOf } from './dataset-validator';
 import { fitSigmoid, extrapolate, suggestNextPilotCompute, type ScaleCurvePoint, type Extrapolation } from './scale-curve';
+import {
+  ingestInstinctSource,
+  mergeForDatasetBuild,
+  extractLineageAnchor,
+  type InstinctSourceRecord,
+  type InstinctDatasetAnchor,
+} from './instinct-source';
 
 // ══════════════════════════════════════
 // 显存估算（纯函数——经验公式）
@@ -104,6 +118,22 @@ export interface DryrunCheck {
   detail: string;
 }
 
+/** instinct 源混合构建的接线结果（DryrunResult 的可选面——传了 instinct 才有） */
+export interface InstinctSourceCheck {
+  /** 归一后进入构建的 instinct 记录数 */
+  accepted: number;
+  /** 源侧拒收数（真实性门 fail-closed 的透传） */
+  rejected: number;
+  /** 合并后进入同一个 buildDataset 的总记录数 */
+  mergedTotal: number;
+  /** 产物中来自 instinct 源的样本行数（混合构建的真值——不是"应该能进"） */
+  instinctLines: number;
+  /** 构建产物总行数 */
+  totalLines: number;
+  /** 数据集血缘锚点（权重 → 数据集 → 经验源反向追溯） */
+  lineage: InstinctDatasetAnchor;
+}
+
 /** dry-run 结果（结构化——MCP train_dryrun 直接消费） */
 export interface DryrunResult {
   /** 整体结论（任一 fail → false；warn 不阻断） */
@@ -115,6 +145,8 @@ export interface DryrunResult {
   extrapolation?: Extrapolation;
   /** 下一个 pilot 规模建议（外推置信低时给——补点提升置信） */
   nextPilotCompute?: number | null;
+  /** instinct 源混合构建摘要（传了 instinctRecords 才有） */
+  instinct?: InstinctSourceCheck;
 }
 
 // ══════════════════════════════════════
@@ -142,10 +174,17 @@ export interface DryrunInput {
   };
   /** 依赖注入：管线连通样本上限（缺省 10 条） */
   pipelineSampleLimit?: number;
+  /**
+   * instinct 源记录（可选输入 · v1.5.8 章三旁挂接入点）。
+   * 传入时归一后与外部源记录合并成同一 records 数组喂给**同一个**
+   * buildDataset；缺省则全流程与 v1.5.7 逐字一致（零行为变化）。
+   */
+  instinctRecords?: readonly InstinctSourceRecord[];
 }
 
 /**
- * 训练 dry-run：管线连通 + 数据抽样 + 显存估算 + 算力外推四项预检。
+ * 训练 dry-run：管线连通 + 数据抽样 + 显存估算 + 算力外推四项预检，
+ * 另附可选的 instinct 源混合构建检查（传了 instinctRecords 才启用）。
  *
  * 不真训练——验证「数据能读、格式能解析、训练集能建、显存够不够、
  * 值不值得投」。全部结构化报告（passed=false 时 checks 指明哪项挂了）。
@@ -178,6 +217,32 @@ export function runDryrun(input: DryrunInput): DryrunResult {
         detail: `数据解析失败：${err instanceof Error ? err.message : String(err)}`,
       });
     }
+  }
+
+  // ── ⑤ instinct 源混合构建（v1.5.8 章三旁挂接入 · 可选输入） ──
+  // 归一 → mergeForDatasetBuild 并入同一 records/columns → 后续 ①② 与外部源
+  // 走**同一个** buildDataset（dataset-builder.ts 零改动：其入参对来源无感）。
+  let instinct: InstinctSourceCheck | undefined;
+  let instinctRecordIds: ReadonlySet<string> = new Set();
+  if (input.instinctRecords !== undefined) {
+    const ing = ingestInstinctSource(input.instinctRecords);
+    instinctRecordIds = new Set(ing.records.map((r) => r.id));
+    let mergedTotal = 0;
+    if (records !== null) {
+      const merged = mergeForDatasetBuild({ records, columns }, ing);
+      records = merged.records;
+      columns = merged.columns;
+      mergedTotal = merged.records.length;
+    }
+    // 外部源不可读时 mergedTotal 保持 0——混合构建未发生，根因见 pipeline-connectivity
+    instinct = {
+      accepted: ing.records.length,
+      rejected: ing.rejected.length,
+      mergedTotal,
+      instinctLines: 0,
+      totalLines: 0,
+      lineage: extractLineageAnchor(ing.records),
+    };
   }
 
   if (records !== null && records.length > 0) {
@@ -214,6 +279,11 @@ export function runDryrun(input: DryrunInput): DryrunResult {
       algorithm: input.algorithm,
       columnMapping: mapping,
     });
+    // 混合构建的真值：从产物行里点出 instinct 来源的行（不是"应该能进"）
+    if (instinct !== undefined) {
+      instinct.instinctLines = builtFull.lines.filter((l) => instinctRecordIds.has(l.meta.recordId)).length;
+      instinct.totalLines = builtFull.lines.length;
+    }
     if (missing.length > 0) {
       checks.push({
         name: 'data-preflight',
@@ -251,6 +321,33 @@ export function runDryrun(input: DryrunInput): DryrunResult {
         });
       }
     }
+  }
+
+  // ── ⑤ instinct 源混合构建检查（v1.5.8 章三 · 未传输入则 skip） ──
+  if (instinct === undefined) {
+    checks.push({
+      name: 'instinct-source-connectivity',
+      status: 'skip',
+      detail: '未提供 instinct 记录——跳过（纯外部源构建，行为与 v1.5.7 一致）',
+    });
+  } else if (instinct.mergedTotal === 0) {
+    checks.push({
+      name: 'instinct-source-connectivity',
+      status: 'fail',
+      detail: `instinct 源归一 ${instinct.accepted} 条但未合并进数据集（外部源不可读，见 pipeline-connectivity）`,
+    });
+  } else if (instinct.instinctLines === 0) {
+    checks.push({
+      name: 'instinct-source-connectivity',
+      status: 'fail',
+      detail: `instinct 源归一 ${instinct.accepted} 条（拒收 ${instinct.rejected} 条）并入 ${instinct.mergedTotal} 条合并记录，但产物 ${instinct.totalLines} 行中无 instinct 来源行——混合构建未成立`,
+    });
+  } else {
+    checks.push({
+      name: 'instinct-source-connectivity',
+      status: 'ok',
+      detail: `instinct 源归一 ${instinct.accepted} 条（拒收 ${instinct.rejected} 条：${instinct.rejected > 0 ? '真实性门 fail-closed' : '无'}），与外部源合并为 ${instinct.mergedTotal} 条喂入同一个 buildDataset → 产物 ${instinct.totalLines} 行（其中 instinct 来源 ${instinct.instinctLines} 行；血缘锚点 ${instinct.lineage.instinctIds.length} 条：${instinct.lineage.instinctIds.join(', ')}）`,
+    });
   }
 
   // ── ③ 显存预检 ──
@@ -324,7 +421,7 @@ export function runDryrun(input: DryrunInput): DryrunResult {
   }
 
   const passed = checks.every((c) => c.status !== 'fail');
-  return { passed, checks, vramEstimate, extrapolation, nextPilotCompute };
+  return { passed, checks, vramEstimate, extrapolation, nextPilotCompute, instinct };
 }
 
 /** 成本取整显示（≥1 万按万计） */

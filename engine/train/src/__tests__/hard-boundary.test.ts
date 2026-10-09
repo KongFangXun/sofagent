@@ -15,6 +15,7 @@ import { enqueueExamAction, readExamQueue } from '@sofagent/orchestrator/instinc
 import type { StoredInstinct } from '@sofagent/orchestrator/instinct';
 import { ingestInstinctSource, mergeForDatasetBuild, extractLineageAnchor } from '../instinct-source';
 import { buildDataset } from '../dataset-builder';
+import { runDryrun } from '../train-dryrun';
 
 function poolItem(over: Partial<StoredInstinct> = {}): StoredInstinct {
   return {
@@ -77,6 +78,52 @@ describe('章三 · TrainChannel 回流（构造产物走既有提交通道）',
     // dataset 产物不含任何自有审计写入调用，回流只经既有通道）
     const trainSrc = require('node:fs').readFileSync(join(__dirname, '..', 'instinct-source.ts'), 'utf8');
     expect(trainSrc).not.toMatch(/emitDecision|appendHistory/); // 源适配器零自有审计写——回流唯一通道不变
+  });
+});
+
+describe('章三 · 生产消费面接线（train-dryrun 旁挂接入点）', () => {
+  it('dryrun 传 instinct 记录 → 归一合并进同一个 buildDataset，产物含 instinct 来源行', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sofagent-instinct-wiring-'));
+    // 外部源 CSV（10 条）——混合构建的另一半
+    const rows = ['instruction,output'];
+    for (let i = 0; i < 10; i++) rows.push(`问题${i}怎么处理,答案${i}是这样做`);
+    const csv = join(dir, 'ext.csv');
+    writeFileSync(csv, rows.join('\n'), 'utf8');
+
+    const exported = exportInstinctRecords([poolItem(), poolItem({ id: 'inst-2' })]);
+    const r = runDryrun({
+      dataPath: csv,
+      algorithm: 'sft',
+      instinctRecords: exported.records.map((x) => ({ ...x })),
+    });
+
+    // 接线检查项在，且不是 fail
+    const wiring = r.checks.find((c) => c.name === 'instinct-source-connectivity');
+    expect(wiring).toBeDefined();
+    expect(wiring!.status).not.toBe('fail');
+    expect(wiring!.status).toBe('ok');
+    expect(wiring!.detail).toContain('合并');
+
+    // 真合并进buildDataset：合并总数 = 外部 10 + instinct 2，产物 12 行
+    expect(r.instinct?.accepted).toBe(2);
+    expect(r.instinct?.mergedTotal).toBe(12);
+    expect(r.instinct?.totalLines).toBe(12);
+    expect(r.instinct?.instinctLines).toBe(2); // 产物中确有 instinct 来源行（非"应该能进"）
+    expect(r.instinct?.lineage.instinctIds).toEqual(['inst-1', 'inst-2']);
+    expect(r.passed).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('未传 instinct 记录 → 检查项 skip 且外部源构建行为零变化（缺省不扰既有调用方）', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sofagent-instinct-noskip-'));
+    writeFileSync(dir + '/ext.csv', 'instruction,output\nq1,a1\nq2,a2\n', 'utf8');
+    const r = runDryrun({ dataPath: dir + '/ext.csv', algorithm: 'sft' });
+
+    const wiring = r.checks.find((c) => c.name === 'instinct-source-connectivity');
+    expect(wiring?.status).toBe('skip');
+    expect(r.instinct).toBeUndefined();
+    expect(r.passed).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
   });
 });
 
