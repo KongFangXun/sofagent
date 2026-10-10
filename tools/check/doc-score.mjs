@@ -25,8 +25,21 @@
 //
 // 退出码：0 = 全绿（各维 ≥8 且 ≥ 基线）；1 = 有维 <8 或低于基线（不可放行）
 //
+// 两种模式（判据不同，不可混用）：
+//   · 全量模式（默认）：六维 27 项全跑，含全仓外部门禁——**每版一次**，约 6 分钟
+//     （实测耗时分布：check-test-count 287s + check-claims 65s 占 96%，文档扫描 <1s）。
+//   · 增量模式（--changed）：只跑 12 项**文档形态机械项**，跳过全仓外部门禁与人工项
+//     （由 pre-push-check 同链串接 / Face 5·6·7 / fresh-eyes 覆盖），**秒级**。
+//     判据 = 变更文档的工作区版本 **对照 HEAD 版本**的命中数差：
+//       差值 > 0 → 新增缺陷（阻断）；= 0 → 存量（信息位，不拦）；< 0 → 改善。
+//     为什么对照 HEAD 而不是「只看新增行」：本面 12 项全是**整文件属性**
+//     （>200 行有无目录 / H3 碎片率 / 括号配对…），无法从新增行单独判定；
+//     用「同文件 HEAD 版本」做基线才能真正做到存量不拦。
+//
 // 用法：
-//   node tools/check/doc-score.mjs             # 评分（读本版 devlog 留痕）
+//   node tools/check/doc-score.mjs             # 全量评分（读本版 devlog 留痕）
+//   node tools/check/doc-score.mjs --changed   # 增量快检（串 doc-discipline.sh Face 13）
+//   node tools/check/doc-score.mjs --self-test # 增量分类四条分支自检（合成命中，不动 git）
 //   node tools/check/doc-score.mjs --json      # 机读输出（供 SOP 记录）
 //   node tools/check/doc-score.mjs --write-baseline  # 用当前实测写基线（发版治具）
 // ============================================================
@@ -55,7 +68,10 @@ function run(cmd, args) {
     return { rc: typeof e.status === 'number' ? e.status : 1, out };
   }
 }
-const readText = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
+const readTextRaw = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
+// OVERRIDE：增量模式对照 HEAD 版本时注入的内容覆写（只含 .md，不影响 JSON 读取）
+let OVERRIDE = null;
+const readText = (f) => (OVERRIDE && OVERRIDE.has(f) ? OVERRIDE.get(f) : readTextRaw(f));
 const readJson = (f) => JSON.parse(readText(f));
 const cps = (s) => [...s].length; // Unicode 码点数（单一口径，同 charset 棘轮）
 const isFence = (s) => /^\s*(?:>\s*)*(```|~~~)/.test(s); // 含 blockquote 内围栏（`> ```bash`）
@@ -68,7 +84,19 @@ const trackedMd = () =>
 
 // ── 扫描面 ────────────────────────────────────────────────
 const charRatchet = readJson(CHAR_RATCHET_PATH);
-const ACTIVE_DOCS = Object.keys(charRatchet).filter((k) => k !== '_meta');
+let ACTIVE_DOCS = Object.keys(charRatchet).filter((k) => k !== '_meta');
+// FULL_DOCS = 恒定的全量面（21 份核心活文档）。跨文件聚合项（D3-2 编号体系 / D4-1 分隔行写法）
+// **必须**在全量面上判——判据是「与主流写法比较」，收窄到变更文档会失去参照系
+// （一份新文档用了异类编号，只扫它自己反而查不出）。逐文件项则用 ACTIVE_DOCS（可被 --changed 收窄）。
+const FULL_DOCS = [...ACTIVE_DOCS];
+
+// ── 模式状态 ──────────────────────────────────────────────
+// SKIP_EXTERNAL：增量模式置真 —— 跳过全仓外部门禁（占全量 96% 耗时，且 pre-push-check 同链已串接）
+let SKIP_EXTERNAL = false;
+// 增量模式下**只跑这 12 项文档形态机械项**：纯本地文本扫描，秒级，判据可归属到文件。
+// 其余 15 项（全仓门禁项 D1-1/1-2/1-3/1-5、Face 项 D2-3/D5-1/D5-2、D6-1、人工项 ×8）
+// 在增量模式下**跳过且不进分母**——已在 pre-push-check 同链覆盖或属人工判断面。
+const MECH_INCREMENTAL = new Set(['D3-1', 'D3-2', 'D3-3', 'D3-4', 'D3-5', 'D4-1', 'D4-2', 'D4-3', 'D4-4', 'D5-3', 'D5-4', 'D6-3']);
 const FROZEN_RE = /^(docs\/(changelog|archive|evidence)\/|playbook\/vendor\/|node_modules\/)/;
 const isFrozen = (f) => FROZEN_RE.test(f);
 const LS_ALL = trackedMd();
@@ -149,7 +177,7 @@ function d3_1() {
     const hasToc = all.some((l) => /^##\s*(目录|Table of Contents)\s*$/i.test(l));
     if (!hasToc) miss.push(`${f}（${all.length} 行）`);
   }
-  return { pass: miss.length === 0, detail: miss.length === 0 ? '>200 行活文档均有「## 目录」' : `缺目录：${miss.join(' / ')}` };
+  return { pass: miss.length === 0, hits: miss, detail: miss.length === 0 ? '>200 行活文档均有「## 目录」' : `缺目录：${miss.join(' / ')}` };
 }
 function d3_2() {
   // 豁免（明示为非章节型）
@@ -165,7 +193,9 @@ function d3_2() {
   };
   const mixed = [];
   const globalSystems = new Set();
-  for (const f of ACTIVE_DOCS) {
+  const sysOwner = new Map(); // 文件 → 其 H2 编号体系（供少数派逐文件归属）
+  const sysCount = new Map(); // 体系 → 采用该体系的文件数（供取主流）
+  for (const f of FULL_DOCS) {
     if (EXEMPT.has(f)) continue;
     const { all } = docLines(f);
     const systems = new Set();
@@ -176,11 +206,26 @@ function d3_2() {
       if (s) systems.add(s);
     }
     if (systems.size > 1) mixed.push(`${f} 混用 ${[...systems].join('+')}`);
-    if (systems.size >= 1) systems.forEach((s) => globalSystems.add(s));
+    if (systems.size >= 1) {
+      // 记「文件 → 体系」：跨文件 minority 判定需要可归属到文件（增量模式按文件比对 HEAD）
+      const s = [...systems][0];
+      sysOwner.set(f, systems.size > 1 ? `mixed:${[...systems].join('+')}` : s);
+      if (systems.size === 1) sysCount.set(s, (sysCount.get(s) || 0) + 1);
+    }
   }
-  const cross = globalSystems.size > 1 ? `章节型文档体系不一致：${[...globalSystems].join(' vs ')}` : '';
-  const bad = [mixed.join(' / '), cross].filter(Boolean);
-  return { pass: bad.length === 0, detail: bad.length === 0 ? `H2 编号体系同类文档内一致（${[...globalSystems].join(',') || '无章节型'}）` : bad.join('；') };
+  // 少数派体系（文件数少于主流）逐文件列出，而不是抛一条无归属的全局串——
+  // 无归属的命中在增量模式下无法与 HEAD 比对，只能降级为信息位（等于该判据被架空）。
+  let cross = [];
+  if (globalSystems.size > 1) {
+    const major = [...sysCount.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (major) for (const [f, s] of sysOwner) if (s !== major) cross.push(`${f} H2 体系「${s}」异于主流「${major}」`);
+  }
+  const bad = [...mixed, ...cross];
+  return {
+    pass: bad.length === 0,
+    hits: bad,
+    detail: bad.length === 0 ? `H2 编号体系同类文档内一致（${[...globalSystems].join(',') || '无章节型'}）` : bad.slice(0, 3).join(' / ') + (bad.length > 3 ? ` …(${bad.length} 处)` : ''),
+  };
 }
 function d3_3() {
   const slug = (s) => s.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-');
@@ -196,7 +241,7 @@ function d3_3() {
       seen.add(s);
     }
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? '无同文件同名标题' : `同名标题 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
+  return { pass: bad.length === 0, hits: bad, detail: bad.length === 0 ? '无同文件同名标题' : `同名标题 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
 }
 function d3_4() {
   // 豁免（**条目型体例**文档 · 与 d3_2 的 EXEMPT 同源，但**仅限本项**）。两条豁免的实测碎片率
@@ -249,6 +294,7 @@ function d3_4() {
   const checked = ACTIVE_DOCS.length - FRAG_EXEMPT.size;
   return {
     pass: bad.length === 0,
+    hits: bad,
     detail: bad.length === 0
       ? `H3 碎片率全部 ≤40%（受检 ${checked} 份；豁免 ${FRAG_EXEMPT.size} 份登记/速查型：${[...FRAG_EXEMPT.keys()].join(' / ')}）`
       : `H3 碎片率超限：${bad.join(' / ')}`,
@@ -263,7 +309,7 @@ function d3_5() {
       if (m && cps(m[1].trim()) > 80) bad.push(`${f}：${cps(m[1].trim())} 码点`);
     }
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? 'H2/H3 均 ≤80 码点' : `超长标题 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
+  return { pass: bad.length === 0, hits: bad, detail: bad.length === 0 ? 'H2/H3 均 ≤80 码点' : `超长标题 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
 }
 
 // ============================================================
@@ -280,22 +326,36 @@ function sepCells(line) {
 function d4_1() {
   // 全局（活文档面）：同一列数下分隔行写法唯一
   const byCols = new Map();
-  for (const f of ACTIVE_DOCS) {
+  for (const f of FULL_DOCS) {
     for (const l of readText(f).split('\n')) {
       if (isFence(l)) continue;
       if (l.includes('|') && isSep(l)) {
         const cols = sepCells(l).length;
         const form = l.trim().replace(/\s+/g, ' ');
         if (!byCols.has(cols)) byCols.set(cols, new Map());
-        byCols.get(cols).set(form, (byCols.get(cols).get(form) || 0) + 1);
+        const fm = byCols.get(cols);
+        if (!fm.has(form)) fm.set(form, { n: 0, files: [] });
+        const rec = fm.get(form);
+        rec.n++;
+        if (!rec.files.includes(f)) rec.files.push(f);
       }
     }
   }
+  // 少数派写法（出现次数少于主流）逐文件列出——理由同 d3_2：无归属命中在增量模式下不可比对。
   const bad = [];
   for (const [cols, forms] of [...byCols].sort((a, b) => a[0] - b[0])) {
-    if (forms.size > 1) bad.push(`${cols} 列 ${forms.size} 种写法`);
+    if (forms.size <= 1) continue;
+    const major = [...forms.entries()].sort((a, b) => b[1].n - a[1].n)[0];
+    for (const [form, rec] of forms) {
+      if (form === major[0]) continue;
+      for (const f of rec.files) bad.push(`${f} 表格分隔行写法异于主流（${cols} 列 · ${rec.n} 处）`);
+    }
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? '各列数下分隔行写法唯一' : `分隔行写法不唯一：${bad.join(' / ')}` };
+  return {
+    pass: bad.length === 0,
+    hits: bad,
+    detail: bad.length === 0 ? '各列数下分隔行写法唯一' : `${bad.length} 处：${bad.slice(0, 3).join(' / ')}`,
+  };
 }
 function d4_2() {
   // 「正文 → --- → 标题」切页横线。结构位横线（标题后 / 目录后 / 表格·引用·列表后的章节分隔 / 文末）不算。
@@ -321,7 +381,7 @@ function d4_2() {
       if (p >= 0 && isPlainBody(L[p]) && q < L.length && isHeading(L[q])) bad.push(`${f}:${i + 1}`);
     }
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? '无切页横线（正文→---→标题 0 处）' : `切页横线 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
+  return { pass: bad.length === 0, hits: bad, detail: bad.length === 0 ? '无切页横线（正文→---→标题 0 处）' : `切页横线 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
 }
 function d4_3() {
   const bad = [];
@@ -340,7 +400,7 @@ function d4_3() {
       }
     }
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? '代码围栏全部标语言' : `裸围栏 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
+  return { pass: bad.length === 0, hits: bad, detail: bad.length === 0 ? '代码围栏全部标语言' : `裸围栏 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
 }
 function d4_4() {
   // 空表（仅表头+分隔线、零数据行）。「≥6 列宽表是否有说明」为**人工确认**附注（见下 humanAdjunct）
@@ -357,7 +417,7 @@ function d4_4() {
       }
     }
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? '无空表' : `空表 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
+  return { pass: bad.length === 0, hits: bad, detail: bad.length === 0 ? '无空表' : `空表 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
 }
 
 // ============================================================
@@ -393,7 +453,7 @@ function d5_3() {
     });
     flush();
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? `无 >${THRESHOLD} 字纯正文段落` : `超长正文段落 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
+  return { pass: bad.length === 0, hits: bad, detail: bad.length === 0 ? `无 >${THRESHOLD} 字纯正文段落` : `超长正文段落 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
 }
 function d5_4() {
   // 无加粗过载行（单行 `**` 超过 4 对 = 8 个标记）
@@ -408,7 +468,7 @@ function d5_4() {
       if (occ > 8) bad.push(`${f}:${no}（${occ / 2} 对）`);
     }
   }
-  return { pass: bad.length === 0, detail: bad.length === 0 ? '无加粗过载行' : `加粗过载 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
+  return { pass: bad.length === 0, hits: bad, detail: bad.length === 0 ? '无加粗过载行' : `加粗过载 ${bad.length} 处：${bad.slice(0, 3).join(' / ')}` };
 }
 
 // ============================================================
@@ -586,11 +646,12 @@ function d6_3() {
       if (applyUnit(blocks[bi].lines) !== 0) bad.push(`${f}:${blocks[bi].start} 括号不配对`);
     }
   }
-  // 孤立表格分隔行 / 表格形状
-  const ts = run('node', ['tools/check/check-table-shape.mjs']);
-  const tsOk = ts.rc === 0;
-  if (!tsOk) bad.push('check-table-shape 有违规（孤立分隔行/超列/孤儿行等）');
-  return { pass: bad.length === 0, detail: bad.length === 0 ? '无残句 / 括号配对 / 无孤立分隔行' : bad.slice(0, 3).join(' / ') };
+  // 孤立表格分隔行 / 表格形状（全仓门禁——增量模式跳过：pre-push-check 同链已串接 check-table-shape）
+  if (!SKIP_EXTERNAL) {
+    const ts = run('node', ['tools/check/check-table-shape.mjs']);
+    if (ts.rc !== 0) bad.push('check-table-shape 有违规（孤立分隔行/超列/孤儿行等）');
+  }
+  return { pass: bad.length === 0, hits: bad, detail: bad.length === 0 ? '无残句 / 括号配对 / 无孤立分隔行' : bad.slice(0, 3).join(' / ') };
 }
 
 // ============================================================
@@ -704,7 +765,9 @@ const DIMENSIONS = [
 // ============================================================
 function score() {
   // 复用一次 doc-discipline 输出（供 D2-3 / D5-1 / D5-2 三个 face 项）
-  const dd = run('bash', ['tools/check/doc-discipline.sh']);
+  // ⚠️ 增量模式**不得**调用：doc-discipline.sh 的 Face 13 会反向串接本脚本 —— 调回去即无限递归。
+  //    且 Face 5/6/7 在同一次 doc-discipline 运行中已判过，重复调用无信息增量。
+  const dd = SKIP_EXTERNAL ? { rc: 0, out: '' } : run('bash', ['tools/check/doc-discipline.sh']);
   const facePass = (tag) => {
     const seg = faceSection(dd.out, tag);
     if (seg === null) return { pass: false, detail: `${tag} 段提取失败（检查器失明）` };
@@ -718,6 +781,15 @@ function score() {
   for (const dim of DIMENSIONS) {
     const items = [];
     for (const it of dim.items) {
+      if (SKIP_EXTERNAL && !MECH_INCREMENTAL.has(it.id)) {
+        items.push({
+          ...it,
+          skipped: true,
+          pass: null,
+          detail: it.kind === 'human' ? '人工判断项（增量模式不计分，由 fresh-eyes 承担）' : '全仓门禁/face 项（增量模式跳过，由 pre-push-check 同链覆盖）',
+        });
+        continue;
+      }
       let r;
       if (it.kind === 'human') {
         const v = att.map.get(it.id) || 'unknown';
@@ -731,11 +803,162 @@ function score() {
       }
       items.push({ ...it, ...r });
     }
-    const passed = items.filter((x) => x.pass).length;
-    const scoreVal = Math.round((passed / items.length) * 100) / 10;
-    results.push({ id: dim.id, name: dim.name, passed, total: items.length, score: scoreVal, items });
+    const scored = items.filter((x) => !x.skipped);
+    const passed = scored.filter((x) => x.pass).length;
+    // 整维被跳过（如 D1/D2/D6 在增量模式下无机械项）→ score = null（不参与评分与基线比较，不静默记 0）
+    const scoreVal = scored.length ? Math.round((passed / scored.length) * 100) / 10 : null;
+    results.push({ id: dim.id, name: dim.name, passed, total: scored.length, skipped: items.length - scored.length, score: scoreVal, items });
   }
   return { results, attestationFile: att.file, docDisciplineRc: dd.rc };
+}
+
+// ============================================================
+// 增量模式（--changed）：变更文档形态机械面 · 对照 HEAD · 存量不拦
+// ============================================================
+/** 变更文档集：工作区 diff + 已 stage + 未跟踪新文档（git diff 看不见未跟踪，而新文档恰恰最该检）。 */
+function changedMd() {
+  const g = (a) => {
+    const r = run('git', a);
+    return r.rc === 0 ? r.out.split('\n').filter(Boolean) : [];
+  };
+  const set = new Set([
+    ...g(['diff', '--name-only', 'HEAD', '--', '*.md']),
+    ...g(['diff', '--name-only', '--cached', '--', '*.md']),
+    ...g(['ls-files', '--others', '--exclude-standard', '--', '*.md']),
+  ]);
+  return [...set].filter((f) => !isFrozen(f) && fs.existsSync(path.join(ROOT, f))).sort();
+}
+/** HEAD 版本内容（新文件在 HEAD 不存在 → 空串，其全部命中按新增计）。 */
+function headContent(f) {
+  const r = run('git', ['show', `HEAD:${f}`]);
+  return r.rc === 0 ? r.out : '';
+}
+/** 命中串归属到文件（命中形如 `f:12` / `f：…` / `f（…）`）。 */
+const ownerOf = (hit, files) =>
+  files.find((f) => hit === f || hit.startsWith(`${f}:`) || hit.startsWith(`${f}：`) || hit.startsWith(`${f}（`));
+
+/** 跑一遍 12 项机械项，返回 Map<itemId, {name, hits[]}>。 */
+function mechHits() {
+  const out = new Map();
+  for (const dim of DIMENSIONS) {
+    for (const it of dim.items) {
+      if (!MECH_INCREMENTAL.has(it.id)) continue;
+      const r = it.fn();
+      out.set(it.id, { name: it.name, hits: Array.isArray(r.hits) ? r.hits : [] });
+    }
+  }
+  return out;
+}
+
+/**
+ * 分类（纯函数，供 --self-test 直接喂合成命中验证四条分支）：按「项 × 文件」比对命中数。
+ *   Δ>0 → 新增缺陷（阻断）；Δ=0 且 >0 → 存量（信息位）；Δ<0 → 改善。
+ * 不可归属到变更文件的命中（跨文件聚合项落在未变更文件上）→ 信息位，不拦。
+ */
+function classify(work, head, files) {
+  const blocks = [];
+  const infos = [];
+  const fixes = [];
+  for (const [id, w] of work) {
+    const h = head.get(id) || { hits: [] };
+    const of = (arr, f) => arr.filter((x) => ownerOf(x, files) === f);
+    for (const f of files) {
+      const nw = of(w.hits, f).length;
+      const nh = of(h.hits, f).length;
+      if (nw > nh) blocks.push({ id, name: w.name, file: f, delta: nw - nh, sample: of(w.hits, f).slice(0, 3), text: `${id} ${w.name} · ${f} 新增 ${nw - nh} 处：${of(w.hits, f).slice(0, 3).join(' / ')}` });
+      else if (nw < nh) fixes.push({ id, name: w.name, file: f, delta: nw - nh, text: `${id} ${w.name} · ${f} 由 ${nh} 处降至 ${nw} 处` });
+      else if (nw > 0) infos.push({ id, text: `${id} ${w.name} · ${f} ${nw} 处（HEAD 同数 = 存量，不拦）` });
+    }
+    const un = w.hits.filter((x) => !ownerOf(x, files));
+    if (un.length) infos.push({ id, text: `${id} ${w.name} · 不可归属 ${un.length} 处（跨文件聚合/未变更文件）：${un.slice(0, 2).join(' / ')}` });
+  }
+  return { blocks, infos, fixes, workCount: [...work.values()].reduce((a, x) => a + x.hits.length, 0) };
+}
+
+function incrementalScan(files) {
+  const prevDocs = ACTIVE_DOCS;
+  ACTIVE_DOCS = files;
+  SKIP_EXTERNAL = true;
+  const work = mechHits();
+  OVERRIDE = new Map(files.map((f) => [f, headContent(f)]));
+  const head = mechHits();
+  OVERRIDE = null;
+  ACTIVE_DOCS = prevDocs;
+  SKIP_EXTERNAL = false;
+  return classify(work, head, files);
+}
+
+/**
+ * 自检（--self-test）：用**合成命中**验证四条分类分支，不动 git、不落临时文件。
+ * 为什么必须自检：Δ 四条分支里「存量同数」与「不可归属」在日常全绿仓里**永远不会自然触发**
+ * （仓内无存量违规 ⇒ 没有可跑的样本），不自检就是未验证的死分支——死分支一旦写错就是假红，
+ * 而假红会把整个 Face 变成被绕过的噪音门禁。
+ */
+function selfTest() {
+  const mk = (hits) => new Map([['D4-3', { name: '代码围栏全部标语言', hits }]]);
+  const cases = [
+    { name: '新增缺陷 → 阻断', files: ['a.md'], work: mk(['a.md:10']), head: mk([]), exp: [1, 0, 0] },
+    { name: '增量多于存量（2 vs 1）→ 只算净新增', files: ['a.md'], work: mk(['a.md:10', 'a.md:20']), head: mk(['a.md:10']), exp: [1, 0, 0] },
+    { name: '存量同数 → 信息位不拦', files: ['a.md'], work: mk(['a.md:10']), head: mk(['a.md:10']), exp: [0, 1, 0] },
+    { name: '改善（命中变少）→ 不算阻断', files: ['a.md'], work: mk([]), head: mk(['a.md:10']), exp: [0, 0, 1] },
+    { name: '不可归属命中 → 信息位不拦', files: ['a.md'], work: mk(['b.md:7']), head: mk([]), exp: [0, 1, 0] },
+    { name: '干净变更 → 全绿', files: ['a.md'], work: mk([]), head: mk([]), exp: [0, 0, 0] },
+  ];
+  let ok = true;
+  for (const c of cases) {
+    const r = classify(c.work, c.head, c.files);
+    const got = [r.blocks.length, r.infos.length, r.fixes.length];
+    const pass = got[0] === c.exp[0] && got[1] === c.exp[1] && got[2] === c.exp[2];
+    if (!pass) ok = false;
+    console.log(`  ${pass ? '✓' : '✗'} ${c.name}（期望 阻断/信息/改善 = ${c.exp.join('/')} · 实得 ${got.join('/')}）`);
+  }
+  // 反向探针：把对照源置空（模拟 git show 失败）不应静默放行——空基线会让全部命中变「新增」，
+  // 属**偏严**而非假绿，故此处只断言「命中数守恒」，并提示空基线风险。
+  const emptyBase = classify(mk(['a.md:1']), new Map(), ['a.md']);
+  console.log(`  ${emptyBase.blocks.length === 1 ? '✓' : '✗'} 空对照基线 → 命中全部计为新增（偏严，fail-closed 方向正确）`);
+  if (emptyBase.blocks.length !== 1) ok = false;
+  if (!ok) process.exit(1);
+  console.log('  自检全过');
+}
+
+function incrementalMain() {
+  const files = changedMd();
+  console.log('=== doc-score --changed · 文档形态机械面（增量 · 对照 HEAD）===');
+  console.log('  变更集口径：git diff --name-only HEAD -- "*.md" ∪ git diff --cached ∪ git ls-files --others（排除冻结区）');
+  if (files.length === 0) {
+    // 自证：把实测命令与结果条数打出来，避免「零命中」被误读为「扫过了没问题」或「空转」
+    console.log('  实测：变更 .md 0 份 → 本面无扫描对象（非空转：上述三条 git 命令已执行，结果为空）');
+    console.log('✓ 无变更文档 —— 文档形态机械面不适用');
+    process.exit(0);
+  }
+  console.log(`  变更文档 ${files.length} 份：${files.slice(0, 6).join(' / ')}${files.length > 6 ? ` …(+${files.length - 6})` : ''}`);
+  console.log(`  机械项 ${MECH_INCREMENTAL.size} 项 · 跳过 ${27 - MECH_INCREMENTAL.size} 项（全仓门禁/人工项：由 pre-push-check 同链 · Face 5·6·7 · fresh-eyes 覆盖，不进分母）`);
+  console.log('');
+
+  const { blocks, infos, fixes, workCount } = incrementalScan(files);
+
+  console.log(`阻断 · 新增缺陷（${blocks.length}）：`);
+  if (blocks.length === 0) console.log('  （无）');
+  for (const x of blocks) console.log(`  ❌ ${x.text}`);
+  console.log('');
+  console.log(`信息位 · 存量/不可归属（${infos.length}，不拦）：`);
+  if (infos.length === 0) console.log('  （无）');
+  for (const x of infos) console.log(`  ⚠️  ${x.text}`);
+  if (fixes.length) {
+    console.log('');
+    console.log(`改善（${fixes.length}）：`);
+    for (const x of fixes) console.log(`  ✓ ${x.text}`);
+  }
+  console.log('');
+  console.log(`  自证：本轮扫描命中合计 ${workCount} 处（工作区版本）· 对照 HEAD 版本同口径重扫 1 次`);
+  console.log('════════════════════════════════════════════════════');
+  if (blocks.length > 0) {
+    console.log(`✗ 变更文档引入 ${blocks.length} 处新的形态缺陷 —— 不可放行`);
+    console.log('  处置：按上列 文件:行号 修内容（存量不拦：HEAD 已存在的同数命中只作信息位）。');
+    process.exit(1);
+  }
+  console.log('✓ 变更文档形态机械面无新增缺陷 —— 通过');
+  process.exit(0);
 }
 
 // ============================================================
@@ -754,6 +977,26 @@ function statusOf(scoreVal, baseline) {
 }
 
 const args = process.argv.slice(2);
+
+// 自检优先（不依赖 git 状态，可在任何时刻验证判据未被架空）
+if (args.includes('--self-test')) {
+  console.log('=== doc-score · 增量分类自检（合成命中 · 不动 git）===');
+  selfTest();
+  process.exit(0);
+}
+
+// 增量模式走独立路径（不调用 score()：跳过全仓外部门禁，也不做基线比较——
+// 子集得分与全量基线口径不同，比较即为假绿/假红）
+if (args.includes('--changed')) {
+  if (args.includes('--json')) {
+    const files = changedMd();
+    const r = files.length ? incrementalScan(files) : { blocks: [], infos: [], fixes: [], workCount: 0 };
+    console.log(JSON.stringify({ mode: 'changed', files, ...r }, null, 2));
+    process.exit(r.blocks.length ? 1 : 0);
+  }
+  incrementalMain();
+}
+
 const { results, attestationFile, docDisciplineRc } = score();
 const totalScore = Math.round((results.reduce((a, r) => a + r.score, 0) / results.length) * 10) / 10;
 
