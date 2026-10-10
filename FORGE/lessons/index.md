@@ -31,6 +31,7 @@
 | 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **守卫 fail-loud（PASS 更不可信）** · **冻结窗口锁（防并行会话误改）→ 已退役（死检查收口·哨点化判据）** · **fresh-eyes 四连事故（窗口冲突/修复静默丢失/降级滚雪球/API 漂移全灭）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step · **编排循环退役与单步执行器（整合归一·能力交接清单）** |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 | 十一·发版流水线连续执行 | [./release-automation.md](./release-automation.md) | **判定前置（verdict + 前置条件清单）** · **停手条件预置（护栏内自动/出护栏停手）** · **文件即状态跨 session 接力** · 每步门禁即时验证 · **外部依赖降级通道预案化** · 多 session 并发 · 险情实录（CI 密钥 fail-closed / bump 行首锚 / sed 静默空转 / 守卫互斥 / 合法红 / 数字时点性） · 连跑最小闭环判据 |
+| 十二·收口验证循环 | [./verification-loop.md](./verification-loop.md) | **追问-物证-修复-重验循环** · 六层病谱系（物理→纪律→事实→时序→格式→引用，每层由上层修复引入）· 险情实录五则（版本号当过程快照 / 前置门成环 / 单数据点掀整账 / 桌面单点故障 / 对账件没跟）· 行为缺陷→机械纪律转化路径 |
 
 ---
 
