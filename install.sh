@@ -62,6 +62,13 @@ info()  { echo -e "${BLUE}[sofagent]${NC} $1"; }
 ok()    { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 err()   { echo -e "${RED}[✗]${NC} $1"; }
+# ── 安装失败累加器（BUG-62 对价 · v1.5.9）──
+# 为什么存在：SKILL 等拷贝步骤原用 `cp … || true` 静默容错——失败后安装继续、
+#   最终仍以 exit 0 收场，用户拿到「看起来装好了、实则不完整」的安装。本累加器让
+#   这类「可继续但已受损」的失败在收尾处以**非零退出码**显形（BUG-62 验收要求）。
+#   只标记「安装不完整」级失败；可自愈/可选面（回退直链、MCP 未配置等）不计入。
+_SOFAGENT_INSTALL_FAILED=0
+mark_failed() { _SOFAGENT_INSTALL_FAILED=$((_SOFAGENT_INSTALL_FAILED + 1)); }
 
 # v1.4.9 P2-20：symlink 被普通目录占用 ⇒ 降级「复制同步」会成为**两套布局副本**，
 # 且副本随本源更新而**静默过期**（用户改 skill 只改本源，平台侧永远是旧快照），
@@ -1148,6 +1155,7 @@ install_skill_unified() {
     mkdir -p "$SOFAGENT_HOME/skill"
     if ! cp -R "$skill_src"/. "$SOFAGENT_HOME/skill/" 2>/dev/null; then
       warn "  ⚠️ SKILL 拷贝失败（${skill_src} → ${SOFAGENT_HOME}/skill）——安装不完整，请检查权限后重跑"
+      mark_failed
     fi
 
     # 平台无关重构：仅当用户显式指定平台时才向该平台目录建 symlink——
@@ -1163,6 +1171,7 @@ install_skill_unified() {
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期——收编后须以本源为准确认）
           if ! cp -R "$SOFAGENT_HOME/skill"/. "$psd"/ 2>/dev/null; then
             warn "  ⚠️ SKILL 拷贝失败（${SOFAGENT_HOME}/skill → ${psd}）——副本可能不完整，请检查权限后重跑"
+            mark_failed
           fi
           warn "  Symlink 被普通目录占用，已降级为复制同步：${psd}（并已在该目录写入 STALE-COPY.md 标记，见其内容）"
           write_stale_copy_marker "$psd" "$SOFAGENT_HOME/skill" "$PLATFORM"
@@ -1179,6 +1188,7 @@ install_skill_unified() {
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
           if ! cp -R "$SOFAGENT_HOME/skill"/. "$cur_skills"/ 2>/dev/null; then
             warn "  ⚠️ SKILL 拷贝失败（${SOFAGENT_HOME}/skill → ${cur_skills}）——副本可能不完整，请检查权限后重跑"
+            mark_failed
           fi
           warn "  Symlink 被普通目录占用，已降级为复制同步：${cur_skills}（并已在该目录写入 STALE-COPY.md 标记，见其内容）"
           write_stale_copy_marker "$cur_skills" "$SOFAGENT_HOME/skill" "cursor"
@@ -1223,6 +1233,7 @@ HOOKJSONEOF
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
           if ! cp -R "$SOFAGENT_HOME/skill"/. "${claude_rules}/skills/sofagent"/ 2>/dev/null; then
             warn "  ⚠️ SKILL 拷贝失败（${SOFAGENT_HOME}/skill → ${claude_rules}/skills/sofagent）——副本可能不完整，请检查权限后重跑"
+            mark_failed
           fi
           warn "  Symlink 被普通目录占用，已降级为复制同步：${claude_rules}/skills/sofagent（并已在该目录写入 STALE-COPY.md 标记，见其内容）"
           write_stale_copy_marker "${claude_rules}/skills/sofagent" "$SOFAGENT_HOME/skill" "claude"
@@ -1252,6 +1263,7 @@ HOOKJSONEOF
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
           if ! cp -R "$SOFAGENT_HOME/skill"/. "$gem_skills"/ 2>/dev/null; then
             warn "  ⚠️ SKILL 拷贝失败（${SOFAGENT_HOME}/skill → ${gem_skills}）——副本可能不完整，请检查权限后重跑"
+            mark_failed
           fi
           warn "  Symlink 被普通目录占用，已降级为复制同步：${gem_skills}"
         fi
@@ -1811,4 +1823,11 @@ else
   echo -e "    fish:  source ~/.config/fish/config.fish"
   echo -e "    或直接重启终端。"
   echo ""
+fi
+
+# ── BUG-62 收尾：拷贝类失败以非零退出码显形 ──
+if [ "${_SOFAGENT_INSTALL_FAILED}" -ne 0 ]; then
+  echo ""
+  err "安装存在 ${_SOFAGENT_INSTALL_FAILED} 处失败（见上方 [!] 告警）——安装不完整，请修复后重跑"
+  exit 1
 fi
