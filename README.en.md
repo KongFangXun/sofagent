@@ -141,10 +141,9 @@ What ships today in this layer is the existing judgment-and-evidence surface):
  7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit**—`npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
 - 🧱 **28 audit rules + 104 MCP tools**—secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 22/28 run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs), 1 filesystem scan, 1 decision-log channel;
- log-based rules such as A7/A8 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped—fail-fast design);
-evidence is based on local diffs; **not fail-closed by default**—the config can be tampered with and the hooks
- skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 28 = 17 default + 11 extensions).
- Note: `commons_invoke` is dry-run pre-check semantics (it returns capability metadata and an invocation plan; real execution is injected by the Agent runtime via an executor—see LIMITATIONS).
+ log-based rules such as A7/A8 (see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist; violations are blocked on the spot (a critical-layer hit skips the rest—fail-fast);
+evidence is based on local diffs; **not fail-closed by default**—config can be tampered with and hooks skipped via `--no-verify` (bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)); quick runs 17 by default, full 28 = 17 + 11.
+ Note: `commons_invoke` is dry-run pre-check semantics (returns capability metadata + a plan; real execution is injected by the Agent runtime—see LIMITATIONS).
 - 🛡️ **Automatic snapshot rollback**—auto-archived after each audit, one-click restore to any snapshot when something breaks
 - 🛡️ **AgentShield static scanning across five config surfaces**—a `@public` SDK capability (invoked via `createAgentShield`), **not on the commit-hook path**, opt-in on demand
 
@@ -223,8 +222,8 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 ## The Two FDE Harness Phases
 
 **How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**:
-together they're onboarding a digital employee (the after-departure side runs daemon patrols 24/7 (daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs), every commit triggers the default 17
-audit rules (the full 28 require `extendedRulesEnabled: true`), snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
+together they're onboarding a digital employee (the after-departure side runs daemon patrols 24/7 (daemon inspection is opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive), every commit triggers the default 17
+audit rules (the full 28 need `extendedRulesEnabled: true`), snapshots stay rollback-ready, and evolution writes promotion and distilled reflection back into the deliverable).
 
 | Organizational act | sofagent equivalent |
 |---|---|
@@ -403,7 +402,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 5946 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
+> 🧪 **Engineering credibility** (current): 5965 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
 > **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
 >the load-chain utility package and dsh-plugin-kit are outside this counting standard)—they aren't the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account—see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever

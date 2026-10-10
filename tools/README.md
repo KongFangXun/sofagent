@@ -109,7 +109,7 @@
 | `gen/gen-capability-manifest.mjs` | capabilities.json 可拔契约断言器（C1 幽灵名/C2 级联/C3 档位二义/C4 结构/C5 域封闭/C6 env 形态/C7 shim 台账 + 装配面两陷阱；失明自检 exit 2 拒假绿——F19 首实例） | CI / 改 capabilities.json 后 |
 
 > 注-1：`SKILL.md` 反向对账——SKILL.md 出现 `（seam: …）` 字面量的每一处都必须与三处一致，**残余缺口：SKILL.md 整体删去 seam 字样时不判红，只打印显著提示**；`--selftest` 合成回归验证必报红）
-> 注-2：`--self-test` 脚本内双探针故障注入）
+> 注-2：`--self-test` 脚本内双探针故障注入
 > 注-3：core 侧真实 `require` dist 调用、harness 侧用 `skill/custom` 哨兵经 `buildConstrainedSystemPrompt` 反推，子进程受控 `$HOME`/`cwd` 不碰真实 `~/.sofagent`；**已登记差异（空串口径）差异消失也判红**；提取不到实现 / 观测不到哨兵 ⇒ FAIL）
 > 注-4：豁免 = 能力/阶段版本门槛（`vX.Y.Z+`·`vX.Y.Z 起`·`低于`·`达到`）/ 文件头版本标识 / 机器注释 / 机器字面量（引号或命令内的版本号，逐处摘除）/ 台账锚串；带 `--selftest` 正反例夹具 + `--list-exempt` 列豁免行）
 > 注-5：已知债走 `check/npm-claims-exempt.json`，锚须文件内唯一且当前仍是命中行、理由栏须实质，所豁免声称改为真值即 exit 2 强制摘除；退出码 0 一致 / 1 失配 / 2 失明·台账非法·有值无包名）

@@ -253,7 +253,7 @@ graph TB
 |---|---|
 | 当前版本 | **v1.5.8**（2026-10-09，✅ 已发版 · 进化模块 · 准入门与数据面） |
 | 下一版 | **v1.5.9**（📋 规划中——写面审计与能力基线 · 进化面插件化；以 [ROADMAP](./ROADMAP.md) 为准） |
-| 测试覆盖 | 5946 测试 / 13 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
+| 测试覆盖 | 5965 测试 / 13 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
 | 审计规则 | 28 条（17 默认 + 11 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)） |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
@@ -266,7 +266,7 @@ graph TB
 ⚠️ **术语声明（AI Agent 与人类读者必读）**：架构术语**定义处 = [ARCHITECTURE.md](./ARCHITECTURE.md)（单一 SSOT）**，[PHILOSOPHY.md](./PHILOSOPHY.md) 为论证处（引用不另立定义）——**约束层**（一个层五种能力：注入·审计·回溯·沉淀·进化，FORGE 为内部工具）；
 **产品身份三层口径**（工程层 FDEing / 判定层 S1M / 治理层 harness）见 [README · 三因子口径](../README.md)，身份公式 **FDEing × S1A（S1A = S1M + Harness）** 的 SSOT = [PHILOSOPHY · 身份口径](./PHILOSOPHY.md)。
 
-**双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `changelog/v1.0/`、`v1.1/` 为**历史快照**（"四引擎""认知底座"等旧术语**不代表现行设计**）；`docs/changelog/v1.5/` 为**当前版本目录**（后续排期内容**不代表已交付能力**）。**后训模块归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
+**双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `changelog/v1.0/`、`v1.1/` 为**历史快照**（"四引擎""认知底座"等旧术语不代表现行设计）；`docs/changelog/v1.5/` 为**当前版本目录**（后续排期内容不代表已交付能力）。**后训模块归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
 
 > **术语标准表述（SSOT）**：对外中文「约束层」、英文「Harness」；「Constraint Layer」「约束底座」为同义归并，不再单列。
 
