@@ -3,7 +3,12 @@
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "command": "bash \"$PWD/tools/hooks/sofagent-precommit.sh\""
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$SOFAGENT_HOME/hooks/sofagent-precommit.sh\""
+          }
+        ]
       }
     ]
   }

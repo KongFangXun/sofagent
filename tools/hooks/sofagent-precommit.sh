@@ -13,8 +13,10 @@
 #   4. Claude Code PreToolUse   → stdin 传 JSON（含 tool_input.command）
 #   5. 千问办公自定义 Hook      → 同上 stdin JSON（预留，schema 以实测为准）
 #
-# 退出码约定（与 git / Claude Code 一致）：
-#   0 = 放行；1 / 2 = 拦截（Claude Code 用 2 阻断，git 用 1 阻断；本脚本统一 exit 1 阻断）
+# 退出码约定（分支语义，判定见下方 §0.1）：
+#   0 = 放行；非零 = 拦截。
+#   git 原生 hook / Cursor：认非零即阻断（本脚本用 1）；
+#   Claude Code：**仅 exit 2 阻断**（其余非零 = 非阻断错误，仅记日志），命中 Claude 调用时用 2。
 # ═══════════════════════════════════════════════════════════════════════
 
 set -uo pipefail
@@ -83,6 +85,19 @@ if [ -z "$COMMIT_MSG_FILE" ] && [ ! -t 0 ]; then
   fi
 fi
 
+# ── 0.1 平台阻断码分流（Claude 用 2 阻断 / git 用 1 阻断）────────────────
+# Claude Code 仅 `exit 2` 会阻断工具调用（其余非零视为非阻断错误、仅记日志）；
+# git 原生 hook 与 Cursor 则认非零即阻断（沿用 1）。以 stdin JSON 的 Claude
+# 专属字段 hook_event_name 判定调用来源：命中则阻断码取 2，否则维持 1。
+BLOCK_EXIT=1
+_CLAUDE_HOOK=""
+if [ -n "${CMD_INPUT:-}" ]; then
+  _CLAUDE_HOOK=$(printf '%s' "$CMD_INPUT" | grep -o '"hook_event_name"' | head -1 || true)
+fi
+if [ -n "$_CLAUDE_HOOK" ]; then
+  BLOCK_EXIT=2
+fi
+
 # ── 1. 仅对 git commit 类操作生效（平台 hook 模式下）──────────────────────
 # git 原生 hook 模式（来源 A）总是审计；平台 hook 模式仅当命令是 commit 才审计
 IS_GIT_COMMIT=false
@@ -109,7 +124,7 @@ fi
 if ! command -v node &>/dev/null; then
   echo "❌ sofagent audit: Node.js 未找到，审计未运行"
   echo "   请安装 Node.js >= 18: https://nodejs.org"
-  exit 1
+  exit "$BLOCK_EXIT"
 fi
 
 # ── 4. 仓库根定位（编辑器从子目录触发 hook 时仍能找到本地 dist）──────────
@@ -240,7 +255,7 @@ else
   else
     echo "❌ sofagent-audit 未安装，审计未运行"
     echo "   请运行: npm install -g @sofagent/audit"
-    exit 1
+    exit "$BLOCK_EXIT"
   fi
 fi
 
@@ -256,7 +271,7 @@ if [ "$_REPO_IS_SOFA" -eq 1 ] && [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; th
     # （信任锚必须是用户显式确认的时刻，不是 hook 顺手拍快照）。
     echo "🔴 [sofagent] 审计模块哈希基准缺失（$HASH_RECORD 不存在）——无法保证审计模块未被替换，本次提交终止"
     echo "   请运行: sofagent audit --doctor --baseline 显式建立基线（在你确认 dist 可信的时刻）"
-    exit 1
+    exit "$BLOCK_EXIT"
   else
     CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('$AUDIT_DIST')).digest('hex'))" 2>/dev/null)
     RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
@@ -316,7 +331,7 @@ if [ "$_REPO_IS_SOFA" -eq 1 ] && [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; th
       echo "   恢复原始 dist: npm run build --workspace=engine/audit"
       echo "   确认 dist 可信后重建信任锚: bash tools/audit-baseline-sync.sh"
       echo "   （注意：sofagent audit --doctor 只体检、不覆盖已存在的基线，不能用它刷新）"
-      exit 1
+      exit "$BLOCK_EXIT"
     fi
   fi
 elif [ -n "${AUDIT_GLOBAL_DIST:-}" ]; then
@@ -350,7 +365,7 @@ elif [ -n "${AUDIT_GLOBAL_DIST:-}" ]; then
     echo "     · 仓库内：bash tools/audit-baseline-sync.sh --global"
     echo "     · 通用：sofagent audit --install-hook（重装 hook 时自动建立全局锚）"
     echo "     · 通用：sofagent audit --doctor --baseline"
-    exit 1
+    exit "$BLOCK_EXIT"
   else
     _GLOBAL_RECORDED=$(tr -d '[:space:]' < "$_GLOBAL_HASH_RECORD" 2>/dev/null)
     if [ "$_GLOBAL_HASH" != "$_GLOBAL_RECORDED" ]; then
@@ -360,7 +375,7 @@ elif [ -n "${AUDIT_GLOBAL_DIST:-}" ]; then
       echo "     ① 仓库内同步信任锚：bash tools/audit-baseline-sync.sh --global"
       echo "     ② 删陈旧锚后重装 hook：rm -f \"\$HOME/.sofagent/internal/audit-global-dist-hash.txt\" && sofagent audit --install-hook"
       echo "   ⚠️ 同版本 npm install -g @sofagent/audit 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。"
-      exit 1
+      exit "$BLOCK_EXIT"
     fi
   fi
 else
@@ -386,7 +401,7 @@ fi
 if ! git reset -q -- .sofagent/ 2>/dev/null; then
   echo "🔴 [sofagent] .sofagent/ 移出暂存区失败（可能 index.lock 竞态）——commit 终止"
   echo "   重试 commit 前先确认: git status --short | grep sofagent 应为空；持续失败查 index.lock 残留"
-  exit 1
+  exit "$BLOCK_EXIT"
 fi
 
 # ── 7. 执行审计 ─────────────────────────────────────────────────────────
@@ -406,7 +421,8 @@ case $EXIT_CODE in
     echo ""
     echo "❌ sofagent audit: 检测到违规，commit 已阻止。"
     echo "   请修复违规项后重新提交（或用 git commit --no-verify 跳过，后果自负）。"
-    exit 1
+    echo "   （git 将以 exit 1 拒绝本次提交；审计侧 exit 2 语义见 --help）"
+    exit "$BLOCK_EXIT"
     ;;
   1)
     echo ""
@@ -421,7 +437,7 @@ case $EXIT_CODE in
     echo "   可能原因：进程被信号杀死（137=OOM / 139=段错误）或命令缺失（126/127）。"
     echo "   请单独运行: node engine/audit/dist/index.js --diff --cached 排查引擎状态；"
     echo "   确认为引擎自身故障并修复后重新提交。"
-    exit 1
+    exit "$BLOCK_EXIT"
     ;;
 esac
 
