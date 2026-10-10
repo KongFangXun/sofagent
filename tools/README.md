@@ -89,6 +89,7 @@
 | `check/check-mjs-comment-backtick.mjs` | mjs/js 注释可执行反引号守卫：注释行反引号串首 token 形似脚本路径或 npm/node/bash 命令头 = 危险——bash 误跑时把注释串当命令替换**真执行**（实锤：曾让 bash 跑完整套 pre-push 防线数分钟）。退出码 0 绿 / 1 违规（改单引号）/ 2 引擎故障 | tool-health 第 ⑨ 项 / 新写 .mjs 注释含反引号路径串后 |
 | `check/check-gate-inventory.sh` | 门禁清单覆盖对账（**登记 ≠ 调用**：`tools/check/` 全体守卫 ⊆ 真实调用面——抓「脚本写好、登记在册、零调用点」的**孤儿守卫**，其红态无人知晓）。（详→注-10） | pre-push 第 1c 步 / 新增或搬迁 tools/check/ 守卫后 |
 | `check/check-platform-hooks.sh` | 平台 hook 配置 schema 门禁（校验 `.claude/settings.json` 的 PreToolUse 内层 `hooks`+`type` 与 `.cursor/hooks.json` 的 `version:1`+camelCase 事件+`Shell` matcher 是否符合各平台官方 schema；不符即 exit 2——防「配置不符 schema ⇒ 平台读不到 command、拦截静默失效而门禁全绿」） | pre-push 第 1d 步 / 改 .claude/settings.json 或 .cursor/hooks.json 后 |
+| `check/check-retirement-due.sh` | 声明体系到期消费者门禁（读 `engine/capabilities.json` 的 `shims[].trigger` + `tools/check/*-exempt.json` 到期条件 + ROADMAP 触发条件，报「已届满未退役」；当前 12 个 shim 属 v2.0.0 裁定的**已登记欠账** ⇒ **非阻断巡检位**，接成阻断位会永久钉红推送） | pre-push 第 1e 步（非阻断）/ 改 shim 台账或版本号后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
 | `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 徽章的「被 Awesome 仓收录」声称变成可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 `search/code` API，防超大 README 假阴性），输出 OK / MISSING / SKIP。（详→注-11） | 被 check-storefront 消费（需 gh 环境） |
 | `check/lib/unwired-reachability.mjs` | **生产可达判定内核**（`--since` 调用 · v1.5.4 收紧）：把「出现过该符号」升级为**生产可达**——① `import type`/类型注解位不计 ② 追链可达（一跳有调用、上一跳无人用 ⇒ 断链）③ 破循环自证（锚点落零接线体内不算）；（详→注-12） |
@@ -191,6 +192,7 @@
 | 内容 | 说明 |
 |---|---|
 | `hooks/sofagent-precommit.sh` | 跨平台共享 pre-commit hook（stdin 模式——Cursor/Claude Code/Gemini CLI 等平台 commit 审计共用；v1.4.0 交付五） |
+| `hooks/merge-claude-settings.mjs` | Claude Code `settings.json` 幂等合并器（零依赖；install.sh `--platform claude` 调用——先备份既有配置，再把 sofagent hook 以绝对路径追加进 PreToolUse，保留用户自有 hooks / permissions；幂等去重） | 被 install.sh `claude)` 分支调用 |
 
 ## 八、train/
 
