@@ -73,7 +73,7 @@
 - **数据面自己会瘦身**（v1.5.6）：运行时数据不再只增不减——事实记忆二级分层 + 冷热归档、审计链历史段归档（**归档 ≠ 删除**：链只追加，归档 = 移走历史段 + 锚点重算）、遗留备份按 30 天策略清理并留痕；`sofagent core doctor` 报数据目录健康度，`--archive` 显式查归档事实。
 - **经验不串项目**（v1.5.6）：审批入池的沉淀记忆默认钉到**当前项目**（按仓库解析），跨项目与用户全局不自动共享；复用走显式导出/导入 + 血缘与审批留痕。
 - **规则自测、写错即曝**（v1.5.3）：审计规则统一为一套引擎（tool-level 与 git-diff 共用同一定义、两种触发时机），**每条规则强制携带正负样例**（必须命中/必须不命中），加载时断言 fail-closed——写错当场拒载；多规则命中取最严，FAIL 报文附替代建议。运维侧同版补 **doctor 修复闭环**：`sofagent core doctor --refresh` 先备份、再一键重置默认、出前后 diff 报告。
-- **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是躺在磁盘上的静态文件——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带 HITL 与审计地自动跑。从「交给企业一堆文档」变成「交给企业一个会自己跑的系统」（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）。详见 [激活链设计](./guides/fde-activation-chain.md)。
+- **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 自动注册企业 SubAgent → 编排成 LangGraph 工作流 → 带 HITL 与审计地自动跑（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN），交付物从「一堆静态文档」变成「会自己跑的系统」。详见 [激活链设计](./guides/fde-activation-chain.md)。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
 - **📡 训练信号与部署闭环**（v1.4.4）：`corpus_export` 语料导出三件套（规则/FDE 方法论/带标签样本，28 编号位 + reward 骨架 + 脱敏聚合）；企业专属模型本地权重部署（`model_register source: 'local-path'` + sha256 篡改拒绝 + rollback-weights 回滚）；训练产物→注册自动衔接（train done + eval pass）；`train compare` 多基座 ROI 排序；决策因果链与先例检索（`causedBy` 因果边）；
@@ -131,7 +131,7 @@
 | ④ | **执行** EXECUTE（v1.2.8-9） | DAG 运行 + 人工审批（HITL）+ 审计集成 |
 | ⑤ | **进化** SUSTAIN（v1.3.0） | 反思 + 回灌，喂下一轮诊断 |
 
-> 约束层（注入）＋ 审计 / 回溯 / 沉淀 / 进化 ＝ 全生命周期**可审计、可回滚、可积累、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
+> 约束层（注入）＋ 审计 / 回溯 / 沉淀 / 进化 ＝ 全生命周期**可审计、可回滚、可积累、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 
 ## 落地：装好就能派活
@@ -482,7 +482,7 @@ jobs:
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
 
-> 多条新产品线同版落地后，新人最常见的问题是「我知道有这功能，但从哪进」。本表按「是什么 / 从哪进 / 前置要求」三列导览——逐条命令真实可跑（v1.4.3 第九章 onboarding 走查对账口径）。
+> 本表按「是什么 / 从哪进 / 前置要求」三列导览多条新产品线——入口命令逐条真实可跑（v1.4.3 第九章 onboarding 走查对账；每条线「装 → 找到入口 → 第一步」应 10 分钟内完成，断点即修记录见发版检查清单）。
 
 | 产品线 | 是什么 | 从哪进 | 前置要求 |
 |---|---|---|---|
@@ -491,8 +491,6 @@ jobs:
 | **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent daemon start`） |
 
 > 注-1：监控：`train_status` / `train_list` / 失败走 `train_diagnose`
-
-> 走查口径：每条线「装 → 找到入口 → 进入第一步」应在 10 分钟内完成——入口命令逐条真实存在（本表经 v1.4.3 第九章 onboarding 断层走查对账，断点即修记录见发版检查清单）。
 
 ### 知识怎么长出来
 
@@ -596,7 +594,7 @@ sofagent orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 审计 Agent 管"刹车是不是还在"，FDE Harness 管"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着。
 
-> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。sofagent 本质上是一款 FDE Harness：对外你用的是品牌名 sofagent（它正是一套 FDE Harness 在帮你干活），对内是 sofagent 约束层（Harness 中间件）在跑。
+> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。对外品牌名 sofagent（一套 FDE Harness 在帮你干活），对内是 sofagent 约束层（Harness 中间件）在跑。
 
 ### 🔗 激活链：从"交付文档"到"自动运转"（v1.2.5+ Phase 1-4 已交付）
 

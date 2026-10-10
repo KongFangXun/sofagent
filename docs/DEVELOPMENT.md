@@ -698,16 +698,9 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 文件清单（按版本）
 
-| 文件 | 版本 | 说明 |
-|---|---|---|
-| `engine/orchestrator/src/activate.ts` | v1.2.5 | 激活链入口：读交付物 → 注册企业 SubAgent |
-| `engine/orchestrator/src/workflow-parser.ts` | v1.2.6 | 扩展：支持企业 workflow.yml 的 HITL/审计字段 |
-| `engine/orchestrator/src/enterprise-graph.ts` | v1.2.7 | `composeEnterpriseWorkflow()`：多 Agent → StateGraph |
-| `engine/orchestrator/src/node-executor.ts` | v1.2.8 | 企业节点执行器（新建） |
-| `engine/orchestrator/src/hitl-handler.ts` | v1.2.9 | HITL 中断处理 + 每节点审计集成 |
-| `engine/orchestrator/src/dag-runner.ts` | v1.2.8 | 扩展：支持企业 Agent 执行 + 审计 hook |
+> 📦 **逐版本新增/修改文件清单已下沉归档——见 [归档 · DEVELOPMENT 参考明细](./archive/doc-slim/development-reference-detail.md)。**
 
-> 详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+> 激活链四阶段设计与各文件职责详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 
 ## 维护者口径

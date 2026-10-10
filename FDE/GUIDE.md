@@ -951,14 +951,7 @@ AI 节点跑起来后，自动生成这些文件：
 
 > **FDE 交付的断裂带**：上面交付了三层实体（文档层 + Skill 层 + 运行层），但交付物本质是静态文件——`nodes/*.md`、`workflows/*.yml`、`skills/*/SKILL.md`、`objects.yml`。企业 IT 拿到后需要手动搭编排、手动配审批节点、手动接审计 hook。这道"从交付到运转"的大断裂带，正是激活链要解决的。
 
-**激活链 = 把 FDE 交付物"点燃"的自动化流程**：
-
-```text
-FDE 交付物（静态文件）         →  ACTIVATE（v1.2.5）: 读交付物 → 注册企业 SubAgent
-ontology/ + workflows/ +        →  ORCHESTRATE（v1.2.6-7）: 多 Agent → StateGraph 编排
-skills/ + nodes/               →  EXECUTE（v1.2.8-9）: DAG 执行 + HITL 审批 + 审计
-                               →  SUSTAIN（v1.3.0）: 执行 → 审计 → 反思 → 进化循环
-```
+**激活链 = 把 FDE 交付物"点燃"的自动化流程**——静态交付物（ontology/ + workflows/ + skills/ + nodes/）经四阶段转为自运转系统：
 
 | 阶段 | 版本 | 做什么 | 对 FDE 的意义 |
 |---|---|---|---|

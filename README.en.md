@@ -6,13 +6,15 @@
 
 <!-- H1 & banner split: the H1 is the repo name and semantic anchor (search engines / no-image environments / screen readers); the banner carries the visuals -->
 
-<p align="center">
- <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main" /></a>
- <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
- <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.8-16B8F3" /></a>
- <img src="https://img.shields.io/npm/v/sofagent" />
- <a href="https://star-history.com/#KongFangXun/sofagent&Date"><img src="https://img.shields.io/github/stars/KongFangXun/sofagent?style=social" /></a>
-</p>
+<div align="center">
+
+[![Build](https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main)](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
+[![Version](https://img.shields.io/badge/Version-v1.5.8-16B8F3)](./CHANGELOG.md)
+![npm](https://img.shields.io/npm/v/sofagent)
+[![Stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
+
+</div>
 
 <p align="center"><sub><a href="./README.md">简体中文</a> | English</sub></p>
 
@@ -135,12 +137,14 @@ What ships today in this layer is the existing judgment-and-evidence surface):
 
 **Governance layer · harness** (after departure · retain judgment, the Harness stage—executing against the deliverables 24/7, writing back as it evolves):
 
-- 🏠 **Stay resident after departure**—the FDE capability remains for inspection, audit, and optimization (daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs), 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
+- 🏠 **Stay resident after departure**—the FDE capability remains for inspection, audit, and optimization (daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs),
+ 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit**—`npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
 - 🧱 **28 audit rules + 104 MCP tools**—secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 22/28 run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs), 1 filesystem scan, 1 decision-log channel;
  log-based rules such as A7/A8 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped—fail-fast design);
 evidence is based on local diffs; **not fail-closed by default**—the config can be tampered with and the hooks
- skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 28 = 17 default + 11 extensions). Note: `commons_invoke` is dry-run pre-check semantics (it returns capability metadata and an invocation plan; real execution is injected by the Agent runtime via an executor—see LIMITATIONS).
+ skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 28 = 17 default + 11 extensions).
+ Note: `commons_invoke` is dry-run pre-check semantics (it returns capability metadata and an invocation plan; real execution is injected by the Agent runtime via an executor—see LIMITATIONS).
 - 🛡️ **Automatic snapshot rollback**—auto-archived after each audit, one-click restore to any snapshot when something breaks
 - 🛡️ **AgentShield static scanning across five config surfaces**—a `@public` SDK capability (invoked via `createAgentShield`), **not on the commit-hook path**, opt-in on demand
 
@@ -159,12 +163,7 @@ together by the deliverables handed over in between**:
 > 🔗 **Why they must be one thing**: the deliverables are a living state shared by both stages—written on entry, read during execution, written back during evolution (trial branches promoted to baseline, reflections distilled back). Without FDE, the constraint layer has no criteria to enforce;
 >without the constraint layer, FDE judgment evaporates the moment the engineer leaves. That is where the name "FDE Harness" comes from—not a bundle of an FDE feature and a Harness feature, but two stages of one job.
 >
-> **From FDE to FDEing—everything can be FDEing**: the combined effect of the two stages is turning Forward Deployed **Engineer** (a job title) into Forward Deployed **Engineering** (a capability)—the person moves on, the capability stays with the deliverables. FDEing is short for Forward
->Deployed Engineering (pronounced /ef-di-i-ing/)—as a noun it names that capability, as a verb it means turning FDE labor into it.
->
-> - **FDE is the noun; FDEing is the verb**—turning FDE from human labor into an auto-executable capability (playbook × judgment × governance): less human labor, more capability delivered.
-> - **Not limited to software**—any business object, process, or node can be FDEing'd through "map → judge → deliver → sustain"; hardware nodes and robot motion are workflows too—the difference lies in the actuator, not the governance.
-> - **It's also a mindset**—before doing anything, think: ① how to structure the workflow; ② which nodes are AI nodes; ③ how AI can best help you get it done (see [PHILOSOPHY](./docs/PHILOSOPHY.md)).
+> **From FDE to FDEing—everything can be FDEing**: the combined effect of the two stages—see the opening of "Core Features" above (everything can be FDEing).
 
 <p align="center"><img src="docs/assets/arch-layers-en.svg" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
 
@@ -223,7 +222,8 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## The Two FDE Harness Phases
 
-**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**: together they're onboarding a digital employee (the after-departure side runs daemon patrols 24/7 (daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs), every commit triggers the default 17
+**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**:
+together they're onboarding a digital employee (the after-departure side runs daemon patrols 24/7 (daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs), every commit triggers the default 17
 audit rules (the full 28 require `extendedRulesEnabled: true`), snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
 
 | Organizational act | sofagent equivalent |
@@ -272,7 +272,8 @@ npx -y -p sofagent sofagent audit
 
 Here is what it looks like when a known-format secret leak gets blocked (real output). A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#28-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys—other known formats too.
 
-Generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90). The screenshot on the first screen shows the A1 scenario (a .env sensitive-file commit blocked, exit 2); A2 secret-format detection is a separate rule, not repeated here.
+Generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90).
+The screenshot on the first screen shows the A1 scenario (a .env sensitive-file commit blocked, exit 2); A2 secret-format detection is a separate rule, not repeated here.
 
 **Full install** (Node.js ≥ 18, download and review before running)—**installed on the enterprise devices running the AI nodes**:
 
@@ -338,7 +339,9 @@ the installed UI is the source of truth.)</sub></p>
 | **`npx -y -p sofagent sofagent audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | Any git repo (temporary) | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or custom JSON rules | Same as above | 1 min |
 | **GitHub Action** | Auto-audit each PR, violations annotated on the diff lines | CI/CD | Set up once |
-| **install.sh full suite** | inject · audit · rollback · distill · evolve + daemon inspection (requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs) + dashboard—the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
+| **install.sh full suite** | inject · audit · rollback · distill · evolve + daemon inspection + dashboard—the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
+
+> 📌 daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs.
 
 > 📌 **Single-entry CLI (since v1.5.6)**—the CLI converges on **`sofagent <domain> <action>`**: `sofagent audit` (audit) · `sofagent train doctor` (training) · `sofagent team formation` (formations) · `sofagent daemon` (daemon) … run `sofagent help` for all domains.
 >
@@ -349,7 +352,8 @@ the installed UI is the source of truth.)</sub></p>
 > | Full install (daemon / dashboard) | `bootstrap.sh` / `install.sh` (above) |
 >
 > - **Compatibility window**: the old commands (`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …) **still work** and print a pointer to the new entry—**removed one minor version later**. The 13 former bins are now carried by the single entry.
-> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; transitive deps measured via `npm ls --all --parseable | wc -l` = 603 lines (1 project-root line ⇒ 602 packages; basis: installed `npm i sofagent@1.5.8` · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10), 5 carry native modules and install scripts—new npm versions don't run unreviewed install scripts, so those native builds are **silently skipped**).
+> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; transitive deps measured via `npm ls --all --parseable | wc -l` = 603 lines (1 project-root line ⇒ 602 packages;
+> basis: installed `npm i sofagent@1.5.8` · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10), 5 carry native modules and install scripts—new npm versions don't run unreviewed install scripts, so those native builds are **silently skipped**).
 >**For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or the scoped package `npm i -g @sofagent/audit`.
 > - **Retired legacy proxy package**: the bare-name `sofagent-audit` (no scope) on npm is the old proxy package—**unpublished on 2026-09-26**; don't install it.
 

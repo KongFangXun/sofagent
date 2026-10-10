@@ -294,10 +294,8 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 
 ## 成为维护者
 
-sofagent 当前 bus factor = 1（唯一维护者）。上面的「Seeking Co-maintainers」表是正式标准（合并 PR ≥5 + 持续 ≥2 月 + 作者邀请）；如果你已满足以下早期信号中的至少 2 条，可以先开 Discussion 与维护者聊聊方向——早期接触不算正式申请：
+**早期接触**：满足以下至少 2 条早期信号，可先开 [Discussion](https://github.com/KongFangXun/sofagent/discussions) 与维护者聊聊方向（正式标准见〈Seeking Co-maintainers〉）——早期接触不算正式申请：
 
 - 提交过 3+ 个被合并的 PR
 - 熟悉 bash 兼容性 / OpenClaw hook / 安全审计 / 英文文档 中至少一个领域
 - 能独立 review 他人的 PR
-
-联系方式：开 [Discussion](https://github.com/KongFangXun/sofagent/discussions)

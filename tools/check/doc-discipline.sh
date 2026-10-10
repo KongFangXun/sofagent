@@ -265,6 +265,8 @@ fi
 
 # ── Face 7 抬头块闸（2026-09-29 抬头块限流批）─────────────────────────
 # 抬头块 = H1 到首个 '## ' 之间的正文；字数只计文本字符，剔装饰行与 YAML front matter
+# 装饰行口径（v1.5.9 补齐）：HTML 装饰 = **一个或多个标签、标签外无正文**（原实现只认单标签行，
+#   导致 `<p …><img …/></p>` 这类多标签徽章行被计入抬头块——与 _meta.opening_rule「剔除 HTML 标签行」漂移，已对齐）
 # （口径与处置见 doc-char-ratchet.json 的 _meta.opening_rule）。
 # 治的是「文档开头堆一大段说明/为什么，读者翻不到正文」。
 OPENING_CAP=600
@@ -277,7 +279,7 @@ else
     const fs=require("fs");
     const base=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
     const cap=parseInt(process.argv[2],10);
-    const deco=/^(<[^>]+>|!\[[^\]]*\]\([^)]*\)|\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)|<!--.*-->|-{3,})$/;
+    const deco=/^((\s*<[^>]+>\s*)+|!\[[^\]]*\]\([^)]*\)|\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)|<!--.*-->|-{3,})$/;
     const opening=(t)=>{
       const L=t.split("\n");
       let start=0;

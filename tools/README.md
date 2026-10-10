@@ -39,13 +39,13 @@
 | `check/check-release-closeout.sh` | 发版收口门禁（五断言：bootstrap 三件套同源 / README 版本行 vs registry / 图注 vs 章节态 / main 三 workflow 结论 / 发布幂等语义——gh 不可用 FAIL、HEAD 未推送可见降级） | pre-push / 发版 SOP 阶段八~九 |
 | `check/check-unwired-exports.sh` | @public 导出接线深扫（S2 四断言：深扫接线/白名单/类型标注/eval 隔离） | 发版 SOP 阶段三/六 |
 | `check/check-wiring-guard.mjs` | 接线守卫（注册表级：注册漂移——分发面孤儿/旁挂清单越界引用；死路径——注册项无分发落点。**首版非阻断**，只提示不阻断；`--selftest` 合成回归验证必命中） | CI（非阻断）/ 发版 SOP / 定期（观察期） |
-| `check/check-seam-contract.mjs` | 插件适配层 seam 契约门禁（正向：插件 seam ∈ `engine/dsh-plugins/SEAMS.md` 词汇表；DSH 三处 seam 逐条一致 + description 不滞后；反向：词汇表每条在**真实宿主**里 grep 到定义处，宿主缺席打印 `SKIP` 不静默通过；双向对账拦「漏写 seam」；（详→注-1） | CI / 新增或改插件后 |
-| `check/check-seam-drift.mjs` | 宿主 seam 词表漂移巡检（登记本 vs 宿主实测差集：宿主有词表未登 / 词表登宿主已废 等三面判定；`SEAMS.md` 只保证 sofagent 侧四载体自洽，本巡检防「宿主破坏性升级后词表静默过期」——**只提示不阻断**，`--strict` 供 CI 收紧） | 宿主升级后 / 定期（默认非阻断） |
+| `check/check-seam-contract.mjs` | 插件适配层 seam 契约门禁（正向：插件 seam ∈ `engine/dsh-plugins/SEAMS.md` 词汇表，DSH 三处逐条一致 + description 不滞后；反向：词汇表每条在**真实宿主** grep 到定义处，宿主缺席打印 `SKIP` 不静默通过；双向对账拦「漏写 seam」；（详→注-1） | CI / 新增或改插件后 |
+| `check/check-seam-drift.mjs` | 宿主 seam 词表漂移巡检（登记本 vs 宿主实测差集：宿主有词表未登 / 词表登宿主已废 三面判定；防「宿主破坏性升级后词表静默过期」——**只提示不阻断**，`--strict` 供 CI 收紧） | 宿主升级后 / 定期（默认非阻断） |
 | `check/check-template-drift.sh` | 模板漂移检测（三断言：模板与实现同步对账） | 发版 SOP 阶段六 |
-| `../engine/audit/src/rulesets/*.json`（跨模块指针，非 tools/ 内文件） | 行业 overlay 规则包（ai/fintech/government/medical 四件；按 `context.md` 的 `industry:` 加载，机制见 `FDE/GUIDE.md` §5.9） | FDE 进场标注行业时（v1.4.8 修正：原登记 `tools/check/` 伪路径，实际在 engine/ 侧） |
+| `../engine/audit/src/rulesets/*.json`（跨模块指针，非 tools/ 内文件） | 行业 overlay 规则包（ai/fintech/government/medical 四件；按 `context.md` 的 `industry:` 加载，机制见 `FDE/GUIDE.md` §5.9） | FDE 进场标注行业时 |
 | `check/dependency-direction.sh` | 依赖方向架构测试（build 序列 13 包边界：核心层←约束层←适配层←展示层；读同目录 `dependency-direction.yml` SSOT——含 `rhythm` 版本节奏段） | CI / 改包依赖后 |
 | `check/check-silent-catch.mjs` | 静默吞错扫描（关键路径空 catch 只拦新增，存量见 `silent-catch-baseline.json` 基线） | CI / 改错误处理时 |
-| `check/check-paired-records.mjs` | 判决类记录成对门禁（N 态判据：声明 N 态即须落 N 态。登记表 = 脚本内 REGISTRY（判决家族 × N 态 × 生产写入点）；三判定：①缺侧 ②未登记判决写入点（新增判决 kind 必须同批登记配对侧）③非判决豁免集与 DecisionKind 枚举对账；盲区显式登记（RULE_TOGGLE/ESCALATE_REPORT/COST 各带理由+触发条件）；（详→注-2） | pre-push 第 3j 步 / 新增判决类 kind 后 |
+| `check/check-paired-records.mjs` | 判决类记录成对门禁（N 态判据：声明 N 态即须落 N 态。登记表 = 脚本内 REGISTRY；三判定：①缺侧 ②未登记判决写入点（新增判决 kind 须同批登记配对侧）③非判决豁免集与 DecisionKind 枚举对账；盲区显式登记）；（详→注-2） | pre-push 第 3j 步 / 新增判决类 kind 后 |
 | `check/check-fresh-eyes-artifacts.mjs` | fresh-eyes-loop 产物契约守闸（harness 注入形态的机械停止条件等价面：校验 runDir 产物存在性 + schema + 计数一致性；`--self-test` 自检） | harness 执行形态跑完轮后（会话内人工/主任务协议步骤） |
 | `check/check-home-resolution-parity.mjs` | 家目录解析口径对照共享守卫（harness 因 layer 0 · `allow: []` **不能** import core，只能本地重实现 `resolveEngineHome()`——本守卫断言两侧**同输入同输出**；（详→注-3） | 改 harness 或 core 的家目录解析后 · pre-push |
 | `check/check-sop-integrity.mjs` | 发版 SOP 阶段文件完整性守卫（A1 失明自检 / A2 SOP-ANCHOR 锚链 / A3 结构三元组 pin / A4 最小形态——治阶段文件被静默截断而门禁全绿） | CI / 改 releasing/ 阶段文件后 |
@@ -53,10 +53,9 @@
 | `check/silent-catch-baseline.json` | 静默吞错存量基线（`check-silent-catch.mjs` 消费，新增即红） | 被 check-silent-catch.mjs 消费 |
 | `check/silent-catch-io-ledger.json` | 外部 IO catch 四分类台账（F9 v1.5.7：69 处外部 IO 的 catch 分层登记——吞错清零补结构化日志的对照账本） | 被 check-silent-catch.mjs 消费 |
 | `check/check-archaeology.sh` | 规则文档禁考古守卫（`releasing.md` + `releasing/*.md` + `SKILL/**` + `playbook/**` 正文禁带出身：版本号 / 日期 / 跑批编号（run-N·第N轮·Round N）/ 出身标签；（详→注-4） | pre-push / 改规则文档后 |
-| `check/archaeology-exempt.json` | 禁考古豁免台账（`check-archaeology.sh` 消费：① `exemptPaths` 第三方 vendored 原文 + 历史档案目录——档案是出身该待的地方；② `exemptAnchors` 行级豁免 `{file, anchor, reason}`——**锚串而非行号**（行号漂移即静默失效），锚须文件内唯一且当前仍是命中行，两条硬校验不成立即 exit 2） | 被 check-archaeology.sh 消费 |
+| `check/archaeology-exempt.json` | 禁考古豁免台账（`check-archaeology.sh` 消费：① `exemptPaths` 第三方 vendored 原文 + 历史档案目录；② `exemptAnchors` 行级豁免 `{file, anchor, reason}`——**锚串而非行号**，须文件内唯一且仍是命中行，两条硬校验不成立即 exit 2） | 被 check-archaeology.sh 消费 |
 | `check/check-readme-parity.sh` | 双语 README 结构 parity 门禁（中英 README 章节/条目对齐，防单语漂移） | CI / 改 README 后 |
 | `check/check-dashboard.sh` | dashboard.html 结构性缺陷门禁（七项静默失效面：双 class 属性/未定义 CSS 变量/重复类定义不一致/未定义 keyframes/onclick 未定义函数/div 配平/U+FFFD 乱码——注入实测七项全报红） | CI / 改 dashboard.html 后 / 发版 SOP 阶段五 |
-| `dashboard/sofagent-dashboard.test.sh` | Dashboard 端到端冒烟（页面可达 + 数据面断言） | dashboard 改动后 |
 | `check/check-guards.sh` | 守卫的守卫（meta-guard：门禁脚本自身四类腐烂模式静态扫 + `--inject` 注入实测——红不了的门禁是装饰品） | 发版 SOP / CI |
 | `check/check-anchors.mjs` | 跨文档 Markdown 锚点引用活性校验（见 check-docs.sh 第 11 段） | 发版 SOP / CI |
 | `check/check-forms.mjs` | 「形态归属」标注一致性守卫（changelog 章标注 ↔ ROADMAP 声明计数**双向对账**：每章须挂 `> **形态归属**：` 行 · 形态词封闭枚举 · 声明计数逐版 pin · 成分按结构判据提取；退出码 0 绿 / 1 违规 / 2 失明） | pre-push 第 3h 步 / 发版 SOP / 新增或改 changelog 章后 |
@@ -65,7 +64,7 @@
 | `check/check-shell-injection.sh` | 命令注入静态扫（engine 源码面：execSync 模板插值/字符串拼接注入形态——v1.4.3 安全修复批防线） | CI |
 | `check/check-action-pins.sh` | GitHub Actions SHA pin 对账（uses: 完整 commit SHA 与行内注释 tag 指向一致性，离线降级 exit 0） | CI / 发版前 / 定期 |
 | `check/check-storefront.sh` | 仓外门面对账（GitHub description/homepage/topics 数字 vs 仓内实数；离线 SKIP 可见不假绿） | CI（离线 SKIP 不阻断）/ 发版 SOP 阶段八/九 |
-| `check/check-npm-claims.mjs` | registry 实测声称对账（活文档面 `npm view <pkg> dist-tags` 与「当前为 …」两种值声称 vs `--prefer-online` 真值——无 npm view 时回退行内包名，有值无包名判盲区；≥3 重试 + timeout；离线 SKIP 不假绿；（详→注-5） | CI（pre-push 3i · 离线 SKIP 不阻断）/ 改 README/docs 后 |
+| `check/check-npm-claims.mjs` | registry 实测声称对账（活文档面 `npm view <pkg> dist-tags` 与「当前为 …」两种值声称 vs `--prefer-online` 真值——无 npm view 时回退行内包名；≥3 重试 + timeout；离线 SKIP 不假绿；（详→注-5） | CI（pre-push 3i · 离线 SKIP 不阻断）/ 改 README/docs 后 |
 | `check/npm-claims-exempt.json` | npm 实测声称豁免台账（`check-npm-claims.mjs` 消费：行级 `{file, anchor, reason}` 锚串豁免——锚须文件内唯一、当前仍是命中行、理由栏须实质，三条硬校验任一不成立即 exit 2；**当前为空 = 无豁免债的正常态**） | 被 check-npm-claims.mjs 消费 |
 | `check/check-shellcheck.sh` | 全仓 shellcheck（**CI 同口径**：按 shell shebang 扫全仓含无扩展名 hook；`-s bash -S warning -e SC2034/SC1090/SC1091`）——补 CI 与本地扫描面口径差 |
 | `check/check-forge-branches.sh` | 分支收编标记对账（tag `forge-merged-*` / 分支名 `-merged-YYYYMMDD` 双形态判定；未标记分支 INFO 四要素列出供人工确认，输出字符级截断防 U+FFFD） | 发版 SOP / 定期 |
@@ -77,21 +76,21 @@
 | `check/public-api.mjs` | public API 变更检测门禁（@public 符号集 vs 基线，未 bump 即 FAIL；v1.3.9 四） | CI / 发版前 |
 | `check/public-api-baseline.json` | @public 符号集基线（13 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
-| `check/doc-postcheck.mjs` | **文档落盘后自检（排障非门禁）**：五项机械判据聚合既有口径——U+FFFD/ 墙式行格/ 字符数棘轮与抬头块·doc-char-ratchet 同判据/ 标题粘连·「正文。## 标题」同行——行内代码剥离 + 格式说明豁免，正负样本 `--se…| 文档落盘后即时快检（全量防线仍归 doc-discipline / check-docs / check-anchors / check-table-shape / doc-score，不替代） |
+| `check/doc-postcheck.mjs` | **文档落盘后自检（排障非门禁）**：五项机械判据聚合既有口径——U+FFFD / 墙式行格 / 字符数棘轮与抬头块 / 标题粘连（判据同 doc-char-ratchet）；行内代码剥离 + 格式说明豁免，`--fix` 折行 · `--changed` 查变更面。 | 文档落盘后即时快检（全量防线仍归宿主门禁，不替代） |
 | `check/vitest-setup.mjs` | 全局测试隔离（预置 SOFAGENT_DATA 到 tmp，防测试污染真实 HOME——被 5 个 engine/*/vitest.config.ts setupFiles 引用） | vitest 自动挂载 |
 | `check/check-cross-package-relative.mjs` | 越包相对引用守卫（相对 import/require 越出**包根**即 FAIL；6 条豁免 = 清单 SSOT 对账测试读 `plugins.json`，登记在 exempt 台账。（详→注-6） | CI（pre-push 2e）/ 改 dsh-plugins 后 / `--selftest` |
 | `check/cross-package-relative-exempt.json` | 越包相对引用存量豁免台账（被 `check-cross-package-relative.mjs` 消费；集合相等判定——新增/漂移/陈旧均红） | 被 check-cross-package-relative.mjs 消费 |
 | `check/check-legacy-knowledge-path.mjs` | 知识库旧路径残留守卫（v1.2.1 前写法，**连写+分离**双形态；扫描 git tracked 文件；非注释面对账 `knowledge-legacy-path-exempt.json`，注释面可见不阻塞，冻结区豁免，守卫自身两文件归「装置面」；退出码 0 绿 / 1 违规 / 2 失明） | CI（check-docs §18）/ 改 knowledge 路径后 / `--selftest` |
 | `check/knowledge-legacy-path-exempt.json` | 知识库旧路径存量豁免台账（被 `check-legacy-knowledge-path.mjs` 消费；逐文件逐计数相等判定） | 被 check-legacy-knowledge-path.mjs 消费 |
-| `check/doc-discipline.sh` | 对外文档写作纪律门禁（P2-27）：依据 CONTRIBUTING「措辞/禁考古/来源块溯源/changelog 写作」规范，把**正则可判定**的三面收进 CI——**Face 1** 内部工单/审查代号（`F-xx`/`P0-xx` 等）（详→注-7） | pre-push · 改对外文档后 |
-| `check/source-block-exempt.txt` | 来源块溯源存量台账（被 `doc-discipline.sh` Face 3b 消费；逐文件逐类别计数**集合相等**判定——新增 / 漂移 / 陈旧均红。格式 `<类别>TAB<文件>TAB<计数>`，类别 ∈ {缺链接, 缺日期}；用 `.txt` 而非 `.json`，因消费方是 bash 而 macOS 不自带 jq。（详→注-8） | 被 doc-discipline.sh Face 3b 消费 |
+| `check/doc-discipline.sh` | 对外文档写作纪律门禁（P2-27）：依据 CONTRIBUTING「措辞/禁考古/来源块溯源/changelog 写作」规范，把**正则可判定**的三面收进 CI——**Face 1** 内部工单/审查代号。（详→注-7） | pre-push · 改对外文档后 |
+| `check/source-block-exempt.txt` | 来源块溯源存量台账（被 `doc-discipline.sh` Face 3b 消费；逐文件逐类别计数**集合相等**判定——新增 / 漂移 / 陈旧均红。格式 `<类别>TAB<文件>TAB<计数>`，类别 ∈ {缺链接, 缺日期}；用 `.txt`（消费方是 bash，macOS 无 jq）。（详→注-8） | 被 doc-discipline.sh Face 3b 消费 |
 | `check/check-prepush-checklist.mjs` | pre-push 检查项清单对账（G-16：清单声明的脚本名 **⊆ 实际调用**——子集关系，实现多于清单合法；守「声明了 X、实现没有 X」缺陷类。清单/调用面提取为空或探针失效 ⇒ exit 2 失明；（详→注-9） | pre-push 第 1b 步 / 改检查项后 / `--selftest` |
 | `check/check-mjs-comment-backtick.mjs` | mjs/js 注释可执行反引号守卫：注释行反引号串首 token 形似脚本路径或 npm/node/bash 命令头 = 危险——bash 误跑时把注释串当命令替换**真执行**（实锤：曾让 bash 跑完整套 pre-push 防线数分钟）。退出码 0 绿 / 1 违规（改单引号）/ 2 引擎故障 | tool-health 第 ⑨ 项 / 新写 .mjs 注释含反引号路径串后 |
 | `check/check-gate-inventory.sh` | 门禁清单覆盖对账（**登记 ≠ 调用**：`tools/check/` 全体守卫 ⊆ 真实调用面——抓「脚本写好、登记在册、零调用点」的**孤儿守卫**，其红态无人知晓）。（详→注-10） | pre-push 第 1c 步 / 新增或搬迁 tools/check/ 守卫后 |
-| `check/check-platform-hooks.sh` | 平台 hook 配置 schema 门禁（校验 `.claude/settings.json` 的 PreToolUse 内层 `hooks`+`type` 与 `.cursor/hooks.json` 的 `version:1`+camelCase 事件+`Shell` matcher 是否符合各平台官方 schema；不符即 exit 2——防「配置不符 schema ⇒ 平台读不到 command、拦截静默失效而门禁全绿」） | pre-push 第 1d 步 / 改 .claude/settings.json 或 .cursor/hooks.json 后 |
+| `check/check-platform-hooks.sh` | 平台 hook 配置 schema 门禁（校验 `.claude/settings.json` PreToolUse `hooks`+`type` 与 `.cursor/hooks.json` `version:1`+camelCase 事件+`Shell` matcher 符合 schema；不符即 exit 2——防「配置不符 ⇒ 平台读不到 command、拦截静默失效」） | pre-push 第 1d 步 / 改平台 hook 配置后 |
 | `check/check-retirement-due.sh` | 声明体系到期消费者门禁（读 `engine/capabilities.json` 的 `shims[].trigger` + `tools/check/*-exempt.json` 到期条件 + ROADMAP 触发条件，报「已届满未退役」；当前 12 个 shim 属 v2.0.0 裁定的**已登记欠账** ⇒ **非阻断巡检位**，接成阻断位会永久钉红推送） | pre-push 第 1e 步（非阻断）/ 改 shim 台账或版本号后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
-| `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 徽章的「被 Awesome 仓收录」声称变成可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 `search/code` API，防超大 README 假阴性），输出 OK / MISSING / SKIP。（详→注-11） | 被 check-storefront 消费（需 gh 环境） |
+| `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 徽章的「被 Awesome 仓收录」声称变成可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 `search/code` API，防假阴性），输出 OK / MISSING / SKIP。（详→注-11） | 被 check-storefront 消费（需 gh 环境） |
 | `check/lib/unwired-reachability.mjs` | **生产可达判定内核**（`--since` 调用 · v1.5.4 收紧）：把「出现过该符号」升级为**生产可达**——① `import type`/类型注解位不计 ② 追链可达（一跳有调用、上一跳无人用 ⇒ 断链）③ 破循环自证（锚点落零接线体内不算）；（详→注-12） |
 | `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
 | `check/check-table-shape.mjs` | 表格形态门禁（四断言）：① 超列（格数 > 表头列数，GFM 丢格）；② 孤儿行（含 `\|` 无「表头+分隔线」归属）；③ 悬空注标（`（详→注-N）` 无定义）；④ 断句格（拆注格切口未落句读符）。内建 10 样本自检；存量见 `table-shape-baseline.json` | CI / 改 .md 表格后 / 发版 SOP |
@@ -99,17 +98,15 @@
 | `check/table-shape-baseline.json` | 表格形状**存量台账**（只拦新增。签名 = 行归一化后 sha256 前 16 位——**不用行号**·编辑漂移即静默放行；**不存原文**——表格常含正则/安全词，落原文触发 A9 自指） | 被 check-table-shape 消费（`--update-baseline` 重生成） |
 | `check/prompt-fork-baseline.json` | 任务书零分支 lint 的**豁免台账**（被 `prompt-fork-lint.mjs` 消费；签名 = 行内容归一化后 sha256 前 16 位——**不用行号**（行号漂移即静默放行，同 table-shape-baseline 理据）；每条须带理由，变更进 review）。 |
 | `check/claims-sdk-ledger.json` | check-claims A 组「新增件零消费阻断」的豁免台账（SDK 面登记：刻意保留的新增件逐条带理由；签名 = 文件路径；变更进 review）。 |
-| `check/doc-ratchet.json` | 核心文档**可读性棘轮台账**（被 `doc-discipline.sh` Face 5 消费：墙式行/墙式格实测值**只许降不许升**——治「内容只进不出」；键 = 逐文档实测计数，`_meta` 记口径，与 `lib/readability-count.mjs` 注释同源）。 |
-| `check/doc-char-ratchet.json` | 核心文档**字数棘轮台账 + 抬头块上限**（被 `doc-discipline.sh` Face 6/7 消费：20 份活文档**字符数**上限锁死 + 抬头块 ≤600 字；超基线即 CI 红。**口径是字数不是行数**——折行让行数 ×6 而字数仅 +1.7%，行数会把排版优化记成膨胀事故。净增须先同文档移出等量字）。 |
+| `check/doc-ratchet.json` | 核心文档**可读性棘轮台账**（被 `doc-discipline.sh` Face 5 消费：墙式行/墙式格实测值**只许降不许升**——治「内容只进不出」；键 = 逐文档实测计数，`_meta` 记口径，与 `lib/readability-count.mjs` 同源）。 |
+| `check/doc-char-ratchet.json` | 核心文档**字数棘轮台账 + 抬头块上限**（被 `doc-discipline.sh` Face 6/7 消费：活文档**字符数**上限锁死 + 抬头块 ≤600 字；超基线即 CI 红。**口径是字数不是行数**——折行让行数 ×6 而字数仅 +1.7%。净增须先同文档移出等量字）。 |
 | `check/lib/readability-count.mjs` | **可读性计数器（单一口径）**（被 doc-discipline Face 5 / reflow-walls 共用：墙式行/墙式格的定义与计数实现；改口径先改本文件头注释再同步 `doc-ratchet.json` `_meta`）。 |
 | `check/lib/reflow-walls.mjs` | **墙式行折行器**（一次性治理工具，非门禁：把超长段落/表格格折行，产出供 doc-ratchet 重新基线；治理批 261→17 的执行器）。 |
-| `check/lib/split-table-cells.mjs` | **超长表格格拆注工具**（一次性治理工具，非门禁：把超长表格内的墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线）。产出契约受 `check-table-shape.mjs` ③④ 两条断言机械对账——标记形态 `（详→注-N）`、同文件必有 `> 注-N：` 定义、**切口必落句读符**（找不到切口就整格不拆，留长格交棘轮报人裁定，不硬切） | 拆注治理时 |
-| `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件（上一 tag 后有改动或本轮暂存）零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine` + `tools`（`playbook/` 剔出：行为锁本质是测试）；（详→注-14） | CI / 改 SECURITY 测绘数字或 hook 时 |
+| `check/lib/split-table-cells.mjs` | **超长表格格拆注工具**（一次性治理工具，非门禁：把超长表格内的墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线）。产出契约受 `check-table-shape.mjs` ③④ 断言机械对账——标记形态 `（详→注-N）`、同文件必有 `> 注-N：` 定义、**切口必落句读符**（找不到切口就整格不拆） | 拆注治理时 |
+| `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine`+`tools`（`playbook/` 剔出：行为锁本质是测试）；（详→注-14） | CI / 改 SECURITY 测绘数字或 hook 时 |
 | `check/doc-score.mjs` | 文档质量六维评分器（准确/精简/结构/排版/可读/淘汰六维，各维 = 通过项/总项 × 10；机械项调既有门禁、人工项读本版 devlog「文档质量评分」留痕，未确认即按不通过计 fail-closed；任一维 <8 或低于基线即不可放行） | pre-push 第 3k 步 / 发版 SOP |
 | `check/doc-score-baseline.json` | 文档质量六维评分基线（逐维下限 + floor 8 + 建档日期；只许升不许降） | 被 doc-score.mjs 消费 |
 | `gen/gen-capability-manifest.mjs` | capabilities.json 可拔契约断言器（C1 幽灵名/C2 级联/C3 档位二义/C4 结构/C5 域封闭/C6 env 形态/C7 shim 台账 + 装配面两陷阱；失明自检 exit 2 拒假绿——F19 首实例） | CI / 改 capabilities.json 后 |
-| `check/check-sop-integrity.mjs` | 发版 SOP 阶段文件完整性守卫（A1 失明自检 / A2 SOP-ANCHOR 锚链 / A3 结构 pin 三元组 / A4 最小形态——治阶段文件被静默截断而门禁全绿） | CI / 改 releasing/ 阶段文件后 |
-| `check/sop-integrity-baseline.json` | SOP 阶段文件结构基线台账（11 阶段文件三元组 + 附件豁免；改阶段文件结构时同批更新） | 被 check-sop-integrity.mjs 消费 |
 
 > 注-1：`SKILL.md` 反向对账——SKILL.md 出现 `（seam: …）` 字面量的每一处都必须与三处一致，**残余缺口：SKILL.md 整体删去 seam 字样时不判红，只打印显著提示**；`--selftest` 合成回归验证必报红）
 > 注-2：`--self-test` 脚本内双探针故障注入）
@@ -121,11 +118,11 @@
 > 注-7（续）：扫描面 = 根级 `*.md` + `docs/**/*.md`；**装置面** `CONTRIBUTING.md`（纪律定义必须引用被禁模式本身）与**历史冻结区** `docs/{changelog,archive,evidence}/**` 豁免。**范围诚实披露**：changelog 的写作纪律不在本门禁判定面（全量含历史代号，纳入会全红且只能靠篡改历史变绿），维持人工 SOP。退出码 0 绿 / 1 违规 / 2 检查器失明（扫描面 <5 个文档或台账缺失即拒判，防「读不到当零违规」）
 > 注-8：数字**只许随真实清理下调**——「只调数字不清理」= 假绿，与文档预算「只调警戒线不归并 = 不合格」同罪）
 > 注-9：退出码 0 绿 / 1 有未接线声明 / 2 检查器失明）
-> 注-10：口径四项：脚本面认裸名**剔注释行** · 文档面只认 `tools/check/` 路径化引用 · **登记表与 changelog 历史记述不在面内**（描述守卫 ≠ 调用守卫）· 区分大小写。豁免写 `playbook/.gate-inventory-exempt`（`文件名:理由`，理由必填）。**语料装载完整性对账**（清单件数 ≡ 语料件数 ∧ 行数 ≡ 非空件行数和）把「漏载面」变 exit 2，不静默误判孤儿。退出码 0 绿 / 1 孤儿或陈旧豁免 / 2 失明
+> 注-10：口径四项：脚本面认裸名**剔注释行** · 文档面只认 `tools/check/` 路径化引用 · **登记表与 changelog 历史记述不在面内**（描述守卫 ≠ 调用守卫）· 区分大小写。豁免写 `playbook/.gate-inventory-exempt`（`文件名:理由`，理由必填）。**语料装载完整性对账**（清单件数 ≡ 语料件数 ∧ 行数 ≡ 非空件行数和）把「漏载面」变 exit 2。退出码 0 绿 / 1 孤儿或陈旧豁免 / 2 失明
 > 注-11：能力边界：依赖 gh CLI + 网络，封闭环境恒 SKIP = 断言未生效（不假绿也不假红）。退出码 0 = 无 MISSING / 1 = 存在 MISSING
 > 注-12：输出区分「有接线 / 零接线 / 一跳断链 / 循环自证」；内建自检 P1/P2/P3，内核缺失或无 node 一律 `exit 2`（拒绝把内核故障伪装成通过）。
 > 注-13：**只管落盘物**：basename 不含 `prompt` 的文件 SKIP 并打印原因（沟通阶段允许多方案 + 推荐）。判据 / 失效模式分析见其文件头。
-> 注-14：排除 bin 入口与**包 tsconfig 显式 exclude 的文件**；另列「仅验证面引用」档，列 ◇ 候选供裁定）· **B** SECURITY 测绘数字（图标数 ↔ dashboard `::before` 去重；uses 数 ↔ workflow 面，口径 = 正则排除注释行）· **C** hook 信任根（hook 内变量不得指向被审仓 `tools/`——原病即「指纹脚本从被审仓执行」）
+> 注-14：排除 bin 入口与**包 tsconfig 显式 exclude 的文件**；另列「仅验证面引用」档供裁定）· **B** SECURITY 测绘数字（图标数 ↔ dashboard `::before` 去重；uses 数 ↔ workflow 面，口径 = 正则排除注释行）· **C** hook 信任根（hook 内变量不得指向被审仓 `tools/`）
 
 ## 二、gen/
 
@@ -192,7 +189,7 @@
 | 内容 | 说明 |
 |---|---|
 | `hooks/sofagent-precommit.sh` | 跨平台共享 pre-commit hook（stdin 模式——Cursor/Claude Code/Gemini CLI 等平台 commit 审计共用；v1.4.0 交付五） |
-| `hooks/merge-claude-settings.mjs` | Claude Code `settings.json` 幂等合并器（零依赖；install.sh `--platform claude` 调用——先备份既有配置，再把 sofagent hook 以绝对路径追加进 PreToolUse，保留用户自有 hooks / permissions；幂等去重） | 被 install.sh `claude)` 分支调用 |
+| `hooks/merge-claude-settings.mjs` | Claude Code `settings.json` 幂等合并器（零依赖；install.sh `--platform claude` 调用——先备份既有配置，再把 sofagent hook 以绝对路径追加进 PreToolUse，保留用户自有 hooks / permissions；幂等去重） |
 
 ## 八、train/
 
@@ -212,7 +209,7 @@
 
 | 脚本 | 用途 | 何时使用 |
 |---|---|---|
-| `verify/verify-chain.mjs` | 独立 HMAC 验签器（单文件零依赖，裸 `node` 可跑）——同时校验 `history.jsonl` 历史链 + `decision-log.jsonl` 决策链；三态输出（链完整 / 某条断裂·给条目号与期望值 / 链头不匹配）+ 降级态（不可复验 / 不足）；`--selftest` 内置 golden vector 硬锚与篡改注入合成回归。（详→注-18） | 第三方举证 / 合规审计 / `--verify-chain` 机内校验的独立对照 |
+| `verify/verify-chain.mjs` | 独立 HMAC 验签器（单文件零依赖，裸 `node` 可跑）——校验 `history.jsonl` 历史链 + `decision-log.jsonl` 决策链；三态输出（完整 / 断裂·给条目号与期望值 / 链头不匹配）+ 降级态（不可复验 / 不足）；`--selftest` 内置 golden vector 与篡改注入回归。（详→注-18） | 第三方举证 / 合规审计 / 独立对照（对照 `--verify-chain`） |
 | `verify/README.md` | 验签器说明（输入格式 / 三态输出 / 第三方举证用法 / 环境指纹换机要点） | 随验签器查阅 |
 
 > 注-18：第三方（审计师 / 监管 / 法院技术顾问）无需安装 sofagent 即可举证

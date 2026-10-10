@@ -4,13 +4,15 @@
 
 <!-- H1 与横幅分工：H1 是仓库名与语义锚点（供搜索引擎/无图环境/screen reader），横幅承载视觉 -->
 
-<p align="center">
-  <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main" /></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.8-16B8F3" /></a>
-  <img src="https://img.shields.io/npm/v/sofagent" />
-  <a href="https://star-history.com/#KongFangXun/sofagent&Date"><img src="https://img.shields.io/github/stars/KongFangXun/sofagent?style=social" /></a>
-</p>
+<div align="center">
+
+[![Build](https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main)](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
+[![Version](https://img.shields.io/badge/Version-v1.5.8-16B8F3)](./CHANGELOG.md)
+![npm](https://img.shields.io/npm/v/sofagent)
+[![Stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
+
+</div>
 
 <p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
 
@@ -177,7 +179,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 ## FDE Harness 两阶段
 
-**两阶段的分工与不可分性**见上文〈[什么是 FDE Harness](#什么是-fde-harness)〉——本节补**组织侧读法**：两阶段合起来就是给数字员工办入职的全流程（离场侧自动动作：daemon 7×24 巡检（daemon 巡检需安装时显式确认，默认不装；QUICK_MODE / 非交互安装自动跳过） · 每次 commit 触发审计（**默认 17 条**；完整 28 条需在 `.sofagent/config.yml` 开 `extendedRulesEnabled: true`）· 快照可回滚 · 进化时试验分支晋升与反思蒸馏写回交付物）。
+**两阶段的分工与不可分性**见上文〈[什么是 FDE Harness](#什么是-fde-harness)〉——本节补**组织侧读法**：两阶段合起来就是给数字员工办入职的全流程（离场侧自动动作——daemon 巡检、commit 审计、快照回滚、进化写回交付物，详见〈核心特性〉与〈安装〉）。
 
 | 组织动作 | sofagent 对应 |
 |---|---|
@@ -277,7 +279,8 @@ sofagent audit --doctor    # 验证环境（可选）
 > | 完整安装（含 daemon / dashboard） | `bootstrap.sh` / `install.sh`（见上） |
 >
 > - **兼容期**：旧命令（`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …）**仍可用**，会提示新入口——**一个 minor 版本后移除**。收敛前的 13 个 bin 现已由单入口统一承载。
-> - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。**只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g @sofagent/audit`。
+> - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
+>   **只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g @sofagent/audit`。
 > - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。
 
 **规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（plugin 类规则默认关闭，需显式 opt-in，见 SECURITY）：
@@ -325,10 +328,9 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：5946 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（流程与近期结论见 [review-system](./docs/guides/review-system.md)）。
-> **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 共 25 个，插件包与工具包不计）——二者非同一集合。
-> 测试数两个口径：**发版时点值**（各版本章节的 `4805→4903` 增量账）与**当前实测值**（上方「工程可信度」行）；权威值以 `tools/check/check-test-count.sh` 实跑为准，包数标准见 [WIKI](./docs/WIKI.md#六当前状态)；审查环境见 [review-system](./docs/guides/review-system.md)；
->性能数据为单机参考值。
+> 🧪 **工程可信度**（当前口径）：5946 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
+> **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 共 25 个，插件与工具包不计）——非同一集合。
+> 测试数二口径：**发版时点值**（各版本 `4805→4903` 增量账）与**当前实测值**（上方行）；权威值以 `tools/check/check-test-count.sh` 实跑为准；性能数据为单机参考值。
 
 ---
 

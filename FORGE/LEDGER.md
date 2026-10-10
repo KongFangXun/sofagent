@@ -322,7 +322,7 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 
 2026-09-03     | 20260903-01    | release-gate | 4    | SKIP       | FAIL       | SKIP     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-01
 
-2026-09-03     | 20260903-04    | release-gate | 4    | SKIP       | PASS       | SKIP     | FAIL→PASS | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-04（BLOCK→PASS 改判：verdict.md 第八节翻转条款执行——12 包 bump 006db13c + 34c 判定核验 + P1-1 映射 a14c7efc + P2-1 锚过时销项；2026-09-03 10:30 driver session 收口）
+2026-09-03     | 20260903-04    | release-gate | 4    | SKIP       | PASS       | SKIP     | FAIL→PASS | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-04（BLOCK→PASS 改判：verdict.md 第八节翻转条款执行——12 包 bump 006db13c + 34c 判定核验 + P1-1 映射 a14c7efc + P2-1 锚过时销项；10:30 driver session 收口）
 
 2026-09-03     | 20260903-05    | release-gate | 4    | SKIP       | FAIL       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-05
 

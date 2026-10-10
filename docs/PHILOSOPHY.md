@@ -95,7 +95,7 @@ WorkBuddy / OpenClaw 等大厂 Agent 平台管路由调度——「会不会做�
 | **Ontology**（sofagent 运行时层） | 事之间什么关系 | 企业业务世界的语义层——实体 / 概念 / 关系 / 状态机 |
 | **Harness**（sofagent 约束层） | 干得对不对 | 每次变更的硬证据审计 + 越界拦截 + 回滚 |
 
-四件是 orthogonal axes（正交轴）：MCP 提供「what」、Skills 提供「how」，二者搭档够跑通单 agent 场景；但企业要「多 agent 协同 + 跨 session 数据一致 + 强治理」时，Skills 文本对齐不够（不带语义对齐层 / 跨 agent 协调 / 变更治理）——sofagent 的 Ontology 运行时层 + Harness 约束层正为此设计：不替代 Skills，补上语义对齐 / 治理 / 编排 / 审计四件事。不是「Skills 不行」，是「Skills 不够」。
+四件是 orthogonal axes（正交轴）：MCP 提供「what」、Skills 提供「how」，二者搭档够跑通单 agent 场景；但企业要「多 agent 协同 + 跨 session 数据一致 + 强治理」时，Skills 文本对齐不够——sofagent 的 Ontology 运行时层 + Harness 约束层正为此设计：不替代 Skills，补上语义对齐 / 治理 / 编排 / 审计四件事。不是「Skills 不行」，是「Skills 不够」。
 
 ### FDE 与 Harness 怎么咬合——判断的两个相位
 
