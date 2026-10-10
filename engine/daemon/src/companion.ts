@@ -44,6 +44,10 @@ export interface CompanionReportStats {
   deployedAt: string | null;
   /** 已部署天数（报告生成时点） */
   daysSinceDeploy: number | null;
+  /** think.md 读取失败（BUG-53：报告据此写「数据缺失：读取失败」而非 0——实现对齐注释） */
+  thinkReadError: boolean;
+  /** decision-log 读取失败（同 BUG-53——缺失须可见，不与真 0 条混同） */
+  decisionReadError: boolean;
 }
 
 /** 陪跑期判定输入 */
@@ -75,8 +79,12 @@ export function getCompanionState(dataDir?: string, now: Date = new Date()): Com
     try {
       const marker = JSON.parse(readFileSync(markerPath, 'utf-8')) as { deployedAt?: string };
       if (typeof marker.deployedAt === 'string') deployedAt = marker.deployedAt;
-    } catch {
-      // 坏标记忽略，走 fallback
+    } catch (err) {
+      // 坏标记忽略，走 fallback；BUG-53：补留痕（原空 catch 静默——坏 companion.json
+      // 会让陪跑期判定悄然回落，部署时间准不准无从察觉）。
+      console.warn(
+        `[sofagent] companion.json 解析失败（忽略，走 fallback）: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
   if (!deployedAt) {
@@ -85,8 +93,11 @@ export function getCompanionState(dataDir?: string, now: Date = new Date()): Com
       try {
         const meta = JSON.parse(readFileSync(currentPath, 'utf-8')) as { startedAt?: string };
         if (typeof meta.startedAt === 'string') deployedAt = meta.startedAt;
-      } catch {
-        // ignore
+      } catch (err) {
+        // BUG-53：坏 sessions/current.json 忽略留痕（原空 catch 静默）
+        console.warn(
+          `[sofagent] fde/sessions/current.json 解析失败（忽略）: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
   }
@@ -118,6 +129,8 @@ function collectCompanionStats(dataDir: string, state: CompanionState, now: Date
     generatedAt: now.toISOString(),
     deployedAt: state.deployedAt,
     daysSinceDeploy: state.daysSinceDeploy,
+    thinkReadError: false,
+    decisionReadError: false,
   };
 
   // think.md：统计 sofagent-companion 标记的巡检条目（审计视角那条）
@@ -126,8 +139,13 @@ function collectCompanionStats(dataDir: string, state: CompanionState, now: Date
     try {
       const thinkContent = readFileSync(thinkPath, 'utf-8');
       stats.thinkEntries = (thinkContent.match(/\(sofagent-companion\)/g) ?? []).length;
-    } catch {
-      // 读失败按 0 计（报告仍生成，标注数据缺失）
+    } catch (err) {
+      // BUG-53：读失败此前静默按 0 计，报告无法区分「真 0 条」与「读取失败」——
+      // 实现对齐注释：置 thinkReadError，报告写「（数据缺失：读取失败）」。
+      stats.thinkReadError = true;
+      console.warn(
+        `[sofagent] companion think.md 读取失败（报告标注数据缺失）: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
@@ -147,12 +165,19 @@ function collectCompanionStats(dataDir: string, state: CompanionState, now: Date
           const whyText = typeof entry.why === 'string' ? entry.why : (entry.why?.text ?? '');
           const match = whyText.match(/finalState=([^，,\s]+)/);
           if (match) stats.finalStates[match[1]!] = (stats.finalStates[match[1]!] ?? 0) + 1;
-        } catch {
-          // 单行坏 JSON 跳过（不改总行数语义）
+        } catch (err) {
+          // 单行坏 JSON 跳过（不改总行数语义）；BUG-53：补留痕
+          console.warn(
+            `[sofagent] companion decision-log 单行解析失败（跳过）: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
-    } catch {
-      // 读失败按 0 计
+    } catch (err) {
+      // BUG-53：整文件读失败同 think.md——报告标注数据缺失而非 0
+      stats.decisionReadError = true;
+      console.warn(
+        `[sofagent] companion decision-log 读取失败（报告标注数据缺失）: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
@@ -184,8 +209,11 @@ export function generateCompanionReport(
   if (existsSync(markerPath)) {
     try {
       marker = JSON.parse(readFileSync(markerPath, 'utf-8')) as Record<string, unknown>;
-    } catch {
-      // 坏标记按空处理（下面重建）
+    } catch (err) {
+      // 坏标记按空处理（下面重建）；BUG-53：补留痕（原空 catch 静默）
+      console.warn(
+        `[sofagent] companion.json 标记解析失败（按空重建）: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
   if (typeof marker.reportGeneratedAt === 'string') {
@@ -205,8 +233,8 @@ export function generateCompanionReport(
     '',
     '## 执行统计',
     '',
-    `- think.md 陪跑巡检条目：**${stats.thinkEntries}** 条（含审计视角 + FDE 视角双向写）`,
-    `- decision-log 决策留痕：**${stats.decisionEntries}** 条（kind=ORCHESTRATION）`,
+    `- think.md 陪跑巡检条目：${stats.thinkReadError ? '**（数据缺失：读取失败）**' : `**${stats.thinkEntries}** 条`}（含审计视角 + FDE 视角双向写）`,
+    `- decision-log 决策留痕：${stats.decisionReadError ? '**（数据缺失：读取失败）**' : `**${stats.decisionEntries}** 条`}（kind=ORCHESTRATION）`,
     '',
     '## Refine 终态分布',
     '',
@@ -214,9 +242,11 @@ export function generateCompanionReport(
     '',
     '## 介入记录汇总',
     '',
-    stats.decisionEntries > 0
-      ? `共 ${stats.decisionEntries} 条介入决策（见 decision-log.jsonl，agentId=sofagent-companion）。若终态含 error:*，建议 FDE 离场前检查质量规则集与 LLM 链路。`
-      : '_（无介入决策记录——陪跑期内未产生巡检留痕）_',
+    stats.decisionReadError
+      ? '_（decision-log 读取失败——数据缺失：读取失败，见上方执行统计）_'
+      : stats.decisionEntries > 0
+        ? `共 ${stats.decisionEntries} 条介入决策（见 decision-log.jsonl，agentId=sofagent-companion）。若终态含 error:*，建议 FDE 离场前检查质量规则集与 LLM 链路。`
+        : '_（无介入决策记录——陪跑期内未产生巡检留痕）_',
     '',
     '---',
     '',

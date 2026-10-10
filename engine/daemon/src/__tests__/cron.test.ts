@@ -15,7 +15,9 @@ import {
   buildInspectorScheduleReport,
   ensureDefaultInspectorsConfig,
   recordInspectorSuccess,
+  selectTriggeredFailures,
 } from '../cron';
+import type { InspectorResult } from '../inspectors/types';
 import { LAYER_SCHEDULE } from '../inspector-layers';
 
 describe('loadCronConfig', () => {
@@ -291,5 +293,49 @@ describe('K1 · 退役 flag 无调用侧残留（--legacy）', () => {
       expect(content).toContain("'loop', '--task'");
       expect(content).not.toContain("'loop', '--legacy'");
     }
+  });
+});
+
+// ============================================================
+// BUG-13 · 巡检告警数统计的运算符优先级
+// ------------------------------------------------------------
+// 缺陷：runInspectorTick 内联谓词
+//   `r.triggered && r.severity === 'warning' || r.severity === 'critical'`
+// 因 `&&` 优先级高于 `||`，实际解析为
+//   `(r.triggered && warning) || critical`
+// ⇒ 「critical 但 **未 triggered**」的项也被计入告警数（虚高）。
+// 修复：谓词抽为 selectTriggeredFailures，显式补括号
+//   `triggered && (warning || critical)`——未触发一律不计。
+// 本用例锁定语义：喂 5 条结果，只有「triggered 的 warning/critical」2 条应入选。
+// ⚠️ 把括号去掉（回到优先级 bug）→ 本用例立刻变红（会数到 3）。
+// ============================================================
+describe('BUG-13 · selectTriggeredFailures 只计已触发的告警级结果', () => {
+  const mk = (
+    name: string,
+    triggered: boolean,
+    severity: InspectorResult['severity'],
+  ): InspectorResult => ({ name, triggered, message: name, severity });
+
+  it('5 条输入中仅 2 条（triggered 且 warning/critical）入选——未触发的 critical 不计', () => {
+    const results: InspectorResult[] = [
+      mk('w-triggered', true, 'warning'),    // ✓ 计入
+      mk('c-triggered', true, 'critical'),   // ✓ 计入
+      mk('c-silent', false, 'critical'),     // ✗ 未触发（优先级 bug 会误计）
+      mk('w-silent', false, 'warning'),      // ✗ 未触发
+      mk('info-triggered', true, 'info'),    // ✗ 非告警级
+    ];
+    const failures = selectTriggeredFailures(results);
+    expect(failures).toHaveLength(2);
+    expect(failures.map((f) => f.name)).toEqual(['w-triggered', 'c-triggered']);
+  });
+
+  it('空输入 → 空结果；全未触发 → 空结果', () => {
+    expect(selectTriggeredFailures([])).toEqual([]);
+    expect(
+      selectTriggeredFailures([
+        mk('a', false, 'critical'),
+        mk('b', false, 'warning'),
+      ]),
+    ).toEqual([]);
   });
 });

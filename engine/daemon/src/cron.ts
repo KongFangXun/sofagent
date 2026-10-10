@@ -22,6 +22,7 @@ import { join, dirname } from 'path';
 import { createRequire } from 'module';
 import { load as yamlLoad } from 'js-yaml';
 import { LAYER_SCHEDULE, type InspectorLayer } from './inspector-layers';
+import type { InspectorResult } from './inspectors/types';
 
 const nodeRequire = createRequire(__filename);
 
@@ -93,7 +94,14 @@ function loadInspectorState(): InspectorStateFile {
     const p = resolveInspectorStatePath();
     if (!existsSync(p)) return { lastSuccessAt: {} };
     return JSON.parse(readFileSync(p, 'utf-8')) as InspectorStateFile;
-  } catch {
+  } catch (err) {
+    // BUG-58：文件损坏（JSON 解析失败 / 读权限）此前静默吞错，doctor 侧表现为
+    // 「从未巡检」的假象而无从定位（与 recordInspectorSuccess 落盘失败同源）。
+    // 兜底返回空状态是正确降级，但故障必须留痕。
+    console.error(
+      '[inspector-schedule] 状态文件读取失败（回落空状态）:',
+      err instanceof Error ? err.message : String(err),
+    );
     return { lastSuccessAt: {} };
   }
 }
@@ -123,6 +131,21 @@ export function recordInspectorSuccess(_projectDir: string, layer: InspectorLaye
 function normalizeLayerSchedule(layer: InspectorLayer, raw: unknown): '@daily' | '@weekly' | '@monthly' {
   if (raw === '@daily' || raw === '@weekly' || raw === '@monthly') return raw;
   return LAYER_SCHEDULE[layer];
+}
+
+/**
+ * 过滤「已触发且达到告警级」的巡检结果（BUG-13 修复本体 · 抽出以便直测）。
+ *
+ * 关键：triggered 约束必须同时覆盖 warning / critical 两档。此前内联表达式
+ * `r.triggered && r.severity === 'warning' || r.severity === 'critical'` 因
+ * `&&` 优先级高于 `||`，被解析为 `(r.triggered && warning) || critical`——
+ * 于是「critical 但**未触发**」的项也被计入告警数（告警数虚高）。
+ * 补括号后语义 = `triggered && (warning || critical)`——未触发一律不计。
+ */
+export function selectTriggeredFailures(results: InspectorResult[]): InspectorResult[] {
+  return results.filter(
+    (r) => r.triggered && (r.severity === 'warning' || r.severity === 'critical'),
+  );
 }
 
 // ────────────────────────────────────────────────────────────
@@ -156,8 +179,14 @@ function loadWatchSection(
       // 用下层同段值覆盖它的语义是「用户没写 = 别替我决定」——与 loadWatchConfig
       // 对 watch: 段整文件判定的行为一致）
       return null;
-    } catch {
+    } catch (err) {
       // 坏 YAML → 尝试下一层（下一层可能是好的——fail-open 但不静默吞文件级故障）
+      // BUG-58：此前该 catch 完全静默，用户写坏 watch.yml 后分层频率覆盖一直失效
+      // 而无任何提示。保留 fail-open 行为，补留痕。
+      console.error(
+        `[cron] watch.yml 解析失败（${ymlPath}）→ 尝试下一层:`,
+        err instanceof Error ? err.message : String(err),
+      );
       continue;
     }
   }
@@ -309,8 +338,14 @@ export function ensureDefaultInspectorsConfig(projectDir: string): boolean {
       '',
     ].join('\n'), 'utf-8');
     return true;
-  } catch {
+  } catch (err) {
     // 写失败不阻断 daemon 启动（下次启动重试）
+    // BUG-58：此前静默吞错——盘满 / 权限不足导致首启缺省巡检段始终写不进去，
+    // 「零调度」根因无从排查。降级行为不变，补留痕。
+    console.error(
+      '[cron] 首启缺省 watch.yml 写入失败（下次启动重试）:',
+      err instanceof Error ? err.message : String(err),
+    );
     return false;
   }
 }
@@ -329,7 +364,14 @@ export function loadCronConfig(projectDir: string): CronJob[] {
       const e = entry as Record<string, unknown>;
       return typeof e.schedule === 'string' && typeof e.task === 'string';
     });
-  } catch {
+  } catch (err) {
+    // BUG-58：坏 YAML / 读失败此前静默返回空数组——cron: 段里用户写的定时任务
+    // 全部静默消失（daemon 打印「已启动 0 项」也不指向这里）。降级返回空是正确
+    // 行为，但故障必须留痕。
+    console.error(
+      '[cron] watch.yml cron: 段读取失败（回落空任务表）:',
+      err instanceof Error ? err.message : String(err),
+    );
     return [];
   }
 }
@@ -393,7 +435,10 @@ export function startCron(projectDir: string): number {
           const { runLayeredInspection } = require('./inspector-layers') as typeof import('./inspector-layers');
           const result = runLayeredInspection(projectDir, layer, 'scheduled');
           recordInspectorSuccess(projectDir, layer);
-          const failures = result.results.filter((r) => r.triggered && r.severity === 'warning' || r.severity === 'critical');
+          // BUG-13：运算符优先级——此前 `r.triggered && r.severity === 'warning' || r.severity === 'critical'`
+          // 按 && 高于 || 解析为 `(r.triggered && warning) || critical`，于是「critical 但未 triggered」
+          // 的项被误计入告警数（告警数虚高）。谓词已抽为 selectTriggeredFailures（补括号）。
+          const failures = selectTriggeredFailures(result.results);
           console.log(`[cron] 巡检层 ${layer} 完成: ${result.results.length} 项，告警 ${failures.length} 项`);
         } catch (err) {
           console.error(`[cron] 巡检层 ${layer} 失败:`, (err as Error).message);
@@ -562,8 +607,11 @@ export function startCron(projectDir: string): number {
             const tracker = new FatigueTracker();
             for (const f of failures) tracker.recordToolCall(f.name, false);
             writeFatigueReport(tracker.assess());
-          } catch {
+          } catch (err) {
             // 疲劳度是观测增强，不是调度依赖——写失败只留日志，不影响调度主流程
+            // BUG-58：原为空 catch，注释却声称「只留日志」而实际零输出（注释与实现不符）。
+            // 此处补上注释所承诺的留痕。
+            console.error('[cron] fatigue 报告写入失败（不影响调度主流程）:', err instanceof Error ? err.message : String(err));
           }
         }
       } catch (err) {

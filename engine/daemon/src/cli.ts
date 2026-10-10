@@ -179,6 +179,21 @@ async function main() {
       heartbeatTimer.unref?.(); // 计时器不阻止进程退出（退出钩子负责收尾落盘）
       console.log('  ✅ 健康自检已启动（心跳 5min，~/.sofagent/data/daemon-health.json）');
 
+      // ── v1.5.9 BUG-74：旧 daemon.log 通道 tombstone ──
+      // launchd 接管后旧 daemon.log 已非活跃通道（内容停在上次 SIGTERM 退出），
+      // 用户按文档 tail 会读到「daemon 已退出」的假死相。向旧通道追加一行迁移
+      // 提示（幂等：已含则跳过——重复启动不重复追加）。
+      try {
+        const { ensureDaemonLogTombstone } = await import('./log-channel');
+        const { resolveDaemonLog } = await import('@sofagent/core');
+        const tomb = ensureDaemonLogTombstone(resolveDaemonLog());
+        if (tomb.written) {
+          console.log('  ℹ️  旧 daemon.log 已追加日志通道迁移提示（launchd 托管，见 daemon-launchd.log）');
+        }
+      } catch (err) {
+        console.warn(`  ⚠️ 旧 daemon.log tombstone 写入失败（不影响启动）: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
       // ── v1.4.9 G9：设备注册面巡检接线 ──
       // ① 设备离线告警（T1 验收 ③）：每 5min 扫描设备心跳超时 → webhook 推送
       //    （复用既有 push 通道；离线判定 = isOnline 读侧实时计算）。
@@ -567,6 +582,20 @@ async function main() {
         console.log(`  ⚠️ 版本戳漂移：CLI 入口=${VERSION} / dist 运行时=${runtimeVersion}——dist 与入口不同版本，建议 rebuild（npm run build）`);
       } else {
         console.log(`  ✅ dist 版本戳一致（${runtimeVersion}）`);
+      }
+
+      // ── v1.5.9 BUG-74：活跃日志通道标注 ──
+      // 旧 daemon.log 与 launchd 通道并存时，标明哪个是活跃通道——
+      // 避免排查时误读停在旧 SIGTERM 的 daemon.log 为「daemon 已退出」。
+      console.log('\n── 日志通道 ──');
+      const { resolveActiveLogChannel, DAEMON_LOG_TOMBSTONE } = await import('./log-channel');
+      const { resolveDaemonLog } = await import('@sofagent/core');
+      const legacyLog = resolveDaemonLog();
+      const activeLog = resolveActiveLogChannel(legacyLog);
+      console.log(`  活跃日志通道: ${activeLog}`);
+      if (activeLog !== legacyLog) {
+        console.log(`  ⓘ 旧通道 ${legacyLog} 已非活跃（迁移提示见该文件内 tombstone 行）`);
+        console.log(`    ${DAEMON_LOG_TOMBSTONE}`);
       }
       break;
     }
