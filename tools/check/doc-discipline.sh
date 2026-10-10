@@ -405,8 +405,16 @@ else
     });')
   KW_N=$(printf '%s\n' "$KWS" | grep -c . || true)
   SHOWN=0
-  if [ "$KW_N" -eq 0 ]; then
-    echo "  ⚠️ 失明防护：本次新增 ${NL_N} 行但抽出 0 个关键词（无《》与加粗短语）——召回未真正执行，请人工确认净增量"
+  # 「无对象」与「失明」必须分开判：本面抽取器的对象就是《作品名》与 **加粗短语**——
+  #   ① 新增行里这两类标记**一个都没有**（只改表格索引行 / 代码块）⇒ 本面无召回对象，SKIP；
+  #   ② 标记存在却抽出 0 个关键词（正则被改坏 / 阈值写错）⇒ 真失明，必须红。
+  # 不分开的后果：只改一行索引也被判「失明」而挡住落盘——噪音型守卫等于失明（同日实测：
+  # 改两行 tools/README 表格即触发，属误报）。
+  MARK_N=$(printf '%s\n' "$NEW_LINES" | grep -cE '《[^》]+》|\*\*[^*]+\*\*' || true)
+  if [ "$KW_N" -eq 0 ] && [ "$MARK_N" -eq 0 ]; then
+    echo "  ℹ️ 本次新增 ${NL_N} 行无任何来源语汇（无《》与加粗短语）——本面无召回对象，跳过"
+  elif [ "$KW_N" -eq 0 ]; then
+    echo "  ❌ 失明防护：新增有 ${MARK_N} 行含《》/加粗标记却抽出 0 个关键词——抽取器失效，拒绝假绿"
     HITS=$((HITS + 1))
   else
     # 扫描面 = tracked .md 减去历史冻结区（**不用 grep -r .**——那会扫进
@@ -566,10 +574,66 @@ else
   printf '%s\n' "$DS_OUT" | grep -E "变更文档|✓ 变更|✓ 无变更|阻断" | sed 's/^/  /'
 fi
 
+# ── Face 14 命令漂移（阻断级 · 2026-10-11 新增）─────────────────────────
+# 治「文档写的命令产品里没有」：代码块内的 `sofagent <token>` 不在真值集即红——用户照抄必失败。
+# 真值集**动态提取**（不落台账＝无双事实源）：umbrella 域表 + 保留字 + 各包 package.json bin
+# + 各 engine/*/cli 的 `case '…':` 标签。命令改名 → 真值集自动跟着变，文档没跟着改才红。
+# 为什么**只扫代码块**：实测全文档扫误报 ≈90%（英文散文 `sofagent is / helps / turns` 被当命令）；
+# 收窄到围栏内后 119 条提及只剩 5 条疑似，且 5 条全是**可机械排除的形态**（每条排除规则都对应一条
+# 实测样本）：`#` 注释行 / `@` mention 前缀 / mermaid 节点（含 `<br/>`）/ YAML `- name:` 行。
+# ⚠️ 本面当前**零命中**：守卫的价值在**未来**（命令改名而文档未跟改），存量 0 ≠ 不该有这面。
+echo "[Face 14] 命令漂移（代码块内 sofagent <命令> 是否在真值集）"
+CD_OUT=$(node -e '
+const fs=require("fs");const{execFileSync}=require("child_process");
+const g=(a)=>execFileSync("git",a,{encoding:"utf8"}).split("\n").filter(Boolean);
+const known=new Set();
+const u=fs.readFileSync("engine/umbrella/bin/sofagent.js","utf8");
+for(const m of u.matchAll(/^ {2}(\w+): \{ pkg:/gm))known.add(m[1]);
+const rr=u.match(/const RESERVED = new Set\(\[([^\]]*)\]/);
+if(rr)for(const m of rr[1].matchAll(/'"'"'([^'"'"']+)'"'"'/g))known.add(m[1]);
+for(const f of g(["ls-files","*package.json"]).filter(x=>!/node_modules/.test(x))){
+  try{const j=JSON.parse(fs.readFileSync(f,"utf8"));const b=j.bin;
+    const ns=typeof b==="string"?[j.name]:(b?Object.keys(b):[]);
+    for(const n of ns){known.add(n);const d=n.replace(/^sofagent-/,"");if(d!==n)known.add(d);}}catch(e){}
+}
+for(const f of g(["ls-files"]).filter(x=>/^engine\/[^/]+\/(src\/cli(\/index)?\.ts|bin\/sofagent\.js)$/.test(x)))
+  for(const m of fs.readFileSync(f,"utf8").matchAll(/case\s+'"'"'([a-z][a-z0-9-]*)'"'"'\s*:/g))known.add(m[1]);
+// 失明自检：真值集抽空（源码形态变了/文件被移走）必须报失明，不得拿空集跑出「零命中＝零违规」
+if(known.size<20){console.log("❌ 命令真值集仅 "+known.size+" 条——提取失败（拒绝假绿）");process.exit(2);}
+const files=g(["ls-files","*.md"]).filter(x=>!/^(docs\/(changelog|archive|evidence)\/|playbook\/vendor\/)/.test(x));
+const bad=[];let scanned=0;
+for(const f of files){
+  const L=fs.readFileSync(f,"utf8").split("\n");let inF=false;
+  L.forEach((l,i)=>{
+    if(/^\s*(?:>\s*)*(```|~~~)/.test(l)){inF=!inF;return;}
+    if(!inF)return;
+    const t=l.trim();
+    if(t.startsWith("#")||l.includes("<br/>")||/^\s*-\s*name:/.test(l))return;
+    for(const m of l.matchAll(/\bsofagent(?:-[a-z][a-z0-9-]*)?[ \t]+([a-z][a-z0-9-]*)/g)){
+      scanned++;
+      const tok=m[1];
+      if(tok==="sofagent"||known.has(tok))continue;
+      if(l[m.index-1]==="@")continue;
+      bad.push(`${f}:${i+1} 「${tok}」不在命令真值集`);
+    }
+  });
+}
+console.log(`  真值集 ${known.size} 条 · 扫 ${files.length} 份文档的代码块 · 命令提及 ${scanned} 处`);
+if(bad.length){console.log(bad.join("\n"));process.exit(1);}
+console.log("OK");
+' 2>&1); CD_RC=$?
+if [ "$CD_RC" -ne 0 ]; then
+  printf '%s\n' "$CD_OUT" | sed 's/^/  /'
+  echo "  ❌ Face 14 未通过：代码块内出现不在真值集的命令（文档照抄即失败）"
+  HITS=$((HITS + 1))
+else
+  printf '%s\n' "$CD_OUT" | sed 's/^/  /'
+fi
+
 echo ""
 if [ "$HITS" -gt 0 ]; then
   echo "发现 ${HITS} 处违规"
   exit 1
 fi
-echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 / 可读性棘轮 / 字数棘轮 / 抬头块 / 落盘自检 / 净增量召回 / 排版四面 / 数字来源 / 字面重复 / 文档形态 十二面）"
+echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 / 可读性棘轮 / 字数棘轮 / 抬头块 / 落盘自检 / 净增量召回 / 排版四面 / 数字来源 / 字面重复 / 文档形态 / 命令漂移 十三面）"
 exit 0

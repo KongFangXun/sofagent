@@ -83,7 +83,7 @@
 | `check/cross-package-relative-exempt.json` | 越包相对引用存量豁免台账（被 `check-cross-package-relative.mjs` 消费；集合相等判定——新增/漂移/陈旧均红） | 被 check-cross-package-relative.mjs 消费 |
 | `check/check-legacy-knowledge-path.mjs` | 知识库旧路径残留守卫（v1.2.1 前写法，**连写+分离**双形态；扫描 git tracked 文件；非注释面对账 `knowledge-legacy-path-exempt.json`，注释面可见不阻塞，冻结区豁免，守卫自身两文件归「装置面」；退出码 0 绿 / 1 违规 / 2 失明） | CI（check-docs §18）/ 改 knowledge 路径后 / `--selftest` |
 | `check/knowledge-legacy-path-exempt.json` | 知识库旧路径存量豁免台账（被 `check-legacy-knowledge-path.mjs` 消费；逐文件逐计数相等判定） | 被 check-legacy-knowledge-path.mjs 消费 |
-| `check/doc-discipline.sh` | 对外文档写作纪律门禁（P2-27）：Face 1 内部代号 / 2 私有路径 / 3 来源块溯源 / 5 可读性棘轮 / 6 字数棘轮 + 6b 上调登记 / 7 抬头块 / 8 落盘自检 / 9 净增量召回 / 10 排版四面 / 11 数字来源绑定 / 12 字面重复 / 13 文档形态机械面（详→注-7、注-20、注-21） | pre-push · 改对外文档后 |
+| `check/doc-discipline.sh` | 对外文档写作纪律门禁（P2-27）：Face 1 内部代号 / 2 私有路径 / 3 来源块溯源 / 5 可读性棘轮 / 6 字数棘轮 + 6b 上调登记 / 7 抬头块 / 8 落盘自检 / 9 净增量召回 / 10 排版四面 / 11 数字来源绑定 / 12 字面重复 / 13 文档形态机械面 / 14 命令漂移（详→注-7、注-20、注-21） | pre-push · 改对外文档后 |
 | `check/source-block-exempt.txt` | 来源块溯源存量台账（被 `doc-discipline.sh` Face 3b 消费；逐文件逐类别计数**集合相等**判定——新增 / 漂移 / 陈旧均红。格式 `<类别>TAB<文件>TAB<计数>`，类别 ∈ {缺链接, 缺日期}；用 `.txt` 而非 `.json`，因消费方是 bash 而 macOS 不自带 jq。（详→注-8） | 被 doc-discipline.sh Face 3b 消费 |
 | `check/check-prepush-checklist.mjs` | pre-push 检查项清单对账（G-16：清单声明的脚本名 **⊆ 实际调用**——子集关系，实现多于清单合法；守「声明了 X、实现没有 X」缺陷类。清单/调用面提取为空或探针失效 ⇒ exit 2 失明；（详→注-9） | pre-push 第 1b 步 / 改检查项后 / `--selftest` |
 | `check/check-mjs-comment-backtick.mjs` | mjs/js 注释可执行反引号守卫：注释行反引号串首 token 形似脚本路径或 npm/node/bash 命令头 = 危险——bash 误跑时把注释串当命令替换**真执行**（实锤：曾让 bash 跑完整套 pre-push 防线数分钟）。退出码 0 绿 / 1 违规（改单引号）/ 2 引擎故障 | tool-health 第 ⑨ 项 / 新写 .mjs 注释含反引号路径串后 |
@@ -168,13 +168,13 @@
 
 > 注-20：Face 8 治「工具存在但无人调用」（`doc-postcheck.mjs` 标「排障非门禁」故长期零调用）；
 > Face 9 治「自述不是证据」（任务书自述净增量零命中，实测已有同源段落）。Face 9 信息位不自动红，
-> 但抽空关键词即报失明——守卫不得用「零命中」冒充「扫过了」
+> 但**有《》/加粗标记却抽不出**才报失明（无标记 = 无对象，跳过）——守卫不得用「零命中」冒充「扫过了」
 
 > 注-21：Face 13 = `doc-score.mjs --changed`，串在 doc-discipline.sh 末尾。治「排版判据只在发版前夜才跑
-> 一次」——全量面 6.5 分钟日常无人跑，12 项机械判据长期失明；增量只跑本地文本扫描（实测 0.3 秒），
-> 判据 = 变更文档**对照 HEAD 版本**的命中数差（Δ>0 阻断 / Δ=0 存量信息位 / Δ<0 改善），不做基线比较。
-> 完整理据见脚本头注释——**此处不复述，防双事实源**（同注-15 口径）。`--self-test` 常驻自检四条分支；
-> ⚠️ 增量链路禁调全量模式（它会回头跑 doc-discipline.sh → 无限递归）
+> 一次」——全量面 6.5 分钟日常无人跑；增量只跑本地文本扫描 0.3 秒，判据 = 变更文档**对照 HEAD
+> 版本**的命中数差（Δ>0 阻断 / Δ=0 存量信息位 / Δ<0 改善），不做基线比较。
+> 理据见脚本头注释（防双事实源，同注-15）。`--self-test` 自检四条分支；
+> ⚠️ 增量链路禁调全量模式（会回头跑 doc-discipline.sh → 无限递归）
 
 > 🔴 **门禁退出码取用纪律**：`bash tools/check/xxx.sh \| tail -20; echo $?` 拿到的是 `tail` 的退出码，
 > **恒为 0**（实测把 exit=1 的门禁读成假绿）。取真值必须无管道：`bash tools/check/xxx.sh > /tmp/o.log 2>&1; echo $?`
