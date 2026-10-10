@@ -269,7 +269,10 @@ class McpServer {
       if (!webhookConfig?.enabled || !webhookConfig.url) return;
       const { pushAuditResult } = await import('@sofagent/audit');
       await pushAuditResult({ platform: (webhookConfig.platform as 'dingtalk' | 'feishu' | 'wecom') ?? 'dingtalk', url: webhookConfig.url, task, rules: results.rules, exitCode: results.exitCode });
-    } catch { /* non-fatal */ }
+    } catch {
+      /* 为何可静默：webhook 推送失败不影响审计主流程（审计结果已落盘、退出码已定），
+         推送属旁路通知；失败不阻断 MCP 请求响应。 */
+    }
   }
 
   private writeLine(line: string): void { process.stdout.write(line + '\n'); }

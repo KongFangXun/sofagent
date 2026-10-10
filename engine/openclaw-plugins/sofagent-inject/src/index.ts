@@ -68,8 +68,9 @@ let configuredRoot: string | undefined;
         if (injected) {
           return { prependSystemContext: injected };
         }
-      } catch {
+      } catch (e) {
         // 约束注入失败不阻断会话（软约束；审计是硬的）
+        logger.warn?.('[sofagent-inject] 约束注入失败（依赖未装或能力不可用）:', e instanceof Error ? e.message : String(e));
       }
       return undefined;
     }, { priority: 100 });

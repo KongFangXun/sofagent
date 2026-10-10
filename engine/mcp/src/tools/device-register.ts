@@ -156,9 +156,18 @@ export function createVersionManifestPusher(
   return async (manifest) => {
     try {
       const { deviceDataPush } = await import('./device-data-push');
+      // BUG-35 对齐（v1.5.9）：采集声明锁定了 destination 时，上报必须携带同一
+      // destination，否则 device-upload-policy 的 fail-closed 校验会拒绝（声明
+      // 目的地 A、请求不传即畅通是 BUG-35 修掉的口径）。取值**来自声明本身**
+      //（按事实取值——不硬编码常量、不改函数签名）：声明无 destination 时传
+      // undefined，政策检查按既有语义短路放行（目的地管控是声明可选项）。
+      // 与 deviceDataPush 内部同源解析（均经 getDataDir 读同一份 policy）。
+      const { loadDeviceUploadPolicy } = await import('@sofagent/core');
+      const declaration = loadDeviceUploadPolicy()?.declarations.find((d) => d.category === 'metrics');
       const r = await deviceDataPush({
         identity,
         category: 'metrics',
+        ...(declaration?.destination ? { destination: declaration.destination } : {}),
         payload: JSON.stringify({
           kind: 'device-version-manifest',
           targetVersion: manifest.targetVersion,
