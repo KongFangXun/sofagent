@@ -211,8 +211,8 @@ export function computeDataSourceHash(dataPath: string): string {
       position += bytes;
     }
     return hash.digest('hex');
-  } catch {
-    return 'unknown';
+  } catch (err) {
+    return `unknown（读取失败：${err instanceof Error ? err.message : String(err)}）`;
   } finally {
     if (fd !== null) {
       try {
