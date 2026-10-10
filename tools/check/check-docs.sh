@@ -1466,6 +1466,43 @@ else
   rm -rf "${DOCSCAN_T}"
 fi
 
+# ── 24. 文档头发版态词 ↔ git tag 一致性（v1.5.9 门禁-1 · 并 BUG-02）──────────
+# 病根：文档头「> vX.Y.Z · 日期（UTC）· 状态词 · 署名」的发版态词（待发版/已发版/…）
+#   在 tag 已存在后漏翻。§26（check-version）也扫「待发版」，但它依赖发版窗口口径、
+#   且只认行级状态位；本项补的是**结构性对账**——只要 `refs/tags/vX.Y.Z` 存在，同名
+#   文档头的状态词就不得是「待发版/待发布」（tag 即发版事实，文档头与之矛盾即漏翻）。
+# 判据：抽取 `^> *vX.Y.Z · ` 形态的文档头行 → 取版本号 → tag 存在且行含「待发版/待发布」
+#   ⇒ 报红（打印 文件:行号，计入 ERRORS）。无 git 上下文时整项跳过并计 SKIPS（不假绿）。
+# 扫描面排除 changelog/archive（历史当时态正确）/node_modules/.git/dist/.workbuddy（非活文档）。
+echo "=== 24. 文档头发版态词 ↔ git tag 一致性（v1.5.9 门禁-1）==="
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "  ⏭️ 无 git 上下文——文档头发版态词 ↔ tag 一致性检查跳过"
+  SKIPS=$((SKIPS + 1))
+else
+  _HDR_FAIL=0
+  while IFS= read -r _hdr; do
+    [ -n "${_hdr}" ] || continue
+    _hdr_file="${_hdr%%:*}"
+    _hdr_rest="${_hdr#*:}"; _hdr_ln="${_hdr_rest%%:*}"
+    _hdr_body="${_hdr_rest#*:}"
+    _hdr_ver=$(printf '%s' "${_hdr_body}" | grep -oE '> *v[0-9]+\.[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    [ -n "${_hdr_ver}" ] || continue
+    printf '%s' "${_hdr_body}" | grep -qE '待发版|待发布' || continue
+    if git rev-parse -q --verify "refs/tags/v${_hdr_ver}" >/dev/null 2>&1; then
+      echo "  ❌ ${_hdr_file}:${_hdr_ln} 文档头标「待发版」但 git tag v${_hdr_ver} 已存在（发版后状态词漏翻）"
+      _HDR_FAIL=$((_HDR_FAIL + 1))
+    fi
+  done < <(grep -rnE '^> *v[0-9]+\.[0-9]+\.[0-9]+ · ' --include="*.md" . 2>/dev/null \
+      | grep -vE '^\./(docs/changelog|docs/archive|node_modules|\.git|dist|\.workbuddy)/' || true)
+  if [ "${_HDR_FAIL}" -gt 0 ]; then
+    echo "  ❌ 共 ${_HDR_FAIL} 处文档头发版态词与 git tag 不一致（tag 已存在却标「待发版」）"
+    ERRORS=$((ERRORS + _HDR_FAIL))
+  else
+    echo "  ✓ 文档头发版态词与 git tag 一致（不存在「tag 已存在却标待发版」）"
+  fi
+fi
+ASSERTS=$((ASSERTS + 1))
+
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
 else
