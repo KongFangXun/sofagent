@@ -497,6 +497,8 @@ index 6b705133e..bc54f4bfa 100644
  > ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent audit --init`（见下方完整安装）。
  
 @@ -324,7 +326,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
+ | 想了解 | 去哪看 |
+ |---|---|
  | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
  | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
  

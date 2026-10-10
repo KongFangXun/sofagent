@@ -26,9 +26,9 @@
       "bodySections": 1
     },
     "04-review-system.md": {
-      "stepRows": 13,
+      "stepRows": 14,
       "stepHeadings": 2,
-      "bodySections": 4
+      "bodySections": 5
     },
     "05-release-gate.md": {
       "stepRows": 4,
