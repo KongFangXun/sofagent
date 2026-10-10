@@ -1146,7 +1146,9 @@ install_skill_unified() {
   if [ -d "$skill_src" ]; then
     # 复制 Skill 到统一路径
     mkdir -p "$SOFAGENT_HOME/skill"
-    cp -R "$skill_src"/. "$SOFAGENT_HOME/skill/" 2>/dev/null || true
+    if ! cp -R "$skill_src"/. "$SOFAGENT_HOME/skill/" 2>/dev/null; then
+      warn "  ⚠️ SKILL 拷贝失败（${skill_src} → ${SOFAGENT_HOME}/skill）——安装不完整，请检查权限后重跑"
+    fi
 
     # 平台无关重构：仅当用户显式指定平台时才向该平台目录建 symlink——
     # 默认安装不再创建/修改任何第三方平台目录（如 ~/.openclaw/skills、~/.workbuddy/skills）
@@ -1159,7 +1161,9 @@ install_skill_unified() {
           ok "  Skill 统一路径已建立：${SOFAGENT_HOME}/skill/ → ${psd}（显式平台集成）"
         else
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期——收编后须以本源为准确认）
-          cp -R "$SOFAGENT_HOME/skill"/. "$psd"/ 2>/dev/null || true
+          if ! cp -R "$SOFAGENT_HOME/skill"/. "$psd"/ 2>/dev/null; then
+            warn "  ⚠️ SKILL 拷贝失败（${SOFAGENT_HOME}/skill → ${psd}）——副本可能不完整，请检查权限后重跑"
+          fi
           warn "  Symlink 被普通目录占用，已降级为复制同步：${psd}（并已在该目录写入 STALE-COPY.md 标记，见其内容）"
           write_stale_copy_marker "$psd" "$SOFAGENT_HOME/skill" "$PLATFORM"
         fi
@@ -1173,7 +1177,9 @@ install_skill_unified() {
         ln -sfn "$SOFAGENT_HOME/skill" "$cur_skills" 2>/dev/null || true
         if [ ! -L "$cur_skills" ]; then
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
-          cp -R "$SOFAGENT_HOME/skill"/. "$cur_skills"/ 2>/dev/null || true
+          if ! cp -R "$SOFAGENT_HOME/skill"/. "$cur_skills"/ 2>/dev/null; then
+            warn "  ⚠️ SKILL 拷贝失败（${SOFAGENT_HOME}/skill → ${cur_skills}）——副本可能不完整，请检查权限后重跑"
+          fi
           warn "  Symlink 被普通目录占用，已降级为复制同步：${cur_skills}（并已在该目录写入 STALE-COPY.md 标记，见其内容）"
           write_stale_copy_marker "$cur_skills" "$SOFAGENT_HOME/skill" "cursor"
         fi
@@ -1215,21 +1221,38 @@ HOOKJSONEOF
         ln -sfn "$SOFAGENT_HOME/skill" "${claude_rules}/skills/sofagent" 2>/dev/null || true
         if [ ! -L "${claude_rules}/skills/sofagent" ] && [ -d "${claude_rules}/skills/sofagent" ]; then
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
-          cp -R "$SOFAGENT_HOME/skill"/. "${claude_rules}/skills/sofagent"/ 2>/dev/null || true
+          if ! cp -R "$SOFAGENT_HOME/skill"/. "${claude_rules}/skills/sofagent"/ 2>/dev/null; then
+            warn "  ⚠️ SKILL 拷贝失败（${SOFAGENT_HOME}/skill → ${claude_rules}/skills/sofagent）——副本可能不完整，请检查权限后重跑"
+          fi
           warn "  Symlink 被普通目录占用，已降级为复制同步：${claude_rules}/skills/sofagent（并已在该目录写入 STALE-COPY.md 标记，见其内容）"
           write_stale_copy_marker "${claude_rules}/skills/sofagent" "$SOFAGENT_HOME/skill" "claude"
         fi
         if [ -f "${SCRIPT_DIR}/.claude/settings.json" ]; then
-          cp "${SCRIPT_DIR}/.claude/settings.json" "${claude_rules}/settings.json"
+          local claude_settings="${claude_rules}/settings.json"
+          mkdir -p "${claude_rules}"
+          if [ -f "$claude_settings" ]; then
+            cp "$claude_settings" "${claude_settings}.sofagent-bak.$(date +%Y%m%d%H%M%S)"
+            warn "  已备份既有 ~/.claude/settings.json（.sofagent-bak.<时间戳>）"
+          fi
+          mkdir -p "${SOFAGENT_HOME}/hooks"
+          cp "${SCRIPT_DIR}/tools/hooks/sofagent-precommit.sh" "${SOFAGENT_HOME}/hooks/sofagent-precommit.sh" 2>/dev/null || true
+          chmod +x "${SOFAGENT_HOME}/hooks/sofagent-precommit.sh" 2>/dev/null || true
+          SOFAGENT_SRC="${SCRIPT_DIR}/.claude/settings.json" \
+          SOFAGENT_TARGET="$claude_settings" \
+          SOFAGENT_HOOK_PATH="${SOFAGENT_HOME}/hooks/sofagent-precommit.sh" \
+            node "${SCRIPT_DIR}/tools/hooks/merge-claude-settings.mjs" \
+            || warn "  settings.json 合并失败（原文件已备份），请手动配置"
+          ok "  Claude Code 薄挂载：~/.claude/settings.json（合并写入 + 已备份 + 绝对路径 hook）"
         fi
-        ok "  Claude Code 薄挂载：~/.claude/settings.json（commit 审计拦截）+ Skill symlink"
         ;;
       gemini)
         local gem_skills="${HOME}/.gemini/skills/sofagent"
         ln -sfn "$SOFAGENT_HOME/skill" "$gem_skills" 2>/dev/null || true
         if [ ! -L "$gem_skills" ] && [ -d "$gem_skills" ]; then
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
-          cp -R "$SOFAGENT_HOME/skill"/. "$gem_skills"/ 2>/dev/null || true
+          if ! cp -R "$SOFAGENT_HOME/skill"/. "$gem_skills"/ 2>/dev/null; then
+            warn "  ⚠️ SKILL 拷贝失败（${SOFAGENT_HOME}/skill → ${gem_skills}）——副本可能不完整，请检查权限后重跑"
+          fi
           warn "  Symlink 被普通目录占用，已降级为复制同步：${gem_skills}"
         fi
         if [ -f "${SCRIPT_DIR}/GEMINI.md" ]; then
