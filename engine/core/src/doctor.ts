@@ -429,7 +429,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         rootBytes += statSync(join(dataDir, e.name), { throwIfNoEntry: false })?.size ?? 0;
       }
     } catch {
-      // dataDir 不可读——上文结构节已报，此处静默（避免重复告警）
+      // 为何可静默：dataDir 不可读已由上文「数据目录结构」节 warn 报送过，此处只做根级
+      //   文件计数，重复告警不增加信息量（根因见 health-report.md 未枚举那条注释）
     }
     const healthReportFile = join(dataDir, 'health-report.md');
     if (existsSync(healthReportFile)) {
@@ -1315,7 +1316,8 @@ function rotateWeeklyArchiveReport(dir: string, baseName: string, nowISO: string
     .filter((f) => f.startsWith(`${stem}-`) && f.endsWith('.md'))
     .sort();
   for (let i = 0; i < oldArchives.length - ROOT_REPORT_WEEKLY_KEEP; i++) {
-    try { rmSync(join(dir, oldArchives[i]!), { force: true }); } catch { /* 单档删除失败不阻断（尽力而为） */ }
+    // 旧档清理为尽力而为（best-effort）：下次运行会重试，轮转失败不影响健康度判定。
+    try { rmSync(join(dir, oldArchives[i]!), { force: true }); } catch { /* 为何可静默：单档删除失败不阻断（尽力而为，下次重试） */ }
   }
   return true;
 }
