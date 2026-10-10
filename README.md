@@ -64,7 +64,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **五分钟沙箱演示**（v1.5.1 已交付；沙箱隔离、真实文件零接触）：`npx -y -p sofagent sofagent audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕链路（`--speed fast` 为 60 秒版；产物落 `$SOFAGENT_DATA/demo`，不触碰被审仓库）。
 
-> 版本说明：v1.5.7 已发版（2026-10-08）；npm 可安装最新版 `@sofagent/audit@1.5.7`。
+> 版本说明：v1.5.8 已发版（2026-10-09）；npm 可安装最新版 `@sofagent/audit@1.5.8`。
 
 ## 该不该装？
 

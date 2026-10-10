@@ -71,7 +71,7 @@ version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 
 </details>
 
-> **Version note**: v1.5.7 was released (2026-10-08); the latest installable npm version is `@sofagent/audit@1.5.7`.
+> **Version note**: v1.5.8 was released (2026-10-09); the latest installable npm version is `@sofagent/audit@1.5.8`.
 
 ## Should you install it?
 
