@@ -326,7 +326,7 @@ export function generateQuickOutput(
         ? `range ${range}`
         : null;
     parts.push(
-      `✅ [sofagent] ${passCount} 条规则全通过${echo ? `（${echo}）` : ''}（默认 17 条 · 完整 28 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCountLabel(skipCount, failFast)}）` : ''}`,
+      `✅ [sofagent] ${passCount} 条规则全通过${echo ? `（${echo}）` : ''}（默认 17 条 · 完整 28 条含扩展，扩展规则需在完整模式启用（quick 模式不读 config），规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCountLabel(skipCount, failFast)}）` : ''}`,
     );
     // v1.3.5 #7: 跳过计数解释——让用户知道「跳过」是 quick 模式缺输入而非漏检
     // v1.4.3 F-08 (bugfix 批): 归因口径如实化——quick 模式不含归因分析（ATTRIBUTION
@@ -358,7 +358,7 @@ export function generateQuickOutput(
   //   双 ⓘ 裸连排时新用户分不清「哪条是我该做的事」。结果语义先行、动作引导明确；
   //   「未检查 ≠ 通过」措辞属既有校准产物，一字不动（见上方 QUICK_SKIP_HINT）。
   parts.push('');
-  parts.push('ⓘ 下一步：默认只跑 17 条规则（扩展规则默认关闭，config 启用）——规则集用 --ruleset 加载');
+  parts.push('ⓘ 下一步：默认只跑 17 条规则（quick 模式不读 config；完整 28 条请用 sofagent audit --full 并在 .sofagent/config.yml 开 extendedRulesEnabled: true）——规则集用 --ruleset 加载');
   parts.push('ⓘ 装完整版（hook 自动审计 + 快照回滚）：sofagent audit --init');
 
   // 产品签名
@@ -486,7 +486,7 @@ export function runCliQuick(argv: string[]): number {
     console.log('  0 = 全通过');
     console.log('  1 = 有警告');
     console.log('  2 = 有违规（另一来源：承载安全语义的参数拼错 = 用法错误，与审计发现共用 2）');
-    console.log('  3 = 非 git 仓库（跑错目录——与「引擎崩溃」单义区分）');
+    console.log('  3 = 非 git 仓库 / diff 范围无法解析（含未知命令回退 audit 后的失败）');
     console.log('  4 = 引擎崩溃（uncaughtException / unhandledRejection 兜底）\n');
     console.log('完整安装：npm install -g @sofagent/audit');
     return 0;

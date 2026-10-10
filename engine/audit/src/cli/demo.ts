@@ -10,7 +10,7 @@
 //    （package.json bin → dist/cli-quick.js），本模块由 cli-quick 的
 //    `argv[2] === 'demo'` 分支调用。**不新增 bin**——不碰「13 bin → 1」收敛叙事，
 //    且传播命令与试用命令同体（看完 demo 去掉 `demo` 就是真审计）。
-//    主分发形态：`npx -y -p @sofagent/audit sofagent-audit demo`
+//    主分发形态：`npx -y -p sofagent sofagent audit demo`（单入口；旧 `sofagent-audit` 为兼容期 shim）
 //
 // 🔴 确定性与真实性双约束：
 //    ① 固定种子（demo-fixtures/seed.ts）+ 固定 git 日期/身份 + 固定沙箱密钥

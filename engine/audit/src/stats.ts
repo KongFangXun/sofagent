@@ -224,6 +224,11 @@ export function computeAuditStats(options: StatsOptions = {}): AuditStatsReport 
  * （改前 E2 未修时该行会写 `~/.sofagent` 却实际读默认根——非默认安装根下双重失真）。
  * 数据源根仍由 `getDataDir()` 实时解析（显式入参 > SOFAGENT_DATA > SOFAGENT_HOME/data）。
  *
+ * v1.5.9 BUG-36：① 报告头补「数据源：<path>（全局跨仓库累计）」——history.jsonl 为
+ * 全局 append-only（SECURITY.md:75），空仓库（本视图窗口内无记录）会看到跨仓数字
+ * 并误读为本仓库 KPI；② 窗口内记录为 0 时不展示比率，改输出「本仓库暂无审计记录
+ * （全局累计 N 条，不在本视图统计）」，N 为 history.jsonl 全量（非窗口）条数。
+ *
  * @param report 聚合报告
  * @param dataDir 数据源根（缺省走 SSOT 解析——与 computeAuditStats 同源）
  */
@@ -231,15 +236,27 @@ export function formatStatsReport(report: AuditStatsReport, dataDir?: string): s
   const pct = (rate: number | null): string =>
     rate === null ? '—（无数据）' : `${(rate * 100).toFixed(2)}%`;
   const sourceDir = dataDir ?? resolveDefaultDataDir();
+  const historyPath = join(sourceDir, 'audit', 'history.jsonl');
   const lines: string[] = [
     '━━━ 全局审计聚合报告（跨仓库混合 · 非单项目）━━━',
-    `口径：全局聚合（跨仓库混合，非单项目；数据源 ${sourceDir}/audit/history.jsonl）`,
+    `数据源：${historyPath}（全局跨仓库累计）`,
     `统计窗口：近 ${report.windowDays} 天（${report.windowStart.slice(0, 10)} ~ ${report.windowEnd.slice(0, 10)}）`,
-    `变更总数：${report.totalChanges}`,
-    `判定分布：PASS ${report.distribution.pass} · WARN ${report.distribution.warn} · FAIL ${report.distribution.fail}`,
-    `安全边界触发率：(WARN+FAIL)/总数 = ${pct(report.triggerRate)}`,
-    `阻断率：FAIL/总数 = ${pct(report.blockRate)}`,
   ];
+
+  if (report.totalChanges === 0) {
+    // BUG-36 ②：本视图（窗口内）零记录——不展示比率，避免把跨仓数字误读为本仓库指标。
+    // N = history.jsonl 全量条数（跨窗口累计——用户据此判断「确实没数据」还是「有历史但在窗口外」）。
+    const globalTotal = readHistoryEntries(sourceDir).length;
+    lines.push(`本仓库暂无审计记录（全局累计 ${globalTotal} 条，不在本视图统计）`);
+  } else {
+    lines.push(
+      `变更总数：${report.totalChanges}`,
+      `判定分布：PASS ${report.distribution.pass} · WARN ${report.distribution.warn} · FAIL ${report.distribution.fail}`,
+      `安全边界触发率：(WARN+FAIL)/总数 = ${pct(report.triggerRate)}`,
+      `阻断率：FAIL/总数 = ${pct(report.blockRate)}`,
+    );
+  }
+
   if (report.topRules.length > 0) {
     lines.push('高危规则 Top 5（WARN+FAIL 合计）：');
     for (const [i, r] of report.topRules.entries()) {

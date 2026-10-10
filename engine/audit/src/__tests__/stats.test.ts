@@ -190,6 +190,45 @@ describe('输出格式', () => {
 });
 
 // ════════════════════════════════════════
+// BUG-36 · 数据源口径标注 + 空视图不展示比率
+// ------------------------------------------------------------
+// history.jsonl 为全局 append-only（跨仓库累计），空仓库（本视图窗口内零记录）
+// 看到跨仓数字会误读为本仓库 KPI。修复：① 报告头补「数据源：<path>（全局跨
+// 仓库累计）」；② 窗口内 0 记录时不展示比率，改输出「本仓库暂无审计记录
+// （全局累计 N 条，不在本视图统计）」，N = 全量（跨窗口）条数。
+// ════════════════════════════════════════
+describe('BUG-36 数据源口径', () => {
+  it('① 报告头含数据源标注（全局跨仓库累计）', () => {
+    seedEntry(1, 0, []);
+    const report = computeAuditStats({ dataDir, now: () => NOW_MS });
+    const text = formatStatsReport(report, dataDir);
+    expect(text).toContain('数据源：');
+    expect(text).toContain('（全局跨仓库累计）');
+    expect(text).toContain('history.jsonl');
+  });
+
+  it('② 本视图窗口内 0 记录 → 输出「本仓库暂无审计记录（全局累计 N 条，不在本视图统计）」而非比率', () => {
+    // 记录全部落在 30 天窗口外（60 天前）——窗口 0 条，全量 3 条
+    seedEntry(60, 0, []);
+    seedEntry(90, 2, [{ rule: 'A2', status: 'FAIL' }]);
+    seedEntry(120, 1, [{ rule: 'A3', status: 'WARN' }]);
+    const report = computeAuditStats({ dataDir, now: () => NOW_MS, days: 30 });
+    expect(report.totalChanges).toBe(0);
+    const text = formatStatsReport(report, dataDir);
+    expect(text).toContain('本仓库暂无审计记录（全局累计 3 条，不在本视图统计）');
+    // 不再出现未标注的跨仓比率行
+    expect(text).not.toContain('安全边界触发率');
+    expect(text).not.toContain('阻断率：FAIL/总数');
+  });
+
+  it('② 全量也为 0（history.jsonl 不存在）→ 全局累计 0 条', () => {
+    const report = computeAuditStats({ dataDir, now: () => NOW_MS });
+    const text = formatStatsReport(report, dataDir);
+    expect(text).toContain('本仓库暂无审计记录（全局累计 0 条，不在本视图统计）');
+  });
+});
+
+// ════════════════════════════════════════
 // 三、只读铁律（聚合前后字节级一致——HMAC 链零破坏）
 // ════════════════════════════════════════
 
