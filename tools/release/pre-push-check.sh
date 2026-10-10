@@ -180,7 +180,7 @@ if [ -f tools/check/check-prepush-checklist.mjs ]; then
     printf '%s\n' "$CPC_OUT" | grep -E '^❌|^    ·' | head -10
   fi
 else
-  check_warn "tools/check/check-prepush-checklist.mjs 不存在（守卫缺失）"
+  check_fail "tools/check/check-prepush-checklist.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
 fi
 
 # ════════════════════════════════════════
@@ -210,7 +210,7 @@ if [ -f tools/check/check-gate-inventory.sh ]; then
     printf '%s\n' "$GI_OUT" | grep -E '❌|处置二选一' | head -10
   fi
 else
-  check_warn "tools/check/check-gate-inventory.sh 不存在（守卫缺失）"
+  check_fail "tools/check/check-gate-inventory.sh 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
 fi
 
 # ════════════════════════════════════════
@@ -645,7 +645,7 @@ if [ "$MINIMAL" = false ]; then
     fi
     unset NPM_CLAIMS_OUT NPM_CLAIMS_RC
   else
-    check_warn "tools/check/check-npm-claims.mjs 不存在（守卫缺失）"
+    check_fail "tools/check/check-npm-claims.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
   fi
 fi
 
@@ -679,7 +679,7 @@ if [ "$MINIMAL" = false ]; then
     fi
     unset DS_OUT DS_RC
   else
-    check_warn "tools/check/doc-score.mjs 不存在（守卫缺失）"
+    check_fail "tools/check/doc-score.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
   fi
 fi
 
@@ -966,7 +966,7 @@ if [ -f tools/check/check-cjk-var.sh ]; then
     check_fail "check-cjk-var.sh 发现变量定界违规（修法：花括号显式定界）"
   fi
 else
-  check_warn "tools/check/check-cjk-var.sh 不存在（守卫缺失）"
+  check_fail "tools/check/check-cjk-var.sh 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
 fi
 
 # ════════════════════════════════════════
@@ -1005,7 +1005,7 @@ if [ "$MINIMAL" = false ]; then
       printf '%s\n' "$HP_OUT" | grep -E '^❌|^⇒' | head -10
     fi
   else
-    check_warn "tools/check/check-home-resolution-parity.mjs 不存在（守卫缺失）"
+    check_fail "tools/check/check-home-resolution-parity.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
   fi
 fi
 
@@ -1027,7 +1027,7 @@ if [ -f tools/check/check-release-closeout.sh ]; then
     grep -E "✗" /tmp/ppc-closeout.log | head -6 | sed 's/^/      /'
   fi
 else
-  check_warn "tools/check/check-release-closeout.sh 不存在（守卫缺失）"
+  check_fail "tools/check/check-release-closeout.sh 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
 fi
 
 # ════════════════════════════════════════
