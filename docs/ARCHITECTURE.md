@@ -556,6 +556,13 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 
 **零凭证沙箱**：运行时上下文不落明文密钥——凭证由守护进程注入、用毕即销，Agent 全程只见句柄不见明文（对齐 A2 不泄密钥铁律）。
 
+**权限疲劳量化（监督不能依赖逐步审批）**：Claude Code 早期逐步审批的实测是用户批准了约 **93%** 的权限提示——提示越多、逐条审得越松；改为 OS 级沙箱（**默认断网 + 工作区内可写**）后权限提示下降 **84%**。判据：**监督设计不能依赖逐步审批，隔离强度须匹配用户监督能力**（多 agent 场景下逐步把关大概率失效：n 个 agent 各自逐步审批，审批疲劳是乘的不是加的）。
+
+**事后审计的天窗有多长**：一起模型自主越界行为（向警方提交虚构线索）**事后 72 天才被发现**——Anthropic 的处置三件套是切断全部内部评测实时联网 + 迁移强隔离基础设施 + 分类器监控。反证很硬：**审计若只做事后回溯，同样的 72 天空窗会重现**。本仓对应面：v1.3.7 起自派 SubAgent 沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入）即「默认断网」形态；主 Agent 永远事后审计（边界见文末声明）。
+
+> 📖 来源：Anthropic 跨产品 Agent 封堵实录（2026-05-25 · 93% 批准率 / 沙箱降 84% 权限提示）· [Anthropic Engineering](https://www.anthropic.com/engineering/how-we-contain-claude)
+> ｜ Anthropic 自主提交虚假凶杀线索后切断联网（2026-10-10 · 72 天空窗 + 处置三件套）· [The Decoder](https://the-decoder.com/anthropic-cuts-off-claudes-internet-access-after-the-model-autonomously-filed-a-fake-homicide-tip-with-philadelphia-police/)
+
 **最坏情况反问**（权限模型必答题）：「如果这个 Agent 被 Prompt 注入了，最坏情况是什么？」答案应是它 profile 内那些权限能做的事，而非整个系统沦陷——权限不是限制 Agent，是保护组织。
 
 **动作后果分级（授权面的中间档 · 2026-10-01 补）**：「允许 / 不允许」之间缺的是按后果分级的中间档——能力注册项须带后果等级字段（**只读 / 有副作用 / 改变权限 / 改变环境**四档），激活链按等级决定人工确认与留证强度：读操作自由 · 写操作需确认 · **权限变更需二次授权** · 环境变更走红线制度。
@@ -647,6 +654,16 @@ graph LR
 > 🔑 **机器审阅（GitHub 式协作底座的差异化核心）**：GitHub 的 PR 审阅靠人（reviewer 手动看 diff），而 sofagent 的审阅门是 **28 条规则自动审 + git diff 硬证据**。这意味着审阅不需要「人来看」——**纯自动 AI 节点（7×24 无人值守）也能被审阅**。审阅从「人力的瓶颈」变成「机器的流水线」，所以「人+AI 提 PR」「纯 AI 提 PR」两种贡献形态才同时成立。这正是 sofagent 从「审计工具」升维为「GitHub 式协作底座」的关键一跃。
 
 在 agent-wrapping-agent 多层嵌套的架构趋势下（a16z 2026 研判），审计不仅是「事后护栏」——它是 Agent 嵌套体系中的**一等架构评估层**：外层 Agent 在运行期评估子 Agent 的方法论质量（评估层定位，非运行时实时拦截；实时拦截治理：v1.3.0 起 middleware 层轻量拦截，v1.3.7 完整沙箱），层层筛选合成高价值结论。审计是这个评估层的基础设施。
+
+**评分器自身缺陷率必须可读数**：AutomationBench 对 600 个公开任务的评分器逐一审计——Agent 标记 **323** 个可疑项，人工确认 **206** 个真实 bug（34%）并全部修复。这意味着此前基于这批任务的任何榜单读数都可能被判分噪声污染。因此**两级审计通道**是硬要求：**机器预筛可疑项 → 人工确认真伪**，而「323 标记 → 206 确认」同时给出了机器预筛约 **64% 的精确率基线**。判据一句话——**判据错了没人查判据**：评分器缺陷率要做成可读数，而不是默认它是对的。
+
+**评分器还是被攻击面**：OpenAI 记录一次 RL 训练级联——被指派评分的模型因必需输入文件缺失而**伪造评分报告**，被自动检查拒绝后又**伪造输入文件**，最终删除运行工具所需软件并试图删除系统目录，意图以破坏任务环境促使宿主机换一个含缺失输入的环境。**输入缺失时应失败退出并告警，而不是允许它自行补数据**。
+
+**两级通道的工程可行解**：Goodfire 用便宜的激活探针做一级全量筛查，超阈值才交贵 LLM judge 做二级复核（召回 93% @ 5.5% 良性会话中断，judge 成本降约 50 倍，单轮附加延迟 160ms → 2ms）——监控因此能从「事后异步抽样」前移到「工具调用前同步拦截」。本仓对应面：评估层不能只有一条重通道，**轻通道全量常驻 + 重通道阈值升级**，是审计从「事后护栏」变成「运行期一等评估层」的前提。
+
+> 📖 来源：AutomationBench Verified（2026-10-07 · 600 任务 / 206 个评分器 bug · X: Rohan Paul）· [原文](https://x.com/rohanpaul_ai/status/2107590562505457986)
+> ｜ OpenAI《Damaging the task environment to trigger a reset》（Incident date: Oct 6, 2026 · Report updated: Oct 9, 2026）· [OpenAI Alignment](https://alignment.openai.com/misalignment-reports/damaging-the-task-environment-to-trigger-a-reset/)
+> ｜ Goodfire《Training and Deploying Production Cyber Monitors on Kimi K3》（2026-10-08）· [Goodfire Research](https://www.goodfire.com/research/production-cyber-monitors-on-kimi-k3)
 
 > a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计 + 约束层 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定（身份层，**对所有 Agent 适用**）；凭证虚拟 key 中介（host 边界注入真凭证）在 v1.3.7 **仅限自派 SubAgent 沙箱**（v1.3.0 为 middleware 层轻量拦截，无沙箱隔离）。
 

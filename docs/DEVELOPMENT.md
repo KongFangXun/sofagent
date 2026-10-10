@@ -94,9 +94,15 @@
 | task-aware | 收到任何用户任务时 | 每任务闸门：边界→语义→健康度→判级→澄清 |
 | task-closure | 闭环信号出现时 | 离境闸门：调 Loop Agent→反思/评分/A/B/汇报 |
 | loop-check | 检查点/失败/闭环 | 顾问 Agent：读数据→做判断→给建议 |
-| loop-evaluate | loop-check closure 模式触发 | 复盘/评分/沉淀，评审者与执行者分离 |
+| loop-evaluate | loop-check closure 模式触发 | 复盘/评分/沉淀（**成功路径：条件 + 量化结果；失败路径：失败模式 + 触发条件——两者同等收录**），评审者与执行者分离 |
 | loop-exit | 循环终止信号出现时 | 循环终止条件与收尾 |
 | fde | FDE 部署时按需加载 | 企业约束层：合规要求/脱敏规则/审计频率 |
+
+> 📖 来源：AIBuildAI 知识系统拆解（2026-10-02 · 负证据与正证据同等收录，每条声明带出处与日期）· [GitHub](https://github.com/aibuildai-inc/aibuildai-knowledge-base)
+> ｜ 翁荔《Harness Engineering for Self-Improvement》（2026-07-04）——harness 应使失败尝试易被保存，从失败中学习缩减搜索空间 · [Lil'Log](https://lilianweng.github.io/posts/2026-07-04-harness/)
+> ｜ WikiSkill（Google Research · 2026-09-27）——`skill-impact.md` 程序化保留被拒提案的 diff 与拒绝结论，把失败尝试当资产
+>
+> 注：同源判据的局限侧已在 [LIMITATIONS「负证据是知识的一半」](./LIMITATIONS.md) 披露，此处只补评估层侧的落点。
 
 > 三层闸门 + 一条回环：入境→每任务→Loop→离境。四个全走才能保证 `.sofagent/` 数据层被激活。
 
