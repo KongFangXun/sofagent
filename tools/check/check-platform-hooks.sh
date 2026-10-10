@@ -127,4 +127,30 @@ process.exit(0);
 NODE
 
 node -e "$VALIDATOR" "$CLAUDE" "$CURSOR"
-exit $?
+_rc=$?
+[ "$_rc" -eq 0 ] || exit "$_rc"
+
+# ── ② 脚本侧契约：平台阻断码分流（Claude exit 2 / git exit 1 / 非 commit 不误伤）──
+# 为什么在这里：配置 schema 合规只证明「平台读得到 command」，不证明「脚本按平台语义阻断」。
+#   Claude Code **仅 exit 2 阻断**（其余非零只记日志）——脚本若统一 exit 1，配置再合规也拦不住。
+#   本步用**可控触发点**（空 SOFAGENT_HOME ⇒ 基线缺失 fail-loud，与违规判定无关）驱动同一脚本的
+#   两种调用形态 + 一次非 commit 调用，把原先只靠人工实跑的契约变成机械判据。
+HOOK_SH="tools/hooks/sofagent-precommit.sh"
+if [ ! -f "$HOOK_SH" ]; then
+  echo "✗ 平台 hook 脚本缺失：$HOOK_SH"
+  exit 2
+fi
+_TMPH=$(mktemp -d 2>/dev/null || echo "/tmp/sofagent-ph-$$")
+mkdir -p "$_TMPH"
+printf 'feat: platform-hook contract probe\n' > "$_TMPH/msg"
+_c_rc=0; printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git commit -m x"}}' | SOFAGENT_HOME="$_TMPH" bash "$HOOK_SH" >/dev/null 2>&1 || _c_rc=$?
+_g_rc=0; SOFAGENT_HOME="$_TMPH" bash "$HOOK_SH" "$_TMPH/msg" >/dev/null 2>&1 || _g_rc=$?
+_s_rc=0; printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls -la"}}' | SOFAGENT_HOME="$_TMPH" bash "$HOOK_SH" >/dev/null 2>&1 || _s_rc=$?
+rm -rf "$_TMPH"
+_ok=1
+[ "$_c_rc" -eq 2 ] || { echo "✗ Claude 形态阻断码应为 2，实为 ${_c_rc}（Claude Code 仅 exit 2 阻断；取 1 = 拦截静默失效）"; _ok=0; }
+[ "$_g_rc" -eq 1 ] || { echo "✗ git 形态阻断码应为 1，实为 ${_g_rc}"; _ok=0; }
+[ "$_s_rc" -eq 0 ] || { echo "✗ 平台模式下非 commit 命令应放行（0），实为 ${_s_rc}（会误伤普通 Bash 调用）"; _ok=0; }
+[ "$_ok" -eq 1 ] || exit 2
+echo "✓ 脚本侧契约合规：Claude 形态 exit 2 · git 形态 exit 1 · 非 commit 放行 0"
+exit 0
