@@ -152,7 +152,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
 verify_component_integrity() {
   local MISSING_COMPONENTS=""
   for f in "${SOFAGENT_HOME}/bin/sofagent" "${TARGET}/scripts/task-record.sh" "${TARGET}/scripts/cleanup.sh"; do
-    [ -f "$f" ] || MISSING_COMPONENTS="${MISSING_COMPONENTS}  ${f}\n"
+    [ -f "$f" ] && [ -s "$f" ] || MISSING_COMPONENTS="${MISSING_COMPONENTS}  ${f}（存在但为空）\n"
   done
   if [ -n "$MISSING_COMPONENTS" ]; then
     echo ""
