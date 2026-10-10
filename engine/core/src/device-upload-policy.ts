@@ -6,7 +6,8 @@
 //
 // 与 T2（device-data-policy.ts）同源纪律（任务书 T3 原文「与 T2 同源」）：
 //   - 判定语义一致：默认空 = 不上行（fail-closed 铁律 4）——配置不存在/
-//     损坏/字段非法 → 拒绝一切 push。
+//     损坏/字段非法 → 拒绝一切 push；destination 核对同属本铁律（BUG-35：
+//     声明带 destination 时请求必须提供且一致，未提供视为不匹配）。
 //   - 配置形态一致：version + deviceId + 采集类别清单。
 //   - 边界攻击面一致：类别名精确匹配（无前缀语义——类别是枚举值非路径）。
 //
@@ -145,10 +146,17 @@ export function authorizeDeviceUpload(
   if (!decl) {
     return { ok: false, reason: 'category-not-declared', message: `数据类别未声明可上行：${category}` };
   }
-  // 目的地核对：声明带 destination 时请求必须一致（声明未指定则放行——
-  // 目的地管控是声明可选项，不强制 FDE 填写）
-  if (decl.destination && opts.destination && decl.destination !== opts.destination) {
-    return { ok: false, reason: 'destination-mismatch', message: `目的地与声明不符：请求 ${opts.destination} ≠ 声明 ${decl.destination}` };
+  // 目的地核对（fail-closed，BUG-35 修复）：声明带 destination 时请求必须提供且一致——
+  // 未提供视为不匹配。改前条件是 `decl.destination && opts.destination && decl.destination !== opts.destination`，
+  // 请求省略 destination（undefined）时短路放行，等价于「声明已把该类别锁到端点 A，
+  // 却仍可从无目的地推」的 fail-open 缺口。声明未指定 destination 时不约束
+  //（目的地管控是声明可选项，不强制 FDE 填写）。
+  if (decl.destination && decl.destination !== opts.destination) {
+    return {
+      ok: false,
+      reason: 'destination-mismatch',
+      message: `目的地与声明不符：请求 ${opts.destination ?? '(未提供)'} ≠ 声明 ${decl.destination}`,
+    };
   }
   return { ok: true, declaration: decl, message: '声明内放行' };
 }
