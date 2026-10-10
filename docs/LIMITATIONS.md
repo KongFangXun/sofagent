@@ -161,8 +161,8 @@ PowerShell 脚本（`.ps1`）作为 bash 脚本的平行实现存在，但**功�
 | 脚本 | .sh 行数 | .ps1 行数 | 覆盖度 |
 |---|---|---|---|
 | verify | 955 | 230 | ~25%（按行数比，缺 §4 Hook 检查、§8 断路器配置、§10 企业合规验证、§11 daemon 状态） |
-| install | 1638 | 559 | 实现路径完全不同：ps1 含 Windows 注册表逻辑，但覆盖面窄于 sh（sh 走完整安装流程） |
-| daemon | 349 | 131 | ~38%（按行数比） |
+| install | 1791 | 559 | 实现路径完全不同：ps1 含 Windows 注册表逻辑，但覆盖面窄于 sh（sh 走完整安装流程） |
+| daemon | 379 | 131 | ~38%（按行数比） |
 | audit | 111 | 77 | ~70%（按行数比） |
 
 **核心审计模块（@sofagent/audit npm 包）跨平台**——纯 TypeScript，Node.js ≥18 即可运行，不依赖 bash。
@@ -367,7 +367,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >经 `--init` / `--install-hook` 安装时自动写 .gitignore（v1.3.6 起一致），v1.4.2 起三层防线兜底（pre-commit 移出暂存 + commit-msg 二次清理 + post-commit 对账），`git add -f` 也会被移出（reset 失败 fail-loud 拒绝）；不进提交但 `ls -a` 可见，可安全删除（重审会重建）。
 >
 > task/logs 与 think.md 为 Markdown，可能含代码片段、API 响应、对话摘要；LLM 提炼反思时可能无意写入敏感信息。静态加密已接线 daemon 启动（AES-256-GCM + AGE-V1）——**密钥就绪后仅 `history.jsonl` 密文落盘**（唯一有加密写挂点的主链文件，挂点在 `audit-history.ts`）；
->`decision-log.jsonl` 写侧走 `chain-kernel.appendChained`，该内核**零加密代码路径、恒明文**；v1.5.1 新增的 `intent.jsonl` / `intent-skips.jsonl`（意图面，含工具名 + 脱敏参数摘要）同样恒明文；task/logs、think.md 与 forge-runs/checkpoint/model-registry、knowledge/ 属附链目录仍为明文（脱敏管道仍生效；
+>`decision-log.jsonl` 写侧走 `chain-kernel.appendChained`，该内核**零加密代码路径、恒明文**；v1.5.1 新增的 `intent.jsonl` / `intent-skips.jsonl`（意图面，含工具名 + 脱敏参数摘要）同样恒明文；`session-report.json` / `session-report.md`（会话报告，含审计摘要）亦为明文；task/logs、think.md 与 forge-runs/checkpoint/model-registry、knowledge/ 属附链目录仍为明文（脱敏管道仍生效；
 >本节即权威清单，含交互/非交互密钥激活差异），见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)。
 > - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
 > - **v1.3.1 #44 披露：审计历史并发写入无文件锁**——appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的，审计历史条目通常 < 1KB，单次写入安全。但多进程同时写入（daemon 文件监控 + Agent commit）可能导致行交错，产生损坏行触发 hash chain 完整性校验失败。概率极低（审计触发频率 < 1次/分钟），但损坏会导致校验失败。**v1.3.8 解决**——WAL 写在网关层，天然单 writer 模式（所有工具调用经网关串行写入，消除并发写入）。
@@ -439,7 +439,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 ### 平台依赖
 
-核心约束层（审计）**平台无关**——核心约束（SKILL.md / fde.md）是纯 Markdown，任何能读文件的平台都能加载，审计照常生效。但 **hook 自动注入当前仅 OpenClaw 生效**（深度集成 Hook 注入、session 隔离、sub-agent 管理只有 OpenClaw 能做到——其他平台的 Hook 接入排期见 [ROADMAP](./ROADMAP.md)（Claude Code PreToolUse 适配评估中））；其他平台手动注入约束 + 审计照常。
+核心约束层（审计）**平台无关**——核心约束（SKILL.md / fde.md）是纯 Markdown，任何能读文件的平台都能加载，审计照常生效。但 **hook 自动注入当前仅 OpenClaw 生效**（深度集成 Hook 注入、session 隔离、sub-agent 管理只有 OpenClaw 能做到——其他平台的 Hook 接入排期见 [ROADMAP](./ROADMAP.md)（Claude Code PreToolUse 适配：配置已按官方 schema 修正、脚本已按平台语义分派 exit 码〔Claude 调用形态 exit 2 / git 形态 exit 1〕；**端到端拦截有效性待真实 Claude Code / Cursor 会话实跑确认**））；其他平台手动注入约束 + 审计照常。
 
 #### OpenClaw 的两种角色
 
@@ -651,6 +651,13 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 - **组织记忆**：选了共享文件路线（透明可审计），但规则文件不会随使用自动进化，需人工维护
 - **模型依赖**：代码由 AI 模型生成，如果所用的工程模型或审查模型停止服务，项目失去修复 bug 的能力。当前 bus factor = 1（唯一维护者），且模型依赖构成了比单人维护更深层的结构性风险——维护者本人没有独立写出这些代码的能力，必须依赖模型。未来方向：bus factor ≥ 2 后引入多个模型 fallback
+
+### 四处未披露行为登记（v1.5.9 披露批）
+
+- **golden set 防篡改依赖 sidecar 存在性**：golden set 的防篡改校验依赖与之配套的 `.sha256` sidecar 文件是否存在——**删除 sidecar 即静默关闭该 golden set 的校验，无任何告警**。即校验强度 = 「sidecar 在位」这一前提条件；托管方须确保 sidecar 随 golden set 一并分发与保留。v1.5.8 起 eval 信号已进进化准入链路，golden set 缺失校验会传导至准入判定。
+- **质量规则集静默放行面**（orchestrator/refine-agent/quality-rule-set.ts）：三处检查类型（forbidden_pattern 正则无效 / custom 无判定体 / 未知类型）配置写错即静默放行（fail-open 系有意设计）；代价＝规则集写坏时规则静默失效、无告警；排查须人工核对规则集配置。
+- **`config.yml` 自定义 `sanitizePatterns` 正则无 ReDoS 防护**：脱敏管道消费的 `sanitizePatterns` 自定义正则**不做 ReDoS（灾难性回溯）防护**——恶意或失控的正则（如嵌套量词）可令每次审计在脱敏管道挂起，兜底为既有的 30 秒审计超时降级（见本文件超时相关条目）。建议**只在受信配置中使用自定义正则**；面向不可信输入的场景请沿用内置模式。
+- **`postbuild` 的 home 副作用（构建非纯函数）**：`engine/audit` 的 `postbuild` 会执行 `tools/audit-baseline-sync.sh`，该步向 `~/.sofagent/internal/` 写入**信任锚**——即构建**不是仓库纯函数**，会在用户 home 留下副作用。多 worktree 并行构建时，后建者的锚会覆盖先建者的锚（脚本注释自承）。CI / 多 worktree 并行场景须知悉此覆盖语义。
 
 ---
 

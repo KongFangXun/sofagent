@@ -12,7 +12,7 @@
 
 - [一、一句话](#一一句话)
 - [二、产品叙事：FDE Harness 层（不造 Agent，嵌在 Agent 与模型之间做治理）](#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)
-- [能力全景（用「你遇到的事」说 · 3 分钟版 · 三域分组：场景 FDEing / 判定 S1M / 治理 harness）](#能力全景用你遇到的事说--3-分钟版)
+  - [能力全景（用「你遇到的事」说 · 3 分钟版 · 三域分组：场景 FDEing / 判定 S1M / 治理 harness）](#能力全景用你遇到的事说--3-分钟版)
 - [三、核心概念](#三核心概念)
 - [四、架构全景](#四架构全景)
 - [五、文件地图](#五文件地图)
@@ -70,9 +70,9 @@ graph TB
 **为什么这条 workflow 会一直跑**：企业持续需要 AI 落地 → 这条 FDE workflow 不只是 sofagent 的项目，也会成为企业的 workflow。
 
 
-## 能力全景（用「你遇到的事」说 · 3 分钟版）
+### 能力全景（用「你遇到的事」说 · 3 分钟版）
 
-> 模块语言（注入/审计/回溯/沉淀/进化）给开发者；下表用**用户任务语言**回答「能干什么」，按**三域分组**（场景=FDEing / 判定=S1M / 治理=harness，映射见 [v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）；✅ 发版 · 📋 排期（核对至 v1.5.7）。
+> 模块语言（注入/审计/回溯/沉淀/进化）给开发者；下表用**用户任务语言**回答「能干什么」，按**三域分组**（场景=FDEing / 判定=S1M / 治理=harness，映射见 [v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）；✅ 发版 · 📋 排期（核对至 v1.5.8）。
 
 **域一 · 场景（FDEing 打法——进场把判断写成文件）**
 
@@ -88,7 +88,6 @@ graph TB
 
 | 你遇到的事 | sofagent 做什么 | 状态 |
 |---|---|---|
-| AI 改代码会不会把密钥/后门带上生产？ | 每次 commit 自动过 28 条安检，违规当场拦截（秒级、零配置） | ✅ |
 | AI 生成的报表/数据对不上账？ | E5 数据产物审计——数值勾稽（合计=明细和）+ 来源可溯 + 口径一致三判据（v1.5.7） | ✅ |
 | prompt 文件里被塞隐藏指令？ | E6 提示注入防护——隐藏载荷/边界伪造/持续操控检测（v1.5.7） | ✅ |
 | 判定面频繁降级没人知道？ | E7 决策质量信号——decision-log 通道 FALLBACK_DEGRADE 高频告警（v1.5.7） | ✅ |
@@ -98,8 +97,11 @@ graph TB
 
 | 你遇到的事 | sofagent 做什么 | 状态 |
 |---|---|---|
+| AI 改代码会不会把密钥/后门带上生产？ | 每次 commit 自动过安检（**默认 17 条**，完整 28 条需显式启用），违规当场拦截（秒级、零配置） | ✅ |
 | AI 搞砸了怎么办？ | 每次变更自动存快照，一键回到任意时点 | ✅ |
 | 老板问「AI 到底在干什么」？ | Dashboard 驾驶舱 + 治理 KPI 面板（六卡 + 合规报告导出） | ✅ |
+
+> ⚠️ **拦截面宿主差异（如实标注）**：工具名黑名单 `DANGEROUS_TOOLS`（14 个高破坏性命令）仅存在于 **OpenClaw 档**（`engine/openclaw-plugins/sofagent-audit`），DSH 侧无对应实现——「工具调用拦截」的**工具名黑名单面**为 OpenClaw 档独有；DSH 档的工具拦截走逐工具 seam（见域一「DSH 档逐工具可拦」）。
 
 **一句话版**：进场帮你把业务摸清写成文件，离场后管住你的数字员工——干活有安检、出事能回滚、越用越懂你（进化闭环排期中，实证边界见 [LIMITATIONS](./LIMITATIONS.md)）、老板看得见、数据不出门。
 
@@ -273,6 +275,7 @@ graph TB
 | 术语 | 简释 | 精确定义 |
 |---|---|---|
 | FDE | Forward Deployed Engineer——进场生成判断、部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
+| S1M | System One Model——判断与生成分离的决策模型（判定层） | [PHILOSOPHY §一](./PHILOSOPHY.md) |
 | 归域 | MCP 工具按**业务职能**分桶进五域（域 +N = 条目数变化）——权威源 = `tool-registry.ts` 的 TOOLS 分桶，与 `roles` 标签、`docs/API.md` 十能力域是三套不同标签，禁混用 | [ARCHITECTURE · 五域重算与三套标签声明](./ARCHITECTURE.md) |
 | 五域（消歧） | 两义：① **MCP 工具五域**——104 tools 按业务职能分的五个编制域（[ARCHITECTURE](./ARCHITECTURE.md)）；② **五域→三域映射**——v1.5.3 的口径迁移表（[v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）。遇「五域」先辨指向 | 本条（消歧索引） |
 | 五（消歧） | 「五」字四义固定表述：**五种能力** = 约束层的注入·审计·回溯·沉淀·进化（[ARCHITECTURE §二](./ARCHITECTURE.md)）；**五模块** = 约束层内部的功能域编制（治理/执行/审计/编排/后训，模块不是产品线，[ARCHITECTURE 定位声明](./ARCHITECTURE.md)）；（详→注-3） | 本条（消歧索引） |
@@ -368,7 +371,7 @@ graph TB
 
 | 内容类型 | 落点文档 | 文体 | 纪律 | 体量纪律 |
 |---|---|---|---|---|
-| 行业案例 / 研报数据 / 外部印证 | [VALIDATION](./VALIDATION.md) | 叙事·印证 | 案例不进 PHILOSOPHY（只引用结论），数据与来源TION | 以 `tools/check/doc-char-ratchet.json` 实测为准（三行制收录） |
+| 行业案例 / 研报数据 / 外部印证 | [VALIDATION](./VALIDATION.md) | 叙事·印证 | 案例不进 PHILOSOPHY（只引用结论），数据与来源须标注 | 以 `tools/check/doc-char-ratchet.json` 实测为准（三行制收录） |
 | 产品结论 / 设计哲学 / 论证 | [PHILOSOPHY](./PHILOSOPHY.md) | 叙事·论证 | 结论自带的最小论证可以，行业案例展开留给 VALIDATION | 以 `tools/check/doc-char-ratchet.json` 实测为准 |
 | 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 28 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 | （SECURITY 面） |
 | 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 | 以 `tools/check/doc-char-ratchet.json` 实测为准 |

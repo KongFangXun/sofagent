@@ -169,8 +169,8 @@ cd sofagent && bash install.sh
 |---|---|
 | `openclaw` | 完整部署——宪法 + Hook + 配套脚本 + 断路器 → `~/.openclaw/` |
 | `workbuddy` | Skill symlink → `~/.workbuddy/skills/sofagent/` + 校验数据目录 |
-| `claude` | Skill symlink + 工具调用拦截配置 `~/.claude/settings.json` |
-| `cursor` | Skill symlink + `.cursor/rules/sofagent.mdc` + 拦截配置 `~/.cursor/hooks.json` |
+| `claude` | Skill symlink + 工具调用拦截配置 `~/.claude/settings.json`（配置已按官方 schema 修正、脚本已按平台语义分派 exit 码〔Claude 调用形态 exit 2 / git 形态 exit 1〕；端到端拦截有效性待真实 Claude Code 会话实跑确认） |
+| `cursor` | Skill symlink + `.cursor/rules/sofagent.mdc` + 拦截配置 `~/.cursor/hooks.json`（配置已按官方 schema 修正、脚本已按平台语义分派 exit 码；端到端拦截有效性待真实 Cursor 会话实跑确认） |
 | `gemini` | Skill symlink + `~/.gemini/GEMINI.md` |
 | `codex` | 挂载点 `~/.codex/AGENTS.md`（无 Skill 目录，靠平台自身读取约定） |
 | `hermes` | Skill symlink + `SOUL.md` 种子指令 |

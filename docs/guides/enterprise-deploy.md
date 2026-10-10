@@ -1,6 +1,6 @@
 # sofagent · 企业部署指南
 
-> v1.5.8 · 2026-10-09（✅ 已发版） · 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ✅ 已发版 · 孔放勋
 
 > sofagent 在企业内网部署的配置说明。普通用户不需要看这份文档——默认安装就行；想分步骤把团队用起来看 [team-deploy.md](./team-deploy.md)。
 
@@ -27,6 +27,20 @@ Agent 检测到后跳过 ClawHub 搜索，Skills 手动放入 `~/.openclaw/skill
 - 手动拆任务
 - 用 task-record.sh 逐条记录
 - 手动闭环
+
+### 4. 完全离线（内网隔离）部署
+
+内网机器无外网时，两条外部依赖通道（GitHub clone + npm registry）均不可达——按四步预置离线物料：
+
+**① 依赖清单**（联网机侧准备）：仓库源码（GitHub clone / Release tarball → `install.sh` / `bootstrap.sh`）· npm 包（`sofagent` / `@sofagent/*`）· Node.js ≥ 18（需重建 `node_modules` 时）。
+
+**② tarball 拷入路径**：联网机 `tar -czf sofagent-offline.tar.gz -C <repo-parent> <repo-dir>` + `npm pack`；隔离机经随身介质 / 跳板机 / 内网共享目录拷入后 `tar -xzf sofagent-offline.tar.gz -C ~/` 解包。
+
+**③ 私有 registry 镜像配置**（有内网 registry 时，免逐包手工拷贝）：`npm config set registry https://<内网-registry>/`（或 `export npm_config_registry=...`）→ `npm install -g sofagent`。
+
+**④ sha256 校验**：`shasum -a 256 sofagent-offline.tar.gz`（macOS）/ `sha256sum …`（Linux），与发版侧公示哈希逐字节比对，不一致即拒绝使用。
+
+> 注：`bootstrap.sh` 内嵌的 7 个 LIB 哈希钉值与安装载荷**同源**——防传输劫持、不防源头替换；需第二通道交叉核对时走 Release 页公示哈希 / provenance attestation（见 [ROADMAP · 探索方向](../ROADMAP.md)）。
 
 ## 数据安全
 
@@ -188,10 +202,14 @@ done
 **第 2 步 · 无头激活**（env 显式确认，替代交互 readline）：
 
 ```bash
+# 前置 · 指纹备份（管理机侧，仅一次）：从第 1 步启动输出提取密钥指纹并归档
+mkdir -p ~/sofagent-key-backup
+printf '%s\n' "指纹（SHA-256 前 16 位）：<第 1 步启动输出中的指纹>" > ~/sofagent-key-backup/data.key.fingerprint.txt   # 归档物离线保管，勿与 data.key 同盘
+
 # 每台目标机：env 通道确认备份后启动 daemon 即激活
 SOFAGENT_CONFIRM_BACKUP=1 sofagent daemon start
 # 验证：密文前缀在位即激活成功
-head -1 ~/.sofagent/data/audit/history.jsonl | grep -c "SOFAGENT-AGE-V1"   # 期望 1
+tail -1 ~/.sofagent/data/audit/history.jsonl | grep -c "SOFAGENT-AGE-V1"   # 期望 1
 ```
 
 **第 3 步 · 批量样例脚本**（三步合一）：
@@ -209,6 +227,8 @@ done < hosts.txt
 ```
 
 > ⚠️ 安全边界：data.key 是全 fleet 同源密钥——单机失窃即全 fleet 密文暴露，强隔离场景应逐机生成（去掉分发步，每台各自 `sofagent daemon start` + 本机确认）；备份指纹记录务必离线保管，密钥丢失 = 加密数据永久不可读（见 [SECURITY](../../SECURITY.md) 静态加密节）。
+>
+> ⚠️ **`SOFAGENT_CONFIRM_BACKUP=1` 是合规确认而非仪式**——未实际完成指纹备份即设置该 env，等于让审计记录系统性说谎：脚本与每台机器都宣称「已备份」，审计事件对账「是否备份」时全部显示已确认，而记录与事实不符。请在设置该 env 前，先完成上文的指纹备份步骤并确认归档物离线在位。
 
 ### 其他方案
 

@@ -560,6 +560,8 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 ### `SOFAGENT_*` 分流：功能门控 vs 配置参数（v1.5.7 章五）
 > 判据——**改了它会改变「某能力在不在」的是功能门控（G）**，**只改能力行为参数的是配置参数（P）**。实测基线 95 项（G 23 + P 72）；G 组清单内 5 档与 `capabilities.json` 逐项对账，其余 18 项属「清单外门控」（安全 fail-closed 面不开放可拔声明）。
 > 📦 **完整名单与逐类注见 [归档 · DEVELOPMENT 参考明细](./archive/doc-slim/development-reference-detail.md)。**
+>
+> 📌 **环境变量登记**：`SOFAGENT_PERSONA_SOURCE`（属 **P 配置参数**）——单路径覆盖 `persona.md` 源文件；三级优先级：env `SOFAGENT_PERSONA_SOURCE`（单值）> config `memory_sync.persona_sources`（数组）> 内置默认路径表。消费点 `engine/core/src/filesystem/memory-sync.ts`。
 ## 八、提交时审计 + 文件系统审计
 
 > 审计模块的 CLI 使用和 exit code 约定。用户视角见 [HANDBOOK §提交后自动审计](./HANDBOOK.md#提交后自动审计)，CI 集成例子见 [HANDBOOK §CI 集成](./HANDBOOK.md#ci-集成)。

@@ -29,6 +29,7 @@
 
 ## 二、MCP 工具清单（104 · 按产品能力域分组）
 
+> 其中 commons_invoke 为 dry-run 预检语义（返回能力元数据与调用计划，真实执行由 Agent runtime 注入 executor；见 LIMITATIONS）。
 > 十域按「一组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节承载审计（审计与合规）、回溯（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）；**注入**走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄以 roles 为准，分组是文档编制判断。
 >浏览器四件套（`playwright_*`）已于 2026-09-26 注销（v2.0.0 §七 B 表裁定退役，UI 审计实做窗口已关）；v1.5.7 章二实现底座一并退役删除（可行性报告落盘触发，公开面 4 符号吊销 breaking）。
 
