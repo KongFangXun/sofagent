@@ -373,6 +373,11 @@ fi
 # 在**活跃文档**（排除历史冻结区）召回并打印命中，交人工确认。
 # 判据：命中 ≠ 违规（同一命题的局限侧与评估层侧可能是正当两面），但**必须被看见**——
 #       故为信息位不自动红；与 Face 3b 同源的「可见即可审」口径。
+# ⚠️ 先初始化：Face 10-12 复用这三个变量，而 Face 9 只在「有新增行」分支里给
+#   MD_FILES/CHANGED_MD 赋值——`set -u` 下引用未定义变量会让整个门禁崩掉。
+NEW_LINES=""
+MD_FILES=""
+CHANGED_MD=""
 echo "[Face 9] 新增来源块的净增量召回（信息位 · 命中须人工确认）"
 # ⚠️ 关键词取自**本次新增的全部正文行**（不只 📖 行）——判据金句与作品名多数落在
 #   来源行的上一段，只扫来源行会抽空 ⇒ 召回未真正执行（守卫自证：抽到 0 个关键词
@@ -429,6 +434,117 @@ else
     else
       echo "  ⚠️ ${KW_N} 个关键词中 ${SHOWN} 个有命中（信息位）：确认是「同命题另一侧」（保留并互链）还是「同事实第二份副本」（须合并）"
     fi
+  fi
+fi
+
+# ── Face 10 排版四面（增量口径 · 2026-10-11 新增）────────────────────────
+# 全部**只在本次新增行上判定**——存量不拦（裸围栏存量 90/476、占位符存量 32 处，
+# 全量判定会让门禁当场全红，而变绿只能靠改历史，那是门禁的死路）。
+# ① 裸围栏：``` 无语言标注（渲染无高亮）　② 标题层级跳跃：H2 直跳 H4
+# ③ 图片引用存在性：![](相对路径) 的文件不在仓内　④ 占位符残留：TODO/TBD/FIXME/待补/XXX
+echo "[Face 10] 排版四面（裸围栏 / 标题跳跃 / 图片断链 / 占位符 · 只看新增行）"
+if [ -z "$NEW_LINES" ]; then
+  echo "  ℹ️ 本次无 .md 新增行，跳过"
+else
+  P10=0
+  BARE=$(printf '%s\n' "$NEW_LINES" | grep -cE '^\+[[:space:]]*```[[:space:]]*$' || true)
+  if [ "${BARE:-0}" -gt 0 ]; then
+    echo "    ❌ 裸围栏 ${BARE} 处（\`\`\` 无语言标注）——补语言或用 \`text\`"
+    P10=$((P10 + 1))
+  fi
+  # 标题跳跃：取本次变更 .md 的**全部**标题序列（层级需看上下文，不能只看新增行）
+  # 标题跳跃为**信息位**：层级序列是全文属性，无法只在新增行上判定；全量判定
+  # 会让存量跳跃当场把门禁打红，而变绿只能靠改历史——故只报告不计违规。
+  JUMP=$(for f in $CHANGED_MD; do
+    [ -f "$f" ] || continue
+    awk '/^#{1,6} /{ match($0,/^#+/); n=RLENGTH; if(p && n>p+1) printf "%s:%d  H%d→H%d\n", FILENAME, NR, p, n; p=n }' "$f"
+  done 2>/dev/null || true)
+  if [ -n "$JUMP" ]; then
+    printf '%s\n' "$JUMP" | sed 's|^|    ⚠️ 标题跳跃（信息位）：|' | head -5
+  fi
+  IMG_MISS=$(printf '%s\n' "$NEW_LINES" | grep -oE '!\[[^]]*\]\([^)h][^)]*\)' | sed -E 's/.*\((.*)\)/\1/' | while read -r p; do
+    [ -z "$p" ] && continue
+    [ -e "$p" ] || echo "$p"
+  done 2>/dev/null || true)
+  if [ -n "$IMG_MISS" ]; then
+    printf '%s\n' "$IMG_MISS" | sed 's|^|    ❌ 图片断链：|' | head -5
+    P10=$((P10 + 1))
+  fi
+  TODO=$(printf '%s\n' "$NEW_LINES" | grep -nE 'TODO|TBD|FIXME|待补|待填|XXX' | head -5 || true)
+  if [ -n "$TODO" ]; then
+    printf '%s\n' "$TODO" | sed 's|^|    ❌ 占位符：|'
+    P10=$((P10 + 1))
+  fi
+  if [ "$P10" -eq 0 ]; then
+    echo "  ✓ 新增行排版四面干净"
+  else
+    HITS=$((HITS + P10))
+  fi
+fi
+
+# ── Face 11 数字与来源绑定（信息位 · 2026-10-11 新增）────────────────────
+# 治「无源数字」：本次新增段落里出现 ≥2 个量化读数（%/倍/x/万/毫秒），但该段落
+# 上下 3 行内没有 `📖 来源` 行——数字就悬空了（今日实锤：93%/84% 曾被安错来源）。
+# 信息位不阻断：同段落复述既有来源的数字是正当的，但**必须被看见**。
+echo "[Face 11] 量化数字的来源绑定（信息位）"
+if [ -z "$NEW_LINES" ]; then
+  echo "  ℹ️ 本次无 .md 新增行，跳过"
+else
+  UNSOURCED=$(node -e '
+    let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+      const lines=s.split("\n").map(l=>l.replace(/^\+/,""));
+      const num=/(?:\d+(?:\.\d+)?)\s*(?:%|倍|x|×|万|亿|ms|毫秒|秒|s\b)/i;
+      const out=[];
+      lines.forEach((l,i)=>{
+        if(!num.test(l)) return;
+        const hits=(l.match(new RegExp(num.source,"gi"))||[]).length;
+        if(hits<2) return;
+        const near=lines.slice(Math.max(0,i-3),i+4).join("\n");
+        if(/📖|📐|来源：/.test(near)) return;
+        out.push("「"+l.trim().slice(0,48)+"…」"+hits+" 个读数，上下 3 行无来源行");
+      });
+      console.log(out.slice(0,6).join("\n"));
+    });' <<< "$NEW_LINES" 2>/dev/null || true)
+  if [ -z "$UNSOURCED" ]; then
+    echo "  ✓ 新增行中的量化读数均邻近来源行"
+  else
+    printf '%s\n' "$UNSOURCED" | sed 's|^|    ⚠️ |'
+  fi
+fi
+
+# ── Face 12 跨文件字面重复（信息位 · 2026-10-11 新增）────────────────────
+# 「内容冗余」里**可机械**的那一半：本次新增的长句（中文连续 ≥25 字）若已整段
+# 出现在其他活跃文档 —— 那就是事实的第二份副本（同命题另一侧除外，故信息位）。
+# 不可机械的那一半（同事实不同措辞）见 Face 9 的关键词召回，两者互为补充。
+echo "[Face 12] 跨文件字面重复（信息位）"
+if [ -z "$NEW_LINES" ] || [ -z "$MD_FILES" ]; then
+  echo "  ℹ️ 无新增行或无可比文件，跳过"
+else
+  DUP=$(node -e '
+    let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+      const lines=s.split("\n").map(l=>l.replace(/^\+/,""));
+      const seen=new Set(); const out=[];
+      for(const l of lines){
+        for(const m of l.matchAll(/[\u4e00-\u9fff，。、；：（）「」]{25,}/g)){
+          const frag=m[0];
+          if(seen.has(frag)) continue; seen.add(frag);
+          out.push(frag);
+        }
+      }
+      console.log(out.slice(0,12).join("\n"));
+    });' <<< "$NEW_LINES" 2>/dev/null || true)
+  if [ -z "$DUP" ]; then
+    echo "  ✓ 新增行无 ≥25 字连续中文片段（无可比对指纹）"
+  else
+    DUPN=0
+    while IFS= read -r frag; do
+      [ -z "$frag" ] && continue
+      F_HIT=$(printf '%s\n' "$MD_FILES" | xargs grep -l -- "$frag" 2>/dev/null || true)
+      [ -z "$F_HIT" ] && continue
+      printf '    ⚠️ 已存在于 %s：%s…\n' "$(printf '%s\n' "$F_HIT" | head -2 | tr '\n' ' ')" "$(printf '%s' "$frag" | cut -c1-30)"
+      DUPN=$((DUPN + 1))
+    done <<< "$DUP"
+    [ "$DUPN" -eq 0 ] && echo "  ✓ 长句指纹在其他活跃文档零命中（无字面重复）"
   fi
 fi
 
