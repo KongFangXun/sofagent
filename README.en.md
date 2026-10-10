@@ -11,6 +11,7 @@
  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.8-16B8F3" /></a>
  <img src="https://img.shields.io/npm/v/sofagent" />
+ <a href="https://star-history.com/#KongFangXun/sofagent&Date"><img src="https://img.shields.io/github/stars/KongFangXun/sofagent?style=social" /></a>
 </p>
 
 <p align="center"><sub><a href="./README.md">简体中文</a> | English</sub></p>
@@ -91,17 +92,17 @@ evolve)—works right after installation |
 | Positioning | full-history secret scanning | generic commit-hook framework | Agent behavior audit harness |
 | Evidence | repo text patterns | your own scripts | git-diff hard evidence + Agent logs + decision trail |
 | Coverage | secret leaks | anything (DIY) | 28 rules: secrets / scope / injection / privilege / backdoors / data products |
-| Deployment cost | Low—standalone binary, zero deps | Low—one CLI from your language ecosystem | Medium—a one-time `install.sh` on the enterprise device (you can also try it zero-config via npx first) |
+| Deployment cost | Low—standalone binary, zero runtime deps | Low—one CLI from your language ecosystem | Medium—a one-time `install.sh` on the enterprise device (you can also try it zero-config via npx first) |
 | Maintenance burden | Low—rules track upstream | Medium—custom scripts are yours to maintain | Medium—rules and hooks ship with this repo, but each version needs the hook reinstalled and config re-aligned |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both—focused on Agent governance |
 
 **30-second lightweight trial** (first run includes the npx package fetch, reruns finish in seconds; a single engine audit itself takes ~1.1 seconds—see the measured figures below): `npx -y -p sofagent sofagent audit` (any git repo; secret leaks blocked on the spot).
 
-> 💡 For the trial, keep commit messages **at least 6 characters** (e.g. `initial audit test`)—A19 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) flags ultra-short messages (`init`/`add`) by design (it guards against meaningless commit messages), not a malfunction.
+> 💡 For the trial, keep commit messages **at least 6 characters** (e.g. `initial audit test`)—A19 (rule numbers: see the [rule list](./SECURITY.md#28-条审计规则完整清单文档级-ssot)) flags ultra-short messages (`init`/`add`) by design (it guards against meaningless commit messages), not a malfunction.
 
 **Five-minute sandbox demo** (shipped in v1.5.1; sandboxed, zero touch on real files): `npx -y -p sofagent sofagent audit demo`—one command runs the full five-act chain: sandbox
 build → injection → deliberate violation → audit interception → snapshot rollback → HMAC evidence export
-(`--speed fast` for a 60-second cut; artifacts land under `$SOFAGENT_DATA/demo` (default `~/.sofagent/data/demo`), touching neither the audited repository nor other directories).
+(`--speed fast` for a 60-second cut; artifacts land under `$SOFAGENT_DATA/demo` (default `~/.sofagent/data/demo`), touching neither the audited repository nor other directories). (The demo is provided via the npm channel; the install.sh-installed CLI has no demo subcommand.)
 
 ## Core Features
 
@@ -120,27 +121,28 @@ Three layers, each in its place: the **engineering layer (FDEing)** writes judgm
 
 **Engineering layer · FDEing** (on entry · generate judgment, the FDE stage—deciding where AI belongs and what it's worth, frozen into deliverables):
 
-- 🧭 **Map the workflow**—five-element deep-dive + three-question triage, capturing erole's process steps and pricing out what each AI node is worth
+- 🧭 **Map the workflow**—five-element deep-dive + three-question triage, capturing each role's process steps and pricing out what each AI node is worth
 - 🤖 **Deploy AI nodes**—three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
-- 📦 **Judgment frozen into deliverables**—enode carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
+- 📦 **Judgment frozen into deliverables**—each node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
 **Judgment layer · S1M** (System One Model—a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0, with the declaration
 for v2.0.0—not yet shipped**. This version states identity and roadmap only, no claim that judgment capabilities are
 delivered yet; the narrative is anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition.
 What ships today in this layer is the existing judgment-and-evidence surface):
 
-- 🔎 **Judgment trail**—decision-log causal chains record eaccountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
+- 🔎 **Judgment trail**—decision-log causal chains record each accountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
 - 🔗 **Judgment made provable**—the audit history lands on an HMAC chain; `--verify-chain` recomputes chain integrity offline, so conclusions can be re-checked by a third party
 
 **Governance layer · harness** (after departure · retain judgment, the Harness stage—executing against the deliverables 24/7, writing back as it evolves):
 
-- 🏠 **Stay resident after departure**—the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
+- 🏠 **Stay resident after departure**—the FDE capability remains for inspection, audit, and optimization (daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs), 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit**—`npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
-- 🧱 **28 audit rules + 104 MCP tools**—secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 22/28 run on git-diff hard evidence (effective locally), 5 hybrid (4 diff + Agent logs, 1 decision-log channel), 1 filesystem scan;
+- 🧱 **28 audit rules + 104 MCP tools**—secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 22/28 run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs), 1 filesystem scan, 1 decision-log channel;
  log-based rules such as A7/A8 (rule numbers: see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped—fail-fast design);
 evidence is based on local diffs; **not fail-closed by default**—the config can be tampered with and the hooks
- skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 28 = 17 default + 11 extensions)
-- 🛡️ **Automatic snapshot rollback**—auto-archived after eaudit, one-click restore to any snapshot when something breaks
+ skipped via `--no-verify` (trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)) (quick runs 17 by default; full 28 = 17 default + 11 extensions). Note: `commons_invoke` is dry-run pre-check semantics (it returns capability metadata and an invocation plan; real execution is injected by the Agent runtime via an executor—see LIMITATIONS).
+- 🛡️ **Automatic snapshot rollback**—auto-archived after each audit, one-click restore to any snapshot when something breaks
+- 🛡️ **AgentShield static scanning across five config surfaces**—a `@public` SDK capability (invoked via `createAgentShield`), **not on the commit-hook path**, opt-in on demand
 
 ## What is the FDE Harness
 
@@ -149,7 +151,7 @@ you already have (DSH / OpenClaw / WorkBuddy) and the model layer. A full FDE wo
 together by the deliverables handed over in between**:
 
 - **On entry · generate judgment**: four steps—**map the workflow → build dual graphs → qualify AI nodes → deploy**. Dual graphs = business graph (system boundaries, data flows; read by humans) + ontology graph (shared semantic foundation; read by AI), turning the enterprise into a
- machine-readable structure; for eAI node, "what counts as done (merge_criteria) · who signs off (approver) · when it runs (trigger)" is judged here and frozen into the deliverables
+ machine-readable structure; for each AI node, "what counts as done (merge_criteria) · who signs off (approver) · when it runs (trigger)" is judged here and frozen into the deliverables
 (workflow.yml + ontology + skills).
 - **After departure · retain judgment**: the FDE leaves, the judgment stays—audit triggers automatically on change events (commits) against the frozen criteria (evidence-tiered: 22 of the 28 rules run on git-diff hard evidence—see Core Features); daemon inspects 7×24, snapshots roll back,
  experience distills back. The human leaves, governance doesn't.
@@ -172,7 +174,7 @@ together by the deliverables handed over in between**:
  postings surged 729% in a year (verification in [VALIDATION](./docs/VALIDATION.md))
 - **Completeness comes from the union**—DSH solves "can work"; sofagent solves "keeps working"; only together do they make a complete FDE Harness (next chapter)
 - **"Continuous optimization" only holds with a constraint layer**—backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment (ARC-AGI-3, **capability-harness data**—it lifts task scores and token efficiency, a different dimension from the
- reliability gains of a governance constraint layer): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in
+ reliability gains of a governance constraint layer—directional reference only): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in
 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md) (write-surface audit coverage: the weight and skill surfaces have
  shipped; the prompt / memory surfaces are scheduled for v1.5.9)
 - **Capabilities are portable, never dead-bound to a platform**—the constraint layer is platform-agnostic; the methodology follows the business, not the platform
@@ -187,12 +189,12 @@ the platform:
 
 | Tier | Platform | Constraint injection | Mounting method |
 |---|---|---|---|
-| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` plugins mounted into the runtime；（详→注-1） |
+| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` plugins mounted into the runtime (see Note 1) |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
 | **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 28 rules, not call-level interception) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
 
-> 注-1：1 optional aggregate plugin also available—see "Upstream & plugin entries" below—7 lifecycle events incl. `tools/pre-execute`（vocabulary table: `engine/dsh-plugins/SEAMS.md`）
+> Note 1: 1 optional aggregate plugin also available—see "Upstream & plugin entries" below—7 lifecycle events incl. `tools/pre-execute` (vocabulary table: `engine/dsh-plugins/SEAMS.md`)
 
 - **Never assume capability parity—tiers differ in injection strength, not in "supported or not"**—DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text (advisory). "Supports platform X" means the
  constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls
@@ -208,30 +210,30 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ⚡ **Two gates on evolution + the data plane from experience to training**—so an Agent can't drift out of control by rewriting itself:
 
-| Capability | One-liner |
-|---|---|
-| **Evolution admission gates** | Domain-verifier three-tier routing (`deterministic` / `model-judge` / `human-only`): only domains where verification is cheaper than generation evolve automatically; unregistered domains fail-closed at the strictest tier |
-| **Three-tier promotion policy** | Frequency × persistence × verification as pure functions → inject-lease / skill-semi-persistent / fine-tune-amortized; promotion must clear four evidence gates (holdout-first · strictly beat historical best · single-variable attributable · calibration non-degrading) |
-| **Experience pool → training pipeline** | instinct pool exports high-confidence + examined records as training rows (with lineage anchor and source-authenticity mark); the train-side adapter normalizes them and builds datasets mixed with external sources |
-| **Examiner** | Generates verification questions from instinct; only answer-correct **and** reproduction-verified items are marked `verified` and enter the pool; scorer independence is a hard gate |
-| **RL training governance** | Policy hits during training fold penalties by rule severity (via the existing `severityWeightOf` single source — no second mapping) |
-| **Rule count 25→28 fully reconciled** | Docs / code comments / npm facade / dashboard all synced; five-variant gate prevents regression |
+| Capability | One-liner | Reach |
+|---|---|---|
+| **Evolution admission gates** | Domain-verifier three-tier routing (`deterministic` / `model-judge` / `human-only`): only domains where verification is cheaper than generation evolve automatically; unregistered domains fail-closed at the strictest tier | SDK only (47 symbols, no production call sites; scheduled v1.5.9) |
+| **Three-tier promotion policy** | Frequency × persistence × verification as pure functions → inject-lease / skill-semi-persistent / fine-tune-amortized; promotion must clear four evidence gates (holdout-first · strictly beat historical best · single-variable attributable · calibration non-degrading) | SDK only (47 symbols, no production call sites; scheduled v1.5.9) |
+| **Experience pool → training pipeline** | instinct pool exports high-confidence + examined records as training rows (with lineage anchor and source-authenticity mark); the train-side adapter normalizes them and builds datasets mixed with external sources | SDK only (47 symbols, no production call sites; scheduled v1.5.9) |
+| **Examiner** | Generates verification questions from instinct; only answer-correct **and** reproduction-verified items are marked `verified` and enter the pool; scorer independence is a hard gate | Library-only |
+| **RL training governance** | Policy hits during training fold penalties by rule severity (via the existing `severityWeightOf` single source — no second mapping) | SDK only (47 symbols, no production call sites; scheduled v1.5.9) |
+| **Rule count 25→28 fully reconciled** | Docs / code comments / npm facade / dashboard all synced; five-variant gate prevents regression | — |
 
 > 📌 Full evidence: [v1.5.8 dev log](./docs/changelog/v1.5/v1.5.8.md); older capability sections: [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
-**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**: together they're onboarding a digital employee (the after-departure side runs daemon patrols 24/7, every commit triggers the 28
-audit rules including **AgentShield static scanning across five config surfaces**, snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
+**How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**: together they're onboarding a digital employee (the after-departure side runs daemon patrols 24/7 (daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs), every commit triggers the default 17
+audit rules (the full 28 require `extendedRulesEnabled: true`), snapshots stay rollback-ready, and evolution writes promotion plus distilled reflection back into the deliverable).
 
 | Organizational act | sofagent equivalent |
 |---|---|
 | Job description | Frozen deliverables from the entry phase (merge_criteria / approver / trigger) |
 | Performance review | Audit evidence + governance KPI dashboard (v1.5.0) |
 | Organizational memory | Knowledge distillation (think.md reflection + knowledge/) |
-| Training pipeline | Experience → exam → promotion self-evolution chain (scheduled v1.5.8) |
+| Training pipeline | Experience → exam → promotion self-evolution chain (shipped in v1.5.8) |
 | Fault tolerance | Snapshot rollback + capability baseline timeline (scheduled v1.5.9) |
-| Employment contract boundary | Pluggable contracts & core capability registry (delivered in v1.5.7: 18 units + `SOFAGENT_*` gating) |
+| Employment contract boundary | Pluggable contracts & core capability registry (delivered in v1.5.7; switch surface and gating in [ARCHITECTURE](./docs/ARCHITECTURE.md)) |
 
 | Go deeper | Where |
 |---|---|
@@ -335,8 +337,8 @@ the installed UI is the source of truth.)</sub></p>
 |---|---|---|---|
 | **`npx -y -p sofagent sofagent audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | Any git repo (temporary) | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or custom JSON rules | Same as above | 1 min |
-| **GitHub Action** | Auto-audit ePR, violations annotated on the diff lines | CI/CD | Set up once |
-| **install.sh full suite** | inject · audit · rollback · distill · evolve + daemon inspection + dashboard—the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
+| **GitHub Action** | Auto-audit each PR, violations annotated on the diff lines | CI/CD | Set up once |
+| **install.sh full suite** | inject · audit · rollback · distill · evolve + daemon inspection (requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs) + dashboard—the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
 
 > 📌 **Single-entry CLI (since v1.5.6)**—the CLI converges on **`sofagent <domain> <action>`**: `sofagent audit` (audit) · `sofagent train doctor` (training) · `sofagent team formation` (formations) · `sofagent daemon` (daemon) … run `sofagent help` for all domains.
 >
@@ -347,7 +349,7 @@ the installed UI is the source of truth.)</sub></p>
 > | Full install (daemon / dashboard) | `bootstrap.sh` / `install.sh` (above) |
 >
 > - **Compatibility window**: the old commands (`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …) **still work** and print a pointer to the new entry—**removed one minor version later**. The 13 former bins are now carried by the single entry.
-> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; 771 transitive deps measured, 5 carry native modules and install scripts—new npm versions don't run unreviewed install scripts, so those native builds are **silently skipped**).
+> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; transitive deps measured via `npm ls --all --parseable | wc -l` = 603 lines (1 project-root line ⇒ 602 packages; basis: installed `npm i sofagent@1.5.8` · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10), 5 carry native modules and install scripts—new npm versions don't run unreviewed install scripts, so those native builds are **silently skipped**).
 >**For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or the scoped package `npm i -g @sofagent/audit`.
 > - **Retired legacy proxy package**: the bare-name `sofagent-audit` (no scope) on npm is the old proxy package—**unpublished on 2026-09-26**; don't install it.
 
@@ -370,11 +372,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 
 ## Ecosystem & Docs Index
 
-> 🌏 Note: the linked docs (LIMITATIONS / ARCHITECTURE / PHILOSOPHY / WIKI / SECURITY …) are Chinese-first—English readers can rely on this README plus the EN summary at the top of [WIKI](./docs/WIKI.md); full doc translation is tracked in issue #8.
-
-**Social proof**:
-
-[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
+> 🌏 Note: the linked docs (LIMITATIONS / ARCHITECTURE / PHILOSOPHY / WIKI / SECURITY …) are Chinese-first—English readers should rely on this README; full doc translation is tracked in issue #8.
 
 **Featured in** (community listings, incl. pending PRs):
 
@@ -401,9 +399,9 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 5946 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review continuously running.
+> 🧪 **Engineering credibility** (current): 5946 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
 > **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
->the load-chain utility package and dsh-plugin-kit are outside this counting standard)—they'ren't the same set.
+>the load-chain utility package and dsh-plugin-kit are outside this counting standard)—they aren't the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account—see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever
 >`tools/check/check-test-count.sh` reports (`test-count.sh` produces the SSOT count, `check-test-count.sh` verifies doc-claimed figures for consistency)—counting standard in [WIKI package-count definition](./docs/WIKI.md#六当前状态). Review-environment notes in
 >[docs/guides/review-system.md](./docs/guides/review-system.md); performance figures are single-machine reference values.

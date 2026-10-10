@@ -9,6 +9,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" /></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.8-16B8F3" /></a>
   <img src="https://img.shields.io/npm/v/sofagent" />
+  <a href="https://star-history.com/#KongFangXun/sofagent&Date"><img src="https://img.shields.io/github/stars/KongFangXun/sofagent?style=social" /></a>
 </p>
 
 <p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
@@ -35,8 +36,8 @@
 
 > 🏢 **组织视角版本**：AI 落地卡点已从「模型够不够聪明」迁到「组织敢不敢接」——能不能进组织架构、有没有账号、绩效怎么算、做错了怎么退。sofagent 是给数字员工办入职的制度：进场把岗位职责写成文件，离场按文件做绩效考核（每次变更留证据）、组织记忆（沉淀机制随使用迭代，边界见 [LIMITATIONS](./docs/LIMITATIONS.md)）、试错容错（做错退得回）。给 AI 发工号前，先装 sofagent。
 
-> 🧩 **一句话（三因子口径**，术语见〈[什么是 FDE Harness](#什么是-fde-harness)〉**）**：sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M，把判定从生成里分出来的决策模型）排期 v1.6.0–v1.9.0 建设、v2.0.0 宣告。三层各司其职、不互替。
->身份公式定稿 **FDEing × S1A（S1A = S1M + Harness）**，口径 SSOT = [PHILOSOPHY · 身份口径](./docs/PHILOSOPHY.md)。
+> 🧩 **一句话（三因子口径，术语见〈[什么是 FDE Harness](#什么是-fde-harness)〉）**：sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M，把判定从生成里分出来的决策模型）排期 v1.6.0–v1.9.0 建设、v2.0.0 宣告。三层各司其职、不互替。
+> 身份公式定稿 **FDEing × S1A（S1A = S1M + Harness）**，口径 SSOT = [PHILOSOPHY · 身份口径](./docs/PHILOSOPHY.md)。
 
 **开源 FDE Harness 层**（Harness = 「缰绳」，套住 Agent 的治理层；FDE = Forward Deployed Engineer 前线部署工程师，详见〈什么是 FDE Harness〉）——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理：进场把业务判断写成文件（工作流/本体数据/AI 节点），离场按文件审计每次变更。约束层五种能力（注入·审计·回溯·沉淀·进化），五种形态分发（FDE 插件 / Skill / MCP / CLI / Dashboard）。
 sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（管住强度按宿主分档：DSH/OpenClaw 硬注入可拦截，其余档位为建议性注入 + git hook 审计兜底——见〈多平台挂载〉档位表）。
@@ -62,7 +63,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 > 💡 试用时提交消息请写 **≥6 字符**（如 `initial audit test`）——A19 质量规则（编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）对超短消息（`init`/`add`）判红属设计意图（防无意义提交信息），不是故障。
 
-**五分钟沙箱演示**（v1.5.1 已交付；沙箱隔离、真实文件零接触）：`npx -y -p sofagent sofagent audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕链路（`--speed fast` 为 60 秒版；产物落 `$SOFAGENT_DATA/demo`，不触碰被审仓库）。
+**五分钟沙箱演示**（v1.5.1 已交付；沙箱隔离、真实文件零接触）：`npx -y -p sofagent sofagent audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕链路（`--speed fast` 为 60 秒版；产物落 `$SOFAGENT_DATA/demo`，不触碰被审仓库）。（demo 经 npm 通道提供；install.sh 安装态 CLI 暂无 demo 子命令）
 
 > 版本说明：v1.5.8 已发版（2026-10-09）；npm 可安装最新版 `@sofagent/audit@1.5.8`。
 
@@ -82,7 +83,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | 定位 | 密钥全量历史扫描 | 通用提交钩子框架 | Agent 行为审计约束层 |
 | 证据面 | 仓库文本模式 | 自定义脚本 | git diff 硬证据 + Agent 日志 + 决策留痕 |
 | 覆盖维度 | 密钥泄漏 | 任意（自己写） | 28 条规则：密钥/越界/注入/权限/后门 |
-| 部署成本 | 低——单二进制，零依赖 | 低——随语言生态装一个 CLI | 中——企业设备需一次 `install.sh` 装约束层（也可先用 npx 零配置试用） |
+| 部署成本 | 低——单二进制，零运行时依赖 | 低——随语言生态装一个 CLI | 中——企业设备需一次 `install.sh` 装约束层（也可先用 npx 零配置试用） |
 | 维护负担 | 低——规则随上游更新 | 中——自定义脚本需自己维护 | 中——规则与 hook 随本仓升级，但每版需重装 hook 并对齐配置 |
 | 建议 | 强密钥合规必配 | 已有体系可保留 | 与前两者并用，专注 Agent 治理维度 |
 
@@ -111,11 +112,12 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **治理层 · harness**（离场 · 驻留判断——「harness 治理」，按交付物 7×24 执行，进化时写回）：
 
-- 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，commit 时触发审计，人离场治理不离开
-- 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（quick 约 1.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
+- 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化（daemon 巡检需安装时显式确认，默认不装；QUICK_MODE / 非交互安装自动跳过），commit 时触发审计，人离场治理不离开
+- 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
 - 🧱 **规则与安全面：28 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截；fail-fast（critical 命中后其余跳过）、默认非 fail-closed（绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
-- 🔧 **工具与能力面：104 个 MCP tool + 证据分档**——28 条规则中 22 条基于 git diff（本地生效、零 token）、4 条 hybrid（diff + Agent 日志）、1 条 filesystem 扫描、1 条走 decision-log（清单见 [SECURITY](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）
+- 🔧 **工具与能力面：104 个 MCP tool + 证据分档**——28 条规则中 22 条基于 git diff（本地生效、零 token）、4 条 hybrid（diff + Agent 日志）、1 条 filesystem 扫描、1 条走 decision-log（清单见 [SECURITY](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）。其中 commons_invoke 为 dry-run 预检语义（返回能力元数据与调用计划，真实执行由 Agent runtime 注入 executor；见 LIMITATIONS）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
+- 🛡️ **AgentShield 五类配置面静态扫描**——`@public` SDK 能力（经 `createAgentShield` 调用），**不在 commit hook 链路上**，按需接入
 
 ## 什么是 FDE Harness
 
@@ -134,7 +136,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 - **企业 AI 落地的瓶颈不是模型，是部署**——MIT NANDA《生成式人工智能的鸿沟》：95% 企业 GenAI 项目未能产生可写进财务报表的价值，而 FDE 岗位发布量一年涨 729%（核验见 [VALIDATION](./docs/VALIDATION.md)）
 - **完整来自组合**——DSH 解决「能干活」，sofagent 解决「持续干」，两者合起来才是完整的 FDE Harness（见下一章「多平台挂载」的 DSH 档）
-- **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3，**能力型 harness 数据**，与治理型约束层的可靠性收益非同一量纲）：同一模型仅优化外层 Harness 即可显著提升任务完成率（核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)）
+- **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3，**能力型 harness 数据**，与治理型约束层的可靠性收益非同一量纲，仅作方向性参考）：同一模型仅优化外层 Harness 即可显著提升任务完成率（核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)）
 - **能力可迁移，绝不绑死单一平台**——约束层平台无关（可迁移的是约束资产与审计兜底，注入强度仍按宿主分档：DSH/OpenClaw 硬注入，其余建议性注入 + git hook 兜底——见〈多平台挂载〉档位表），方法论跟着业务走、不跟着平台走
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 工作流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
@@ -162,29 +164,29 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 ⚡ **给进化装上两道门 + 打通经验到训练的数据面**——不让 Agent 越自我改越失控：
 
-| 能力 | 一句话 |
-|---|---|
-| **进化准入判据** | 域验证器三档分流（`deterministic` / `model-judge` / `human-only`）：验证比生成便宜的域才自动进化，未登记域 fail-closed 按最高档处理 |
-| **三层晋级判据** | 频次 × 存续 × 验证三维纯函数 → 注入租用 / skill 半持久 / 微调摊销三态；晋升须过四道证据门槛（留出集优先 · 严格优于历史最佳 · 单变量可归因 · 校准不退化） |
-| **经验池接训练管道** | instinct 池按「高置信 + 已考核」筛选导出为训练记录（带血缘锚点与来源真实性标记）；train 侧旁挂适配器归一后与外部源混合构建数据集 |
-| **出题考核器** | 从 instinct 反向生成验证题；答对 + 复现双成功才标记 `verified` 入池，评分器独立性有硬门 |
-| **RL 训练治理** | 训练期命中策略的轨迹按规则严重级折算惩罚（经既有 `severityWeightOf` 单源，不做第二套映射） |
-| **规则数 25→28 全线清偿** | 文档 / 代码注释 / npm 门面 / dashboard 四面同步；五变体门禁防回潮 |
+| 能力 | 一句话 | 触达方式 |
+|---|---|---|
+| **进化准入判据** | 域验证器三档分流（`deterministic` / `model-judge` / `human-only`）：验证比生成便宜的域才自动进化，未登记域 fail-closed 按最高档处理 | SDK only（47 符号零生产调用点，排期 v1.5.9） |
+| **三层晋级判据** | 频次 × 存续 × 验证三维纯函数 → 注入租用 / skill 半持久 / 微调摊销三态；晋升须过四道证据门槛（留出集优先 · 严格优于历史最佳 · 单变量可归因 · 校准不退化） | SDK only（47 符号零生产调用点，排期 v1.5.9） |
+| **经验池接训练管道** | instinct 池按「高置信 + 已考核」筛选导出为训练记录（带血缘锚点与来源真实性标记）；train 侧旁挂适配器归一后与外部源混合构建数据集 | SDK only（47 符号零生产调用点，排期 v1.5.9） |
+| **出题考核器** | 从 instinct 反向生成验证题；答对 + 复现双成功才标记 `verified` 入池，评分器独立性有硬门 | Library-only |
+| **RL 训练治理** | 训练期命中策略的轨迹按规则严重级折算惩罚（经既有 `severityWeightOf` 单源，不做第二套映射） | SDK only（47 符号零生产调用点，排期 v1.5.9） |
+| **规则数 25→28 全线清偿** | 文档 / 代码注释 / npm 门面 / dashboard 四面同步；五变体门禁防回潮 | — |
 
 > 📌 完整证据见 [v1.5.8 开发日志](./docs/changelog/v1.5/v1.5.8.md)；旧版能力段见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE Harness 两阶段
 
-**两阶段的分工与不可分性**见上文〈[什么是 FDE Harness](#什么是-fde-harness)〉——本节补**组织侧读法**：两阶段合起来就是给数字员工办入职的全流程（离场侧自动动作：daemon 7×24 巡检 · 每次 commit 触发 28 条审计（含 **AgentShield 五类配置面静态扫描**）· 快照可回滚 · 进化时试验分支晋升与反思蒸馏写回交付物）。
+**两阶段的分工与不可分性**见上文〈[什么是 FDE Harness](#什么是-fde-harness)〉——本节补**组织侧读法**：两阶段合起来就是给数字员工办入职的全流程（离场侧自动动作：daemon 7×24 巡检（daemon 巡检需安装时显式确认，默认不装；QUICK_MODE / 非交互安装自动跳过） · 每次 commit 触发审计（**默认 17 条**；完整 28 条需在 `.sofagent/config.yml` 开 `extendedRulesEnabled: true`）· 快照可回滚 · 进化时试验分支晋升与反思蒸馏写回交付物）。
 
 | 组织动作 | sofagent 对应 |
 |---|---|
 | 岗位职责说明书 | 进场冻结的交付物（merge_criteria / approver / trigger） |
 | 绩效考核 | 审计留痕 + 治理 KPI 面板（v1.5.0） |
 | 组织记忆 | 知识沉淀（think.md 反思 + knowledge/） |
-| 培训体系 | 经验→考核→晋级的自进化链（v1.5.8 排期） |
+| 培训体系 | 经验→考核→晋级的自进化链（v1.5.8 已交付） |
 | 试错容错 | 快照回滚 + 能力基线版本线（v1.5.9 排期） |
-| 劳动合同边界 | 可拔契约与主干能力清单（v1.5.7 交付：18 单元 + `SOFAGENT_*` 门控分流） |
+| 劳动合同边界 | 可拔契约与主干能力清单（v1.5.7 交付；开关面与门控见 [ARCHITECTURE](./docs/ARCHITECTURE.md)） |
 
 > 📚 **想深入**：[FDE/GUIDE](./FDE/GUIDE.md)（四阶段十二步）· [ARCHITECTURE](./docs/ARCHITECTURE.md)（五能力与模块）· [PHILOSOPHY](./docs/PHILOSOPHY.md)（设计禁区）· [FDE/README](./FDE/README.md)（Skill 体系）；完整导航见 [WIKI](./docs/WIKI.md)。
 
@@ -264,7 +266,7 @@ sofagent audit --doctor    # 验证环境（可选）
 | **`npx -y -p sofagent sofagent audit`** | 零配置审计最近一次 commit，秒级出结果（首次 npx 约 30 秒） | 任意 git 仓库（临时） | 30 秒 |
 | **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 同上 | 1 分钟 |
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
-| **install.sh 全套** | 注入·审计·回溯·沉淀·进化五能力 + daemon 巡检 + dashboard——Agent 的完整约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
+| **install.sh 全套** | 注入·审计·回溯·沉淀·进化五能力 + daemon 巡检（daemon 巡检需安装时显式确认，默认不装；QUICK_MODE / 非交互安装自动跳过） + dashboard——Agent 的完整约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
 
 > 📌 **单入口 CLI（v1.5.6 起）**——CLI 收敛为 **`sofagent <域> <动作>`**：`sofagent audit`（审计）· `sofagent train doctor`（训练）、`sofagent team formation`（阵型）· `sofagent daemon`（守护）… 全部域见 `sofagent help`。
 >
@@ -275,7 +277,7 @@ sofagent audit --doctor    # 验证环境（可选）
 > | 完整安装（含 daemon / dashboard） | `bootstrap.sh` / `install.sh`（见上） |
 >
 > - **兼容期**：旧命令（`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …）**仍可用**，会提示新入口——**一个 minor 版本后移除**。收敛前的 13 个 bin 现已由单入口统一承载。
-> - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；实测 771 传递依赖，5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。**只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g @sofagent/audit`。
+> - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。**只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g @sofagent/audit`。
 > - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。
 
 **规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（plugin 类规则默认关闭，需显式 opt-in，见 SECURITY）：
@@ -296,10 +298,6 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 - **收集我的数据吗？** 缺省全量本地。可选联邦查询 = 你主动配置才出本机（见 SECURITY）。
 
 ## 生态与文档索引
-
-**社交证明**：
-
-[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
 
 **Featured in**（社区收录 · 含收录申请中）：
 
@@ -327,7 +325,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：5946 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查持续运行。
+> 🧪 **工程可信度**（当前口径）：5946 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（流程与近期结论见 [review-system](./docs/guides/review-system.md)）。
 > **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 共 25 个，插件包与工具包不计）——二者非同一集合。
 > 测试数两个口径：**发版时点值**（各版本章节的 `4805→4903` 增量账）与**当前实测值**（上方「工程可信度」行）；权威值以 `tools/check/check-test-count.sh` 实跑为准，包数标准见 [WIKI](./docs/WIKI.md#六当前状态)；审查环境见 [review-system](./docs/guides/review-system.md)；
 >性能数据为单机参考值。
