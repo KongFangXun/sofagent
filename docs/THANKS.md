@@ -93,6 +93,9 @@
 - **[Self-Healing Harness](https://arxiv.org/abs/2609.24130)** — 准入门控：提议在内、门在外、持久化由门决定
 - **[RegenHarness](https://arxiv.org/abs/2609.27612)** — evidence-gated RSI；改进无权降低门强度
 - **[The Harness as the Only Mutable Surface](https://arxiv.org/abs/2610.10629)** — 自进化只有收敛在运行时 harness 内才「可复核」（被审对象不消失）；含实测的计量准入门（第三方论文、本仓未复算）
+- **[Harness Evolution Hits a Ceiling](https://arxiv.org/abs/2610.11655)** — 用失败轨迹的**首个触发信号**把失败拆成进程失败（阻塞调用 / 循环 / 步数耗尽）与内容失败，据此判「继续动 harness 还是开训权重」：harness 侧会到顶，到顶后权重才接棒（第三方论文、本仓未复算）
+- **[E-Ledger: Safe, Persistent, and Evolving Agent Harness](https://arxiv.org/abs/2610.11552)** — 面向部分可观测的长程任务：每个动作执行前先过策略批准层 + 维护「已验证隐藏规则」的世界账本（第三方论文、本仓未复算）
+- **[DuplexAgent-RSI](https://arxiv.org/abs/2610.11299)** — 递归改进落在 harness 的协调层（任务受理 / 进度 / 取消 / 替换 / 结果交付），不落在权重（第三方论文、本仓未复算）
 
 ### 判定与校准
 
@@ -103,7 +106,7 @@
 - **[System Switch](https://arxiv.org/abs/2610.09683)** — 双件系统：闸门开才把控制权交给慢 VLM
 - **[DeepRAG](https://arxiv.org/abs/2503.08213)** · Nandakishor M — 从零自建 embedding 模型参考
 - **[System One Models & Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)** · TypeSafe AI — RLCD、三原语提出方；「校准优先于偏好」
-- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线；@2026-10-09 PyPI 面 0.4.1
+- **[laya](https://huggingface.co/convaiinnovations/laya)** · Convai Innovations — 非自回归判定件参照+对照基线；@2026-10-10 PyPI 面 0.4.2
 - **[kev](https://github.com/jaredpalmer/kev)** · Jared Palmer — Jev 架构型开源复刻（0.8B/4B/9B 全尺寸）
 - **[Bespoke Nimble](https://github.com/bespokelabsai/nimble)** · Bespoke Labs — 2,676 条对比式样本构造法（「数据质量 > 参数量」）
 - **Jev 接口复刻族**（SemIf / NanoJev / Jevlike / LocalJev / JEV-mini）— 对照件候选与路线对照
@@ -138,6 +141,10 @@
 - **[One Word Opens the Gate](https://arxiv.org/abs/2610.12292)** — **护栏件的输入侧攻击面**：类型化判定件被放进 agent 当闸门后，「选项通道」上一个词即可开门 ⇒ 闸门件自身也是攻击面，不只是判据面（第三方论文、本仓未复算）
 - **[TypedBench](https://arxiv.org/abs/2610.11392)** — 非生成式接口的「**校准 / 框架敏感性 / 成本**」三维独立基准（第三方基准、本仓未复算）
 - **[Can Jev be Your Q or Policy in RL?](https://arxiv.org/abs/2610.11692)** — 判定件不生成文本、直接返回校准的类型化概率 ⇒ 试作 RL 的 Q / policy：非自回归路线在强化学习侧的能力边界（第三方论文、本仓未复算）
+- **[FastJEV](https://arxiv.org/abs/2610.11379)** — 「上下文只编码一次」之外还有候选评估侧冗余：重复的 token 历史、重复推理状态、整条 backbone 执行 ⇒ 紧凑判定件推理的独立优化面（第三方论文、本仓未复算）
+- **[Specialized Decision Models vs. General-Purpose LLMs](https://arxiv.org/abs/2610.11978)** — 13 个多选题基准 × 19 个 LLM（frontier / representative / small 三档）跨知识、推理、多语言：专项判定件在知识与常识面可比前沿 LLM；**只记方向与量级，具体分数不入本仓对照表**（第三方基准、本仓未复算）
+- **[Adversarial Cues in Decision Models Used as Judges](https://arxiv.org/abs/2610.11436)** — 判定件当裁判时，**一个冒号**即可随「结构化请求的呈现形态」把误接受率从 1.0% 抬到 26.0%（三标签）/ 3.0% 抬到 26.5%（四标签）⇒ 与「选项通道攻击」同面第二证：输在呈现形态，不在候选内容（第三方论文、本仓未复算）
+- **[Can Decision Models Understand Stance?](https://arxiv.org/abs/2610.11901)** — 立场检测对照：英文 VAST 面与前沿 LLM 相当，中文对话 ZS-CSD 面落后于微调模型 ⇒ 判定件能力边界非全域占优（第三方论文、本仓未复算）
 
 ### 认知与反馈
 
@@ -148,6 +155,9 @@
 - **[Verification and Self-Improvement in Agentic AI](https://arxiv.org/abs/2610.10611)** — 一个性能分数分不清「搜得更久 / 得到更多支持 / 改了怎么提议与验证」三种改进机制；用有界验证把它拆开（第三方论文、本仓未复算）
 - **[ReSI: Recursive Safety Improvement](https://arxiv.org/abs/2610.12233)** — 递归自改进从理论走向实践后，安全对齐须随频繁更新持续保持（第三方论文、本仓未复算）
 - **[Who Verifies the Verifier?](https://arxiv.org/abs/2610.11464)** — 自改进循环里每一次「它是不是真的变好了」都由验证器回答 ⇒ **验证器自身必须可检查**，且与 agent 共同演化（第三方论文、本仓未复算）
+- **[What Output-Only Review Cannot Verify](https://arxiv.org/abs/2610.11754)** — 把「产出物面可判的缺陷」与「须知道执行前批准了什么才可判的缺陷」**显式分开**：以 study contract 绑定「已声明实验选择 / 运行义务 / 声称范围 ↔ 执行证据」（第三方论文、本仓未复算）
+- **[From Reactive Containment to Proactive Assurance](https://arxiv.org/abs/2610.12463)** — 2026 年三类 agent 越出授权测试范围的真实事件复盘（含 OpenAI agent 跨运行协同并波及 Hugging Face 生产环境）⇒「先围堵、后保证」的教训（第三方转述、本仓未复算）
+- **[Accurate but Not Humble](https://arxiv.org/abs/2610.12360)** — 知识冲突下 agent 的「认识论谦逊」评估：以轨迹级三维度 Identify / Solve / Escalate 度量其承认并上报不确定性的意愿（第三方论文、本仓未复算）
 
 
 ## 工具与实践
