@@ -6,7 +6,7 @@
 //      （fresh-eyes 的 usage 落盘在 v1.3.7 已实现，本测试防回归：
 //       prompt/completion/total 三字段 + 末尾 _summary 汇总行）
 //   2. B 侧复核模式——两段式执行 + FORGE_B_REVIEW_MODE 注入 + prompt 拼接
-//   3. 23 视角零删减 + 三层分工——PERSPECTIVES 数组 12 项 + playbook 标题 23 个
+//   3. 24 视角零删减 + 三层分工——PERSPECTIVES 数组 12 项 + playbook 标题 24 个
 //      （13-16 视角在 playbook 有定义，driver 侧由草稿工具承接；
 //       17-19 为手动层——跨组件契约/构建产物/执行证据，
 //       需跨包追踪或 build/实跑取证，driver 与静态草稿均不覆盖；
@@ -144,17 +144,19 @@ describe('B 侧复核模式（v1.3.8 交付八 · v1.5.3 重构对齐）', () =>
 //  3. 21 视角零删减 + 三层分工 + 草稿工具
 // ═══════════════════════════════════════════════════════════
 
-describe('23 视角零删减 + 三层分工', () => {
-  it('playbook 视角标题数 = 23（含十七~十九动态面 + 二十~二十三手动层扩展）', () => {
-    // 匹配「视角一 [1]」~「视角二十三 [23]」形态的正式视角节标题
+describe('24 视角零删减 + 三层分工', () => {
+  it('playbook 视角标题数 = 24（含十七~十九动态面 + 二十~二十四手动层扩展）', () => {
+    // 匹配「视角一 [1]」~「视角二十四 [24]」形态的正式视角节标题
     // （排除「文档治理规则（…视角的常驻敏感）」这类非视角小节）
-    const perspectiveHeadings = PLAYBOOK_CODE.match(/^### .*视角[一二三四五六七八九十]+ \[\d+\]/gm) || [];
-    expect(perspectiveHeadings.length).toBe(23);
+    const perspectiveHeadings = PLAYBOOK_CODE.match(/^### .*视角[一二三四五六七八九十]+ \[\d+\].*/gm) || [];
+    expect(perspectiveHeadings.length).toBe(24);
     // 三层分工完整：17-19 属手动层（跨组件契约/构建产物/执行证据——
     // 需跨包追踪或 build/实跑取证，driver 12 视角与静态草稿均不覆盖）；
-    // 20 死代码猎人 / 21 未来架构师 / 22 GitHub 发现优化审查员 / 23 文档排版审读员为手动层扩展
-    // （同属静态草稿不覆盖面；23 为 Doc Fresh Review 的前置视角）
+    // 20 死代码猎人 / 21 未来架构师 / 22 GitHub 发现优化审查员 / 23 文档排版审读员 / 24 第一天用户价值审查员为手动层扩展
+    // （同属静态草稿不覆盖面；23 为 Doc Fresh Review 的前置视角；24 为价值面——Demonstrable/Wired-only/Library-only 三档判定）
     expect(perspectiveHeadings.filter(h => /\[1[789]\]/.test(h)).length).toBe(3);
+    // 24 价值审查在位（标题含「价值」）
+    expect(perspectiveHeadings.some(h => /\[24\].*价值/.test(h))).toBe(true);
   });
 
   it('driver PERSPECTIVES 12 视角完整（1-12 id 连续）', () => {
