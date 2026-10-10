@@ -98,6 +98,13 @@ echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 #   - 🔴 v1.2.5 P0-13/P0-14：docs/evidence 不再排除！此前 evidence/ 的 12 条死链
 #     因排除而漏检（假绿根因之一）。evidence/ 是核心证据文档，链接必须纳入检查。
 #   - SKILL/harness 排除：harness 模板含运行时动态路径占位（非真实链接）
+#   - 🔴 降级 prompt 载荷豁免（**按文件自述标记**识别，非目录/文件名）：LLM 调用失败时
+#     落盘的降级产物，首部含「降级产物：LLM 调用失败」＋「粘贴执行完即可删除本文件」双标记。
+#     其内容为 **prompt 正文**——内里 markdown 链接是**被引述的草稿文本**（与内联代码壳内的
+#     示例同性质），不是可导航链接；且同一文件内混用「仓根相对」（`./docs/WIKI.md`）与
+#     「作者处相对」（`../../LIMITATIONS.md`）两种基准，**不存在单一正确的重写**，
+#     强行改级数会把归档 prompt 正文改错。故不判定其链接，但**一律回显文件名**（不静默）；
+#     若文档谎报该标记，标记本身即可被审查（豁免面可见，非压绿）。
 #   - 🔴 v1.2.4 P4：FDE/ 不再排除！FDE/GUIDE.md + FDE/README.md + FDE/templates/
 #     是核心人读文档，链接必须纳入自动检查（此前整目录排除 = 死链盲区）。
 #     ⚠️ 注意：section 4 文档预算仍排除 FDE（预算口径，FDE 目录行数单独管理），
@@ -120,9 +127,19 @@ function walk(dir, out, excludes) {
     } else if (f.endsWith(".md")) out.push(p);
   }
 }
+// 降级 prompt 载荷：内容为 prompt 正文（内里链接属被引述草稿文本），非可导航链接。
+// 按**双自述标记**识别，命中即整文件跳过链接判定并回显文件名（豁免可见，非静默压绿）。
+function isPromptPayload(f) {
+  try {
+    const head = fs.readFileSync(f, "utf-8").split("\n").slice(0, 5).join("\n");
+    return /降级产物/.test(head) && /粘贴执行完即可删除本文件/.test(head);
+  } catch { return false; }
+}
+const PAYLOAD = new Set();
 function scan(files) {
   const dead = [];
   for (const mdfile of files) {
+    if (isPromptPayload(mdfile)) { PAYLOAD.add(mdfile); continue; }
     let inFence = false;
     const lines = fs.readFileSync(mdfile, "utf-8").split("\n");
     for (const raw of lines) {
@@ -161,7 +178,7 @@ const WARN_EXCLUDE = EXCLUDE.filter(re => !WARN_DIRS.some(d => re.test(d + "/"))
 const excludedFiles = [];
 for (const d of WARN_DIRS) { if (fs.existsSync(d)) walk(d, excludedFiles, WARN_EXCLUDE); }
 const excludedDead = scan(excludedFiles);
-process.stdout.write(JSON.stringify({ mainDead, excludedDead }));
+process.stdout.write(JSON.stringify({ mainDead, excludedDead, payload: [...PAYLOAD] }));
 ' 2>/dev/null || echo '{"parseError":true}')
 # parseError 标记：node 扫描器自身崩溃时不得伪造空结果（空结果=0 死链=假绿——
 # run-10 教训家族：检查器故障必须显式 FAIL，不能静默降级为「全绿」）
@@ -174,6 +191,9 @@ if [ "$DEAD_LINKS" = "SCAN_FAIL" ] || [ "$EXCLUDED_DEAD" = "SCAN_FAIL" ]; then
   EXCLUDED_DEAD=0
 fi
 DEAD_DETAIL=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.mainDead.join('\n'))" "$DEAD_SCAN" 2>/dev/null)
+# 降级 prompt 载荷豁免面（非静默回显）：被 §1b 跳过的 prompt 正文文件在此列出。豁免必须可见
+# 可审——某文件若谎报自述标记，仅凭「它出现在这份豁免清单里」即可被人工审查，故不压绿。
+PAYLOAD_LIST=$(node -e "const d=JSON.parse(process.argv[1]);console.log((d.payload||[]).join('\n'))" "$DEAD_SCAN" 2>/dev/null || true)
 
 if [ "${DEAD_LINKS:-0}" -gt 0 ]; then
   echo "  全仓相对路径死链: ${DEAD_LINKS} 处"
@@ -194,6 +214,10 @@ if [ "${EXCLUDED_DEAD:-0}" -gt 0 ]; then
   node -e "const d=JSON.parse(process.argv[1]);console.log(d.excludedDead.slice(0,10).join('\n'))" "$DEAD_SCAN" 2>/dev/null || true
 else
   echo "  排除面死链: 0"
+fi
+if [ -n "${PAYLOAD_LIST:-}" ]; then
+  echo "  · 豁免（降级 prompt 载荷·内里链接属被引述草稿文本，不判定）:"
+  node -e "const d=JSON.parse(process.argv[1]);for(const f of (d.payload||[]))console.log('      '+f)" "$DEAD_SCAN" 2>/dev/null || true
 fi
 
 echo ""
