@@ -66,7 +66,7 @@ rules:
 ```
 
 ```yaml
-# 方式 B：industry overlay 自动发现（context.md 标注）
+# 方式 B：industry overlay 自动发现（context.md 标注）——⚠️ 尚未接线，请用方式 A 显式 --ruleset
 # frontmatter: industry: smb
 # → 自动加载 smb overlay（勾稽/溯源/口径三条 pattern 规则）
 ```
