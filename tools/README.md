@@ -58,7 +58,7 @@
 | `check/check-dashboard.sh` | dashboard.html 结构性缺陷门禁（七项静默失效面：双 class 属性/未定义 CSS 变量/重复类定义不一致/未定义 keyframes/onclick 未定义函数/div 配平/U+FFFD 乱码——注入实测七项全报红） | CI / 改 dashboard.html 后 / 发版 SOP 阶段五 |
 | `dashboard/sofagent-dashboard.test.sh` | Dashboard 端到端冒烟（页面可达 + 数据面断言） | dashboard 改动后 |
 | `check/check-guards.sh` | 守卫的守卫（meta-guard：门禁脚本自身四类腐烂模式静态扫 + `--inject` 注入实测——红不了的门禁是装饰品） | 发版 SOP / CI |
-| `check/check-anchors.mjs` | 跨文档 Markdown 锚点引用活性校验（见 check-docs.sh 第 11 段） | 发版 SOP / CI |
+| `check/check-anchors.mjs` | 跨文档 Markdown 锚点引用活性校验（见 check-docs.sh 第 11 段）。**外链可达性为可选面**（2026-10-10 新增）：`SOFAGENT_CHECK_LINKS=1` 时对活文档外链做 GET 探测（8 并发 / 15s 超时），4xx/5xx/超时即 exit 1；未开启时打印 SKIP（**SKIP 不是 PASS**）。另提示「索引/批次页」形态链接——200 只证明页面存在，不证明可点达被引用的那一篇（详→注-19） | 发版 SOP / CI / 改文档外链后 |
 | `check/check-forms.mjs` | 「形态归属」标注一致性守卫（changelog 章标注 ↔ ROADMAP 声明计数**双向对账**：每章须挂 `> **形态归属**：` 行 · 形态词封闭枚举 · 声明计数逐版 pin · 成分按结构判据提取；退出码 0 绿 / 1 违规 / 2 失明） | pre-push 第 3h 步 / 发版 SOP / 新增或改 changelog 章后 |
 | `check/check-cjk-var.sh` | shell 变量定界守卫（`$VAR` + CJK 全角标点误吞检测） | 改 shell 脚本后 / CI |
 | `check/check-guard-fail-loud.sh` | 防线失明自检门禁（PATH 劫持假检测引擎实测守卫 fail-loud——引擎故障下仍 exit 0 的守卫即失明不自知） | 发版 SOP / CI |
@@ -83,7 +83,7 @@
 | `check/cross-package-relative-exempt.json` | 越包相对引用存量豁免台账（被 `check-cross-package-relative.mjs` 消费；集合相等判定——新增/漂移/陈旧均红） | 被 check-cross-package-relative.mjs 消费 |
 | `check/check-legacy-knowledge-path.mjs` | 知识库旧路径残留守卫（v1.2.1 前写法，**连写+分离**双形态；扫描 git tracked 文件；非注释面对账 `knowledge-legacy-path-exempt.json`，注释面可见不阻塞，冻结区豁免，守卫自身两文件归「装置面」；退出码 0 绿 / 1 违规 / 2 失明） | CI（check-docs §18）/ 改 knowledge 路径后 / `--selftest` |
 | `check/knowledge-legacy-path-exempt.json` | 知识库旧路径存量豁免台账（被 `check-legacy-knowledge-path.mjs` 消费；逐文件逐计数相等判定） | 被 check-legacy-knowledge-path.mjs 消费 |
-| `check/doc-discipline.sh` | 对外文档写作纪律门禁（P2-27）：依据 CONTRIBUTING「措辞/禁考古/来源块溯源/changelog 写作」规范，把**正则可判定**的三面收进 CI——**Face 1** 内部工单/审查代号（`F-xx`/`P0-xx` 等）（详→注-7） | pre-push · 改对外文档后 |
+| `check/doc-discipline.sh` | 对外文档写作纪律门禁（P2-27）：依据 CONTRIBUTING「措辞/禁考古/来源块溯源/changelog 写作」规范，把**正则可判定**的面收进 CI——**Face 1** 内部工单/审查代号（`F-xx`/`P0-xx` 等）；**Face 2** 本机私有路径；**Face 3a/3b** 来源块溯源（内部件阻断 + 缺链接/缺日期存量台账）；**Face 5** 可读性棘轮（wall/cell）；**Face 6** 字数棘轮 + **6b 基线上调登记闸**（抬上限必须在 `_meta.note` 记文件名与理由）；**Face 7** 抬头块闸；**Face 8** 串接 `doc-postcheck.mjs --changed`（2026-10-10：把「靠人记得跑」的落盘自检收进门禁）；**Face 9** 新增来源块的净增量召回（抽《》与加粗判据词，在**其他**活跃文档召回，治「任务书自述零命中而实测已有同源段落」；信息位不自动红，抽空即报失明）（详→注-7、注-20） | pre-push · 改对外文档后 |
 | `check/source-block-exempt.txt` | 来源块溯源存量台账（被 `doc-discipline.sh` Face 3b 消费；逐文件逐类别计数**集合相等**判定——新增 / 漂移 / 陈旧均红。格式 `<类别>TAB<文件>TAB<计数>`，类别 ∈ {缺链接, 缺日期}；用 `.txt` 而非 `.json`，因消费方是 bash 而 macOS 不自带 jq。（详→注-8） | 被 doc-discipline.sh Face 3b 消费 |
 | `check/check-prepush-checklist.mjs` | pre-push 检查项清单对账（G-16：清单声明的脚本名 **⊆ 实际调用**——子集关系，实现多于清单合法；守「声明了 X、实现没有 X」缺陷类。清单/调用面提取为空或探针失效 ⇒ exit 2 失明；（详→注-9） | pre-push 第 1b 步 / 改检查项后 / `--selftest` |
 | `check/check-mjs-comment-backtick.mjs` | mjs/js 注释可执行反引号守卫：注释行反引号串首 token 形似脚本路径或 npm/node/bash 命令头 = 危险——bash 误跑时把注释串当命令替换**真执行**（实锤：曾让 bash 跑完整套 pre-push 防线数分钟）。退出码 0 绿 / 1 违规（改单引号）/ 2 引擎故障 | tool-health 第 ⑨ 项 / 新写 .mjs 注释含反引号路径串后 |
@@ -162,6 +162,12 @@
 > 注-15：检查位清单以 `tools/release/pre-push-check.sh` 头部 `#   + <脚本名>` 段为准（此处不复述，防双事实源；`check-prepush-checklist.mjs` 已对账「清单 ⊆ 实现」）；`--quick` 跳过 test/build，`--minimal` 结构性快检；v1.4.0 由根目录移入）
 > 注-16：指纹为**内容树对象 sha**（临时 index + `git add -A` + `write-tree`，内容寻址——`git commit` 不使其过期）。四道防线：内容指纹 · 日志在位非空 · 日志有绿灯摘要 · `record --pre <指纹>` 钉住长跑前内容（中途改文件 ⇒ exit 3 拒凭据）。退出码 0 可复用 / 2 失明拒假绿 / 3 需重跑。凭据库 `.sofagent/heavy-gate-receipts.log`（gitignore ⇒ 自指回避）
 > 注-17：裸名总包 `sofagent` 不在此脚本（SOP 步骤八单独发）；支持 `SOFAGENT_PUBLISH_TAG` dist-tag 分道（施工期 `--tag alpha`）
+
+> 注-19：外链校验为何是**可选面**而非常驻——229 个活文档外链此前零校验（脚本明示「http(s) 不校验」），实测即抓到 404 与「索引页 200 但事件页不点达」；但常驻开启会把 CI 网络抖动记成文档缺陷，故默认 SKIP（**SKIP 必须可见，不得静默当绿**），仅在有网环境显式开启
+
+> 注-20：doc-discipline Face 8/9 的判据——Face 8 治「工具存在但无人调用」（`doc-postcheck.mjs` 标注「排障非门禁」故长期零自动链路）；Face 9 治「自述不是证据」（落盘任务书自述净增量零命中，实测 `docs/LIMITATIONS.md` 已有同源段落）。Face 9 为**信息位**：命中不自动红，但抽空关键词即报失明——守卫不得用「零命中」冒充「扫过了」
+
+> 🔴 **门禁退出码取用纪律**（2026-10-10 补）：`bash tools/check/xxx.sh \| tail -20; echo $?` 拿到的是 `tail` 的退出码，**恒为 0**——实测把 exit=1 的门禁读成假绿。取真实退出码必须无管道：`bash tools/check/xxx.sh > /tmp/o.log 2>&1; echo $?`（范本见 `pre-push-check.sh` 的 `if bash …; then` 写法）
 
 ## 五、forge/
 

@@ -973,6 +973,10 @@ if (sectionReports.length > 0) {
   console.log('');
 }
 
+// 外链校验必须在**成功 exit 之前**跑：放在报告末尾会被零违规路径的 process.exit(0)
+// 跳过，守卫形同虚设（2026-10-10 修正）。
+await checkExternalLinks();
+
 if (staleReports.length === 0 && brokenFileReports.length === 0 && chapterReports.length === 0 && sectionReports.length === 0) {
   console.log(colors.green(`  ✓ 全部通过：${validRefs} 个锚点引用全部有效，无文件断链，章号一致`));
   console.log('');
@@ -1023,6 +1027,98 @@ if (unfixed > 0) {
     }
     console.log('');
   }
+}
+
+// ── 外链可达性校验（可选面 · SOFAGENT_CHECK_LINKS=1 开启）──────────────────
+// 背景（2026-10-10 实锤）：本脚本长期明示「http(s) 协议链接本脚本不校验（只管仓内
+// 文件）」，活文档 229 个外链**零校验**——实测即抓到两 Anthropic 候选 URL 404，以及
+// OpenAI 批次索引页 200 但**不可点达具体事件页**（索引页存在 ≠ 事件页存在，都是 200）。
+// 设计取舍：做**可选面**而非常驻——CI 无网时强制开启会把网络抖动记成文档缺陷，故
+//   未开启时明确 SKIP（SKIP 不是 PASS，不假绿），开启后才有判定力。
+// 补充判据：「200」只证明页面存在，不证明指向**具体对象**；索引页 / 批次页形态的
+//   链接须人工确认可点达被引用的那一篇（本脚本只提示，不作自动判定）。
+async function checkExternalLinks() {
+if (process.env.SOFAGENT_CHECK_LINKS === '1') {
+  const linkRe = /\]\((https?:\/\/[^)\s]+)\)/g;
+  const seen = new Map();
+  for (const f of files) {
+    const content = fs.readFileSync(f, 'utf8');
+    let m;
+    linkRe.lastIndex = 0;
+    while ((m = linkRe.exec(content)) !== null) {
+      const u = m[1].replace(/[),.;]+$/, '');
+      if (!seen.has(u)) seen.set(u, new Set());
+      seen.get(u).add(path.relative(PROJECT_ROOT, f));
+    }
+  }
+  const urls = [...seen.keys()];
+  console.log(colors.bold(`── 外链可达性（SOFAGENT_CHECK_LINKS=1 · ${urls.length} 个唯一 URL）──`));
+  const dead = [];
+  const soft = [];
+  const retry = [];
+  const CONC = 8;
+  for (let i = 0; i < urls.length; i += CONC) {
+    const batch = urls.slice(i, i + CONC);
+    const res = await Promise.all(batch.map(async (u) => {
+      try {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 15000);
+        const r = await fetch(u, { method: 'GET', redirect: 'follow', signal: ctl.signal });
+        clearTimeout(timer);
+        return { u, status: r.status };
+      } catch (e) {
+        return { u, status: 0, err: String((e && e.message) || e) };
+      }
+    }));
+    for (const r of res) {
+      if (r.status === 0 || r.status >= 400) {
+        // 分级而非一刀切（2026-10-10 实测修正：首版把 26 条全判红，其中 403/451/ERR
+        //  多为**反爬 / 付费墙 / 超时**，不是文档缺陷——噪音型门禁会被绕过，等同失明）：
+        //   404 / 410      → 阻断（对象确实不存在）
+        //   401/403/429/451→ 可疑（反爬 / 付费墙 / 限流），信息位
+        //   status 0（超时/网络）→ 重试一次，仍失败列可疑（不把网络抖动记成文档缺陷）
+        //   其余 4xx/5xx    → 阻断
+        if (r.status === 0) retry.push(r);
+        else if (r.status === 404 || r.status === 410 || r.status >= 500) dead.push(r);
+        else soft.push(r);
+      }
+    }
+  }
+  // 超时/网络类重试一次（串行、10s 超时），仍失败才列可疑
+  for (const r of retry) {
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 10000);
+      const resp = await fetch(r.u, { method: 'GET', redirect: 'follow', signal: ctl.signal });
+      clearTimeout(timer);
+      if (resp.status === 404 || resp.status === 410 || resp.status >= 500) dead.push({ u: r.u, status: resp.status });
+      else if (resp.status >= 400) soft.push({ u: r.u, status: resp.status });
+    } catch {
+      soft.push({ u: r.u, status: 0 });
+    }
+  }
+  for (const r of dead) {
+    console.log(colors.red(`  ✗ ${r.status}  ${r.u}`));
+    console.log(`     出现于: ${[...seen.get(r.u)].slice(0, 3).join(', ')}`);
+  }
+  if (soft.length) {
+    console.log(colors.yellow(`  ⚠️ ${soft.length} 条可疑（403/401/429/451 反爬或付费墙 / 超时）：不阻断，但须人工抽样确认未 404`));
+    for (const r of soft.slice(0, 12)) console.log(colors.yellow(`     ${r.status || 'ERR'}  ${r.u}`));
+    if (soft.length > 12) console.log(colors.yellow(`     …另 ${soft.length - 12} 条`));
+  }
+  const idxLike = urls.filter(u => /\/(reports|posts|blog|items|research)\/?$/.test(u));
+  if (idxLike.length) {
+    console.log(colors.yellow(`  ⚠️ ${idxLike.length} 个链接指向索引/批次页，200 不等于可点达被引用的那一篇，须人工确认：`));
+    for (const u of idxLike) console.log(colors.yellow(`     ${u}`));
+  }
+  if (dead.length) {
+    console.log(colors.red(`  ✗ ${dead.length}/${urls.length} 个外链不可达（4xx/5xx/超时）——修链接或换一手源`));
+    process.exit(1);
+  }
+  console.log(colors.green(`  ✓ ${urls.length} 个外链全部可达`));
+} else {
+  console.log(colors.yellow('  ⏭️ 外链可达性 SKIP（设 SOFAGENT_CHECK_LINKS=1 开启）——未校验不等于可达'));
+}
 }
 
 console.log(colors.bold(colors.cyan('═'.repeat(60))));

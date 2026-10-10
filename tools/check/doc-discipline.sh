@@ -42,6 +42,13 @@
 #      天然放水口——现要求「全仓非冻结 .md 中 wall/cell > 0 者必须已在册」，新增文档
 #      带债务却未登记即红，堵住「靠不登记规避门禁」。
 #
+# Face 7 抬头块闸（v1.5.4）：H1 到首个 H2 之间的正文 ≤600 字，治「开头堆说明翻不到正文」。
+# Face 8 落盘后自检（2026-10-10）：串接 doc-postcheck.mjs --changed，把此前「靠人记得跑」的
+#   五项即时快检收进门禁（U+FFFD / 墙式行格 / 字数棘轮 / 抬头块 / 标题粘连）。
+# Face 9 净增量召回（2026-10-10）：新增来源块的关键词在活跃文档召回并打印（信息位，不自动红）。
+#   治「任务书自述净增量零命中而实测已有同源段落」——自述不是证据，命中必须被看见。
+# Face 6b 基线上调登记闸（2026-10-10）：字数基线上调必须在 _meta.note 记入文件名与理由。
+#
 # ⚠️ 范围诚实披露（排除面 ≠ 无覆盖，但必须可见）：
 #   · Face 1-3（内部代号 / 私有路径 / 来源块）判定面 = 根级 *.md + docs/**/*.md。
 #   · Face 5（棘轮 + 覆盖面）判定面 = 全仓 tracked .md 减去历史冻结区与 vendored 上游
@@ -261,6 +268,36 @@ else
     REG_N=$(node -e 'const fs=require("fs");const o=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log(Object.keys(o).filter(k=>k!=="_meta").length)' "$CHAR_RATCHET" 2>/dev/null || echo '?')
     echo "  ✓ 全部 ≤ 基线（${REG_N} 份核心文档；精简后请改小台账让 diff 记录）"
   fi
+
+  # ── Face 6b 基线上调登记闸（2026-10-10 升级：抬上限必须有据）────────────
+  # 「只许降不许升」的例外是正当新增，而正当性必须写在 _meta.note 里
+  # （2026-10-08 KB 候选落盘先例即如此登记：文件名 + 增量 + 理由）。
+  # 判据：某文件基线值较 HEAD 版本上升 ⇒ 该文件路径必须出现在 _meta.note 中。
+  # 堵的是「悄悄抬上限」——与 check-docs LIMIT_A 注释里「批注自身记载过该缺口
+  # 却以抬上限代替归层修正」同源的累积病。
+  if git rev-parse --verify HEAD >/dev/null 2>&1; then
+    RAISED=$(node -e '
+      const {execFileSync}=require("child_process"); const fs=require("fs");
+      const p=process.argv[1];
+      let old={};
+      try{ old=JSON.parse(execFileSync("git",["show","HEAD:"+p],{encoding:"utf8"})); }catch(e){ process.exit(0); }
+      const cur=JSON.parse(fs.readFileSync(p,"utf8"));
+      const note=String((cur._meta&&cur._meta.note)||"");
+      const out=[];
+      for(const [f,v] of Object.entries(cur)){
+        if(f==="_meta") continue;
+        const o=old[f];
+        if(typeof o!=="number" || typeof v!=="number") continue;
+        if(v>o && !note.includes(f)) out.push(f+"  基线 "+o+" → "+v+"（+"+(v-o)+"）但 _meta.note 未提及该文件");
+      }
+      if(out.length) console.log(out.join("\n"));
+    ' "$CHAR_RATCHET" 2>/dev/null || true)
+    if [ -n "$RAISED" ]; then
+      printf '%s\n' "$RAISED" | sed 's|^|    |'
+      HITS=$((HITS + $(printf '%s\n' "$RAISED" | grep -c .)))
+      echo "  ❌ 基线上调未登记——把文件名与理由写进 _meta.note（抬上限必须有据，同 Face 3b 存量债口径）"
+    fi
+  fi
 fi
 
 # ── Face 7 抬头块闸（2026-09-29 抬头块限流批）─────────────────────────
@@ -305,10 +342,100 @@ else
   fi
 fi
 
+# ── Face 8 落盘后自检（2026-10-10 升级：把「靠人记得跑」收进门禁）────────
+# doc-postcheck.mjs 五项（U+FFFD / 墙式行格 / 字数棘轮 / 抬头块 / 标题粘连）与
+# Face 5-7 判据同源，但它是**单文件即时快检**。此前它只在 tools/README 里被描述为
+# 「文档落盘后即时快检」，无任何自动链路调用——落盘者要凭记忆才跑得到。
+# 本 Face 用 doc-postcheck 自带的 --changed 面（git diff HEAD + staged 的 .md）
+# 兜住「刚改的那几份」，让落盘当下就自检，不必等 pre-push。
+POSTCHECK="tools/check/doc-postcheck.mjs"
+echo "[Face 8] 落盘后自检（doc-postcheck.mjs · 本次变更 .md 五项）"
+if [ ! -f "$POSTCHECK" ]; then
+  echo "  ❌ 自检器缺失：${POSTCHECK}——无判定面，拒绝假绿"
+  HITS=$((HITS + 1))
+else
+  PC_OUT=$(node "$POSTCHECK" --changed 2>&1); PC_RC=$?
+  if printf '%s\n' "$PC_OUT" | grep -q "无待检文件"; then
+    echo "  ℹ️ 本次无 .md 变更，跳过"
+  elif [ "$PC_RC" -ne 0 ]; then
+    printf '%s\n' "$PC_OUT" | sed 's|^|    |'
+    HITS=$((HITS + 1))
+    echo "  ❌ 落盘后自检未过——见上（口径与 Face 5-7 同源，此处是即时快检）"
+  else
+    printf '%s\n' "$PC_OUT" | sed 's|^|    |'
+  fi
+fi
+
+# ── Face 9 新增来源块的净增量召回（信息位 · 防「自述零命中」式假绿）────────
+# 背景（2026-10-10 实锤）：落盘任务书自述「净增量 grep 零命中」，实测
+# docs/LIMITATIONS.md:128 已有同源判据段落——**「自述」不是证据**。
+# 本 Face 机械复算：取本次新增的 `> 📖 来源：` 行，抽出作品名（《》）与加粗判据词，
+# 在**活跃文档**（排除历史冻结区）召回并打印命中，交人工确认。
+# 判据：命中 ≠ 违规（同一命题的局限侧与评估层侧可能是正当两面），但**必须被看见**——
+#       故为信息位不自动红；与 Face 3b 同源的「可见即可审」口径。
+echo "[Face 9] 新增来源块的净增量召回（信息位 · 命中须人工确认）"
+# ⚠️ 关键词取自**本次新增的全部正文行**（不只 📖 行）——判据金句与作品名多数落在
+#   来源行的上一段，只扫来源行会抽空 ⇒ 召回未真正执行（守卫自证：抽到 0 个关键词
+#   且有新增行时，必须报「失明」而不是报「零命中」，见下 SHOWN/SELFCHECK）。
+# ⚠️ 用 `git diff HEAD`（= 工作树 + 暂存区 vs HEAD）：落盘当下改动多半**还没 stage**，
+#   只看 --cached 或 HEAD~1..HEAD 都会对「刚写完还没 add」的段落失明。
+NEW_LINES=$(git diff HEAD --unified=3 -- '*.md' 2>/dev/null | grep -E '^\+[^+]' || true)
+if [ -z "$NEW_LINES" ]; then
+  NEW_LINES=$(git diff HEAD~1 HEAD --unified=3 -- '*.md' 2>/dev/null | grep -E '^\+[^+]' || true)
+fi
+if [ -z "$NEW_LINES" ]; then
+  echo "  ℹ️ 本次无 .md 新增行，跳过"
+else
+  NL_N=$(printf '%s\n' "$NEW_LINES" | grep -c .)
+  # 关键词口径（防告警疲劳：噪音型守卫等于失明——实测首版抽出 the/to/a/on/「+」/「→」
+  # 等 51 条命中，绝大多数无意义）：只取《作品名》与 **加粗判据短语**；纯 ASCII 仅保留
+  # 多词短语（≥8 字符且含空格/连字符），过滤掉停用词与单字；中文一律保留。
+  KWS=$(printf '%s\n' "$NEW_LINES" | node -e '
+    let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+      const set=new Set();
+      for(const m of s.matchAll(/《([^》]{2,})》/g)) set.add(m[1]);
+      for(const m of s.matchAll(/\*\*([^*]{3,30})\*\*/g)) set.add(m[1]);
+      const keep=[...set].filter(k=>/[\u4e00-\u9fff]/.test(k) ? true : (k.length>=8 && /[\s-]/.test(k)));
+      console.log(keep.join("\n"));
+    });')
+  KW_N=$(printf '%s\n' "$KWS" | grep -c . || true)
+  SHOWN=0
+  if [ "$KW_N" -eq 0 ]; then
+    echo "  ⚠️ 失明防护：本次新增 ${NL_N} 行但抽出 0 个关键词（无《》与加粗短语）——召回未真正执行，请人工确认净增量"
+    HITS=$((HITS + 1))
+  else
+    # 扫描面 = tracked .md 减去历史冻结区（**不用 grep -r .**——那会扫进
+    # node_modules 下 762 个 .md，实测把本 Face 拖到 3 分钟以上，门禁不可接受）；
+    # 再减去**本次变更文件自身**——命中自己不构成「已存在同源内容」的证据。
+    MD_FILES=$(git ls-files '*.md' 2>/dev/null | grep -vE '^(docs/changelog/|docs/archive/|docs/evidence/)' || true)
+    CHANGED_MD=$(git diff HEAD --name-only -- '*.md' 2>/dev/null | sort -u)
+    [ -z "$CHANGED_MD" ] && CHANGED_MD=$(git diff HEAD~1 HEAD --name-only -- '*.md' 2>/dev/null | sort -u)
+    if [ -n "$CHANGED_MD" ]; then
+      EXCL_RE=$(printf '%s\n' "$CHANGED_MD" | paste -sd'|' -)
+      MD_FILES=$(printf '%s\n' "$MD_FILES" | grep -vE "^(${EXCL_RE})$" || true)
+    fi
+    # ⚠️ 必须按行读：多词短语（如「Damaging the task environment to trigger a reset」）
+    #   用 `for kw in $KWS` 会被 IFS 按空白拆成 the/task/to/a 等单字——噪音即由此而来。
+    while IFS= read -r kw; do
+      [ -z "$kw" ] && continue
+      HITS_F=$(printf '%s\n' "$MD_FILES" | xargs grep -l -- "$kw" 2>/dev/null || true)
+      [ -z "$HITS_F" ] && continue
+      N=$(printf '%s\n' "$HITS_F" | grep -c .)
+      printf '    · 「%s」→ 其他活跃文档 %s 处命中：%s\n' "$kw" "$N" "$(printf '%s\n' "$HITS_F" | head -4 | tr '\n' ' ')"
+      SHOWN=$((SHOWN + 1))
+    done <<< "$KWS"
+    if [ "$SHOWN" -eq 0 ]; then
+      echo "  ✓ ${NL_N} 新增行 / ${KW_N} 个关键词，活跃文档零命中（净增量成立）"
+    else
+      echo "  ⚠️ ${KW_N} 个关键词中 ${SHOWN} 个有命中（信息位）：确认是「同命题另一侧」（保留并互链）还是「同事实第二份副本」（须合并）"
+    fi
+  fi
+fi
+
 echo ""
 if [ "$HITS" -gt 0 ]; then
   echo "发现 ${HITS} 处违规"
   exit 1
 fi
-echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 / 可读性棘轮 / 字数棘轮 / 抬头块 六面）"
+echo "全部通过（0 处违规：内部代号 / 本机私有路径 / 来源块溯源 / 可读性棘轮 / 字数棘轮 / 抬头块 / 落盘自检 / 净增量召回 八面）"
 exit 0
