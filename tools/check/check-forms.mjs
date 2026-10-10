@@ -915,10 +915,20 @@ function extractDeclaredSegment(roadmapText, version) {
  * @returns {boolean}
  */
 function versionInIterationTable(roadmapText, version) {
+  // 位置假设防御（v1.5.9）：① **只在「迭代历程」段内**检索——避免把「版本规划」表的未来版本行
+  //   误判为「已移档」，从而吞掉真缺一侧；② **不强制行内带日期**——原正则要求版本号后紧跟 `（`，
+  //   迭代表行一旦省略日期即假红「缺一侧」（口径应由「版本落在哪张表」决定，而非由日期写法决定）。
+  const lines = roadmapText.split('\n');
+  const start = lines.findIndex((l) => /^##+\s.*迭代历程/.test(l));
+  if (start < 0) return false;
   const re = new RegExp(
-    '^\\|\\s*(?:\\*\\*)?\\s*' + escapeRe(version) + '\\s*(?:\\*\\*)?\\s*（',
+    '^\\|\\s*(?:\\*\\*)?\\s*' + escapeRe(version) + '\\s*(?:\\*\\*)?\\s*(?:（[^）]*）)?\\s*\\|',
   );
-  return roadmapText.split('\n').some((l) => re.test(l));
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^##+\s/.test(lines[i])) break; // 段结束
+    if (re.test(lines[i])) return true;
+  }
+  return false;
 }
 
 /**
