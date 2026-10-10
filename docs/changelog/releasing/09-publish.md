@@ -328,6 +328,11 @@ node tools/gen/gen-plugin-manifests.mjs
 # ④ 抓残留（bump 可能 EXIT 137 中断，核心号已改、边缘位置残留）
 bash tools/check/check-version.sh
 
+# ④b 🔴 根 package.json 的 @sofagent/* 依赖 spec 手工核验（发布实测盲区）——
+#    bump 脚本 [2c/13] 只处理 workspace 子包与各包 dependencies，**根 package.json 的
+#    dependencies 不在覆盖面**（实测：@sofagent/rules spec 残留 1.5.7，lock 随之带旧值，
+#    check-version「MISMATCH root → @sofagent/rules」红）。处置：bump 后手工同步根 spec
+#    再跑 ⑤ lockfile 重生成。
 # ⑤ lockfile 重生成（bump 不改 package-lock 的 workspace 内部依赖——
 #    发版时若不同批重生成 ⇒ lock 内部钉旧版号与 package.json 失配，与「全 SHA 固定/
 #    可复现构建」叙事自相矛盾。生成后 git add package-lock.json 随 bump commit 同批提交）

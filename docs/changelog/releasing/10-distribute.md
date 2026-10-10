@@ -103,7 +103,7 @@ done
 > - **双 manifest 版本一致**：ClawHub 校验 `package.json` 与 `openclaw.plugin.json` 两层 version 必须一致且 = 目标版本——bump 后先跑 `bash tools/check/check-version.sh`（9c 段已覆盖双 manifest），漂移直接被拒
 > - 先 `--dry-run` 验证格式与 source 映射，再真实发布
 
-> **publish 输出歧义判读**：真实发布成功输出两种形态——「Update submitted for <name>@X.Y.Z; pending security scans」与「OK. Published <name>@X.Y.Z (<id>)」。🔴 **「Fix: ...」形态不是成功证据**（v1.5.8 实测：同批四款 CLI 全输出「Fix: Move unsupported top-level manifest fields...」，API 复核仅 1 款实际发布、3 款仍停旧版——该形态只代表平台校验/修复建议流，发布未完成）。重试报「Version already exists」是已发布证据。**定性唯一通道**：API 查证 `https://clawhub.ai/api/v1/packages/<name>`（🔴 必须 `https://` 前缀——裸 `clawhub.ai/...` 被 curl 当本地路径静默失败返回空，
+> **publish 输出歧义判读**：真实发布成功输出两种形态——「Update submitted for <name>@X.Y.Z; pending security scans」与「OK. Published <name>@X.Y.Z (<id>)」。🔴 **「Fix: ...」形态不是成功证据**（发布实测：同批四款 CLI 全输出「Fix: Move unsupported top-level manifest fields...」，API 复核仅 1 款实际发布、3 款仍停旧版——该形态只代表平台校验/修复建议流，发布未完成）。重试报「Version already exists」是已发布证据。**定性唯一通道**：API 查证 `https://clawhub.ai/api/v1/packages/<name>`（🔴 必须 `https://` 前缀——裸 `clawhub.ai/...` 被 curl 当本地路径静默失败返回空，
 >对账假红）的 `latestVersion` + `scanStatus` + `verification.sourceCommit`，勿据 CLI 输出盲改版本号。**每次发布后逐款 API 复核 latestVersion == 目标版本才算发布完成**（「Fix:」形态出现时重发该款直至拿到成功形态输出）。另两条实测补充：① **服务端内存瞬断**——Convex `512 MB out of memory (reset in 48s)` 是平台侧限流非包问题，等 ≥60s 重发即成；② **scan=suspicious 未必是问题**——包内含 `*.test.js` 会触发扫描器启发式（同批无 test 文件的包 clean），按 verify 快照纪律判「新引入 vs 历史遗留」后再处置。
 
 ```bash

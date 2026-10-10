@@ -29,6 +29,7 @@
 | 循环 | `fresh-eyes` |
 | 轮数 | 实际跑了几轮（round-01 … round-NN） |
 | P0/P1/P2 | 该 run 最终 findings 中各级问题总数（去重后） |
+| 视角归因（新） | findings 按产出视角计数（如 `V3:2/V9:1/V24:1`，无产出视角不记）——跨 run 累计后作为视角生死判定依据：连续 3 run 零产出的视角进退役评审（playbook 纪律 17） |
 | 停止原因 | `2-rounds-clean`（连续 2 轮无 P0/P1）/ `human-stop` / `max-rounds` |
 | runs 指针 | 相对仓库根的路径，如 `FORGE/SKILL/fresh-eyes-loop/runs/2026/07/25/run-01` |
 
