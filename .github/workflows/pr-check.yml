@@ -146,6 +146,9 @@ jobs:
       - name: check-unwired-exports.sh（@public 导出接线）
         run: bash tools/check/check-unwired-exports.sh
 
+      - name: check-sdk-waiver-progress.mjs（SDK-face 清偿进度 · require-zero）
+        run: node tools/check/check-sdk-waiver-progress.mjs --require-zero
+
       # ── v1.5.7 F31 接入：插件适配层 seam 契约门禁 ──
       # 门禁目的：插件 seam ∈ SEAMS.md 词汇表（正向）+ DSH 三处 seam 逐条一致 +
       #   description 不滞后 + 反向词汇表每条在真实宿主 grep 到定义处（宿主缺席打印
