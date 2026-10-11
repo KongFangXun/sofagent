@@ -102,6 +102,7 @@
 | `check/doc-char-ratchet.json` | 核心文档**字数棘轮台账 + 抬头块上限**（被 `doc-discipline.sh` Face 6/7 消费：活文档**字符数**上限锁死 + 抬头块 ≤600 字；超基线即 CI 红。**口径是字数不是行数**——折行让行数 ×6 而字数仅 +1.7%。净增须先同文档移出等量字）。 |
 | `check/lib/readability-count.mjs` | **可读性计数器（单一口径）**（被 doc-discipline Face 5 / reflow-walls 共用：墙式行/墙式格的定义与计数实现；改口径先改本文件头注释再同步 `doc-ratchet.json` `_meta`）。 |
 | `check/lib/compact-tables.mjs` | **表格瘦身器**（一次性治理，非门禁）：去单元格对齐填充 + 分隔行归一（**只减不增**；冻结区跳过）。`--selftest` 十项。 |
+| `check/check-loop-bare-return.mjs` | **循环体内裸 return 守卫**：`for`/`for...of`/`while` 体内出现无返回值的 `return;` → 报红（意图几乎总是「跳过本项」，该用 `continue`，实际却退出整个函数）。根因实证：一轮目录遍历扫描器因此把 1094 篇误报成 14 篇（10 倍级误差、无报错、数字表面自洽）。判定＝由内向外找最近外层开括号并分类（循环→命中 / 函数→停 / 普通块→继续），不判函数末尾早退与 `forEach` 回调（那里 `return` 合法）。豁免 `// loop-return-ok: <理由>`。`--selftest` 10 例（4 正例必红 / 6 反例必绿）。 |
 | `check/lib/reflow-walls.mjs` | **墙式行折行器**（一次性治理，非门禁）。`--selftest` 十项：幂等 / 内容守恒 / **不凭空造行** / 无残留超限 / 表格围栏豁免等。 |
 | `check/lib/split-table-cells.mjs` | **超长表格格拆注工具**（一次性治理工具，非门禁：把超长表格内的墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线）。产出契约受 `check-table-shape.mjs` ③④ 断言机械对账——标记形态 `（详→注-N）`、同文件必有 `> 注-N：` 定义、**切口必落句读符**（找不到切口就整格不拆） | 拆注治理时 |
 | `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine`+`tools`（`playbook/` 剔出：行为锁本质是测试）；（详→注-14） | CI / 改 SECURITY 测绘数字或 hook 时 |

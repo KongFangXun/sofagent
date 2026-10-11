@@ -14,6 +14,7 @@
 #   ⑦ tools/ README 收录对账（每个 git 追踪的脚本文件名须被
 #      tools/README.md 提到——漂移阻断，v1.4.8 第2批由观察期 WARN 升级 FAIL）
 #   ⑩ check 脚本自检（--selftest 常驻化：自检存在却无人调用 = 纸面防线，本段逐个执行）
+#   ⑪ 循环体内裸 return 守卫（自报计数的头号假数字来源）
 #
 # 设计纪律（与 check-review-system.sh 一致）：
 #   - 清单核对器，不判断好坏；0=全绿 / 1=有 FAIL / 2=脚本自身错误
@@ -411,6 +412,25 @@ elif [ -n "$SELFTEST_FAIL" ]; then
   bad "⑩ check 脚本自检失败：$SELFTEST_FAIL"
 else
   ok "⑩ check 脚本自检 $SELFTEST_N 个全过（--selftest 常驻；另有 $SELFTEST_SKIP 个仅「提及」该参数，按 rc=2 判为不支持而跳过）"
+fi
+
+# ============================================================
+# ⑪ 循环体内裸 return 守卫（自报计数的头号假数字来源）
+#   为什么：`for`/`for...of`/`while` 体内写 `return`（本意「跳过本项」）会**退出整个函数**——
+#   实测过一次：目录遍历扫描器因此把「1094 篇」报成「14 篇」，**10 倍级误差且表面自洽**。
+#   凡「自报扫描数」的脚本踩此坑，产出的是**看起来像真的假数字**，比直接崩溃更坏。
+#   配套：SOP 侧已入《温故知新每日扫描 SOP》§8 第 18 步「自报计数三律」（v4.19）。
+# ============================================================
+[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑪ 循环体内裸 return 守卫 ──${NC}"
+_lr_out=$(node tools/check/check-loop-bare-return.mjs 2>&1)
+_lr_rc=$?
+if [ "$_lr_rc" -eq 0 ]; then
+  ok "⑪ 循环体内零裸 return（跳过本项请用 continue）"
+elif [ "$_lr_rc" -eq 2 ]; then
+  bad "⑪ 守卫引擎故障（扫描面异常）——fail-loud 拒绝假绿"
+else
+  echo "$_lr_out" | head -6 | sed "s/^/      /"
+  bad "⑪ 发现循环体内裸 return（明细见上——改 continue，或加 // loop-return-ok: <理由> 豁免）"
 fi
 # ============================================================
 # 汇总
