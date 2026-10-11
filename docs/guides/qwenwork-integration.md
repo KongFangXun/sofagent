@@ -10,7 +10,7 @@
 ## 已确认能力（可落地）
 
 | 能力 | 状态 | 接入方式 |
-|------|------|----------|
+|---|---|---|
 | **自定义 MCP 服务** | ✅ 确定 | 支持 Streamable HTTP / SSE / STDIO；sofagent 的 `sofagent mcp`（工具数以 `engine/mcp/src/tool-registry.ts` 为准）可直接挂入 |
 | **自定义 Hook（命令行安全防护）** | ⚠️ 能力存在，schema 未公开 | 官方确认「支持开发者自定义 Hook 拦截危险命令（如 rm -rf）」，但配置格式未公开文档 |
 

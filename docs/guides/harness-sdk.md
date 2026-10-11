@@ -31,7 +31,7 @@ const result = await hosted.agent.invoke({ messages: [...] });
 ## 双形态兼容
 
 | 形态 | 用法 | 拦截点 |
-|------|------|--------|
+|---|---|---|
 | `createReactAgent` | `wrapTools(myTools, options)` 后传给 agent | middleware 工具链路 |
 | 纯 `StateGraph` | 同一 `wrapTools` 产物注入 `tools` 节点 | tools 节点（工具调用必经点） |
 
@@ -40,7 +40,7 @@ const result = await hosted.agent.invoke({ messages: [...] });
 ## 审批模式
 
 | 模式 | 语义 |
-|------|------|
+|---|---|
 | `allow-with-audit`（默认） | 放行 + 审计留痕（保守默认，不破坏既有行为） |
 | `require-approval` | 副作用类工具（write/delete/git 等）调 `requestApproval` 等人审；**无审批通道时 fail-safe 拒绝** |
 | `deny` | 副作用类工具全部拦截（只读观察模式——适合审计/监控类 agent） |

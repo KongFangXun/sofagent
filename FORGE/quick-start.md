@@ -21,7 +21,7 @@ fresh-eyes-loop 和 release-gate-loop **共用同一套模型配置**——只�
 **统一单模型**（当前口径，权威源 `FORGE/models/profile.mjs`）：六个角色（A/B/C/D/V/F）统一走 **glm-5.3-flash**（GLM Coding Plan 订阅档）。fresh-eyes 纪律通过**每步独立子进程（零上下文）+ 独立 prompt** 实现，不依赖模型差异。
 
 | 角色 | 职责 | 模型 | 行为指令 | 工具集 |
-|:--:|------|------|------|------|
+|:---:|---|---|---|---|
 | **A**（审查者） | 12 视角单盲审查 + 合并 | glm-5.3-flash | `prompts/a-check-perspective-*.md` / `a-consolidate.md` | `REVIEWER_TOOLS`（只读） |
 | **B**（工程师） | 修复缺陷 | glm-5.3-flash | `prompts/b-check.md` / `b-fix.md` | `ENGINEER_TOOLS`（含写工具） |
 | **C**（验收者） | 逐条实测验收 B 的修复 | glm-5.3-flash | `prompts/c-verify.md` | `REVIEWER_TOOLS`（只读） |
@@ -60,7 +60,7 @@ source ~/.sofagent/env.local
 **glm-5.3-flash（全角色）**：driver 传 `thinking={type:'enabled', clear_thinking:false}` + `reasoningEffort='max'` + `temperature=1.0`，启用最强推理模式。
 
 | 参数 | 值 | 说明 |
-|------|:--:|------|
+|---|:---:|---|
 | `maxTokens`（默认） | 16000 | 限制输出 token，防止 thinking 模式无限消耗 |
 | `maxTokens`（合并步骤） | 32000 | a-consolidate / consolidate 单独覆盖——合并多份完整报告输出超长，16000 会截断导致整轮降级 |
 
@@ -71,7 +71,7 @@ source ~/.sofagent/env.local
 每轮循环的 token 用量会被准确记录。**成本**的估算方式取决于各模型的计费模式：
 
 | 模型类型 | 计费模式 | 说明 |
-|------|:--:|------|
+|---|:---:|---|
 | **glm-5.3-flash**（全角色使用） | 📦 订阅制 | GLM Coding Plan，按月固定费用 + 额度，**不按 token 扣费**。driver 只记录 token 用量，`cost_cny` 记为 `null`，`price_confidence` 标为 `subscription` |
 | **按量计费模型**（如需切换） | 💧 按量计费 | driver 按「官方标价 × token 用量」算出 `cost_cny` 估算值。实际账单受**缓存命中率**影响，以厂商 API 后台为准 |
 
@@ -103,7 +103,7 @@ node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <runDir�
 ```
 
 | 参数 | 说明 |
-|------|------|
+|---|---|
 | `--worker` | 单步执行模式（唯一入口；无参调用打印退役提示） |
 | `--step` | 角色步骤名（a-check / a-consolidate / b-fix / b-audit / c-verify / d-review） |
 | `--round-dir` | 本轮产物目录绝对路径 |
@@ -151,7 +151,7 @@ node FORGE/src/release-gate-driver.mjs --step verdict       --target v1.3.7 --ru
 **driver 参数**：
 
 | 参数 | 说明 | 默认值 |
-|------|------|------|
+|---|---|---|
 | `--target` | 目标版本号 | 必填 |
 | `--dry-run` | 只打印 step 序列，不调用 LLM | `false` |
 | `--skip-acceptance` | 跳过 acceptance-test 步骤（需手动预跑） | `false` |
@@ -192,7 +192,7 @@ verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
 ```
 
 | 字段 | 说明 |
-|------|------|
+|---|---|
 | `role` | 角色标识（`A` = 审查者 / `B` = 工程师） |
 | `model` | 模型名 |
 | `prompt_tokens` | 输入 token 数 |
@@ -207,7 +207,7 @@ verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
 ## 常见问题
 
 | 问题 | 原因 | 解决 |
-|------|------|------|
+|---|---|---|
 | `SOFAGENT_LLM_A_API_KEY` 或 `SOFAGENT_LLM_B_API_KEY` 未设 | 没配 key | 厂商 key：`export GLM_API_KEY=REPLACE_ME`（key 跟模型文件走，见 `FORGE/models/*.mjs` 的 `apiKeyEnv`） |
 | driver 找不到 `node` 命令 | Node.js 未安装或不在 PATH | 装 Node.js ≥ 18（`brew install node` / `nvm install 18`） |
 | reviewer 每轮都驳回 | 审查标准太严 | 改 `SKILL/agents/reviewer/SKILL.md` 的判定标准 |

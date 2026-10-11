@@ -32,7 +32,7 @@ daemon 启动时自动遍历所有子目录并建独立 watcher，新目录创�
 ## 告警出口与审计规则
 
 | 出口 | 用途 |
-|------|------|
+|---|---|
 | stdout | 实时终端输出 |
 | `daemon-health.json` | 供审计模块后续检查 |
 | `audit/history.jsonl` | `--timeline` 查看历史 |

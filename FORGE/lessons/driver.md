@@ -15,7 +15,7 @@
 **六项检查与阻塞策略**：
 
 | # | 检查项 | 级别 | 失败表现 |
-|---|--------|------|---------|
+|---|---|---|---|
 | ① | cwd / repoRoot 路径 | HALT | 目录不存在/不是目录 → git 命令全崩 |
 | ② | stdout 管道 SIGPIPE | **WARN** | stdout 是管道 → 下游 `\| head` 截断会杀 driver |
 | ③ | 模型 API 可达 | HALT | fetch 超时/网络错误 → 长任务必然中途断 |
@@ -43,7 +43,7 @@
 ### recursionLimit 按步骤区分
 
 | 步骤类型 | recursionLimit | 理由 |
-|---------|---------------|------|
+|---|---|---|
 | 审查类（a-check/b-check） | 130 | L2 硬熔断在 100 次工具调用时触发（≈superstep 200），写报告窗口 REVIEW_GRACE_STEPS=80 |
 | 文本处理类（a-consolidate） | 50-100 | 主要做合并/格式化 |
 | 修复类（b-fix） | 100-150 | 每个修复点 Read→Edit→Test 三步 |
@@ -395,7 +395,7 @@ npx vitest run FORGE/src/driver-base.test.mjs   # 单文件（调试用）
 `set -euo pipefail` 下 `cmd | head -N` → head 关闭管道 → SIGPIPE → `set -e` 退出。
 
 | 场景 | ❌ 危险 | ✅ 安全 |
-|------|---------|---------|
+|---|---|---|
 | 只关心副作用 | `cmd \| head -N` | `cmd > /dev/null 2>&1 \|\| true` |
 | 需要截取输出 | `cmd \| head -N` | `OUT=$(cmd 2>&1 \|\| true); echo "$OUT" \| head -N` |
 
@@ -406,7 +406,7 @@ npx vitest run FORGE/src/driver-base.test.mjs   # 单文件（调试用）
 #### 超时设置
 
 | 来源 | 值 |
-|------|------|
+|---|---|
 | Driver 内部超时 | 脚本预估 3-5 倍（acceptance 2-3min → 超时 15min） |
 | Sandbox kill | ~20s-300s（不可控，只能靠流式日志最小化杀伤） |
 
@@ -430,7 +430,7 @@ node driver.mjs --target <版本> --skip-acceptance
 #### Driver --step 单步执行模式
 
 | 模式 | 触发 | 适用场景 |
-|------|------|---------|
+|---|---|---|
 | 全量（默认） | `--target vX.Y.Z` | 正常发版 |
 | 单步 | `--step <name> --target vX.Y.Z` | 沙箱 OOM / CI 内存受限 |
 | worker | `--worker --step <name>` | 内部机制 |
@@ -497,7 +497,7 @@ const invokeAgent = async () => { ... };  // invokeAgent 也能访问
 **正确做法**：
 
 | 方式 | 是否安全 | 说明 |
-|------|---------|------|
+|---|---|---|
 | 前台阻塞执行 | ✅ | 但占住 session 无法监控 |
 | `nohup ... &disown` | ❌ | WorkBuddy 清理脱离进程 |
 | Bash 工具 `run_in_background: true` + `dangerouslyDisableSandbox: true` | ✅ | Bash 工具管理生命周期，不被清理 |
@@ -525,7 +525,7 @@ node FORGE/src/fresh-eyes-driver.mjs --target <版本> > /tmp/fresh-eyes.log 2>&
 **四个典型案例**（regression-checklist.md 检查命令缺陷）：
 
 | 缺陷类型 | 案例 | 表现 |
-|------|------|------|
+|---|---|---|
 | 期望值过期 | #4 | 规则数期望写死 21，实际已是 24 |
 | 环境假设错误 | #7 | 把 .gitignore 的运行时文件（config.yml）缺失判为 FAIL，干净 clone 必然"失败" |
 | 比对格式不归一 | #4 | TS 源码 vs README 表格行直接 diff，两种格式永远有差异 |
@@ -787,7 +787,7 @@ node FORGE/src/fresh-eyes-driver.mjs --target <版本> > /tmp/fresh-eyes.log 2>&
 **场景**：用户拍板「worker 必须走 DSH（DeepSeek Harness）」。DSH CLI 桥接形态（`dsh --profile headless "<task>"` 子进程）下，release-gate 判断层连续 6+ 轮失败，症状演进：
 
 | run | 症状 | 根因 |
-|-----|------|------|
+|---|---|---|
 | run-04/05 | 4 worker 全退出码 1（ERROR） | worker 无工具读 precheck → 报告空 → throw |
 | run-06 | coverage/verdict 有产物但「0 条工具结果」 | f76e14bb 前：output 提取缺失 |
 | run-07 | regression 有产物但「0 条工具结果」→ FAIL | f76e14bb 修了 output，但 worker 仍无证据 |

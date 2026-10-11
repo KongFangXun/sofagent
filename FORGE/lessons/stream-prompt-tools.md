@@ -104,7 +104,7 @@ dist/tools.js 是手写 `ExecutableTool` 格式，LangGraph ToolNode 需要 `too
 ### 两层可观测
 
 | 层级 | 数据源 | 内容 |
-|------|--------|------|
+|---|---|---|
 | L1 visibility | 循环级事件（RUN_START / ROUND_END / ERROR） | progress.jsonl + status.json |
 | L2 progressMw | 工具调用级（start/end + duration）+ 推理心跳 | sub-progress-<role>.jsonl |
 

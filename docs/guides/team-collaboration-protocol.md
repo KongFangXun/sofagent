@@ -19,7 +19,7 @@ v1.3.2 交付了单 Agent 全闭环（Onboard L1-L5）+ workflow 批量生成（
 ### 0.2 本协议不做什么（边界钉死）
 
 | 边界 | 说明 | 归属版本 |
-|------|------|---------|
+|---|---|---|
 | **不碰权限体系** | 成员能/不能做什么（准入控制、操作授权）归 v1.3.7 场景权限体系。本协议的 trust **只是排序权重，不是权限令牌** | v1.3.7 |
 | **不碰 L3 组织能力市场** | Agent 的发现/交易/上架归 v1.3.4 | v1.3.4 |
 | **不重写联邦加密链路** | 复用 v1.1.8 AES-256-GCM + FederationChannel 抽象 | v1.1.8 |
@@ -367,7 +367,7 @@ Agent A 跑 Refine → 发现质量缺陷 → L4 修复 → 审计通过
 ### 5.2 v1.3.3 的依赖方向约束
 
 | 包 | 角色 | 可依赖 | 禁止依赖 |
-|----|------|--------|---------|
+|---|---|---|---|
 | **orchestrator** | 协议核心 | core / audit / rules / ontology | ❌ **禁止反向 import daemon** |
 | **daemon** | 联邦通道 | orchestrator / core / audit | （下游包，无禁止） |
 | **mcp** | 工具层 | orchestrator / audit / core / daemon(optional) | （下游包，无禁止） |
@@ -411,7 +411,7 @@ export class FederatedTeamSyncChannel implements TeamSyncChannel {
 **为什么不选另外两种方案**：
 
 | 方案 | 否决原因 |
-|------|---------|
+|---|---|
 | 事件回调注入 | orchestrator 需要「主动调」sync（写完即同步），回调注入是「被动等」daemon 来拉，语义不对 |
 | daemon 轮询 team 状态 | 轮询有延迟（最终一致性窗口不可控）+ 浪费 CPU（团队大部分时间无变更） |
 
@@ -426,7 +426,7 @@ export class FederatedTeamSyncChannel implements TeamSyncChannel {
 主 Agent（Leader）通过 L2 协议机制编排 N 个 sub-agent：
 
 | 职责 | 落地机制 | 调用链 |
-|------|---------|--------|
+|---|---|---|
 | 分发 | 意图广播 + 触发反应 | Leader 广播 `intent.execute.<task>` → 匹配的 sub-agent 触发 |
 | 监控 | 团队级审计轨迹 | Leader 读 decision-log（按 teamId tag 过滤） |
 | 审计 | 审计模块 git diff | sub-agent 产出后走 A1-A24（已有能力） |
@@ -455,7 +455,7 @@ parseWorkflowToSubAgents()
 Refine Agent 复用 v1.3.2 loop-agent 的 L1/L3/L4/L5，只替换 L2 判据：
 
 | loop-agent 层 | Refine 复用方式 |
-|--------------|----------------|
+|---|---|
 | `driver.ts`（L1 循环驱动） | 复用骨架，注入 `l2Judge = qualityJudge` |
 | `judge.ts`（L1 crash/error/超时） | 直接复用（import） |
 | `ontology-comparator.ts`（L2 语义对比） | **替换为 `quality-judge.ts`**（接口对齐 DiffReport） |
@@ -498,7 +498,7 @@ quality-rule-set 加载顺序：
 进化闭环（optimization-loop）的优化器**只能修改经验层**：
 
 | 层 | 允许改 | 禁止改 |
-|----|:------:|:------:|
+|---|:---:|:---:|
 | L1 硬约束（SKILL.md） | ❌ | **永远不可碰——审计铁律** |
 | L2 决策约束（think.md） | ✅ | |
 | L4 经验层（knowledge/） | ✅ | |
@@ -527,7 +527,7 @@ freezeBenchmark(def)           // benchmark-designer.ts:172 冻结基线
 ## 十、安全考量
 
 | 攻击面 | 防护措施 |
-|--------|---------|
+|---|---|
 | 意图事件注入 | IntentEvent 的 payload 经 sanitize（复用 `REDACTION_PATTERNS`，与 A9 同类） |
 | trust 值篡改 | team.yml 明文存储——建议 chmod 444 或 HMAC 签名（对齐 config.yml 加固模式） |
 | 共享态明文 | team-state.automerge 是明文二进制——叠加「已知风险·明文存储」段（与 knowledge 同级风险） |
@@ -538,7 +538,7 @@ freezeBenchmark(def)           // benchmark-designer.ts:172 冻结基线
 ## 十一、待明确事项（实现时再定）
 
 | # | 问题 | 当前倾向 |
-|---|------|---------|
+|---|---|---|
 | 1 | 共享态并发写——乐观锁（CAS）还是悲观锁？ | **乐观锁**（CRDT 自动合并，冲突时 trust 高者胜） |
 | 2 | 意图广播收敛窗口——多久算收敛？ | **默认 5 秒无新意图**（可配置） |
 | 3 | 主 agent 编排逻辑放哪？ | **并入 team-manager.ts**（编排是团队生命周期的一部分） |

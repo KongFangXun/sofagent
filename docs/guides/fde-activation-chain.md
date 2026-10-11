@@ -25,7 +25,7 @@ FDE 诊断完成后，交付了一堆**静态文件**：ontology 本体数据（
 轨道铺好了，但只有 4 节自有车厢，企业车厢造好了没挂上去：
 
 | 零件 | 文件 | 现有能力 | 缺什么 |
-|------|------|---------|--------|
+|---|---|---|---|
 | **composer.ts** | `engine/orchestrator/src/composer.ts` | 用 LangGraph `createReactAgent` 做任务拆解，输出 workflow YAML | 现在是"用户给 task → 拆通用 workflow"。缺"读 FDE 交付物 → 生成企业专属 workflow" |
 | **workflow-parser.ts** | `engine/orchestrator/src/workflow-parser.ts` | YAML → SubAgent 映射，有 DAG 校验 | 映射表写死 4 个内置 Agent（developer/qa/researcher/writer）。缺企业自定义 Agent 注册 |
 | **dag-runner.ts** | `engine/orchestrator/src/dag-runner.ts` | 按 DAG 依赖顺序跑 SubAgent（当前串行） | 能跑，但只跑内置 Agent。缺企业 Agent 支持 |
@@ -40,7 +40,7 @@ FDE 诊断完成后，交付了一堆**静态文件**：ontology 本体数据（
 FDE 诊断完成（交付物就绪）后，四阶段依次推进：
 
 | 阶段 | 做什么 | 改谁 |
-|------|--------|------|
+|---|---|---|
 | **Phase 1 · ACTIVATE（激活）** | 读交付物 → 注册企业 SubAgent | 新增 `activate.ts` |
 | **Phase 2 · ORCHESTRATE（编排）** | 映射表 + 注册扩展 → StateGraph 构建 | 扩展 `composer.ts` + `workflow-parser.ts` |
 | **Phase 3 · EXECUTE（执行）** | dag-runner + 节点执行器 → HITL + 审计集成 + 异常处理 | 扩展 `dag-runner.ts` |
@@ -203,7 +203,7 @@ export async function composeEnterpriseWorkflow(
 节点间数据怎么传——三层架构：
 
 | 数据类型 | 传法 | 轻重 |
-|---------|------|------|
+|---|---|---|
 | **实时业务数据**（订单号、排程结果） | LangGraph State（内存传递） | 轻，跑完就没了 |
 | **知识数据**（客户信息、工艺标准） | ontology entity（持久化） | 重，写入磁盘 |
 | **状态标记**（处理中/已完成/异常） | State + entity 双写 | 中，State 传 + entity 留痕 |
@@ -211,7 +211,7 @@ export async function composeEnterpriseWorkflow(
 **节点间**仍走 LangGraph State（编排层 DAG 通道），但**节点内部**（v1.5.5 竀一起）运行 SKILL.state 执行协议——三输入形态：
 
 | 输入 | 类别 | 说明 |
-|------|------|------|
+|---|---|---|
 | **P**（技能说明，不可变） | systemPrompt / SKILL.md 注入 | 执行期只读恒定 |
 | **Σt**（结构化状态 JSON） | 实时业务数据 + 状态标记（唯一跨步记忆） | 接单 → 排产传递的订单数据入 `facts`；节点完成度入 `done`/`todo`；形如 `{ customer-intake: 'done' }` 的旧 `nodeStatus` 语义由编排层 State 承担 |
 | **ot**（最新观察） | 上一步工具返回（截断） | 只看最新一条，历史观察不进 prompt |
@@ -267,7 +267,7 @@ sofagent orchestrator run-enterprise
 ### 已有能力（无需新建）
 
 | 能力 | 现状 |
-|------|------|
+|---|---|
 | FDE sustain 模式 | 已有：读 audit 报告趋势 → 生成优化建议 |
 | think.md 回溯 | 已有：每次任务自动写反思 |
 | evolve 优化 | 已有：分析 Skill → 生成优化候选 |
@@ -289,7 +289,7 @@ Skill（**自动晋级未启用**——当前为记录+整理态，晋级走人�
 **方案**：从 workflow.yml 的 `actions` 字段提取，映射到工具集：
 
 | actions 声明 | 实际工具 |
-|-------------|---------|
+|---|---|
 | `read` | Read, Glob, Grep |
 | `write` | Write, Edit |
 | `bash` | Bash |
@@ -311,7 +311,7 @@ Skill（**自动晋级未启用**——当前为记录+整理态，晋级走人�
 激活链生成的企业 Agent 需要在多种平台运行：
 
 | 平台 | 运行方式 |
-|------|---------|
+|---|---|
 | **CLI**（sofagent orchestrator） | 原生支持，Phase 3 直接跑 |
 | **WorkBuddy** | 通过 Skill 加载 + MCP 调用 `activate_workflow` |
 | **OpenClaw** | 通过 Skill + bridge 转发 |
@@ -326,7 +326,7 @@ Skill（**自动晋级未启用**——当前为记录+整理态，晋级走人�
 ### 新增文件
 
 | 文件 | 说明 |
-|------|------|
+|---|---|
 | `engine/orchestrator/src/activate.ts` | **核心**：Phase 1 激活逻辑 |
 | `engine/orchestrator/src/enterprise-graph.ts` | Phase 2 企业编排图构建 |
 | `engine/orchestrator/src/node-executor.ts` | Phase 3 企业节点执行器（含 HITL/审计集成） |
@@ -339,7 +339,7 @@ Skill（**自动晋级未启用**——当前为记录+整理态，晋级走人�
 ### 修改文件
 
 | 文件 | 修改内容 |
-|------|---------|
+|---|---|
 | `engine/orchestrator/src/workflow-parser.ts` | 扩展映射表支持 `agent: enterprise` 类型 |
 | `engine/orchestrator/src/registry.ts` | 扩展 `SubAgentDefinition` 增加 hitl / hitlConfig 字段 |
 | `engine/orchestrator/src/composer.ts` | 新增 `composeEnterpriseWorkflow()` |
@@ -358,7 +358,7 @@ Agent 执行 + HITL 中断（细节见 Phase 1-3 正文）。
 ## 验证方式
 
 | 检查项 | 通过标准 |
-|--------|------|
+|---|---|
 | activate 命令 | 能读 workflow.yml + skills/ + entities/ → 生成 .sofagent/subagents/*.yml |
 | dry-run 模式 | `--dry-run` 只预览不写文件 |
 | 👤 节点跳过 | type 为 👤 的节点被跳过，记录在 skippedNodes |
@@ -378,7 +378,7 @@ Agent 执行 + HITL 中断（细节见 Phase 1-3 正文）。
 ## 与其他开发线的衔接
 
 | 开发线 | 衔接 |
-|--------|------|
+|---|---|
 | **Skill × MCP 集成（S1-S5）** | FDE Skill 有 MCP 工具调用能力；激活链的 `activate_workflow` 是新增 MCP tool |
 | **Skill 分包** | `SKILL/skills/04-deliver.md` 应含 activate 引导——交付后不是结束，activate 才是 |
 | **运行时审计** | LangGraph middleware wrapToolCall（通用拦截）与激活链"每个节点执行后审计"（企业专属）互补 |
@@ -409,7 +409,7 @@ flowchart TD
 ### 继承是自动的，不是配置出来的
 
 | 引擎 | 企业 SubAgent 怎么继承 | 触发点 |
-|------|----------------------|--------|
+|---|---|---|
 | 🧭 **约束层** | `buildConstrainedSystemPrompt()` 注册即生效，走 SKILL.md → fde.md → think.md → knowledge/ 四层加载链 | 启动时自动 |
 | 🔍 **审计模块** | EXECUTE 阶段 `on_step: true`，每步执行后自动跑 28 条规则 | 每步执行后 |
 | 🔄 **回溯能力** | 审计后自动 git snapshot，违规一键回滚 | 审计完成后自动 |
@@ -418,7 +418,7 @@ flowchart TD
 ### 自我进化的两层边界
 
 | 进化层级 | 机制 | 状态 | 企业 SubAgent 能得到吗 |
-|---------|------|:--:|----------------------|
+|---|---|:---:|---|
 | **行为级进化** | think.md 反思（不犯同样错）+ Dream Cycle 知识回灌（越跑越懂企业）+ evolve Skill 优化（记录+整理态——自动改进未启用，准入门与晋级判据排期 [v1.5.8](../changelog/v1.5/v1.5.8.md)） | ⚠️ 记录+整理态 | **能，自动获得沉淀**——反思与知识回灌随使用迭代；「失败 3 次自动改」为早期叙事，自动改进启用以 v1.5.8 准入门为准（诚实边界见 [LIMITATIONS](../LIMITATIONS.md)） |
 | **模型级进化** | QLoRA 后训练小模型（workflow 数据训练进权重） | ⚠️ v3.x-v4.x 远期 | 远期蓝图，当前不具备 |
 

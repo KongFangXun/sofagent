@@ -12,7 +12,7 @@
 ## 角色
 
 | 角色 | 身份 | 每轮动作 | 产物 |
-|------|------|---------|------|
+|---|---|---|---|
 | **A** | 审查者 / QA | ① 独立跑 12 视角审查 ② 合并 A/B 报告 ③ 验证 B 修复 | `check-a.md` → `findings.md` + `result.md` → 回填 verify |
 | **B** | 工程师 | ① 独立跑 12 视角审查 ② 执行合并后的修复 | `check-b.md` → `summary.md` |
 | **编排者** | 一次 harness 运行（WorkBuddy 有人值守 / DSH 无头 / Codex headless，注入主任务协议即跑） | 中转文件、建 `runs/`、判定停止、写 `LEDGER.md` | `runs/` 目录 + LEDGER 行 |
@@ -51,7 +51,7 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 ## 产物 Schema
 
 | 文件 | 作者 | 内容 |
-|------|------|------|
+|---|---|---|
 | `check-a.md` / `check-b.md` | A / B | 各自 12 视角独立发现，每条带 `视角 / 文件路径 / 具体描述 / 优先级(P0\|P1\|P2)` |
 | `findings.md` | A | 合并去重后的统一问题清单，按 P0→P2 排序，每条带 `来源(A/B/双)` |
 | `result.md` | A | 给 B 的修复指令（每条 finding → 期望修复行为）；末尾 verify 列由步骤 5 回填 |
@@ -86,7 +86,7 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 循环的编排逻辑 = 本文件「主任务协议」六条（SSOT）；**编排者就是一次 harness 运行本身**——注入协议即跑，不存在第二种编排形态。状态全在 `runs/` 文件里（文件即状态），中断任意载体接续跑，无需重开。
 
 | 层 | 归属 |
-|----|------|
+|---|---|
 | **编排逻辑** | 主任务协议六条（本文件，唯一 SSOT） |
 | **编排者** | 任意 harness session：WorkBuddy（有人值守，单轮 + 修复批）/ **DSH 无头（主载体，无人值守多轮）** / Codex headless |
 | **角色执行** | 三通道任选（见主任务协议第 2 条；每角色独立上下文） |

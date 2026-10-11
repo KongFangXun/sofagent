@@ -13,7 +13,7 @@ const MODEL_CONFIGS = {
 ```
 
 | 角色 | 模型 | 计费 | 用途 |
-|------|------|------|------|
+|---|---|---|---|
 | A（审查者） | glm-5.3-flash | GLM Coding Plan（订阅） | 审查 / 合并 / 验证 |
 | B（工程师） | glm-5.3-flash | GLM Coding Plan（订阅） | 修复 |
 | C（验收者） | glm-5.3-flash | GLM Coding Plan（订阅） | 独立验收 B 的修复 |

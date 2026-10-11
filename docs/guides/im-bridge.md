@@ -35,7 +35,7 @@ npx -y github:xmanrui/dsh-im install
 ## 三、机器人命令（白名单）
 
 | 命令 | 作用 |
-|------|------|
+|---|---|
 | `/help` `/status` `/version` | 帮助 / 连接状态 / 插件版本（均不创建会话） |
 | `/new` | 解绑当前聊天会话，下一条消息开新 Session（不删旧 Session） |
 | `/models` · `/model [序号\|Provider/ID [推理等级]]` | 列出 / 切换模型 |

@@ -5,7 +5,7 @@
 ## 文件清单
 
 | 文件 | 用途 | 谁消费 |
-|------|------|--------|
+|---|---|---|
 | `sofagent.png` | 项目 Logo（200px），README 头部引用 | GitHub README、npm 包页面、docs/ 各文档头部（WIKI/ARCHITECTURE 等；dashboard.html 实测无引用，2026-10-06 核对） |
 | `banner.png` | README 头部横幅 | README 中英版头部 |
 | `arch-layers.svg` | 三层定位图（模型层 → FDE Harness 层 → Agent 层），矢量、全内联样式 | README 中文版「什么是 FDE Harness」段 |

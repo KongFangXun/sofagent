@@ -11,7 +11,7 @@
 从上岗 prompt 提取四要素，缺任何一项 → **停在诊断，不开始安装**：
 
 | 要素 | 用途 | 缺失时诊断 |
-|------|------|-----------|
+|---|---|---|
 | 平台名（openclaw/workbuddy/claude/cursor/codex/hermes/gemini） | `install.sh --platform` 参数 | `{ "step": 0, "missing": "platform" }`——问派单方要，不猜 |
 | 设备身份码（agentId + publicKey + signature） | 第 4 步 G9 注册 | 同上——身份码由约束层侧生成下发，设备侧不自造 |
 | 策略文件路径（可选） | `install.sh --policy` | 可缺省（无企业策略管控时跳过） |

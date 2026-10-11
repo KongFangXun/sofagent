@@ -7,7 +7,7 @@
 ## 为什么需要这个测试
 
 | 维度 | 现有单测 | 本 E2E |
-|------|---------|--------|
+|---|---|---|
 | 进程边界 | 同进程 mock 两个 peer | **两个独立 Node 进程**（fork），loopback TCP 传输 |
 | 传输层 | `createMemoryChannel` 内存直投 | **真实 TCP socket**（127.0.0.1） |
 | 配对 | 直接构造 `PairedPeer`（跳过协商） | **完整配对流程**（createPairingSession → pairByCode → 指纹确认） |
@@ -61,7 +61,7 @@ SOFAGENT_REPO="$(pwd)" node playbook/federation-e2e.mjs
 ## 常见失败排查
 
 | 现象 | 原因 |
-|------|------|
+|---|---|
 | `未找到 sofagent 仓库` | 不在仓库根目录运行，或未设 SOFAGENT_REPO |
 | `Cannot find module .../engine/core/dist` | 仓库未构建——先跑 `npm run build` |
 | 场景二 FAIL | fork 子进程未能启动——检查 Node 版本（需 ≥18，支持 fetch 无关；脚本用 net/fork 均内置） |

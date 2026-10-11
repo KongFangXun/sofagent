@@ -5,7 +5,7 @@
 ## 一、模板清单
 
 | 模板 | 渲染产物 | 用途 |
-|------|---------|------|
+|---|---|---|
 | `node-manual.md` | `<nodeId>-manual.md` | 文档层——节点交付手册（人读） |
 | `node-skill.md` | `<nodeId>-skill.md` | Skill 层——Agent 可执行的作业指导 |
 | `node-node.yaml` | `<nodeId>-node.yaml` | 运行层——workflow 节点片段（引擎六组装用） |
@@ -15,7 +15,7 @@
 模板用 `{{key}}` 占位，渲染时按节点访谈数据（五要素 + 判定标签）注入：
 
 | 占位符 | 数据来源 |
-|--------|---------|
+|---|---|
 | `{{nodeId}}` / `{{description}}` | 节点标识与描述 |
 | `{{input}}` / `{{output}}` / `{{owner}}` / `{{duration}}` / `{{bottleneck}}` | 五要素 |
 | `{{tag}}` / `{{tagLabel}}` | 自动化标签（auto/enhance/none）与中文展示 |

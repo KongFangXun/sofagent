@@ -9,7 +9,7 @@
 `seam` 是插件向宿主声明「我挂在哪」的契约字段。它此前写在**三处**：
 
 | 位置 | 载体 | 消费方 |
-| --- | --- | --- |
+|---|---|---|
 | `engine/dsh-plugins/<pkg>/src/index.ts` | `pluginMeta.seam` | DSH 注册表 / skill 引导链 |
 | `engine/dsh-plugins/<pkg>/package.json` | `sofagent.seam` | npm 生态 / 工具链 |
 | `engine/dsh-plugins/<pkg>/cordis.patch.yml` | `config.seam` | Cordis loader 挂载 |
@@ -33,7 +33,7 @@
 
 <!-- SEAM-VOCAB:DSH-HOST:BEGIN -->
 | seam | 宿主包 | 宿主目录 | 语义 | 挂载插件 |
-| --- | --- | --- | --- | --- |
+|---|---|---|---|---|
 | `tools/change` | `@deepseek-ai/dsh-tools` | `lib/` | 工具集合变更（工具增删的广播） | 暂无 |
 | `tools/execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行中（计时 / 成本计量落点） | 暂无 |
 | `tools/post-execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行后（结果质检落点） | 暂无 |
@@ -90,7 +90,7 @@ grep -rhoE "['\"]session/event['\"]" "$B/dsh-session/lib/"        | tr -d "\"'" 
 
 <!-- SEAM-VOCAB:DSH-FORM:BEGIN -->
 | form | 接入形态 | 不通过宿主事件接入的理由 | 对外接口 | 插件 |
-| --- | --- | --- | --- | --- |
+|---|---|---|---|---|
 | `non-seam:tool-set` | tool 集（能力以工具形式暴露） | 能力按需调用、无生命周期时机——挂任何生命周期事件都会是「跑不到的假契约」；v1.4.9 P2 起 `fde` 为厚插件：本体 / FDE / 公地三域工具面（合并原 `commons` 与 `ontology` 条目），settings 三档分域可关 | `ctx.provide('sofagent.fde')` | `fde` |
 | `non-seam:host-process` | 独立调度进程 | 7×24 巡检是**进程级调度**（cron / 常驻），不寄生宿主事件循环 | `ctx.provide('sofagent.daemon')` | `daemon` |
 | `non-seam:plugin-suite` | 插件聚合（一次 apply 挂全套原子插件） | 自身**不挂任何宿主生命周期**——只依次调用 6 个原子插件的 `apply`；能力仍由各原子插件 `provide`，聚合层没有独立的事件时机，挂任何生命周期都会是「跑不到的假契约」 | `ctx.provide('sofagent.suite')` | `suite` |
@@ -101,7 +101,7 @@ grep -rhoE "['\"]session/event['\"]" "$B/dsh-session/lib/"        | tr -d "\"'" 
 `~/.dsh/profiles/<name>/` 各 profile 的 `bundles` 与 patch **允许不同**，差异本身不是漏挂：
 
 | profile | bundles 里的 sofagent 项 | 差异理由（该 profile `cordis.patch.yml` 自述） |
-| --- | --- | --- |
+|---|---|---|
 | `web` | `cordis-plugin-sofagent`（一次挂全套原子插件） | 有 WebUI 服务（`settings` / `dynamicCordisRunner`） |
 | `headless` | 只挂 `cordis-plugin-sofagent-audit`，patch 里 `inject: []` | headless 无上述 WebUI 服务——插件默认 patch inject 了这两个服务会导致 pending 启动失败 |
 
@@ -118,7 +118,7 @@ OpenClaw 的探测事件名是**下划线风格**（`before_tool_call`），与 
 
 <!-- SEAM-VOCAB:OPENCLAW-HOST:BEGIN -->
 | hook | 宿主包 | 宿主路径 glob | 语义 | 挂载插件 |
-| --- | --- | --- | --- | --- |
+|---|---|---|---|---|
 | `before_model_resolve` | `openclaw` | `dist/hook-types-*.d.ts` | 会话消息载入前覆盖 provider / model | 暂无 |
 | `agent_turn_prepare` | `openclaw` | `dist/hook-types-*.d.ts` | 消费排队的 turn 注入、补同轮上下文 | 暂无 |
 | `before_prompt_build` | `openclaw` | `dist/hook-types-*.d.ts` | 模型调用前追加动态上下文 / 系统提示词 | `sofagent-inject` `sofagent-evolve` |
@@ -169,7 +169,7 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 
 <!-- SEAM-VOCAB:OPENCLAW-INTERNAL-HOST:BEGIN -->
 | event | 宿主包 | 宿主路径 glob | 语义 | 挂载插件 |
-| --- | --- | --- | --- | --- |
+|---|---|---|---|---|
 | `agent:bootstrap` | `openclaw` | `docs/automation/hooks.md` | workspace bootstrap 文件注入前——会话级约束注入落点 | `sofagent-load-chain` |
 | `command:new` | `openclaw` | `docs/automation/hooks.md` | `/new` 命令触发 | 暂无 |
 | `command:reset` | `openclaw` | `docs/automation/hooks.md` | `/reset` 命令触发 | 暂无 |
@@ -191,7 +191,7 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 
 <!-- SEAM-VOCAB:OPENCLAW-FORM:BEGIN -->
 | form | 接入形态 | 不通过宿主事件接入的理由 | 对外接口 | 插件 |
-| --- | --- | --- | --- | --- |
+|---|---|---|---|---|
 | `non-seam:tool-set` | tool 集 + CLI 命令 | 只注册工具与 CLI（`registerTool` / `registerCli`），不拦截任何生命周期 | `api.registerTool('sofagent_rollback')` | `sofagent-rollback` |
 <!-- SEAM-VOCAB:OPENCLAW-FORM:END -->
 
@@ -232,7 +232,7 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 ↔ `src/index.ts` 的 `seamHandlers` 顶层键，`gen-plugin-manifests --check` 强制）。
 
 | 侧 | 现状 | 证据 |
-| --- | --- | --- |
+|---|---|---|
 | **DSH** | seam 是**声明 + 实现**——7 款插件里声明了宿主事件的 4 款（共 7 个事件位）经 `ctx.on()` 真实订阅（事件位归属见下表注）；订阅 disposer 收进 apply 的复合卸载契约 | 各插件 `src/index.ts` 的 `seamHandlers`；`plugins.json.seamHandlers`；门禁三方对账；探针剧本见 §7.3 |
 | **OpenClaw** | hook 是**实现**——`api.on('before_tool_call', handler)` 真注册，拦停返回 `{ block: true, blockReason }` | `engine/openclaw-plugins/*/src/index.ts` |
 
@@ -259,7 +259,7 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 ### 7.1 六项产出逐条结论
 
 | # | 实测项 | 结论 |
-| --- | --- | --- |
+|---|---|---|
 | ① | 契约形状复核 | 与任务书 §1.2 相符：三种取法（`ctx.get('tools')` / `ctx.get('tools', false)` / `ctx.tools`）全部可用、返回 ToolRuntime；**非同一引用**（属性访问经 getTraceable 包装，方法面一致）——但 `output.render` 签名有修正，见下注 |
 | ② | 就绪时机与 inject 声明 | `inject: ['tools']` 声明后 apply() 内立即可用（无竞态）；不声明时属性访问抛 `cannot get property "tools" without inject`，`ctx.get` 则返 undefined。裁定走 `ctx.get?.('tools')`（见 7.2） |
 | ③ | 工具可见可调 + guard | **通**：模型真实调用注册工具（pre-execute → result 全链路）；`guard()` 返回字符串=拒绝理由、单调不可翻案 |
@@ -320,7 +320,7 @@ Case 022 同名节。
 ### 8a. 三层挂载位
 
 | 位 | 挂法 | 拿到什么 | 代价 |
-| --- | --- | --- | --- |
+|---|---|---|---|
 | **L1 · 直挂 DSH** | 只依赖宿主 ctx 面（§1 词汇表），不接主干 Hub | 与裸 DSH 无差——**不增值**（宿主原生能力而已） | 零额外依赖 |
 | **L2 · 挂主干 Hub** | 经主干 cordis 兼容层挂载——**事件桥**消费主干事件流 + **services 桥** `ctx.get()` 取 `@sofagent/*` @public 面 | **28 条规则审计留痕 + HMAC 链举证**（插件的执行与写行为自动进链）+ **事件桥消费主干判定流** | 依赖主干在 `inject` 声明的服务（缺席 ⇒ cordis 静默不调 `apply`，见 §7.3 坑①） |
 | **L3 · 挂 Hub + S1M 判定件** | L2 之上，消费**类型化判定 API**（choice / score / noul，带校准概率；[v2.0.0 起](../../docs/changelog/v2.0/v2.0.0.md)落位） | 判定件成为插件的**共享语义判断服务**——一次判定多插件复用，校准概率替代插件内裸 LLM 判断 | 依赖 S1M 判定件在场（V2 前不可用） |

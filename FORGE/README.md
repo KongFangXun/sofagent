@@ -29,7 +29,7 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 外环走到特定阶段时，启动内环做深度验证。内环结束 → 外环继续。当前已落地两个内环：
 
 | 内环 | 嵌套在外环哪个阶段 | 路径 | 用途 |
-|------|------------------|------|------|
+|---|---|---|---|
 | **fresh-eyes-loop** | 阶段三（开发后质量循环） | `FORGE/SKILL/fresh-eyes-loop/` | A/B 双角色零上下文 12 视角审查 + 修复 + 验证，连续 2 轮无 P0/P1 即停 |
 | **release-gate-loop** | 阶段五（发版闸门） | `FORGE/SKILL/release-gate-loop/` | acceptance-test + regression + coverage + verdict，异步轮询长任务 |
 
@@ -38,7 +38,7 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 外环的每个关键节点都有**证据闸门**——不是靠"我觉得好了"放行，而是靠客观工具产出硬证据：
 
 | 节点 | 证据工具 | 有 ❌ 的后果 |
-|------|---------|------------|
+|---|---|---|
 | A0（编写 dev prompt） | ① `tools/check/check-dev-prompt.sh`（查存在性）+ ② `playbook/dev-prompt-checklist.md`（查签名/注册点/已完成区等软错误） | 两层都过才许进开发 |
 | A5-d3（D3 闸门） | `playbook/acceptance-test.sh` | 零覆盖 = 不许进下一阶段 |
 | A6（release-gate-loop） | `FORGE/src/release-gate-driver.mjs` | verdict = FAIL = 回阶段五 |
@@ -63,7 +63,7 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 好的 Loop 不是「让 Agent 一直尝试」，而是让每一轮获得新证据并在明确边界内靠近终点。参考 Agent Engineering 中 Loop 设计的七个核心问题，对照检查两个 loop：
 
 | 要素 | 核心问题 | fresh-eyes-loop 现状 | release-gate-loop 现状 |
-|------|---------|---------------------|----------------------|
+|---|---|---|---|
 | 触发 | 什么会启动下一轮？ | A 审查完成→B 修复→A 验证，driver 自动编排 | 发版前手动触发，异步轮询 |
 | 目标 | 什么状态才算成功？ | 连续 2 轮无 P0/P1 | acceptance-test + regression 全绿 |
 | 状态 | 下一轮需要保留什么？ | 审查报告 + 修复 diff + 验证结论 | 审查报告 + acceptance 结果 + regression 结果 |
@@ -79,7 +79,7 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 FORGE 有两个内环，共用同一套模型配置（详见 [`quick-start.md`](quick-start.md)）：
 
 | 内环 | 阶段 | 命令 |
-|------|------|------|
+|---|---|---|
 | **fresh-eyes-loop**（质量循环） | 阶段三（开发后） | 对 harness 注入主任务协议（`SKILL/fresh-eyes-loop/loop.md`「执行形态」节）——编排者即 harness session，逐角色调执行器 `node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>` |
 | **release-gate-loop**（发版闸门） | 阶段五（发版前） | `node FORGE/src/release-gate-driver.mjs --target <版本号>` |
 
@@ -103,7 +103,7 @@ key 泄露嫌疑时优先轮换（控制台重新生成），而非仅删文件�
 FORGE 的 sub-agent 定义在 `SKILL/agents/` 下：
 
 | Agent | 角色 | 位置 |
-|-------|------|------|
+|---|---|---|
 | `sofagent-engineer` | 软件工程师——写代码、修复 | `SKILL/agents/engineer/SKILL.md` |
 | `sofagent-reviewer` | 代码审查员——审查 + 自动门控 | `SKILL/agents/reviewer/SKILL.md` |
 | `sofagent audit` | 合规审计员——A1-A24 规则检查 | `SKILL/agents/audit/SKILL.md` |

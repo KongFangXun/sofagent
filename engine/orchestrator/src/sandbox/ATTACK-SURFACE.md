@@ -7,7 +7,7 @@
 ## 一、五类攻击面 × 防御措施
 
 | 攻击面 | 防御措施 | 实现位置 |
-|--------|---------|---------|
+|---|---|---|
 | **沙箱逃逸**（SubAgent 绕过虚拟 FS 直接写物理磁盘） | 启动时完整性自检（`integrityCheck()` 校验 writeVirtual/approve 函数 toString 指纹未漂移）+ SubAgent 全部写操作经虚拟层（未审批不落盘；monkey-patch 模式下绕过 = 进程级 deny） | filesystem-backend.ts `integrityCheck()` / index.ts `createSandboxSession()` |
 | **网络白名单绕过**（DNS 隧道 / ICMP / raw socket 逃逸） | 出站全量拦截（不只 HTTP）：monkey-patch `net.connect` / `net.createConnection` / `dns.lookup` / `dns.resolve`——白名单外域名/IP deny + deny 事件审计（上限 1000 条防刷爆）；IP 直连按 CIDR 白名单判定（防域名解析绕过） | network-gateway.ts `installNetworkGuard()` |
 | **虚拟 key 泄漏**（SubAgent 提取虚拟 key 向外发送） | 虚拟 key 限 scope（数据流契约：越界拒绝）+ token bucket 限速（默认 1 QPS，突发 5）；真实 key 不进 SubAgent 可见 env（host 边界注入——`buildSandboxEnv()` 只放 vk- key）；日志脱敏（`mask()` 把 vk- 全串打码） | virtual-key.ts |

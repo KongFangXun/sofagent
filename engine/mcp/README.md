@@ -56,7 +56,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 > 完整清单（按域分组 + 每工具说明）见 [docs/API.md](../../docs/API.md)——由 tool-registry.ts 生成，门禁对账永不漂移。
 
 | Tool | 说明 |
-|------|------|
+|---|---|
 | `run_audit` | 对 git diff 跑全量审计规则（A1-A11、A14-A24 + E1-E2/E4-E7，共 28 条——v1.5.7 新增 E5 SMB 数据产物 / E6 提示注入 / E7 决策质量），返回结构化报告 |
 | `get_think` | 读取 think.md 最近 N 条反思条目 |
 | `write_think` | 向 think.md 追加一条反思记录 |
@@ -86,7 +86,7 @@ SOFAGENT_MCP_ROLES=audit sofagent mcp
 `SOFAGENT_MCP_ROLES=audit` 时的暴露清单（与 tool-registry `roles` 打标逐项一致——门禁断言防漂移）：
 
 | Tool | 语义 |
-|------|------|
+|---|---|
 | `run_audit` | 全量审计规则跑批（28 条规则 + HMAC 链） |
 | `audit_file` | 单文件定点审计（不改链） |
 | `audit_query` | 审计数据只读查询（history 三维过滤 + decision 因果链，不写链） |

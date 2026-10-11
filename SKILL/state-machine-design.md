@@ -12,7 +12,7 @@
 ## 二、协议六要素（sofagent 落地形态）
 
 | 要素 | 落地 | 实现点 |
-|------|------|--------|
+|---|---|---|
 | **P（技能说明，不可变）** | systemPrompt / SKILL.md 注入内容，执行期只读恒定 | `node-executor.ts` 循环外构建一次 |
 | **Σt（执行状态 JSON）** | 每节点类型结构化状态，唯一跨步携带的记忆 | `schema.ts` 注册表 + `protocol.ts` |
 | **ot（最新观察）** | 上一步工具返回（截断至 token 预算），只看最新 | `protocol.ts` OT_BUDGET=4000 |
@@ -36,7 +36,7 @@
 ```
 
 | 节点类型 | 领域扩展字段 | 语义 |
-|------|------|------|
+|---|---|---|
 | engineer | `tests: {pass, fail, skipped}` · `reviewComments: [{file, line, status}]` | 代码修复循环 |
 | checker | `checkRuns: [{rule, verdict, evidence}]` · `falsePositives: []` | 审查循环 |
 | reviewer | `issuesBySeverity: {p0, p1, p2}` · `coveredFiles: []` | 审查循环 |
@@ -61,7 +61,7 @@
 ## 六、降级语义
 
 | 场景 | 行为 |
-|------|------|
+|---|---|
 | `SOFAGENT_STATEFUL_EXEC=off` | 全部节点走 legacy（消息历史式）——一键回退 |
 | 连续 3 次补丁被拒 | 该节点自动降级 legacy 重执行，`degraded:true` 可观测，度量记 `autoDegraded:true` |
 | LLM / agent 工厂不可用 | 落 legacy 既有降级路径（v1.4.5 T6 语义） |

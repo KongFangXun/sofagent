@@ -8,7 +8,7 @@
 ## 文件清单
 
 | 模板 | 对应步骤 | 谁填 | 用途 |
-|------|----------|------|------|
+|---|---|---|---|
 | `enterprise-profile.md` | §3 建档，§4-§12 持续回写 | FDE Harness | 交付手册第一章：企业画像 |
 | `deployment-plan.md` | §4-§7 产出 | FDE Harness | 交付手册第二章：部署方案 |
 | `nodes/node-template.md` | §7 产出，§8-§10 更新 | FDE Harness | 工作流节点文档（人读） |
@@ -29,7 +29,7 @@ templates/ 是给 Agent 读的案例参考。与其留大量空占位符，不�
 ## 不在这个目录里的（不用模板）
 
 | 交付物 | 为什么不用模板 |
-|--------|---------------|
+|---|---|
 | 上手文档（快速上手段） | skill 包自带，见 `FDE/README.md` 三步快速上手 |
 | AI 知识库（对话历史 + 反思笔记） | Agent 在对话中自动积累 |
 
@@ -42,7 +42,7 @@ templates/ 是给 Agent 读的案例参考。与其留大量空占位符，不�
 FDE Harness 离场前产出给企业的文档，含 4 章：
 
 | 章节 | 模板 | 备注 |
-|------|------|------|
+|---|---|---|
 | 企业画像 | `enterprise-profile.md` | Agent 填 |
 | 部署方案 | `deployment-plan.md` | Agent 填 |
 | 运行规范 | 参见 SKILL.md 关键规则 | skill 包自带 |
@@ -53,7 +53,7 @@ FDE Harness 离场前产出给企业的文档，含 4 章：
 每个 🔄/⚡ 节点有三层实实在在的实体，每层有对应模板：
 
 | 层 | 形式 | 给谁读 | 模板 |
-|----|------|--------|------|
+|---|---|---|---|
 | 📄 文档层 | `nodes/[节点名].md` | **人读** | `nodes/node-template.md` |
 | 🧠 Skill 层 | `skills/[节点名]/SKILL.md` | **AI 读** | `skills/skill-template/SKILL.md` |
 | 🔴 运行层 | 对话 session / 部署清单 | **活的** | 文档里 checklist 确认 |

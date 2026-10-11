@@ -26,7 +26,7 @@ npx -y -p sofagent sofagent audit --diff HEAD~1..HEAD
 安装后获得以下命令：
 
 | 命令 | 来源 | 说明 |
-|------|------|------|
+|---|---|---|
 | `sofagent audit` | `@sofagent/audit` | 审计 CLI 主入口 |
 | `sofagent core` | `@sofagent/core` | 核心运行时（含 `verify` / `doctor` 子命令） |
 | `sofagent orchestrator` | `@sofagent/orchestrator` | 编排模块 CLI（含 `compose` / `compare` 子命令） |
@@ -59,7 +59,7 @@ sofagent audit --diff HEAD~1..HEAD --ci --json
 ### 全部参数
 
 | 参数 | 说明 | 默认值 |
-|------|------|------|
+|---|---|---|
 | `--diff <range>` | git diff 范围 | `HEAD~1..HEAD` |
 | `--task <desc>` | 任务描述（A3 越界检测） | — |
 | `--strict` | 严格模式：无日志时 A7 返回 FAIL 而非 WARN | off |
@@ -81,7 +81,7 @@ sofagent audit --diff HEAD~1..HEAD --ci --json
 ### 退出码
 
 | 码 | 含义 |
-|:--:|------|
+|:---:|---|
 | 0 | 全部规则通过 |
 | 1 | 有警告（WARN） |
 | 2 | 有违规（FAIL）/ 非 git 仓库 |
@@ -111,7 +111,7 @@ sofagent core doctor
 ```
 
 | 参数 | 说明 | 默认值 |
-|------|------|--------|
+|---|---|---|
 | `--quick` | 仅 4 项核心检查 | — |
 | `--quiet` | 只显示失败和警告 | — |
 | `--json` | JSON 机器可读输出 | — |
@@ -188,7 +188,7 @@ sofagent audit --diff HEAD~1..HEAD --webhook feishu --webhook-url "https://open.
 ### 默认规则（A1-A11 + A18-A23，共 17 条）
 
 | 规则 | 判定 | 严重度 | 分级 |
-|------|------|:--:|------|
+|---|---|:---:|---|
 | A1 不碰敏感 | `.env` / `*.pem` / `id_rsa` / 密钥文件被修改 | FAIL | 业务底线 |
 | A2 不泄密钥 | 代码中出现 API Key（OpenAI / Anthropic / DeepSeek）/ Token / Password 模式 | FAIL | 业务底线 |
 | A3 不改越界 | 修改文件路径与任务描述不匹配 | WARN | 能力拐杖 |
@@ -214,7 +214,7 @@ sofagent audit --diff HEAD~1..HEAD --webhook feishu --webhook-url "https://open.
 A14-A17 + A24 + E1/E2/E4/E5/E6/E7 均需 `extendedRules: true` 启用（`DEFAULT_CONFIG=false`，opt-in）。仅当 config 解析失败走 `safeDefaults` 时 fail-closed 强制启用所有扩展规则——这是有意的保护性设计。
 
 | 规则 | 判定 | 严重度 | 分级 |
-|------|------|:--:|------|
+|---|---|:---:|---|
 | A14 知识库越权 | 访问超出工作流声明范围的知识库页面（事后审计，非运行时阻断） | WARN | 能力拐杖 |
 | A15 不盲动 | workflow.yml 节点未声明 actions 时 FAIL（防绕过，v1.1.3 起升级） | FAIL | 能力拐杖 |
 | A16 非授权文件变更 | 非工作流声明范围内的文件被修改（行为级检测，文件路径/扩展名） | FAIL | 工程规范 |
@@ -263,7 +263,7 @@ historyRetentionDays: 90
 ### 环境变量
 
 | 变量 | 说明 | 默认值 |
-|------|------|------|
+|---|---|---|
 | `SOFAGENT_DATA` | 数据目录（think.md / audit / task/logs） | `.sofagent`（cwd 下） |
 | `SOFAGENT_WEBHOOK_URL` | Webhook URL | — |
 

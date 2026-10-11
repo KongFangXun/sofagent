@@ -123,7 +123,7 @@ git grep -nE "[0-9]+(\.[0-9]+)? ?(万星|k stars|万 stars|万下载)" -- docs/ 
 **归属原则**：
 
 | 功能类型 | 权威文档（写详细机制 + 配置方法） | 其他文档（一句话 + 链接引用） |
-|---------|------|------|
+|---|---|---|
 | 审计规则/约束层内部机制 | DEVELOPMENT.md | HANDBOOK 速览表 + ARCHITECTURE 引用 |
 | FDE 企业操作流程 | FDE/GUIDE.md | README 企业段 + HANDBOOK 速览表 |
 | 编排/调度/运行时 | ARCHITECTURE.md + DEVELOPMENT.md | README 引擎段引用 |
@@ -152,7 +152,7 @@ grep -l "Dream Cycle" docs/HANDBOOK.md docs/DEVELOPMENT.md docs/ARCHITECTURE.md
 对 changelog 里每条新功能，判定以下三项：
 
 | 判定项 | 要求 | 不满足 |
-|--------|------|--------|
+|---|---|---|
 | ① 权威文档命中 | 功能点在归属原则指定的权威文档中有详细说明 | P0（用户无处查阅） |
 | ② 引用文档命中 | 功能点在 HANDBOOK 速览表 / README 相关段有引用（一句话 + 链接） | P1（入口缺失） |
 | ③ 无重复展开 | 同一功能详细内容只出现在一个权威文档，其他文档只引用不复制 | P2（维护负担） |

@@ -23,7 +23,7 @@
 ```
 
 | 列 | 含义 |
-|----|------|
+|---|---|
 | 日期 | `YYYY-MM-DD` |
 | run-id | `YYYYMMDD-NN`（同日第 NN 次循环） |
 | 循环 | `fresh-eyes` |
@@ -52,7 +52,7 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 ```
 
 | 列 | 含义 |
-|----|------|
+|---|---|
 | 日期 | `YYYY-MM-DD` |
 | run-id | `YYYYMMDD-NN`（同日第 NN 次循环） |
 | 循环 | `release-gate` |
@@ -81,7 +81,7 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 ```
 
 | 列 | 含义 |
-|----|------|
+|---|---|
 | 日期 | `YYYY-MM-DD`（裁决日期） |
 | run-id | 触发本次裁决的 driver run-id（`YYYYMMDD-NN`） |
 | 循环（手工裁决） | `release-gate-手工裁决` / `fresh-eyes-手工裁决` |

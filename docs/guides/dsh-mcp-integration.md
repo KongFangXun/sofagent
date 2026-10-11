@@ -30,7 +30,7 @@ DSH（DeepSeek Harness）有两条接入路径：① **本文档**——用官�
 **两种 command 写法按部署形态选**：
 
 | 部署形态 | command / args | 说明 |
-|---------|---------------|------|
+|---|---|---|
 | npm 安装（v1.3.5 发版后） | `npx -y @sofagent/mcp` | 最简——首次会拉包，需能访问 npm registry；`@sofagent/mcp@^1.3.5` 起 bin 为 `sofagent mcp` |
 | monorepo 本地 / 内网 | `node /path/to/sofagent/engine/mcp/dist/mcp-server.js` | 开发/内网环境——dist 需先 `npm run build`（workspace 根目录执行）；也可 `npm i -g /path/to/engine/mcp` 后 command 直接写 `sofagent mcp` |
 

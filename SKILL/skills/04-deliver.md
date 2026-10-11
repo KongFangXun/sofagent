@@ -15,7 +15,7 @@
 1. 对每个 🔄/⚡ 节点生成三层实体：
 
 | 层 | 是什么 | 模板 |
-|----|--------|------|
+|---|---|---|
 | 📄 文档层 | 节点详细说明（人读 + 编排模块读） | `FDE/templates/nodes/node-template.md` |
 | 🧠 Skill 层 | Agent 行为指令（节点的大脑） | `FDE/templates/skills/skill-template/SKILL.md` |
 | 🔴 运行层 | 真实环境配置 | 写进部署清单 |

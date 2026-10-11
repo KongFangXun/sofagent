@@ -7,7 +7,7 @@
 ## 三个 HITL 确认点（人必须在场）
 
 | 节点 | 为什么人必须确认 |
-|------|-----------------|
+|---|---|
 | `pt-need-collect` | 企业一句话可能有歧义，模型不能自己脑补 |
 | `pt-model-select` | 选哪个基座/算法影响成本，必须企业点头 |
 | `pt-deploy` | 权重上线是生产变更，强制人审（对齐 v1.3.5 promote_ab） |
@@ -17,7 +17,7 @@
 ## 激活链映射
 
 | 激活链阶段 | 节点 |
-|-----------|------|
+|---|---|
 | ACTIVATE 进场 | pt-need-collect |
 | ORCHESTRATE 编排 | pt-env-check → pt-model-select |
 | EXECUTE 执行 | pt-data-prep → pt-train-run → pt-eval-gate |
@@ -26,7 +26,7 @@
 ## 依赖的后训模块版本
 
 | 节点 | 依赖能力 | 版本 |
-|------|---------|:---:|
+|---|---|:---:|
 | pt-need-collect / pt-model-select | train analyze + train templates | v1.4.3 |
 | pt-env-check | train env / train doctor | v1.4.2 |
 | pt-data-prep | 数据管道 + 训练集版本 | v1.4.2 |

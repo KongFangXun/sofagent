@@ -125,7 +125,7 @@ git submodule add ~/sofagent-shared knowledge
 ## 同步内容清单
 
 | 同步什么 | 为什么 | 不同步什么 | 为什么不同步 |
-|------|------|------|------|
+|---|---|---|---|
 | ✅ `knowledge/` | Agent 经验（entities/concepts/comparisons） | ❌ `task/`、`logs/` | 每个设备做的事不同，无需共享 |
 | ✅ `think.md` | 踩坑反思 | ❌ `permission.local.json` | 每个项目的权限可能不同 |
 | ❌ `fde.md` | 业务约束是项目级的，不同步可以不同 | | |
@@ -182,7 +182,7 @@ v1.3.4、权限体系 v1.3.7 + 网关 v1.3.8）。
 **通道契约（v1.4.0 定义，实现随 daemon HTTP 面接入）**：
 
 | 端点 | 语义 | 鉴权 |
-|------|------|------|
+|---|---|---|
 | `POST /remote/workflow/trigger` | 触发一个 workflow（YAML 定义或 workflowId） | 共享 token（Bearer） |
 | `GET /remote/workflow/{id}/status` | 查询 workflow 执行状态（running/done/failed/hitl-waiting） | 同上 |
 

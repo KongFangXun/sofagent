@@ -52,7 +52,7 @@ jobs:
 sofagent audit 检查 28 条规则（17 默认 + 11 扩展：A1-A11、A14-A24 + E1/E2/E4/E5/E6/E7），覆盖安全、边界、追溯。下表为**默认规则**，扩展规则与完整清单见 [SECURITY](../../SECURITY.md)：
 
 | 规则 | 内容 | 级别 |
-|------|------|:--:|
+|---|---|:---:|
 | A1 | 敏感文件（`.env`/`*.pem`/`*.key`） | FAIL |
 | A2 | 密钥泄露（AWS Key / Token / Password） | FAIL |
 | A3 | 改动范围越界（超出 `--task` 描述） | WARN |
@@ -72,7 +72,7 @@ sofagent audit 检查 28 条规则（17 默认 + 11 扩展：A1-A11、A14-A24 + 
 ## exit code
 
 | 0 | 1 | 2 |
-|:--:|:--:|:--:|
+|:---:|:---:|:---:|
 | ✅ 绿灯 | ⚠️ 黄灯 | ❌ 红灯，阻止合并 |
 
 ---
@@ -94,7 +94,7 @@ audit:
 ## 常见问题
 
 | 问题 | 解决 |
-|------|------|
+|---|---|
 | 跳过某 PR | **无跳过机制**（commit message 标记不生效——引擎无此逻辑）；可用 workflow `paths` 过滤降低触发面 |
 | "not found" | 本地构建方式：确认 `engine/audit/` 子目录存在 + `package-lock.json` 已提交；npx 方式无需本地目录 |
 | GitHub Enterprise | 支持，零外部 API 依赖 |

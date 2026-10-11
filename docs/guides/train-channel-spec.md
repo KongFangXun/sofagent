@@ -7,7 +7,7 @@
 `engine/train/src/train-channel.ts`——四动作契约：
 
 | 动作 | 签名 | 语义 |
-|------|------|------|
+|---|---|---|
 | `submit` | `(jobDir, jobSpec) → { remoteJobId, accepted }` | 提交训练 job（job.json + 数据集上传 + 启动） |
 | `status` | `(remoteJobId) → { status, rawStatus, error?, recentEvents }` | 轮询状态（状态机归一） |
 | `artifacts` | `(remoteJobId) → ChannelArtifact[]` | 产物清单（sha256 必填） |
@@ -18,7 +18,7 @@
 ### 状态机归一（各云原生状态 → ChannelStatus）
 
 | ChannelStatus | 语义 | 常见云原生值 |
-|---------------|------|--------------|
+|---|---|---|
 | `pending` | 已受理未启动 | `QUEUED` / `CREATING` / `PENDING` |
 | `running` | 训练中 | `TRAINING` / `RUNNING` / `IN_PROGRESS` |
 | `succeeded` | 成功 | `COMPLETED` / `SUCCEEDED` / `DONE` |
@@ -30,7 +30,7 @@
 ### 事件归一（各云原生事件 → ChannelEvent → 协议② TrainEvent）
 
 | ChannelEvent.kind | 映射到 TrainEvent | 说明 |
-|-------------------|-------------------|------|
+|---|---|---|
 | `progress` | `{ type: 'progress', step }` | step = percent 取整 |
 | `status`(succeeded) | `{ type: 'done' }` | 完成事件 |
 | `status`(failed) / `error` | `{ type: 'failed', reason }` | 失败事件 |

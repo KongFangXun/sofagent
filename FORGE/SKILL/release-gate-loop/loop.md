@@ -14,7 +14,7 @@
 ## 角色
 
 | 角色 | 身份 | 动作 | 产物 |
-|------|------|------|------|
+|---|---|---|---|
 | **V** | 验证者 | 5 步串行验证 | `acceptance.md` → `regression.md` → `coverage.md` → `stage6-report.md` → `verdict.md` |
 | **F** | 修复者 | verdict FAIL 后修复代码 | `fix-plan.md` → `fix-summary.md` → `audit-result.md` |
 | **driver** | 用户手动新开的执行 session（见 SKILL.md「执行载体铁律」） | 中转文件、建 `runs/`、复制报告到桌面、写 `LEDGER.md` | `runs/` 目录 + LEDGER 行 |
@@ -79,7 +79,7 @@ verdict = FAIL 且 round ≥ MAX_FIX_ROUNDS → 输出"轮次耗尽"报告 ❌ �
 ## 产物 Schema
 
 | 文件 | 步骤 | 内容 |
-|------|------|------|
+|---|---|---|
 | `acceptance.md` | ① | acceptance-test.sh 执行结果 |
 | `regression.md` | ② | regression-checklist 逐维度结果 |
 | `coverage.md` | ③ | changelog 功能点 vs acceptance-test 交叉覆盖 |

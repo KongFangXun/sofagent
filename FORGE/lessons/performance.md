@@ -54,7 +54,7 @@ preModelHook: (state) => {
 ```
 
 | 参数 | 作用 | 推荐值 |
-|------|------|--------|
+|---|---|---|
 | `MAX_CONTEXT_MESSAGES`（stateModifier） | 发给 LLM 的消息条数 | 16 |
 | `STATE_MESSAGES_HARD_LIMIT`（preModelHook） | state 内物理保留条数 | 20 |
 | `TOOL_OUTPUT_MAX_LINES`（truncateToolOutput） | 单条工具输出行数 | 200 |
@@ -77,7 +77,7 @@ preModelHook: (state) => {
 **根因**：`spawnWorker` 给每个 worker 子进程设 `--max-old-space-size=2048`（2GB）。并发 N 个 worker 时总内存 = N × 2GB + driver 自身。在 8GB 物理内存的机器上：
 
 | 并发数 | worker 总内存 | + driver | 合计 | 8GB 机器 |
-|--------|-------------|----------|------|---------|
+|---|---|---|---|---|
 | 6 | 12 GB | ~1 GB | ~13 GB | ❌ OOM |
 | 3 | 6 GB | ~1 GB | ~7 GB | ⚠️ 临界 |
 | 1 | 2 GB | ~1 GB | ~3 GB | ✅ 安全 |
@@ -107,7 +107,7 @@ FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target <版本>
 
 **改动**（fresh-eyes-driver.mjs）：
 | 项 | 旧 | 新 | 理由 |
-|----|----|----|------|
+|---|---|---|---|
 | worker `--max-old-space-size` | 2048 | **1024** | 实测负载轻；降半后并发 2 总 heap ≤2GB |
 | `MAX_CONCURRENCY` 默认 | 4 | **2** | 8GB 新均衡点：2×1GB + driver 1GB + 系统 2GB ≈ 5GB，余量 3GB |
 

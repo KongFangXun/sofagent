@@ -57,7 +57,7 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 ## 合规检查清单
 
 | 检查项 | 状态 | 说明 |
-|------|:--:|------|
+|---|:---:|---|
 | 数据存储位置 | ✅ 本地 | 不上云，不调外部 API（离线模式；唯一例外：显式配置模型推理端点后，Dream Cycle「真实大脑」反思 / train_serve 推理会把 prompt 上下文发往用户配置的模型 API——opt-in 默认关闭，详见 [SECURITY.md「已知风险」](../../SECURITY.md)） |
 | 数据脱敏 | ✅ | A2/A9 命中行脱敏后存储 |
 | 数据加密 | ◐ 主链已加密 | daemon start 已接线（AES-256-GCM + SOFAGENT-AGE-V1）——密钥就绪后审计历史主链**密文落盘**；task/logs、think.md、knowledge/ 附链目录仍**明文**（脱敏管道仍生效，权威清单见 LIMITATIONS #4）。强合规场景（GDPR/等保/SOC2）附链请配 OS 级全盘加密 |
@@ -242,7 +242,7 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 ### SIEM 对接方案
 
 | 工具 | 接入方式 |
-|------|---------|
+|---|---|
 | **ELK (Elasticsearch + Logstash + Kibana)** | Filebeat 配置 `input.path: /path/to/.sofagent/data/audit/history.jsonl`，Logstash 解析 JSONL 后索引到 Elasticsearch |
 | **Splunk** | Universal Forwarder 配置 monitor 监听 `history.jsonl`，自动解析结构化日志 |
 | **Grafana Loki** | Promtail 配置 scrape_config 指向 `history.jsonl`，label 按 `rule`/`status` 维度 |
@@ -280,7 +280,7 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 ### 安全建议
 
 | 措施 | 说明 |
-|------|------|
+|---|---|
 | token 最小化 | 每台设备用独立 token，避免单 token 泄露影响全集群 |
 | 定期轮换 | 建议 90 天轮换一次，token 变更后同步更新各设备的 token 文件 |
 | 日志隔离 | 设备间 audit log 不自动同步——需通过中央管道做聚合，避免单设备被控后污染全量日志 |

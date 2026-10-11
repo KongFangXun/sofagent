@@ -7,7 +7,7 @@
 ## 一、来源
 
 | 项 | 值 |
-|----|----|
+|---|---|
 | 上游仓库 | https://github.com/mattpocock/skills |
 | 上游路径 | `skills/engineering/improve-codebase-architecture/` + 依赖闭包 |
 | 钉版 commit | `3cca18b368ae95cdbdebbff572ccafa662551015` |
@@ -29,7 +29,7 @@
 **本地一律不得改写 `upstream/` 下的任何文件**——改了就失去 diff 能力。需要改行为 → 改适配层。
 
 | 文件 | sha256 |
-|------|--------|
+|---|---|
 | `upstream/improve-codebase-architecture/SKILL.md` | `d1ac25511a936ff4250a48dbcefda363837d6bb9321b3cba73df99fa37270a75` |
 | `upstream/improve-codebase-architecture/HTML-REPORT.md` | `581e8bb5a521e46bbda8ca7e19b15948bed882187108092ebb90c62513b77528` |
 | `upstream/codebase-design/SKILL.md` | `2c20617f87ec8af6a434859f381b2f061a69b530444e74eb39e78bb016a6d1e2` |
@@ -57,7 +57,7 @@ cd playbook/vendor/improve-codebase-architecture/upstream && shasum -a 256 $(fin
 上游原文**不改**，偏差全部落在适配层。以下是实际执行时的行为差异：
 
 | # | 上游行为 | 本地行为 | 落点 |
-|---|---------|---------|------|
+|---|---|---|---|
 | 1 | 写自包含 HTML 到 OS 临时目录并 `open` | **对话形式直出**，不落 HTML、不落仓库 | `deep-module-review.md` §三、§六-2 |
 | 2 | 用户显式敲 `/improve-codebase-architecture` | 作为 fresh-eyes 审查的体系外挂按需执行 | `../fresh-eyes-review.md` 视角分层表后的「体系外挂」段 |
 | 3 | 依赖 `CONTEXT.md` 领域词汇表 | 改用 README / COMMUNITY / PHILOSOPHY / ARCHITECTURE / 术语表 | `deep-module-review.md` §三 |
@@ -90,7 +90,7 @@ diff -r <上游检出>/skills/engineering ./upstream
 ## 六、挂载点（两处，同一 pin）
 
 | 落点 | 用途 | 位置 |
-|------|------|------|
+|---|---|---|
 | 仓内 vendoring | 版本控制 + 可 diff 升级 + 随包分发 | 本目录 |
 | 用户级安装 | 运行时可直接被 skill 机制加载 | `~/.workbuddy/skills/improve-codebase-architecture/` |
 

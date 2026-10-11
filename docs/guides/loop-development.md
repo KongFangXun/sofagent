@@ -192,7 +192,7 @@ try {
 **经验值参考**：
 
 | recursionLimit | ≈ 工具调用轮数 | 适合什么步骤 |
-|:-:|:-:|------|
+|:---:|:---:|---|
 | 25 | 12 轮 | 简单问答 |
 | 50 | 25 轮 | 文本处理（合并/格式化/验证） |
 | 150 | 75 轮 | 完整代码审查（12 视角） |
@@ -205,7 +205,7 @@ try {
 **根因**：LLM 训练数据以 Linux（GNU 工具）为主，默认用 GNU 语法。macOS 是 BSD 工具，行为差异显著：
 
 | GNU 语法（LLM 默认） | BSD 实际行为（macOS） | 正确写法 |
-|------|------|------|
+|---|---|---|
 | `grep -P "pattern"` | `-P` 不存在 | `grep -E "pattern"` |
 | `sed --version` | `--version` 报错 | 不用 |
 | `sed -i "s/a/b/"` | `-i` 需要后缀 | `sed -i "" "s/a/b/"` |
@@ -256,7 +256,7 @@ fresh-eyes-loop 使用两个不同厂商的模型，分别承担审查者和工�
 ### 配置表
 
 | 维度 | A（审查者） | B（工程师） |
-|------|-------------|-------------|
+|---|---|---|
 | **模型** | GLM-5.2（智谱） | DeepSeek V4 Pro |
 | **baseURL** | `https://open.bigmodel.cn/api/coding/paas/v4/` | `https://api.deepseek.com/` |
 | **计费** | Coding Plan 订阅制 | 按量计费 |
@@ -357,7 +357,7 @@ FORGE/SKILL/fresh-eyes-loop/
 单步执行器实现：`FORGE/src/fresh-eyes-driver.mjs`（~1980 行；多轮编排循环已退役，编排逻辑归 harness 注入的主任务协议——见 `FORGE/SKILL/fresh-eyes-loop/loop.md`「执行形态」节）。关键函数：
 
 | 函数 | 职责 |
-|------|------|
+|---|---|
 | `main()` | CLI 入口：仅分发 `--worker` 单步执行（编排循环已退役，无参调用打印退役提示） |
 | `runWorker()` | Worker 主逻辑：读 prompt → 建 model+tools → 执行 → 写产物（零上下文独立子进程） |
 | `buildSystemPrompt()` | 从 SKILL.md 构建 systemPrompt + macOS BSD 约束 |
@@ -384,7 +384,7 @@ FORGE/SKILL/fresh-eyes-loop/
 
 **为什么是 Skill + 脚本 + Runtime**：
 | 什么事 | 谁来做 | 为什么 |
-|------|------|------|
+|---|---|---|
 | 判断（评分、反思、选模板） | Skill（MD prompt） | LLM 长项——模式识别 |
 | 机械操作（文件读写、API） | 脚本（bash） | 确定性操作 |
 | 硬安全（加载链、断路器） | Runtime（Agent 平台，如 OpenClaw） | Agent 失控时没法自己管自己 |
@@ -441,7 +441,7 @@ flowchart LR
 **三个条件路由函数**（纯函数，可单测）：
 
 | 路由 | 判定 | 出口 |
-|------|------|------|
+|---|---|---|
 | `routeAfterAudit` | blocked→END；FAIL→engineer；PASS/WARN→reviewer | engineer / reviewer / END |
 | `routeAfterHuman` | 非 running→END；running（驳回）→engineer | engineer / END |
 | `routeFromStart` | 正常→engineer；resume→指定节点 | 四节点之一 |
@@ -454,7 +454,7 @@ flowchart LR
 节点之间不靠全局变量，全靠 `state.artifacts` 这个对象传递。LangGraph 的 `Annotation` 给它配了浅合并 reducer——节点返回时只需给增量字段，框架自动合并。
 
 | 字段 | 类型 | 谁写 | 谁读 |
-|------|------|------|------|
+|---|---|---|---|
 | `task` | string | 初始化 | 全部节点 |
 | `engineerOutput` | string | engineer | audit / reviewer |
 | `engineerOutputs` | string[] | engineer（追加） | 历史追溯 |
@@ -482,7 +482,7 @@ flowchart LR
 sofagent 的编排模块天然就是一张**控制图（Control Graph）**——不必新造能力，只需用这套精确词汇重新表述已有实现：
 
 | Graph Engineering 构件 | sofagent 对应实现 | 源码位置 |
-|------|------|------|
+|---|---|---|
 | **控制图 Control Graph**（node=state, edge=transition, guard edge 守门） | `StateGraph` 四节点 `START→engineer→audit→reviewer→human_confirm→END`，`routeAfterAudit`/`routeAfterHuman` 条件路由，WARN 透传为 guard 放行 | `engine/orchestrator/src/loop/graph.ts` |
 | **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A24 + E1/E2/E4/E5/E6/E7，共 28 条），不信任 Agent 自报，比"只看 PR 号"更硬。**Grounding 三必要条件**（Carlos E. Perez）：① audit 规则不可篡改 = ground-truth ② `acceptance-test.sh` = 冻结验收标准 ③ 用户 task 来自系统外部 | `@sofagent/audit` |
 | **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `engine/orchestrator/src/graph/checkpoint.ts` |
@@ -498,7 +498,7 @@ sofagent 的编排模块天然就是一张**控制图（Control Graph）**——
 **Org Graph 节点六要素**（每节点定义：职责 / 输入契约 / 输出契约 / 工具权限 / 状态范围 / 退出条件）：
 
 | 节点 | 职责 | 输入 | 输出 | 工具权限 | 退出条件 |
-|------|------|------|------|---------|---------|
+|---|---|---|---|---|---|
 | **engineer** | 写代码/改文件 | `artifacts.task` + `reviewReport` | `engineerOutput` | write/edit/run_bash | audit PASS→next；FAIL→retry；retry≥3→blocked |
 | **audit** | git diff 硬证据审计 | `engineerOutput` | `auditReport` + `auditResult` | 只读 git diff | 规则跑完→next |
 | **reviewer** | AI 语义审查 | `auditReport` + `engineerOutput` | `reviewReport` | 只读上下文 | 审查完成→human_confirm |
@@ -544,7 +544,7 @@ WARN 不阻断流转——`[审计告警]` 前缀透传给 reviewer 输入，由
 **FileCheckpointer 五条并发安全规矩**（`engine/orchestrator/src/graph/checkpoint.ts`）：
 
 | # | 规矩 | 实现 |
-|---|------|------|
+|---|---|---|
 | 1 | 文件名永不覆盖 | `checkpoint-{ISO时间戳}-{6位随机}.json`（时间戳 `:`/`.` 替换为 `-`，Windows 兼容） |
 | 2 | latest 指针 | symlink 指向最新（Windows 无权限时降级为指针文件，读取端两种都兼容） |
 | 3 | schema 版本 | JSON 第一字段 `schemaVersion: 'v1'`，未来变化走 `migrateCheckpoint()` 显式迁移，不静默丢字段 |
