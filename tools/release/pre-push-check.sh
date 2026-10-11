@@ -252,7 +252,9 @@ if [ -f tools/check/check-retirement-due.sh ]; then
   if [ "$RD_RC" -eq 0 ]; then
     check_pass "check-retirement-due.sh（无已届满未退役项）"
   else
-    RD_DUE=$(printf '%s\n' "$RD_OUT" | grep -c '已届满未退役' || true)
+    # 计数只数**明细行**（`已届满未退役：shim …`）——原先按含该词的行计数会把脚本末行的
+    #   汇总句（「✗ 声明体系：N 条「已届满未退役」…」）一并算入，报出数虚高 2（实测 14 vs 12）。
+    RD_DUE=$(printf '%s\n' "$RD_OUT" | grep -c '已届满未退役：shim' || true)
     check_warn "check-retirement-due.sh：已届满未退役 ${RD_DUE} 项（已登记欠账 · 退役排期见 ROADMAP · 非阻断）"
     printf '%s\n' "$RD_OUT" | grep -E '✗|已届满未退役' | head -3 | sed 's/^/      /'
   fi
