@@ -13,6 +13,7 @@
 #      v1.3.7 run-28 同期 fresh-eyes 实查 test-count.sh FLAKY_PKGS 实案）
 #   ⑦ tools/ README 收录对账（每个 git 追踪的脚本文件名须被
 #      tools/README.md 提到——漂移阻断，v1.4.8 第2批由观察期 WARN 升级 FAIL）
+#   ⑩ check 脚本自检（--selftest 常驻化：自检存在却无人调用 = 纸面防线，本段逐个执行）
 #
 # 设计纪律（与 check-review-system.sh 一致）：
 #   - 清单核对器，不判断好坏；0=全绿 / 1=有 FAIL / 2=脚本自身错误
@@ -371,6 +372,40 @@ else
   fi
 fi
 
+
+# ============================================================
+# ⑩ check 脚本自检（--selftest 常驻化）
+#   背景：本仓多数 check 脚本自带 --selftest（正/负样本合成探针，注入漂移必报红），
+#   但此前**无人调用**——自检存在而永不执行 = 纸面防线：脚本自身回归时无人发现。
+#   本段自动发现支持 --selftest 的脚本并逐个执行；任一非零即 FAIL（fail-loud）。
+#   macOS bash 3.2 兼容：只用字符串累积，无关联数组。
+# ============================================================
+[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑩ check 脚本自检 ──${NC}"
+
+SELFTEST_N=0
+SELFTEST_FAIL=""
+for _st in $(grep -rl -- "--selftest" tools/check/*.mjs tools/check/*.sh tools/check/lib/*.mjs tools/verify/*.mjs 2>/dev/null | sort); do
+  # 自排除：本脚本因**含有 --selftest 字样**（就是下面这段）会被自己扫到，
+  # 而它并不实现该参数；且「健康检查去跑健康检查」在语义上也应断开。
+  [ "$_st" = "tools/check/check-tool-health.sh" ] && continue
+  case "$_st" in
+    *.mjs) _st_out=$(node "$_st" --selftest 2>&1); _st_rc=$? ;;
+    *.sh)  _st_out=$(bash "$_st" --selftest 2>&1); _st_rc=$? ;;
+    *) continue ;;
+  esac
+  SELFTEST_N=$((SELFTEST_N + 1))
+  if [ "$_st_rc" -ne 0 ]; then
+    SELFTEST_FAIL="$SELFTEST_FAIL $_st(rc=$_st_rc)"
+    [ "$QUIET" = false ] && echo "$_st_out" | tail -3 | sed "s/^/      /"
+  fi
+done
+if [ "$SELFTEST_N" -eq 0 ]; then
+  bad "⑩ 未发现任何带 --selftest 的脚本——扫描面异常，拒绝假绿"
+elif [ -n "$SELFTEST_FAIL" ]; then
+  bad "⑩ check 脚本自检失败：$SELFTEST_FAIL"
+else
+  ok "⑩ check 脚本自检 $SELFTEST_N 个全过（--selftest 常驻）"
+fi
 # ============================================================
 # 汇总
 # ============================================================
