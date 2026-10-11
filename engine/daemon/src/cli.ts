@@ -60,7 +60,12 @@ async function main() {
     const { getDataDir } = await import('@sofagent/core');
     installWriteSurfaceTracing({ dataDir: getDataDir() });
   } catch (err) {
-    console.warn(`  ⚠️ 写面留痕接线失败（不影响命令执行）: ${err instanceof Error ? err.message : String(err)}`);
+    // S3 独立审查 F-05：原为一行 console.warn ⇒ 所有写面动作回落遗留态放行且无告警面。
+    // fail-closed 覆盖的是「留痕写入失败」，**不覆盖「留痕未接线」**——该缺口由此显式告警补上：
+    // 结构化标记 `[WRITE-SURFACE-UNWIRED]` 供运维面 grep / 告警规则接取（不改命令退出码，
+    // 保持「增强项不阻断会话」的既有语义，但把「静默降级」变成「可见降级」）。
+    const detail = err instanceof Error ? err.message : String(err);
+    console.warn(`  ⚠️ [WRITE-SURFACE-UNWIRED] 写面留痕未接线——本次会话所有 prompt/memory 写面变更**不会留痕**（不阻断命令执行）: ${detail}`);
   }
 
   switch (subcommand) {
