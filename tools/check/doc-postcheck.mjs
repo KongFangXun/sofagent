@@ -192,18 +192,29 @@ if (fix) {
   // 字数棘轮（doc-char-ratchet.json）「只许降不许升」——两者天然冲突。此前这个冲突是**隐藏**的：
   // `--fix` 不报字符变化，用户跑完才在 Face 6 撞红、且不知是谁改的。此处显性化。
   const sizeBefore = new Map(targets.map((f) => [f, fs.existsSync(f) ? fs.readFileSync(f, 'utf8').length : 0]));
-  for (const f of targets) {
+  // 🔴 迭代到稳定：两个治理器有先后依赖——① reflow 折行可能把行变短到不必拆注；
+  //    ② split 拆注会在表后新增「注行」，注行本身可能又是超长行，需要**下一轮 reflow** 才收敛。
+  //    单趟跑完常有残留（实测空跑数轮仍有变化）。故循环至无变化或达上限，并如实打印轮数。
+  const snap = () => targets.map((f) => { try { return fs.readFileSync(f, 'utf8'); } catch { return ''; } }).join('\u0000');
+  let rounds = 0;
+  for (let round = 1; round <= 3; round++) {
+    const before = snap();
+    for (const f of targets) {
     // 冻结区不动（同判据：Face 5 不判冻结区，改写历史事实行不可接受）
     if (FROZEN_ZONE.test(path.relative(ROOT, f))) { skipped++; continue; }
-    for (const tool of ['lib/reflow-walls.mjs', 'lib/compact-tables.mjs']) {
-      try {
-        execFileSync('node', [path.join(SELF_DIR, tool), f, '--write'], { cwd: ROOT, stdio: 'pipe' });
-      } catch (e) {
-        /* 折不断（无标点）的行 / 守恒校验拒绝的文件保留原样，由下方检查如实报告 */
-        if (process.env.DOC_POSTCHECK_DEBUG) console.warn(`[${tool}]`, f, String(e).slice(0, 80));
+      for (const tool of ['lib/reflow-walls.mjs', 'lib/compact-tables.mjs', 'lib/split-table-cells.mjs']) {
+        try {
+          execFileSync('node', [path.join(SELF_DIR, tool), f, '--write'], { cwd: ROOT, stdio: 'pipe' });
+        } catch (err) {
+          /* 折不断（无标点）的行 / 守恒校验拒绝的文件保留原样，由下方检查如实报告 */
+          if (process.env.DOC_POSTCHECK_DEBUG) console.warn(`[${tool}]`, f, String(err).slice(0, 80));
+        }
       }
     }
+    rounds = round;
+    if (snap() === before) break;
   }
+  if (rounds > 1) console.log(`--fix 迭代到稳定：${rounds} 轮（先后依赖：折行 ↔ 拆注）`);
   if (skipped) console.log(`⏭ 冻结区 ${skipped} 个文件跳过治理（changelog/archive/evidence/vendor）`);
   let grew = 0, shrank = 0, grewList = [];
   for (const f of targets) {

@@ -27,7 +27,10 @@ import fs from 'node:fs';
 const CUT_CHARS = ['。', '；', '！', '？', ';', '!', '?'];
 
 /** 纯函数：拆注。刻意**不导出**（自检在本文件内闭环；导出即构成无消费者的新导出，会撞 check-unwired-exports）。 */
-function splitCells(src, MAX = 200) {
+/** 行预算：表格整行超过它就算「墙式行」（口径同 readability-count 的 300） */
+const ROW_BUDGET = 300;
+
+function splitCells(src, MAX = 200, rowBudget = ROW_BUDGET) {
   const lines = src.split('\n');
   const out = [];
   let inFence = false;
@@ -71,7 +74,36 @@ function splitCells(src, MAX = 200) {
         pendingNotes.push(`> 注-${noteId}：${tail}`);
         return ' ' + t.slice(0, cut + 1) + `（详→注-${noteId}） `;
       });
-      out.push(newCells.join('|'));
+      // 🔴 行预算兜底：整行仍 >300 时，对**最长格**按句读符再切一刀（契约 ③ 不变——仍只切句读符，
+      //    切不动就不切）。为什么需要：常见形态是「多格各 100~200 字符」——没有单格 >MAX，
+      //    但整行仍 >300 被判墙式行；此前工具对这类**完全无解**（外仓残留 27 处即此形态）。
+      let joined = newCells.join('|');
+      let guard = 0;
+      while (joined.length > rowBudget && guard++ < 6) {
+        let best = -1;
+        let bestLen = 0;
+        newCells.forEach((c, idx) => {
+          if (idx === 0 || idx === newCells.length - 1) return;
+          const t = c.trim();
+          if (t.length <= bestLen || /（详→注-\d+）/.test(t)) return;
+          const cut0 = Math.max(...CUT_CHARS.map((ch) => t.lastIndexOf(ch, MAX - 12)));
+          if (cut0 > 0 && t.slice(cut0 + 1).trim()) { best = idx; bestLen = t.length; }
+        });
+        if (best < 0) break;
+        const t = newCells[best].trim();
+        const cut = Math.max(...CUT_CHARS.map((ch) => t.lastIndexOf(ch, MAX - 12)));
+        // 🔴 只在**确实变短**时才下刀：尾段比标记还短时，切了反而让行变长（实测用例：
+        //    格 184 字符、尾段仅 4 字符 → 主句 180 + 标记 ~10 = 190 > 184，行反而 +6）。
+        //    与 compact-tables 的「只减不增」同一条纪律。
+        const trial = newCells.slice();
+        trial[best] = ' ' + t.slice(0, cut + 1) + `（详→注-${noteId + 1}） `;
+        if (trial.join('|').length >= joined.length) break;
+        noteId++;
+        pendingNotes.push(`> 注-${noteId}：${t.slice(cut + 1).trim()}`);
+        newCells[best] = ' ' + t.slice(0, cut + 1) + `（详→注-${noteId}） `;
+        joined = newCells.join('|');
+      }
+      out.push(joined);
       continue;
     }
 
@@ -131,6 +163,16 @@ function selfTest() {
   // 围栏内不动
   const fenced = '```\n| h | ' + 'x'.repeat(300) + ' |\n```\n';
   check('围栏内不动', splitCells(fenced, 200).text === fenced);
+
+  // 行预算：多格各 <MAX 但整行 >300 → 仍应被切到预算内（此前无解、外仓残留即此形态）
+  const wideRow = '| h1 | h2 | h3 |\n|---|---|---|\n| ' + '一二三四五。'.repeat(30) + '尾段足够长才会被切。'.repeat(4) + ' | ' + '六七八九十。'.repeat(30) + '尾段乙也足够长。'.repeat(4) + ' | x |\n';
+  const r4 = splitCells(wideRow, 200, 300);
+  const maxBefore = Math.max(...wideRow.split('\n').filter((l) => l.trim().startsWith('|')).map((l) => l.length));
+  const maxAfter = Math.max(...r4.text.split('\n').filter((l) => l.trim().startsWith('|')).map((l) => l.length));
+  // 可成立的不变式：① 行预算切口**确实生效**；② **任何行都不会变长**（与「只减不增」同纪律）。
+  //   不断言「必被切到 ≤300」——工具按设计**每格只切一次**（不做嵌套注），双巨格的行掉两个尾段后
+  //   仍可能 >300；那是留给作者改写的余量，不是工具该硬凑的。
+  check('行预算：多格长行被切且任何行不变长', r4.notes > 0 && maxAfter <= maxBefore, `notes=${r4.notes} maxBefore=${maxBefore} maxAfter=${maxAfter}`);
 
   // 分隔行 / 短格不动
   const plain = '| h1 | h2 |\n|---|---|\n| a | b |\n';
