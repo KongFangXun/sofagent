@@ -16,3 +16,4 @@ check-interface-roadmap.mjs:须带 `--spec <商业机制文档>` 才实跑，spe
 check-seam-drift.mjs:宿主 seam 词表漂移巡检（登记本 vs 宿主实测差集），cadence = 宿主升级后 / 定期，非推前链路；且**默认只提示不阻断**——漂移是**宿主侧**信息，不是本仓的错。接进 pre-push 只会在每次推送时产出恒定提示噪声而无任何阻断价值。`--strict` 供巡检时收紧。
 check-fresh-eyes-artifacts.mjs:fresh-eyes-loop harness 注入形态的产物契约守闸——调用方是 harness 执行形态的会话内人工/主任务协议步骤（使用说明在 FORGE/SKILL 与 loop.md 的 .md 面，天然不进脚本调用面）；driver 形态的等价判定在 driver 进程内。--self-test 可自证。
 sync-test-count.sh:手工预览工具——SOP 09-publish 步骤二/08-confirm 步骤二以「测试数疑漂时人工跑 --dry-run 预览归属」使用，不接自动调用面
+check-cross-worktree-drift.mjs:跨 worktree 文档漂移检测器——多分支并存时「漂移是事实不是违规」（仅红档=合并预演冲突才是真问题，黄档=并行演进合法），按设计**不接 pre-push** 等自动阻断链路；调用方是收敛批开工时的人工会话（`--report` 一页纸 / `--stale-days N` 三桶分档）。接进自动链路只会在每次推送时产出恒定噪声而无阻断价值。

@@ -945,6 +945,8 @@ if (brokenFileReports.length > 0) {
     console.log(`    行: ${r.line.substring(0, 100)}`);
     console.log('');
   }
+  console.log(colors.yellow('  修法：先 test -e 判「指向错」还是「文件真没了」——指向错（目录层级数错最常见：搬目录后相对链接少一级/多一级）改链接路径；目标文件确已删除/改名则改引现状文件或删该引用。禁止为过检而新建空文件占位（那是把断链伪装成活链）。changelog 排除面的死链另见 check-docs §1b 双保险'));
+  console.log('');
 }
 
 if (chapterReports.length > 0) {
