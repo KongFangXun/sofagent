@@ -29,7 +29,7 @@
 import { readdirSync, readFileSync, existsSync, statSync, appendFileSync, writeFileSync } from 'fs';
 import { join, relative } from 'path';
 
-import { resolveSensitivity, isSensitivityVisible, resolveKnowledgeDir } from '@sofagent/core';
+import { resolveSensitivity, isSensitivityVisible, resolveKnowledgeDir, emitWriteSurfaceTrace } from '@sofagent/core';
 
 import { pushKnowledgeSummary } from '../notify';
 import { pushToTarget } from '../push-target';
@@ -171,16 +171,35 @@ function generateIndexMarkdown(pages: KnowledgePage[]): string {
   return header + tableHeader + rows + '\n';
 }
 
+/**
+ * v1.5.9 章一：知识面（knowledge/ 目录）写操作留痕。
+ * knowledge-health 是 knowledge/ 的唯一写操作方（章一接线说明登记的落点）——
+ * 每处写（体检报告追加 / index.md 自动修复）落一条写面记录。
+ * 未接线（core 未注册 tracer）时 emitWriteSurfaceTrace 返回 false（遗留态零副作用）。
+ */
+function emitKnowledgeWriteTrace(target: string, before: string | null, after: string): void {
+  emitWriteSurfaceTrace({
+    surface: 'memory',
+    target,
+    actor: 'knowledge-health',
+    origin: 'system',
+    diff: { mode: 'entry-level', op: 'revise', entryKey: target, before, after },
+  });
+}
+
 /** 向 health-report.md 追加一段报告（唯一允许的写操作） */
 function appendHealthReport(knowledgeDir: string, lines: string[]): void {
+  let wrote = false;
   try {
     const reportPath = join(knowledgeDir, 'health-report.md');
     const now = new Date().toISOString();
     const block = `\n## ${now} knowledge-health 巡检\n\n${lines.map((l) => `- ${l}`).join('\n')}\n`;
     appendFileSync(reportPath, block, 'utf-8');
+    wrote = true;
   } catch {
     // 报告写失败不阻断巡检（fail-open on report，fail-closed on source）
   }
+  if (wrote) emitKnowledgeWriteTrace('knowledge/health-report.md', null, `巡检报告 ${lines.length} 行`);
 }
 
 /**
@@ -400,6 +419,7 @@ export function checkKnowledgeHealth(
       });
       if (kept.length !== indexLines.length) {
         writeFileSync(indexPath, kept.join('\n'), 'utf-8');
+        emitKnowledgeWriteTrace('knowledge/index.md', null, `断链行已移除（${indexLines.length}→${kept.length} 行）`);
         autoFixed.push('index.md 断链行已移除');
       }
     }
@@ -407,6 +427,7 @@ export function checkKnowledgeHealth(
     const indexRel = relative(knowledgeDir, indexPath) || 'index.md';
     if (staleIndexes.includes(indexRel)) {
       writeFileSync(indexPath, generateIndexMarkdown(pages), 'utf-8');
+      emitKnowledgeWriteTrace('knowledge/index.md', null, `index 过旧已重新生成（${pages.length} 页）`);
       autoFixed.push('index.md 已重新生成（消除过旧）');
     }
     reportLines.push(

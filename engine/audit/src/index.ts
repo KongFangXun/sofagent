@@ -148,6 +148,41 @@ export {
   LEVEL_ORDER,
 } from './degradation';
 export type { DegradationLevel, DegradationTrigger, DegradationRecord, LevelCapability, DegradationManagerOptions } from './degradation';
+// v1.5.9 章一：自进化写面变更留痕（prompt / memory 两类契约 + HMAC 挂链 + 第三通道 + 举证导出）。
+// 标 @internal：仓内契约（core 侧经 createWriteSurfaceTracer 接线），不进 @public 基线。
+/* @internal */ export {
+  WRITE_SURFACES,
+  WRITE_SURFACE_ORIGINS,
+  WRITE_SURFACE_KINDS,
+  MEMORY_ENTRY_OPS,
+  kindForSurface,
+  assertDiffContract,
+  summarizeDiff,
+  getWriteSurfaceLogPath,
+  recordWriteSurfaceChange,
+  loadWriteSurfaceLog,
+  verifyWriteSurfaceChain,
+  writeSurfaceToDiffFiles,
+  exportWriteSurfaceEvidence,
+  createWriteSurfaceTracer,
+  WriteSurfaceContractError,
+  WriteSurfaceWriteError,
+} from './write-surface-log';
+/* @internal */ export type {
+  WriteSurface,
+  WriteSurfaceOrigin as WriteSurfaceChangeOrigin,
+  WriteSurfaceKind,
+  PromptFieldChange,
+  PromptFieldDiff,
+  MemoryEntryOp,
+  MemoryEntryDiff,
+  WriteSurfaceDiff,
+  WriteSurfaceChangeInput,
+  WriteSurfaceRecord,
+  WriteSurfaceEntry,
+  WriteSurfaceEvidenceBundle,
+  ExportWriteSurfaceEvidenceOptions,
+} from './write-surface-log';
 import { analyzeRootCause } from './audit-root-cause';
 import { runVerifyChain, runVerifyCommit } from './commands/verify';
 import { formatSuggestions } from './config-suggestion';

@@ -7,8 +7,8 @@
 //         语义——本模块只出判定，不新建回退机制）
 //   人审门：promote-train 只提示不执行（FDE 确认队列）
 //   台账：每次判定落 decision-log（判据快照可追溯——经 core 的
-//         emitAuditDecision；该符号当前未从 @sofagent/core 导出，本模块以
-//         可注入 writer 解耦：默认 no-op，生产接线下版随 core 导出面收口）
+//         emitAuditDecision；v1.5.9 该符号已 @public 导出，生产由
+//         createCoreDecisionWriter() 接线，见下）
 //
 // 晋级四道证据门槛（evidenceGates）：留出集优先 / 严格优于历史最佳 /
 // 单变量可归因 / 校准不退化——四门全过才允许 promote-*，任一拒绝即 keep。
@@ -16,6 +16,7 @@
 // 单标量（口径 = held-out 分数），不另立第二套基线存储（双事实源风险）。
 
 import type { QuotaConfig, QuotaUsage, QuotaVerdict } from '@sofagent/core';
+import { emitWriteSurfaceTrace, emitAuditDecision } from '@sofagent/core';
 
 // ── 阈值常量（集中定义——对齐 skill-health.ts MAX_SCAN_FILES 惯例；落数表 #4/#5/#6）──
 
@@ -226,6 +227,22 @@ export type DecisionWriter = (entry: { kind: string; moment: string; why: string
 export const noopDecisionWriter: DecisionWriter = () => null;
 
 /**
+ * 生产 DecisionWriter：把判定台账写入 core 的 decision-log（受控写经 @sofagent/audit）。
+ *
+ * v1.5.9 收口（承 v1.5.8 待明确 #1）：core 已 `@public` 导出 emitAuditDecision（此前是导出面
+ * 缺口，本模块只能默认 no-op）。core 侧 emitAuditDecision 内部已 **fail-open**——运行时解析不到
+ * `@sofagent/audit` 或写入抛错时返回 null 并把原因打到 stderr，故本函数不重复兜底：
+ * 留痕缺失仍由调用方「如实暴露为 null」（不伪造 ts）。
+ *
+ * @param opts.dataDir 数据目录（透传 emitAuditDecision——决定 decision-log 落盘位置；缺省走
+ *                     core 默认 dataDir）。生产调用方 evolution/loop.ts 传本循环的 dataDir，
+ *                     保证测试隔离与数据分目录一致。
+ */
+export function createCoreDecisionWriter(opts: { dataDir?: string } = {}): DecisionWriter {
+  return (entry) => emitAuditDecision(entry, opts.dataDir);
+}
+
+/**
  * 判定落台账：判据快照 + decision-log 留痕。
  * 返回台账条目；writer 失败不阻断（留痕缺失由 writer 返回 null 如实暴露）。
  */
@@ -239,9 +256,23 @@ export function recordPromotionDecision(
   const entry: PromotionLedgerEntry = { ts, itemId: input.itemId, verdict, criteriaSnapshot: input };
   writer({
     kind: 'EVOLUTION',
-    moment: 'select',
+    // moment 必须是 audit 的 LoopPhase 枚举（此前误填 'select'——那是 DecisionCategory，
+    // 真接线后 emitDecision 会 schema 拒绝；晋级判定发生在进化阶段，取 'EVOLVE'）。
+    moment: 'EVOLVE',
     why: `晋级判定 ${verdict.action}：${verdict.basis}`,
     evidence: [`item=${input.itemId}`, `freq=${input.injectionFrequency}`, `persist=${input.persistenceDays}d`, `passRate=${input.passRate.toFixed(2)}`],
+  });
+  // ── v1.5.9 章一：晋级动作自动留痕（判定即写面变更——不靠调用方自觉）──
+  // 章一接线说明登记的库层缝：在库层落点接线后，生产调用方
+  // engine/daemon/src/evolution/loop.ts 自动获得留痕，**无需改调用点**。
+  // 未接线（core 未注册 tracer）时 emitWriteSurfaceTrace 返回 false（遗留态零副作用）。
+  emitWriteSurfaceTrace({
+    surface: 'memory',
+    target: `promotion:${input.itemId}`,
+    actor: 'evolve-loop',
+    origin: 'self-improvement',
+    diff: { mode: 'entry-level', op: 'revise', entryKey: input.itemId, before: `layer=${input.currentLayer}`, after: verdict.action },
+    refTrace: entry.ts,
   });
   return entry;
 }

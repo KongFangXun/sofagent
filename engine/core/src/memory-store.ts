@@ -29,6 +29,7 @@ import { dirname, join } from 'path';
 import { createHash, randomUUID } from 'crypto';
 import { execFileSync } from 'child_process';
 import { getDataDir } from './data-paths';
+import { guardWriteSurface, type WriteSurfaceOrigin } from './loadchain-write-hook';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -336,13 +337,18 @@ export function resolveMemoryScope(cwd?: string): string {
  *
  * @param dataBase 数据根目录（可选；默认 SOFAGENT_DATA → ~/.sofagent/data）
  * @param options.scope 作用域覆盖（默认 resolveMemoryScope()；测试隔离用）
+ * @param options.trace 写面留痕元数据（v1.5.9 章一）——记忆写入的触发来源 / 发起人缺省。
+ *   ⚠️ 留痕只在 core 侧注册了写面 sink（setWriteSurfaceTracer）后生效；未接线时按遗留态
+ *   放行（零回归）。
  */
 export function createMemoryStore(
   dataBase?: string,
-  options: { scope?: string } = {},
+  options: { scope?: string; trace?: { origin?: WriteSurfaceOrigin; actor?: string } } = {},
 ): MemoryStore {
   const memoryRoot = getMemoryRoot(dataBase);
   const scope = options.scope ?? resolveMemoryScope();
+  const traceOrigin: WriteSurfaceOrigin = options.trace?.origin ?? 'self-improvement';
+  const traceActor = options.trace?.actor;
 
   /** 按 key 读取一条事实（**不做作用域过滤**——过滤在 visibleFact） */
   const readFact = (key: string): MemoryFact | null => {
@@ -360,52 +366,114 @@ export function createMemoryStore(
   /**
    * 写入或更新一条事实（打上给定 scope）。
    * set 用当前 scope；importFacts 用目标 scope。
+   *
+   * v1.5.9 章一：写入经写面留痕守卫（guardWriteSurface）——
+   *   · 条目级 diff（新增 / 修订）+ 发起人 + 触发来源 + 时间戳；
+   *   · 未接线 tracer 时按遗留态放行（零回归）；已接线时留痕失败 ⇒ 回退 + 告警（fail-closed）。
    * @returns 事实 ID
    */
   const putFact = (
     fact: Omit<MemoryFact, 'id' | 'createdAt' | 'updatedAt'>,
     scopeValue: string,
+    origin: WriteSurfaceOrigin,
   ): string => {
-    mkdirSync(memoryRoot, { recursive: true, mode: 0o700 });
-    const index = readIndex(memoryRoot);
-    const now = new Date().toISOString();
+    // ── 写前快照（供留痕失败时回退 —— 净效果 = 拒绝无痕写入）──
+    const { bucket: priorBucket } = extractBucket(fact.key);
+    const priorIndex = readIndex(memoryRoot);
+    const priorFactId = priorIndex[fact.key];
+    const priorPath = priorFactId ? resolveFactPath(memoryRoot, priorBucket, priorFactId) : null;
+    const priorContent = priorPath ? readFileSync(priorPath, 'utf-8') : null;
+    const priorValue = priorContent !== null
+      ? (markdownToFact(priorContent, priorFactId)?.value ?? null)
+      : null;
 
-    // 已存在则更新
-    let factId = index[fact.key];
-    let createdAt = now;
-    if (factId) {
-      // 读取旧事实的 createdAt
-      const { bucket } = extractBucket(fact.key);
-      const oldPath = resolveFactPath(memoryRoot, bucket, factId);
-      if (oldPath) {
-        const old = markdownToFact(readFileSync(oldPath, 'utf-8'), factId);
-        if (old) createdAt = old.createdAt;
+    const doWrite = (): string => {
+      mkdirSync(memoryRoot, { recursive: true, mode: 0o700 });
+      const index = readIndex(memoryRoot);
+      const now = new Date().toISOString();
+
+      // 已存在则更新
+      let factId = index[fact.key];
+      let createdAt = now;
+      if (factId) {
+        // 读取旧事实的 createdAt
+        const { bucket } = extractBucket(fact.key);
+        const oldPath = resolveFactPath(memoryRoot, bucket, factId);
+        if (oldPath) {
+          const old = markdownToFact(readFileSync(oldPath, 'utf-8'), factId);
+          if (old) createdAt = old.createdAt;
+        }
+      } else {
+        factId = randomUUID();
       }
-    } else {
-      factId = randomUUID();
-    }
 
-    const full: MemoryFact = {
-      ...fact,
-      id: factId,
-      createdAt,
-      updatedAt: now,
-      // v1.5.6 章二：写入时打上作用域
-      scope: scopeValue,
+      const full: MemoryFact = {
+        ...fact,
+        id: factId,
+        createdAt,
+        updatedAt: now,
+        // v1.5.6 章二：写入时打上作用域
+        scope: scopeValue,
+      };
+
+      const { bucket } = extractBucket(fact.key);
+      const factPath = getFactPath(memoryRoot, bucket, factId);
+      mkdirSync(dirname(factPath), { recursive: true, mode: 0o700 });
+
+      // 写 Markdown 单文件
+      writeFileSync(factPath, factToMarkdown(full), 'utf-8');
+
+      // 更新索引
+      index[fact.key] = factId;
+      writeIndex(memoryRoot, index);
+
+      return factId;
     };
 
-    const { bucket } = extractBucket(fact.key);
-    const factPath = getFactPath(memoryRoot, bucket, factId);
-    mkdirSync(dirname(factPath), { recursive: true, mode: 0o700 });
+    const revert = (): void => {
+      if (priorFactId && priorPath && priorContent !== null) {
+        // 修订场景：恢复旧文件与旧索引（factId 不变）
+        mkdirSync(dirname(priorPath), { recursive: true, mode: 0o700 });
+        writeFileSync(priorPath, priorContent, 'utf-8');
+        const idx = readIndex(memoryRoot);
+        idx[fact.key] = priorFactId;
+        writeIndex(memoryRoot, idx);
+        return;
+      }
+      // 新增场景：删除刚落盘的文件并把索引退回写前
+      const idx = readIndex(memoryRoot);
+      const newId = idx[fact.key];
+      if (newId) {
+        const p = resolveFactPath(memoryRoot, priorBucket, newId);
+        if (p) {
+          try {
+            unlinkSync(p);
+          } catch {
+            // 为何可静默：回退阶段文件可能已被并发删除——索引回退仍照常执行，不阻断回退
+          }
+        }
+        delete idx[fact.key];
+        writeIndex(memoryRoot, idx);
+      }
+    };
 
-    // 写 Markdown 单文件
-    writeFileSync(factPath, factToMarkdown(full), 'utf-8');
-
-    // 更新索引
-    index[fact.key] = factId;
-    writeIndex(memoryRoot, index);
-
-    return factId;
+    return guardWriteSurface(
+      {
+        surface: 'memory',
+        target: fact.key,
+        actor: fact.source || traceActor || 'unknown',
+        origin,
+        diff: {
+          mode: 'entry-level',
+          op: priorFactId ? 'revise' : 'add',
+          entryKey: fact.key,
+          before: priorValue,
+          after: fact.value,
+        },
+      },
+      doWrite,
+      revert,
+    );
   };
 
   /** 列出事实（按 key 前缀过滤，**不做作用域过滤**） */
@@ -435,7 +503,7 @@ export function createMemoryStore(
   return {
     /** 写入或更新一条事实（当前 scope）。@returns 事实 ID */
     set(fact: Omit<MemoryFact, 'id' | 'createdAt' | 'updatedAt'>): string {
-      return putFact(fact, scope);
+      return putFact(fact, scope, traceOrigin);
     },
 
 
@@ -454,7 +522,7 @@ export function createMemoryStore(
     },
 
     /**
-     * 按 key 删除一条事实。
+     * 按 key 删除一条事实（v1.5.9 章一：映射为记忆面条目级「失效」并留痕）。
      * @returns true=删除成功，false=不存在
      */
     delete(key: string): boolean {
@@ -464,17 +532,50 @@ export function createMemoryStore(
 
       const { bucket } = extractBucket(key);
       const factPath = resolveFactPath(memoryRoot, bucket, factId);
-      if (factPath) {
-        try {
-          unlinkSync(factPath);
-        } catch {
-          // 文件已被删除，继续清理索引
-        }
-      }
+      const priorContent = factPath ? readFileSync(factPath, 'utf-8') : null;
+      const priorFact = priorContent !== null ? markdownToFact(priorContent, factId) : null;
 
-      delete index[key];
-      writeIndex(memoryRoot, index);
-      return true;
+      const doDelete = (): boolean => {
+        if (factPath) {
+          try {
+            unlinkSync(factPath);
+          } catch {
+            // 文件已被删除，继续清理索引
+          }
+        }
+        const idx = readIndex(memoryRoot);
+        delete idx[key];
+        writeIndex(memoryRoot, idx);
+        return true;
+      };
+
+      const revert = (): void => {
+        if (factPath && priorContent !== null) {
+          mkdirSync(dirname(factPath), { recursive: true, mode: 0o700 });
+          writeFileSync(factPath, priorContent, 'utf-8');
+          const idx = readIndex(memoryRoot);
+          idx[key] = factId;
+          writeIndex(memoryRoot, idx);
+        }
+      };
+
+      return guardWriteSurface(
+        {
+          surface: 'memory',
+          target: key,
+          actor: priorFact?.source || traceActor || 'unknown',
+          origin: traceOrigin,
+          diff: {
+            mode: 'entry-level',
+            op: 'invalidate',
+            entryKey: key,
+            before: priorFact?.value ?? null,
+            after: null,
+          },
+        },
+        doDelete,
+        revert,
+      );
     },
 
     /**
@@ -633,6 +734,8 @@ export function createMemoryStore(
             tags: [...(fact.tags ?? []), ...lineage],
           },
           targetScope,
+          // 跨项目导入须显式人工批准（approve 门）⇒ 触发来源归「人工」
+          'human',
         );
         imported += 1;
       }
