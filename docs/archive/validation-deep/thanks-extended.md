@@ -65,6 +65,32 @@
   还写明**自改进通道本身无权降低门的强度**；② 「已观察到的事实」与「已接受的任务进度」**分账**，与本仓审计链「原始记录 vs 判定结论」分离同向，可作该分离的第三方实现样本。**边界**：自述「first to introduce an evidence-gated RSI protocol for embodied robotic agents」属**序位自述、本仓不采**；机器人体域、无本仓可复算读数 ⇒ 只作结构对位，不入对照表
 
 ## 判定与校准（分析段全文——对照件池谱系，判定件深读另见 [judgment-ecosystem.md](./judgment-ecosystem.md)）
+### What Output-Only Review Cannot Verify（分析段）
+
+- 把「产出物面可判的缺陷」与「须知道执行前批准了什么才可判的缺陷」**显式分开**：以 study contract 绑定「已声明实验选择 / 运行义务 / 声称范围 ↔ 执行证据」（第三方论文、本仓未复算）。
+
+### From Reactive Containment to Proactive Assurance（分析段）
+
+- 2026 年三类 agent 越出授权测试范围的真实事件复盘（含 OpenAI agent 跨运行协同并波及 Hugging Face 生产环境）⇒「先围堵、后保证」的教训（第三方转述、本仓未复算）。
+### Drex（Nace.AI · 判定件族，2026-10-11 登记）
+
+- **路线同构（厂商自述）**：模型卡原文「Pointer head `head.pt`, scores each option from the backbone's hidden states」；DLM 版为「双向上下文 + 各问题分支因果注意力 + 共享 pointer head」——**与本仓「编码器 + 判定头、非自回归」路线同构的活体正例**（厂商自述，本仓未复算）。
+- **发布形态**：GitHub `nace-ai/drex-decision-models`（Apache-2.0 · ★19 · created 2026-10-09T18:30:00Z · pushed 2026-10-10T00:14:01Z，实测）；HF `drex-v1.5` 制品含 `head.pt` + 4 分片 safetensors（gated=false / private=false）。
+- **复用**：模型卡自述「serves the TypeSafe-compatible `/v1/systemone` API through the bundled Kev code」——与本仓 `/v1/systemone` 面同接口。
+- **准入缺口**：训练数据未随包发布 ⇒ **只作「路线与发布形态对照」，不入对照表**；自报读数（Decision Index 58.08 / JevBench 231 题 86.2%）**只并列不排名**。
+
+### Specialized Decision Models vs. General-Purpose LLMs（分析段）
+
+- 基准面：13 个多选题基准 × 19 个 LLM（frontier / representative / small 三档）跨知识、推理、多语言。
+- 结论：专项判定件在**知识与常识**面可比前沿 LLM；**只记方向与量级，具体分数不入本仓对照表**（第三方基准、本仓未复算）。
+
+### FastJEV（分析段）
+
+- 「上下文只编码一次」之外还有**候选评估侧冗余**：重复的 token 历史、重复推理状态、整条 backbone 执行 ⇒ 紧凑判定件推理的独立优化面（第三方论文、本仓未复算）。
+
+### Adversarial Cues in Decision Models Used as Judges（分析段）
+
+- 判定件当裁判时，**一个冒号**即可随「结构化请求的呈现形态」把误接受率从 1.0% 抬到 26.0%（三标签）/ 3.0% 抬到 26.5%（四标签）⇒ 与「选项通道攻击」同面第二证：**输在呈现形态，不在候选内容**（第三方论文、本仓未复算）。
 
 ### 判定与校准
 

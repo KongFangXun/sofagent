@@ -141,10 +141,11 @@
 - **[One Word Opens the Gate](https://arxiv.org/abs/2610.12292)** — **护栏件的输入侧攻击面**：类型化判定件被放进 agent 当闸门后，「选项通道」上一个词即可开门 ⇒ 闸门件自身也是攻击面，不只是判据面（第三方论文、本仓未复算）
 - **[TypedBench](https://arxiv.org/abs/2610.11392)** — 非生成式接口的「**校准 / 框架敏感性 / 成本**」三维独立基准（第三方基准、本仓未复算）
 - **[Can Jev be Your Q or Policy in RL?](https://arxiv.org/abs/2610.11692)** — 判定件不生成文本、直接返回校准的类型化概率 ⇒ 试作 RL 的 Q / policy：非自回归路线在强化学习侧的能力边界（第三方论文、本仓未复算）
-- **[FastJEV](https://arxiv.org/abs/2610.11379)** — 「上下文只编码一次」之外还有候选评估侧冗余：重复的 token 历史、重复推理状态、整条 backbone 执行 ⇒ 紧凑判定件推理的独立优化面（第三方论文、本仓未复算）
-- **[Specialized Decision Models vs. General-Purpose LLMs](https://arxiv.org/abs/2610.11978)** — 13 个多选题基准 × 19 个 LLM（frontier / representative / small 三档）跨知识、推理、多语言：专项判定件在知识与常识面可比前沿 LLM；**只记方向与量级，具体分数不入本仓对照表**（第三方基准、本仓未复算）
-- **[Adversarial Cues in Decision Models Used as Judges](https://arxiv.org/abs/2610.11436)** — 判定件当裁判时，**一个冒号**即可随「结构化请求的呈现形态」把误接受率从 1.0% 抬到 26.0%（三标签）/ 3.0% 抬到 26.5%（四标签）⇒ 与「选项通道攻击」同面第二证：输在呈现形态，不在候选内容（第三方论文、本仓未复算）
+- **[FastJEV](https://arxiv.org/abs/2610.11379)** — 候选评估侧冗余也是紧凑判定件的独立优化面（第三方论文、本仓未复算）。
+- **[Specialized Decision Models vs. General-Purpose LLMs](https://arxiv.org/abs/2610.11978)** — 13 个多选题基准 × 19 个 LLM：**专项判定件在知识与常识面可比前沿 LLM**（第三方基准、本仓未复算）。
+- **[Adversarial Cues in Decision Models Used as Judges](https://arxiv.org/abs/2610.11436)** — 判定件当裁判时，**一个冒号**即可把误接受率从 1.0% 抬到 26.0% ⇒ 「输在呈现形态、不在候选内容」（第三方论文、本仓未复算）。
 - **[Can Decision Models Understand Stance?](https://arxiv.org/abs/2610.11901)** — 立场检测对照：英文 VAST 面与前沿 LLM 相当，中文对话 ZS-CSD 面落后于微调模型 ⇒ 判定件能力边界非全域占优（第三方论文、本仓未复算）
+- **[Drex](https://github.com/nace-ai/drex-decision-models)** · Nace.AI — 开源判定件族：v1.5 9B / DLM 8B 扩散 LM，均带独立 pointer head、复用 Kev 代码；代码 Apache-2.0、**权重非通行开源**（Open RAIL-M / CC BY-NC 4.0，商用须另授权）；自报 Decision Index 0.3.1 公开面 58.08（**厂商自测、本仓未复算**）。
 
 ### 认知与反馈
 
@@ -155,8 +156,8 @@
 - **[Verification and Self-Improvement in Agentic AI](https://arxiv.org/abs/2610.10611)** — 一个性能分数分不清「搜得更久 / 得到更多支持 / 改了怎么提议与验证」三种改进机制；用有界验证把它拆开（第三方论文、本仓未复算）
 - **[ReSI: Recursive Safety Improvement](https://arxiv.org/abs/2610.12233)** — 递归自改进从理论走向实践后，安全对齐须随频繁更新持续保持（第三方论文、本仓未复算）
 - **[Who Verifies the Verifier?](https://arxiv.org/abs/2610.11464)** — 自改进循环里每一次「它是不是真的变好了」都由验证器回答 ⇒ **验证器自身必须可检查**，且与 agent 共同演化（第三方论文、本仓未复算）
-- **[What Output-Only Review Cannot Verify](https://arxiv.org/abs/2610.11754)** — 把「产出物面可判的缺陷」与「须知道执行前批准了什么才可判的缺陷」**显式分开**：以 study contract 绑定「已声明实验选择 / 运行义务 / 声称范围 ↔ 执行证据」（第三方论文、本仓未复算）
-- **[From Reactive Containment to Proactive Assurance](https://arxiv.org/abs/2610.12463)** — 2026 年三类 agent 越出授权测试范围的真实事件复盘（含 OpenAI agent 跨运行协同并波及 Hugging Face 生产环境）⇒「先围堵、后保证」的教训（第三方转述、本仓未复算）
+- **[What Output-Only Review Cannot Verify](https://arxiv.org/abs/2610.11754)** — 「产出物面可判的缺陷」与「须知执行前批准了什么才可判的缺陷」须**显式分开**（第三方论文、本仓未复算）。
+- **[From Reactive Containment to Proactive Assurance](https://arxiv.org/abs/2610.12463)** — 2026 年三类 agent 越权事件复盘 ⇒「先围堵、后保证」的教训（第三方转述、本仓未复算）。
 - **[Accurate but Not Humble](https://arxiv.org/abs/2610.12360)** — 知识冲突下 agent 的「认识论谦逊」评估：以轨迹级三维度 Identify / Solve / Escalate 度量其承认并上报不确定性的意愿（第三方论文、本仓未复算）
 
 

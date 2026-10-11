@@ -33,7 +33,7 @@
 - **反去人化命题**——human-in-the-loop 不是能力缺陷，是「可靠优先于自主」的差异化优势（主体性护栏不可外包）。
 - **90/10 价值分层 → 知行合一框架**——模型给 90% 智力（知），sofagent 补 10% 可靠执行（行），关键在「合一」；模型越强那 10% 越值钱。
 - **治理缺口的代价（三项联网核验）**——Gartner 2026-05：到 2027 年 40% 企业自主 Agent 将因治理缺口被降级/停用；MIT NANDA：95% gen-AI 部署零可衡量 ROI；Governance Decay：运行时约束被上下文压缩擦除后违规率 0%→38%。约束/治理是投产前提，非加分项。
-- **a16z 七法则映射**——「人比软件便宜」与 90/10 同频；Loops/Evals/冗员等五条本仓原生具备，[完整映射表见归档](./archive/validation-digest/README.md)。
+- **a16z 七法则映射**——「人比软件便宜」与 90/10 同频；五条本仓原生具备（[完整映射表见归档](./archive/validation-digest/README.md)）。
 - **Sovereign AI 四层主权框架**——「主权是光谱不是开关」「先建评测集再谈微调」与本仓模型路由不自研、Benchmark 先行完全同构（四层落点对照见 [v1.4.0 商业侧定位](./changelog/v1.4/v1.4.0.md)）
 - **评测集是受管资产（三源收敛）**——来源：真实失败与生产流量沉淀（非合成数据）；规模：20-50 个真实失败案例即可起步、随版本扩展（拖越久越难补）；形态：进版本控制、接 CI 跑（临时脚本形态 = 不可回归的评测 = 假评测）。与本仓既有 09-06「评测集所有权治理」为姊妹条：彼管归属，此管来源与形态。
   来源：Anthropic《Demystifying Evals》（IMA 收录）｜ DeepSeek Safety 官方技术报告（IMA 收录）｜ OpenRouter · https://openrouter.ai/blog/tutorials/ai-agent-regression-testing-after-a-prompt-or-model-change/
@@ -83,7 +83,7 @@ Cloudflare CEO 把工作角色分三类（Builder/Seller/Measurer），**Measure
 - **OpenAI Agents SDK v0.22.0**——四因子乘积模型（模型能力 × 运行时可靠性 × 数据可信度 × 权限与审计）被官方一手源实证，后三因子正是约束层的活。[出处](https://github.com/openai/openai-agents-python/releases/tag/v0.22.0)
 - **harnessed agentic RL**——训练域验证「归因单位必须是完整执行、不是单次调用」（Agent Lightning 2.41 样本/rollout、Dressage reward 以整条 trajectory 为单位）：与审计按 commit 留痕同构。arXiv:2608.17528
 - **Omarchy**——SKILL.md 是正在收敛的 Agent 接口形态；反漂移靠「禁二份」纪律（SSOT 声明 + 扫描对账互补）。[omacom/omarchy](https://github.com/omacom/omarchy)（35.3k stars）
-- **企业 AI 选型框架「两轴一红线」**——语义不确定性 × 路径不确定性两轴矩阵 + 高影响动作留给人；「能用规则不用模型判断」与 20/25 纯 git-diff 同构，「不信可解释性」（信任源于证据链而非推理结论）与 HMAC 链 + HITL 咬合。验收六指标全部可从审计链派生——考试式验收的落地形态。[深读见归档](./archive/validation-deep/selection-frameworks.md)
+- **企业 AI 选型框架「两轴一红线」**——两轴矩阵 + 高影响动作留给人；「能用规则不用模型判断」与 20/25 纯 git-diff 同构，「不信可解释性」与 HMAC 链 + HITL 咬合（完整对照见归档）。
 - **金融风控归因消融**——汇添富以领域本体为底座引导 LLM：实体识别 95%、关系抽取 99%，**消融对照移除本体约束后关系抽取降约 30 个百分点**——「可检查性必须落在模型外」的量化实证。《证券信息技术》2026-1（周建军等）
 
 ### System One 决策模型：判断与生成分离（Jev · 2026-09）
@@ -108,8 +108,8 @@ RSI 统一形式化：三个可写面算子（Data-RSI 经验池 / Harness-RSI �
 
 **▍其他（2026-09 深读，一句话判据）**
 
-- **WeKnora**（腾讯开源知识平台）——判定件上游的检索现成件，非同类：混合检索分数归一化、检索降级留痕、chunk 级编辑修订与「召回三问」链路直接可引；治理面无 append-only 链差一档。[深读见归档](./archive/validation-deep/weknora.md)
-- **具身智能切面**——机器人的运动过程 = 一个个 workflow，**差别在执行器、不在治理形态**；判定件对具身的价值在控制回路**外**的治理（责任面/数据面/进化面），判定永不进安全反射；边界自律：非排期承诺。[深读见归档](./archive/validation-deep/judgment-ecosystem.md)
+- **WeKnora**（腾讯开源知识平台）——判定件上游的检索现成件，非同类：混合检索归一化 / 降级留痕 / chunk 级修订可引；治理面无 append-only 链差一档。[深读见归档](./archive/validation-deep/weknora.md)
+- **具身智能切面**——机器人的运动过程 = 一个个 workflow，**差别在执行器、不在治理形态**；判定件对具身的价值在控制回路**外**的治理，判定永不进安全反射。[深读见归档](./archive/validation-deep/cross-domain.md)
 
 ---
 
@@ -133,7 +133,7 @@ deepagents 启发了 v1.0-1.1 的 DAG 编排（Harness 范式 + HITL 功不可�
 
 ### 与现有工具的差异（速查表）
 
-一句话：现有工具查代码，sofagent 查 AI 的行为——密钥泄漏、越界改文件、盲目修改是 AI 特有闯祸方式。完整速查表（detect-secrets/gitleaks/Cursor Rules/云厂商三短板）见归档。
+一句话：现有工具查代码，sofagent 查 AI 的行为——密钥泄漏、越界改文件、盲目修改是 AI 特有闯祸方式。完整速查表见归档。
 
 > 📚 全文与读数：[归档](./archive/validation-digest/README.md)——本节 2026-09-28 台账化压缩。
 
@@ -147,21 +147,21 @@ deepagents 启发了 v1.0-1.1 的 DAG 编排（Harness 范式 + HITL 功不可�
 | **LangSmith** | ? 可选 | 开发调试工具，非产品组成（SDK MIT，平台闭源收费） |
 
 **不做 RAG、不做向量检索、不做 Document Loader** 是设计禁区（详见 PHILOSOPHY [§八 设计禁区](./PHILOSOPHY.md#八不做什么设计禁区)）——知识管理哲学是 [Don't Do RAG](https://arxiv.org/abs/2412.15605) 验证的 CAG 方向：干净 Markdown + 加载链按需注入比向量检索更可审计。FORGE loop 技术栈极其克制——**核心价值不在「用了多少技术」，在「管住了多少行为」**。
-意图债务 / 理解债务（loop-engineering 概念，SKILL.md 为什么不是可选项）全文见归档。
+意图债务 / 理解债务（loop-engineering 概念）全文见归档。
 
 ### 2026 年的新一代对标：Agent 运行时治理内核
 
 2026 年治理从合规文档类分化为运行时内核类（概率模型外做确定性裁决）：ArbiterOS / Cordum / 《Reason Less Verify More》（78% 失败是静默错误状态、门自身精度必须被审计）/ 风控三层——本仓占「运行时治理内核」格，差异在判定面多出校准概率+弃权+档位。对标表与数据见归档。
 
 > ⚠️ **判定/决策接口须保留显式弃权位并报弃权率（判据级纪律）**：Arena 对 12 模型 34,580 场裁决实测——**96% 对战被强制选出赢家**（无弃权位的强制二选一）；裁判间一致率 79.4% vs 与人类仅 56.9%——**高分一致率可能只是同源假象**（裁判偏爱自己的答案比人类高 70%、同厂裁判对同厂模型宽容 37 分）。推论：无弃权位的判定系统会把「判不了」静默伪装成「判了」，是系统性偏差信号；本仓档位五态中 `ABSTAIN`（带三源归因）与选项表强制第四选项正是对位设计，**弃权率本身须作为可观测指标上报**（弃权率趋零先查通道坍缩再查能力提升）。
->（人类侧镜像现象——AI 建议在场使人的弃答率从 36-44% 坍缩至 3-6%、正确率反降——属使用面洞察，详见归档，不并入本判据。）
+>（人类侧镜像现象属使用面洞察，详见归档，不并入本判据。）
 > 来源：Arena · https://x.com/arena/status/2104965778613452895 ｜ 《研究：AI 建议可用让人几乎不再愿意说「我不知道」》（IMA 收录）
 
 > 📚 完整映射表：[归档](./archive/validation-digest/README.md)
 
 ## 三、架构印证：行业框架独立复现 sofagent 的选择
 
-> 本节把跨批行业研读中与 sofagent 架构**结构上对齐**的行业框架逐条印证——不是发明新架构，是验证已有架构选型的行业合理性。成篇论证全文见 [归档 · architecture-mapping](./archive/validation-deep/architecture-mapping.md)。
+> 本节逐条印证与 sofagent 架构**结构上对齐**的行业框架（非发明新架构，是验证既有选型）。成篇论证全文见 [归档 · architecture-mapping](./archive/validation-deep/architecture-mapping.md)。
 
 ### Ontology = 共同理解层 / 翻译层
 
@@ -174,11 +174,11 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构系统之�
 - **Apache Ossie**（2026-07 进孵化器）——语义层交换标准：厂商中性 YAML/JSON 语义模型 + `ai_context` 字段 = 「本体 = 运行时语义层」的工业级实例化；Hub-and-Spoke（N 平台互转 2N 条路径）与「合的框架」同构。⚠️ 克制：初生标准不引入依赖，仅作演进参照。[ossie.apache.org](https://ossie.apache.org/)
 - **Notification 事件驱动协作**——多 Agent 经事件总线协作而非点对点：调用路径不动态化，治理不失控。
 - **外层 FORGE 节奏与护栏**——Onyx 四阶段闭环 + 双模式审批（高风险人工/常规受信自动）= SUSTAIN 巡检 + critical/warning/crutch 分层。
-- **行业五层骨架映射**——五层（配置/知识/指令/校验/编排）映射本仓三层，关键同构 = 仅指令层直接调 AI（[映射表见归档](./archive/validation-digest/README.md)）
+- **行业五层骨架映射**——五层映射本仓三层，关键同构 = 仅指令层直接调 AI（[映射表见归档](./archive/validation-digest/README.md)）
 - **AOS 四大基础设施**（数据接口/上下文理解/权限管理/Skill 生态）与 sofagent 五层工程谱系逐层同构。
 - **脑力自动化四阶段**（提示词→上下文→驾驭→循环）恰是 sofagent 五层谱系的工程化落地。
 - **企业级确定性执行底线**——零数据权限 / 全链路留痕 / 确定性执行三条底线与「LLM 动脑指挥，Ontology 指路，确定性工具执行」分工完全同构。
-- **OLAF-I 五块骨架**——Object/Link/Action/Function/Interface 最小不可再分集，sofagent 五能力同构；Palantir「Action 默认 staged 等人审」= human_confirm 同构。[映射表见归档](./archive/validation-digest/README.md)
+- **OLAF-I 五块骨架**——Object/Link/Action/Function/Interface 最小不可再分集与本仓五能力同构；Palantir「Action 默认 staged 等人审」= human_confirm 同构（[映射表见归档](./archive/validation-digest/README.md)）
 - **模型层判断**——智能密度提升（小大模型差距缩到半年）印证分层模型架构可行；运行时动态路由与 model-router 同构；「组合优于单一」是 Scaling Law 天花板的必然结果。
 
 ### 循环的边界：入场判据与升级判据
@@ -210,7 +210,7 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构系统之�
 一句话判据：Palantir 官方把 Ontology 定义为「**可运行的业务契约**」（Data+Logic+Action+Security 四合一，「表达企业彼此关联的复杂**决定**，而不是数据」）；KLM 范式 = 智能/控制分离 + 把规则动作边界放模型外；Red Loop 写回五机制（幂等/回执/补偿/审计/人工接管）与 Durable Execution + WAL + HITL 逐一对位；
 双 MCP 体系把「改结构」（proposal 人工门）与「改数据」（受控 Action）拆成两条治理通道——每个 action type 独立暴露为 MCP 工具 = **审计粒度到单个业务动作**，与「28 条规则按变更类型切分」同构。Snowflake 反向「自下而上」路径（数仓长出本体栈，Cortex Sense 47%→83%）与 Palantir 互为外部佐证——**本体 = 运行时 context 层被多家独立复现**；其 Action 语义缺失恰是审计 + HITL 的主场。
 
-纳德拉「学习循环」（Token 资本复利，2800 万浏览）四要素与 sofagent 能力面逐项对齐：「可以外包一项任务甚至一份工作，但永远无法外包学习过程」——模型可换、平台可换，企业积累的约束规则与审计历史不动。深读全文见 [归档](./archive/validation-deep/architecture-mapping.md)。
+纳德拉「学习循环」四要素与本仓能力面对齐：「可以外包一项任务甚至一份工作，但永远无法外包学习过程」——模型/平台可换，企业积累的约束与审计历史不动。深读全文见 [归档](./archive/validation-deep/thanks-extended.md)
 
 
 > 📖 [Palantir Foundation · Ontology MCP](https://palantirfoundation.org/docs/foundry/ontology-mcp/sample-architecture) · [Snowflake · Cortex Sense](https://www.snowflake.com/en/blog/enterprise-ai-agents-grounded-context/) · [Satya Nadella ·
@@ -231,7 +231,7 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 
 ## 四、市场印证：行业判断被市场买单
 
-> 前三章回答"技术对不对"，本章回答"市场认不认"。成篇论证全文见 [归档 · market-validation](./archive/validation-deep/market-validation.md)。
+> 前三章回答「技术对不对」，本章回答「市场认不认」。成篇全文见 [归档 · market-validation](./archive/validation-deep/market-validation.md)。
 
 **▍经济账与定位（一句话判据）**
 
@@ -246,9 +246,13 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 - **FDE 岗位爆发**：MIT NANDA「95% 项目零财务回报」vs FDE 岗位一年涨 **729%**（Indeed 2025）——模型不稀缺了，能把模型塞进真实业务的人/工具才稀缺。…
 > 📦 **本条印证全文（多源数据与逐条出处）见 [归档 · validation-deep](./archive/validation-deep/section-fde-market-and-harness-research.md)。**
 
+- **pass^k 一致性抽验（单次通过 ≠ 稳定通过）**：回归验收抽验边缘场景，要求 **k 次重复稳定通过**而非单次成功——单次通过率会掩盖抖动的 harness。
+  - ⚠️ 两条口径注记（**细节见归档**）：+54% 系 **pass^1 相对提升**、非 k 次一致性；同页已声明「多数场景推荐改用 extended thinking」⇒ 只按**方法论**采用。
+> 📖 来源：[Anthropic Engineering · The think tool](https://www.anthropic.com/engineering/claude-think-tool)（2025-12-15 更新）· 哥伦比亚大学 COMS W4995 第 5 讲（2026-10-11）
+
 ## 五、研报视角的边界提示
 
-> 行业研报在给出印证的同时也提示了边界，与 [LIMITATIONS](./LIMITATIONS.md) 的既有披露互证。成篇全文见 [归档 · boundary-research](./archive/validation-deep/boundary-research.md)。
+> 行业研报的边界提示与 [LIMITATIONS](./LIMITATIONS.md) 互证。成篇全文见 [归档 · boundary-research](./archive/validation-deep/boundary-research.md)。
 
 ### 约束增益与自进化系列的实验数据汇总（ARCHITECTURE/PHILOSOPHY 引用的数据锚）
 
