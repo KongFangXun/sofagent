@@ -2,7 +2,7 @@
 
 > 🔴 **报告漏洞**：见本文 [§报告漏洞](#报告漏洞)（唯一上报入口——渠道 / 范围 / 响应预期以该节为准）。渠道为 **GitHub Security Advisory 单通道**——v1.3.6 起不再提供安全邮箱（无法保证收信），亦未提供加密公钥；勿经 issue 上报未公开漏洞。
 
-<p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > v1.5.8 · 2026-10-09（UTC）· ✅ 已发版（[CHANGELOG](./CHANGELOG.md)）· 孔放勋
 >

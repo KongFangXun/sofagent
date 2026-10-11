@@ -1,6 +1,6 @@
 # 贡献指南
 
-<p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > 📖 新贡献者？先看 [COMMUNITY.md](./docs/COMMUNITY.md) 了解社区现状和贡献路径。
 > 📌 基于当前 main 分支结构修订，目录与文件以你面前的仓库为准。

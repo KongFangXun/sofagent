@@ -1,6 +1,6 @@
 # Changelog
 
-<p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > **sofagent 是开源（MIT）的 FDE Harness 层**；**本文件是版本目录索引**。完整开发日志在 [`docs/changelog/`](./docs/changelog/) 下，此处仅留「版本能力索引（一段式）+ 链接」与「跨版本破坏性变更 / 退役公告」，不重复逐版细节。
 > **状态标注约定**：正式版条目一律带发布日期；近期版本另附「已发版 / 待发版」状态标注，历史版本以日期为准。

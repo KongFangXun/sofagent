@@ -1,6 +1,6 @@
 # sofagent
 
-<p align="center"><img src="docs/assets/banner.png" alt="sofagent" width="100%" /></p>
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/banner.png" alt="sofagent" width="100%" /></p>
 
 <!-- H1 与横幅分工：H1 是仓库名与语义锚点（供搜索引擎/无图环境/screen reader），横幅承载视觉 -->
 
@@ -45,7 +45,7 @@
 sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（管住强度按宿主分档：DSH/OpenClaw 硬注入可拦截，其余档位为建议性注入 + git hook 审计兜底——见〈多平台挂载〉档位表）。
 
 <p align="center">
-  <img src="docs/assets/audit-terminal.png" alt="sofagent audit 拦截 .env 提交" width="860" /><br/>
+  <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/audit-terminal.png" alt="sofagent audit 拦截 .env 提交" width="860" /><br/>
   <sub>零配置审计实拍：一行命令审计最近一次 commit，密钥泄漏当场拦截（截图摄于单入口收敛前，命令已收敛为 sofagent audit）</sub>
 </p>
 
@@ -53,7 +53,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 <summary>🗺️ 系统架构总览（FDE Harness 五模块编制）</summary>
 
 <p align="center">
-  <img src="docs/assets/architecture-diagram.png" alt="sofagent 系统架构" width="860" /><br/>
+  <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/architecture-diagram.png" alt="sofagent 系统架构" width="860" /><br/>
   <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制：治理模块 v1.5.0 已发版 · 执行模块 v1.5.4/v1.5.5 已发版；完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
 </p>
 
@@ -132,7 +132,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 >
 > 两个阶段的合成效果——「从 FDE 到 FDEing」——见〈核心特性〉首段理念主线（万物皆可 FDEing）。
 
-<p align="center"><img src="docs/assets/arch-layers.svg" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/arch-layers.svg" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
 
 **为什么是 FDE Harness**
 
@@ -247,7 +247,7 @@ sofagent audit --doctor    # 验证环境（可选）
 
 ## 使用
 
-<p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" /><br/><sub>Dashboard 驾驶舱（单文件 HTML · 示例数据）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>（界面演进见 CHANGELOG，实际以安装态为准）</sub></p>
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" /><br/><sub>Dashboard 驾驶舱（单文件 HTML · 示例数据）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>（界面演进见 CHANGELOG，实际以安装态为准）</sub></p>
 
 > 📊 **Dashboard 有三个入口，各归各位**：
 >
@@ -261,7 +261,7 @@ sofagent audit --doctor    # 验证环境（可选）
 
 > 👁️ **Agent 视角**：装完 hook 后每次 commit 触发审计——PASS 输出简短回声后放行（自动快照），违规直接打进终端输出并按配置推送 Webhook / IM，Agent 侧无独立图形界面（详见 [PHILOSOPHY §二](./docs/PHILOSOPHY.md#系统暴露的能力agent-视角)）。
 
-<p align="center"><img src="docs/assets/usage-path.svg" alt="使用路径：试用 → 团队 → 企业 → 自运转" width="85%" /></p>
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/usage-path.svg" alt="使用路径：试用 → 团队 → 企业 → 自运转" width="85%" /></p>
 
 | 入口 | 做什么 | 装在哪 | 花多久 |
 |---|---|---|---|

@@ -1,7 +1,7 @@
 # sofagent
 
 <p align="center">
- <img src="docs/assets/banner.png" alt="sofagent" width="100%" />
+ <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/banner.png" alt="sofagent" width="100%" />
 </p>
 
 <!-- H1 & banner split: the H1 is the repo name and semantic anchor (search engines / no-image environments / screen readers); the banner carries the visuals -->
@@ -58,7 +58,7 @@ Five Harness capabilities (inject · audit · rollback · distill · evolve), fi
 sofagent doesn't build the Agent—it delivers the layer that keeps any Agent governed.
 
 <p align="center">
- <img src="docs/assets/audit-terminal.png" alt="sofagent audit blocks a .env commit" width="860" /><br/>
+ <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/audit-terminal.png" alt="sofagent audit blocks a .env commit" width="860" /><br/>
  <sub>Zero-config audit in action: one command audits the latest commit; leaked secrets get blocked on the spot (screenshot taken before the single-entry consolidation; the command is now sofagent audit)</sub>
 </p>
 
@@ -66,7 +66,7 @@ sofagent doesn't build the Agent—it delivers the layer that keeps any Agent go
 <summary>🗺️ System architecture overview (FDE Harness five-module structure)</summary>
 
 <p align="center">
- <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training /
+ <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training /
 governance / execution modules" width="860" /><br/>
  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure: governance module released in v1.5.0 · execution module released in v1.5.4/v1.5.5; full interactive
 version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
@@ -164,7 +164,7 @@ together by the deliverables handed over in between**:
 >
 > **From FDE to FDEing—everything can be FDEing**: the combined effect of the two stages—see the opening of "Core Features" above (everything can be FDEing).
 
-<p align="center"><img src="docs/assets/arch-layers-en.svg" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/arch-layers-en.svg" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
 
 **Why the FDE Harness**
 
@@ -313,7 +313,7 @@ Enterprise users who just want the FDE methodology for mapping business workflow
 
 ## Usage
 
-<p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" /><br/><sub>Dashboard cockpit (single-file HTML · sample data): rule pass
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" /><br/><sub>Dashboard cockpit (single-file HTML · sample data): rule pass
 rate, audit tasks, violation trends—see at a glance what the AI is doing.<br>(See CHANGELOG for UI evolution;
 the installed UI is the source of truth.)</sub></p>
 
@@ -331,7 +331,7 @@ the installed UI is the source of truth.)</sub></p>
 > 👁️ **Agent's view**: with hooks installed, every commit triggers an audit—PASS prints a short echo then passes (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there's no separate GUI on the Agent side (see [PHILOSOPHY
 >§2](./docs/PHILOSOPHY.md#%E7%B3%BB%E7%BB%9F%E6%9A%B4%E9%9C%B2%E7%9A%84%E8%83%BD%E5%8A%9Bagent-%E8%A7%86%E8%A7%92)).
 
-<p align="center"><img src="docs/assets/usage-path-en.svg" alt="Usage path: trial → team → enterprise → self-running" width="85%" /></p>
+<p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/usage-path-en.svg" alt="Usage path: trial → team → enterprise → self-running" width="85%" /></p>
 
 | Entry | What it does | Where installed | Time needed |
 |---|---|---|---|
