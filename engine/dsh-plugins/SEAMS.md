@@ -42,7 +42,7 @@
 | `tools/result` | `@deepseek-ai/dsh-tools` | `lib/` | 工具最终结果确定——审计留证落点 | `audit` |
 | `fs/edit-intent` | `@deepseek-ai/dsh-fs` | `lib/` | 文件编辑意图（写盘前可见） | 暂无 |
 | `fs/observed` | `@deepseek-ai/dsh-fs` | `lib/` | 文件系统变更已观测 | 暂无 |
-| `fs/write-intent` | `@deepseek-ai/dsh-fs` | `lib/` | 文件写入意图（写盘前可拦） | `audit` |
+| `fs/write-intent` | `@deepseek-ai/dsh-fs` | `lib/` | 文件写入意图（写盘前可拦） | `audit` `evolve` |
 | `agent/pre-step` | `@deepseek-ai/dsh-agent` | `lib/` | 模型看到输入前——约束注入落点 | `inject` |
 | `agent/request` | `@deepseek-ai/dsh-agent` | `lib/` | 模型请求发出前 | 暂无 |
 | `agent/request-error` | `@deepseek-ai/dsh-agent` | `lib/` | 模型请求失败后（重试 / 降级落点） | 暂无 |
@@ -233,19 +233,20 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 
 | 侧 | 现状 | 证据 |
 | --- | --- | --- |
-| **DSH** | seam 是**声明 + 实现**——7 款插件里声明了宿主事件的 4 款（共 7 个事件位）经 `ctx.on()` 真实订阅（事件位归属见下表注）；订阅 disposer 收进 apply 的复合卸载契约 | 各插件 `src/index.ts` 的 `seamHandlers`；`plugins.json.seamHandlers`；门禁三方对账；探针剧本见 §7.3 |
+| **DSH** | seam 是**声明 + 实现**——7 款插件里声明了宿主事件的 4 款（共 8 个事件位；v1.5.9 章七 evolve 增 `fs/write-intent` 写面窄化）经 `ctx.on()` 真实订阅（事件位归属见下表注）；订阅 disposer 收进 apply 的复合卸载契约 | 各插件 `src/index.ts` 的 `seamHandlers`；`plugins.json.seamHandlers`；门禁三方对账；探针剧本见 §7.3 |
 | **OpenClaw** | hook 是**实现**——`api.on('before_tool_call', handler)` 真注册，拦停返回 `{ block: true, blockReason }` | `engine/openclaw-plugins/*/src/index.ts` |
 
-> **DSH 侧 7 个事件位的归属**：audit → `tools/result` · `tools/pre-execute` · `fs/write-intent` · `agent/turn-stopping`；
-> inject → `agent/pre-step`；evolve → `session/event`（按 `event.type === 'turn/end'` 过滤）；rollback → `agent/error`。
+> **DSH 侧 8 个事件位的归属**：audit → `tools/result` · `tools/pre-execute` · `fs/write-intent`（放行接线） · `agent/turn-stopping`；
+> inject → `agent/pre-step`；evolve → `session/event`（按 `event.type === 'turn/end'` 过滤）· `fs/write-intent`（v1.5.9 章七**写面窄化拦截**——模型只写 memory/skill，控制面写入即拒）；rollback → `agent/error`。
 
 > ⚠️ **对使用者的含义**：DSH 侧插件的运行时介入已经接线，但**能力边界不同**，
 > 不要笼统写成「已自动拦截」：
 > - `tools/pre-execute` 是**真拦截**（判定源 `checkDangerousCommand`，命中即 deny）；
 > - `agent/turn-stopping` 是**验收续跑**（判定源 `checkAcceptance`，未定义验收时不拦；
 >   每 turn 至多续跑一次）；
-> - `fs/write-intent` 目前是**放行接线**——引擎包没有「按目标路径判定写意图」的
->   @public 判定源，按马鞍铁律不新造判定，故只接线不拦截；
+> - `fs/write-intent` 两态并存：`audit` 侧是**放行接线**（引擎包无「按目标路径判定写意图」
+>   的 @public 判定源，不新造判定）；`evolve` 侧是 v1.5.9 章七的**写面窄化真拦截**——
+>   判定源在插件内（`write-surface-boundary.ts`，纯路径形态判定，可独立拔插），控制面写入即拒；
 > - `agent/error` 的自动回滚**默认关档**（settings `rollbackOnError`），开档才撤销工作区。
 >
 > **F-50 settings 声明实态（防误补/防误删）**：七款插件的 flags 声明面分两类——**显式声明**：`audit`（`settingsExtra: {rules, acceptanceGate}`，门禁类默认开）、`rollback`（`settingsExtra: {rollbackOnError}`，副作用类默认关）、`fde`（`featureGates` 三档分域 ontology/fde/commons）；
