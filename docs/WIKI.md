@@ -253,7 +253,7 @@ graph TB
 |---|---|
 | 当前版本 | **v1.5.8**（2026-10-09，✅ 已发版 · 进化模块 · 准入门与数据面） |
 | 下一版 | **v1.5.9**（📋 规划中——写面审计与能力基线 · 进化面插件化；以 [ROADMAP](./ROADMAP.md) 为准） |
-| 测试覆盖 | 5965 测试 / 13 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
+| 测试覆盖 | 6067 测试 / 13 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
 | 审计规则 | 28 条（17 默认 + 11 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)） |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |

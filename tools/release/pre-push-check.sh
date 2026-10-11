@@ -27,6 +27,7 @@
 #                             同输入同输出 + 已登记差异钉住 · 须在构建之后跑 · v1.4.9 G-9 接入）
 #   + doc-discipline.sh    → 对外文档写作纪律（内部工单代号 / 本机私有路径 / 来源块溯源 · v1.4.9 P2-27 接入）
 #   + check-prepush-checklist.mjs → 本清单自身的对账：清单里的脚本名 ⊆ 实际被调用（v1.4.9 G-16 接入）
+#                             部署清单内 + bootstrap LIB_FILES ⊇ install.sh 依赖（v1.5.1 P0 后接入）
 #   + check-archaeology.sh → 规则文档禁考古（正文不带版本号/日期/跑批编号（run-N·第N轮·Round N）/出身标签；
 #                             豁免：blockquote 叙事 / 能力版本门槛（`vX.Y.Z+`·`vX.Y.Z 起`·低于·达到）/
 #                             文件头版本标识 / 机器注释 / 机器字面量（引号或命令内版本号）/
@@ -415,6 +416,29 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 2g. 加载链配置面契约（check-loadchain-config.mjs · v1.5.9 章三接入）
+# ════════════════════════════════════════
+#   四层配置字段 SSOT（loadchain-schema.ts）⇄ 实现双向对账：
+#   正向 implRef 锚点仍在 + 反向实现 SOFAGENT_* 引用无未登记 + 结构（归属唯一/四层全覆盖）。
+#   纯 node 内置，无需先 build。三态：0 全绿 / 1 违规 / 2 失明（拒绝假绿）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 2g. 加载链配置面契约 ──${NC}"
+  _lc_output=$(node tools/check/check-loadchain-config.mjs 2>&1)
+  _lc_rc=$?
+  if [ "$_lc_rc" -eq 0 ]; then
+    check_pass "check-loadchain-config.mjs（四层字段 SSOT ⇄ 实现 双向对账全绿）"
+  elif [ "$_lc_rc" -eq 2 ]; then
+    check_fail "check-loadchain-config.mjs 检查器失明（exit 2——SSOT 块缺失/实现全不可读，拒绝假绿）"
+    printf '%s\n' "$_lc_output" | grep -E '❌|✗|失明' | head -5 | sed 's/^/    /'
+  else
+    check_fail "check-loadchain-config.mjs 发现配置面违规（rc=${_lc_rc}）"
+    printf '%s\n' "$_lc_output" | grep -E '❌|✗' | head -5 | sed 's/^/    /'
+  fi
+  unset _lc_output _lc_rc
+fi
+
+# ════════════════════════════════════════
 # 3. 文档检查（check-docs.sh）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
@@ -771,6 +795,32 @@ if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
   else
     check_fail "tools/check/doc-score.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
   fi
+fi
+
+# ════════════════════════════════════════
+# 5c. 红队执行器（red-team-runner.mjs · v1.5.9 章六）
+# ════════════════════════════════════════
+#   四类攻击面成对用例的两态判定；穿透 ⇒ rc=1（进回归清单）/ 失明 ⇒ rc=2。
+#   ⚠️ 依赖 engine/*/dist 已构建——故本步位置在构建段（§5）之后。
+# ════════════════════════════════════════
+echo -e "\n${BOLD}── 5c. 红队执行器（敌手自测）──${NC}"
+if [ ! -f tools/check/red-team-runner.mjs ]; then
+  check_fail "tools/check/red-team-runner.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理）"
+else
+  _rt_log=$(mktemp)
+  if node tools/check/red-team-runner.mjs >"$_rt_log" 2>&1; then
+    _rt_line=$(grep -E '^汇总' "$_rt_log" | head -1)
+    check_pass "red-team-runner.mjs（红队非穿透）${_rt_line:+ · ${_rt_line}}"
+  else
+    _rt_rc=$?
+    if [ "$_rt_rc" -eq 2 ]; then
+      check_fail "red-team-runner.mjs 失明（rc=2——缺 dist 或用例未登记，拒绝假绿）"
+    else
+      check_fail "red-team-runner.mjs：存在穿透（rc=${_rt_rc}）——进回归清单"
+    fi
+    grep -E "🔴|✗|穿透" "$_rt_log" | head -10 | sed 's/^/      /'
+  fi
+  rm -f "$_rt_log"; unset _rt_log _rt_line _rt_rc
 fi
 
 # ════════════════════════════════════════

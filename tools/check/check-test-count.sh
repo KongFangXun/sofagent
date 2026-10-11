@@ -322,6 +322,22 @@ run_scenario_guard() {
       [ -n "$_cl_ln" ] || continue
       _cl_file=$(echo "$_cl_ln" | cut -d: -f1)
       _cl_lineno=$(echo "$_cl_ln" | cut -d: -f2)
+      # ── 版本行冻结判据（v1.5.9 口径修正）──────────────────────────────
+      # 版本行记的是**该版发布当时**的场景数（v1.5.7 / v1.5.8 发版时 = 401），属历史事实。
+      # 若强制其等于**当前** SSOT，唯一「修法」就是**改历史读数**——用改过去迁就现在，
+      # 与「历史冻结区不回改」直接冲突，且会让读者以为这两版发版时就是 NNN 场景（失实）。
+      # 故按「**已 tag ⇒ 冻结**」跳过：只有**尚未 tag** 的行（＝正在开发的下一版索引行，
+      # 其数字本就该在 bump 前与 SSOT 对齐）才受检。版本锚取「本行或最近一条版本行」的
+      # `vX.Y.Z`（CHANGELOG 索引行第二行为续行，版本号在上一行）。
+      # 注意：ROADMAP 的「当前值 NNN」声称由下方 ⑤ 段单管——那是**活**声明，不受本跳过影响。
+      _cl_ver=$(sed -n "1,${_cl_lineno}p" "$_cl_file" 2>/dev/null | grep -oE '(^- \*\*v|^\| v|^> \*\*v)[0-9]+\.[0-9]+\.[0-9]+' | tail -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+      if [ -n "$_cl_ver" ] && git tag -l "v${_cl_ver}" 2>/dev/null | grep -qx "v${_cl_ver}"; then
+        if [ "$QUIET" = false ]; then
+          echo -e "  ${GREEN}✓ ${_cl_file}（行 ${_cl_lineno}）：v${_cl_ver} 已 tag ⇒ 历史冻结行（不与当前 SSOT 比对）${NC}"
+        fi
+        SCEN_PASS=$((SCEN_PASS + 1))
+        continue
+      fi
       check_scenario_doc "${_cl_file}（acceptance 场景声称）" "${_cl_file}" \
         "${_cl_lineno}" \
         "$(echo "$_cl_ln" | grep -oE '(场景 )?(\*\*)?[0-9]+(\*\*)? 全绿' | grep -oE '[0-9]+' | head -1)"
