@@ -64,3 +64,6 @@
   VerifyResult,
   Args,
 } from '../verify/types';
+
+// ── v1.5.9 章一·decision-log 实写（域＝审计域）──────────────────────────
+/* @internal */ export { emitAuditDecision } from '../audit-decision-writer';

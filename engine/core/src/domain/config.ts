@@ -30,3 +30,26 @@
   DEFAULT_WATCH_CONFIG,
 } from '../config/watch-config';
 /* @public */ export type { WatchConfig, CronJob } from '../config/watch-config';
+
+// ── v1.5.9 章三·加载链配置面契约（域＝配置域）────────────────────────────
+// 为什么补在这里：domain barrel 头部写明「新符号先进根 barrel 再同步分拣到本文件，
+// 避免两面漂移」——v1.5.9 章三把 15 个符号加进根 barrel 却漏了本步，导致
+// 「root ≡ 域 barrel 并集」不变量被打破（S476 行为锁实测 core root=333 vs uni=310）。
+// 标记沿用根 barrel 的 `@internal`（本批未扩大 @public 面）。
+/* @internal */ export {
+  LOAD_CHAIN_LAYERS,
+  LOAD_CHAIN_CONFIG_FIELDS,
+  getFieldsByLayer,
+  assertUniqueOwnership,
+  assertAllRegistered,
+  resolveOwner,
+  assertLayerWrite,
+  buildLayerConfig,
+  loadChainDefaults,
+  loadChainConfigFromEnv,
+  validateLoadChainSchema,
+  LoadChainSchemaError,
+  LoadChainOwnershipError,
+  LoadChainUnregisteredFieldError,
+  LoadChainBoundaryError,
+} from '../loadchain-schema';
