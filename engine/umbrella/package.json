@@ -1,7 +1,7 @@
 {
   "name": "sofagent",
   "version": "1.5.8",
-  "description": "Open-source FDE Harness for AI coding agents. On entry, write business judgment into files; after departure, audit every change against them. 28 audit rules, tamper-evident chain, snapshots, 104 MCP tools.",
+  "description": "Open-source FDE Harness for AI coding agents. On entry, write business judgment into files; after departure, audit every change against them. 28 audit rules, tamper-evident chain, snapshots (104 tools, 11 plugins).",
   "license": "MIT",
   "author": "KongFangXun",
   "type": "module",
