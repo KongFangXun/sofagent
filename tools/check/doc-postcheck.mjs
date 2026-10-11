@@ -181,17 +181,26 @@ const ratchetDoc = (() => {
 })();
 const ratchet = ratchetRaw ? { ...ratchetRaw, ratchetDoc } : null;
 
-// --fix：先调既有 reflow-walls 折行（口径单一来源），再继续检查
+// --fix：先调既有 lib 治理器（口径单一来源），再继续检查
+//   ① reflow-walls：超长行折行
+//   ② compact-tables：表格去对齐填充 + 分隔行归一（**只减不增**，冻结区自跳过）
+//   —— 后者是本批新增：`doc-postcheck` 报的「墙式行」多数**不是内容密度**而是对齐填充撑行，
+//      故 `--fix` 应对它一并治理，否则用户看到「有墙式行」却折不动（表格行不可折行）而无从下手。
 if (fix) {
   let skipped = 0;
   for (const f of targets) {
-    // 冻结区不折行（同判据：Face 5 不判冻结区，改写历史事实行不可接受）
+    // 冻结区不动（同判据：Face 5 不判冻结区，改写历史事实行不可接受）
     if (FROZEN_ZONE.test(path.relative(ROOT, f))) { skipped++; continue; }
-    try {
-      execFileSync('node', [path.join(SELF_DIR, 'lib/reflow-walls.mjs'), f, '--write'], { cwd: ROOT, stdio: 'pipe' });
-    } catch (e) { /* 折不断（无标点）的行保留，由下方检查如实报告 */ if (process.env.DOC_POSTCHECK_DEBUG) console.warn('[reflow]', f, String(e).slice(0, 80)); }
+    for (const tool of ['lib/reflow-walls.mjs', 'lib/compact-tables.mjs']) {
+      try {
+        execFileSync('node', [path.join(SELF_DIR, tool), f, '--write'], { cwd: ROOT, stdio: 'pipe' });
+      } catch (e) {
+        /* 折不断（无标点）的行 / 守恒校验拒绝的文件保留原样，由下方检查如实报告 */
+        if (process.env.DOC_POSTCHECK_DEBUG) console.warn(`[${tool}]`, f, String(e).slice(0, 80));
+      }
+    }
   }
-  if (skipped) console.log(`⏭ 冻结区 ${skipped} 个文件跳过折行（changelog/archive/evidence/vendor）`);
+  if (skipped) console.log(`⏭ 冻结区 ${skipped} 个文件跳过治理（changelog/archive/evidence/vendor）`);
 }
 
 let total = 0;
