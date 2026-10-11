@@ -27,8 +27,12 @@ import fs from 'node:fs';
 const args = process.argv.slice(2);
 const isSep = (cells) => cells.every((c) => /^:?-+:?$/.test(c));
 
-/** 纯函数：表格瘦身。刻意**不导出**（自检在本文件内闭环；导出即构成无消费者的新导出，会撞 check-unwired-exports）。 */
-function compact(src) {
+/** 纯函数：表格瘦身。刻意**不导出**（自检在本文件内闭环；导出即构成无消费者的新导出，会撞 check-unwired-exports）。
+ *  `frozen` = 该文件是否在历史冻结区——由**调用方按文件路径**判定（函数本身拿不到路径）。
+ *  冻结区整篇跳过：历史区的排版是**历史事实的一部分**，治理不得回改
+ *  （判据同 check-doc-discipline Face 4 的豁免面：docs/changelog · docs/archive · docs/evidence · vendor）。 */
+function compact(src, frozen = false) {
+  if (frozen) return { text: src, touched: 0 };
   const lines = src.split('\n');
   let inFence = false;
   let touched = 0;
@@ -40,15 +44,23 @@ function compact(src) {
     const cells = t.slice(1, -1).split(/(?<!\\)\|/).map((c) => c.trim());
     if (isSep(cells) && cells.length) {
       const neu = '|' + cells.map((c) => `${c.startsWith(':') ? ':' : ''}---${c.endsWith(':') ? ':' : ''}`).join('|') + '|';
+      // 硬约束同下：`|:--:|`（5 字符）→ `|:---:|`（6）会**加字**，故同样只减不增
+      if (neu.length > l.length) return l;
       if (neu !== l) touched++;
       return neu;
     }
     const neu = '| ' + cells.join(' | ') + ' |';
+    // 🔴 硬约束：**输出永不比原行更长**。`|a|b|`（本就紧凑）若被规范成 `| a | b |` 会**加字**，
+    // 撞 host 仓的「字数棘轮只许降不许升」（实测 +1~+14 字/篇，11 篇超基线）——瘦身器只该减，不该增。
+    if (neu.length > l.length) return l;
     if (neu !== l) touched++;
     return neu;
   });
   return { text: out.join('\n'), touched };
 }
+
+/** 冻结区判据（与 check-doc-discipline Face 4 同口径） */
+const isFrozenPath = (p) => /(^|\/)(docs\/(changelog|archive|evidence)\/|vendor\/)/.test(p);
 
 /** 守恒：**豁免分隔行**（短横线数为装饰），其余去空白后逐字多重集一致 */
 function conserve(src, dst) {
@@ -67,6 +79,7 @@ function selfTest() {
     ['冒号标记保留', '| a | b |\n|:---|----:|\n', '| a | b |\n|:---|---:|\n'],
     ['围栏内不动', '```\n|  a  |   b   |\n```\n', '```\n|  a  |   b   |\n```\n'],
     ['非表格行不动', '普通  段落   保持原样。\n', '普通  段落   保持原样。\n'],
+    ['紧凑表不被撑大（只减不增）', '|a|b|\n|---|---|\n|1|2|\n', '|a|b|\n|---|---|\n|1|2|\n'],
   ];
   let ok = true;
   for (const [name, src, want] of cases) {
@@ -84,9 +97,17 @@ function selfTest() {
   const esc = '| a\\|b | c |\n';
   if (compact(esc).text.split('|').length !== esc.split('|').length) { ok = false; console.error('  ✗ 转义管道 \\| 被误切'); }
   else console.log('  ✓ 转义管道 \\| 不被误切');
+  // 冻结区整篇跳过（历史事实区排版不得回改）
+  const froz = '|  a  |   b   |\n|------|------|\n';
+  if (compact(froz, true).text !== froz || compact(froz, true).touched !== 0) { ok = false; console.error('  ✗ 冻结区未被跳过'); }
+  else console.log('  ✓ 冻结区整篇跳过（docs/changelog·archive·evidence·vendor）');
+  // 冻结区判据本身
+  if (!isFrozenPath('docs/archive/x/y.md') || !isFrozenPath('docs/changelog/v1.5/v1.5.8.md') || isFrozenPath('docs/HANDBOOK.md')) {
+    ok = false; console.error('  ✗ isFrozenPath 判据错误');
+  } else console.log('  ✓ 冻结区判据（archive/changelog 命中，普通文档不命中）');
 
   if (!ok) { console.error('  自检失败'); process.exit(1); }
-  console.log('  自检全过（去填充 / 分隔行归一 / 冒号保留 / 围栏豁免 / 幂等 / 转义管道）');
+  console.log('  自检全过（去填充 / 分隔行归一 / 冒号保留 / 围栏豁免 / 只减不增 / 幂等 / 转义管道 / 冻结区豁免）');
 }
 
 if (args.includes('--selftest')) { selfTest(); process.exit(0); }
@@ -96,7 +117,8 @@ const write = args.includes('--write');
 if (!file || !fs.existsSync(file)) { console.error('usage: compact-tables.mjs <file> [--write] | --selftest'); process.exit(2); }
 
 const src = fs.readFileSync(file, 'utf8');
-const { text, touched } = compact(src);
+const frozen = isFrozenPath(file);
+const { text, touched } = compact(src, frozen);
 if (text !== src && !conserve(src, text)) { console.error(`❌ ${file}: 守恒校验失败——拒绝写回`); process.exit(1); }
 if (write && text !== src) fs.writeFileSync(file, text, 'utf8');
-console.log(`${file}: 表格瘦身${write ? (text !== src ? '（已写回）' : '（无变化）') : '（dry-run）'}，改动 ${touched} 行`);
+console.log(`${file}: 表格瘦身${frozen ? '（⏭ 冻结区跳过）' : write ? (text !== src ? '（已写回）' : '（无变化）') : '（dry-run）'}，改动 ${touched} 行`);

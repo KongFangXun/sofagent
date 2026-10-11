@@ -101,8 +101,8 @@
 | `check/doc-ratchet.json` | 核心文档**可读性棘轮台账**（被 `doc-discipline.sh` Face 5 消费：墙式行/墙式格实测值**只许降不许升**——治「内容只进不出」；键 = 逐文档实测计数，`_meta` 记口径，与 `lib/readability-count.mjs` 同源）。 |
 | `check/doc-char-ratchet.json` | 核心文档**字数棘轮台账 + 抬头块上限**（被 `doc-discipline.sh` Face 6/7 消费：活文档**字符数**上限锁死 + 抬头块 ≤600 字；超基线即 CI 红。**口径是字数不是行数**——折行让行数 ×6 而字数仅 +1.7%。净增须先同文档移出等量字）。 |
 | `check/lib/readability-count.mjs` | **可读性计数器（单一口径）**（被 doc-discipline Face 5 / reflow-walls 共用：墙式行/墙式格的定义与计数实现；改口径先改本文件头注释再同步 `doc-ratchet.json` `_meta`）。 |
-| `check/lib/compact-tables.mjs` | **表格瘦身器**（一次性治理工具，**非门禁**：去单元格对齐填充 + 分隔行短横线归一）。**为什么需要**：`doc-postcheck` 报的「墙式行」多数**不是内容密度**而是对齐填充撑行（实测 `| 类 | 用在哪 | 枚举 |` 一行 278 字符、可见文字仅 15 字符）；GFM 不需要对齐填充，故**零内容风险**——治理批实测一仓 24 篇省 64179 字符（≈64KB）。守恒纪律：写回前字符多重集比对，**分隔行豁免**（短横线数为纯装饰）。`--selftest` 七项：去填充 / 分隔行归一 / **冒号对齐标记保留** / 围栏豁免 / 幂等 / **转义管道 \\| 不误切**。 |
-| `check/lib/reflow-walls.mjs` | **墙式行折行器**（一次性治理工具，**非门禁**：把超长段落折行，产出供 doc-ratchet 重新基线；治理批 261→17 的执行器）。**`--selftest` 常驻自检**五条：幂等（f(f(x))===f(x)）/ 内容守恒 / **不凭空造行**（引用块不得多出空 `>`）/ 无残留超限 / 表格与围栏豁免——另含「长度恰好 301 且以句读结尾」的边界用例。口径：引用续行前缀取 `>` **无空格**（`>正文` 是本仓既有风格，168 行，勿改）。 |
+| `check/lib/compact-tables.mjs` | **表格瘦身器**（一次性治理，非门禁）：去单元格对齐填充 + 分隔行归一（**只减不增**；冻结区跳过）。`--selftest` 十项。 |
+| `check/lib/reflow-walls.mjs` | **墙式行折行器**（一次性治理，非门禁）。`--selftest` 十项：幂等 / 内容守恒 / **不凭空造行** / 无残留超限 / 表格围栏豁免等。 |
 | `check/lib/split-table-cells.mjs` | **超长表格格拆注工具**（一次性治理工具，非门禁：把超长表格内的墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线）。产出契约受 `check-table-shape.mjs` ③④ 断言机械对账——标记形态 `（详→注-N）`、同文件必有 `> 注-N：` 定义、**切口必落句读符**（找不到切口就整格不拆） | 拆注治理时 |
 | `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine`+`tools`（`playbook/` 剔出：行为锁本质是测试）；（详→注-14） | CI / 改 SECURITY 测绘数字或 hook 时 |
 | `check/doc-score.mjs` | 文档质量六维评分器（准确/精简/结构/排版/可读/淘汰六维，各维 = 通过项/总项 × 10；机械项调既有门禁、人工项读本版 devlog「文档质量评分」留痕，未确认即按不通过计 fail-closed；任一维 <8 或低于基线即不可放行；增量模式见注-21） | pre-push 第 5b 步 / 发版 SOP / Face 13 |
@@ -239,12 +239,12 @@
 
 | 脚本 | 用途 | 不接 CI 的理由 |
 |---|---|---|
-| `check/check-deps.sh` | 关键依赖版本检查（含 DSH / LangGraph / automerge 等） | **exit 1 = 有依赖落后于上游最新版**，而「是否升级」是人工决策（SOP 步骤 5 决策规则）——接线即永久红。需要人做决策的工具不进 CI |
-| `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（引用路径/函数是否真实存在；历史档案漂移单列 🕘 不计失败） | **参数化按需工具**：必须传 `<file.md>`，可加 `--strict` 强制历史档案按严格口径判；无参数时报用法错并 exit 1——CI 无处传参。生成 prompt 后手动跑 |
-| `check/sync-test-count.sh` | 测试数多文档一键同步（实测值回写各文档声称位） | **写文档的收口工具**，不是检查器——发版 SOP 数字收口阶段人工触发 |
-| `check/resolve-section.sh` | 行号 → markdown 段落归属解析器（防「行号冒充归属」） | **排障工具非门禁**：自动化版在扫描面为 0 时会静默通过（死分支形态），故刻意不接 check-guards/CI。挂载于 `docs/changelog/releasing/03-quality-loop.md` / `04-review-system.md` |
-| `check/doc-postcheck.mjs` | 文档落盘后自检（五项：U+FFFD / 墙式行格拦新增 / 字符数棘轮 / 抬头块 / 标题粘连；`--fix` 折行 · `--changed` 变更面 · `--selftest`） | **排障工具非门禁**：判定面按参数收敛，扫描面为 0 静默通过是预期形态（同 resolve-section），全量防线由宿主门禁承担。挂载于 `06-doc-finalize.md`〈三道闸〉 |
-| `check/check-forge-branches.sh` | FORGE 分支收编标记对账（未标记的 `forge/*` 分支四要素列出） | 输出为 **INFO 级**（未标记分支需人工确认后补标记），由 `playbook/acceptance-test.sh` 人工链调用 |
+| `check/check-deps.sh` | 关键依赖版本检查（详见 §一） | **exit 1 = 有依赖落后于上游最新版**，而「是否升级」是人工决策（SOP 步骤 5 决策规则）——接线即永久红。需要人做决策的工具不进 CI |
+| `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 引用一致性校验（详见 §一） | **参数化按需工具**：必须传 `<file.md>`，可加 `--strict` 强制历史档案按严格口径判；无参数时报用法错并 exit 1——CI 无处传参。生成 prompt 后手动跑 |
+| `check/sync-test-count.sh` | 测试数多文档一键同步（详见 §一） | **写文档的收口工具**，不是检查器——发版 SOP 数字收口阶段人工触发 |
+| `check/resolve-section.sh` | 行号 → 段落归属解析（详见 §一） | **排障工具非门禁**：自动化版在扫描面为 0 时会静默通过（死分支形态），故刻意不接 check-guards/CI。挂载于 `docs/changelog/releasing/03-quality-loop.md` / `04-review-system.md` |
+| `check/doc-postcheck.mjs` | 文档落盘后自检（详见 §一） | **排障工具非门禁**：判定面按参数收敛，扫描面为 0 静默通过是预期形态（同 resolve-section），全量防线由宿主门禁承担。挂载于 `06-doc-finalize.md`〈三道闸〉 |
+| `check/check-forge-branches.sh` | FORGE 分支收编标记对账（详见 §一） | 输出为 **INFO 级**（未标记分支需人工确认后补标记），由 `playbook/acceptance-test.sh` 人工链调用 |
 | `check/check-interface-roadmap.mjs` | 接口编号承载对账（G1-G14 接口编号 ↔ ROADMAP/开发日志的真实承载版本；C1-C5 FAIL + C6 WARN，防「编号标了版本、版本却没承载它」） | **需 `--spec <商业机制文档>` 参数**：无参数时打印 SKIP 并 exit 0（SKIP 不算通过）。spec 属商业侧文档、不进开源仓——CI 无处传参，只在商业侧对账时人工跑 |
 | `maintenance/prune-spill.mjs` | spill 临时文件 TTL 回收（>5MB diff 落盘的密钥类内容按保留期清理） | 独立工具（cron/手动） |
 

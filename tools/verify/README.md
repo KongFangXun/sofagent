@@ -25,7 +25,7 @@ node tools/verify/verify-chain.mjs --history ./history.jsonl --decision ./decisi
 ### 命令行选项
 
 | 选项 | 说明 |
-|------|------|
+|---|---|
 | `--data-dir <dir>` | 数据根目录——自动定位 `<dir>/audit/history.jsonl` 与 `<dir>/audit/decision-log.jsonl`（以及 `<dir>/audit/history-chain-head` 链头锚点）。 |
 | `--history <file>` | 显式指定历史链文件路径（覆盖自动定位）。锚点按 `<file 同目录>/history-chain-head` 定位。 |
 | `--decision <file>` | 显式指定决策链文件路径（覆盖自动定位）。 |
@@ -42,7 +42,7 @@ node tools/verify/verify-chain.mjs --history ./history.jsonl --decision ./decisi
 验签器读取的是 sofagent 的 **JSONL 链文件**——每行一条 JSON 记录，`\n` 分隔。记录里的链接字段由引擎写入：
 
 | 字段 | 含义 |
-|------|------|
+|---|---|
 | `prevHash` | 前一条记录的内容哈希前 16 hex（创世条目为字面量 `genesis`）。 |
 | `hashVersion` | `2` = 写入时纳入环境指纹；缺省 / 非 2 = 旧算法（无指纹）。 |
 | `envFingerprint` | 写入时的环境指纹（8 hex）——读侧指纹漂移时用于区分「真篡改」与「换机」。 |
@@ -56,7 +56,7 @@ node tools/verify/verify-chain.mjs --history ./history.jsonl --decision ./decisi
 主结论分三类（外加两档降级态），每条给出足够定位信息：
 
 | 状态 | 退出码 | 含义与输出 |
-|------|--------|-----------|
+|---|---|---|
 | **链完整**（`ok`） | 0 | 所有记录 `prevHash` + `hmacSig` 均可复算一致（且有锚点者链头一致）。 |
 | **某条断裂**（`tampered`） | 2 | 检测到篡改——**报出条目号（0-based）与期望值 / 实际值**（如 `期望值：hmacSig = …` / `实际值：hmacSig = …`）。 |
 | **链头不匹配**（`head-mismatch`） | 2 | 链头锚点校验失败——尾部被截断（锚点条数 > 实际条数）或锚位条目被重写（`headHash` 不符）。 |
