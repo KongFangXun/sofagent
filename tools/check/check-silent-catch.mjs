@@ -121,7 +121,10 @@ const MIGRATE = process.argv.includes('--migrate-baseline-key-format');
 // 豁免台账是承认覆盖盲区，而这些文件恰恰是失败行为的核心承载面，不该被盲区登记掉。
 // F-22 盲区收窄：补 permission|policy|security|guard 四词——path-guard.ts /
 // permission-ceiling.ts / isolation-guard.ts / prompt-sanitizer.ts 从「零覆盖盲区」进「必判」面。
-const CRITICAL_FILE_HINTS = /audit|persist|notice|daemon|history|snapshot|write|crypto|hmac|events\/|localiz|permission|policy|security|guard/i;
+// S3 独立审查 F-06 收窄：补 `schema` ——`loadchain-schema.ts`（章三配置面契约，含三类所有权断言）
+//   此前不在关键词集内 ⇒ 被前置过滤跳过、其 catch 从不判定（零覆盖盲区）。
+//   取「纳入判定面」而非「登记进豁免台账」：契约文件的失败行为不该被盲区登记掉。
+const CRITICAL_FILE_HINTS = /audit|persist|notice|daemon|history|snapshot|write|crypto|hmac|events\/|localiz|permission|policy|security|guard|schema/i;
 
 // 同行空 catch：catch (...) { } 或 catch { } 或 catch (...) { /* 仅注释 */ }
 const SAME_LINE_EMPTY = /catch\s*(\([^)]*\))?\s*\{[\s]*(?:\/\*[^*]*\*\/|\/\/[^\n]*)?[\s]*\}/;

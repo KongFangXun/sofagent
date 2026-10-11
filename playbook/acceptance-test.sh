@@ -109,10 +109,14 @@ check_dist_export() {
 # 探针库统一断言：跑 acceptance-node-probes.js <slug>，stdout 命中 ^OK 记 PASS，否则打 ✗ 取证行并记 FAIL。
 # 用法: probe_assert <小写 slug> "<PASS 描述>" "<FAIL 描述>"
 probe_assert() {
-  local slug="$1" out tag
-  tag=$(printf '%s' "$slug" | tr '[:lower:]' '[:upper:]')
-  out=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" "$slug" 2>&1) || true
-  grep -q "^OK" <<< "$out" && pass "$2" || { echo "  ✗ $tag: $out"; fail "$3"; }
+  # 判据只看 **stdout**（探针协议：成功在 stdout 打印 `^OK`、exit 0；失败打印原因、exit 1）。
+  # 原用 `2>&1` 合并两路 ⇒ stderr 噪声（实测 shim 兼容期告警）即让 `^OK` 失配 = 假红（S419/S438）。
+  # stderr 全量保留：仅失败时打印，诊断能力不减。
+  local slug="$1" out tag err rc=0 _ef; tag=$(printf '%s' "$slug" | tr '[:lower:]' '[:upper:]')
+  _ef=$(mktemp /tmp/probe-err-XXXXXX)
+  out=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" "$slug" 2>"$_ef") || rc=$?
+  err=$(cat "$_ef" 2>/dev/null); rm -f "$_ef"
+  grep -q "^OK" <<< "$out" && pass "$2" || { echo "  ✗ $tag: $out"; [ -n "$err" ] && printf '%s\n' "$err" | head -3 | sed 's/^/  ⚠️ stderr: /'; fail "$3"; }
 }
 # v1.5.1 修复批 B3 · 场景体例 fail-loud 守卫（静态扫描；只加守卫，不改任何既有场景体例）：
 # 两代体例 = probe_assert｜旧三行壳（$S<N>_OUT=$(...) + grep -q "^OK" + $S<N>_OK && pass || fail）｜webhook_assert/assert_* 助手。某 ^scenario 块一条判据都没有 ⇒ 会被静默跳过而 REPORT 仍称「已落地」——缺判据即 FAIL 并打印场景号。
