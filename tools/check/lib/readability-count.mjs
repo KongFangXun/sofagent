@@ -14,7 +14,14 @@ import fs from 'node:fs';
 const files = process.argv.slice(2);
 const out = {};
 for (const f of files) {
-  if (!fs.existsSync(f)) continue; // 新建/改名中的文件由门禁侧单独报
+  if (!fs.existsSync(f)) {
+    // 🔴 缺失文件**必须显式**：原先 `continue` 是静默跳过——JSON 里没有该键，消费方读 `o[f].wall`
+    //    拿到 undefined，算式（如 Math.min）静默变 NaN 并写进台账（实测过：doc-ratchet.json 被写坏）。
+    //    故改为「显式条目 + stderr 告警」：让缺失**可见**，且消费方取到的是数字而非 undefined。
+    process.stderr.write(`⚠️ readability-count: 文件不存在，按 0 计并标注 missing：${f}\n`);
+    out[f] = { wall: 0, cell: 0, missing: true };
+    continue;
+  }
   const lines = fs.readFileSync(f, 'utf8').split('\n');
   let inFence = false, wall = 0, cell = 0;
   for (const line of lines) {

@@ -188,6 +188,10 @@ const ratchet = ratchetRaw ? { ...ratchetRaw, ratchetDoc } : null;
 //      故 `--fix` 应对它一并治理，否则用户看到「有墙式行」却折不动（表格行不可折行）而无从下手。
 if (fix) {
   let skipped = 0;
+  // 前后字符数快照：**折行会加字**（blockquote 续行加 `> `、列表续行加两空格），而 host 仓的
+  // 字数棘轮（doc-char-ratchet.json）「只许降不许升」——两者天然冲突。此前这个冲突是**隐藏**的：
+  // `--fix` 不报字符变化，用户跑完才在 Face 6 撞红、且不知是谁改的。此处显性化。
+  const sizeBefore = new Map(targets.map((f) => [f, fs.existsSync(f) ? fs.readFileSync(f, 'utf8').length : 0]));
   for (const f of targets) {
     // 冻结区不动（同判据：Face 5 不判冻结区，改写历史事实行不可接受）
     if (FROZEN_ZONE.test(path.relative(ROOT, f))) { skipped++; continue; }
@@ -201,6 +205,20 @@ if (fix) {
     }
   }
   if (skipped) console.log(`⏭ 冻结区 ${skipped} 个文件跳过治理（changelog/archive/evidence/vendor）`);
+  let grew = 0, shrank = 0, grewList = [];
+  for (const f of targets) {
+    const b2 = sizeBefore.get(f);
+    const a2 = fs.existsSync(f) ? fs.readFileSync(f, 'utf8').length : 0;
+    if (a2 > b2) { grew++; if (grewList.length < 3) grewList.push(`${path.relative(ROOT, f)}(+${a2 - b2})`); }
+    else if (a2 < b2) shrank++;
+  }
+  if (grew || shrank) {
+    console.log(`--fix 字符数净变化：${shrank} 篇减少 / ${grew} 篇增加${grewList.length ? `（如 ${grewList.join(', ')}）` : ''}`);
+  }
+  if (grew) {
+    console.log(`  ⚠️ 有 ${grew} 篇变长——折行/缩进必然会加字，而字数棘轮「只许降不许升」：\n` +
+      `     若这些文件在 doc-char-ratchet.json 台账内，须**同文档移出等量字**后再动台账（06·三道闸闸一），否则 Face 6 必红。`);
+  }
 }
 
 let total = 0;

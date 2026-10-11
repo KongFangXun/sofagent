@@ -383,16 +383,22 @@ fi
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑩ check 脚本自检 ──${NC}"
 
 SELFTEST_N=0
+SELFTEST_SKIP=0
 SELFTEST_FAIL=""
 for _st in $(grep -rl -- "--selftest" tools/check/*.mjs tools/check/*.sh tools/check/lib/*.mjs tools/verify/*.mjs 2>/dev/null | sort); do
-  # 自排除：本脚本因**含有 --selftest 字样**（就是下面这段）会被自己扫到，
-  # 而它并不实现该参数；且「健康检查去跑健康检查」在语义上也应断开。
-  [ "$_st" = "tools/check/check-tool-health.sh" ] && continue
   case "$_st" in
     *.mjs) _st_out=$(node "$_st" --selftest 2>&1); _st_rc=$? ;;
     *.sh)  _st_out=$(bash "$_st" --selftest 2>&1); _st_rc=$? ;;
     *) continue ;;
   esac
+  # 判定按**行为**而非文字：grep 找的是「提到 --selftest 的文件」，其中有些只是**提及**（如本脚本
+  # 下面这段、或注释里讲别人的自检）并不实现该参数。约定：**rc=2 = 用法错 = 不支持**（本仓脚本
+  # 的统一约定「未知参数 → exit 2」），据此跳过；rc=1 = 真实自检失败，报红。
+  #（首版用硬编码自排除绕过，属特例补丁——行为判定把这一类整体解决，不留特例。）
+  if [ "$_st_rc" -eq 2 ]; then
+    SELFTEST_SKIP=$((SELFTEST_SKIP + 1))
+    continue
+  fi
   SELFTEST_N=$((SELFTEST_N + 1))
   if [ "$_st_rc" -ne 0 ]; then
     SELFTEST_FAIL="$SELFTEST_FAIL $_st(rc=$_st_rc)"
@@ -404,7 +410,7 @@ if [ "$SELFTEST_N" -eq 0 ]; then
 elif [ -n "$SELFTEST_FAIL" ]; then
   bad "⑩ check 脚本自检失败：$SELFTEST_FAIL"
 else
-  ok "⑩ check 脚本自检 $SELFTEST_N 个全过（--selftest 常驻）"
+  ok "⑩ check 脚本自检 $SELFTEST_N 个全过（--selftest 常驻；另有 $SELFTEST_SKIP 个仅「提及」该参数，按 rc=2 判为不支持而跳过）"
 fi
 # ============================================================
 # 汇总

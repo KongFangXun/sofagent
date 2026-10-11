@@ -60,7 +60,7 @@ function compact(src, frozen = false) {
 }
 
 /** 冻结区判据（与 check-doc-discipline Face 4 同口径） */
-const isFrozenPath = (p) => /(^|\/)(docs\/(changelog|archive|evidence)\/|vendor\/)/.test(p);
+const isFrozenPath = (p) => /(^|\/)(changelog|archive|evidence|vendor)\//.test(p);
 
 /** 守恒：**豁免分隔行**（短横线数为装饰），其余去空白后逐字多重集一致 */
 function conserve(src, dst) {
@@ -102,7 +102,9 @@ function selfTest() {
   if (compact(froz, true).text !== froz || compact(froz, true).touched !== 0) { ok = false; console.error('  ✗ 冻结区未被跳过'); }
   else console.log('  ✓ 冻结区整篇跳过（docs/changelog·archive·evidence·vendor）');
   // 冻结区判据本身
-  if (!isFrozenPath('docs/archive/x/y.md') || !isFrozenPath('docs/changelog/v1.5/v1.5.8.md') || isFrozenPath('docs/HANDBOOK.md')) {
+  if (!isFrozenPath('docs/archive/x/y.md') || !isFrozenPath('docs/changelog/v1.5/v1.5.8.md')
+      || !isFrozenPath('changelog/v0/0.1.0.md')   // 新仓模板用**顶层** changelog/
+      || isFrozenPath('docs/HANDBOOK.md') || isFrozenPath('devlog/_TEMPLATE.md')) {
     ok = false; console.error('  ✗ isFrozenPath 判据错误');
   } else console.log('  ✓ 冻结区判据（archive/changelog 命中，普通文档不命中）');
 
@@ -112,13 +114,24 @@ function selfTest() {
 
 if (args.includes('--selftest')) { selfTest(); process.exit(0); }
 
-const file = args.find((a) => !a.startsWith('--'));
+const files = args.filter((a) => !a.startsWith('--'));
 const write = args.includes('--write');
-if (!file || !fs.existsSync(file)) { console.error('usage: compact-tables.mjs <file> [--write] | --selftest'); process.exit(2); }
+if (!files.length) { console.error('usage: compact-tables.mjs <file...> [--write] | --selftest'); process.exit(2); }
+const missing = files.filter((f) => !fs.existsSync(f));
+if (missing.length) { console.error(`❌ 文件不存在：${missing.join(', ')}`); process.exit(2); }
 
-const src = fs.readFileSync(file, 'utf8');
-const frozen = isFrozenPath(file);
-const { text, touched } = compact(src, frozen);
-if (text !== src && !conserve(src, text)) { console.error(`❌ ${file}: 守恒校验失败——拒绝写回`); process.exit(1); }
-if (write && text !== src) fs.writeFileSync(file, text, 'utf8');
-console.log(`${file}: 表格瘦身${frozen ? '（⏭ 冻结区跳过）' : write ? (text !== src ? '（已写回）' : '（无变化）') : '（dry-run）'}，改动 ${touched} 行`);
+let nChanged = 0, nFrozen = 0, nLines = 0, refused = 0;
+for (const file of files) {
+  const src = fs.readFileSync(file, 'utf8');
+  const frozen = isFrozenPath(file);
+  if (frozen) { nFrozen++; console.log(`${file}: ⏭ 冻结区跳过`); continue; }
+  const { text, touched } = compact(src, false);
+  if (text !== src && !conserve(src, text)) { console.error(`❌ ${file}: 守恒校验失败——拒绝写回`); refused++; continue; }
+  if (write && text !== src) fs.writeFileSync(file, text, 'utf8');
+  if (text !== src) { nChanged++; nLines += touched; }
+  console.log(`${file}: 表格瘦身${write ? (text !== src ? '（已写回）' : '（无变化）') : '（dry-run）'}，改动 ${touched} 行`);
+}
+if (files.length > 1 || nFrozen) {
+  console.log(`—— 合计：${files.length} 个目标 · ${nChanged} 个有改动 / 共 ${nLines} 行 · 冻结区跳过 ${nFrozen}${refused ? ` · 守恒拒绝 ${refused}` : ''}`);
+}
+if (refused) process.exit(1);
