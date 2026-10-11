@@ -270,14 +270,15 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 
 > 来源：Google Developers Blog ·〈The Anatomy of Harness Engineering〉｜OpenAI · Astra 对齐叫停决定（本仓经媒体转述收录，未复算官方声明）｜hugozhu.site ·〈别配置 Agent 了，给它岗位〉
 
-- **完成认证锚定环境终态（Outcome），文本声明≠完成（三源）**——验收须查环境终态而非执行者自报：Anthropic 评测方法论把评测基本单位定义为 Task（输入+成功标准）/ Trial / Transcript / **Outcome（环境终态）**，明确「文本声明≠完成」——Agent 自报的任务完成声明不构成完成认证，须以环境终态为裁决锚（文件已写入、服务已响应、状态机已迁移）；配套区分 Capability（允许低通过率爬坡）与 Regression（应接近 100% 防退化）两类评测，成熟任务「毕业」转入回归集。Transactional Outbox 式「期望 vs 观测」效果查证位是其工程化形态：未观测不默认成功——审计从记账升级为闭环确认。与上条正交：彼管「验收维度须独立于能力」，此管「完成状态语义须锚定终态证据」。
+- **完成认证锚定环境终态（Outcome），文本声明≠完成（三源）**——验收须查环境终态而非执行者自报：Anthropic 评测方法论把评测基本单位定义为 Task（输入+成功标准）/ Trial / Transcript / **Outcome（环境终态）**，明确「文本声明≠完成」——Agent 自报的任务完成声明不构成完成认证，须以环境终态为裁决锚（文件已写入、服务已响应、状态机已迁移）；配套区分 Capability（允许低通过率爬坡）与 Regression（应接近 100% 防退化）两类评测，成熟任务「毕业」转入回归集。
+  Transactional Outbox 式「期望 vs 观测」效果查证位是其工程化形态：未观测不默认成功——审计从记账升级为闭环确认。与上条正交：彼管「验收维度须独立于能力」，此管「完成状态语义须锚定终态证据」。
 > 来源：Anthropic《Demystifying Evals》· https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents （IMA 收录；转述交叉：Agent评测三源合篇 2026-10-07）｜ Transactional Outbox 效果查证位（Agentic 发布篇 2026-09）
 
 - **pass^k 一致性抽验（单次通过 ≠ 稳定通过）**：回归验收抽验边缘场景，要求 **k 次重复稳定通过**而非单次成功——单次通过率会掩盖抖动的 harness。
   - ⚠️ 两条口径注记（**细节见归档**）：+54% 系 **pass^1 相对提升**、非 k 次一致性；同页已声明「多数场景推荐改用 extended thinking」⇒ 只按**方法论**采用。
 > 📖 来源：[Anthropic Engineering · The think tool](https://www.anthropic.com/engineering/claude-think-tool)（2025-12-15 更新）· 哥伦比亚大学 COMS W4995 第 5 讲（2026-10-11）
 
-
+- **FDE 不是唯一路径：同一机构存在「绕开 FDE」的对立路线（并列不归一化）**——OpenAI 一边成立 Deployment Company 要 FDE，一边由 Codex 产品负责人主张「把 AI 直接交到干活的人手里」。**判定：本仓不在攻击面内**（批评的靶子是「一上来搞大而全 workflow 自动化」，而本仓方法论首条铁律是**按最小工作单元切**）；须对外应答的是平台层「图即企业」叙事被误读成「大而全」的风险。**不做**：不为本条新增任何能力（W4 反向对照，指认不出 W1/W2/W3 消费方，按登记与承诺分离只进本节）。全文（两条路线逐句原文 · 三条处置纪律 · 对外应答建议 · 来源）见 [归档 · validation-deep](./archive/validation-deep/section-fde-market-and-harness-research.md)。
 ## 六、反面案例 / 证伪记录
 
 > **收录规则**：本节只收仓内已披露的失效、未达预期与判据偏差——每条三行制（判据 + 事实 + 出处链接指向仓内文档）。正面印证在 §一–§五，反面边界在此——两面对账才是完整的验证观。
