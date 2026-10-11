@@ -267,4 +267,43 @@ describe('A3 不改越界', () => {
     const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
+
+  // ---- v1.5.9 章一 · A3 新增文件系统性误报治理 ----
+  // A3 判据是「**改动**越界」（碰了任务范围外的既有文件）；新增文件本就是要加新文件，
+  // 不在「改动既有代码」语义内 → 仅对 status='modified' 提示（新增文件豁免）。
+
+  it('新增文件（status=added）→ A3 零命中（不构成「改动越界」）', () => {
+    // 对照：同一场景若为 modified 则 WARN（见下一条）；added 必须豁免。
+    const ctx = makeCtx(
+      [makeDiffFile('src/brand-new-module.ts', undefined, 'added')],
+      { task: '修复 login 模块' }
+    );
+    const result = scanA3(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('修改型（status=modified）→ 越界命中（对照组：同路径形态，仅 status 不同）', () => {
+    const ctx = makeCtx(
+      [makeDiffFile('src/brand-new-module.ts', undefined, 'modified')],
+      { task: '修复 login 模块' }
+    );
+    const result = scanA3(ctx);
+    expect(result.status).toBe('WARN');
+    expect(result.details[0]).toContain('1/1');
+  });
+
+  it('新增文件豁免且不计入分母：混合 added + modified（仅 modified 计入分子/分母）', () => {
+    const ctx = makeCtx(
+      [
+        makeDiffFile('src/new-feature.ts', undefined, 'added'), // 新增 → 豁免且不进分母
+        makeDiffFile('src/login.ts', undefined, 'modified'), // 相关 → 不算越界
+        makeDiffFile('src/legacy.ts', undefined, 'modified'), // 越界 → 分子 1
+      ],
+      { task: 'login auth' }
+    );
+    const result = scanA3(ctx);
+    // 分母 = 2（两个 modified），分子 = 1（legacy），1/2 = 50% > 20% → WARN
+    expect(result.status).toBe('WARN');
+    expect(result.details[0]).toContain('1/2');
+  });
 });

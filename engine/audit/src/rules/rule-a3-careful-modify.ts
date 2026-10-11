@@ -183,6 +183,12 @@ export function scanA3(ctx: AuditContext): RuleScan {
   for (const file of diffFiles) {
     const filePath = file.path.toLowerCase();
 
+    // v1.5.9 章一 · A3 新增文件系统性误报治理：A3 判据是「**改动**越界」（是否碰了
+    // 任务范围外的既有文件），而新增文件（status='added'）不构成「改动既有代码」——
+    // 之前对新增文件也判「不在任务描述范围内」⇒ 系统性误报（新功能本就要加新文件）。
+    // 仅对**修改型**变更（modified）提示，与「新增文件豁免」口径一致。
+    if (file.status !== 'modified') continue;
+
     // 跳过低风险文件
     let isLowRisk = false;
     for (const pattern of allLowRiskPatterns) {
@@ -205,8 +211,11 @@ export function scanA3(ctx: AuditContext): RuleScan {
     }
   }
 
-  // 如果超过阈值的文件修改与任务无关，发出警告
+  // 如果超过阈值的文件修改与任务无关，发出警告。
+  // 分母与分子同口径（v1.5.9 章一）：只计**修改型**且非低风险路径的文件——
+  // 与上方 unexpectedFiles 的收集面一致，避免「分母含新增文件」造成比例失真。
   const totalFiles = diffFiles.filter((f) => {
+    if (f.status !== 'modified') return false;
     const name = f.path.toLowerCase();
     return !allLowRiskPatterns.some((p) => p.test(name));
   }).length;
