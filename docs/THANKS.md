@@ -117,6 +117,7 @@
 - **[AutoJev-27B](https://github.com/denis-pplx/autojev)** · denis-pplx —「自主 agent 全程建成」活体样本；披露 ECE 三列
 - **[RSI-Jev](https://github.com/Shanghua-Gao/RSI-Jev)** · Shanghua Gao — RSI 循环直接造判定件；v4.0-VL 读图（自报）
 - **[AgentJev](https://github.com/malevrigns/agent-jev)** · malevrigns —「去 LM head」形态正例（置换等变判定头）
+- **[Intern-Decision](https://github.com/InternLM/Intern-Decision)**（权重集合页 `internlm/intern-decision`）· 上海 AI Lab（InternLM）— 多模态判定件：冻结视觉塔与投影层、只微调语言主干，0.8B／2B／4B，Apache-2.0；**保留 next-token head ⇒ 路线参考**（非「encoder + 判定头」同构；准入鉴别见 [v1.9.0 §五](./changelog/v1.9/v1.9.0.md)）；读数全系厂商自报、本仓未复算
 - **[FRIDA-Decisions](https://github.com/ai-forever/FRIDA-Decisions)** · SberAI — 一次编码打包全问，序构造性无关（转述）
 - **[Permutation-Robust Decision Modeling](https://arxiv.org/abs/2610.01601)** — 候选分数不该依赖序列化顺序（架构级）
 - **[AnyJev](https://github.com/nokia-applied-research/AnyJev)** · Nokia — 读出校准免训练两件套：先验除法+旋转平均（自报）
