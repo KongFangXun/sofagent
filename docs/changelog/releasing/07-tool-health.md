@@ -16,8 +16,8 @@
 
 #### 一 · 🔴 跑工具健康门禁
 
-`bash tools/check/check-tool-health.sh`——九项自动检查：审查文档路径活性（含 CI glob 前缀引用验证）/ 孤儿配置排查 / bump↔check 结构对照 / hook 头版本标记 vs SSOT / CI workflows 引用有效性 / **set -u 新变量初始化守卫**（`VAR="${VAR}..."` 首次赋值即自引用且无前置初始化 = 炸弹——给门禁/防御脚本加新逻辑时必查，
-含 `local`/`declare`/`do` 后缀形态）/ README 收录对账 / **防线失明自检**（见步骤八）/ **mjs 注释可执行反引号守卫**（`check-mjs-comment-backtick.mjs`：.mjs/.js 注释行反引号串首 token 形似仓内脚本路径或 npm/node/bash 命令头 = bash 误跑时会被当命令替换**真执行**——实锤：check-prepush-checklist.mjs 头部注释串曾让 bash 跑完整套 pre-push 防线数分钟。新写 .mjs 注释时反引号内不要放可执行形态路径，需要引用路径用单引号） 
+`bash tools/check/check-tool-health.sh`——十项自动检查：审查文档路径活性（含 CI glob 前缀引用验证）/ 孤儿配置排查 / bump↔check 结构对照 / hook 头版本标记 vs SSOT / CI workflows 引用有效性 / **set -u 新变量初始化守卫**（`VAR="${VAR}..."` 首次赋值即自引用且无前置初始化 = 炸弹——给门禁/防御脚本加新逻辑时必查，
+含 `local`/`declare`/`do` 后缀形态）/ README 收录对账 / **防线失明自检**（见步骤八）/ **mjs 注释可执行反引号守卫**（`check-mjs-comment-backtick.mjs`：.mjs/.js 注释行反引号串首 token 形似仓内脚本路径或 npm/node/bash 命令头 = bash 误跑时会被当命令替换**真执行**——实锤：check-prepush-checklist.mjs 头部注释串曾让 bash 跑完整套 pre-push 防线数分钟。新写 .mjs 注释时反引号内不要放可执行形态路径，需要引用路径用单引号） / **check 脚本自检常驻**（⑩，见步骤十）
 
 | # | 完成 | 步骤 | 验证方式 |
 |:--:|:--:|------|------|
@@ -57,6 +57,19 @@
 
 `bash tools/check/check-guard-fail-loud.sh`——PATH 劫持假检测引擎（崩溃型 exit 3 / 空响应型 exit 0 无输出）实测守卫 fail-loud：引擎故障下守卫必须非 0 退出，仍 exit 0 = 「0 处违规但根本没在看」= 失明不自知，比没有防线更坏。覆盖判定路径依赖 perl 的守卫（check-cjk-var / check-guards）
 
+
+#### 十 · check 脚本自检（--selftest 常驻）
+
+本仓多个 check 脚本自带 `--selftest`（正/负样本合成探针：注入漂移必报红），但此前**全仓无人调用**——
+自检存在而永不执行 = **纸面防线**：脚本自身回归时无人发现。
+
+阶段七的 ⑩ 把它常驻化：自动发现 `tools/check/*.{mjs,sh}` · `tools/check/lib/*.mjs` · `tools/verify/*.mjs`
+中含 `--selftest` 者并逐个执行；**任一 rc≠0 即 FAIL**；扫描面为 0 判 fail-loud（拒绝「没扫到 = 通过」）。
+
+判定按**行为**而非文字：`rc=2` = 用法错 = 不实现该参数 → 跳过（如实打印跳过数）；`rc=1` = 真实自检失败 → 报红。
+（首版用文字匹配发现脚本，会把「仅提及」该参数的文件误纳，只好加硬编码自排除；行为判定把这一类整体解决。）
+
+新增 check 脚本时**顺手写 `--selftest`**：⑩ 会自动纳入，无需手工接线；同时自带回归防线。
 
 > 退出码语义（两个新门禁共用）：0=全绿 / 1=有 FAIL / 2=脚本自身错误——「工具死了」和「检查出问题」严格区分。
 > 🔴 **audit CLI 的退出码契约（步骤六相关）**：0=全绿 / 1=有警告（放行）/ 2=有违规（阻断）/ 3=非 git 仓库（cli-quick 口径）/ **引擎崩溃=4**——node 未捕获异常默认 exit 1 会与「警告」撞码，导致 hook 把崩溃当警告**静默放行**（fail-open 实测：含密钥的 .env 入库）。hook 侧已有 `-ne 0` 兜底分支拦截非 0/1/2 退出码。
