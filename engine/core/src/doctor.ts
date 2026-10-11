@@ -14,7 +14,7 @@
 //
 // 注意：post-commit 仅检查存在性——不检查内容是否引用 sofagent
 
-import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync, rmSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync, rmSync, copyFileSync } from 'fs';
 import { join, dirname, isAbsolute, resolve } from 'path';
 import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
@@ -413,6 +413,39 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       } else {
         ok(`data/${d}/ (${files} 文件 · ${mb(bytes)}MB)`);
       }
+    }
+
+    // BUG-38 ①：dataDir **根级文件**检查项——HEALTH_DIRS 只枚举子目录
+    // （memory/audit/task/logs/orchestrator），而 health-report.md 落在 **dataDir 根**
+    // （daemon/src/notify.ts:101 `join(dataDir,'health-report.md')`），此前不在任何
+    // 检查项内（根因是「根级文件未被枚举」而非「漏了 knowledge 目录」）。此处补根级
+    // 文件覆盖：逐文件计大小并纳入健康度面板，health-report.md 显式成项。
+    let rootFileCount = 0;
+    let rootBytes = 0;
+    try {
+      for (const e of readdirSync(dataDir, { withFileTypes: true })) {
+        if (e.name.startsWith('.') || !e.isFile()) continue;
+        rootFileCount++;
+        rootBytes += statSync(join(dataDir, e.name), { throwIfNoEntry: false })?.size ?? 0;
+      }
+    } catch {
+      // 为何可静默：dataDir 不可读已由上文「数据目录结构」节 warn 报送过，此处只做根级
+      //   文件计数，重复告警不增加信息量（根因见 health-report.md 未枚举那条注释）
+    }
+    const healthReportFile = join(dataDir, 'health-report.md');
+    if (existsSync(healthReportFile)) {
+      healthChecked++;
+      const hrBytes = statSync(healthReportFile, { throwIfNoEntry: false })?.size ?? 0;
+      if (hrBytes > SIZE_WARN_BYTES) {
+        healthWarned = true;
+        warn(`data/health-report.md（根级文件）接近性能退化区间（总量 ${mb(hrBytes)}MB > ${Math.round(SIZE_WARN_BYTES / 1024 / 1024)}MB）`);
+        repairHint('根级报告轮转：`doctor --repair` 按周轮转 data/health-report.md（保留 4 份，对齐 daemon-health.json 策略）');
+      } else {
+        ok(`data/health-report.md（根级文件 · ${mb(hrBytes)}MB · 纳入健康度扫描）`);
+      }
+    }
+    if (rootFileCount > 0) {
+      console.log(`  ↳ dataDir 根级文件 ${rootFileCount} 个 · 合计 ${mb(rootBytes)}MB（含 health-report.md 等根级报告）`);
     }
     if (healthChecked === 0) {
       info('无可检查的数据目录（运行一次审计后再看健康度）');
@@ -1222,11 +1255,71 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
       warn(`审计目录维护失败（不影响其它修复）: ${err instanceof Error ? err.message : String(err)}`);
     }
 
+    // 5. v1.5.9 BUG-38 ②：dataDir 根级报告 health-report.md 按周轮转（保留 4 份）——
+    //    策略与 daemon-health.json 周档同源（ISO 周号命名 <base>-YYYY-Www.md，保留 4）。
+    //    置于 --repair 维护路径（非只读扫描）：轮转是写操作，普通 doctor 不得有副作用；
+    //    与「审计目录维护」同列——修复模式内的数据治理动作。
+    try {
+      if (rotateWeeklyArchiveReport(DATA_DIR, 'health-report.md', new Date().toISOString())) {
+        ok('data/health-report.md 已按周轮转归档（保留 4 份，对齐 daemon-health.json 策略）');
+        repairsApplied++;
+      } else {
+        info('data/health-report.md 无需轮转（不存在 / 未跨周）');
+      }
+    } catch (err) {
+      warn(`health-report.md 轮转失败（不影响其它修复）: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
     console.log(`\n── 修复完成（${repairsApplied} 项自动修复）──\n`);
   }
 
   // 运行完整检查（无论是否 repair）
   return runDoctor(projectDir, options);
+}
+
+// ════════════════════════════════════════════════════════════
+// BUG-38 ② · 根级报告按周轮转（与 daemon-health.json 策略同源）
+// ════════════════════════════════════════════════════════════
+
+/** 周档保留数（对齐 daemon-health.json 的 WEEKLY_KEEP=4 ≈ 一个月回看窗） */
+const ROOT_REPORT_WEEKLY_KEEP = 4;
+
+/** ISO 周号（与 health-reporter.ts isoWeek 逐字同源——同源策略的实现对齐） */
+function isoWeekOf(d: Date): string {
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dayNum = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((t.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${t.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+/**
+ * BUG-38 ②：dataDir 根级报告（.md）按周轮转——当前档跨周时归位为
+ * `<base>-YYYY-Www.md`、清理超保留数旧档。纯文件操作：文件不存在 / 同周时
+ * 零副作用；返回是否发生轮转。
+ *
+ * 策略与 daemon-health.json 周档**同源**（health-reporter.ts rotateWeeklyArchive）：
+ * ISO 周号命名、保留 4 份、按文件名排序删最旧。两处实现语义逐条对齐。
+ */
+function rotateWeeklyArchiveReport(dir: string, baseName: string, nowISO: string): boolean {
+  const current = join(dir, baseName);
+  if (!existsSync(current)) return false;
+  const stat = statSync(current);
+  const fileWeek = isoWeekOf(stat.mtime);
+  const nowWeek = isoWeekOf(new Date(nowISO));
+  if (fileWeek === nowWeek) return false; // 同周 = 覆盖写语义，不轮转
+  const stem = baseName.replace(/\.md$/, '');
+  const archived = join(dir, `${stem}-${fileWeek}.md`);
+  copyFileSync(current, archived);
+  const oldArchives = readdirSync(dir)
+    .filter((f) => f.startsWith(`${stem}-`) && f.endsWith('.md'))
+    .sort();
+  for (let i = 0; i < oldArchives.length - ROOT_REPORT_WEEKLY_KEEP; i++) {
+    // 旧档清理为尽力而为（best-effort）：下次运行会重试，轮转失败不影响健康度判定。
+    try { rmSync(join(dir, oldArchives[i]!), { force: true }); } catch { /* 为何可静默：单档删除失败不阻断（尽力而为，下次重试） */ }
+  }
+  return true;
 }
 
 // ============================================================

@@ -1,6 +1,6 @@
 # sofagent · 企业部署指南
 
-> v1.5.8 · 2026-10-09（✅ 已发版） · 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ✅ 已发版 · 孔放勋
 
 > sofagent 在企业内网部署的配置说明。普通用户不需要看这份文档——默认安装就行；想分步骤把团队用起来看 [team-deploy.md](./team-deploy.md)。
 
@@ -27,6 +27,20 @@ Agent 检测到后跳过 ClawHub 搜索，Skills 手动放入 `~/.openclaw/skill
 - 手动拆任务
 - 用 task-record.sh 逐条记录
 - 手动闭环
+
+### 4. 完全离线（内网隔离）部署
+
+内网机器无外网时，两条外部依赖通道（GitHub clone + npm registry）均不可达——按四步预置离线物料：
+
+**① 依赖清单**（联网机侧准备）：仓库源码（GitHub clone / Release tarball → `install.sh` / `bootstrap.sh`）· npm 包（`sofagent` / `@sofagent/*`）· Node.js ≥ 18（需重建 `node_modules` 时）。
+
+**② tarball 拷入路径**：联网机 `tar -czf sofagent-offline.tar.gz -C <repo-parent> <repo-dir>` + `npm pack`；隔离机经随身介质 / 跳板机 / 内网共享目录拷入后 `tar -xzf sofagent-offline.tar.gz -C ~/` 解包。
+
+**③ 私有 registry 镜像配置**（有内网 registry 时，免逐包手工拷贝）：`npm config set registry https://<内网-registry>/`（或 `export npm_config_registry=...`）→ `npm install -g sofagent`。
+
+**④ sha256 校验**：`shasum -a 256 sofagent-offline.tar.gz`（macOS）/ `sha256sum …`（Linux），与发版侧公示哈希逐字节比对，不一致即拒绝使用。
+
+> 注：`bootstrap.sh` 内嵌的 7 个 LIB 哈希钉值与安装载荷**同源**——防传输劫持、不防源头替换；需第二通道交叉核对时走 Release 页公示哈希 / provenance attestation（见 [ROADMAP · 探索方向](../ROADMAP.md)）。
 
 ## 数据安全
 
@@ -165,59 +179,11 @@ jobs:
 
 > `--ci` 模式：WARN 不阻断（exit 1），FAIL 阻断（exit 2），紧凑输出。
 
-### ④ 静态加密批量激活（20 台级无头部署）
+### ④ 静态加密批量激活（20 台级无头部署） · 其他方案 · 当前局限
 
-静态加密（AES-256-GCM，密钥落 `~/.sofagent/keys/` 0600）默认交互确认——批量部署时逐台交互不可行，用 env 通道显式确认：
-
-**第 1 步 · 生成一次密钥并分发**（密钥同源，跨机可恢复）：
-
-```bash
-# 管理机首次启动 daemon：交互引导生成密钥 + 指纹确认 + 备份确认（指纹打印在启动输出）
-sofagent daemon start
-# 无头批量部署跳过交互（非交互场景）：
-#   SOFAGENT_CONFIRM_BACKUP=1 sofagent daemon start
-
-# 预共享分发到 20 台目标机（scp + 0600 权限）
-for host in $(cat hosts.txt); do
-  ssh "$host" 'mkdir -p ~/.sofagent/keys && chmod 700 ~/.sofagent/keys'
-  scp ~/.sofagent/keys/data.key "$host":~/.sofagent/keys/data.key
-  ssh "$host" 'chmod 600 ~/.sofagent/keys/data.key'
-done
-```
-
-**第 2 步 · 无头激活**（env 显式确认，替代交互 readline）：
-
-```bash
-# 每台目标机：env 通道确认备份后启动 daemon 即激活
-SOFAGENT_CONFIRM_BACKUP=1 sofagent daemon start
-# 验证：密文前缀在位即激活成功
-head -1 ~/.sofagent/data/audit/history.jsonl | grep -c "SOFAGENT-AGE-V1"   # 期望 1
-```
-
-**第 3 步 · 批量样例脚本**（三步合一）：
-
-```bash
-#!/usr/bin/env bash
-# fleet-crypto-activate.sh · 20 台批量激活静态加密
-set -euo pipefail
-while IFS= read -r host; do
-  ssh "$host" 'mkdir -p ~/.sofagent/keys && chmod 700 ~/.sofagent/keys'
-  scp -q ~/.sofagent/keys/data.key "$host":~/.sofagent/keys/data.key
-  ssh "$host" 'chmod 600 ~/.sofagent/keys/data.key && SOFAGENT_CONFIRM_BACKUP=1 sofagent daemon start' \
-    && echo "✅ $host 激活" || echo "❌ $host 失败（查 daemon 日志）"
-done < hosts.txt
-```
-
-> ⚠️ 安全边界：data.key 是全 fleet 同源密钥——单机失窃即全 fleet 密文暴露，强隔离场景应逐机生成（去掉分发步，每台各自 `sofagent daemon start` + 本机确认）；备份指纹记录务必离线保管，密钥丢失 = 加密数据永久不可读（见 [SECURITY](../../SECURITY.md) 静态加密节）。
-
-### 其他方案
-
-- **Git submodule**：`git submodule add git@github.com:your-org/sofagent-shared-config.git ~/.sofagent/shared`
-- **dotfiles**：将 `~/.sofagent/config.yml` 加入 stow/chezmoi，通过 symlink 统一管理
-
-### 当前局限
-
-- 没有 org-level 自动推送机制，每个 repo 需独立 `--init`。集中管控当前无排期；缓解：系统级 git hook 模板批量下发（见下）
+> 📦 **详情已下沉归档**——见 [归档 · enterprise-deploy 车队运维参考明细](../archive/doc-slim/enterprise-deploy-fleet-ops.md)（静态加密三步骤脚本与安全边界 / Git submodule 与 dotfiles 方案 / org-level 集中管控的当前局限）。
+>
+> 要点：静态加密默认交互确认，批量无头部署用 `SOFAGENT_CONFIRM_BACKUP=1` env 通道确认（该 env 是**合规确认而非仪式**——未实际完成指纹备份即设置它 = 让审计记录系统性说谎）；密钥同源分发须防范单机失窃；当前无 org-level 自动推送，集中管控无排期，缓解走系统级 git hook 模板批量下发。
 
 ### 多项目数据隔离（v1.2.8）
 
@@ -238,61 +204,11 @@ sofagent audit --init    # 数据写入 /data/sofagent-hr/data/
 > ⚠️ **隔离现状分两层（2026-09-26 对齐）**：**查询侧隔离已交付**——[v1.4.7](../changelog/v1.4/v1.4.7.md) G7 多租户 v0（查询按 orgId 过滤 + `data/<tenant>/` 身份归属隔离地基）；**写入侧隔离仍是环境变量级手动方案**——不设 `SOFAGENT_HOME` 则全部项目共享 `~/.sofagent/data/`；
 >租户级鉴权 / 配额 / 跨租户策略与写入侧自动隔离尚未落地（诚实边界见 [LIMITATIONS §三](../LIMITATIONS.md#三安全与信任模型局限)）——多租户硬隔离需求当前仍建议按本节每实例独立 `SOFAGENT_HOME` 部署。
 
-### 多机状态汇聚（v1.2.8）
+### 多机状态汇聚 / 版本一致性校验 / Windows 支持边界（v1.2.8）
 
-企业多机部署后，集中收集各机器状态：
-
-```bash
-# 方案 A：定期 doctor --json 汇总到中心
-# 每台机器的 crontab：
-0 9 * * 1 SOFAGENT_HOME=/data/sofagent sofagent audit --doctor --json >> /shared/sofagent-reports/$(hostname)-$(date +%F).json
-
-# 方案 B：dashboard 定期采集
-# 将各机器的 ~/.sofagent/data/ 通过 NFS/共享存储挂载到 dashboard 所在机器
-#
-# ⚠️ 安全警告：NFS/共享存储挂载明文审计目录与"数据不出本机"的数据主权立场存在矛盾。
-#    密钥就绪时 history.jsonl 为 SOFAGENT-AGE-V1 密文（daemon start 已接线引导），
-#    但密钥未激活/非交互跳过时仍为明文 JSONL，且附链目录（task/logs/think.md 等）
-#    恒为明文（见上方合规清单「数据加密」行）。明文态下 NFS 挂载使同 NFS 卷的其他
-#    主机可能读取。如需此方案，务必：
-#    ① NFS export 限制为 dashboard 机器 IP（ro 只读挂载）
-#    ② NFS export 使用 sec=sys + root_squash，防止非授权 UID 读取
-#    ③ 或将 data/ 放在加密卷（gpg / LUKS）上再挂载
-#    ④ 更安全的替代方案：方案 A（doctor --json SSH 拉取），不暴露 NFS 挂载面
-```
-
-### 版本一致性校验（v1.2.8）
-
-发版后校验所有机器的引擎版本一致：
-
-```bash
-# 各机器检查 ~/.sofagent/VERSION 与最新发布版本
-LATEST=$(npm view @sofagent/audit version 2>/dev/null)
-INSTALLED=$(cat ~/.sofagent/VERSION 2>/dev/null || echo 'unknown')
-if [ "$LATEST" != "$INSTALLED" ]; then
-  echo "⚠️ 版本不一致：已装 $INSTALLED，最新 $LATEST"
-  # 触发升级
-  bash install.sh --upgrade
-fi
-```
-
-> `--doctor` 也会报告"运行引擎版本 vs 已发布版本"不一致。
-
-### Windows 支持边界（v1.2.8）
-
-sofagent 对 Windows 的支持是**实验性**的：
-
-| 能力 | macOS/Linux | Windows |
-|------|:-----------:|:-------:|
-| git hook（commit-msg / post-commit） | ✅ 完全支持 | ⚠️ 需 Git Bash（原生 cmd.exe 不支持 bash hook 脚本） |
-| 审计模块（sofagent audit） | ✅ 完全支持 | ✅ 支持（Node.js 跨平台） |
-| MCP Server | ✅ | ✅ |
-| daemon 常驻进程 | ✅ | ❌ 不支持（v1.2.9 PM2 守护面向 macOS/Linux，Windows 待排期） |
-| orchestrator 编排 | ✅ | ⚠️ 部分功能依赖 Unix signal |
-| install.sh 安装脚本 | ✅ | ❌ 需 WSL 或 Git Bash 运行 |
-| `engine/scripts/windows/*.ps1` PowerShell 脚本 | N/A | ⚠️ 覆盖核心功能（v1.2.8 时点评估约 25%；现脚本 10+ 个，以目录实态为准），非完整替代 |
-
-> Windows 用户建议使用 WSL2 或 Git Bash 环境。原生 PowerShell 支持待排期。
+> 📦 **详情已下沉归档**——见 [归档 · enterprise-deploy 车队运维参考明细](../archive/doc-slim/enterprise-deploy-fleet-ops.md)（多机状态汇聚两方案含 NFS 安全警告 / 版本一致性校验脚本 / Windows 支持边界逐能力矩阵）。
+>
+> 要点：多机状态汇聚 = 方案 A（`doctor --json` SSH 拉取，推荐）或方案 B（NFS 挂载，须配只读 + root_squash + 加密卷，且与数据主权立场冲突）；版本一致性 = `~/.sofagent/VERSION` vs `npm view` 对账，`--doctor` 亦报不一致；Windows 支持为**实验性**（daemon/install.sh 不支持原生，需 WSL2 或 Git Bash，核心审计模块跨平台可用）。
 
 ---
 

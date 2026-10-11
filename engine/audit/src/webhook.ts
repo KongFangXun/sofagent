@@ -152,6 +152,11 @@ function redactDetail(detail: string, customPatterns?: { pattern: RegExp; replac
       }
     }
   }
+  // v1.5.9 BUG-75：出网面 URL 中和——webhook 通道只承载告警，不承载跳转。
+  //   被审 Agent 可在 task 描述 / diff 里埋 `http://evil.example 详情点击`，随 WARN/FAIL 告警
+  //   推进企业群，审批人点击即社工；故出网详情里的裸链接一律中和为占位符（redactDetail 只脱密钥
+  //   模式、不过滤 URL，此处补上）。
+  redacted = redacted.replace(/https?:\/\/\S+/g, '[链接已过滤]');
   return redacted;
 }
 

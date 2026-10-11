@@ -145,7 +145,8 @@ describe('v1.5.1 第六章 · T8/T9 上行管线接线（三层检测 + 灰度�
     expect(wiring.decision.level).toBe('sensitive');
 
     // 上行链路：原始敏感值不入盘（WAL 只存密文）
-    const r = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', payload });
+    // BUG-35 行为变更：声明带 destination 时请求须显式提供且一致——补 destination
+    const r = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', destination: 'platform-ingest', payload });
     expect(r.data.ok).toBe(true);
     const wal = fs.readFileSync(path.join(dataDir, 'upload-wal.jsonl'), 'utf-8');
     expect(wal).not.toContain(PHONE);
@@ -265,6 +266,7 @@ describe('v1.5.1 第六章 · T8/T9 上行管线接线（三层检测 + 灰度�
         const r = await deviceDataPush({
           identity: legal as unknown as Record<string, unknown>,
           category: 'metrics',
+          destination: 'platform-ingest',
           payload: `灰度采样样本 ${i}`,
         });
         expect(r.data.ok).toBe(true);
@@ -281,6 +283,7 @@ describe('v1.5.1 第六章 · T8/T9 上行管线接线（三层检测 + 灰度�
       const r = await deviceDataPush({
         identity: legal as unknown as Record<string, unknown>,
         category: 'metrics',
+        destination: 'platform-ingest',
         payload: '灰度健康巡检',
         wiring: {
           metrics: {

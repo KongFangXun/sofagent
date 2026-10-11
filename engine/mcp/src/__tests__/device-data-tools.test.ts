@@ -128,7 +128,8 @@ describe('device_data_query / device_data_push MCP tools（v1.4.9 G10/G11）', (
         { version: 1, deviceId: legal.agentId, declarations: [{ category: 'metrics', destination: 'platform-ingest' }] },
         dataDir,
       );
-      const r = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', payload: 'cpu=80% key=sk-abcdefghij0123456789' });
+      // BUG-35 行为变更：声明带 destination 时请求须显式提供且一致——补 destination
+      const r = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', destination: 'platform-ingest', payload: 'cpu=80% key=sk-abcdefghij0123456789' });
       expect(r.data.ok).toBe(true);
       expect(r.data.seq).toBeGreaterThan(0);
       expect(r.data.delivery).toBe('queued');
@@ -143,12 +144,12 @@ describe('device_data_query / device_data_push MCP tools（v1.4.9 G10/G11）', (
         sentSeqs.push(entry.seq);
         return true;
       };
-      const r = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', payload: 'cpu=90%', transport });
+      const r = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', destination: 'platform-ingest', payload: 'cpu=90%', transport });
       expect(r.data.ok).toBe(true);
       expect(r.data.delivery).toBe('sent');
       expect(r.data.pending).toBe(0);
       // 再推一条：前一条已 ack 不重传（sentSeqs 只含新条目）
-      const r2 = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', payload: 'cpu=95%', transport });
+      const r2 = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', destination: 'platform-ingest', payload: 'cpu=95%', transport });
       expect(r2.data.ok).toBe(true);
       // 续传不变量：已 ack 段无重复发送 + 第二次传输只送新 seq
       expect(new Set(sentSeqs).size).toBe(sentSeqs.length);
@@ -157,7 +158,7 @@ describe('device_data_query / device_data_push MCP tools（v1.4.9 G10/G11）', (
     });
 
     it('传输回调全部失败 → queued（断网暂存语义）', async () => {
-      const r = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', payload: 'x', transport: () => false });
+      const r = await deviceDataPush({ identity: legal as unknown as Record<string, unknown>, category: 'metrics', destination: 'platform-ingest', payload: 'x', transport: () => false });
       expect(r.data.ok).toBe(true);
       expect(r.data.delivery).toBe('queued');
       expect((r.data.pending ?? 0)).toBeGreaterThan(0);

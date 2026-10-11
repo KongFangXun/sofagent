@@ -236,11 +236,17 @@ if [ "$SEC_WORD_FAILS" -gt 0 ]; then
   FAILS=$((FAILS + SEC_WORD_FAILS))
 fi
 
-# ── ⑥ 英文门面压缩残形 lint（v1.5.8 §三.7 / BUG-23 根治）──────────────
-# 背景：bb8c98d65「文档减重」把 every change 压成了 echange 等 6 处残形，首屏即病句；
-# 本脚本「只比对结构不比对文本」的设计原则对此天然零防线。残形是有限可枚举的机械事故
-# （e+单词开头吞字），黑名单 grep 即拦；英文 README 是站外搜索引擎主索引面。
-EN_COMPRESSED=$(grep -nE "\b(etime|echange|emistake|eAgent|ehe |efter|eceives|ecognit|everytime|auditsevery)\b" "$EN_README" 2>/dev/null || true)
+# ── ⑥ 英文门面压缩残形 lint（v1.5.8 §三.7 / BUG-23 根治；v1.5.9 升级为「枚举 + 类规则」）──
+# 背景：bb8c98d65「文档减重」把 every change 压成 echange 等 6 处残形，首屏即病句；
+# v1.5.9 又复发 7 处同类残形（erole's / enode / eaccountable / eaudit / eAI node / ePR /
+# they'ren't）——说明**纯黑名单枚举**会随事故形态漂移而失明（只能拦住历史形态）。
+# 故升级为双面：黑名单（历次实测形态，随事故累积）+ **类规则** `\be[A-Z]{2,}\b`
+# （抓「e + 连续大写缩写」：each AI → eAI、each PR → ePR，不依赖具体单词）。
+# 真阳性规避：`eBay`/`eCommerce` 这类「e + 单个大写」不在类规则内，不误伤。
+# 第三面 `[A-Za-z]'ren't\b`：拦「缩写粘连」残形（they're not → they'ren't）——
+#   合法英文不存在 `'ren't` 词尾（aren't 是 are+n't），故零误伤。
+# 英文 README 是站外搜索引擎主索引面。
+EN_COMPRESSED=$(grep -nE "\b(etime|echange|emistake|eAgent|ehe |efter|eceives|ecognit|everytime|auditsevery|erole|enode|eaccountable|eaudit)\b|\be[A-Z]{2,}\b|[A-Za-z]'ren't\b" "$EN_README" 2>/dev/null || true)
 if [ -n "$EN_COMPRESSED" ]; then
   echo "$EN_COMPRESSED" | while IFS= read -r _c_hit; do
     echo "  ❌ [⑥英文压缩残形] ${_c_hit}"

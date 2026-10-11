@@ -131,7 +131,7 @@ export function resolveHooksDir(cwd: string): HooksDirResolution | null {
     if (top) repoRoot = top;
   } catch (err) {
     // rev-parse 失败（如 .git 是文件而非目录的 worktree 场景）——退化用 .git 父目录，留痕可见
-    console.error('[sofagent] git rev-parse --show-toplevel 失败（退化用 .git 父目录，resolveHooksDir）:', err);
+    console.error('[sofagent] git rev-parse --show-toplevel 失败（退化用 .git 父目录）:', err instanceof Error ? err.message : String(err));
   }
 
   let configuredValue: string | undefined;
@@ -143,8 +143,12 @@ export function resolveHooksDir(cwd: string): HooksDirResolution | null {
     }).trim();
     if (v) configuredValue = v;
   } catch (err) {
-    // 未配置——走缺省 .git/hooks，留痕可见
-    console.error('[sofagent] git config core.hooksPath 读取失败（走缺省 .git/hooks，resolveHooksDir）:', err);
+    // 「键未配置」是绝大多数仓库的正常态（git config 未命中退出码 = 1）——静默走缺省 .git/hooks；
+    // 仅非 1 的异常（git 缺失 / 权限等）才留痕
+    const status = (err as { status?: number }).status;
+    if (status !== 1) {
+      console.error('[sofagent] git config core.hooksPath 读取异常（走缺省 .git/hooks）:', err instanceof Error ? err.message : String(err));
+    }
   }
 
   if (configuredValue) {

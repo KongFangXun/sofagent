@@ -2,8 +2,8 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 104 tools 按域分组。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
-> v1.5.8 · 2026-10-09（UTC）· ✅ 已发版 · 孔放勋 · 104 tools / 7 面——**104 = v1.5.2 的 107 − 2026-09-26 浏览器四件套退役 4 + v1.5.4 新增 `router_slots` 1**（逐版工具数沿革见 [CHANGELOG](../CHANGELOG.md)；状态见 [ROADMAP](./ROADMAP.md)）
+> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 104 tools 按域分组。工具清单的生成与防漂移机制见 §三。
+> v1.5.8 · 2026-10-09（UTC）· ✅ 已发版 · 孔放勋 · 104 tools / 7 面——逐版工具数沿革见 [CHANGELOG](../CHANGELOG.md)；状态见 [ROADMAP](./ROADMAP.md)
 
 ## 目录
 
@@ -25,10 +25,11 @@
 | 7 | **标准数据推送接口** | 数据推送 API（约定 schema · schema 校验 + 敏感分拣双闸，企业合规拦截策略预留扩展）——MCP tool `data_push` 入口已接线（v1.4.8） | 企业凭证 | 企业存储/业务系统推送训练语料与知识数据 |
 
 各面配置见对应文档：MCP → [engine/mcp/README](../engine/mcp/README.md) · CLI/hook 与 Webhook（§五·Daemon 监控边界「审计结果推送」行）→ [SECURITY](../SECURITY.md) · 平台挂载 → [AGENTS](../AGENTS.md) · Skill 分发 → [SKILL/SKILL.md](../SKILL/SKILL.md)。
-标准数据推送接口（第七面）`data_push` 入口已接线（v1.4.8），详见 [v1.4.8 开发日志](./changelog/v1.4/v1.4.8.md)。
+标准数据推送接口（第七面）另见 [v1.4.8 开发日志](./changelog/v1.4/v1.4.8.md)。
 
 ## 二、MCP 工具清单（104 · 按产品能力域分组）
 
+> 其中 commons_invoke 为 dry-run 预检语义（返回能力元数据与调用计划，真实执行由 Agent runtime 注入 executor；见 LIMITATIONS）。
 > 十域按「一组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节承载审计（审计与合规）、回溯（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）；**注入**走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄以 roles 为准，分组是文档编制判断。
 >浏览器四件套（`playwright_*`）已于 2026-09-26 注销（v2.0.0 §七 B 表裁定退役，UI 审计实做窗口已关）；v1.5.7 章二实现底座一并退役删除（可行性报告落盘触发，公开面 4 符号吊销 breaking）。
 

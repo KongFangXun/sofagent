@@ -1,6 +1,6 @@
 # FDE 完全指南 · 从理念到落地
 
-> v1.5.8 · 2026-10-09（UTC）· ⏳ 待发版 · 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ✅ 已发版 · 孔放勋
 
 > FDE 诊断方法论——梳理 workflow、定义 ontology、交付 Workflow Graph + Ontology Graph 双图谱、判定 AI 节点。**人读手册**：读完能独立做一次 FDE 诊断、判断客户 AI 成熟度；Agent 操作指令见 [SKILL/SKILL.md](../SKILL/SKILL.md)。激活链（交付后自动运转）见 [5.12](#512-交付之后激活链从交付物到自动运转)；纯手工交付可不依赖它。
 
@@ -893,16 +893,16 @@ AI 节点跑起来后，自动生成这些文件：
 
 ### 5.9 行业 overlay 标注（进场时）
 
-> 进场梳理时在 `context.md` 标注行业 → 约束层自动发现并加载对应行业规则包（overlay）。完整机制见 v1.3.7 开发日志「行业 overlay 规则包」节。
+> 进场梳理时在 `context.md` 标注行业 → 约束层按标注加载对应行业规则包（overlay）。⚠️ **现状（如实标注）**：自动发现路径**尚未接线**（engine/audit/src/industry-overlay.ts 已实现但无生产调用点，登记见 tools/check/claims-sdk-ledger.json）；**当前可用路径是显式传 `--ruleset <行业>`**。完整机制见 v1.3.7 开发日志「行业 overlay 规则包」节。
 
-| 行业 | 标注值 | 自动加载 |
+| 行业 | 标注值 | 对应规则包（经 --ruleset 显式加载） |
 |---|---|---|
 | 金融 | `industry: fintech` | `sofagent-ruleset-fintech`（反洗钱留痕 + 交易审计双通道 + 监管报送） |
 | 医疗 | `industry: medical` | `sofagent-ruleset-medical`（患者数据保护 + 诊断必须人工复核） |
 | 政务 | `industry: government` | `sofagent-ruleset-government`（数据不出专网 + 国密 + 等保三级） |
 | AI 行业 | `industry: ai` | `sofagent-ruleset-ai`（模型选型审计 + agent 安全治理） |
 
-- 标注放在 context.md 顶部 frontmatter（`industry:` 字段），部署时约束层读它决定加载哪个 overlay
+- 标注放在 context.md 顶部 frontmatter（`industry:` 字段）；**自动读取尚未接线**，部署时请显式传 --ruleset 指定 overlay
 - 未标注行业 = 只跑 17 条默认规则，不加载任何 overlay（保守默认）
 - overlay 复用 `--ruleset` 机制（v1.2.9），与规则市场同一加载通道
 
@@ -951,14 +951,7 @@ AI 节点跑起来后，自动生成这些文件：
 
 > **FDE 交付的断裂带**：上面交付了三层实体（文档层 + Skill 层 + 运行层），但交付物本质是静态文件——`nodes/*.md`、`workflows/*.yml`、`skills/*/SKILL.md`、`objects.yml`。企业 IT 拿到后需要手动搭编排、手动配审批节点、手动接审计 hook。这道"从交付到运转"的大断裂带，正是激活链要解决的。
 
-**激活链 = 把 FDE 交付物"点燃"的自动化流程**：
-
-```text
-FDE 交付物（静态文件）         →  ACTIVATE（v1.2.5）: 读交付物 → 注册企业 SubAgent
-ontology/ + workflows/ +        →  ORCHESTRATE（v1.2.6-7）: 多 Agent → StateGraph 编排
-skills/ + nodes/               →  EXECUTE（v1.2.8-9）: DAG 执行 + HITL 审批 + 审计
-                               →  SUSTAIN（v1.3.0）: 执行 → 审计 → 反思 → 进化循环
-```
+**激活链 = 把 FDE 交付物"点燃"的自动化流程**——静态交付物（ontology/ + workflows/ + skills/ + nodes/）经四阶段转为自运转系统：
 
 | 阶段 | 版本 | 做什么 | 对 FDE 的意义 |
 |---|---|---|---|

@@ -72,6 +72,29 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 
 ---
 
+## 手工裁决（MANUAL-VERDICT）行定义
+
+当 driver 循环自身不稳（多轮 FAIL/BLOCKED 经零信任复验判定为检查器侧债 / driver 债）而由维护者手工裁定 PASS 时，追加 **MANUAL-VERDICT** 行——它是既有 run 行的**旁证**，不改写已写下的 driver 行（append-only）。
+
+```text
+日期 | run-id | 循环（手工裁决） | 触发原因 | 裁决人 | 结论 | 落点版本 | → runs 指针
+```
+
+| 列 | 含义 |
+|----|------|
+| 日期 | `YYYY-MM-DD`（裁决日期） |
+| run-id | 触发本次裁决的 driver run-id（`YYYYMMDD-NN`） |
+| 循环（手工裁决） | `release-gate-手工裁决` / `fresh-eyes-手工裁决` |
+| 触发原因 | driver 为何无法直接给出可信 PASS（如「N 轮 FAIL/BLOCKED 均复验为检查器侧债」），并附改判要点 |
+| 裁决人 | `主 session`（维护者） |
+| 结论 | `PASS` / `FAIL` / `改判` |
+| 落点版本 | 该裁决对应的发版版本号（如 `v1.5.8`） |
+| runs 指针 | 触发 run 的 runDir；无 run 目录时填证据链来源 |
+
+> 口径：MANUAL-VERDICT PASS ≠「loop PASS」——记为「手工裁决 PASS（driver N 轮 FAIL/BLOCKED + 复验改判记录）」。
+
+---
+
 ## 运行记录
 
 > 📌 **关于 FAIL 记录**：以下记录反映了 FORGE 质量循环从 v1.0.5 到 v1.2.8 的真实迭代过程。早期的 FAIL 主要来自工具链 bug（driver 解析 bug、U+FFFD 编码问题、coverage 零覆盖），而非产品功能缺陷。这些问题在迭代中逐步修复，最终 run-24 达到 PASS。保留原始记录是 append-only 纪律的要求，也是 sofagent"审计每次变更"理念在自身开发中的实践。
@@ -299,7 +322,7 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 
 2026-09-03     | 20260903-01    | release-gate | 4    | SKIP       | FAIL       | SKIP     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-01
 
-2026-09-03     | 20260903-04    | release-gate | 4    | SKIP       | PASS       | SKIP     | FAIL→PASS | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-04（BLOCK→PASS 改判：verdict.md 第八节翻转条款执行——12 包 bump 006db13c + 34c 判定核验 + P1-1 映射 a14c7efc + P2-1 锚过时销项；2026-09-03 10:30 driver session 收口）
+2026-09-03     | 20260903-04    | release-gate | 4    | SKIP       | PASS       | SKIP     | FAIL→PASS | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-04（BLOCK→PASS 改判：verdict.md 第八节翻转条款执行——12 包 bump 006db13c + 34c 判定核验 + P1-1 映射 a14c7efc + P2-1 锚过时销项；10:30 driver session 收口）
 
 2026-09-03     | 20260903-05    | release-gate | 4    | SKIP       | FAIL       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-05
 
@@ -426,3 +449,5 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 2026-10-09     | 20261009-02    | release-gate | 4    | PASS       | PASS       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-09/run-02
 
 2026-10-09     | 20261009-03    | release-gate | 4    | SKIP       | PASS       | SKIP     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-09/run-03
+
+2026-10-09     | 20261009-03    | release-gate-手工裁决 | driver 3 轮 BLOCKED（run-01/02/03 均 FAIL）——round-02 P0「整版全量 EXEMPT」经零信任复验改判为检查器债（coverage worker 违背 prompts/coverage.md 规则①·判读漂移假阳性）；round-03 P0 推理链无效但事实前提为真（driver 提取正则 S\d+ 误抽 S1 Bench，属独立缺陷） | 主 session | PASS | v1.5.8 | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-09/run-03（复验改判记录见 docs/changelog/v1.5/v1.5.8.md 阶段五；已发版 2026-10-09）

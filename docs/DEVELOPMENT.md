@@ -566,6 +566,8 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 ### `SOFAGENT_*` 分流：功能门控 vs 配置参数（v1.5.7 章五）
 > 判据——**改了它会改变「某能力在不在」的是功能门控（G）**，**只改能力行为参数的是配置参数（P）**。实测基线 95 项（G 23 + P 72）；G 组清单内 5 档与 `capabilities.json` 逐项对账，其余 18 项属「清单外门控」（安全 fail-closed 面不开放可拔声明）。
 > 📦 **完整名单与逐类注见 [归档 · DEVELOPMENT 参考明细](./archive/doc-slim/development-reference-detail.md)。**
+>
+> 📌 **环境变量登记**：`SOFAGENT_PERSONA_SOURCE`（属 **P 配置参数**）——单路径覆盖 `persona.md` 源文件；三级优先级：env `SOFAGENT_PERSONA_SOURCE`（单值）> config `memory_sync.persona_sources`（数组）> 内置默认路径表。消费点 `engine/core/src/filesystem/memory-sync.ts`。
 ## 八、提交时审计 + 文件系统审计
 
 > 审计模块的 CLI 使用和 exit code 约定。用户视角见 [HANDBOOK §提交后自动审计](./HANDBOOK.md#提交后自动审计)，CI 集成例子见 [HANDBOOK §CI 集成](./HANDBOOK.md#ci-集成)。
@@ -702,16 +704,9 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 文件清单（按版本）
 
-| 文件 | 版本 | 说明 |
-|---|---|---|
-| `engine/orchestrator/src/activate.ts` | v1.2.5 | 激活链入口：读交付物 → 注册企业 SubAgent |
-| `engine/orchestrator/src/workflow-parser.ts` | v1.2.6 | 扩展：支持企业 workflow.yml 的 HITL/审计字段 |
-| `engine/orchestrator/src/enterprise-graph.ts` | v1.2.7 | `composeEnterpriseWorkflow()`：多 Agent → StateGraph |
-| `engine/orchestrator/src/node-executor.ts` | v1.2.8 | 企业节点执行器（新建） |
-| `engine/orchestrator/src/hitl-handler.ts` | v1.2.9 | HITL 中断处理 + 每节点审计集成 |
-| `engine/orchestrator/src/dag-runner.ts` | v1.2.8 | 扩展：支持企业 Agent 执行 + 审计 hook |
+> 📦 **逐版本新增/修改文件清单已下沉归档——见 [归档 · DEVELOPMENT 参考明细](./archive/doc-slim/development-reference-detail.md)。**
 
-> 详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+> 激活链四阶段设计与各文件职责详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 
 ## 维护者口径

@@ -470,7 +470,9 @@ export function evaluateRule(rule: QualityRule, fieldValue: string): QualityChec
           detail: `字段「${rule.targetField}」命中禁止模式 /${patternStr}/`,
         };
       } catch {
-        // 正则无效 → 跳过（不阻断）
+        // 正则无效 → 跳过（不阻断）。配置写错时静默放行——fail-open 为有意设计
+        //（质量规则集是软约束：规则自身写坏不应阻断 Refine 主流程；代价是坏规则失效无声量，
+        //  排查需看 LIMITATIONS 登记项）。
         return { ...base, passed: true, detail: '正则无效，跳过检查' };
       }
     }
@@ -490,11 +492,14 @@ export function evaluateRule(rule: QualityRule, fieldValue: string): QualityChec
     }
 
     case 'custom': {
-      // 自定义规则默认通过（具体逻辑由调用方在 params 中约定）
+      // 自定义规则默认通过（具体逻辑由调用方在 params 中约定）。
+      // 配置写错时静默放行——fail-open 为有意设计（custom 无内建判定体，缺判定即视为满足）。
       return { ...base, passed: true, detail: 'custom 规则默认通过' };
     }
 
     default:
+      // 未知检查类型默认通过。配置写错（拼错 check 类型名）时静默放行——
+      // fail-open 为有意设计（未知类型不阻断 Refine；代价见 LIMITATIONS 登记项）。
       return { ...base, passed: true, detail: '未知检查类型，默认通过' };
   }
 }

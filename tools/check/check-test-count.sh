@@ -311,14 +311,38 @@ run_scenario_guard() {
   #    量纲统一为「场景 NNN（断言 MMM/MMM）」后，场景值纳入守卫——此前两处声称零守卫，
   #    483/401 两值并存即源于此。冻结区纪律：CHANGELOG 历史版本行（v1.5.6 及以前）写的是
   #    断言口径不扫，只扫 v1.5.7 起「场景 NNN」新体例。
-  CL_SCN_MATCHES=$(grep -nE 'acceptance 场景 [0-9]+ 全绿' CHANGELOG.md docs/ROADMAP.md 2>/dev/null)
+  # v1.5.9 门禁-3A（修正-5）：正则容忍加粗与两种体例——星号必须**整体可选**（旧式 `\*\*?`
+  #   要求「至少一个星号」，ROADMAP 纯数字行 `acceptance 场景 401 全绿` 的反向形态
+  #   `acceptance **401** 全绿` 可命中，但漏掉无「场景」二字的 CHANGELOG 体例；且旧式对
+  #   `acceptance **401** 全绿` 之外的 `\*\*?` 贪心亦不稳）。改为 `(场景 )?(\*\*)?[0-9]+(\*\*)?`：
+  #   「场景」与两侧星号各自整体可选，两种体例（`场景 N 全绿` / `**N** 全绿`）皆命中。
+  CL_SCN_MATCHES=$(grep -nE 'acceptance (场景 )?(\*\*)?[0-9]+(\*\*)? 全绿' CHANGELOG.md docs/ROADMAP.md 2>/dev/null)
   if [ -n "$CL_SCN_MATCHES" ]; then
     while IFS= read -r _cl_ln; do
       [ -n "$_cl_ln" ] || continue
       _cl_file=$(echo "$_cl_ln" | cut -d: -f1)
+      _cl_lineno=$(echo "$_cl_ln" | cut -d: -f2)
       check_scenario_doc "${_cl_file}（acceptance 场景声称）" "${_cl_file}" \
-        "$(echo "$_cl_ln" | cut -d: -f1)" \
-        "$(echo "$_cl_ln" | grep -oE '场景 [0-9]+ 全绿' | grep -oE '[0-9]+' | head -1)"
+        "${_cl_lineno}" \
+        "$(echo "$_cl_ln" | grep -oE '(场景 )?(\*\*)?[0-9]+(\*\*)? 全绿' | grep -oE '[0-9]+' | head -1)"
+      # v1.5.9 门禁-3B：断言对自洽校验——「（断言 M/N）」或「（M/N）」要求 M == N。
+      #   量纲统一为「acceptance 场景 NNN 全绿（断言 MMM/MMM）」后，分母分子不相等的笔误
+      #   （如 483/482）此前零守卫（场景数对得上即放行）。本项与场景数守卫同循环逐行校验，
+      #   提取不到断言对的行不判（无该字段的合法行不制造假红）。
+      _cl_assert=$(echo "$_cl_ln" | sed -nE 's/.*（(断言 )?([0-9]+)\/([0-9]+)）.*/\2 \3/p' | head -1)
+      if [ -n "$_cl_assert" ]; then
+        _cl_m=${_cl_assert%% *}
+        _cl_n=${_cl_assert##* }
+        if [ "$_cl_m" = "$_cl_n" ]; then
+          if [ "$QUIET" = false ]; then
+            echo -e "  ${GREEN}✓ ${_cl_file}（行 ${_cl_lineno}）：断言对自洽 ${_cl_m}/${_cl_n}${NC}"
+          fi
+          SCEN_PASS=$((SCEN_PASS + 1))
+        else
+          echo -e "  ${RED}✗ ${_cl_file}（行 ${_cl_lineno}）：断言对分母分子不自洽 ${_cl_m}/${_cl_n}（须 M == N）${NC}"
+          SCEN_FAIL=$((SCEN_FAIL + 1))
+        fi
+      fi
     done <<< "$CL_SCN_MATCHES"
   fi
 

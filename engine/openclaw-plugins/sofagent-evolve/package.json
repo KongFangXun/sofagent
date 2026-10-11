@@ -41,6 +41,9 @@
     "url": "https://github.com/KongFangXun/sofagent/issues"
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
+  "optionalDependencies": {
+    "@sofagent/think": "1.5.8"
+  },
   "devDependencies": {
     "@types/node": "^24.13.4",
     "typescript": "^7.0.2",

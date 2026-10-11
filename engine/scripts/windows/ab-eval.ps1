@@ -37,8 +37,16 @@ $files = if (-not [string]::IsNullOrEmpty($Date)) { @(Join-Path $AuditDir "$Date
          else { Get-ChildItem $AuditDir -Filter "*.jsonl" -EA SilentlyContinue | Where-Object { $_.Name -match '^\d{4}-\d{2}-\d{2}\.jsonl$' } | ForEach-Object { $_.FullName } }
 if (-not $files) { Write-Host "[X] 无 audit-log 文件（Date=$Date）"; exit 1 }
 
-# 读全部事件
-$events = foreach ($f in $files) { foreach ($l in (Get-Content $f -Encoding UTF8 -EA SilentlyContinue)) { try { $l | ConvertFrom-Json } catch {} } }
+# 读全部事件（坏 JSON 行留痕计数——PS 5.1 / 7 兼容，不用 7-only 的 ?? 运算符）
+$script:badJsonLines = 0
+$events = foreach ($f in $files) {
+    foreach ($l in (Get-Content $f -Encoding UTF8 -EA SilentlyContinue)) {
+        try { $l | ConvertFrom-Json } catch {
+            $script:badJsonLines++
+            Write-Warning "[ab-eval] 跳过坏 JSON 行（累计 $script:badJsonLines 行）: $($_.Exception.Message)"
+        }
+    }
+}
 
 if ($ListSessions) {
     Write-Host "audit-log 中的会话（$AuditDir，Date=$(if($Date){$Date}else{'全部'})）:"
@@ -107,3 +115,7 @@ Write-Host "  · 文件待批/待批合计 A>B → 带 sofagent 更主动求批�
 Write-Host "  · decision=failed 差异 → 失败/恢复行为对比"
 Write-Host "  · 命令执行/WebFetch 数 → 行为量；批量任务(T7)期望带 sofagent 调用更少"
 Write-Host "  · ⚠️ 仅机械层客观指标，不取 Agent 自述（绕开 anti-case 001）"
+if ($script:badJsonLines -gt 0) {
+    Write-Host ""
+    Write-Warning "[ab-eval] 本次统计跳过 $script:badJsonLines 行坏 JSON（A/B 计数分母已相应减少，解读时请留意）"
+}

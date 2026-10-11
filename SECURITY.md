@@ -1,12 +1,10 @@
 # 安全策略
 
-> 🔴 **报告漏洞：直接跳 [§报告漏洞](#报告漏洞)**（本文档较长，该节是唯一上报入口——渠道/范围/响应预期全在那节）。
-
-> **快速上报**：见本文 [报告漏洞](#报告漏洞) 一节（渠道 / 范围 / 响应预期以该节为准）。渠道为 **GitHub Security Advisory 单通道**——v1.3.6 起不再提供安全邮箱（无法保证收信），亦未提供加密公钥；勿经 issue 上报未公开漏洞。
+> 🔴 **报告漏洞**：见本文 [§报告漏洞](#报告漏洞)（唯一上报入口——渠道 / 范围 / 响应预期以该节为准）。渠道为 **GitHub Security Advisory 单通道**——v1.3.6 起不再提供安全邮箱（无法保证收信），亦未提供加密公钥；勿经 issue 上报未公开漏洞。
 
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.8 · 2026-10-09（UTC）· ⏳ 待发版（[CHANGELOG](./CHANGELOG.md)）· 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ✅ 已发版（[CHANGELOG](./CHANGELOG.md)）· 孔放勋
 >
 > 按安全主题组织，企业 IT 可按主题快速定位。各能力的引入版本在小节正文首句注明。
 
@@ -32,7 +30,7 @@
 
 ## 已知风险（明文存储）
 
-sofagent 是一套 FDE 能力——**自带治理环境的 S1M**（FDEing × S1M × harness 三层）：底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网）。但以下数据以**明文 Markdown** 存储，请评估风险：
+sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + Harness；FDEing × S1A）：底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网）。但以下数据以**明文 Markdown** 存储，请评估风险：
 
 **「数据不出本机」的三个显式例外**（均需用户 opt-in）：
 
@@ -628,7 +626,7 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 
 ### install.sh 行为说明
 
-install.sh 是一键安装脚本：写 `~/.sofagent/`（数据，700）与 `~/.local/bin`（CLI）；**仅显式传 `--platform` 时**才部署平台 Skill 目录与平台配置注入（默认零平台探测）；`--init` 装三层防线 git hook。供应链侧自 v1.4.3 起内嵌 7 哈希钉值（见上节）。
+install.sh 是一键安装脚本：写 `~/.sofagent/`（数据，700）与 `~/.local/bin`（CLI）；**仅显式传 `--platform` 时**才部署平台 Skill 目录与平台配置注入（默认零平台探测）；`--init` 装三层防线 git hook。供应链侧的 7 哈希钉值由 `bootstrap.sh` 提供（自 v1.4.3 起内嵌，见上节）。
 > 📦 **完整行为清单表（做什么/路径/说明 + 不做的事与退出码）见 [归档 · install.sh 行为清单](./docs/archive/doc-slim/security-install-behavior.md)。**
 ### 第三方依赖供应链
 

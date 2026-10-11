@@ -33,6 +33,7 @@
 #                             台账锚串（tools/check/archaeology-exempt.json，逐条 {file,anchor,reason}）
 #                             · 批二接入）
 #   + check-gate-inventory.sh → 门禁清单覆盖对账：tools/check/ 守卫 ⊆ 真实调用面（抓孤儿守卫）
+#   + check-platform-hooks.sh → 平台 hook 配置 schema 校验（Claude PreToolUse 内层 hooks+type / Cursor version:1+camelCase+Shell）
 #   + check-forms.mjs       → 形态归属标注对账（changelog ↔ ROADMAP 双向）
 #   + doc-score.mjs         → 文档质量六维评分（六维各 ≥8 且不低于基线；机械项调既有门禁，
 #                             人工项读本版 devlog「文档质量评分」留痕，未确认按不通过计 fail-closed）
@@ -211,6 +212,54 @@ if [ -f tools/check/check-gate-inventory.sh ]; then
   fi
 else
   check_fail "tools/check/check-gate-inventory.sh 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
+fi
+
+# ════════════════════════════════════════
+# 1d. 平台 hook 配置 schema 校验（check-platform-hooks.sh）
+# 为什么需要：.claude/settings.json 与 .cursor/hooks.json 是对外声称「工具调用拦截」的
+#   落地配置，长期无门禁校验其是否符合各平台官方 schema ⇒ 配置不符 schema 时平台读不到
+#   command、拦截静默失效，而门禁全绿——「防线失明却不吭声」。本步把两文件最小 schema 变机器判据。
+# 三态语义：0 = 两平台配置合规；2 = 不合规或无法校验（缺 node / 文件缺失）。
+# ════════════════════════════════════════
+echo -e "\n${BOLD}── 1d. 平台 hook 配置 schema ──${NC}"
+if [ -f tools/check/check-platform-hooks.sh ]; then
+  PH_OUT=$(bash tools/check/check-platform-hooks.sh 2>&1)
+  PH_RC=$?
+  if [ "$PH_RC" -eq 0 ]; then
+    check_pass "check-platform-hooks.sh（Claude / Cursor 配置 schema 合规）"
+  else
+    check_fail "check-platform-hooks.sh 报红（exit ${PH_RC}——平台 hook 配置不符各平台 schema）"
+    printf '%s\n' "$PH_OUT" | grep -E '^    ·|^✗' | head -10
+  fi
+else
+  check_fail "tools/check/check-platform-hooks.sh 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
+fi
+
+# ════════════════════════════════════════
+# 1e. 声明体系到期消费者巡检（check-retirement-due.sh）——**非阻断位**
+# 为什么非阻断：本守卫报的是「已届满未退役」的**已登记欠账**（当前量级 12 个 shim——
+#   v2.0.0 已裁定「退役动作不在本版静默移除，排期见 ROADMAP」）。红态是**设计预期**，
+#   不是缺陷。若接成阻断位，会把 pre-push 永久钉红、阻断所有推送——护栏不得使工作流
+#   停摆。故按 playbook/.gate-inventory-exempt 明文承认的「默认非阻断的巡检」形态接线：
+#   **跑它、报它、不拦它**；退役动作执行后本项自动转绿。
+# 注：本脚本仅在 FAIL>0 时 exit 1，WARN 不计入退出码 ⇒ check_warn 确为非阻断。
+# 三态语义：0 = 无已届满未退役；1 = 有届满未退役项（信息位）；2 = 失明。
+# ════════════════════════════════════════
+echo -e "\n${BOLD}── 1e. 声明体系到期消费者（非阻断巡检）──${NC}"
+if [ -f tools/check/check-retirement-due.sh ]; then
+  RD_OUT=$(bash tools/check/check-retirement-due.sh 2>&1)
+  RD_RC=$?
+  if [ "$RD_RC" -eq 0 ]; then
+    check_pass "check-retirement-due.sh（无已届满未退役项）"
+  else
+    # 计数只数**明细行**（`已届满未退役：shim …`）——原先按含该词的行计数会把脚本末行的
+    #   汇总句（「✗ 声明体系：N 条「已届满未退役」…」）一并算入，报出数虚高 2（实测 14 vs 12）。
+    RD_DUE=$(printf '%s\n' "$RD_OUT" | grep -c '已届满未退役：shim' || true)
+    check_warn "check-retirement-due.sh：已届满未退役 ${RD_DUE} 项（已登记欠账 · 退役排期见 ROADMAP · 非阻断）"
+    printf '%s\n' "$RD_OUT" | grep -E '✗|已届满未退役' | head -3 | sed 's/^/      /'
+  fi
+else
+  check_fail "tools/check/check-retirement-due.sh 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
 fi
 
 # ════════════════════════════════════════
@@ -649,40 +698,6 @@ if [ "$MINIMAL" = false ]; then
   fi
 fi
 
-# ════════════════════════════════════════
-# 3k. 文档质量六维评分（doc-score.mjs · 分数棘轮）
-# 为什么需要：本仓 27 项文档检查散落在 8 个门禁 + 若干人工判据里，**没有聚合读数**——
-#   每版只能逐脚本单看「绿/红」，看不到「哪个维度薄、比上一版升了还是降了」。
-#   本步把六维（准确/精简/结构/排版/可读/淘汰）各自折成 0-10 分：分数 = 通过项/总项，
-#   每维 <8 或低于基线即阻断；基线只许升不许降（分数棘轮，floor 8）。
-#   机械项调既有门禁（不重造判据、不改其判定）；人工项读**本版 devlog「文档质量评分」节**
-#   的逐条留痕，未确认即按不通过计（fail-closed——「没写留痕」不得被读成「通过」）。
-# 三态语义：0 = 六维全 ≥8 且不低于基线；1 = 有维度触底/倒扣；2 = 评分器失明
-#   （门禁输出形态漂移 / 扫描面塌缩，拒绝假绿）。
-# 成本实测：约 3~4 分钟（内含 doc-discipline + archaeology + table-shape + check-docs 全量）。
-#   ⚠️ 排在 3k（**不能前移**）：机械项直接消费 3g/3d2 等门的输出形态，前移会造成重复全量扫描。
-# ════════════════════════════════════════
-if [ "$MINIMAL" = false ]; then
-  echo -e "\n${BOLD}── 3k. 文档质量六维评分 ──${NC}"
-  if [ -f tools/check/doc-score.mjs ]; then
-    DS_OUT=$(node tools/check/doc-score.mjs 2>&1)
-    DS_RC=$?
-    printf '%s\n' "$DS_OUT" | sed 's/^/  /'
-    if [ "$DS_RC" -eq 0 ]; then
-      check_pass "doc-score.mjs（六维全 ≥8 且不低于基线）"
-    elif [ "$DS_RC" -eq 2 ]; then
-      check_fail "doc-score.mjs 评分器失明（exit 2——门禁输出形态漂移/扫描面塌缩，拒绝假绿）"
-      printf '%s\n' "$DS_OUT" | grep -E '失明|❌' | head -6
-    else
-      check_fail "doc-score.mjs 有维度触底或倒扣（exit ${DS_RC}——见上方未通过项 / 待人工确认项）"
-      printf '%s\n' "$DS_OUT" | grep -E '❌|↓|触底' | head -12
-    fi
-    unset DS_OUT DS_RC
-  else
-    check_fail "tools/check/doc-score.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
-  fi
-fi
-
 # 4. 审计模块构建 + 测试数汇总（对应 verify.yml + test-count.sh 门禁）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
@@ -717,6 +732,44 @@ if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
   else
     check_fail "check-test-count.sh 检测到文档测试数漂移"
     bash tools/check/check-test-count.sh 2>&1 | grep "✗" | head -5 | sed 's/^/    /'
+  fi
+
+  # ════════════════════════════════════════
+  # 5b. 文档质量六维评分（doc-score.mjs · 分数棘轮）
+  # 为什么需要：本仓 27 项文档检查散落在 8 个门禁 + 若干人工判据里，**没有聚合读数**——
+  #   每版只能逐脚本单看「绿/红」，看不到「哪个维度薄、比上一版升了还是降了」。
+  #   本步把六维（准确/精简/结构/排版/可读/淘汰）各自折成 0-10 分：分数 = 通过项/总项，
+  #   每维 <8 或低于基线即阻断；基线只许升不许降（分数棘轮，floor 8）。
+  #   机械项调既有门禁（不重造判据、不改其判定）；人工项读**本版 devlog「文档质量评分」节**
+  #   的逐条留痕，未确认即按不通过计（fail-closed——「没写留痕」不得被读成「通过」）。
+  # 三态语义：0 = 六维全 ≥8 且不低于基线；1 = 有维度触底/倒扣；2 = 评分器失明
+  #   （门禁输出形态漂移 / 扫描面塌缩，拒绝假绿）。
+  # 成本实测：约 3~4 分钟（内含 doc-discipline + archaeology + table-shape + check-docs 全量）。
+  # ⚠️ 位置：**必须排在构建之后**（与 check-tool-health 同一条规则——「dist 未入 git，
+  #   全新工作树无 dist 时相关判据报红，故须在 `npm run build` 之后」）。本步的 D1-1
+  #   「全仓读数与 SSOT 一致」调 check-test-count.sh，而后者跑**全量测试套件**并传播失败；
+  #   仓内存在**直调 dist 产物**的用例（如 engine/audit/src/__tests__/cli-crash-exit-code.test.ts
+  #   显式断言 dist 产物存在，缺失即 throw）。故本步若排在构建之前（含「未构建」或
+  #   「构建被中断留下不完整 dist」的树），D1 会在测试红的同时被误报为「文档质量不达标」——
+  #   把测试态缺陷伪装成文档态缺陷。排在构建之后即消除该错报。
+  # ════════════════════════════════════════
+  echo -e "\n${BOLD}── 5b. 文档质量六维评分 ──${NC}"
+  if [ -f tools/check/doc-score.mjs ]; then
+    DS_OUT=$(node tools/check/doc-score.mjs 2>&1)
+    DS_RC=$?
+    printf '%s\n' "$DS_OUT" | sed 's/^/  /'
+    if [ "$DS_RC" -eq 0 ]; then
+      check_pass "doc-score.mjs（六维全 ≥8 且不低于基线）"
+    elif [ "$DS_RC" -eq 2 ]; then
+      check_fail "doc-score.mjs 评分器失明（exit 2——门禁输出形态漂移/扫描面塌缩，拒绝假绿）"
+      printf '%s\n' "$DS_OUT" | grep -E '失明|❌' | head -6
+    else
+      check_fail "doc-score.mjs 有维度触底或倒扣（exit ${DS_RC}——见上方未通过项 / 待人工确认项）"
+      printf '%s\n' "$DS_OUT" | grep -E '❌|↓|触底' | head -12
+    fi
+    unset DS_OUT DS_RC
+  else
+    check_fail "tools/check/doc-score.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
   fi
 fi
 
@@ -784,6 +837,7 @@ done
 # 检查 install.sh 引用的路径和实际文件是否一致
 # v1.2.0: install.sh 已从 engine/scripts/ 提升到根目录，SCRIPT_DIR = 项目根目录
 # RULES_SRC 格式: "${SCRIPT_DIR}/SKILL/harness/fde-template.md" → 从项目根目录解析相对路径
+# 约定：install.sh 中 RULES_SRC= 的首次出现即权威定义（head -1 取首次）；新增赋值须追加在其后
 INSTALL_RULES_SRC=$(grep 'RULES_SRC=' install.sh 2>/dev/null | head -1 | sed 's/.*="\${SCRIPT_DIR}\///;s/".*//')
 if [ -n "$INSTALL_RULES_SRC" ]; then
   if [ ! -f "$INSTALL_RULES_SRC" ]; then

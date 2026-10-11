@@ -22,6 +22,7 @@ export const CONFIG_TEMPLATE = `# sofagent 审计配置
 
 audit:
   # 低风险文件模式（不计入 A3「不改越界」检查）
+  # 本项不参与 A1 判定（A1 只读硬编码 SENSITIVE_PATTERNS）；当前消费方为 config-suggestion
   lowRiskPatterns:
     - package-lock.json
     - yarn.lock

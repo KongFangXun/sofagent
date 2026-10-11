@@ -24,7 +24,6 @@ let dataDir: string;
 beforeAll(() => {
   dataDir = mkdtempSync(join(tmpdir(), 'usage-tracker-'));
   process.env.SOFAGENT_DATA = dataDir;
-  process.env.SOFAGENT_USAGE_TRACKING = undefined as unknown as string;
 });
 
 afterAll(() => {

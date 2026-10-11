@@ -1918,10 +1918,18 @@ echo "=== 26. 活文档「待发版」残留（已发版态扫描） ==="
 #                       版本规划表里的未来版本行）⇒ **不报红**
 #     · 提及而非使用 —— 词被「…」引用（索引规则说明行）⇒ 不报红
 if $F6_RELEASED; then
-  _I2_CAND=$(grep -rnE "待发版|待发布|规划中|排期中" --include="*.md" \
-      "${PROJECT_ROOT}/docs" "${PROJECT_ROOT}/README.md" \
-      "${PROJECT_ROOT}/README.en.md" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null \
-    | grep -vE '^[^:]*/(changelog|archive)/' || true)  # F-31：只滤文件路径前缀，不滤行内容（行内 ./changelog/ 链接曾使整行被误滤）
+  # v1.5.9 门禁-2：扫描面从「docs/ + 根三件白名单」扩到**全仓**（根 SECURITY.md / CONTRIBUTING.md /
+  #   FDE/ 等全树此前不在半径内——原实现范围只有 docs/ ⇒ 同族漏网，扩面时又漏三个）；
+  #   词表补「排期」（候选面扩展，实际判定仍由下方 ②/④ 的词门 `待发版|待发布|规划中|排期中` 把关）。
+  #   排除面：changelog/archive（历史当时态）/ node_modules·.git·dist·.workbuddy（非活文档）/
+  #     **FORGE**（agent 运行面：提示词模板 + 台账 + lessons——读者面向文档之外；实测
+  #     `FORGE/SKILL/release-gate-loop/prompts/regression.md` 的「待发版」是**信号图例定义**
+  #     （`⏰：N（待发版）`）、非发版态残留，纳入即假红。扩面纪律：扩到哪面，就得把该面内
+  #     「规则/图例/台账」类非状态位一并排除，否则守卫以假红换取覆盖面）。
+  #   F-31 收紧保留：只滤**文件路径前缀**（`^[^:]*/`），不滤行内容（行内 ./changelog/ 链接曾使整行被误滤）。
+  _I2_CAND=$(grep -rnE "待发版|待发布|规划中|排期中|排期" --include="*.md" \
+      "${PROJECT_ROOT}" 2>/dev/null \
+    | grep -vE '^[^:]*/(changelog|archive|node_modules|\.git|dist|\.workbuddy|FORGE)/' || true)
   # 🔴 v1.5.3 阶段六修正 · F-14 行级排除（与 §27 同口径，补 §26 当年的漏改）：
   #   本项当初（v1.5.1 I2）只删了「整段窗口白名单」（因其使 §26 从未执行），但**没补 §27
   #   后来加的 F-14 行级排除** ⇒ 在待发版窗口内，合法的「下一版」标注被 §26 误判为残留。

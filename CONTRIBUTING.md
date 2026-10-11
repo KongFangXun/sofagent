@@ -4,7 +4,7 @@
 
 > 📖 新贡献者？先看 [COMMUNITY.md](./docs/COMMUNITY.md) 了解社区现状和贡献路径。
 > 📌 基于当前 main 分支结构修订，目录与文件以你面前的仓库为准。
-> v1.5.8 · 2026-10-09（UTC）· ⏳ 待发版 · 孔放勋
+> v1.5.8 · 2026-10-09（UTC）· ✅ 已发版 · 孔放勋
 
 欢迎参与 sofagent！这个项目的代码由 AI 模型辅助生成（详见[致谢](./docs/THANKS.md#生成伙伴)），作者做产品决策和终审。你看到的任何技术问题，请直接指出来，不必客气。
 
@@ -196,6 +196,8 @@ cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 发版：按 [docs/changelog/releasing.md](./docs/changelog/releasing.md) 十一阶段 SOP 执行——阶段一~四（审查/开发/质量循环/审查体系）→ 阶段五~七（发版闸门/文档收尾/工具健康）→ 阶段八（确认关口）→ 阶段九~十（发布：npm 13 包 + ClawHub/SkillHub 双分发 + tag + Release）→ 阶段十一（发布后收尾）。
 简版：`docs/changelog/vX.Y/vX.Y.Z.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/release/bump-version.sh` 升级版本号 → `tools/release/pre-push-check.sh` 全绿 → `git tag vX.Y && git push` → `gh release create vX.Y`。
 
+提交前确认 git user.name / user.email 已按本仓约定设置（见 WIKI 署名口径）；发布脚本自动提交须显式传 --author
+
 > 📋 **changelog 写作规范**：changelog 是对外公开文档，**不写人名、内部私有路径、内部工单/审查代号**。
 > - ❌ 不写开发成员名字或角色代号（如"某某拍板""供某某实现"）
 > - ❌ 不写本机私有路径（如 `~/Desktop/xxx-prompts/`），开发 Prompt 仅作内部参考不分发
@@ -292,10 +294,8 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 
 ## 成为维护者
 
-sofagent 当前 bus factor = 1（唯一维护者）。上面的「Seeking Co-maintainers」表是正式标准（合并 PR ≥5 + 持续 ≥2 月 + 作者邀请）；如果你已满足以下早期信号中的至少 2 条，可以先开 Discussion 与维护者聊聊方向——早期接触不算正式申请：
+**早期接触**：满足以下至少 2 条早期信号，可先开 [Discussion](https://github.com/KongFangXun/sofagent/discussions) 与维护者聊聊方向（正式标准见〈Seeking Co-maintainers〉）——早期接触不算正式申请：
 
 - 提交过 3+ 个被合并的 PR
 - 熟悉 bash 兼容性 / OpenClaw hook / 安全审计 / 英文文档 中至少一个领域
 - 能独立 review 他人的 PR
-
-联系方式：开 [Discussion](https://github.com/KongFangXun/sofagent/discussions)

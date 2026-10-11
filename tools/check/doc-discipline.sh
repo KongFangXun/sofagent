@@ -302,6 +302,8 @@ fi
 
 # ── Face 7 抬头块闸（2026-09-29 抬头块限流批）─────────────────────────
 # 抬头块 = H1 到首个 '## ' 之间的正文；字数只计文本字符，剔装饰行与 YAML front matter
+# 装饰行口径（v1.5.9 补齐）：HTML 装饰 = **一个或多个标签、标签外无正文**（原实现只认单标签行，
+#   导致 `<p …><img …/></p>` 这类多标签徽章行被计入抬头块——与 _meta.opening_rule「剔除 HTML 标签行」漂移，已对齐）
 # （口径与处置见 doc-char-ratchet.json 的 _meta.opening_rule）。
 # 治的是「文档开头堆一大段说明/为什么，读者翻不到正文」。
 OPENING_CAP=600
@@ -314,7 +316,7 @@ else
     const fs=require("fs");
     const base=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
     const cap=parseInt(process.argv[2],10);
-    const deco=/^(<[^>]+>|!\[[^\]]*\]\([^)]*\)|\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)|<!--.*-->|-{3,})$/;
+    const deco=/^((\s*<[^>]+>\s*)+|!\[[^\]]*\]\([^)]*\)|\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)|<!--.*-->|-{3,})$/;
     const opening=(t)=>{
       const L=t.split("\n");
       let start=0;
@@ -455,7 +457,38 @@ if [ -z "$NEW_LINES" ]; then
   echo "  ℹ️ 本次无 .md 新增行，跳过"
 else
   P10=0
-  BARE=$(printf '%s\n' "$NEW_LINES" | grep -cE '^\+[[:space:]]*```[[:space:]]*$' || true)
+  # 裸围栏：只数「**开栏**且无语言标注」的新增行——**闭栏不计**。
+  #   为什么不能按行计数：闭栏（```）天然无语言，任何新增代码块都必带一个闭栏 ⇒
+  #   按行计数会把「新增一个**已标语言**的块」也判红（假阳性；实测：把开栏改成
+  #   ```bash 后仍报 1 处）。故按**文件内围栏奇偶位**判开/闭（奇=开、偶=闭），
+  #   再与「本次新增行号」取交。变更文件清单在本面独立重算（不复用 Face 9 的
+  #   `CHANGED_MD`——后者只在 Face 9 走关键词分支时才赋值，Face 9 跳过时为空串）。
+  BARE=0
+  _P10_FILES=$(git diff HEAD --name-only -- '*.md' 2>/dev/null | sort -u)
+  [ -z "$_P10_FILES" ] && _P10_FILES=$(git diff HEAD~1 HEAD --name-only -- '*.md' 2>/dev/null | sort -u)
+  for _f in $_P10_FILES; do
+    [ -f "$_f" ] || continue
+    _added=$(git diff HEAD --unified=0 -- "$_f" 2>/dev/null | awk '
+      /^@@/ && match($0, /\+[0-9]+/) {
+        s = substr($0, RSTART+1, RLENGTH-1) + 0
+        rest = substr($0, RSTART+RLENGTH)
+        c = 1
+        if (match(rest, /^,[0-9]+/)) c = substr(rest, 2, RLENGTH-1) + 0
+        for (i = 0; i < c; i++) print s + i
+      }')
+    [ -z "$_added" ] && continue
+    # ⚠️ `awk -v` 的赋值不能含换行（会报 "newline in string" 而整段失效）——
+    #   故把行号列表压成空格分隔再传，awk 侧按空格 split。
+    _added_flat=$(printf '%s' "$_added" | tr '\n' ' ')
+    _n=$(awk -v added="$_added_flat" '
+      BEGIN { n = split(added, A, " "); for (i = 1; i <= n; i++) if (A[i] != "") isadd[A[i]] = 1; fence = 0; c = 0 }
+      /^[[:space:]]*```/ {
+        fence++
+        if (fence % 2 == 1 && $0 ~ /^[[:space:]]*```[[:space:]]*$/ && (FNR in isadd)) c++
+      }
+      END { print c + 0 }' "$_f")
+    BARE=$((BARE + _n))
+  done
   if [ "${BARE:-0}" -gt 0 ]; then
     echo "    ❌ 裸围栏 ${BARE} 处（\`\`\` 无语言标注）——补语言或用 \`text\`"
     P10=$((P10 + 1))

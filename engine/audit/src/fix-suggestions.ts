@@ -12,7 +12,7 @@
  * value = 修复建议字符串
  */
 const FIX_SUGGESTIONS: Record<string, string> = {
-  'A1 不碰敏感': '.env 不应提交。将敏感文件加入 .gitignore，或在 config.yml 的 lowRiskPatterns 中添加文件路径',
+  'A1 不碰敏感': '.env 不应提交。将敏感文件加入 .gitignore；示例文件请改用 .env.example / .env.test.ts 形态（A1 白名单放行）。注意：lowRiskPatterns 不参与 A1 判定，改它无效',
   // 顺序即优先级：密钥一旦进过暂存区，改 .gitignore 无效（文件已被 git 跟踪），
   // 第一步必须是吊销——否则「按建议修完」的人反而以为已经安全。
   'A2 不泄密钥': '立即到服务商控制台吊销/轮换该密钥 -> 从提交中移除（git rm --cached 或改提交内容）-> 写入 .env 并加入 .gitignore -> 重新提交。注意：已被 git 跟踪的文件加 .gitignore 无效，必须先吊销',

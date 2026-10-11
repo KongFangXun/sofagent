@@ -900,6 +900,35 @@ function extractDeclaredSegment(roadmapText, version) {
 }
 
 /**
+ * 该版本是否已出现在 ROADMAP「迭代历程」表（= 已发版并归档）。
+ *
+ * 口径修正（v1.5.9 · BUG-24A↔A7 交互）：按 ROADMAP 单向流动纪律，版本**发版即从「版本规划」
+ *   表移入「迭代历程」表**（规划表只留未发版版本；退役/移档范式见 docs/changelog/v2.0/v2.0.0.md）。
+ *   此时「版本规划表无该版本行」是**合法移档**、不是「对账缺一侧」——其形态声明段随行一并移出
+ *   对账面（迭代历程行不承载「形态归属」）。判据 = 迭代历程行首列 = `版本号（日期）`
+ *   （`| v1.5.8（2026-10-09） | …`；加粗可省，与 A7 其它版本行口径一致）。
+ * @param {string} roadmapText ROADMAP 全文
+ * @param {string} version 版本号（如 v1.5.8）
+ * @returns {boolean}
+ */
+function versionInIterationTable(roadmapText, version) {
+  // 位置假设防御（v1.5.9）：① **只在「迭代历程」段内**检索——避免把「版本规划」表的未来版本行
+  //   误判为「已移档」，从而吞掉真缺一侧；② **不强制行内带日期**——原正则要求版本号后紧跟 `（`，
+  //   迭代表行一旦省略日期即假红「缺一侧」（口径应由「版本落在哪张表」决定，而非由日期写法决定）。
+  const lines = roadmapText.split('\n');
+  const start = lines.findIndex((l) => /^##+\s.*迭代历程/.test(l));
+  if (start < 0) return false;
+  const re = new RegExp(
+    '^\\|\\s*(?:\\*\\*)?\\s*' + escapeRe(version) + '\\s*(?:\\*\\*)?\\s*(?:（[^）]*）)?\\s*\\|',
+  );
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^##+\s/.test(lines[i])) break; // 段结束
+    if (re.test(lines[i])) return true;
+  }
+  return false;
+}
+
+/**
  * 把声明段切成**子句**（A7 声明计数「子句头部取数」的基础，即 D-1 修法 A）。
  *
  * 子句边界 = **全角括号深度 0** 处的声明分隔符「＋/+」（声明之间用它连接）与句读
@@ -1307,10 +1336,18 @@ function main() {
   // ── A7 ROADMAP 计数对账 ──
   const a7Details = [];
   const a7Passed = [];
+  const versionsReleasedMoved = [];
   let versionsReconciled = 0;
   for (const { version, file } of VERSION_SOURCES) {
     const declared = extractDeclaredSegment(roadmapText, version);
     if (declared.status === 'no-row') {
+      // 口径修正（v1.5.9）：已发版版本行按 ROADMAP 单向流动纪律从「版本规划」表移入
+      //   「迭代历程」表（BUG-24A）——此时「规划表无该版本行」是合法移档、非对账缺一侧。
+      //   仅当迭代历程表也无该版本时才判真缺一侧（双向皆无 = 版本从 ROADMAP 蒸发）。
+      if (versionInIterationTable(roadmapText, version)) {
+        versionsReleasedMoved.push(version);
+        continue;
+      }
       a7Details.push(`${version}: ${ROADMAP_FILE} 规划版本表无该版本行（对账缺一侧）`);
       continue;
     }
@@ -1431,11 +1468,11 @@ function main() {
     'A7',
     'ROADMAP 计数对账',
     a7Details.length === 0,
-    `${versionsReconciled} 版本声明值全部等于实测值（共 ${a7Passed.length} 条模式对上）`,
+    `${versionsReconciled} 版本声明值全部等于实测值（共 ${a7Passed.length} 条模式对上${versionsReleasedMoved.length ? `；另 ${versionsReleasedMoved.length} 个已发版版本移出规划表、归档于迭代历程` : ''}）`,
     a7Details,
   );
   if (a7Details.length === 0) {
-    console.log(colors.green(`  ✓ A7 ROADMAP 计数对账：${versionsReconciled} 版本声明值与实测值一致`));
+    console.log(colors.green(`  ✓ A7 ROADMAP 计数对账：${versionsReconciled} 版本声明值与实测值一致${versionsReleasedMoved.length ? `（另 ${versionsReleasedMoved.length} 个已发版版本已移出规划表、归档于迭代历程：${versionsReleasedMoved.join(' / ')}）` : ''}`));
     for (const p of a7Passed) console.log(colors.cyan(`      · ${p}`));
   } else {
     console.log(colors.red(`  ✗ A7 ROADMAP 计数对账：${a7Details.length} 处声明值与实测值不一致`));

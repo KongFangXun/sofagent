@@ -365,6 +365,16 @@ while IFS= read -r ts; do
   # 误抬会击穿 acceptance S407（三形态定位边界锚「v1.4.8 条目 10」）类锚定场景。
   # 「第N章」同属功能溯源标记（记录该功能出生于哪一版第几章），不是当前版本锚点——
   # 曾漏列致其被逐版抬号（功能出身版被误改写成当前版）；与「条目」同理永不抬号。
+  # BUG-27 位置假设防御：头部注释区承载版本锚点；若锚点被新增注释挤出 head -10
+  # 切片窗口，继续执行会**静默漏 bump**（该文件版本号不抬），故此处显式拒绝。
+  # 判据与 check-version [12/14] 对齐——只看 `//` 注释行内的 `vX.Y.Z` 锚点，
+  # 避免把正文裸数字（如 1.5）误当锚点而假红；仅「锚点确已滑出窗口」才拒绝。
+  _head_hit=$(head -10 "$ts" | grep -E "$OLD_3SEG|$OLD_2SEG" || true)
+  _tail_anchor=$(tail -n +11 "$ts" 2>/dev/null | grep -E '^[[:space:]]*//' | grep -oE "v($OLD_3SEG|$OLD_2SEG)([^0-9.]|$)" | head -1 || true)
+  if [ -z "$_head_hit" ] && [ -n "$_tail_anchor" ]; then
+    echo "❌ [bump-version] 版本锚点不在 $ts 头部 10 行内——head -10 切片失效，拒绝静默漏 bump" >&2
+    exit 1
+  fi
   ts_head=$(head -10 "$ts")
   ts_rest=$(tail -n +11 "$ts")
   ts_head_new=$(echo "$ts_head" | awk -v OLD3="$OLD_3SEG" -v NEW3="$NEW_3SEG" -v OLD2="$OLD_2SEG" -v NEW2="$NEW_2SEG" '

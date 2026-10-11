@@ -40,3 +40,19 @@ CLI 入口：`sofagent daemon create-usb-key --role --target --platform`（写�
 
 **双向一致纪律**：清单内 5 个 env 档位（`AUDIT_ENABLED`/`PERMISSION_GUARD`/`MCP_ROLES`/`USAGE_TRACKING`/`EVOLVE_GATE`）与 G 组逐项对得上；G 组其余 18 项属「清单外门控」（能力单元不可独立关档、或为安全 fail-closed 面不开放可拔声明——如 `SANITIZE`/`REQUIRE_SIGNED_CONFIG` 属安全底线不设关档）。新增 `SOFAGENT_*` 时先判 G/P：G 项须同批进 capabilities.json 并过生成器断言，P 项登记本表即可。
 
+## 三 · 激活链扩展文件清单（按版本）
+
+
+> 内容原属 `docs/DEVELOPMENT.md` §十三「激活链扩展指南 · 文件清单（按版本）」，按「参考明细下沉归档」纪律迁出，**原文逐字保真**；原地留摘要 + 指针。
+
+| 文件 | 版本 | 说明 |
+|---|---|---|
+| `engine/orchestrator/src/activate.ts` | v1.2.5 | 激活链入口：读交付物 → 注册企业 SubAgent |
+| `engine/orchestrator/src/workflow-parser.ts` | v1.2.6 | 扩展：支持企业 workflow.yml 的 HITL/审计字段 |
+| `engine/orchestrator/src/enterprise-graph.ts` | v1.2.7 | `composeEnterpriseWorkflow()`：多 Agent → StateGraph |
+| `engine/orchestrator/src/node-executor.ts` | v1.2.8 | 企业节点执行器（新建） |
+| `engine/orchestrator/src/hitl-handler.ts` | v1.2.9 | HITL 中断处理 + 每节点审计集成 |
+| `engine/orchestrator/src/dag-runner.ts` | v1.2.8 | 扩展：支持企业 Agent 执行 + 审计 hook |
+
+> 激活链四阶段设计与各文件职责详见 [激活链设计文档](../../guides/fde-activation-chain.md)。
+

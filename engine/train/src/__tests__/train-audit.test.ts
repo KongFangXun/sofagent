@@ -226,8 +226,13 @@ describe('数据源指纹（可溯源）', () => {
     expect(computeDataSourceHash(fileA)).toHaveLength(64); // sha256 hex 长度
   });
 
-  it('test_computeDataSourceHash_文件不存在_unknown占位', () => {
-    expect(computeDataSourceHash(join(dataDir, 'not-exist.jsonl'))).toBe('unknown');
+  it('test_computeDataSourceHash_文件不存在_读取失败标注占位（BUG-64）', () => {
+    // BUG-64 行为变更：读失败与「本就未知」不再混用同一哨兵——返回值含「读取失败」标注
+    //（原为裸 'unknown'，无法区分「未提供 hash」与「文件读失败」）。
+    const result = computeDataSourceHash(join(dataDir, 'not-exist.jsonl'));
+    expect(result).not.toBe('unknown');
+    expect(result).toContain('unknown');
+    expect(result).toContain('读取失败');
   });
 
   it('test_emitTrainAudit_hash缺省拒绝_保溯源口径', () => {

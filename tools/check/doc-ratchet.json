@@ -3,49 +3,25 @@
     "wall": 1,
     "cell": 4
   },
-  "docs/DEVELOPMENT.md": {
-    "wall": 0,
-    "cell": 1
-  },
   "docs/HANDBOOK.md": {
     "wall": 1,
-    "cell": 3
+    "cell": 0
   },
   "docs/LIMITATIONS.md": {
     "wall": 2,
-    "cell": 1
-  },
-  "docs/PHILOSOPHY.md": {
-    "wall": 0,
     "cell": 0
   },
   "docs/VALIDATION.md": {
-    "wall": 2,
-    "cell": 0
-  },
-  "docs/WIKI.md": {
-    "wall": 0,
-    "cell": 3
-  },
-  "FDE/GUIDE.md": {
-    "wall": 0,
+    "wall": 1,
     "cell": 0
   },
   "SECURITY.md": {
-    "wall": 4,
+    "wall": 2,
     "cell": 3
-  },
-  "README.md": {
-    "wall": 0,
-    "cell": 0
   },
   "README.en.md": {
     "wall": 3,
     "cell": 3
-  },
-  "docs/THANKS.md": {
-    "wall": 0,
-    "cell": 0
   },
   "FORGE/LEDGER.md": {
     "wall": 28,
@@ -53,18 +29,6 @@
   },
   "CHANGELOG.md": {
     "wall": 1,
-    "cell": 0
-  },
-  "docs/evidence/evidence.md": {
-    "wall": 0,
-    "cell": 0
-  },
-  "docs/evidence/evidence.en.md": {
-    "wall": 0,
-    "cell": 0
-  },
-  "docs/API.md": {
-    "wall": 0,
     "cell": 0
   },
   "FORGE/lessons/index.md": {
@@ -79,17 +43,13 @@
     "wall": 3,
     "cell": 0
   },
-  "CONTRIBUTING.md": {
-    "wall": 0,
-    "cell": 0
-  },
   "docs/guides/loop-development.md": {
     "wall": 0,
     "cell": 1
   },
   "docs/ROADMAP.md": {
-    "wall": 3,
-    "cell": 4
+    "wall": 1,
+    "cell": 3
   },
   "_meta": {
     "purpose": "核心文档可读性棘轮基线（doc-discipline.sh Face 5）——实测值只许降不许升；清理后必须同步改小本台账，让 diff 记录「债减少」",
@@ -117,10 +77,6 @@
   "SKILL/SKILL.md": {},
   "tools/check/README.md": {
     "wall": 1,
-    "cell": 0
-  },
-  "tools/README.md": {
-    "wall": 0,
     "cell": 0
   }
 }
