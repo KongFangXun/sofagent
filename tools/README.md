@@ -90,6 +90,9 @@
 | `check/check-gate-inventory.sh` | 门禁清单覆盖对账（**登记 ≠ 调用**：`tools/check/` 全体守卫 ⊆ 真实调用面——抓「脚本写好、登记在册、零调用点」的**孤儿守卫**，其红态无人知晓）。（详→注-10） | pre-push 第 1c 步 / 新增或搬迁 tools/check/ 守卫后 |
 | `check/check-platform-hooks.sh` | 平台 hook 配置 schema 门禁（`.claude/settings.json` PreToolUse 内层 `hooks`+`type`；`.cursor/hooks.json` `version:1`+camelCase 事件+`Shell` matcher）——不符即 exit 2，防「配置不符 ⇒ 拦截静默失效」 | pre-push 第 1d 步 / 改平台 hook 配置后 |
 | `check/check-retirement-due.sh` | 声明体系到期消费者门禁（读 `capabilities.json` 的 `shims[].trigger` + `*-exempt.json` 到期条件 + ROADMAP，报「已届满未退役」；当前 12 个 shim 属 v2.0.0 裁定的**已登记欠账** ⇒ **非阻断巡检位**） | pre-push 第 1e 步（非阻断）/ 改 shim 台账或版本号后 |
+| `check/check-loadchain-config.mjs` | 加载链四层字段 SSOT ⇄ 实现双向对账（未路由 key ⇒ 红；`--selftest` 12 探针） | pre-push 2g / 改配置面后 |
+| `check/check-sdk-waiver-progress.mjs` | SDK-face 白名单清偿进度（到期数 / 已摘除数；`--require-zero`） | CI（pr-check） / 摘除符号后 |
+| `check/red-team-runner.mjs` | 红队用例执行器（两态判定：被拦 / 未拦有检出证据 / 穿透即红） | pre-push 5c / 改用例后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
 | `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 的「被收录」声称变可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 search API，防假阴性），输出 OK / MISSING / SKIP。（详→注-11） | 被 check-storefront 消费（需 gh 环境） |
 | `check/lib/unwired-reachability.mjs` | **生产可达判定内核**（`--since` 调用）：把「出现过该符号」升级为**生产可达**——① `import type`/类型注解位不计 ② 追链可达（断链即不算）③ 破循环自证。（详→注-12） |
