@@ -246,10 +246,6 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 - **FDE 岗位爆发**：MIT NANDA「95% 项目零财务回报」vs FDE 岗位一年涨 **729%**（Indeed 2025）——模型不稀缺了，能把模型塞进真实业务的人/工具才稀缺。…
 > 📦 **本条印证全文（多源数据与逐条出处）见 [归档 · validation-deep](./archive/validation-deep/section-fde-market-and-harness-research.md)。**
 
-- **pass^k 一致性抽验（单次通过 ≠ 稳定通过）**：回归验收抽验边缘场景，要求 **k 次重复稳定通过**而非单次成功——单次通过率会掩盖抖动的 harness。
-  - ⚠️ 两条口径注记（**细节见归档**）：+54% 系 **pass^1 相对提升**、非 k 次一致性；同页已声明「多数场景推荐改用 extended thinking」⇒ 只按**方法论**采用。
-> 📖 来源：[Anthropic Engineering · The think tool](https://www.anthropic.com/engineering/claude-think-tool)（2025-12-15 更新）· 哥伦比亚大学 COMS W4995 第 5 讲（2026-10-11）
-
 ## 五、研报视角的边界提示
 
 > 行业研报的边界提示与 [LIMITATIONS](./LIMITATIONS.md) 互证。成篇全文见 [归档 · boundary-research](./archive/validation-deep/boundary-research.md)。
@@ -276,6 +272,10 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 
 - **完成认证锚定环境终态（Outcome），文本声明≠完成（三源）**——验收须查环境终态而非执行者自报：Anthropic 评测方法论把评测基本单位定义为 Task（输入+成功标准）/ Trial / Transcript / **Outcome（环境终态）**，明确「文本声明≠完成」——Agent 自报的任务完成声明不构成完成认证，须以环境终态为裁决锚（文件已写入、服务已响应、状态机已迁移）；配套区分 Capability（允许低通过率爬坡）与 Regression（应接近 100% 防退化）两类评测，成熟任务「毕业」转入回归集。Transactional Outbox 式「期望 vs 观测」效果查证位是其工程化形态：未观测不默认成功——审计从记账升级为闭环确认。与上条正交：彼管「验收维度须独立于能力」，此管「完成状态语义须锚定终态证据」。
 > 来源：Anthropic《Demystifying Evals》· https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents （IMA 收录；转述交叉：Agent评测三源合篇 2026-10-07）｜ Transactional Outbox 效果查证位（Agentic 发布篇 2026-09）
+
+- **pass^k 一致性抽验（单次通过 ≠ 稳定通过）**：回归验收抽验边缘场景，要求 **k 次重复稳定通过**而非单次成功——单次通过率会掩盖抖动的 harness。
+  - ⚠️ 两条口径注记（**细节见归档**）：+54% 系 **pass^1 相对提升**、非 k 次一致性；同页已声明「多数场景推荐改用 extended thinking」⇒ 只按**方法论**采用。
+> 📖 来源：[Anthropic Engineering · The think tool](https://www.anthropic.com/engineering/claude-think-tool)（2025-12-15 更新）· 哥伦比亚大学 COMS W4995 第 5 讲（2026-10-11）
 
 
 ## 六、反面案例 / 证伪记录
