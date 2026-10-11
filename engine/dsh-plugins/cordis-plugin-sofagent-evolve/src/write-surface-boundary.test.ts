@@ -127,3 +127,35 @@ describe('写面权限窄化 · 归一化与控制面优先', () => {
     expect((cls as { surface: string }).surface).toBe('audit-history');
   });
 });
+
+describe('写面权限窄化 · 路径逃逸（`..` 段 · fail-closed）', () => {
+  // 为什么单独成块（S3 独立审查发现）：控制面规则用行首锚定（如 `^SKILL/`），而含 `..`
+  // 段的落点归一后不再以控制面前缀开头 ⇒ 会被可写面规则 `^memory/` 接住 = 把控制面写入
+  // 放行。实测逃逸：`memory/../SKILL/foo.md` → 判 `memory` 可写。
+  // 判据：含 `..` **独立段**一律判 `unknown` ⇒ 拒绝。不做「按段弹出」式解析——本判定面
+  // 只拿到宿主传来的相对落点、拿不到真实根，猜错根 = 真实假放行，风险高于一律拒。
+  it('含 `..` 段 → 判未分类并拒绝（不做弹出式解析）', () => {
+    const escapes = [
+      'memory/../SKILL/foo.md', // 逃逸到注入源
+      'memory/../policy/rules.json', // 逃逸到策略面
+      'memory/../router/x.json', // 逃逸到路由面
+      'skills/../../SKILL/x.md', // 跨两级逃逸
+      '../SKILL/foo.md', // 首段即 ..
+      'memory/a/../../policy/p.json', // 中段 ..
+    ];
+    for (const p of escapes) {
+      expect(normalizeWriteTarget(p)).toBe('');
+      expect(classifyWriteTarget(p).kind).toBe('unknown');
+      expect(guardWriteIntent(p, 'agent-1').decision).toBe('deny');
+    }
+  });
+
+  it('文件名中含 `..` 字面（非独立段）不受影响', () => {
+    expect(normalizeWriteTarget('memory/a..b.md')).toBe('memory/a..b.md');
+    expect(classifyWriteTarget('memory/a..b.md').kind).toBe('writable');
+  });
+
+  it('`..` 段在 Windows 分隔符下同样判拒', () => {
+    expect(classifyWriteTarget('memory\\..\\SKILL\\foo.md').kind).toBe('unknown');
+  });
+});

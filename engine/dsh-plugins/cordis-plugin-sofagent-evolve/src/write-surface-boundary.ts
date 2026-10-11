@@ -67,15 +67,24 @@ export interface WriteIntentVerdict {
 /**
  * 归一化落点：统一分隔符、去掉首部 `./`、折叠重复斜杠、去掉尾部斜杠。
  * Windows 反斜杠一并归一到 `/`——路径判据只认形态，不认平台。
+ *
+ * ⚠️ **`..` 段一律判未分类（fail-closed 拒绝）**——不做「按段弹出」式解析。
+ * 为什么：控制面规则用行首锚定（如 `^SKILL/`），而 `memory/../SKILL/x.md` 这类落点
+ * 归一后不以 `SKILL/` 开头 ⇒ 会被可写面规则 `^memory/` 接住，等于**把控制面写入放行**
+ * （实测逃逸：`memory/../SKILL/foo.md` → 判 `memory` 可写）。而「按段弹出」需要先界定
+ * 根目录——本判定面只拿到宿主传来的相对落点、拿不到真实根，猜错根 = 真实假放行，
+ * 风险高于「一律拒」。故按 fail-closed 处置：返回空串 ⇒ `classifyWriteTarget` 判 `unknown` ⇒ 拒绝。
  */
 export function normalizeWriteTarget(target: string): string {
   if (typeof target !== 'string') return '';
-  return target
+  const cleaned = target
     .replace(/\\/g, '/')
     .replace(/\/+/g, '/')
     .replace(/^\.\//, '')
     .replace(/\/$/, '')
     .replace(/^\/+/, '');
+  if (cleaned.split('/').some((seg) => seg === '..')) return '';
+  return cleaned;
 }
 
 /** 判定用路径规则：`^` 锚定段首、`(^|/)` 允许落在任意层级下 */
