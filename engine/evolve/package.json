@@ -7,9 +7,6 @@
   "description": "sofagent Skill 优化 — Skill 质量分析 / 优化建议 / 自动重构",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "sofagent-evolve": "dist/cli.js"
-  },
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",

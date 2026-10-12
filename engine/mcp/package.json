@@ -11,9 +11,6 @@
     "!dist/**/*.test.*",
     "README.md"
   ],
-  "bin": {
-    "sofagent-mcp": "dist/mcp-server.js"
-  },
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",

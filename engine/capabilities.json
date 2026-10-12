@@ -171,18 +171,19 @@
       "cascadeNote": "依赖 inject-constraint-chain：公地能力的调用约束经注入链——同上级联纪律"
     }
   ],
-  "shims": [
-    { "id": "shim-sofagent-audit", "carrier": "@sofagent/audit", "cli": "sofagent-audit", "source": "engine/audit/src/cli-quick.ts", "trigger": "兼容期届满（v1.5.6 章一 CLI 单入口收敛，一个 minor）", "action": "移除" },
-    { "id": "shim-sofagent-audit-full", "carrier": "@sofagent/audit", "cli": "sofagent-audit-full", "source": "engine/audit/src/index.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-core", "carrier": "@sofagent/core", "cli": "sofagent-core", "source": "engine/core/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-daemon", "carrier": "@sofagent/daemon", "cli": "sofagent-daemon", "source": "engine/daemon/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-eval", "carrier": "@sofagent/eval", "cli": "sofagent-eval", "source": "engine/eval/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-evolve", "carrier": "@sofagent/evolve", "cli": "sofagent-evolve", "source": "engine/evolve/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-ontology", "carrier": "@sofagent/ontology", "cli": "sofagent-ontology", "source": "engine/ontology/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-orchestrator", "carrier": "@sofagent/orchestrator", "cli": "sofagent-orchestrator", "source": "engine/orchestrator/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-orchestrator-compare", "carrier": "@sofagent/orchestrator", "cli": "sofagent-orchestrator-compare", "source": "engine/orchestrator/src/orchestrator-compare.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-think", "carrier": "@sofagent/think", "cli": "sofagent-think", "source": "engine/think/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-ab-test", "carrier": "@sofagent/ab-test", "cli": "sofagent-ab-test", "source": "engine/ab-test/src/cli.ts", "trigger": "兼容期届满（同上）", "action": "移除" },
-    { "id": "shim-sofagent-mcp", "carrier": "@sofagent/mcp", "cli": "sofagent-mcp", "source": "engine/mcp/src/mcp-server.ts", "trigger": "兼容期届满（同上）", "action": "移除" }
+  "shims": [],
+  "shimsRetired": [
+    {"id": "shim-sofagent-audit", "carrier": "@sofagent/audit", "cli": "sofagent-audit", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-audit-full", "carrier": "@sofagent/audit", "cli": "sofagent-audit-full", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-core", "carrier": "@sofagent/core", "cli": "sofagent-core", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-daemon", "carrier": "@sofagent/daemon", "cli": "sofagent-daemon", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-eval", "carrier": "@sofagent/eval", "cli": "sofagent-eval", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-evolve", "carrier": "@sofagent/evolve", "cli": "sofagent-evolve", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-ontology", "carrier": "@sofagent/ontology", "cli": "sofagent-ontology", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-orchestrator", "carrier": "@sofagent/orchestrator", "cli": "sofagent-orchestrator", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-orchestrator-compare", "carrier": "@sofagent/orchestrator", "cli": "sofagent-orchestrator-compare", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-think", "carrier": "@sofagent/think", "cli": "sofagent-think", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-ab-test", "carrier": "@sofagent/ab-test", "cli": "sofagent-ab-test", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"},
+    {"id": "shim-sofagent-mcp", "carrier": "@sofagent/mcp", "cli": "sofagent-mcp", "retiredIn": "v1.5.9", "reason": "兼容期届满（登记 v1.5.6 + 一个 minor）；按 v2.0.0 章六「兼容层退役清单」显式退役——移除旧 bin 名与弃用提示"}
   ]
 }
