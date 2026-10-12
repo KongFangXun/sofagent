@@ -327,7 +327,11 @@ fi
 if [ "$QUIET" = false ]; then echo ""; fi
 echo "── 汇总 ──"
 echo "  ✅ 一致: $OK_COUNT"
-echo "  ❌ 不一致(error): $BAD_ERROR"
+# 🔴 呈现符号纪律：计数行禁用行首 ❌（20261012 run-07 实证）——回归 checklist 的
+# teardown 判据是「输出含行首 ❌ 即维度 FAIL」，零错误计数行「❌ 不一致(error): 0」
+# 会让维度 148 在全绿时也被判假红（run-01/06/07 三轮 verdict FAIL 均含此因）。
+# 真失败时的行首 ❌ 由下方 BAD_ERROR>0 分支打出（那里才是 teardown 该抓的信号）。
+echo "  ·— 不一致(error): $BAD_ERROR"
 echo "  ⚠️  不一致/可疑(warn): $BAD_WARN"
 echo "  ⏭  跳过: $SKIP_COUNT"
 [ "$FIX" = true ] && echo "  🔧 已回填: $FIXED_COUNT"
