@@ -451,3 +451,7 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 2026-10-09     | 20261009-03    | release-gate | 4    | SKIP       | PASS       | SKIP     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-09/run-03
 
 2026-10-09     | 20261009-03    | release-gate-手工裁决 | driver 3 轮 BLOCKED（run-01/02/03 均 FAIL）——round-02 P0「整版全量 EXEMPT」经零信任复验改判为检查器债（coverage worker 违背 prompts/coverage.md 规则①·判读漂移假阳性）；round-03 P0 推理链无效但事实前提为真（driver 提取正则 S\d+ 误抽 S1 Bench，属独立缺陷） | 主 session | PASS | v1.5.8 | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-09/run-03（复验改判记录见 docs/changelog/v1.5/v1.5.8.md 阶段五；已发版 2026-10-09）
+
+2026-10-12     | 20261012-07    | release-gate | 18   | SKIP       | FAIL       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-12/run-07
+
+2026-10-12     | 20261012-07    | release-gate | 28   | SKIP       | FAIL       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-12/run-07
