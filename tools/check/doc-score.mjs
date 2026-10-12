@@ -39,6 +39,12 @@
 // 用法：
 //   node tools/check/doc-score.mjs             # 全量评分（读本版 devlog 留痕）
 //   node tools/check/doc-score.mjs --changed   # 增量快检（串 doc-discipline.sh Face 13）
+//   node tools/check/doc-score.mjs --fast      # 快速档：跳过实跑全仓外部门禁的慢子项
+//                                              #   （D1-1 check-test-count ~287s / D1-3
+//                                              #   check-claims ~65s，二者占全量档 96% 耗时），
+//                                              #   其余子项照判——供收尾自检套餐与迭代高频
+//                                              #   复跑。**--fast 结果不可作为发版放行依据**，
+//                                              #   发版批必须跑全量档。
 //   node tools/check/doc-score.mjs --self-test # 增量分类四条分支自检（合成命中，不动 git）
 //   node tools/check/doc-score.mjs --json      # 机读输出（供 SOP 记录）
 //   node tools/check/doc-score.mjs --write-baseline  # 用当前实测写基线（发版治具）
@@ -52,6 +58,7 @@ import { fileURLToPath } from 'node:url';
 const SELF_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(SELF_DIR, '..', '..');
 process.chdir(ROOT);
+const FAST_MODE = process.argv.includes('--fast');
 
 const BASELINE_PATH = 'tools/check/doc-score-baseline.json';
 const CHAR_RATCHET_PATH = 'tools/check/doc-char-ratchet.json';
@@ -118,10 +125,22 @@ function docLines(f) {
 // D1 准确（5 项 · 全机械）
 // ============================================================
 function d1_1() {
+  if (FAST_MODE) {
+    return { pass: true, skipped: true, detail: 'FAST 档暂缓（实跑全仓测试为第一慢源 ~287s）——发版批须跑全量档，本结果不可作放行依据' };
+  }
   const r = run('bash', ['tools/check/check-test-count.sh', '--quiet']);
   // 判据 = 退出码 0 且输出含独立 OK 行（--quiet 模式下 OK 之后仍有场景守卫输出行，
   // 原 endsWith('OK') 恒假 → rc=0 也被判未绿。判行不判尾，与 check-claims 同款修法）。
   const ok = r.rc === 0 && /^OK$/m.test(r.out);
+  // 三态解析：check-test-count 缺 node_modules 时 fail-loud 退出并自报「环境未安装依赖」——
+  //   那是**环境面失败源**，不是测试失败、也不是文档漂移（两者各有判据）。此前两个失败源在
+  //   D1-1 合流 ⇒ 未装依赖的 worktree 文档批永远无法过 D1 ⇒ 文档作者无法靠修文档变绿（实测
+  //   文档全对仍 D1=8.0 挡总分）。升级：识别环境自报 ⇒ 该子项**跳过计分并显式标注**（非静默
+  //   放行——报告带「环境未装依赖」提示与修法）。语义边界：skip 不计入分母（等价于「本维度
+  //   按其余子项评分」），复跑装好依赖后自动回到二态；check-test-count 自身 fail-loud 不变。
+  if (!ok && r.out.includes('环境未安装依赖')) {
+    return { pass: true, skipped: true, detail: '环境未装依赖（check-test-count 自报环境限制）——本子项暂缓计分，npm install 后复跑即回二态；非文档漂移' };
+  }
   return { pass: ok, detail: ok ? '文档声称测试数 == 实测（SSOT）' : `check-test-count 未绿（rc=${r.rc}）` };
 }
 function d1_2() {
@@ -132,6 +151,9 @@ function d1_2() {
   return { pass: n === 0, detail: n === 0 ? '失效相对引用 0 处' : `失效相对引用 ${n} 处（check-docs §1b）` };
 }
 function d1_3() {
+  if (FAST_MODE) {
+    return { pass: true, skipped: true, detail: 'FAST 档暂缓（check-claims 实测 ~65s，逐符号 git grep 算法性慢）——发版批须跑全量档' };
+  }
   const r = run('node', ['tools/check/check-claims.mjs']);
   return { pass: r.rc === 0, detail: r.rc === 0 ? '无被推翻的「未实现/未接线」断言（check-claims 三组通过）' : `check-claims rc=${r.rc}` };
 }

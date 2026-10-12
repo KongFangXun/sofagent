@@ -103,6 +103,18 @@ fi
 DUP_IDS=$(grep -E "^#### " "$CHECKLIST" | grep -oE "^#### [0-9]+" | grep -oE "[0-9]+" | sort -n | uniq -d || true)
 if [ -z "$DUP_IDS" ]; then
   ok "维度编号无重复"
+  # 缺号计数对账（口径＝最大号 − 维数）：此前该数字**零门禁看守** ⇒ 自 v1.5.2 起静默漂移多个版本
+  #   无人察觉（对比：场景数有 S165 动态对账兜底）。本断言把它变成可机械复算项。
+  DECL_GAP=$(head -8 "$CHECKLIST" | grep -oE '[0-9]+ 个编号重新编号后空缺' | grep -oE '^[0-9]+')
+  MAX_NUM=$(grep -oE '^#### [0-9]+\.' "$CHECKLIST" | grep -oE '[0-9]+' | sort -n | tail -1)
+  CALC_GAP=$((MAX_NUM - ACTUAL_DIM))
+  if [ -z "$DECL_GAP" ]; then
+    bad "checklist 头部未声明「N 个编号重新编号后空缺」——口径声明缺失（守卫不空转）"
+  elif [ "$DECL_GAP" != "$CALC_GAP" ]; then
+    bad "缺号计数漂移：声称 ${DECL_GAP} ≠ 可复算 ${CALC_GAP}（最大号 ${MAX_NUM} − 维数 ${ACTUAL_DIM}）"
+  else
+    ok "缺号计数一致：${DECL_GAP}（口径＝最大号−维数）"
+  fi
 else
   bad "维度编号重复占用：$(echo "$DUP_IDS" | tr '\n' ' ')" "    修复：新维度编号必须 = 当前最大 +1（维护公约）"
 fi

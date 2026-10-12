@@ -214,3 +214,62 @@ Your data. Any format, just be real.
 > 💡 Why 11%? Karpathy's figure is the floor after human review. sofagent's proposition: **can machine auditing replace human review and approach the same floor?** Whether it can is a question for v1.0 to answer — v0.95 just sets up the measurement framework.
 
 > 📌 Industry trend (Loop Engineering) — see [ARCHITECTURE.md](../ARCHITECTURE.md): Ralph Loop is cited as a foundational precursor to Loop Engineering, confirming sofagent's design direction aligns with the emerging industry consensus.
+
+---
+
+## False-positive rate reading & transparency-repo opening gate
+
+> This section corresponds to the **transparency repo & adversarial self-test** two hard boundaries:
+> ① opening the transparency repo is gated by the **false-positive rate <5% red line**;
+> ② the public face **contains no tenant data and no credentials** (only raw governance records:
+> verdicts, false positives, overturn process). Red-team cases and run conclusions:
+> [red-team/](./red-team/README.md).
+
+### False-positive rate reading (established · pending collection)
+
+| Item | Definition | Current reading | Measurement |
+|---|---|:--:|---|
+| False-positive rate | Audit reports FAIL but no real issue | **Not measured** | Manual / independent review of each FAIL batch; false positives / total FAILs |
+| Opening red line | Upper bound of the false-positive rate | **< 5%** | Red line, see below |
+
+- **Reading status = not measured**: historical FAIL reports have not been reviewed line-by-line,
+  so there is no valid reading yet. Per the "author self-tests don't count" principle at the top of
+  this page, the false-positive rate **must be collected by human or independent review** — no
+  self-assessed numbers. This section **sets up the framework first** (definition / measurement /
+  red line from one source); the value is filled in after review.
+- **Gate semantics**: the <5% red line is an **opening precondition** (a threshold, not a promise).
+
+### Transparency repo opening (current: not opened)
+
+- **Opening = double control**: ① the false-positive rate <5% red line gate + ② **human confirmation**.
+- **Below the red line ⇒ accumulate-only, do not open**: `evidence/` keeps accumulating raw
+  governance records in real time, but is **not opened** to the public yet.
+- **Opening is one-way** (publication is not retracted) ⇒ after the red line is met, a separate
+  human confirmation releases it.
+- **Current status: not opened** (red line not met). This section **does not claim "already opened"**.
+
+### Public face zero tenant data / zero credentials (verified)
+
+Public face = the whole `docs/evidence/` tree. Verification commands and readings (no git dependency,
+directly reproducible):
+
+```bash
+# Public-face file count
+find docs/evidence -type f | wc -l
+# Zero credentials: key / token / private-key shapes
+grep -rEl 'sk-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{20,}|xox[baprs]-' docs/evidence/ | wc -l
+# Zero real tenant identifiers (literal enterpriseId)
+grep -rEl 'enterpriseId' docs/evidence/ | wc -l
+```
+
+Verified results (measured):
+
+| Item | Reading |
+|---|---|
+| Public-face file count | 36 |
+| Credential-shape hits | **0 files** |
+| Tenant identifier (literal `enterpriseId`) hits | **0 files** |
+
+> Conclusion: the public face has **zero credentials, zero real tenant identifiers** — it contains
+> only raw governance records (verdicts / detection evidence / boundaries / overturn process).
+> All sample data is sanitized (no real keys / tenant names).

@@ -148,6 +148,41 @@ export {
   LEVEL_ORDER,
 } from './degradation';
 export type { DegradationLevel, DegradationTrigger, DegradationRecord, LevelCapability, DegradationManagerOptions } from './degradation';
+// v1.5.9 章一：自进化写面变更留痕（prompt / memory 两类契约 + HMAC 挂链 + 第三通道 + 举证导出）。
+// 标 @internal：仓内契约（core 侧经 createWriteSurfaceTracer 接线），不进 @public 基线。
+/* @internal */ export {
+  WRITE_SURFACES,
+  WRITE_SURFACE_ORIGINS,
+  WRITE_SURFACE_KINDS,
+  MEMORY_ENTRY_OPS,
+  kindForSurface,
+  assertDiffContract,
+  summarizeDiff,
+  getWriteSurfaceLogPath,
+  recordWriteSurfaceChange,
+  loadWriteSurfaceLog,
+  verifyWriteSurfaceChain,
+  writeSurfaceToDiffFiles,
+  exportWriteSurfaceEvidence,
+  createWriteSurfaceTracer,
+  WriteSurfaceContractError,
+  WriteSurfaceWriteError,
+} from './write-surface-log';
+/* @internal */ export type {
+  WriteSurface,
+  WriteSurfaceOrigin as WriteSurfaceChangeOrigin,
+  WriteSurfaceKind,
+  PromptFieldChange,
+  PromptFieldDiff,
+  MemoryEntryOp,
+  MemoryEntryDiff,
+  WriteSurfaceDiff,
+  WriteSurfaceChangeInput,
+  WriteSurfaceRecord,
+  WriteSurfaceEntry,
+  WriteSurfaceEvidenceBundle,
+  ExportWriteSurfaceEvidenceOptions,
+} from './write-surface-log';
 import { analyzeRootCause } from './audit-root-cause';
 import { runVerifyChain, runVerifyCommit } from './commands/verify';
 import { formatSuggestions } from './config-suggestion';
@@ -2014,11 +2049,6 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
 // v1.5.8: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
 if (require.main === module) {
-// v1.5.8 章一 · 单入口收敛（兼容期 shim）：直接调用旧命令时提示新入口；
-// 被 `sofagent <域>` 路由调用时静默（路由注入 SOFAGENT_SINGLE_ENTRY=1）。
-if (process.env.SOFAGENT_SINGLE_ENTRY !== '1') {
-  process.stderr.write('[sofagent] 旧命令 `sofagent-audit-full` 已收敛到单入口 `sofagent audit --full`——本命令进入兼容期（仍可用，下一 minor 版本移除）。\n');
-}
   main().catch((err) => {
     console.error('sofagent audit 内部错误:', err.message);
     exit(2);

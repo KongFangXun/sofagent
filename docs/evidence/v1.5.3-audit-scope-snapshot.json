@@ -89,10 +89,8 @@
       },
       {
         "id": "A3",
-        "status": "WARN",
-        "details": [
-          "5/5 个文件不在任务描述 (\"fixture task\") 范围内: a.txt, b.js, src/index.ts 等"
-        ]
+        "status": "PASS",
+        "details": []
       },
       {
         "id": "A4",

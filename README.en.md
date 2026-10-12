@@ -174,7 +174,7 @@ together by the deliverables handed over in between**:
 - **"Continuous optimization" only holds with a constraint layer**—backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment (ARC-AGI-3, **capability-harness data**—it lifts task scores and token efficiency, a different dimension from the
  reliability gains of a governance constraint layer—directional reference only): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in
 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md) (write-surface audit coverage: the weight and skill surfaces have
- shipped; the prompt / memory surfaces are scheduled for v1.5.9)
+ shipped; the prompt / memory surfaces shipped in v1.5.9)
 - **Capabilities are portable, never dead-bound to a platform**—the constraint layer is platform-agnostic; the methodology follows the business, not the platform
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself—the project is a complete FDE workflow (map → build → deploy → depart), and this open-source repository is that deliverable.
@@ -210,11 +210,11 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 | Capability | One-liner | Reach |
 |---|---|---|
-| **Evolution admission gates** | Domain-verifier three-tier routing (`deterministic` / `model-judge` / `human-only`): only domains where verification is cheaper than generation evolve automatically; unregistered domains fail-closed at the strictest tier | SDK only (47 symbols, no production call sites; scheduled v1.5.9) |
-| **Three-tier promotion policy** | Frequency × persistence × verification as pure functions → inject-lease / skill-semi-persistent / fine-tune-amortized; promotion must clear four evidence gates (holdout-first · strictly beat historical best · single-variable attributable · calibration non-degrading) | SDK only (47 symbols, no production call sites; scheduled v1.5.9) |
-| **Experience pool → training pipeline** | instinct pool exports high-confidence + examined records as training rows (with lineage anchor and source-authenticity mark); the train-side adapter normalizes them and builds datasets mixed with external sources | SDK only (47 symbols, no production call sites; scheduled v1.5.9) |
+| **Evolution admission gates** | Domain-verifier three-tier routing (`deterministic` / `model-judge` / `human-only`): only domains where verification is cheaper than generation evolve automatically; unregistered domains fail-closed at the strictest tier | Wired (v1.5.9 cleared all 47 symbols) |
+| **Three-tier promotion policy** | Frequency × persistence × verification as pure functions → inject-lease / skill-semi-persistent / fine-tune-amortized; promotion must clear four evidence gates (holdout-first · strictly beat historical best · single-variable attributable · calibration non-degrading) | Wired (v1.5.9 cleared all 47 symbols) |
+| **Experience pool → training pipeline** | instinct pool exports high-confidence + examined records as training rows (with lineage anchor and source-authenticity mark); the train-side adapter normalizes them and builds datasets mixed with external sources | Wired (v1.5.9 cleared all 47 symbols) |
 | **Examiner** | Generates verification questions from instinct; only answer-correct **and** reproduction-verified items are marked `verified` and enter the pool; scorer independence is a hard gate | Library-only |
-| **RL training governance** | Policy hits during training fold penalties by rule severity (via the existing `severityWeightOf` single source — no second mapping) | SDK only (47 symbols, no production call sites; scheduled v1.5.9) |
+| **RL training governance** | Policy hits during training fold penalties by rule severity (via the existing `severityWeightOf` single source — no second mapping) | Wired (v1.5.9 cleared all 47 symbols) |
 | **Rule count 25→28 fully reconciled** | Docs / code comments / npm facade / dashboard all synced; five-variant gate prevents regression | — |
 
 > 📌 Full evidence: [v1.5.8 dev log](./docs/changelog/v1.5/v1.5.8.md); older capability sections: [CHANGELOG](./CHANGELOG.md).
@@ -231,7 +231,7 @@ audit rules (the full 28 need `extendedRulesEnabled: true`), snapshots stay roll
 | Performance review | Audit evidence + governance KPI dashboard (v1.5.0) |
 | Organizational memory | Knowledge distillation (think.md reflection + knowledge/) |
 | Training pipeline | Experience → exam → promotion self-evolution chain (shipped in v1.5.8) |
-| Fault tolerance | Snapshot rollback + capability baseline timeline (scheduled v1.5.9) |
+| Fault tolerance | Snapshot rollback + capability baseline timeline (delivered in v1.5.9) |
 | Employment contract boundary | Pluggable contracts & core capability registry (delivered in v1.5.7; switch surface and gating in [ARCHITECTURE](./docs/ARCHITECTURE.md)) |
 
 | Go deeper | Where |
@@ -402,7 +402,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 5965 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
+> 🧪 **Engineering credibility** (current): 6067 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
 > **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
 >the load-chain utility package and dsh-plugin-kit are outside this counting standard)—they aren't the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account—see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever

@@ -70,7 +70,11 @@ let d;
 try { d = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); }
 catch (e) { console.error("parse-error: " + e.message); process.exit(2); }
 const s = Array.isArray(d.shims) ? d.shims : [];
-if (s.length === 0) { console.error("empty-shims"); process.exit(3); }
+if (s.length === 0) {
+  const r = Array.isArray(d.shimsRetired) ? d.shimsRetired : [];
+  if (r.length > 0) { process.stdout.write("__ALL_RETIRED__\t" + r.length + "\n"); process.exit(0); }
+  console.error("empty-shims"); process.exit(3);
+}
 for (const x of s) {
   const f = [x.id, x.cli, x.source, String(x.trigger || "").replace(/\t/g, " ")]
     .map((v) => (v == null ? "" : v));
@@ -78,6 +82,13 @@ for (const x of s) {
 }
 ' "${CAPS}")" || SHIM_RC=$?
 SHIM_RC=${SHIM_RC:-0}
+
+if printf '%s' "${SHIM_TSV}" | grep -q '^__ALL_RETIRED__'; then
+  _n="$(printf '%s' "${SHIM_TSV}" | head -1 | cut -f2)"
+  echo "  ${GREEN}✅ 旧命令 shim 已全退役${NC}（shimsRetired 登记 ${_n} 条）——兼容期届满后按 v2.0.0 章六「兼容层退役清单」显式退役"
+  echo "── shim 台账：在册 0 条 · 退役记录 ${_n} 条（空台账不再是「失明」——退役记录可证，防空转守卫保留）"
+  exit 0
+fi
 if [ "${SHIM_RC}" -eq 2 ]; then
   echo "${RED}❌ 失明：${CAPS} 解析失败——台账不可读，拒绝假绿${NC}"
   exit 2

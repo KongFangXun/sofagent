@@ -18,10 +18,6 @@
       "default": "./dist/*.js"
     }
   },
-  "bin": {
-    "sofagent-audit": "dist/cli-quick.js",
-    "sofagent-audit-full": "dist/index.js"
-  },
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc && npm run copy-assets",

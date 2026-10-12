@@ -168,11 +168,11 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 | 能力 | 一句话 | 触达方式 |
 |---|---|---|
-| **进化准入判据** | 域验证器三档分流（`deterministic` / `model-judge` / `human-only`）：验证比生成便宜的域才自动进化，未登记域 fail-closed 按最高档处理 | SDK only（47 符号零生产调用点，排期 v1.5.9） |
-| **三层晋级判据** | 频次 × 存续 × 验证三维纯函数 → 注入租用 / skill 半持久 / 微调摊销三态；晋升须过四道证据门槛（留出集优先 · 严格优于历史最佳 · 单变量可归因 · 校准不退化） | SDK only（47 符号零生产调用点，排期 v1.5.9） |
-| **经验池接训练管道** | instinct 池按「高置信 + 已考核」筛选导出为训练记录（带血缘锚点与来源真实性标记）；train 侧旁挂适配器归一后与外部源混合构建数据集 | SDK only（47 符号零生产调用点，排期 v1.5.9） |
+| **进化准入判据** | 域验证器三档分流（`deterministic` / `model-judge` / `human-only`）：验证比生成便宜的域才自动进化，未登记域 fail-closed 按最高档处理 | 已接线（v1.5.9 清偿 47 符号） |
+| **三层晋级判据** | 频次 × 存续 × 验证三维纯函数 → 注入租用 / skill 半持久 / 微调摊销三态；晋升须过四道证据门槛（留出集优先 · 严格优于历史最佳 · 单变量可归因 · 校准不退化） | 已接线（v1.5.9 清偿 47 符号） |
+| **经验池接训练管道** | instinct 池按「高置信 + 已考核」筛选导出为训练记录（带血缘锚点与来源真实性标记）；train 侧旁挂适配器归一后与外部源混合构建数据集 | 已接线（v1.5.9 清偿 47 符号） |
 | **出题考核器** | 从 instinct 反向生成验证题；答对 + 复现双成功才标记 `verified` 入池，评分器独立性有硬门 | Library-only |
-| **RL 训练治理** | 训练期命中策略的轨迹按规则严重级折算惩罚（经既有 `severityWeightOf` 单源，不做第二套映射） | SDK only（47 符号零生产调用点，排期 v1.5.9） |
+| **RL 训练治理** | 训练期命中策略的轨迹按规则严重级折算惩罚（经既有 `severityWeightOf` 单源，不做第二套映射） | 已接线（v1.5.9 清偿 47 符号） |
 | **规则数 25→28 全线清偿** | 文档 / 代码注释 / npm 门面 / dashboard 四面同步；五变体门禁防回潮 | — |
 
 > 📌 完整证据见 [v1.5.8 开发日志](./docs/changelog/v1.5/v1.5.8.md)；旧版能力段见 [CHANGELOG](./CHANGELOG.md)。
@@ -187,7 +187,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | 绩效考核 | 审计留痕 + 治理 KPI 面板（v1.5.0） |
 | 组织记忆 | 知识沉淀（think.md 反思 + knowledge/） |
 | 培训体系 | 经验→考核→晋级的自进化链（v1.5.8 已交付） |
-| 试错容错 | 快照回滚 + 能力基线版本线（v1.5.9 排期） |
+| 试错容错 | 快照回滚 + 能力基线版本线（v1.5.9 已交付） |
 | 劳动合同边界 | 可拔契约与主干能力清单（v1.5.7 交付；开关面与门控见 [ARCHITECTURE](./docs/ARCHITECTURE.md)） |
 
 > 📚 **想深入**：[FDE/GUIDE](./FDE/GUIDE.md)（四阶段十二步）· [ARCHITECTURE](./docs/ARCHITECTURE.md)（五能力与模块）· [PHILOSOPHY](./docs/PHILOSOPHY.md)（设计禁区）· [FDE/README](./FDE/README.md)（Skill 体系）；完整导航见 [WIKI](./docs/WIKI.md)。
@@ -278,7 +278,7 @@ sofagent audit --doctor    # 验证环境（可选）
 > | 全局安装 | `npm i -g sofagent` → `sofagent audit` |
 > | 完整安装（含 daemon / dashboard） | `bootstrap.sh` / `install.sh`（见上） |
 >
-> - **兼容期**：旧命令（`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …）**仍可用**，会提示新入口——**一个 minor 版本后移除**。收敛前的 13 个 bin 现已由单入口统一承载。
+> - **旧命令已退役**：`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` 等 12 个旧 bin 的兼容期届满，**已移除**（bin 与弃用提示一并下线）。收敛前的 13 个 bin 现由单入口统一承载。
 > - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
 >   **只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g @sofagent/audit`。
 > - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。
@@ -328,7 +328,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：5965 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
+> 🧪 **工程可信度**（当前口径）：6067 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
 > **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 共 25 个，插件与工具包不计）——非同一集合。
 > 测试数二口径：**发版时点值**（各版本 `4805→4903` 增量账）与**当前实测值**（上方行）；权威值以 `tools/check/check-test-count.sh` 实跑为准；性能数据为单机参考值。
 

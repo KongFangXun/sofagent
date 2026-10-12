@@ -624,7 +624,10 @@ const fs=require("fs");const{execFileSync}=require("child_process");
 const g=(a)=>execFileSync("git",a,{encoding:"utf8"}).split("\n").filter(Boolean);
 const known=new Set();
 const u=fs.readFileSync("engine/umbrella/bin/sofagent.js","utf8");
-for(const m of u.matchAll(/^ {2}(\w+): \{ pkg:/gm))known.add(m[1]);
+// v1.5.9 修：原 /^ {2}(\\w+): \\{ pkg:/ 只匹配**裸标识符**，而 umbrella 域表键是**带引号**的
+//   （`'ab-test': { pkg:`）⇒ 连字符域从未被此规则收进真值集，一直**靠旧 bin 的 `sofagent-`
+//   前缀剥离**兜着；shim 退役后旧 bin 消失 ⇒ 这些域掉出真值集、文档照抄反被判红。修正为允许引号与连字符。
+for(const m of u.matchAll(/^\s*\x27?([a-z][a-z0-9-]*)\x27?\s*:\s*\{ pkg:/gm))known.add(m[1]);
 const rr=u.match(/const RESERVED = new Set\(\[([^\]]*)\]/);
 if(rr)for(const m of rr[1].matchAll(/'"'"'([^'"'"']+)'"'"'/g))known.add(m[1]);
 for(const f of g(["ls-files","*package.json"]).filter(x=>!/node_modules/.test(x))){

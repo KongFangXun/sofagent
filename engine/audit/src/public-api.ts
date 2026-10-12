@@ -161,6 +161,13 @@
 } from './degradation';
 /* @public */ export type { DegradationLevel, DegradationTrigger, DegradationRecord, LevelCapability, DegradationManagerOptions } from './degradation';
 
+// ── v1.5.9 章一：自进化写面留痕的 HMAC 挂链落盘实现（跨包内部接缝）──
+// @internal：**生产消费方**是 engine/evolve / engine/daemon 侧——core 的
+// loadchain-write-hook.ts 经 setWriteSurfaceTracer(createWriteSurfaceTracer(dataDir))
+// 完成注册（core 不得静态依赖 audit，方向单向）。按 tools/check/public-api.mjs
+// 的 @internal 语义不计入 public API 基线（不承诺 semver 稳定性）。
+/* @internal */ export { createWriteSurfaceTracer } from './write-surface-log';
+
 // ── 训练语料导出（MCP corpus_export 经包 main 入口消费此面）──
 /* @public */ export { exportRuleCorpus, generateVerifiers, buildRuleCorpusBody, signBody, jsonToYaml } from './export/exporter';
 /* @public */ export { buildVerifiersManifest, buildVerifiersWithOverrides, severityWeightOf } from './export/reward-mapping';

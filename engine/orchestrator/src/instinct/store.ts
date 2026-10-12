@@ -8,9 +8,16 @@
 //
 // 租户隔离纪律（数据主权铁律）：池按 enterpriseId 分区存储（单文件、字段级
 // 分区——跨租户导出在 exporter 侧默认禁止，本文件只保证字段随行可判）。
+//
+// 🔴 写面留痕（v1.5.9 章一「考核动作自动产生写面记录」）：appendToPool 是 instinct
+//   池条目的**唯一写入方**（考核动作的落点）——写入成功后对每条 item 落一条 memory
+//   面写面留痕（不靠调用方自觉）。走 core 的 emitWriteSurfaceTrace（章一钩子）：
+//   未接线（无 tracer）时为遗留态返回 false，既有调用方零回归；一旦 audit 侧注入
+//   sink，留痕即为可举证链的一环。
 
 import { existsSync, mkdirSync, appendFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { emitWriteSurfaceTrace } from '@sofagent/core';
 import type { InstinctItem } from './extractor';
 
 /** 考核态（本版第四章考核器产出） */
@@ -39,6 +46,25 @@ export function appendToPool(dataDir: string, items: readonly StoredInstinct[]):
   mkdirSync(dir, { recursive: true });
   const lines = items.map((i) => JSON.stringify(i)).join('\n') + '\n';
   appendFileSync(instinctPoolPath(dataDir), lines, 'utf8');
+  // 写入成功后逐条留痕（章一：考核动作自动产生写面记录——不靠调用方自觉）。
+  // append-only ⇒ op='add'；entryKey = 条目 id；血缘锚 refTrace 取 sourceTrace / traceId。
+  for (const item of items) {
+    const refTrace = item.sourceTrace ?? item.traceId;
+    emitWriteSurfaceTrace({
+      surface: 'memory',
+      target: `instinct:${item.id}`,
+      actor: 'instinct-pool',
+      origin: 'self-improvement',
+      diff: {
+        mode: 'entry-level',
+        op: 'add',
+        entryKey: item.id,
+        before: null,
+        after: `${item.pattern}（verified=${item.verified}）`,
+      },
+      ...(refTrace ? { refTrace } : {}),
+    });
+  }
   return items.length;
 }
 

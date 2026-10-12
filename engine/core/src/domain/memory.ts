@@ -52,3 +52,15 @@
   restoreSnapshot,
 } from '../snapshot-helpers';
 /* @public */ export type { SnapshotInfo } from '../snapshot-helpers';
+
+// ── v1.5.9 章一·自进化写面审计覆盖（域＝记忆与快照域：写面留痕落在 memory 面）────
+// 同 config.ts 的说明：根 barrel 新增后须同步分拣到本域，勿两面漂移。
+/* @internal */ export {
+  setWriteSurfaceTracer,
+  getWriteSurfaceTracer,
+  guardWriteSurface,
+  emitWriteSurfaceTrace,
+  WriteSurfaceUntracedError,
+  diffLoadChainFields,
+  captureLoadChainWrite,
+} from '../loadchain-write-hook';

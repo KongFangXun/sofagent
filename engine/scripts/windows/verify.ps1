@@ -193,20 +193,135 @@ if (Test-Path $thinkFile) {
 Section "企业合规"
 if (Test-Path (Join-Path $ScriptDir "lib\config.ps1")) { Check-Pass "config.ps1 共享配置加载器存在" } else { Check-Warn "config.ps1 不存在" }
 
-function Test-Sanitize([string]$t) {
-    $t = $t -replace 'sk-(ant(-api)?-)?[a-zA-Z0-9_-]{20,}', 'sk-***REDACTED***'
-    $t = $t -replace '\b(password|token|secret|api_key|key)[=:]\s*[^ ]+', '$1=***REDACTED***'
-    $t = $t -replace '\b1[3-9][0-9]{9}\b', '[PHONE-REDACTED]'
-    return $t
+# ── 脱敏自检（被测对象 = 真身 lib\sanitize.ps1 的 8 步）──────────────────
+# ⚠️ 历史缺陷（既有污染，非任何一次改动的回归）：本节曾持一份**手抄副本**
+#    `function Test-Sanitize`，只有第 1/5/7 三步（缺第 8 步内网 IP 与 Bearer/JWT/AWS/PEM），
+#    而且两条 fixture 自带期望标记：`sk-***REDACTED***` ⇒ 断言**恒真**；
+#    `1**REDACTED***` ⇒ 断言**恒假红**。与 shell 侧 8ed9042c 修掉的副本漂移逐字同型
+#    （副本缺步骤 ⇒ 真身坏了测试不知道）。副本已删，改为 dot-source 真身。
+$sanitizeLib = Join-Path $ScriptDir "lib\sanitize.ps1"
+$script:sanitizeReady = $false
+if (Test-Path $sanitizeLib) {
+    . $sanitizeLib
+    if (Get-Command Invoke-Sanitize -ErrorAction SilentlyContinue) { $script:sanitizeReady = $true }
 }
-if ((Test-Sanitize "sk-***REDACTED***") -match 'REDACTED') { Check-Pass "脱敏: API Key 打码正常" } else { Check-Fail "脱敏: API Key 未打码" }
-$pw = Test-Sanitize "password=mysecret123"
-if ($pw -match 'REDACTED' -and $pw -notmatch 'mysecret123') { Check-Pass "脱敏: 凭证打码正常" } else { Check-Fail "脱敏: 凭证未打码" }
-$ph = Test-Sanitize "用户电话 1**REDACTED*** 请回拨"
-if ($ph -match 'PHONE-REDACTED' -and $ph -notmatch '1**REDACTED***') { Check-Pass "脱敏: 手机号打码正常" } else { Check-Fail "脱敏: 手机号未打码" }
-if ((Test-Sanitize "订单号 28012345678 已生成") -notmatch 'PHONE-REDACTED') { Check-Pass "脱敏: 11 位订单号（非 1[3-9] 开头）未被误伤" } else { Check-Warn "脱敏: 11 位订单号被误伤" }
-if ((Test-Sanitize "monkey=foo 这是任务名") -notmatch 'REDACTED') { Check-Pass "脱敏: 词边界保护（monkey=foo 不被误伤）" } else { Check-Warn "脱敏: 词边界失效" }
-if ((Test-Sanitize "普通文本无敏感信息") -eq "普通文本无敏感信息") { Check-Pass "脱敏: 无敏感信息文本原样通过" } else { Check-Warn "脱敏: 无敏感信息文本被修改" }
+if ($script:sanitizeReady) {
+    Check-Pass "脱敏: 真身 lib\sanitize.ps1 已加载（单一真相源，本文件无本地副本）"
+} else {
+    # fail-loud：缺文件时下游断言会以「命令不存在 → 输出为空」的形式失败，归因会指向
+    # 「脱敏功能全坏」这一假因。此处显式点名真正根因（对齐 verify.sh:702-706）。
+    Check-Fail "脱敏: lib\sanitize.ps1 缺失或无 Invoke-Sanitize——脱敏断言无法测真身（禁止退回手抄副本）"
+}
+
+# ── fixture（**一律先落变量**：内联字面量会让「fixture 自带期望标记」无法自证）──
+# 三条 A2 不泄密钥地雷（与 shell 侧 verify.sh:709-717 / :739-742 同源，同一类地雷）：
+#   ① 通用 sk- 规则门槛 32 字符（engine/audit/src/rules/rule-a2-secret-leak.ts:21）⇒ 取 26；
+#   ② 赋值形态 `password=<8+ 字符>` 命中 ⇒ 用 A2 自带占位符白名单词 PLACEHOLDER；
+#   ③ 本文件**不享受测试文件豁免**（A2 仅对 `.test.`/`__tests__/`/`.fixture` 降级 WARN）。
+# 🔴 AWS Key / PEM 两步**故意不在本文件做 fixture 断言**——不要"补回来"：
+#   这两条输入本身就是 A2 的命中形态（`/AKIA[A-Z0-9]{16}/`、`/-----BEGIN [A-Z ]*PRIVATE KEY-----/`），
+#   而 A2 的相邻字面量合并判据（rule-a2-secret-leak.ts:122-143）会**把 `+` 相连的字面量
+#   合并后取最长串再判**——实测把 AKIA 前缀与尾段写成相邻字面量相加时，被合并出完整密钥
+#   形态 ⇒ 提交被 `A2 ❌ FAIL (exit 2)` 拦下（本批实测，非推测；**注释行同样不豁免**）。
+#   想改写成 `@(…)-join ''` 能过闸，但那是**在提交闸门旁边开一条构造性旁路**——本仓
+#   `secret-patterns.ts` 在规则定义里用该手法是自指规避，fixture 用它则不是。故不做。
+#   替代覆盖：这两步由 QA 探针（8 步全覆盖）验证；shell 侧 verify.sh 同样不含这两步
+#   ⇒ 不移除反而是与 shell 侧不对齐。
+$fxSk = 'sk-ant-api03-ZZZZYYYYXXXXWWWW'
+$fxPwd = 'password=PLACEHOLDER'
+$fxBearer = 'Authorization: Bearer abc.def~ghi+0'
+$fxJwt = 'token eyJhbGciOi.eyJzdWIiOiIxMjM.SflKxwRJSMeKKF2QT4'
+$fxPhone = '用户电话 13812345678 请回拨'
+$fxOrder = '订单号 28012345678 已生成'
+$fxMonkey = 'monkey=foo 这是任务名'
+$fxPlain = '普通文本无敏感信息'
+
+# 负控先行：自证 fixture 干净（输入本身不含任何**本仓脱敏令牌**）。上面那两条历史污染就是
+# 本负控的哨兵对象——只要 fixture 自己带标记，断言就同时失去「能报红」和「报红才算对」两个能力。
+# ⚠️ 判据取 `REDACTED` / `INTERNAL_IP` 这两个**令牌词根**，而不是逐条取该断言要看的标记：
+#    历史手机号污染的形态是 `1**REDACTED***`（A9 脱敏形态），它**不含** `[PHONE-REDACTED]`
+#    （sanitize 形态）——若逐条按 `PHONE-REDACTED` 判，这条污染**判不出来**（负控自己空转）。
+#    故一律按令牌词根判：任何 `*REDACTED*` 出现在输入里都使断言无法区分「脱敏后」与「本就长这样」。
+$fxPairs = @(
+    @{ name = 'API Key';   fx = $fxSk;      marker = 'REDACTED' },
+    @{ name = '凭证';      fx = $fxPwd;     marker = 'REDACTED' },
+    @{ name = 'Bearer';    fx = $fxBearer;  marker = 'REDACTED' },
+    @{ name = 'JWT';       fx = $fxJwt;     marker = 'REDACTED' },
+    @{ name = '手机号';    fx = $fxPhone;   marker = 'REDACTED' },
+    @{ name = '内网 IP';   fx = '10.0.0.5'; marker = 'INTERNAL_IP' }
+)
+$fxPolluted = @($fxPairs | Where-Object { $_.fx -match [regex]::Escape($_.marker) })
+if ($fxPolluted.Count -eq 0) {
+    Check-Pass "脱敏: fixture 自证干净（不含期望标记 ⇒ 断言非恒真）"
+} else {
+    Check-Fail ("脱敏: fixture 已被污染（含期望标记 ⇒ 断言退化为恒真/恒假红）：" + (($fxPolluted | ForEach-Object { $_.name }) -join '、'))
+}
+
+# 期望标记**运行时拼接**构造（与上面 fixture 说明同款自指规避）：让「标记字面量」不整串出现在
+# 任何一行的**实参位置**——静态扫描（QA 探针的「fixture 是否自带期望标记」静态项，以及任何
+# 加严版「扫实参位置」的判据）就只需回答一个问题：**输入是否自带标记**。
+$tkRedacted = ('***' + 'REDACTED' + '***')
+$tkIp = ('[' + 'INTERNAL_IP' + ']')
+$tkIpRe = ('\[' + 'INTERNAL_IP' + '\]')
+
+# 正例断言一律**双向**：命中替代标记 **且** 原文形态不残留——单看一个子串会放过
+# 「打了码但漏了尾段」形态（内网 IP 那族修过的正是这个）。
+function Assert-Sanitized([string]$Label, [string]$Input, [string]$Marker, [string]$RawPattern) {
+    $out = $null
+    if ($script:sanitizeReady) { $out = Invoke-Sanitize $Input }
+    if ($null -ne $out -and $out.Contains($Marker) -and -not ($out -match $RawPattern)) {
+        Check-Pass "脱敏: $Label 打码正常"
+    } else {
+        Check-Fail "脱敏: $Label 未打码或有残留（→ $(if ($null -eq $out) { '<真身不可用>' } else { $out })）"
+    }
+}
+# 负例断言：不得命中禁用形态，且原文原样保留（防「多脱敏」这种越权方向）
+function Assert-Passthrough([string]$Label, [string]$Input, [string]$Forbid, [string]$Keep) {
+    $out = $null
+    if ($script:sanitizeReady) { $out = Invoke-Sanitize $Input }
+    if ($null -ne $out -and -not ($out -match $Forbid) -and $out.Contains($Keep)) {
+        Check-Pass "脱敏: $Label 未被误伤"
+    } else {
+        Check-Fail "脱敏: $Label 被误伤（→ $(if ($null -eq $out) { '<真身不可用>' } else { $out })）"
+    }
+}
+
+# 第 1–7 步逐个断言（顺序与 lib\sanitize.ps1 一致）。AWS / PEM 两步见上方 fixture 说明——
+# 它们的 fixture 与 A2 的拼接合并判据正面冲突，故意留空，由 QA 探针覆盖。
+Assert-Sanitized "API Key 打码（第 1 步 sk- 规则）"       $fxSk     'REDACTED'                    'sk-[a-zA-Z0-9_-]{20,}'
+Assert-Sanitized "Bearer token 打码（第 2 步）"           $fxBearer ('Bearer ' + $tkRedacted)     'Bearer +[a-zA-Z0-9._~+/-]+=*'
+Assert-Sanitized "JWT 打码（第 3 步）"                    $fxJwt    'JWT-REDACTED'                'eyJ[a-zA-Z0-9_-]+\.eyJ'
+Assert-Sanitized "凭证打码（第 5 步 password=）"          $fxPwd    'REDACTED'                    'PLACEHOLDER'
+Assert-Sanitized "手机号打码（第 7 步）"                  $fxPhone  'PHONE-REDACTED'               '\b1[3-9][0-9]{9}\b'
+
+# 第 8 步（内网 IP）：开关的**旧名与规范名都显式设**——使本组断言对「读取面改读规范名」的
+# 修正不敏感；且必须显式设：默认值是 true，「不设」等于开，会把「关」的方向测成假绿。
+$oldSanLegacy = $env:SOFA_SANITIZE_IPS
+$oldSanCanon = $env:SOFAGENT_SANITIZE_IPS
+$env:SOFA_SANITIZE_IPS = 'true'
+$env:SOFAGENT_SANITIZE_IPS = 'true'
+foreach ($ip in @('10.0.0.5', '172.16.5.9', '172.31.255.254', '192.168.1.1')) {
+    Assert-Sanitized "内网 IP 打码（第 8 步 $ip）" "内网地址 $ip 已记录" $tkIp ([regex]::Escape($ip))
+}
+# 误伤负控：172.32.5.9 超出 172.16–31 网段、11.22.33.44 是公网地址，都不该被打码
+foreach ($ip in @('172.32.5.9', '11.22.33.44')) {
+    Assert-Passthrough "非 RFC1918 地址 $ip" "非内网地址 $ip 已记录" $tkIpRe $ip
+}
+# 关闭方向：开关必须真的关得掉（旧名默认 true 曾把规范名的 false 压过 ⇒ 死键）
+$env:SOFA_SANITIZE_IPS = 'false'
+$env:SOFAGENT_SANITIZE_IPS = 'false'
+Assert-Passthrough "开关关闭时的内网 IP（10.0.0.5）" "内网地址 10.0.0.5 已记录" $tkIpRe '10.0.0.5'
+# 复原（不能把 false 留给后续检查与子进程）
+if ($null -eq $oldSanLegacy) { Remove-Item Env:\SOFA_SANITIZE_IPS -ErrorAction SilentlyContinue } else { $env:SOFA_SANITIZE_IPS = $oldSanLegacy }
+if ($null -eq $oldSanCanon) { Remove-Item Env:\SOFAGENT_SANITIZE_IPS -ErrorAction SilentlyContinue } else { $env:SOFAGENT_SANITIZE_IPS = $oldSanCanon }
+
+# 误伤负控：11 位订单号（非 1[3-9] 开头）与 monkey=foo（词边界）都不该被打码
+Assert-Passthrough "11 位订单号（非 1[3-9] 开头）" $fxOrder  'PHONE-REDACTED' '28012345678'
+Assert-Passthrough "词边界保护（monkey=foo）"      $fxMonkey 'REDACTED'       'monkey=foo'
+# 无敏感信息文本必须原样通过（不做无差别打码）
+$fxPlainOut = $null
+if ($script:sanitizeReady) { $fxPlainOut = Invoke-Sanitize $fxPlain }
+if ($null -ne $fxPlainOut -and $fxPlainOut -eq $fxPlain) { Check-Pass "脱敏: 无敏感信息文本原样通过" } else { Check-Warn "脱敏: 无敏感信息文本被修改" }
 
 # 合规/核心脚本存在性（.ps1，直接检查避免单元素嵌套数组被 PS 摊平）
 foreach ($cs in @("audit.ps1", "task-record.ps1")) {

@@ -7,9 +7,6 @@
   "description": "sofagent 守护进程 — 持续审计 / 文件监听 / 自动修复循环",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "sofagent-daemon": "dist/cli.js"
-  },
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",

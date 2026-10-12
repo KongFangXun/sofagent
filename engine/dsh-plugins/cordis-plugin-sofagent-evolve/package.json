@@ -4,14 +4,14 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "给宿主加上经验沉淀——任务收尾自动写 think.md 反思条目（seam: session/event）——桥接 @sofagent/think generateThinkEntry / @sofagent/core parseDiff / @sofagent/audit runRules / @sofagent/core getDataDir",
+  "description": "进化面 RSI 独立模块——准入门/晋级/经验池/考核/写面审计/能力基线/透明仓；运行载体 = RSI 插件，沉淀留主干、审计链不受插件存废影响（seam: session/event + fs/write-intent）——桥接 @sofagent/think generateThinkEntry / @sofagent/core parseDiff / @sofagent/audit runRules / @sofagent/core getDataDir",
   "license": "MIT",
   "author": "KongFangXun",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "vitest run src/index.test.ts"
+    "test": "vitest run"
   },
   "keywords": [
     "sofagent",
@@ -21,10 +21,11 @@
   "sofagent": {
     "type": "dsh-plugin",
     "family": "cordis",
-    "seam": "session/event",
-    "seamSemantics": "会话事件流中的 Turn 结束（turn/end）→ 经验沉淀（think.md 反思）",
+    "seam": "session/event + fs/write-intent",
+    "seamSemantics": "会话事件流中的 Turn 结束（turn/end）→ 经验沉淀（think.md 反思） + 文件写入意图拦截（写面窄化：模型只写 memory / skill，控制面写入即拒）",
     "seamHandlers": [
-      "session/event"
+      "session/event",
+      "fs/write-intent"
     ]
   },
   "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts 惰性 await import（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装；v1.4.9 P2 起厚插件多包 bridges 按序解析、部分可用即部分成功），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",

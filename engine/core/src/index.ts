@@ -325,6 +325,66 @@
 } from './memory-contract';
 /* @public */ export type { MemoryLayer, Sensitivity, Trust } from './memory-contract';
 
+// ── 加载链四层配置面契约（v1.5.9 章三）──
+// 四层（SKILL.md / fde.md / think.md / knowledge/）配置字段 SSOT + 所有权断言
+// （归属唯一 / 未登记拒绝 / 越界具名）。SSOT 与 tools/check/check-loadchain-config.mjs
+// 双向对账——标 @internal：仓内契约，不进 @public 基线。
+/* @internal */ export {
+  LOAD_CHAIN_LAYERS,
+  LOAD_CHAIN_CONFIG_FIELDS,
+  getFieldsByLayer,
+  assertUniqueOwnership,
+  assertAllRegistered,
+  resolveOwner,
+  assertLayerWrite,
+  buildLayerConfig,
+  loadChainDefaults,
+  loadChainConfigFromEnv,
+  validateLoadChainSchema,
+  LoadChainSchemaError,
+  LoadChainOwnershipError,
+  LoadChainUnregisteredFieldError,
+  LoadChainBoundaryError,
+} from './loadchain-schema';
+/* @internal */ export type {
+  LoadChainLayer,
+  LoadChainFieldType,
+  LoadChainImplRef,
+  LoadChainField,
+} from './loadchain-schema';
+
+// ── 写面变更留痕钩子（v1.5.9 章一）──
+// core 侧唯一入口：tracer 注册表 + fail-closed 守卫 + 配置面 before/after 捕获。
+// 落盘实现（HMAC 挂链 + 两类契约）在 engine/audit（core 不得反向依赖 audit）。
+// 标 @internal：仓内接线缝，不进 @public 基线。
+/* @internal */ export {
+  setWriteSurfaceTracer,
+  getWriteSurfaceTracer,
+  guardWriteSurface,
+  emitWriteSurfaceTrace,
+  WriteSurfaceUntracedError,
+  diffLoadChainFields,
+  captureLoadChainWrite,
+} from './loadchain-write-hook';
+/* @internal */ export type {
+  WriteSurfaceName,
+  WriteSurfaceOrigin,
+  WriteSurfaceTrace,
+  WriteSurfaceTraceSink,
+  WriteSurfaceDiffLike,
+  GuardWriteSurfaceOptions,
+  LoadChainFieldChange,
+  LoadChainFieldDiff,
+  CaptureLoadChainWriteInput,
+} from './loadchain-write-hook';
+
+// ── decision-log 写入软依赖收口（v1.5.9 第 2 步 · 承 v1.5.8 待明确 #1）──
+// core 不得静态依赖 audit（方向单向）；本导出使 **跨包消费者（engine/evolve）** 可
+// 经 @sofagent/core 触达 decision-log 写入面（运行时动态解析 @sofagent/audit）。
+// 🔴 唯一 @public（消费者在 engine/evolve——跨包，@internal 不算 @public 接线）。
+/* @public */ export { emitAuditDecision } from './audit-decision-writer';
+/* @public */ export type { AuditDecisionInput } from './audit-decision-writer';
+
 // ── prompt 注入防线（层 1 包裹 + 层 4 脱敏 + 层 5 可信分级 · v1.1.8 新增）──
 /* @public */ export {
   wrapUntrusted,

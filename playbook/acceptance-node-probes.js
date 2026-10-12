@@ -567,10 +567,14 @@ async function s419() {
   process.env.SOFAGENT_DATA = hpDataDir;
   process.env.SOFAGENT_KEY_PATH = path.join(hpHome, '.sofagent-key');
   fs.writeFileSync(process.env.SOFAGENT_KEY_PATH, 's419-hp-hmac-key');
-  // 刷新模块级缓存：dataDir/密钥常量在 require 时固化（与上面无密钥面同手法）
-  for (const mod of ['engine/core/dist/index.js', 'engine/daemon/dist/device-registry.js', 'engine/daemon/dist/upload-wal.js', 'engine/audit/dist/index.js']) {
-    const abs = path.join(process.env.PROJECT_ROOT, mod);
-    if (require.cache[require.resolve(abs)]) delete require.cache[require.resolve(abs)];
+  // 刷新模块级缓存：dataDir/密钥常量在 require 时固化（与上面无密钥面同手法）。
+  // ⚠️ S3 复验修：原为**固定四模块清单**，漏了**已被缓存的上游调用方**
+  // （`engine/mcp/dist/tools/device-data-push.js` 在本探针前面已 require 过）——它内部
+  // 对 `upload-wal` 的绑定在首次 require 时即固化，故即使 upload-wal 被摘、再 require 也只
+  // 返回旧实例 ⇒ 入队写进**旧 dataDir**、而断言读 hpDataDir ⇒ ENOENT 假红。
+  // 改为**按前缀整体摘除 `engine/**` 缓存**（上游调用方一并失效，重 require 时整链重建）。
+  for (const k of Object.keys(require.cache)) {
+    if (k.startsWith(process.env.PROJECT_ROOT + '/engine/')) delete require.cache[k];
   }
   const hpCore = require(process.env.PROJECT_ROOT + '/engine/core/dist/index.js');
   const hpIdentity = _s41x_identity('s419-tool-dev');
@@ -578,7 +582,11 @@ async function s419() {
   if (!hpDr.registerDevice(hpIdentity, { kind: 'node' }, hpDataDir).ok) bad.push('tool 链注册失败');
   hpCore.saveDeviceUploadPolicy({ version: 1, deviceId: hpIdentity.agentId, declarations: [{ category: 'metrics', frequency: '@daily', destination: 'platform-a' }] }, hpDataDir);
   const push = require(process.env.PROJECT_ROOT + '/engine/mcp/dist/tools/device-data-push.js');
-  const ok1 = await push.deviceDataPush({ identity: hpIdentity, category: 'metrics', payload: '{"cpu":0.42}' });
+  // ⚠️ S3 复验修：本探针上面声明的目的地是 `platform-a`，而此处原**未传 destination** ⇒
+  // 产品按「声明有目的地、请求未提供 ⇒ destination-mismatch」正确拒绝（声明外/不符双拒的
+  // 同一判据），于是**根本没入队**、后面读 WAL 即 ENOENT（S419 长期假红的真因）。
+  // 修法：happy-path 按声明传 destination，使本段真的走「声明内放行」分支。
+  const ok1 = await push.deviceDataPush({ identity: hpIdentity, category: 'metrics', payload: '{"cpu":0.42}', destination: 'platform-a' });
   if (ok1.data.ok !== true || ok1.data.delivery !== 'queued' || ok1.data.isError !== false) bad.push('声明内上行未入队:' + JSON.stringify(ok1.data));
   if (ok1.data.auditLogged !== true) bad.push('上行未留审计计量痕');
   const rej1 = await push.deviceDataPush({ identity: hpIdentity, category: 'screenshots', payload: 'x' });
@@ -884,13 +892,16 @@ async function s426() {
   //    维度数改动态对账（声称 = 实际 ^#### 计数，与 check-review-system ① 同款判据）——
   //    硬编码维数在每次归并/新增后必漂（v1.5.1 归并 #138-141 后 90→87 实证），写死即假红
   const rc = read('playbook/regression-checklist.md');
-  const dimClaim = rc.match(/当前 (\d+) 维 · 编号 1-(\d+) · (\d+) 个编号已归并删除/);
+  // v1.5.9：头部缺号计数措辞由「已归并删除」改为更准确的「重新编号后空缺（口径＝最大号−维数）」，
+  //   本判据放宽为**兼容两种措辞**（形态锁锁的是「三值可解析」，不是某句具体措辞——写死措辞会在
+  //   措辞修正时造成与内容无关的假红）。
+  const dimClaim = rc.match(/当前 (\d+) 维 · 编号 1-(\d+) · (\d+) 个编号(?:已归并删除|重新编号后空缺)/);
   if (!dimClaim) bad.push('checklist 头部维度声明形态漂移');
   const dimActual = (rc.match(/^#### /gm) || []).length;
   if (dimClaim && Number(dimClaim[1]) !== dimActual) bad.push('checklist 维度声称 ' + dimClaim[1] + ' ≠ 实际 ' + dimActual);
   const numMax = (rc.match(/^#### (\d+)\./gm) || []).map((s) => Number(s.replace(/\D/g, '')));
   if (dimClaim && numMax.length && Math.max(...numMax) !== Number(dimClaim[2])) bad.push('checklist 编号上界声称 ' + dimClaim[2] + ' ≠ 实际 ' + Math.max(...numMax));
-  if (!/regression-checklist\.md\` ≤ 2050 行、\`acceptance-test\.sh\` ≤ 4611 行/.test(rc)) bad.push('警戒线双值锚漂移');
+  if (!/regression-checklist\.md\` ≤ 2050 行、\`acceptance-test\.sh\` ≤ 4632 行/.test(rc)) bad.push('警戒线双值锚漂移');
   const rcLines = (rc.match(/\n/g) || []).length; // wc -l 口径（与 check-review-system 同——换行符数，非 split 段数）
   if (rcLines > 2050) bad.push('checklist 超警戒线:' + rcLines);
   // ② C 类锚：calibration v1.4.9 收编 5 条特征锚（提取为空/同构替换 SSOT/死断言可达性/重跑全量/协议升级归 C）
@@ -1487,7 +1498,10 @@ async function s438() {
   if (wiring.text.includes(PHONE)) bad.push('L0 命中后原始手机号仍在文本里');
   if (!wiring.text.includes('{PII:PHONE_NUMBER:')) bad.push('L0 未产出脱敏占位符');
   if (wiring.decision.level !== 'sensitive') bad.push('敏感档位判定错:' + wiring.decision.level);
-  const push = await dp.deviceDataPush({ identity, category: 'metrics', payload });
+  // ⚠️ S3 复验修：与 S419 同型——本探针声明的目的地是 `platform-ingest`，而此处原未传
+  // destination ⇒ 产品按「声明已有目的地、请求未提供 ⇒ destination-mismatch」正确拒绝，
+  // 上行根本没入队、随后读 WAL 即 ENOENT（S438 长期假红的真因）。按声明补齐 destination。
+  const push = await dp.deviceDataPush({ identity, category: 'metrics', payload, destination: 'platform-ingest' });
   if (push.data.ok !== true) bad.push('上行未放行:' + push.data.reason);
   const wal = fs.readFileSync(path.join(dataDir, 'upload-wal.jsonl'), 'utf-8');
   if (wal.includes(PHONE)) bad.push('WAL 落盘含原始手机号');
@@ -1531,7 +1545,8 @@ async function s438() {
     if (arms.size !== 1) bad.push('同键分流不稳定（臂数=' + arms.size + '）');
     // 端到端：设备上行逐次落链且臂恒定
     for (let i = 0; i < 3; i++) {
-      const r3 = await dp.deviceDataPush({ identity, category: 'metrics', payload: `灰度采样 ${i}` });
+      // ⚠️ S3 复验修：同型第三处——未传 destination ⇒ 被按 destination-mismatch 拒。
+      const r3 = await dp.deviceDataPush({ identity, category: 'metrics', payload: `灰度采样 ${i}`, destination: 'platform-ingest' });
       if (r3.data.ok !== true) { bad.push('灰度上行未放行'); break; }
       const rows = fs.readFileSync(path.join(dataDir, 'audit', 'decision-log.jsonl'), 'utf-8')
         .trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));

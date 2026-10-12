@@ -53,32 +53,15 @@ if ($Help) {
 $cfg = Join-Path $PSScriptRoot "lib\config.ps1"
 if (Test-Path $cfg) { . $cfg }
 
+# ── 加载脱敏函数（单一真相源，verify.ps1 同源调用）──
+# 保持 Test-Path 守卫（与 config.ps1 同款）：缺 lib 时 Invoke-Sanitize 未定义，
+# 调用点抛「无法识别的命令」并在 $ErrorActionPreference="Stop" 下中止——fail-loud，
+# 不会静默写出未脱敏日志。对齐 task-record.sh:37-42 的同款守卫与理由。
+$sanitizeLib = Join-Path $PSScriptRoot "lib\sanitize.ps1"
+if (Test-Path $sanitizeLib) { . $sanitizeLib }
+
 # ── 默认值辅助（对齐 bash 的 ${VAR:-default}）──
 function Def($v, $d) { if ([string]::IsNullOrEmpty($v)) { $d } else { $v } }
-
-# ── 脱敏（对齐 sanitize()，sed -> .NET regex；[[:<:]]/[[:>:]] -> \b）──
-function Invoke-Sanitize([string]$text) {
-    if ([string]::IsNullOrEmpty($text)) { return $text }
-    # 1. OpenAI / Anthropic API Key
-    $text = $text -replace 'sk-(ant(-api)?-)?[a-zA-Z0-9_-]{20,}', 'sk-***REDACTED***'
-    # 2. Bearer token
-    $text = $text -replace 'Bearer +[a-zA-Z0-9._~+/-]+=*', 'Bearer ***REDACTED***'
-    # 3. JWT (eyJ 三段式)
-    $text = $text -replace 'eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+', '***JWT-REDACTED***'
-    # 4. AWS Access Key
-    $text = $text -replace '\bAKIA[0-9A-Z]{16}\b', '***AWS-KEY-REDACTED***'
-    # 5. 凭证赋值（词边界防误伤 monkey=foo）
-    $text = $text -replace '\b(password|token|secret|api_key|key)[=:]\s*[^ ]+', '$1=***REDACTED***'
-    # 6. PEM 私钥块
-    $text = $text -replace '(?s)-----BEGIN [^-]*PRIVATE KEY-----.*?-----END [^-]*PRIVATE KEY-----', '***PRIVATE-KEY-BLOCK-REDACTED***'
-    # 7. 中国大陆手机号
-    $text = $text -replace '\b1[3-9][0-9]{9}\b', '[PHONE-REDACTED]'
-    # 8. 内网 IP（可选）
-    if ($env:SOFA_SANITIZE_IPS -eq "true") {
-        $text = $text -replace '\b(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)[0-9]+\.[0-9]+\b', '[INTERNAL_IP]'
-    }
-    return $text
-}
 
 # ── 数据目录（honor SOFAGENT_DATA，缺省 PWD/.sofagent）──
 function Get-SofagentData {
@@ -155,8 +138,20 @@ $logFile = Join-Path $logDir "$today.md"
 $timestamp = Get-Date -Format "HH:mm:ss"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
-# ── 写入前脱敏（SOFA_SANITIZE=true 时）──
-if ($env:SOFA_SANITIZE -eq "true") {
+# ── 写入前脱敏 ──
+# 用局部变量保存脱敏后值，不修改原始参数变量
+# 🔴 开关读「规范名优先 + 旧名兜底」——对齐 task-record.sh:188-192 的同款读取面：
+#    config.ps1 会把旧名从 fde.md 回填成 true，若只读旧名，用户设 SOFAGENT_SANITIZE=false
+#    会被压过 ⇒ 关不掉（#28 死键的 Windows 侧镜像；旧实现 `if ($env:SOFA_SANITIZE -eq "true")`
+#    连规范名都完全不看）。缺省值不在此处兜，由 config.ps1 逐条对齐 config.sh 给出。
+if (-not [string]::IsNullOrEmpty($env:SOFAGENT_SANITIZE)) {
+    $sanitizeOn = ($env:SOFAGENT_SANITIZE -eq "true")
+} elseif (-not [string]::IsNullOrEmpty($env:SOFA_SANITIZE)) {
+    $sanitizeOn = ($env:SOFA_SANITIZE -eq "true")
+} else {
+    $sanitizeOn = $false
+}
+if ($sanitizeOn) {
     $saneTask   = Invoke-Sanitize $Task
     $saneResult = Invoke-Sanitize $Result
     $saneModel  = Invoke-Sanitize $Model

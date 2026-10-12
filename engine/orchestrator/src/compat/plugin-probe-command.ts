@@ -33,9 +33,9 @@ export interface PluginProbeCommandIo {
 
 const USAGE = [
   '用法:',
-  '  plugin-probe --self                进程内自检：真建事件桥/services 桥 + 真跑四段预检',
+  '  plugin-probe --self                进程内自检：真建事件桥/services 桥 + 真跑五段预检',
   '  plugin-probe --services            打印 services 桥默认命名空间面（@sofagent/* @public 投影）',
-  '  plugin-probe <decl.json> [--json]  读插件声明 JSON → 四段预检（两态结论 + 缺口明细）',
+  '  plugin-probe <decl.json> [--json]  读插件声明 JSON → 五段预检（两态结论 + 三态安全评级 + 缺口明细）',
 ].join('\n');
 
 /** 建真双桥（事件桥挂真事件总线 / services 桥注册宿主默认 @public 面） */
@@ -49,7 +49,7 @@ function buildBridges(dataDir: string) {
   return { bus, eventBridge, serviceBridge };
 }
 
-/** 打印四段预检结论（两态 + 逐段读数 + 缺口） */
+/** 打印五段预检结论（两态 + 三态安全评级 + 逐段读数 + 缺口） */
 function printVerdict(
   verdict: Awaited<ReturnType<typeof probePluginMount>>,
   out: (s: string) => void,
@@ -58,6 +58,13 @@ function printVerdict(
   out(`${icon} ${verdict.summary}`);
   for (const s of verdict.segments) {
     out(`  ${s.ok ? '✓' : '✗'} ${s.label}：${s.detail}`);
+  }
+  const ratingIcon =
+    verdict.securityRating === 'pass' ? '🟢' : verdict.securityRating === 'restricted' ? '🟡' : '🔴';
+  out(`  ${ratingIcon} 安全评级：${verdict.securityRating}（三态：通过 / 受限通过 / 拒载）`);
+  if (verdict.securityFindings.length > 0) {
+    out('  安全发现明细:');
+    for (const f of verdict.securityFindings) out(`    · [${f.severity}] ${f.case}：${f.detail}`);
   }
   if (verdict.gaps.length > 0) {
     out('  缺口明细:');
@@ -147,6 +154,7 @@ export async function runPluginProbeCommand(
       pluginId: raw.pluginId,
       declaredEvents: raw.declaredEvents,
       declaredServices: raw.declaredServices,
+      ...(raw.security ? { security: raw.security } : {}),
     };
   } catch (e) {
     err(`❌ 插件声明解析失败：${(e as Error).message}`);

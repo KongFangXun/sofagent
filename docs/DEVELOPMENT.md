@@ -209,7 +209,7 @@ FDE 部署 SOP 应遵循此顺序：
 
 新增文档请归入对应域；跨文档引用保持相对路径，CI 的 `check-docs` 会校验。本仓未强制物理迁移历史文档，仅以本说明固化约定。
 
-> npm 包 @sofagent/audit 暴露 2 个 bin：`sofagent-audit`（快审）、`sofagent-audit-full`（完整引擎）；`sofagent audit` 是总包路由用法，非包 bin（v1.1.0 拆包后 verify 等已迁出，bin 见各包 `package.json`）。
+> npm 包 @sofagent/audit 的 2 个旧 bin（快审 / 完整引擎）**已随 shim 退役移除**；`sofagent audit` 是总包路由用法，非包 bin（v1.1.0 拆包后 verify 等已迁出，bin 见各包 `package.json`）。
 
 | 脚本 | 干什么 | 什么时候跑 |
 |---|---|---|
@@ -631,7 +631,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
 
-- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（85 维）+ `acceptance-test.sh`（401 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
+- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（85 维）+ `acceptance-test.sh`（405 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束层零 token 运行（28 条规则 22 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 - **保存 ≠ 生效 ≠ 变好**：三个状态分记，谁也不许冒充谁——**已保存**（配置/产物写入了）／**已生效**（接线在真实路径上，不是只存在于测试或声明里）／**已验证变好**（行为级验证通过，且对照了改前基线）。交付声明只能落在实际达到的那一档，未做行为验证的显式记「未验证」，不并进「已完成」。
 
@@ -691,7 +691,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 激活链要解决的工程问题
 
-当前 orchestrator 包（1690 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
+当前 orchestrator 包（1696 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
 
 ### 扩展点
 
@@ -724,7 +724,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 401（最大场景号 S477）。
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 405（最大场景号 S481）。
 > 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账（v1.5.0–v1.5.4 各批 +N 明细）见 [归档](./archive/validation-deep/development-maintainer.md) 与 [v1.5.0 开发日志·附录](./changelog/v1.5/v1.5.0.md)。
 
 ### 加载链预算目标跟踪

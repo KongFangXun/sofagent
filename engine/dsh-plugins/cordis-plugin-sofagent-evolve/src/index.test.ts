@@ -57,7 +57,8 @@ describe('章十 · seam 事件接线', () => {
   };
   const entry = MANIFEST.plugins.find((p) => p.id === 'cordis-plugin-sofagent-evolve');
   const declared: string[] = entry?.seamHandlers ?? [];
-  const ONE = ['session/event'];
+  // v1.5.9 章七：进化面升格 RSI 独立模块——seam 增 fs/write-intent（写面权限窄化行为锁）
+  const ALL = ['session/event', 'fs/write-intent'];
 
   const errSpy = () => vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -92,7 +93,7 @@ describe('章十 · seam 事件接线', () => {
   const sessionOf = (cwd?: string) => ({ header: cwd === undefined ? {} : { cwd } });
 
   it('seamHandlers 与 plugins.json 声明同集合（三处对账的插件侧）', () => {
-    expect(declared.slice().sort()).toEqual([...ONE].sort());
+    expect(declared.slice().sort()).toEqual([...ALL].sort());
   });
 
   it('订阅名是 session/event 而非 turn/end（后者不是 ctx 派发点）', () => {
@@ -118,10 +119,10 @@ describe('章十 · seam 事件接线', () => {
     const disposer = (pluginDefault.apply as (c: unknown) => unknown)(ctx) as
       | (() => Promise<void>)
       | undefined;
-    expect([...subscribed.keys()].sort()).toEqual([...ONE].sort());
+    expect([...subscribed.keys()].sort()).toEqual([...ALL].sort());
     expect(typeof disposer).toBe('function');
     await disposer!();
-    expect(disposed.slice().sort()).toEqual([...ONE].sort());
+    expect(disposed.slice().sort()).toEqual([...ALL].sort());
     spy.mockRestore();
   });
 
@@ -208,5 +209,63 @@ describe('章十 · seam 事件接线', () => {
       dataDir: undefined,
     });
     spy.mockRestore();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.5.9 章七 · 写面权限窄化行为锁（fs/write-intent seam 的运行时拦截）
+// 断言面：① 可写面放行且调 next ② 控制面拒绝且**不调 next**（模型写入即失败）
+//        ③ 未分类落点 fail-closed 拒绝
+// ─────────────────────────────────────────────────────────────────────────────
+describe('章七 · 写面权限窄化行为锁', () => {
+  const mountWithIntentHandler = (): {
+    handler: (...a: unknown[]) => unknown;
+    next: ReturnType<typeof vi.fn>;
+  } => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { ctx, subscribed } = (() => {
+      const subscribed = new Map<string, (...a: unknown[]) => unknown>();
+      const on = vi.fn((event: string, handler: (...a: unknown[]) => unknown) => {
+        subscribed.set(event, handler);
+        return () => undefined;
+      });
+      return { ctx: { provide: vi.fn(() => () => undefined), on }, subscribed };
+    })();
+    (pluginDefault.apply as (c: unknown) => unknown)(ctx);
+    spy.mockRestore();
+    return { handler: subscribed.get('fs/write-intent')!, next: vi.fn(async () => 'released') };
+  };
+
+  it('模型写 memory / skill → 放行（调 next）', async () => {
+    const { handler, next } = mountWithIntentHandler();
+    const r1 = await handler('memory/facts.md', 'model-executor', next);
+    const r2 = await handler('skills/new.md', 'model-executor', next);
+    expect(r1).toBe('released');
+    expect(r2).toBe('released');
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it('模型写控制面（策略/注入/路由/状态/审计历史）→ 拒绝且不调 next', async () => {
+    const { handler, next } = mountWithIntentHandler();
+    const targets = [
+      'policy/rules.md',
+      'SKILL/harness/installer.md',
+      'router/slots.json',
+      'state/runtime.state.json',
+      'audit/decision-log.jsonl',
+    ];
+    for (const t of targets) {
+      const v = (await handler(t, 'model-executor', next)) as { kind?: string; reason?: string };
+      expect(v.kind).toBe('deny');
+      expect(v.reason).toContain('写面窄化');
+    }
+    expect(next).not.toHaveBeenCalled(); // 控制面写入即失败：next 从未被放行
+  });
+
+  it('未分类落点 → 拒绝（fail-closed）', async () => {
+    const { handler, next } = mountWithIntentHandler();
+    const v = (await handler('src/random.ts', 'model-executor', next)) as { kind?: string };
+    expect(v.kind).toBe('deny');
+    expect(next).not.toHaveBeenCalled();
   });
 });

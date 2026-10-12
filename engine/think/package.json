@@ -7,9 +7,6 @@
   "description": "sofagent 思考链分析 — 推理路径追踪 / 决策可视化 / 思维审计",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "sofagent-think": "dist/cli.js"
-  },
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",

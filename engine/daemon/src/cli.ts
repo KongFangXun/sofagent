@@ -46,8 +46,26 @@ async function main() {
     console.log('  decision-tree                对话分支回溯视图（v1.4.0 交付七）');
     console.log('  billing                      账单周期聚合——agent × 自然月月结（v1.4.7 G8）');
     console.log('  scheduler <create|list|pause|resume|trigger|history|delete>  定时任务管理（v1.2.9 · create v1.4.7）');
+    console.log('  evolve <cycle|init-registry> 进化循环（v1.5.9 第 2 步 · SDK-face 生产接线入口）');
     console.log('  doctor                       检查 daemon 健康状态（v1.2.5 §8.4）');
     process.exit(0);
+  }
+
+  // ── v1.5.9 章一：写面留痕接线（进程引导点 · 单一注入）──
+  // daemon 是 composition root：进化循环（evolve cycle）与 @weekly inspector（含
+  // knowledge-health）等写面动作都在本进程发生；core 的 tracer 是进程内单例，故在
+  // 命令分派前注入一处即全覆盖。未接线时 core 按遗留态放行（sink=null），既有调用零回归。
+  try {
+    const { installWriteSurfaceTracing } = await import('./write-surface-bootstrap');
+    const { getDataDir } = await import('@sofagent/core');
+    installWriteSurfaceTracing({ dataDir: getDataDir() });
+  } catch (err) {
+    // S3 独立审查 F-05：原为一行 console.warn ⇒ 所有写面动作回落遗留态放行且无告警面。
+    // fail-closed 覆盖的是「留痕写入失败」，**不覆盖「留痕未接线」**——该缺口由此显式告警补上：
+    // 结构化标记 `[WRITE-SURFACE-UNWIRED]` 供运维面 grep / 告警规则接取（不改命令退出码，
+    // 保持「增强项不阻断会话」的既有语义，但把「静默降级」变成「可见降级」）。
+    const detail = err instanceof Error ? err.message : String(err);
+    console.warn(`  ⚠️ [WRITE-SURFACE-UNWIRED] 写面留痕未接线——本次会话所有 prompt/memory 写面变更**不会留痕**（不阻断命令执行）: ${detail}`);
   }
 
   switch (subcommand) {
@@ -101,6 +119,60 @@ async function main() {
           console.error('   用法: sofagent-daemon knowledge <status>');
           process.exit(1);
       }
+      break;
+    }
+    case 'evolve': {
+      // v1.5.9 第 2 步 · SDK-face 七组 47 符号的生产接线落点（人工/调度双入口）：
+      //   cycle          —— 周度进化循环（七组能力按语义接进一条生产可达的循环）
+      //   init-registry  —— FDE 人工写入面（受保护域验证器登记表：Agent 运行时不得调用）
+      const action = args[1];
+      if (action === 'init-registry') {
+        // FDE 专用：写登记表 + 立即设只读位 + 返回钉哈希。--entries <json 文件>
+        // （形如 [{"domain":"code","tier":"deterministic","basis":"...","registeredAt":"..."}]）
+        const { initializeDomainVerifierRegistry } = await import('./evolution/loop');
+        const { getDataDir } = await import('@sofagent/core');
+        const entriesIdx = args.indexOf('--entries');
+        const entriesPath = entriesIdx !== -1 ? args[entriesIdx + 1] : undefined;
+        if (!entriesPath) {
+          console.error('❌ evolve init-registry 需要 --entries <json 文件>');
+          console.error('   用法: sofagent-daemon evolve init-registry --entries <domain-verifiers.json>');
+          process.exit(1);
+        }
+        const { readFileSync } = await import('fs');
+        let entries: unknown;
+        try {
+          entries = JSON.parse(readFileSync(entriesPath, 'utf-8'));
+        } catch (err) {
+          console.error(`❌ 读取登记项失败：${(err as Error).message}`);
+          process.exit(1);
+        }
+        if (!Array.isArray(entries)) {
+          console.error('❌ --entries 文件须为 JSON 数组（[{domain,tier,basis,registeredAt}]）');
+          process.exit(1);
+        }
+        const written = initializeDomainVerifierRegistry(
+          getDataDir(),
+          entries as Array<{ domain: string; tier: 'deterministic' | 'model-judge' | 'human-only'; basis: string; registeredAt: string }>,
+        );
+        console.log(`✅ 域验证器登记表已写入（只读位已设）: ${written.path}`);
+        console.log(`   钉哈希: ${written.contentHash.slice(0, 16)}…`);
+        break;
+      }
+      if (action === 'cycle' || !action) {
+        // @weekly 同源循环的人工入口（排查/演练）；真实调度见 inspectors/evolve-trigger.ts
+        const { runEvolutionLoop } = await import('./evolution/loop');
+        const { getDataDir } = await import('@sofagent/core');
+        const report = await runEvolutionLoop({ dataDir: getDataDir() });
+        console.log('── 进化循环报告 ──');
+        console.log(`  安全套件: ${report.safety.blocked ? '硬阻断' : '放行'} · 停滞: ${report.stagnation.stagnant ? '是' : '否'} · 待触发失败聚类: ${report.pendingTriggers}`);
+        console.log(`  经验池: ${report.pool.total} 条（租户 ${report.pool.tenant} ${report.pool.tenantCount} 条）· 导出 ${report.pool.exported} · 拒收 ${report.pool.rejected}`);
+        console.log(`  考核队列: ${report.exam.pendingInQueue} 条 · 本次出题 ${report.exam.questions.length} · 结果 ${report.exam.results.length}`);
+        console.log(`  收益指标: 可用维度 ${report.metrics.availableDims}/4 · 训练策略命中 ${report.training.hits}`);
+        break;
+      }
+      console.error('❌ 未知 evolve 子命令: ' + (action || ''));
+      console.error('   用法: sofagent-daemon evolve <cycle|init-registry>');
+      process.exit(1);
       break;
     }
     case 'start': {
@@ -768,16 +840,11 @@ async function main() {
     }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-daemon <start|create-usb-key|snapshot|knowledge|scheduler|doctor> [options]');
+      console.error('Usage: sofagent-daemon <start|create-usb-key|snapshot|knowledge|scheduler|evolve|doctor> [options]');
       process.exit(1);
   }
 }
 
-// v1.5.6 章一 · 单入口收敛（兼容期 shim）：直接调用旧命令时提示新入口；
-// 被 `sofagent <域>` 路由调用时静默（路由注入 SOFAGENT_SINGLE_ENTRY=1）。
-if (process.env.SOFAGENT_SINGLE_ENTRY !== '1') {
-  process.stderr.write('[sofagent] 旧命令 `sofagent-daemon` 已收敛到单入口 `sofagent daemon`——本命令进入兼容期（仍可用，下一 minor 版本移除）。\n');
-}
 main().catch((err: Error) => {
   console.error(err.message);
   // v1.4.4 #32+47：start 路径启动失败 = 守护级致命错误，落盘 exit 78 后退出。
