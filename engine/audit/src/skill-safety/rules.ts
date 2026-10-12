@@ -1,5 +1,5 @@
 // ============================================================
-// rules.ts（原 rules/skill-safety-rules.ts · v1.5.8 BUG-18 迁至 src/skill-safety/）· Skill 安全审查——规则定义
+// rules.ts（原 rules/skill-safety-rules.ts · v1.5.9 BUG-18 迁至 src/skill-safety/）· Skill 安全审查——规则定义
 // ============================================================
 // SafetyRule.pattern = 原始正则（用于 COMPILED_RULES 预编译和 SafetyHit.pattern 展示）
 // SafetyRule.regex  = 编译后无 g flag 的版本（scanFile 实际使用，避免 lastIndex 状态问题）
@@ -7,7 +7,6 @@
 import { VERSION } from '@sofagent/core';
 
 export { VERSION };
-
 export const SCANNABLE_EXTENSIONS = new Set(['.md', '.js', '.ts', '.py', '.sh', '.json', '.yaml', '.yml']);
 
 /** 安全检查规则 */

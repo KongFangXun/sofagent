@@ -1,5 +1,5 @@
 // ============================================================
-// engine.ts（原 rules/skill-safety-engine.ts · v1.5.8 BUG-18 迁至 src/skill-safety/）· Skill 安全审查——文件扫描逻辑
+// engine.ts（原 rules/skill-safety-engine.ts · v1.5.9 BUG-18 迁至 src/skill-safety/）· Skill 安全审查——文件扫描逻辑
 // ============================================================
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';

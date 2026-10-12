@@ -1,6 +1,6 @@
 {
   "name": "sofagent",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "description": "Open-source FDE Harness for AI coding agents. On entry, write business judgment into files; after departure, audit every change against them. 28 audit rules, tamper-evident chain, snapshots (104 tools, 11 plugins).",
   "license": "MIT",
   "author": "KongFangXun",
@@ -42,15 +42,15 @@
     "README.md"
   ],
   "dependencies": {
-    "@sofagent/ab-test": "1.5.8",
-    "@sofagent/audit": "1.5.8",
-    "@sofagent/core": "1.5.8",
-    "@sofagent/daemon": "1.5.8",
-    "@sofagent/eval": "1.5.8",
-    "@sofagent/evolve": "1.5.8",
-    "@sofagent/mcp": "1.5.8",
-    "@sofagent/ontology": "1.5.8",
-    "@sofagent/orchestrator": "1.5.8",
-    "@sofagent/think": "1.5.8"
+    "@sofagent/ab-test": "1.5.9",
+    "@sofagent/audit": "1.5.9",
+    "@sofagent/core": "1.5.9",
+    "@sofagent/daemon": "1.5.9",
+    "@sofagent/eval": "1.5.9",
+    "@sofagent/evolve": "1.5.9",
+    "@sofagent/mcp": "1.5.9",
+    "@sofagent/ontology": "1.5.9",
+    "@sofagent/orchestrator": "1.5.9",
+    "@sofagent/think": "1.5.9"
   }
 }

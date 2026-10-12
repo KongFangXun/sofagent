@@ -10,7 +10,7 @@
 
 [![Build](https://img.shields.io/github/actions/workflow/status/KongFangXun/sofagent/verify.yml?branch=main)](https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.5.8-16B8F3)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v1.5.9-16B8F3)](./CHANGELOG.md)
 ![npm](https://img.shields.io/npm/v/sofagent)
 [![Stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
 
@@ -277,7 +277,7 @@ The screenshot on the first screen shows the A1 scenario (a .env sensitive-file 
 **Full install** (Node.js ≥ 18, download and review before running)—**installed on the enterprise devices running the AI nodes**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.8/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.9/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh     # review the script first, confirm it's safe
 bash bootstrap.sh && rm bootstrap.sh
 ```

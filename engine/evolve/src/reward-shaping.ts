@@ -1,4 +1,4 @@
-// reward-shaping.ts · 训练期惩罚信号折算（v1.5.8 章五）
+// reward-shaping.ts · 训练期惩罚信号折算（v1.5.9 章五）
 //
 // 承接 v1.4.4 规则→reward 映射：映射源 = @sofagent/audit 的
 // severityWeightOf（export/rule-schema 定义、public-api re-export 于

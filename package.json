@@ -1,6 +1,6 @@
 {
   "name": "sofagent-monorepo",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "description": "sofagent 单仓根（monorepo，private 不发布）——开源 FDE Harness 层：嵌在 Agent 与模型层之间做治理，进场把业务判断写成文件（工作流 / 本体数据 / AI 节点），离场按文件审计每一次变更。各能力包在 engine/* 下独立发布（CLI 入口 @sofagent/audit，裸名总包 sofagent）。",
   "keywords": [
     "sofagent",
