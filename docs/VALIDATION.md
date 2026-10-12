@@ -282,6 +282,11 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
   Transactional Outbox 式「期望 vs 观测」效果查证位是其工程化形态：未观测不默认成功——审计从记账升级为闭环确认。与上条正交：彼管「验收维度须独立于能力」，此管「完成状态语义须锚定终态证据」。
 > 来源：Anthropic《Demystifying Evals》· https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents （IMA 收录；转述交叉：Agent评测三源合篇 2026-10-07）｜ Transactional Outbox 效果查证位（Agentic 发布篇 2026-09）
 
+- **评测对象是「一次行动」而非「一个答案」（四源）**——被测的是 模型 + Prompt + Skill + 工具 + 记忆 + 状态 + 业务流程 组成的复杂系统，而非裸模型本身：
+  同一模型换 Harness / Skill / 工具即等于换被测对象，故「模型升级了评测作废」与「Harness 改了评测同样作废」须同等对待。
+  配套判据「**带着正确答案的失败**」（结果正确而过程错误）：只看终局答案会把它判成通过，须与结果轴**独立留痕、分别举证**。
+> 来源：美团 Agent 评测五层用例体系（AItest进阶之路）｜淘宝 LLM-as-Judge 日级工业化（大淘宝技术）
+
 - **pass^k 一致性抽验（单次通过 ≠ 稳定通过）**：回归验收抽验边缘场景，要求 **k 次重复稳定通过**而非单次成功——单次通过率会掩盖抖动的 harness。
   - ⚠️ 两条口径注记（**细节见归档**）：+54% 系 **pass^1 相对提升**、非 k 次一致性；同页已声明「多数场景推荐改用 extended thinking」⇒ 只按**方法论**采用。
 > 📖 来源：[Anthropic Engineering · The think tool](https://www.anthropic.com/engineering/claude-think-tool)（2025-12-15 更新）· 哥伦比亚大学 COMS W4995 第 5 讲（2026-10-11）
