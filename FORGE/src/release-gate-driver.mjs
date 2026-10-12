@@ -565,8 +565,10 @@ function loadTools(role, progressMw = null) {
                 // release-gate R1 verdict P0-1：60s 硬上限把维度 148 判成超时（exit=ERR），
                 // 而该维度 6 个子命令逐条实测 ①1s ②1s ③0s ⑥**131s** ⑦1s——单项
                 // `check-tool-health.sh` 131s 正常完成（rc=0），事实侧无缺陷，纯属工装预算不足。
-                // 提到 180s：超时仍照旧报 ERR（不削弱任何门禁），只消除「跑得完却判超时」的假红。
-                timeout: 180_000,
+                // 提到 300s：实测该项**随机器负载在 131s~176s 间波动**（同一命令两次实测），
+                // 180s 只剩 4s 余量、负载稍高即复现假红；300s 留 ≥1.7 倍余量。
+                // 超时仍照旧报 ERR（不削弱任何门禁），只消除「跑得完却判超时」的假红。
+                timeout: 300_000,
                 cwd: (globalWorktree && globalWorktree.worktreeDir) || REPO_ROOT,
               });
               raw = stdout || '(命令执行完成，无 stdout 输出)';
