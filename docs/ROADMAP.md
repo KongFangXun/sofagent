@@ -3,7 +3,7 @@
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.5.9 · 2026-10-11（UTC）· ✅ 已发版 · 孔放勋 · 进化模块 · 准入门与数据面。完整历史见 [CHANGELOG](../CHANGELOG.md)。
+> v1.5.9 · 2026-10-13（UTC）· ✅ 已发版 · 孔放勋 · 进化模块 · 准入门与数据面。完整历史见 [CHANGELOG](../CHANGELOG.md)。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 

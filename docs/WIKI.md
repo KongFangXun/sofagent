@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.9 · 2026-10-11（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.9 · 2026-10-13（UTC）· ✅ 已发版 · 孔放勋
 
 > sofagent 是开源（MIT）的 **FDE Harness 层**——不造 Agent，给宿主 Agent（DSH / OpenClaw / WorkBuddy）加一层治理。本文档是项目全局索引入口。
 > 人类与 AI Agent 均可读；**Agent 查实现路径直接跳 [§五 文件地图](#五文件地图)**；English: [README.en.md](../README.en.md)。阅读路径见 [§八](#八导航按你的意图选路)；文档分工见 [§九](#九文档分工与体量纪律)。
