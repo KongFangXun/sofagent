@@ -186,6 +186,11 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        # 🔴 v1.5.9：本 job 必须带 fetch-depth: 0（拉 tag）——check-test-count 的历史冻结豁免
+        # 依赖 git tag 判「已发版行」（v1.5.8 行声称 401 是当时真实值）。浅检出下 tag 为空 ⇒
+        # 豁免失效 ⇒ 历史行被误判漂移（实测 pr-check 38285955605 红因）。与 version-and-docs job 同口径。
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
