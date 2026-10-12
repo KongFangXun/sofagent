@@ -82,8 +82,27 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
       --quick)       QUICK=true; shift ;;
       --minimal)     MINIMAL=true; shift ;;
+      --guard-only)
+        # 只跑「不可逆风险」守卫（开源边界 + 家目录路径，同在 check-open-boundary.sh）。
+        # 为什么单列一个模式：这是 pre-push hook 的载荷，而 **hook 必须快到没人想绕过**。
+        #   实测：--quick 需 **7 分钟以上**（落进 hook 只会被 --no-verify 绕开，比不装更糟）；
+        #   本模式 **约 30 秒**（守卫对 2000+ tracked 文件逐个 `file` 探测，慢在这）。
+        #   判据：**只有「push 之后发现就来不及」的检查才配进 hook**（公开面泄漏即此类——
+        #   清理须移动已发布 tag，通常做不到）；其余检查都能事后修，交给 CI 与手动全量预检。
+        # ⚠️ 本块在辅助函数定义之前（参数解析期）执行，故只用 echo，**不得调 check_pass/check_fail**。
+        echo -e "${BOLD}── 不可逆风险守卫（非完整预检）──${NC}"
+        _g_rc=0
+        bash tools/check/check-open-boundary.sh || _g_rc=$?
+        if [ "$_g_rc" -eq 0 ]; then
+          echo -e "  ${GREEN}✓${NC} check-open-boundary.sh（不可逆风险守卫）"
+        else
+          echo -e "  ${RED}✗${NC} check-open-boundary.sh 发现公开面泄漏（rc=${_g_rc}）"
+        fi
+        echo -e "  ${YELLOW}⚠ 本模式仅覆盖不可逆风险守卫；完整预检请跑 --quick 或全量${NC}"
+        [ "$_g_rc" -eq 0 ] || exit 1
+        exit 0 ;;
       --install-hook)
-        # 安装 pre-push hook：push 前自动跑本脚本 --quick（含 2d 开源边界守卫）
+        # 安装 pre-push hook：push 前自动跑不可逆风险守卫（--guard-only，约 30 秒）
         # 为什么需要：开源边界守卫早已接进本脚本，但 .git/hooks/ 从未装 pre-push ⇒
         #   该段在 push 时**从不自动执行**，只能靠「人记得手动跑」；而 CI 是 push 之后，
         #   对「公开面泄漏」这类**不可逆风险**已经晚了（清理须移动已发布 tag）。
@@ -93,16 +112,17 @@ while [[ $# -gt 0 ]]; do
         cat > "$_GD/hooks/pre-push" <<'SOFAGENT_PREPUSH'
 #!/bin/bash
 # sofagent pre-push hook —— 由 `bash tools/release/pre-push-check.sh --install-hook` 生成
-# 只跑静态段（--quick：跳过 npm test/build），其中含 2d 开源边界守卫。
+# 只跑不可逆风险守卫（--guard-only，约 30 秒）。刻意不跑完整预检：hook 必须快到
+# 没人想绕过，否则会被 --no-verify 绕开，比不装更糟。完整预检仍由 CI 与手动全量承担。
 # 卸载：rm .git/hooks/pre-push
 # 临时绕过（谨慎）：git push --no-verify
 TOP=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 [ -x "$TOP/tools/release/pre-push-check.sh" ] || exit 0
-exec bash "$TOP/tools/release/pre-push-check.sh" --quick
+exec bash "$TOP/tools/release/pre-push-check.sh" --guard-only
 SOFAGENT_PREPUSH
         chmod +x "$_GD/hooks/pre-push" || { echo "✗ chmod 失败"; exit 1; }
         echo "✓ 已安装 pre-push hook：$_GD/hooks/pre-push"
-        echo "  作用：每次 push 前自动跑 pre-push-check.sh --quick（含开源边界守卫）"
+        echo "  作用：每次 push 前自动跑不可逆风险守卫（约 30 秒，含开源边界断言）"
         echo "  卸载：rm \"$_GD/hooks/pre-push\"   临时绕过：git push --no-verify"
         unset _GD
         exit 0 ;;
@@ -110,7 +130,8 @@ SOFAGENT_PREPUSH
         echo "pre-push-check.sh — 推前预检"
         echo "  --quick        跳过 npm test/build"
         echo "  --minimal     结构性快检：只跑 shellcheck+CLI验证+安装路径+tag+依赖图，跳过 版本号/文档/构建/测试门禁"
-        echo "  --install-hook 安装 pre-push hook（push 前自动跑 --quick）"
+        echo "  --guard-only  只跑不可逆风险守卫（约 30 秒；pre-push hook 载荷，非完整预检）"
+        echo "  --install-hook 安装 pre-push hook（push 前自动跑 --guard-only）"
         echo "  --help         显示帮助"
         exit 0 ;;
     *) shift ;;
