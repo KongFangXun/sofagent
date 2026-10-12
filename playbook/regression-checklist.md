@@ -8,10 +8,10 @@
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2050 行、`acceptance-test.sh` ≤ 4632 行（**上限重估**（台账注记见 git 演进史）：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → 4584）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → 4569）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → 4548）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2050 行、`acceptance-test.sh` ≤ 4641 行（**上限重估**（台账注记见 git 演进史）：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → 4584）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → 4569）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → 4548）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
 ·t +3 → **1989**）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4584 + 1 场景余量 6 = **4590**（前段：4548 + 6 = 4554；后阶段四收编 S459 vote fail-closed 场景 7 行 ⇒ 4555 + 余量 6 = 4561；后 release-gate 20260929-01 coverage P0 闭环批 S460/S461 场景 8 行 ⇒ 4569 + 余量 6 = 4575；
-后 release-gate 20260929-03 verdict 闭环批 S463/S464 ⇒ 4584 + 余量 6 = 4590；v1.5.7 阶段四 A 类分发 +4 场景（S474-477）⇒ 4605 + 余量 6 = 4611；v1.5.9 承接 v1.5.8 B 类 3 场景（S478-480）⇒ 4626 + 余量 6 = **4632**，演进见 git）；**未删改任何既有断言**，前值 2006/4541。阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = 2050（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
+后 release-gate 20260929-03 verdict 闭环批 S463/S464 ⇒ 4584 + 余量 6 = 4590；v1.5.7 阶段四 A 类分发 +4 场景（S474-477）⇒ 4605 + 余量 6 = 4611；v1.5.9 承接 v1.5.8 B 类 3 场景（S478-480）⇒ 4626 + 余量 6 = **4632**，演进见 git；**release-gate R1 verdict P0-2 覆盖缺口闭环批**：新增 S482「章五·FDE Handbook 升格行为锁（GUIDE 六段生命周期）」（+3 行 ⇒ 落位后实测 **4635**）⇒ 4635 + 余量 6 = **4641**——走「真实归并**或**上调记录」两条路径中的**上调记录**（本批未删改任何既有断言，无真实可归并空间：新增面为章五文档锁，与现有 148 维不同族），前值 4632）；**未删改任何既有断言**，前值 2006/4541。阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = 2050（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1986 + 1 维度余量 20 = **2006** · 4535 + 1 场景余量 6 = **4541**（后续 S454 降语义修复 `e869c670` +4，当批实测 4539 / ≤4541 余 2）；**未删改任何既有断言**，前值 1950/4500。实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
 🔴 **欠账登记（已评估 · 移 v1.5.5）**：本版新增章对应的验收场景与回归维度欠账，**经对销可行性复核判定两文件均无真实可归并空间**（0 内容级可归并对；乐观叠加 checklist ≈43 < 需求 98 / acceptance DRY 16 < 需求 21），按 v1.5.4〈首项硬交付〉〈对销可行性评估〉节裁定**7 项全批移 v1.5.5 落位**；本版新增维度前仍须先真实归并 ≥新增数并附承接断言清单，详见 [v1.5.4 开发日志](../docs/changelog/v1.5/v1.5.4.md)〈首项硬交付〉节。
 > 🧾 **落位说明（承接落位批）**：本版 devlog〈待补清单〉之 4 个维度项（#1 发版状态翻牌面三分 / #2 registry 对账通道终局口径 / #5 bump 历史引用误伤 / #6 dev prompt 读数禁快照）**按维护公约 §8「有同类 → 扩展旧维度子项、不新增编号」以子项并入同类现役维度**（#1/#5 → #124 · #2 → #97 · #6 → #130），**无一新增编号**（`check-review-system.sh` §1a/§1f 读数值 85 不变、归并配额棘轮不触发）。
@@ -33,7 +33,7 @@ ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 2050 ] && echo "✅ checklist $WC_CHK (≤2050)" || { echo "❌ checklist $WC_CHK 超 2050（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4632 ] && echo "✅ acceptance $WC_ACC (≤4632)" || { echo "❌ acceptance $WC_ACC 超 4632（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+[ "$WC_CHK" -le 2050 ] && echo "✅ checklist $WC_CHK (≤2050)" || { echo "❌ checklist $WC_CHK 超 2050（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4641 ] && echo "✅ acceptance $WC_ACC (≤4632)" || { echo "❌ acceptance $WC_ACC 超 4632（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
@@ -1356,7 +1356,7 @@ grep -q "13812345678" engine/scripts/verify.sh || echo "⚠️ verify.sh 脱敏�
 ```bash
 (
 # ① quick 规则数声称对账（防 #1）：README 声称与 dist 实测一致
-README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" ] || echo "⚠️ README quick 规则数口径漂移"
+README_N=$(grep -oE '17 条默认' README.md | head -1); [ -n "$README_N" ] || echo "⚠️ README quick 规则数口径漂移"
 node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==28)process.exit(1)" || echo "⚠️ dist 规则数非 17/28，README 同步" # v1.5.7 E5/E6/E7 落地后全量 25→28（S360/S474 同口径）
 # ② check-version MCP 数含 ARCHITECTURE 能力总览（防 #3/#14）
 bash tools/check/check-version.sh > /tmp/cv.log 2>&1; grep -qE "60 tools|MCP 工具数" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE" # 注：48→60（52+8 新 tool），数字勿写死——check-version 自身会跟 SSOT

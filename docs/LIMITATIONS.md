@@ -562,7 +562,7 @@ sofagent audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/tas
 
 | 文件 | 实测体量 | 维护风险 | 拆分去向 |
 |---|---|---|---|
-| `playbook/acceptance-test.sh` | 512,108 字符 / 4,626 行 | 单文件承载 405 场景——新增场景持续增厚；bash 无模块化，场景间复用靠函数 | 按域拆多文件 + driver 汇编——**须与发版 SOP 容量约束协同**（发版门禁引用单文件路径），排期评估 |
+| `playbook/acceptance-test.sh` | 516,439 字符 / 4,635 行 | 单文件承载 406 场景——新增场景持续增厚；bash 无模块化，场景间复用靠函数 | 按域拆多文件 + driver 汇编——**须与发版 SOP 容量约束协同**（发版门禁引用单文件路径），排期评估 |
 | `tools/dashboard/dashboard.html` | 297,721 字符 / 2,997 行 | 单文件 HTML（check-dashboard MAX_LINES 3000 顶格附近，余量 3 行）；内联 style 194/210 逼近上限（check-dashboard 实测）——新增能力无空间 | 拆分评估已登记 [ROADMAP · 探索方向](./ROADMAP.md)（单文件形态是安装态分发前提，拆分须与分发方式协同；内联 style 类化改造同条登记，待拆分评估一并处置） |
 | `engine/audit/src/index.ts` | 103,980 字符 / 2,062 行 | CLI 入口 + 审计主流程单文件——改动面集中，review 噪声大 | 按子命令拆模块（`src/cli/` 目录化）——低风险机械拆分，排期评估 |
 | `install.sh` | 1,791 行（v1.5.8 登记） | 安装器单文件——哈希钉定/rescue/bootstrap/平台分发多职责合一 | 本版不拆分；与上述同族登记，拆分去向排期评估 |
@@ -618,7 +618,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 405 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
 - **CI 已覆盖**：单元测试审计核心 1562 个、全 workspace 6067 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 405 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
+- **发版前手动覆盖**：acceptance-test.sh 406 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
