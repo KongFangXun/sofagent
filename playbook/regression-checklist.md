@@ -1154,7 +1154,7 @@ done
 grep -qE 'echo "SUMMARY:' playbook/acceptance-test.sh && echo "✅ 机器可解析 SUMMARY 在位" || echo "⚠️ 缺 ANSI-stripped 汇总行"
 # b: bash 3.2 兼容模式（归并原维度 94——空数组+set -u = unbound；尾行 [[ ]] && + set -e = 成功也 exit 1）※ 新增脚本人工核对项
 /bin/bash --version | head -1 # 确认为 3.2；危险模式：${arr[@]} 无守卫 / 尾行条件裸用
-grep -rn 'declare -A' install.sh tools/ engine/scripts/ --include="*.sh" 2>/dev/null | grep -vE '^\S+:[0-9]+:\s*#' || true # 期望：零命中（bash 3.2 无关联数组）
+grep -rn 'declare -A' install.sh tools/ engine/scripts/ playbook/ --include="*.sh" 2>/dev/null | grep -vE '^\S+:[0-9]+:\s*#' || true # 期望：零命中（bash 3.2 无关联数组；playbook/ 已纳入——release-gate 编排脚本曾从该盲区漏检，实测修复后 playbook/ 真实命中 0）
 ```
 
 #### 92. 审查文档自身检查命令的架构迁移同步
