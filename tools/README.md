@@ -2,7 +2,7 @@
 
 > **边界**：`engine/scripts/` 是 install.sh 组装调用的**用户安装链**（随 `deploy_scripts()` 到达用户目标目录的 `scripts/`）；本目录是**仓库维护链**，只在本仓运行——两者不可混放。
 
-> **目录结构**：按职能分子目录（check/ · gen/ · report/ · dashboard/ · release/ · verify/，各节用途见下方目录）。**根目录无任何脚本与数据文件**。
+> **目录结构**：按职能分子目录。**根目录无任何脚本与数据文件**。
 
 ## 目录
 
@@ -105,10 +105,10 @@
 | `check/doc-ratchet.json` | 核心文档**可读性棘轮台账**（被 `doc-discipline.sh` Face 5 消费：墙式行/墙式格实测值**只许降不许升**——治「内容只进不出」；键 = 逐文档实测计数，`_meta` 记口径，与 `lib/readability-count.mjs` 同源）。 |
 | `check/doc-char-ratchet.json` | 核心文档**字数棘轮台账 + 抬头块上限**（被 `doc-discipline.sh` Face 6/7 消费：活文档**字符数**上限锁死 + 抬头块 ≤600 字；超基线即红。**口径是字数不是行数**，净增须先同文档移出等量字） |
 | `check/lib/readability-count.mjs` | **可读性计数器（单一口径）**（被 doc-discipline Face 5 / reflow-walls 共用：墙式行/墙式格的定义与计数实现；改口径先改本文件头注释再同步 `doc-ratchet.json` `_meta`）。 |
-| `check/lib/compact-tables.mjs` | **表格瘦身器**（**一次性治理工具、非门禁**）：去单元格对齐填充 + 分隔行归一；GFM 不需填充 ⇒ **零内容风险**（写回前字符多重集比对，分隔行豁免；**只减不增** · 冻结区跳过）。`--selftest` 十项 | 手动治理文档时 |
+| `check/lib/compact-tables.mjs` | **表格瘦身器**（**一次性治理工具、非门禁**）：去单元格对齐填充 + 分隔行归一；GFM 不需填充 ⇒ **零内容风险**（写回前多重集比对，只减不增）。`--selftest` 十项 | 手动治理文档时 |
 | `check/check-loop-bare-return.mjs` | 裸 return 循环守卫 |
-| `check/lib/reflow-walls.mjs` | **墙式行折行器**（**一次性治理工具、非门禁**）：超长段落折行，产出供 doc-ratchet 重新基线。`--selftest` 十条：幂等/内容守恒/不凭空造行/无残留超限/表格与围栏豁免。续行前缀取 `>` 无空格（本仓风格，勿改） |
-| `check/lib/split-table-cells.mjs` | **超长表格格拆注工具**（**一次性治理工具、非门禁**）：把墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线。契约受 `check-table-shape.mjs` ③④ 机械对账——标记 `（详→注-N）`、须有 `> 注-N：` 定义、**切口必落句读符**（无切口则整格不拆） | 拆注治理时 |
+| `check/lib/reflow-walls.mjs` | **墙式行折行器**（**一次性治理工具、非门禁**）：超长段落折行，产出供 doc-ratchet 重新基线。`--selftest`：幂等/守恒/不造行/无残留/表格豁免。续行取 `>` 无空格 |
+| `check/lib/split-table-cells.mjs` | **超长表格格拆注工具**（**一次性治理工具、非门禁**）：把墙式格拆成表格下方注行，产出供 doc-ratchet 重新基线。契约受 `check-table-shape.mjs` ③④ 对账——`（详→注-N）` 须配 `> 注-N：` 定义，切口必落句读符 | 拆注治理时 |
 | `check/check-claims.mjs` | **声称↔实测三组断言**：**A** 整文件零生产消费者（存量件信息位不阻断、**新增件零消费 ⇒ 阻断**（豁免台账 `check/claims-sdk-ledger.json`；治纸面接线第 4 逃逸路径）——生产面 = `engine`+`tools`（`playbook/` 剔出：行为锁本质是测试）；（详→注-14） | CI / 改 SECURITY 测绘数字或 hook 时 |
 | `check/doc-score.mjs` | 文档质量六维评分器（准确/精简/结构/排版/可读/淘汰六维，各维 = 通过项/总项 × 10；机械项调既有门禁、人工项读本版 devlog「文档质量评分」留痕，未确认即按不通过计 fail-closed；任一维 <8 或低于基线即不可放行；增量模式见注-21） | pre-push 第 5b 步 / 发版 SOP / Face 13 |
 | `check/doc-score-baseline.json` | 文档质量六维评分基线（逐维下限 + floor 8 + 建档日期；只许升不许降） | 被 doc-score.mjs 消费 |
