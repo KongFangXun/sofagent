@@ -278,7 +278,7 @@ sofagent audit --doctor    # 验证环境（可选）
 > | 全局安装 | `npm i -g sofagent` → `sofagent audit` |
 > | 完整安装（含 daemon / dashboard） | `bootstrap.sh` / `install.sh`（见上） |
 >
-> - **兼容期**：旧命令（`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …）**仍可用**，会提示新入口——**一个 minor 版本后移除**。收敛前的 13 个 bin 现已由单入口统一承载。
+> - **旧命令已退役**：`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` 等 12 个旧 bin 的兼容期届满，**已移除**（bin 与弃用提示一并下线）。收敛前的 13 个 bin 现由单入口统一承载。
 > - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
 >   **只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g @sofagent/audit`。
 > - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。
