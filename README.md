@@ -46,7 +46,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 <p align="center">
   <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/audit-terminal.png" alt="sofagent audit 拦截 .env 提交" width="860" /><br/>
-  <sub>零配置审计实拍：一行命令审计最近一次 commit，密钥泄漏当场拦截（截图摄于单入口收敛前，命令已收敛为 sofagent audit）</sub>
+  <sub>零配置审计实拍：一行命令审计最近一次 commit，密钥泄漏当场拦截（现为 sofagent audit）</sub>
 </p>
 
 <details>
@@ -253,7 +253,7 @@ sofagent audit --doctor    # 验证环境（可选）
 >
 > | 入口 | 命令 | 形态 | 给谁看 |
 > |---|---|---|---|
-> | **终端版** | `sofagent dashboard --full`（旧 bin `sofagent-dashboard` 仍在兼容期可用） | 终端 ASCII 三栏（零前端依赖） | 开发者 / FDE 快速看 |
+> | **终端版** | `sofagent dashboard --full` | 终端 ASCII 三栏（零前端依赖） | 开发者 / FDE 快速看 |
 > | **Web 版** | `sofagent web`（install.sh 安装态可用）· 仓库态 `node tools/dashboard/serve-dashboard.mjs` | 浏览器可视化（localhost:3780） | 老板 / IT 可视化看 |
 > | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式（仅 macOS 双击入口） | macOS 用户 |
 >
@@ -278,7 +278,7 @@ sofagent audit --doctor    # 验证环境（可选）
 > | 全局安装 | `npm i -g sofagent` → `sofagent audit` |
 > | 完整安装（含 daemon / dashboard） | `bootstrap.sh` / `install.sh`（见上） |
 >
-> - **旧命令已退役**：`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` 等 12 个旧 bin 的兼容期届满，**已移除**（bin 与弃用提示一并下线）。收敛前的 13 个 bin 现由单入口统一承载。
+> - **旧命令已退役**：12 个旧 bin 兼容期已满**移除**，统一走单入口。
 > - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
 >   **只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g @sofagent/audit`。
 > - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。

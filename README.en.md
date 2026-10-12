@@ -321,7 +321,7 @@ the installed UI is the source of truth.)</sub></p>
 >
 > | Entry | Command | Form | Who it's for |
 > |---|---|---|---|
-> | **Terminal** | `sofagent dashboard --full` (legacy bin `sofagent-dashboard` still works during the compatibility window) | Terminal ASCII three-pane (zero frontend dependencies) | Developers / FDE quick check |
+> | **Terminal** | `sofagent dashboard --full` (legacy bin `sofagent-dashboard` retired) | Terminal ASCII three-pane (zero frontend dependencies) | Developers / FDE quick check |
 > | **Web** | `sofagent web` (available in the install.sh-installed state) · repo-mode `node tools/dashboard/serve-dashboard.mjs` | Browser visualization (localhost:3780) | Boss / IT visual review |
 > | **macOS double-click** | Double-click `start-dashboard.command` | macOS shortcut to the Web version (macOS double-click entry only) | macOS users |
 >
@@ -350,7 +350,7 @@ the installed UI is the source of truth.)</sub></p>
 > | Global install | `npm i -g sofagent` → `sofagent audit` |
 > | Full install (daemon / dashboard) | `bootstrap.sh` / `install.sh` (above) |
 >
-> - **Compatibility window**: the old commands (`sofagent-audit` / `sofagent-daemon` / `sofagent-orchestrator` …) **still work** and print a pointer to the new entry—**removed one minor version later**. The 13 former bins are now carried by the single entry.
+> - **Legacy commands retired**: the 12 old bins (`sofagent-audit` etc.) passed their compatibility window and **have been removed**; the former 13 bins are now served by the single entry.
 > - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; transitive deps measured via `npm ls --all --parseable | wc -l` = 603 lines (1 project-root line ⇒ 602 packages;
 > basis: installed `npm i sofagent@1.5.8` · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10), 5 carry native modules and install scripts—new npm versions don't run unreviewed install scripts, so those native builds are **silently skipped**).
 >**For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or the scoped package `npm i -g @sofagent/audit`.
