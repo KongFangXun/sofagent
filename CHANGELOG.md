@@ -33,6 +33,8 @@
 > 📌 **当前口径**：MCP tool 总数 **104**（v1.5.4 新增 `router_slots` 103→104；浏览器四件套 MCP 面（`playwright_*`）2026-09-26 退役 107→103，底座随 v1.5.7 章二删除，裁定见 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md)；上方 107 为 v1.5.2 时点读数）
 - **v1.5.1** — 🎬 编排模块·事件驱动（业务事件触发/设备 OTA/审计输入双通道/`sofagent demo`）· 测试 4903→**5083**（13 包 workspace 口径）· acceptance 357→**367** · 2026-09-22 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.1.md)
 - **v1.5.0** — 📊 治理模块·可见性与本体成熟（治理 KPI 面板/本体双时态/Validation Engine/trace 对账/FDE 陪跑期/DSH 插件事件接线）· MCP 104→105 tools · 测试 4805→**4903**（+98，13 包口径）· acceptance 352→**357** · 2026-09-19 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
+- **v1.4.x（后训模块九连版 v1.4.1→v1.4.9）** — 🚂 train-job 编排 → 数据管道 → eval → serve → 分布式训练 → 商业接口 → 插件管控 → 设备接入：企业专属小模型全链路（train compare 多基座对比 · 详见各版日志）。
+
 
 
 > ⚠️ **API 退役公告（v1.4.3 公告 · v1.5.0 移除）**
@@ -68,20 +70,6 @@
 > **升级影响（公开 API 删除）**：外部代码 import 上述 4 符号将编译失败——四件套自 MCP 面 2026-09-26 注销（107→103）后已零生产消费面，SDK 面台账零登记（`check-unwired-exports` 实测零命中），实际破坏面为零；历史实现可自 v1.4.x tag 取回。
 >**保留不变**：三件图像能力 `analyzeScreenshot` / `readImageMeta` / `degradeImageToText`（dsh-vision 视觉降级本体，非四件套）迁 `engine/orchestrator/src/refine-agent/image-meta.ts`，`@public` 导出与基线条目原样保留（导出改指新模块，导入路径无需变更）。MCP 工具面无增删（仍 104）。
 
-- **v1.4.9** — 设备接入与数据承接：G9 设备注册/发现/心跳（Ed25519 身份 + 在线才派单/掉线改派）· G10 数据目录白名单授权读取 · G11 采集声明 opt-in 上行（WAL 加密暂存 + 断点续传 + 审计计量）· T7 router 过站 session 承接 · T8 敏感识别三层插槽（SDK 面，
-  管线接线排期 v1.5.1）· T9 权重灰度 AB（SDK 面同上）· G5b 连接器注册 + G1 workflow 模板血缘 · T6 installer + T10 模型清单 · MCP 95→**104**（9 新）· 测试 4429→**4805** · 2026-09-17 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.9.md)
-
-- **v1.4.8** — 插件管控与工程效能：插件来源白名单 · 应用级工具策略 · 多 Agent 协作阵型库 · 自动上下文压缩 · shell 提权分级 · 成本 quota 事前门禁 · 依赖方向架构测试 · 自研进化 gate（skillopt 更名 @sofagent/evolve）· 执行机制纪律批 · MCP 95→**95**（零新增）· 测试 4279→**4429** · 2026-09-13 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.8.md)
-- **v1.4.7** — 商业平台接口版：G2 能力缺口 · G4 人机贡献度 · G6 节点可见性 · G7 多租户 v0 · G13 PR 生命周期 · G14 workflow CRUD · workflow 烧录 USB · G8 首部署 cron · 云训练 TrainChannel 收口 · MCP 84→**95**（11 新）· 测试 4088→**4279** · 2026-09-11 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.7.md)
-- **v1.4.6** — 后训模块 · 分布式与云端：多卡/多机训练（schema v2 + GPU 拓扑 + NCCL 诊断）· 云 VM 执行面 train_cloud · 标准数据推送接口双闸 · 边界收缩（约 −1.2k 行）· MCP 83→**84** · 测试 4055→**4088** · 2026-09-09 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.6.md)
-- **v1.4.5** — 后训模块 · 服务与持续：train_serve 推理服务 · 持续后训练三触发与回退 · train_compliance 合规扫描 · train_deliverable 交付包 · 进化实证收口 · 可靠性加固批 · MCP 80→**83** · 测试 3753→**4055** · 2026-09-08 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.5.md)
-- **v1.4.4** — 后训模块 · 信号与部署闭环：训练语料导出三件套 · 企业专属模型本地权重部署（manifest+sha256 篡改拒绝）· 训练产物自动注册 · 多基座对比（train compare ROI 排序）· 决策因果链与先例检索 · CI 供应链全 SHA 固定 · MCP 79→**80** · 测试 3619→**3753** · 2026-09-04 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.4.md)
-- **v1.4.3** — 后训模块 · 运行与需求 + 审计聚合：train_status/train_list 监控 · train_diagnose 七类诊断 · 训练沙箱 · 需求推导 + RL 配方模板 · 审计聚合 --stats · 反作弊基线 · 存量清扫五件 · MCP 76→**79** · 测试 3349→**3619** · 2026-09-01 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.3.md)
-- **v1.4.2** — 后训模块 · 数据与评估 + FDE 六引擎：数据管道（多源接入+质量闸门+脱敏）· dataset_version 台账 · eval 闭环 · train_doctor · dry-run 算力外推 · fde_* 六件 · IM 桥 · MCP 67→**76** · 测试 3202→**3349** · 2026-08-29 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.2.md)
-- **v1.4.1** — 🚂 后训模块 · 地基：train-job 编排（`train_submit` 67 tools）+ 审计 HMAC 链 + enterpriseId 隔离 + 可复现指纹 + 权重 HMAC 签名阻断 + 崩溃恢复 + 安全基线（路径白名单/注入过滤/凭据脱敏）+ Metal reward 收敛验证 + 双栈契约文档 + SKILL 体系重构 + 依赖升级 · 测试 2981→**3222**（+241，全量口径：包含非 workspace 计数的散测 3178+44——v1.4.2 起改为 12 包 workspace 口径，
-  两版数字不直接可比）· 2026-08-28 · [开发日志](./docs/changelog/v1.4/v1.4.1.md)
-- **v1.4.0** — 📊 Web 工作明细页 + 图谱栏 + 💰 成本审计（`cost_query` + 超支告警）+ 🔌 DSH 插件家族 9 款 + 🦞 OpenClaw 插件 4 款 + 🏠 Dashboard HTML 产品化 + 📡 远程 API 通道 + 🔗 MLflow 接线 + 🌐 Agentic Browser（66 tools）+ 🔀 工具角色分层 + ⚡ DSH 默认启用 + 🔌 MCP 自动配置 + 🔄 联邦查询 E2E + 🐚 bash 3.2 实测 · 测试 2903→**2981**（+78）· 2026-08-23 ·
-  [开发日志](./docs/changelog/v1.4/v1.4.0.md)
 - **v1.3.9** — 🔍 官方 AST 规则引擎（8+2 规则同管线）+ meta-harness 多 harness 编排 + worklog 数据层 + API 分级 @public/@internal（1439 符号门禁）+ FORGE 切 DSH + MLflow agent 评估 + Agentic Browser + 跨平台适配器 + ATTRIBUTION 归因 + Dream Sandbox + >5MB diff 修复 + 长任务进程自愈（守护 daemon + watcher，
   进程被外部回收后自动恢复） · 测试 2782→**2903**（+121）· 2026-08-23 · [开发日志](./docs/changelog/v1.3/v1.3.9.md)
 - **v1.3.8** — 🛡️ 代理网关硬边界（唯一出入口 + HITL 审批队列首场景）+ 🔐 数据静态加密（能力交付：AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1，见 SECURITY）+ ⏸️ Durable Execution L3（WAL 三档可逆）+ ⏰ 异步长任务自治（cron + 依赖图）+ FORGE 保活三件套 + SDK `sandbox:true` + release-gate 瘦身 + 审查成本计量（逐步 token 记账 + 单次草稿模式） + 快照写路径加固 · 测试

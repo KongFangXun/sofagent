@@ -26,7 +26,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.8: Evolution Module · Admission Gates & Data Plane](#v158-evolution-module--admission-gates--data-plane)
+- [v1.5.9: Evolution Module · Write-Surface Audit & Meta-Validation](#v159-evolution-module--write-surface-audit--meta-validation)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -204,21 +204,21 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.8: Evolution Module · Admission Gates & Data Plane
+## v1.5.9: Evolution Module · Write-Surface Audit & Meta-Validation
 
-⚡ **Two gates on evolution + the data plane from experience to training**—so an Agent can't drift out of control by rewriting itself:
+🧬 **A black box for self-improvement — every evolutionary step is logged, rollback-able, and the gate itself never ages**:
 
-| Capability | One-liner | Reach |
+| Capability | One-liner | Reachable |
 |---|---|---|
-| **Evolution admission gates** | Domain-verifier three-tier routing (`deterministic` / `model-judge` / `human-only`): only domains where verification is cheaper than generation evolve automatically; unregistered domains fail-closed at the strictest tier | Wired (v1.5.9 cleared all 47 symbols) |
-| **Three-tier promotion policy** | Frequency × persistence × verification as pure functions → inject-lease / skill-semi-persistent / fine-tune-amortized; promotion must clear four evidence gates (holdout-first · strictly beat historical best · single-variable attributable · calibration non-degrading) | Wired (v1.5.9 cleared all 47 symbols) |
-| **Experience pool → training pipeline** | instinct pool exports high-confidence + examined records as training rows (with lineage anchor and source-authenticity mark); the train-side adapter normalizes them and builds datasets mixed with external sources | Wired (v1.5.9 cleared all 47 symbols) |
-| **Examiner** | Generates verification questions from instinct; only answer-correct **and** reproduction-verified items are marked `verified` and enter the pool; scorer independence is a hard gate | Library-only |
-| **RL training governance** | Policy hits during training fold penalties by rule severity (via the existing `severityWeightOf` single source — no second mapping) | Wired (v1.5.9 cleared all 47 symbols) |
-| **Rule count 25→28 fully reconciled** | Docs / code comments / npm facade / dashboard all synced; five-variant gate prevents regression | — |
+| **Write-surface audit trail** | Full trail on prompt/memory write surfaces, reusing the HMAC audit chain; no trail = rollback (fail-closed) | Wired |
+| **Capability baseline lineage** | Four-layer state snapshots + content-addressed ids + predecessor chain; answers "how did it behave back then" and rolls back | Wired |
+| **Load-chain config contract** | 18-field SSOT bidirectional reconciliation (impl ↔ declaration) across four config layers; unrouted keys mechanically detectable | Wired |
+| **Validator aging detection** | Three-state drift triage (real failure / env drift / insufficient evidence); advisory, non-blocking | Wired |
+| **Transparency repo & adversary self-test** | Red-team runner with 9 paired cases (blocked / detection-evidenced) across tamper·forge·bypass attack surfaces | Wired |
+| **evolve promoted to RSI module** | Zero logic change, mount-point migration only; write-surface narrowing (control-plane deny / traversal deny / writable allow) | Wired |
+| **Legacy command shims retired** | 12 old bins (sofagent-audit etc.) explicitly removed after compatibility window; single entry only | ⚠️ Breaking |
 
-> 📌 Full evidence: [v1.5.8 dev log](./docs/changelog/v1.5/v1.5.8.md); older capability sections: [CHANGELOG](./CHANGELOG.md).
-
+> 📌 Full evidence in the [v1.5.9 devlog](./docs/changelog/v1.5/v1.5.9.md); older capability sections in [CHANGELOG](./CHANGELOG.md).
 ## The Two FDE Harness Phases
 
 **How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**:
