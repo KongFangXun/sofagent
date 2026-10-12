@@ -264,6 +264,8 @@ else
     OVER_N=$(printf '%s\n' "$OVER" | grep -c .)
     HITS=$((HITS + OVER_N))
     echo "  ❌ ${OVER_N} 处超基线——内容只许降不许升；净增须先同文档移出等量字（06 · 三道闸闸一），再动基线"
+    echo "    💡 最常见成因：解 merge 冲突时「取并集」把两侧内容都留下 ⇒ 合并前先算字数账"
+    echo "       （git show <merge-base>:<file> | wc -m 对比 doc-char-ratchet.json 基线；超了就在同文档内移出等量字，勿动基线）"
   else
     REG_N=$(node -e 'const fs=require("fs");const o=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log(Object.keys(o).filter(k=>k!=="_meta").length)' "$CHAR_RATCHET" 2>/dev/null || echo '?')
     echo "  ✓ 全部 ≤ 基线（${REG_N} 份核心文档；精简后请改小台账让 diff 记录）"
