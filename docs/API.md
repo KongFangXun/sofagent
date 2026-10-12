@@ -3,7 +3,7 @@
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 104 tools 按域分组。工具清单的生成与防漂移机制见 §三。
-> v1.5.9 · 2026-10-09（UTC）· ✅ 已发版 · 孔放勋 · 104 tools / 7 面——逐版工具数沿革见 [CHANGELOG](../CHANGELOG.md)；状态见 [ROADMAP](./ROADMAP.md)
+> v1.5.9 · 2026-10-11（UTC）· ✅ 已发版 · 孔放勋 · 104 tools / 7 面——逐版工具数沿革见 [CHANGELOG](../CHANGELOG.md)；状态见 [ROADMAP](./ROADMAP.md)
 
 ## 目录
 
