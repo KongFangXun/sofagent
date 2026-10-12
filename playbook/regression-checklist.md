@@ -1,7 +1,7 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 85 维 · 编号 1-147 · 61 个编号已归并删除（#4 已并入 #147（28 口径承接）· #9 已并入 #18 · #21 已并入 #146 · 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 83 维 · 编号 1-148 · 63 个编号已归并删除（#4 已并入 #147（28 口径承接）· #9 已并入 #18 · #21 已并入 #146 · 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -40,9 +40,9 @@ WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/ac
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段五（发版闸门）跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（85 维 · 编号规则见头部）
+## 审查维度（83 维 · 编号规则见头部）
 
-### 审查维度正文（#1-147 · 维度流连续不中断）
+### 审查维度正文（#1-148 · 维度流连续不中断）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
@@ -986,57 +986,24 @@ echo "imports=$IMPORTS tools_array=$TOOLS_ARRAY cases=$CASES"
 # 正确正则 ^\s+name: '[a-z_]+',$（行首缩进+逗号结尾=独立声明行）
 ```
 
-#### 71. package.json build 脚本禁用 `|| true` 吞编译错误（新盲区）
+#### 71. 语言/工具链静默失效陷阱——build 吞错 · 函数作用域 · 正则修饰符（归并 #72+#76 入此）
 
-> 教训`tsc && [...] || true` 末尾 `|| true` 会吞掉 tsc 编译失败的 exit code，导致 build 永远报成功。正确格式是子 shell 分组 `(...; true)`——在子 shell 内执行后返回 true，不影响外层 exit code 传递。
+> 教训（三同族：**都不报错、都静默失效**——正因如此才需要一个专门维度把它们收在一起）：
+> ① `tsc && [...] || true` 末尾 `|| true` 会吞掉 tsc 编译失败的 exit code，build 永远报成功；正确格式是子 shell 分组 `(...; true)`（子 shell 内执行后返回 true，不影响外层 exit code 传递）。
+> ② `isReportText` 定义在 `runWorker` 局部作用域内，但模块级函数 `extractAgentText` 也调用了它 → `ReferenceError` 运行时崩溃。TS/JS **不会编译期报此错**。
+> ③ JSON ruleset 的 pattern 字段用 grep 风格 `(?i)` 前缀做大小写不敏感匹配，但 JS RegExp 原生不支持内联修饰符语法——`new RegExp('(?i)foo')` **不报错也不匹配**，13 条规则静默失效、形同虚设。
 
 ```bash
-# 检测所有 package.json 的 build 脚本不含裸 || true 吞错误
+# ① build 吞错 + 根 tsconfig outDir（归并原维度 88——根因未修时 .gitignore 过渡兜底须在位，防 tsc 写回 src）
 BAD=$(grep -rE '"build".*\|\| true' engine/*/package.json 2>/dev/null | head -1)
 [ -z "$BAD" ] && echo "✓ 无 || true 吞错误" || echo "✗ 发现: $BAD"
-# 期望：零命中（正确格式是 (...; true) 子 shell 分组）
-# 子项 b: 根 tsconfig outDir（归并原维度 88——根因未修时 .gitignore 过渡兜底须在位，防 tsc 写回 src）
 grep -c '"outDir"' tsconfig.json; grep -c 'engine/\*/src/\*\*/\*.js' .gitignore # outDir 修后 ≥1（未修=0）；gitignore 兜底 ≥1
-```
-
-#### 72. 函数定义作用域 vs 引用位置——局部函数禁被模块级引用（新盲区）
-
-> 教训`isReportText` 定义在 `runWorker` 局部作用域内，但模块级函数 `extractAgentText` 也调用了它 → `ReferenceError` 运行时崩溃。TS/JS 不会编译期报此错。
-
-```bash
-# 检查 FORGE driver：局部定义（缩进 function）是否被模块级区域引用
+# ② 函数定义作用域 vs 引用位置（局部函数禁被模块级引用）
 node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver.mjs','utf8');const src=raw.split('\\n').filter(l=>!l.trim().startsWith('//')).join('\\n');const mod=[...src.matchAll(/^function (\w+)/gm)].map(m=>m[1]);const loc=[...src.matchAll(/^\s+function (\w+)/gm)].map(m=>m[1]).filter(n=>!mod.includes(n));const bad=loc.filter(fn=>src.slice(0,src.indexOf('function '+fn)).includes(fn));console.log(bad.length?'ISSUE: '+bad.join(','):'OK')" 2>/dev/null
 # 期望：OK
-```
-
-#### 73. ESM named export 完整性 + FORGE 模块加载烟测（归并 73+74）
-
-> 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check（修正：脚本已迁 `tools/release/pre-push-check.sh`，tools/ 根下旧位置已不存在）。
-
-```bash
-(
-# 确认 forge-smoke-test.sh 存在且集成到 pre-push
-test -f tools/forge/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
-grep -q "forge-smoke-test" tools/release/pre-push-check.sh && echo "✅ 已集成" || echo "❌ 未集成"
-# 烟测实跑（🔴 禁管道取退出码——教训`| tail -3` 吞 exit 1 假绿）
-bash tools/forge/forge-smoke-test.sh > /tmp/forge-smoke.out 2>&1; SMOKE_RC=$?
-[ "$SMOKE_RC" -eq 0 ] && echo "✅ 烟测全绿" || { echo "❌ 烟测失败（exit=$SMOKE_RC）："; tail -5 /tmp/forge-smoke.out; }
-# ESM named export 检查（被 import 引用的符号须有 export 声明）
-node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
-) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
-```
-
-#### 76. JS RegExp 不支持 grep 风格 (?i) 内联修饰符（新盲区）
-
-> 教训：JSON ruleset 的 pattern 字段用 grep 风格 `(?i)` 前缀做大小写不敏感匹配，但 JS RegExp 原生不支持内联修饰符语法——`new RegExp('(?i)foo')` 不报错也不匹配，**13 条规则静默失效，形同虚设**。compilePattern() 在编译层统一剥离前导修饰符并转为 JS flags。
-
-```bash
-(
-# 确认 ruleset-loader.ts 含 compilePattern（(?i) → JS flags 转换器）
+# ③ JS RegExp 不支持 grep 风格 (?i) 内联修饰符
 grep -q 'compilePattern' engine/audit/src/ruleset-loader.ts && echo "✅ compilePattern 存在" || echo "❌ 缺失"
-# 确认 compilePattern 处理 (?i) 修饰符
 grep -q '?i' engine/audit/src/ruleset-loader.ts && echo "✅ 处理 (?i)" || echo "❌ 未处理"
-) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 79. 运行时审计 tool wrapper——gate 拦截优先于 progress 埋点
@@ -1306,7 +1273,7 @@ _bad=$(grep -n "§十" docs/LIMITATIONS.md 2>/dev/null | grep -v "archive\|退�
 
 > **路径迁移感知**：`.sofagent/` 已迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
-## 分组：环境敏感与后期维度（维度 #102-#147 · 上面铁律适用于本组所有维度）
+## 分组：环境敏感与后期维度（维度 #102-#148 · 上面铁律适用于本组所有维度）
 
 #### 102. 市场五环完整性——10 模块 + 6 MCP tool + inspector 双注册
 
@@ -2042,3 +2009,24 @@ node tools/check/lib/dim147-checks.js k && echo "✅ k: 规则口径 17+11=28 �
 node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20'))process.exit(1)" && echo "✅ l: AUDIT_PRIORITY 兼容导出在位" || { echo "❌ l: 兼容导出缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度147:FAIL"; exit 1; }; echo "维度147:PASS"
 ```
+
+
+#### 148. v1.5.9 审查批一维收口——S3 实锤防复发（写面 `..` 逃逸 / barrel 域分拣 / 陈旧行为锁 / 探针参数一致）+ 维护纪律（门禁未登记假绿 / 字面量台账 / 锁陈旧 vs 文档缺句）
+
+> **A 类（本版新功能审查面 · 一维收口）**：写面审计留痕（prompt / memory 两面）· 能力基线版本线（四层快照 + 版本链 + 回滚）· 加载链配置面契约（18 字段 SSOT + 三类所有权断言）· 验证器自身老化检测（漂移三态 + 只提示不阻断）· FDE Handbook 六段生命周期（与 S1M-DECISION-POINTS 同构）· 透明仓与敌手自测（红队两态）· 进化面插件化（manifest 升格 + 写面窄化 + 策展快照）。
+> **B 类（防复发 · 本轮实锤）**：① 场景数 SSOT 必须**全仓同步**（S165 动态对账兜底）② 新增导出必须**同步分拣域 barrel**（`root ≡ ∪domain` 不变量）③ 路径类判定必带 **traversal 负向探针**（含 `..` 独立段一律判未分类）④ **探针调用参数须与自身声明一致**（`destination` 漏传曾致 ENOENT 长期假红、真实断言全被掩盖）⑤ 行为锁期望值须随**文档措辞与包集合演进**复核（陈旧锁 ≠ 文档缺句）⑥ 新增守卫类交付必须 **`git add` 后复跑** `check-tool-health ⑦`（未跟踪文件对 `git ls-files` 不可见 = 假绿）⑦ 改 `acceptance-test.sh` **行数**须同批 `check-literals --fix`。
+> **归并配额（判据④）**：本维落地前已真实归并 2 份维度头（原 #72 / #76 → 并入 #71「语言/工具链静默失效陷阱」，断言零删减）。
+
+```bash
+# ① 场景数跨文档一致（S165 自动对账）
+bash tools/check/check-test-count.sh --scenarios-only
+# ② domain barrel 等价（root ≡ 域 barrel 并集）
+node -e "const fs=require('fs'),RP=process.cwd();for(const pk of ['core','daemon','train']){const r=Object.keys(require(RP+'/engine/'+pk+'/dist/index.js')).length;const ds=fs.readdirSync(RP+'/engine/'+pk+'/dist/domain').filter(f=>f.endsWith('.js'));const u=new Set;for(const d of ds)Object.keys(require(RP+'/engine/'+pk+'/dist/domain/'+d)).forEach(k=>u.add(k));console.log(pk, r===u.size?'✓等价':'✗破 '+r+'/'+u.size)}"
+# ③ traversal 负向探针（含 .. 一律拒；正常可写面不受影响）
+node -e "const b=require(process.cwd()+'/engine/dsh-plugins/cordis-plugin-sofagent-evolve/dist/write-surface-boundary.js');['memory/../SKILL/x.md','../SKILL/x.md','skills/../../SKILL/x.md'].forEach(p=>console.log(b.classifyWriteTarget(p,'t').kind==='unknown'?'✓拒 '+p:'✗放行 '+p));console.log(b.classifyWriteTarget('memory/ok.md','t').kind==='writable'?'✓正常放行':'✗误拒')"
+# ⑥ 门禁登记对账（新增脚本须先 git add 再跑）
+bash tools/check/check-tool-health.sh
+# ⑦ 字面量台账（改 acceptance 行数后必跑）
+bash tools/check/check-literals.sh
+```
+
