@@ -39,7 +39,14 @@
 
 #### 六 · Doc Fresh Review（大版本选做，小版本跳过）
 
-major/minor 发版或多文档大批量改动后，按 [playbook/doc-fresh-review.md](../../../playbook/doc-fresh-review.md) 复制 prompt 到**新 session**（fresh 纪律：参与过编写/修复的 session 不得跑）执行独立人读审查（含 dashboard.html 专项）；报告落桌面 → 零信任复核 → 修复批 → 收敛判定 GREEN 后放行。轮次策略与已知问题类型检查表见该 playbook（四轮实跑沉淀）。
+major/minor 发版或多文档大批量改动后，按 [playbook/doc-fresh-review.md](../../../playbook/doc-fresh-review.md) 执行独立人读审查（含 dashboard.html 专项）；报告落桌面 → 零信任复核 → 修复批 → 收敛判定 GREEN 后放行。轮次策略与已知问题类型检查表见该 playbook（四轮实跑沉淀）。
+**fresh 纪律的实质 =「作者 ≠ 审查者」，不是「必须新 session」**。三档隔离按成本选，**择优最省的那档**：
+| 档 | 形态 | 独立性来源 | 成本 |
+|---|---|---|---|
+| ① | 跨 session（人工复制 prompt） | 完全无共享记忆 | 最高（需人工一次操作） |
+| ② | **本 session 内派隔离 subagent**（只给产物 + 本 playbook，不给对话上下文） | 新上下文 ⇒ 无作者记忆；可由非作者角色承担 | 低（一次派发） |
+| ③ | 同 session 自查 | 有作者盲点——**不满足纪律** | 最低 |
+**判据是「审查者无作者记忆」**：能用 ② 达到同等独立性时，优先 ②——**不要为流程仪式付出新 session 的成本**。仅当需要人工跨会话留痕（对外审计、跨人复核）时才用 ①。
 **与 fresh-eyes-review 的分工**：fresh-eyes 管代码，Doc Fresh Review 管文档——同一 fresh 纪律的两个审查面 
 
 
