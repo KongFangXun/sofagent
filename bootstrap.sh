@@ -24,7 +24,7 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #      机器校验见 tools/check/check-version.sh 第 20 项（lib 哈希逐一对账）。
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
-INSTALL_SHA256="947c389104200a554627ca9b3a3172c05029828239cb6dc018ba324b7b1e3429"  # v1.5.8 预计算（install.sh 与 tag URL bump 同 commit）
+INSTALL_SHA256="6e0e98e595725d10f11f3c16191bb0d06ec4c89b971f3c4cbdeb4057fd40153d"  # v1.5.8 预计算（install.sh 与 tag URL bump 同 commit）
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。
@@ -36,7 +36,7 @@ LIB_FILES="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh 
 LIB_SHA256S="e0b1c5b9f291d558f6f0450f41bc185d68ed50d0aae02005852186a997b9f2c0
 d6560792bb88472e30ab12ed4d86614226c280501d7858b8683ebfc647919a42
 ac0e900fc904cec0b5530baf0ee64934591b7ff3b710b46a9f6f5d317b113461
-d41703698ef480d9166aee69a4fddd61338dd89e7956890dfd4d9d6c138bae3e
+40ccfc7e38b20f59e3e38e0038ae9e646d6788f491a732357083cd9cd0c7c9bf
 bec93fd676d2524b11abfb44e1ffa4cb6dd536d13e3a05421aebee5c6bcf6fc2
 7d1744e7157d85ff492d1e53f41636f7f94e52f672193432a82af29f4250a29a"
 
