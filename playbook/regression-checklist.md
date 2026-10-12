@@ -1,7 +1,7 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 83 维 · 编号 1-148 · 63 个编号已归并删除（#4 已并入 #147（28 口径承接）· #9 已并入 #18 · #21 已并入 #146 · 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 83 维 · 编号 1-148 · 65 个编号重新编号后空缺（口径＝最大号−维数；#4 已并入 #147（28 口径承接）· #9 已并入 #18 · #21 已并入 #146 · 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -959,14 +959,18 @@ grep -c 'Array.isArray(content)' FORGE/src/fresh-eyes-driver.mjs FORGE/src/relea
 grep -c 'typeof content.*object' FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs # 期望：各 ≥1
 ```
 
-#### 67. FORGE ReAct 步骤预算——reviewer ≤50 步 / engineer ≤30 步（效率铁律）
+#### 67. FORGE driver 纪律——ReAct 步骤预算（reviewer ≤50 步 / engineer ≤30 步）+ run_bash cwd 强制（归并 #85 入此）
 
-> 教训：FORGE ReAct Agent 在无步数约束时容易陷入重复读取循环——reviewer 反复读同一个文件、engineer 反复跑同一个测试。在 SKILL.md 中加入效率铁律（目标步数 + 禁止重复读取）后，平均执行步数下降 50-60%。**每个 sub-agent SKILL.md 必须有明确步数预算。**
+> 教训①（效率铁律）：FORGE ReAct Agent 在无步数约束时容易陷入重复读取循环——reviewer 反复读同一个文件、engineer 反复跑同一个测试。SKILL.md 加入效率铁律（目标步数 + 禁止重复读取）后，平均执行步数下降 50-60%。**每个 sub-agent SKILL.md 都须含效率铁律**。
+> 教训②（cwd 强制）：worker 模型自己写 `cd /Users/<拼错用户名>/...`，bash 大面积 No such file or directory → 24 worker 硬熔断降级、审查结论不可信。`run_bash` 包装层须强制 `cwd=REPO_ROOT` 并剥离 `cd` 前缀。
 
 ```bash
-# 验证 reviewer/engineer SKILL.md 含效率铁律
+# ① 效率铁律在位
 grep -q "效率铁律" SKILL/agents/reviewer/SKILL.md && echo "✓ reviewer" || echo "✗ reviewer"
 grep -q "效率铁律" SKILL/agents/engineer/SKILL.md && echo "✓ engineer" || echo "✗ engineer"
+# ② run_bash 包装层强制 cwd=REPO_ROOT + 剥离 cd 前缀
+grep -c "cwd: REPO_ROOT" FORGE/src/fresh-eyes-driver.mjs # ≥1
+grep -c "stripped.*replace.*cd" FORGE/src/fresh-eyes-driver.mjs # ≥1
 ```
 
 #### 70. MCP tool 注册三处一致性——新增 tool 必须在 tool-registry + case dispatch + capabilities 三处都注册（修：跟上 tool-registry.ts 拆分）
@@ -1004,6 +1008,23 @@ node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver
 # ③ JS RegExp 不支持 grep 风格 (?i) 内联修饰符
 grep -q 'compilePattern' engine/audit/src/ruleset-loader.ts && echo "✅ compilePattern 存在" || echo "❌ 缺失"
 grep -q '?i' engine/audit/src/ruleset-loader.ts && echo "✅ 处理 (?i)" || echo "❌ 未处理"
+```
+
+#### 73. ESM named export 完整性 + FORGE 模块加载烟测（归并 73+74）
+
+> 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check（修正：脚本已迁 `tools/release/pre-push-check.sh`，tools/ 根下旧位置已不存在）。
+
+```bash
+(
+# 确认 forge-smoke-test.sh 存在且集成到 pre-push
+test -f tools/forge/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
+grep -q "forge-smoke-test" tools/release/pre-push-check.sh && echo "✅ 已集成" || echo "❌ 未集成"
+# 烟测实跑（🔴 禁管道取退出码——教训`| tail -3` 吞 exit 1 假绿）
+bash tools/forge/forge-smoke-test.sh > /tmp/forge-smoke.out 2>&1; SMOKE_RC=$?
+[ "$SMOKE_RC" -eq 0 ] && echo "✅ 烟测全绿" || { echo "❌ 烟测失败（exit=$SMOKE_RC）："; tail -5 /tmp/forge-smoke.out; }
+# ESM named export 检查（被 import 引用的符号须有 export 声明）
+node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 79. 运行时审计 tool wrapper——gate 拦截优先于 progress 埋点
@@ -1103,16 +1124,6 @@ grep -rn "shouldAllow" engine/orchestrator/src/ --include="*.ts" | grep -v node_
 grep -c "data/audit/runtime" FORGE/src/audit-middleware.mjs # ≥1
 # 子项 d: repo-hash 基于 git rev-parse（非硬编码路径）
 grep -c "rev-parse\|repo.*hash\|resolveRuntimeAuditPath" FORGE/src/audit-middleware.mjs # ≥1
-```
-
-#### 85. FORGE driver run_bash cwd 强制——防 worker 路径错误大面积降级
-
-**背景**：worker 模型自己写 `cd /Users/<拼错用户名>/...`，bash 大面积 No such file or directory → 24 worker 硬熔断降级，审查结论不可信。
-
-```bash
-# run_bash 包装层强制 cwd=REPO_ROOT + 剥离 cd 前缀
-grep -c "cwd: REPO_ROOT" FORGE/src/fresh-eyes-driver.mjs # ≥1
-grep -c "stripped.*replace.*cd" FORGE/src/fresh-eyes-driver.mjs # ≥1
 ```
 
 #### 86. FORGE driver auto-commit 代码领域限定——防卷队友未提交内容
