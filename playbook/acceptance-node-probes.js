@@ -892,7 +892,10 @@ async function s426() {
   //    维度数改动态对账（声称 = 实际 ^#### 计数，与 check-review-system ① 同款判据）——
   //    硬编码维数在每次归并/新增后必漂（v1.5.1 归并 #138-141 后 90→87 实证），写死即假红
   const rc = read('playbook/regression-checklist.md');
-  const dimClaim = rc.match(/当前 (\d+) 维 · 编号 1-(\d+) · (\d+) 个编号已归并删除/);
+  // v1.5.9：头部缺号计数措辞由「已归并删除」改为更准确的「重新编号后空缺（口径＝最大号−维数）」，
+  //   本判据放宽为**兼容两种措辞**（形态锁锁的是「三值可解析」，不是某句具体措辞——写死措辞会在
+  //   措辞修正时造成与内容无关的假红）。
+  const dimClaim = rc.match(/当前 (\d+) 维 · 编号 1-(\d+) · (\d+) 个编号(?:已归并删除|重新编号后空缺)/);
   if (!dimClaim) bad.push('checklist 头部维度声明形态漂移');
   const dimActual = (rc.match(/^#### /gm) || []).length;
   if (dimClaim && Number(dimClaim[1]) !== dimActual) bad.push('checklist 维度声称 ' + dimClaim[1] + ' ≠ 实际 ' + dimActual);

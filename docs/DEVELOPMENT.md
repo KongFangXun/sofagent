@@ -209,7 +209,7 @@ FDE 部署 SOP 应遵循此顺序：
 
 新增文档请归入对应域；跨文档引用保持相对路径，CI 的 `check-docs` 会校验。本仓未强制物理迁移历史文档，仅以本说明固化约定。
 
-> npm 包 @sofagent/audit 暴露 2 个 bin：`sofagent-audit`（快审）、`sofagent-audit-full`（完整引擎）；`sofagent audit` 是总包路由用法，非包 bin（v1.1.0 拆包后 verify 等已迁出，bin 见各包 `package.json`）。
+> npm 包 @sofagent/audit 的 2 个旧 bin（快审 / 完整引擎）**已随 shim 退役移除**；`sofagent audit` 是总包路由用法，非包 bin（v1.1.0 拆包后 verify 等已迁出，bin 见各包 `package.json`）。
 
 | 脚本 | 干什么 | 什么时候跑 |
 |---|---|---|
