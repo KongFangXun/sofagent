@@ -96,6 +96,7 @@
 - **[Harness Evolution Hits a Ceiling](https://arxiv.org/abs/2610.11655)** — 用失败轨迹的**首个触发信号**把失败拆成进程失败（阻塞调用 / 循环 / 步数耗尽）与内容失败，据此判「继续动 harness 还是开训权重」：harness 侧会到顶，到顶后权重才接棒（第三方论文、本仓未复算）
 - **[E-Ledger: Safe, Persistent, and Evolving Agent Harness](https://arxiv.org/abs/2610.11552)** — 面向部分可观测的长程任务：每个动作执行前先过策略批准层 + 维护「已验证隐藏规则」的世界账本（第三方论文、本仓未复算）
 - **[DuplexAgent-RSI](https://arxiv.org/abs/2610.11299)** — 递归改进落在 harness 的协调层（任务受理 / 进度 / 取消 / 替换 / 结果交付），不落在权重（第三方论文、本仓未复算）
+- **[Recurrent Harness for Agentic Continual Learning](https://arxiv.org/abs/2610.12668)** — ReHarness：harness 状态不再只靠前向信息流演化、也不依赖额外回放或验证数据，而是做成**循环**结构以在长交互流上持续适应分布漂移 ⇒ 「harness 自更新」多了一种须被审计观察的形态（第三方论文、本仓未复算）
 
 ### 判定与校准
 
@@ -123,7 +124,7 @@
 - **[AnyJev](https://github.com/nokia-applied-research/AnyJev)** · Nokia — 读出校准免训练两件套：先验除法+旋转平均（自报）
 - **[TensorFlow.js](https://github.com/tensorflow/tfjs)** + [tfjs-models](https://github.com/tensorflow/tfjs-models) · Google — 一套 API 四后端+模型即 npm 包的十年先例
 - **[Verdict / rlcd-modernbert-151m](https://huggingface.co/heman10x/rlcd-modernbert-151m)** · Heman10x-NGU —「编码器+判定头」最早可复算建仓时点（2026-09-17）
-- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-10-09 站点面 v1.5.7 榜首 cygnet（release 面仍 v1.4.2，六面不同步）
+- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-10-12 站点 / 数据端点面 **v1.6.0**（协议 `jevbench::v1.6` · `n_ranked` 92 · 全量重测），release 面仍 v1.4.2 ⇒ 六面不同步（读数据端点，不采渲染页）
 - **[AgentGovBench](https://github.com/agentic-control-plane/agentgovbench)** + **[ST-WebAgentBench](https://github.com/segev-shlomov/ST-WebAgentBench)** — 治理对照基准两件套（CuP 双轴指标）；其「Harness honesty」修订公开固化：制造证据不计分、**空审计日志不算通过**、报错场景留在分母
 - **[NIST 官方标准面](https://www.nist.gov/artificial-intelligence/ai-agent-standards-initiative)**（CAISSI 三支柱 + RFI + NCCoE 四功能域 + AI 800 系列）— agent = 非人类身份 principal；双身份令牌
 - **[Jev-Mem](https://arxiv.org/abs/2609.23986)** — System One 控制面管 agentic memory
@@ -147,6 +148,8 @@
 - **[Adversarial Cues in Decision Models Used as Judges](https://arxiv.org/abs/2610.11436)** — 判定件当裁判时，**一个冒号**即可把误接受率从 1.0% 抬到 26.0% ⇒ 「输在呈现形态、不在候选内容」（第三方论文、本仓未复算）。
 - **[Can Decision Models Understand Stance?](https://arxiv.org/abs/2610.11901)** — 立场检测对照：英文 VAST 面与前沿 LLM 相当，中文对话 ZS-CSD 面落后于微调模型 ⇒ 判定件能力边界非全域占优（第三方论文、本仓未复算）
 - **[Drex](https://github.com/nace-ai/drex-decision-models)** · Nace.AI — 开源判定件族：v1.5 9B / DLM 8B 扩散 LM，均带独立 pointer head、复用 Kev 代码；代码 Apache-2.0、**权重非通行开源**（Open RAIL-M / CC BY-NC 4.0，商用须另授权）；自报 Decision Index 0.3.1 公开面 58.08（**厂商自测、本仓未复算**）。
+- **[Sieve](https://huggingface.co/sthanika-ai/Sieve-31B)** · sthanika-ai — 判定件族 0.8B–31B、**全 Apache-2.0**：**读出＝末层隐状态 × 选项标签行 + 定温 softmax**、不生成文本，与「编码器 + 判定头」同路线；0.8B 与本仓 0.5B 同量级。自报 Decision Index 0.3 公开面：4B 50.06 / 9B-v2 53.35 / 27B 60.04 / 31B 62.52（**厂商自测、未上榜单**）。
+- **[Can Language Models Learn When to Abstain?](https://arxiv.org/abs/2610.13821)** — 弃权能力的两条实现路对照：训练模型自身 vs 另训一个答案检查组件；以「答对加分 / 答错扣分 / 允许弃权」的评分在 Qwen3-14B 上跨三训练种子与两个留出置信阈值比较 ⇒ 弃权该内建还是外挂，有可复算的实验口径（第三方论文、本仓未复算）
 
 ### 认知与反馈
 
@@ -160,6 +163,7 @@
 - **[What Output-Only Review Cannot Verify](https://arxiv.org/abs/2610.11754)** — 「产出物面可判的缺陷」与「须知执行前批准了什么才可判的缺陷」须**显式分开**（第三方论文、本仓未复算）。
 - **[From Reactive Containment to Proactive Assurance](https://arxiv.org/abs/2610.12463)** — 2026 年三类 agent 越权事件复盘 ⇒「先围堵、后保证」的教训（第三方转述、本仓未复算）。
 - **[Accurate but Not Humble](https://arxiv.org/abs/2610.12360)** — 知识冲突下 agent 的「认识论谦逊」评估：以轨迹级三维度 Identify / Solve / Escalate 度量其承认并上报不确定性的意愿（第三方论文、本仓未复算）
+- **[AI Models Can Provably Hide Arbitrary Capabilities](https://arxiv.org/abs/2610.13928)** — 构造性反例：把加密神经网络嵌入宿主权重、仅在收到秘密触发词时解密执行 ⇒ 「隐藏能力可被引出」这一**能力评测的前提**在对抗条件下不成立；评测可靠性本身需要威胁模型（第三方论文、本仓未复算）
 
 
 ## 工具与实践
