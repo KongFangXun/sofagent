@@ -19,6 +19,9 @@
 #   与 check-docs §2c 豁免口径一致。
 #
 # 三态语义（对齐 check-storefront.sh）：PASS / FAIL / SKIP-可见。
+# 不可逆风险的守卫不得静默缺席：本脚本是**公开面泄漏的最后一道可拦截点**
+#   （泄漏一旦随 push 进远端，清理须移动已发布 tag——通常做不到），
+#   故已接 pre-push（tools/release/pre-push-check.sh 第 2d 段）与 CI。
 #
 # 用法：
 #   bash tools/check/check-open-boundary.sh          # 全仓 tracked 扫描
@@ -28,7 +31,7 @@
 
 cd "$(dirname "$0")/../.." || exit 2
 
-# BSD 兼容：pattern 用 ERE；字面管道符在引号内无歧义
+# BSD 兼容：pattern 用 ERE；字面量管道符在引号内无歧义
 # family 覆盖四种拼写（GrapHub / GraphHub / Graph Hub / Grap Hub）+ 大小写变体。
 # ⚠️ 残留风险（已披露）：`Graph Hub`（带空格变体）理论上可被「…Graph Hub…」这类
 #    跨词相邻误命中（如某文档写 "Workflow Graph Hub"）。实测全仓 0 命中，
@@ -37,8 +40,13 @@ cd "$(dirname "$0")/../.." || exit 2
 PATTERN='Grap[h]?[ ]?Hub|Flow[ ]?Hub'
 
 # 豁免清单（历史事实档案 + 守卫自身——断言 pattern 里的字面量不是泄漏）。
-# 实际豁免走两处 case 分支（staged/全仓），此处仅文档化口径：
-#   ^\.git/ ^docs/changelog/ ^tools/check/check-docs\.sh$ ^tools/check/check-open-boundary\.sh$
+# 实际豁免走三处 case 分支（staged / 全仓 / 家目录断言），此处仅文档化口径：
+#   ^\.git/ */changelog/ ^tools/check/check-docs\.sh ^tools/check/check-open-boundary\.sh$
+#   ⚠️ changelog 用 `*/changelog/` 而非路径字面量 `docs/changelog/`：历史档案一旦
+#      迁移（如 docs/ → archive/），路径字面量即失配、豁免**静默失效**，历史档案
+#      会集体转红而无人知其所以然。豁免面跟随「changelog 这个目录名」，不跟随层级位置。
+#   修法纪律（三条 FAIL 均适用）：命中即把私域名改为 `〔私域产品名〕` 占位——
+#      **保留句子与语义，勿删段、勿加豁免**。加豁免等于修测试（把不可逆风险从门禁里摘出去）。
 
 # ── 模式分派 ──
 if [ "$1" = "--staged" ]; then
@@ -57,7 +65,7 @@ if [ "$1" = "--staged" ]; then
   SCANNED=0
   for f in $STAGED; do
     case "$f" in
-      .git/*|docs/changelog/*|tools/check/check-docs.sh|tools/check/check-open-boundary.sh) continue ;;
+      .git/*|*/changelog/*|tools/check/check-docs.sh|tools/check/check-open-boundary.sh) continue ;;
     esac
     [ -f "$f" ] || continue
     TOTAL=$((TOTAL + 1))
@@ -71,6 +79,7 @@ $f: $HIT"
   if [ -n "$HITS" ]; then
     echo "❌ 暂存区泄漏（${SCANNED} 个变更文件中命中）："
     printf "%s\n" "$HITS" | grep "." | head -20
+    echo "   修法：改为 〔私域产品名〕 占位（保留句子与语义，勿删段、勿加豁免——加豁免＝修测试）"
     exit 1
   fi
   echo "✅ staged 模式：${SCANNED} 个变更文件零命中"
@@ -87,6 +96,7 @@ AIR_DOC_HITS=$(git ls-files -- 'docs/*.md' 'README*.md' 'CHANGELOG.md' 'SKILL/*.
 if [ -n "$AIR_DOC_HITS" ]; then
   echo "❌ AIR 文档面泄漏（私有商业代号不得进入开源文档）:"
   printf "%s\n" "$AIR_DOC_HITS" | head -10
+  echo "   修法：改为 〔私域代号〕 占位（保留句子与语义，勿删段、勿加豁免——加豁免＝修测试）"
   exit 1
 fi
 
@@ -109,7 +119,7 @@ TOTAL_TRACKED=${TOTAL_TRACKED:-0}
 
 while IFS= read -r f; do
   case "$f" in
-    .git/*|docs/changelog/*|tools/check/check-docs.sh|tools/check/check-open-boundary.sh) continue ;;
+    .git/*|*/changelog/*|tools/check/check-docs.sh|tools/check/check-open-boundary.sh) continue ;;
   esac
   # 二进制快速跳过：git 的 = 后缀标记或 file 探测
   if file "$f" 2>/dev/null | grep -qE "binary|Binary"; then
@@ -134,7 +144,7 @@ HOME_PATH_HITS=""
 HOME_PATH_TOTAL=0
 for f in $TRACKED; do
   case "$f" in
-    .git/*|docs/changelog/*|docs/archive/*|tools/check/check-open-boundary.sh) continue ;;
+    .git/*|*/changelog/*|docs/archive/*|tools/check/check-open-boundary.sh) continue ;;
     # F-38 测试面豁免：脱敏/路径解析类测试用占位家目录路径（/Users/johndoe/、
     # /home/alice/）做 fixture 属正当用法——断言抓的是「维护者机器路径外溢」，
     # 不是「任何家目录形状的字符串」。
@@ -167,9 +177,10 @@ echo ""
 if [ -n "$HITS" ]; then
   echo "❌ 开源边界违规：tracked 文件存在商业产品名（私域产品名家族）"
   printf "%s\n" "$HITS" | grep "." | head -20
+  echo "   修法：改为 〔私域产品名〕 占位（保留句子与语义，勿删段、勿加豁免——加豁免＝修测试）"
   exit 1
 fi
 
 echo "✅ 开源边界守卫：${SCANNED}/${TOTAL_TRACKED} 个 tracked 文件扫描，产品名家族（Grap/Graph+Hub · Flow+Hub）零命中"
-echo "   （AIR 文档面断言在线；CHANGELOG 历史档案豁免）"
+echo "   （AIR 文档面断言在线；changelog 历史档案豁免·按目录名跨层级匹配）"
 exit 0

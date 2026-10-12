@@ -80,14 +80,39 @@ MINIMAL=false
 # ── 参数解析 ──
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --quick)       QUICK=true; shift ;;
-    --minimal)     MINIMAL=true; shift ;;
-    --help|-h)
-      echo "pre-push-check.sh — 推前预检"
-      echo "  --quick        跳过 npm test/build"
-      echo "  --minimal     结构性快检：只跑 shellcheck+CLI验证+安装路径+tag+依赖图，跳过 版本号/文档/构建/测试门禁"
-      echo "  --help         显示帮助"
-      exit 0 ;;
+      --quick)       QUICK=true; shift ;;
+      --minimal)     MINIMAL=true; shift ;;
+      --install-hook)
+        # 安装 pre-push hook：push 前自动跑本脚本 --quick（含 2d 开源边界守卫）
+        # 为什么需要：开源边界守卫早已接进本脚本，但 .git/hooks/ 从未装 pre-push ⇒
+        #   该段在 push 时**从不自动执行**，只能靠「人记得手动跑」；而 CI 是 push 之后，
+        #   对「公开面泄漏」这类**不可逆风险**已经晚了（清理须移动已发布 tag）。
+        #   ⇒ 守卫存在 ≠ 守卫在岗。本选项把最后一道本地拦截真正接上。
+        _GD=$(git rev-parse --git-common-dir 2>/dev/null || echo .git)
+        mkdir -p "$_GD/hooks" || { echo "✗ 无法创建 $_GD/hooks"; exit 1; }
+        cat > "$_GD/hooks/pre-push" <<'SOFAGENT_PREPUSH'
+#!/bin/bash
+# sofagent pre-push hook —— 由 `bash tools/release/pre-push-check.sh --install-hook` 生成
+# 只跑静态段（--quick：跳过 npm test/build），其中含 2d 开源边界守卫。
+# 卸载：rm .git/hooks/pre-push
+# 临时绕过（谨慎）：git push --no-verify
+TOP=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+[ -x "$TOP/tools/release/pre-push-check.sh" ] || exit 0
+exec bash "$TOP/tools/release/pre-push-check.sh" --quick
+SOFAGENT_PREPUSH
+        chmod +x "$_GD/hooks/pre-push" || { echo "✗ chmod 失败"; exit 1; }
+        echo "✓ 已安装 pre-push hook：$_GD/hooks/pre-push"
+        echo "  作用：每次 push 前自动跑 pre-push-check.sh --quick（含开源边界守卫）"
+        echo "  卸载：rm \"$_GD/hooks/pre-push\"   临时绕过：git push --no-verify"
+        unset _GD
+        exit 0 ;;
+      --help|-h)
+        echo "pre-push-check.sh — 推前预检"
+        echo "  --quick        跳过 npm test/build"
+        echo "  --minimal     结构性快检：只跑 shellcheck+CLI验证+安装路径+tag+依赖图，跳过 版本号/文档/构建/测试门禁"
+        echo "  --install-hook 安装 pre-push hook（push 前自动跑 --quick）"
+        echo "  --help         显示帮助"
+        exit 0 ;;
     *) shift ;;
   esac
 done
