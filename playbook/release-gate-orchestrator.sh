@@ -111,7 +111,6 @@ FAILED_STEPS=()
 TOTAL_START=$(date +%s)
 
 for step in "${STEPS[@]}"; do
-  step_index=$((${STEPS[*]/$step//} == ${STEPS[*]} ? 0 : 1))
   # 计算步骤序号
   step_num=0
   for i in "${!STEPS[@]}"; do
