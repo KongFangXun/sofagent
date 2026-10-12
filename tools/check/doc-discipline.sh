@@ -422,7 +422,10 @@ else
     # 扫描面 = tracked .md 减去历史冻结区（**不用 grep -r .**——那会扫进
     # node_modules 下 762 个 .md，实测把本 Face 拖到 3 分钟以上，门禁不可接受）；
     # 再减去**本次变更文件自身**——命中自己不构成「已存在同源内容」的证据。
-    MD_FILES=$(git ls-files '*.md' 2>/dev/null | grep -vE '^(docs/changelog/|docs/archive/|docs/evidence/)' || true)
+    # 冻结区判据 = **目录名匹配**（与本文件 Face 4 自述四区「changelog · archive · evidence · vendor」
+    # 及 lib/compact-tables.mjs 的 isFrozenPath 同口径）。不得写 `docs/` 前缀——docs/ 整体迁入
+    # archive/ 后（定稿 §十五）路径字面量即失配、冻结区静默失效，会让历史档案重新受门禁约束。
+    MD_FILES=$(git ls-files '*.md' 2>/dev/null | grep -vE '(^|/)(changelog|archive|evidence|vendor)/' || true)
     CHANGED_MD=$(git diff HEAD --name-only -- '*.md' 2>/dev/null | sort -u)
     [ -z "$CHANGED_MD" ] && CHANGED_MD=$(git diff HEAD~1 HEAD --name-only -- '*.md' 2>/dev/null | sort -u)
     if [ -n "$CHANGED_MD" ]; then

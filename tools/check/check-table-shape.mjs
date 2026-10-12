@@ -286,11 +286,14 @@ if (!selfTestOk || !noteSelfTestOk) {
 if (process.argv.includes('--update-baseline')) {
   // ⚠️ 优先级陷阱（曾实锤）：`'前缀' + cond ? A : B` 会先拼串再做三元判断 ⇒ 恒真 ⇒ **全表取 A**。
   //   理由分类必须显式加括号，否则「在役文档待清」这一档永远写不出来（台账全体误标冻结区）。
-  const isFrozen = (f) =>
-    f.startsWith('docs/archive/') ||
-    f.startsWith('docs/evidence/') ||
-    f.startsWith('playbook/vendor/') ||
-    /^docs\/changelog\/v[0-9]/.test(f); // 版本日志冻结；`docs/changelog/releasing*`（SOP 本体）**不冻结**
+    // 冻结区判据 = **目录名匹配**（与 lib/compact-tables.mjs 的 isFrozenPath / doc-discipline
+    // Face 4 同口径——本注释上文已声明「同口径」，此前实现却是 `docs/` 前缀，属自相矛盾）。
+    // ⚠️ 不得写 `docs/` 前缀：docs/ 整体迁入 archive/ 后（定稿 §十五）字面量即失配、
+    //    冻结区静默失效 ⇒ 存量台账被重判、冻结区文件重新受门禁约束（大批假红）。
+    //    例外：`changelog/releasing*`（SOP 本体）**不冻结** ⇒ changelog 仍需 v<数字> 限定。
+    const isFrozen = (f) =>
+      /(^|\/)(archive|evidence|vendor)\//.test(f) ||
+      /(^|\/)changelog\/v[0-9]/.test(f);
   const entries = violations.map((v) => ({
     file: v.file, kind: v.kind, signature: v.signature,
     reason: '存量（本批未修）——' + (isFrozen(v.file)

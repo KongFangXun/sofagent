@@ -111,14 +111,18 @@ echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 #     与本段死链检查的排除解耦——此处只考虑"链接有效性"，不考虑"预算归属"。
 DEAD_LINKS=0
 DEAD_DETAIL=""
-EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/SKILL/harness/*" -not -path "*/docs/archive/*" -not -path "*/FORGE/archive/*" -not -path "*/commercial/*")
+# ⚠️ 此处原有 bash 数组「EXCLUDE=(...)」，已确认**不为任何命令展开**（shellcheck SC2034 报未使用；
+#    全文件无 ${EXCLUDE 展开）——真正的排除面在下方 node DEAD_SCAN 的 const EXCLUDE 里。
+#    留着它会造成「改了这里却毫无效果」的**假绿温床**，故删除。勿重加。
+#    冻结区一律**按目录名匹配**（changelog / archive / evidence），不得写 docs/ 前缀
+#    （定稿 §十五 把 docs/ 迁入 archive/ 后路径字面量即失配，历史档案会重新进入扫描面）。
 # v1.3.6 B11 性能迁移：逐行 bash 循环 + 每链接 fork subshell（cd+pwd）是全脚本第二瓶颈。
 # 改 node 一次性完成主仓 + 归档区两遍扫描（判定语义与原实现一致：围栏跳过、
 # 协议/占位符豁免、路径归一化后 existsSync）。输出死链清单，计数回填 bash 变量。
 DEAD_SCAN=$(node -e '
 const fs = require("fs");
 const path = require("path");
-const EXCLUDE = [/node_modules/, /(^|[\/\\])\.workbuddy[\/\\]/, /(^|[\/\\])\.sofagent[\/\\]/, /(^|[\/\\])docs[\/\\]changelog[\/\\]/, /(^|[\/\\])SKILL[\/\\]harness[\/\\]/, /(^|[\/\\])docs[\/\\]archive[\/\\]/, /(^|[\/\\])FORGE[\/\\]archive[\/\\]/, /(^|[\/\\])commercial[\/\\]/];
+const EXCLUDE = [/node_modules/, /(^|[\/\\])\.workbuddy[\/\\]/, /(^|[\/\\])\.sofagent[\/\\]/, /(^|[\/\\])changelog[\/\\]/, /(^|[\/\\])SKILL[\/\\]harness[\/\\]/, /(^|[\/\\])archive[\/\\]/, /(^|[\/\\])commercial[\/\\]/];
 function walk(dir, out, excludes) {
   for (const f of fs.readdirSync(dir)) {
     const p = path.join(dir, f);
@@ -984,9 +988,13 @@ echo "=== 15. 全仓工具数声称对账（防新文件成盲区）==="
 TOOL_CLAIM_SCAN=$(node -e "
 const fs = require('fs');
 const path = require('path');
-// 排除面与 1b 死链扫描同口径 + engine 源码（内部文案非文档声称）+ docs/evidence（历史冻结区，
-//   与本脚本他处「历史冻结区 docs/changelog、docs/archive、evidence → 豁免」口径一致）
-const EXCLUDE = [/node_modules/, /\.git/, /\.workbuddy/, /\.sofagent/, /docs\/changelog\//, /docs\/archive\//, /docs\/evidence\//, /FORGE\/archive\//, /^engine\//, /^FORGE\/runs\//, /commercial/];
+// 排除面与 1b 死链扫描同口径 + engine 源码（内部文案非文档声称）+ evidence（历史冻结区）。
+// ⚠️ 冻结区一律**按目录名匹配**（changelog / archive / evidence）——不得写「docs/」前缀：
+//   （本行曾误用反引号包 docs/ —— 双引号串内反引号＝shell 命令替换、会真执行；
+//     bash -n 检不出，靠 shellcheck SC2287 抓到。同款形态见 check-mjs-comment-backtick.mjs 的教训。）
+//   docs/ 整体迁入 archive/ 后（定稿 §十五）路径字面量即失配、豁免静默失效，
+//   历史档案会重新进入扫描面（大批假红）。与 doc-discipline Face 4 / compact-tables 同口径。
+const EXCLUDE = [/node_modules/, /\.git/, /\.workbuddy/, /\.sofagent/, /(^|\/)changelog\//, /(^|\/)archive\//, /(^|\/)evidence\//, /^engine\//, /^FORGE\/runs\//, /commercial/];
 const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
 const regCount = new Set([...regSrc.matchAll(/name:\s*'([a-z_]+)',/g)].map(m => m[1])).size;
 const results = [];

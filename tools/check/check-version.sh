@@ -416,8 +416,8 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/node_modules/*' \
   -not -path '*/.git/*' \
   -not -path '*/dist/*' \
-  -not -path '*/docs/changelog/*' \
-  -not -path '*/docs/archive/*' \
+  -not -path '*/changelog/*' \
+  -not -path '*/archive/*' \
   -not -path '*/_archive/*' \
   -not -path '*/FORGE/archive/*' \
   -not -path '*/.sofagent/*' \
@@ -1137,8 +1137,8 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/node_modules/*' \
   -not -path '*/.git/*' \
   -not -path '*/dist/*' \
-  -not -path '*/docs/changelog/*' \
-  -not -path '*/docs/archive/*' \
+  -not -path '*/changelog/*' \
+  -not -path '*/archive/*' \
   -not -path '*/FORGE/archive/*' \
   -not -path '*/_archive/*' \
   -not -path '*/.sofagent/*' \
