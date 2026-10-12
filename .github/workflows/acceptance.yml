@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   acceptance:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # 🔴 非阻塞核心：验收失败不判红工作流（非 required check）——只为信号与取证。
     continue-on-error: true
     steps:

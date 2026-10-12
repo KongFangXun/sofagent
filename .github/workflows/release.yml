@@ -11,7 +11,7 @@ jobs:
     # 但 audit 运行时依赖 @sofagent/core（workspace 链接到 ../core），
     # 而 core/dist 被 gitignore 且 CI 中无人 build core，导致 vitest 无法解析入口
     # 现改为从根目录 workspace 构建（与 publish-mcp 对齐）
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -60,7 +60,7 @@ jobs:
 
   publish-mcp:
     # 不依赖 publish-audit——两个包独立发布，audit 失败不应阻塞 mcp
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:

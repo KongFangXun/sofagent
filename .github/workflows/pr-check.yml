@@ -17,7 +17,7 @@ on:
 
 jobs:
   version-and-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -165,7 +165,7 @@ jobs:
   # 预装 Node（版本漂移），且 `typescript/unstable/sync` 的可用性依赖 Node 版本；与
   # build-and-test job 及 verify.yml 的 Node 22 口径对齐（v1.2.5 crypto 教训同源）。
   public-api:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -180,7 +180,7 @@ jobs:
         run: node tools/check/public-api.mjs
 
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -237,7 +237,7 @@ jobs:
   cross-product-contract:
     # 验证主 install.sh 的 --base-only 契约不被破坏。
     # LOOP 已在 v1.2.0 解散为 FORGE，loop-install.sh 已移除。
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Verify install.sh is main installer with --base-only
@@ -265,7 +265,7 @@ jobs:
   # 独立 job 而非并入 version-and-docs：该 job 的前提是「无 build 需求」（见其内注释），
   # 与本步的 build 前置冲突。
   forge-smoke-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
