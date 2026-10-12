@@ -1883,7 +1883,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
     const totalCnt = defaultCnt + extendedCnt;
     const line =
       c === 0
-        ? `✅ [sofagent] 审计通过 · ${n} 项检查 · ${totalCnt} 条规则 (${defaultCnt} 默认 + ${extendedCnt} 扩展) · exit 0`
+        ? `✅ [sofagent] 审计通过 · ${n} 项检查 · 规则库 ${totalCnt} 条 (默认 ${defaultCnt} + 扩展 ${extendedCnt}) · exit 0`
         : c === 1
           ? `⚠️ [sofagent] 审计 ${warnN} 警告 · exit 1`
           : `❌ [sofagent] 审计拦截 ${failN} 违规 · exit 2`;
@@ -1898,8 +1898,8 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
       const eCnt = extendedRules.length;
       const tCnt = dCnt + eCnt;
       const passLine = n === tCnt
-        ? `✅ [sofagent] 审计通过 · ${tCnt} 条规则 (${dCnt} 默认 + ${eCnt} 扩展)`
-        : `✅ [sofagent] 审计通过 · ${n} 项检查 · ${tCnt} 条规则 (${dCnt} 默认 + ${eCnt} 扩展)`;
+        ? `✅ [sofagent] 审计通过 · 规则库 ${tCnt} 条 (默认 ${dCnt} + 扩展 ${eCnt})`
+        : `✅ [sofagent] 审计通过 · ${n} 项检查 · 规则库 ${tCnt} 条 (默认 ${dCnt} + 扩展 ${eCnt})`;
       process.stderr.write(passLine + '\n');
       return;
     }
@@ -1935,9 +1935,10 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   const issueWord = failCount > 0 ? `${failCount} 违规` : warnCount > 0 ? `${warnCount} 警告` : '0 违规';
 
   console.log('');
-  // 口径统一（run-02 P1-5）：defaultCnt/extendedCnt 前置计算——签名行与明细行
-  // 同源同口径「N 项检查 · M 条规则 (D 默认 + E 扩展)」，quick 模式不再出现
-  // 横幅「17 规则」与明细计数自相矛盾（计数为运行时实数，此处注释为历史口径示例）。
+  // 口径统一（run-02 P1-5 / P1-4）：defaultCnt/extendedCnt 前置计算——签名行与明细行
+  // 同源同口径「N 项检查 · 规则库 M 条 (默认 D + 扩展 E)」。N 为运行时实数（本跑实跑检查项），
+  // 「规则库 D/E」为注册口径——并列时以「规则库」显式区分，避免把实跑数 N 与注册默认数 D
+  // 读成互斥断言（配置停用一条默认规则时合法的 N=D-1，旧写法「N 项检查 · 28 条规则 (D 默认…)」会产生 16 vs 17 的表面矛盾）。
   const defaultCnt = defaultRules.length;
   const extendedCnt = extendedRules.length;
   const totalCnt = defaultCnt + extendedCnt;
@@ -1945,7 +1946,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log('  ' + productSignature(exitCode, totalRules, totalCnt));
   console.log(bannerTop());
   console.log(bannerLine(`sofagent audit · FDE Harness · v${VERSION}`));
-  console.log(bannerLine(`扫描 ${diffFiles.length} 文件 · ${totalRules} 项检查 · ${totalCnt} 条规则 (${defaultCnt} 默认 + ${extendedCnt} 扩展) · ${issueWord}`));
+  console.log(bannerLine(`扫描 ${diffFiles.length} 文件 · ${totalRules} 项检查 · 规则库 ${totalCnt} 条 (默认 ${defaultCnt} + 扩展 ${extendedCnt}) · ${issueWord}`));
   console.log(bannerLine(`${statusLabel}  ·  ${actionLabel}`));
   console.log(bannerBottom());
 

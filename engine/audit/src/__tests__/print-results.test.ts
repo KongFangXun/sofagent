@@ -48,6 +48,16 @@ describe('printResults · ci||silent 模式 stdout 结论行（P0 可见性）',
     expect(out).toContain(`· ${passRules.length} 项检查`);
   });
 
+  it('case5: PASS + ci → 尾行注册构成显式标注「规则库 M 条 (默认 D + 扩展 E)」，实跑检查数与注册默认数同句不互斥（P1-4）', () => {
+    printResults(makeResults(passRules), [], false, true, true);
+    const out = spy.mock.calls.map((c) => String(c[0])).join('\n');
+    // 注册口径须显式标注为「规则库」，避免把实跑检查数 N 与注册默认数 D 读成同一计数
+    expect(out).toMatch(/规则库 \d+ 条 \(默认 \d+ \+ 扩展 \d+\)/);
+    // 实跑检查数独立呈现（本用例 N=2），不得再写成「N 条规则 (…)」造成 16-vs-17 式表面矛盾
+    expect(out).toContain(`· ${passRules.length} 项检查`);
+    expect(out).not.toMatch(new RegExp(`· ${passRules.length} 条规则 \\(`));
+  });
+
   it('case2: WARN + ci → stdout 含 ⚠️ [sofagent] 审计 且保留原有详情行', () => {
     printResults(makeResults(warnRules), [], false, true, true);
     const out = spy.mock.calls.map((c) => String(c[0])).join('\n');
