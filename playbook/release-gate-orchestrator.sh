@@ -29,13 +29,17 @@ RUNS_BASE="${SOFAGENT_HOME}/data/forge-runs/release-gate-loop"
 STEPS=("acceptance" "regression" "coverage" "consolidate" "verdict")
 
 # 每步的产物文件名（与 driver STEPS[].outputs 一致）
-declare -A STEP_ARTIFACTS=(
-  ["acceptance"]="acceptance.md"
-  ["regression"]="regression.md"
-  ["coverage"]="coverage.md"
-  ["consolidate"]="stage6-report.md"
-  ["verdict"]="verdict.md"
-)
+# bash 3.2 兼容（macOS 自带 bash 无关联数组）：用 case 函数代替 declare -A
+step_artifact() {
+  case "$1" in
+    acceptance)  echo "acceptance.md" ;;
+    regression)  echo "regression.md" ;;
+    coverage)    echo "coverage.md" ;;
+    consolidate) echo "stage6-report.md" ;;
+    verdict)     echo "verdict.md" ;;
+    *)           echo "" ;;
+  esac
+}
 
 # ─── 参数解析 ────────────────────────────────────────────────
 TARGET="${1:-}"
@@ -73,7 +77,7 @@ if [[ -n "${LATEST_RUN_DIR}" && -d "${LATEST_RUN_DIR}" ]]; then
   # 检查该目录是否已有产物文件（断点续跑）
   HAS_ARTIFACT=false
   for step in "${STEPS[@]}"; do
-    artifact="${LATEST_RUN_DIR}/${STEP_ARTIFACTS[$step]}"
+    artifact="${LATEST_RUN_DIR}/$(step_artifact "$step")"
     if [[ -f "${artifact}" ]]; then
       HAS_ARTIFACT=true
       break
@@ -117,7 +121,7 @@ for step in "${STEPS[@]}"; do
     fi
   done
 
-  artifact="${RUN_DIR}/${STEP_ARTIFACTS[$step]}"
+  artifact="${RUN_DIR}/$(step_artifact "$step")"
 
   echo "=== [${step}] 启动 $(date '+%H:%M:%S') ==="
   echo "    步骤 ${step_num}/${#STEPS[@]}"
@@ -143,7 +147,7 @@ for step in "${STEPS[@]}"; do
     echo "=== [${step}] 失败 exit_code=${EXIT_CODE} 耗时 ${step_elapsed}s ==="
     # 检查产物是否在失败前已生成（部分成功）
     if [[ ! -f "${artifact}" ]]; then
-      echo "[orchestrator] 错误：步骤 ${step} 失败且产物 ${STEP_ARTIFACTS[$step]} 不存在"
+      echo "[orchestrator] 错误：步骤 ${step} 失败且产物 $(step_artifact "$step") 不存在"
       echo "[orchestrator] 编排中止。修复后重新运行可断点续跑："
       echo "    bash $0 ${TARGET}${EXTRA_ARGS:+ ${EXTRA_ARGS}}"
       exit 1
