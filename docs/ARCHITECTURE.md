@@ -1453,7 +1453,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 **未来方向**：
 - **v1.5.4（✅ 已发版 · 2026-09-30）**：**分层模型路由**（云端规划 / 本地执行分层 + 数据敏感度 fail-closed + routeReason 可解释——路由层本体已在位，调用侧分流归位判定面）；**离线节点交付**：[v1.8.0](./changelog/v1.8/v1.8.0.md) 介质两档（DSH 节点 + 判定件交付介质，旧「合体」叙事退役）；**组织级共享记忆 + 协同层**：v2.x 待裁定（版本域纪律：V2.0 起为 S1M 迭代域）
-- **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）——离线节点本地推理的轻量化。详见 [ROADMAP · 分层模型架构](./ROADMAP.md#分层模型架构v3x-远景概述)
+- **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）——离线节点本地推理的轻量化。详见 [ROADMAP · 分层模型架构](./ROADMAP.md#分层模型架构v30-远景概述)
 - **远期护城河演进方向（非当前能力）**：详见 [归档 · ARCHITECTURE 细节](./archive/doc-slim/architecture-industry-anchors.md)。
 > **远期部署形态与数据逻辑（非当前能力）**：引擎作为**软件**部署在**企业侧信任边界内**（独立控制节点或容器内），由其**驱动训练流水线**——加载企业自带 license/key 的开源基座 + 企业私有数据，训练产出定制模型；全程数据不出域、sofagent 不碰原始数据、企业用自有 GPU/key（BYOK）。训练主体是软件/引擎跑脚本，模型不「自训练」。此为长期目标蓝图，当前不具备。
 
