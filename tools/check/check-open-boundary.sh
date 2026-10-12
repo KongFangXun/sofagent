@@ -45,6 +45,9 @@ PATTERN='Grap[h]?[ ]?Hub|Flow[ ]?Hub'
 #   ⚠️ changelog 用 `*/changelog/` 而非路径字面量 `docs/changelog/`：历史档案一旦
 #      迁移（如 docs/ → archive/），路径字面量即失配、豁免**静默失效**，历史档案
 #      会集体转红而无人知其所以然。豁免面跟随「changelog 这个目录名」，不跟随层级位置。
+#   ⚠️ 同理，家目录断言的 `*/archive/`（原 `docs/archive/`）——实测 `docs/archive/` 下
+#      有 8 行真实机器路径，一旦搬迁该字面量失配，这 8 行立即转红。
+#      **通则：路径锚定的豁免面 = 潜伏的假红源，一律改按目录名匹配。**
 #   修法纪律（三条 FAIL 均适用）：命中即把私域名改为 `〔私域产品名〕` 占位——
 #      **保留句子与语义，勿删段、勿加豁免**。加豁免等于修测试（把不可逆风险从门禁里摘出去）。
 
@@ -144,7 +147,7 @@ HOME_PATH_HITS=""
 HOME_PATH_TOTAL=0
 for f in $TRACKED; do
   case "$f" in
-    .git/*|*/changelog/*|docs/archive/*|tools/check/check-open-boundary.sh) continue ;;
+    .git/*|*/changelog/*|*/archive/*|tools/check/check-open-boundary.sh) continue ;;
     # F-38 测试面豁免：脱敏/路径解析类测试用占位家目录路径（/Users/johndoe/、
     # /home/alice/）做 fixture 属正当用法——断言抓的是「维护者机器路径外溢」，
     # 不是「任何家目录形状的字符串」。
