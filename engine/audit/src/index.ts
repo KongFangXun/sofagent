@@ -1043,7 +1043,7 @@ async function main(): Promise<void> {
 
   // v1.5.9：agent-shield 子命令（AgentShield 五类配置面扫描 CLI）
   if (args.agentShieldCommand) {
-    const { runAgentShieldCli, parseAgentShieldArgs } = await import('./cli/agent-shield');
+    const { runAgentShieldCli, parseAgentShieldArgs } = await import('./cli/agent-shield-cli');
     const cliArgs = parseAgentShieldArgs(rawArgs);
     try {
       // createAgentShield 就在 audit 包内——无跨包依赖，直接跑

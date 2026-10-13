@@ -40,17 +40,21 @@ describe('failure-ledger', () => {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
   });
 
-  /** 构造测试用 FailureRecord */
+  /** 构造测试用 FailureRecord（v1.6.0 BUG-37：seq 使 reason 唯一——同聚类不同因
+   *  视为新条目照常录入；造「同因重复」用 makeRecord(..., {sameReason: true})） */
+  let reasonSeq = 0;
   function makeRecord(
     skillId: string,
     failureMode: string,
     ts?: string,
+    opts?: { sameReason?: boolean },
   ): FailureRecord {
+    const reason = opts?.sameReason ? `${failureMode} detail` : `${failureMode} detail #${++reasonSeq}`;
     return {
       timestamp: ts ?? new Date().toISOString(),
       skillId,
       failureMode,
-      reason: `${failureMode} detail`,
+      reason,
       source: 'test',
     };
   }
@@ -74,13 +78,22 @@ describe('failure-ledger', () => {
       expect(record.failureMode).toBe('format-mismatch');
     });
 
-    it('多条记录追加写入（append-only）', () => {
+    it('多条记录追加写入（append-only·不同聚类）', () => {
       recordFailure(makeRecord('skill-a', 'mode-1'));
       recordFailure(makeRecord('skill-b', 'mode-2'));
-      recordFailure(makeRecord('skill-a', 'mode-1'));
+      recordFailure(makeRecord('skill-c', 'mode-3'));
 
       const lines = fs.readFileSync(resolveFailureLedgerPath(), 'utf-8').trim().split('\n');
       expect(lines.length).toBe(3);
+    });
+
+    it('同聚类同因去重（v1.6.0 BUG-37 行为锁：重跑不涨行数）', () => {
+      recordFailure(makeRecord('skill-a', 'mode-1', undefined, { sameReason: true }));
+      recordFailure(makeRecord('skill-a', 'mode-1', undefined, { sameReason: true }));
+      recordFailure(makeRecord('skill-a', 'mode-1', undefined, { sameReason: true }));
+
+      const lines = fs.readFileSync(resolveFailureLedgerPath(), 'utf-8').trim().split('\n');
+      expect(lines.length).toBe(1); // 同 skill|mode|reason 只落一条
     });
 
     it('自动创建 evolve 子目录', () => {

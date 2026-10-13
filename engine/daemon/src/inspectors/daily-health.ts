@@ -15,13 +15,18 @@
 // ============================================================
 
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { join, sep } from 'path';
 import { execFileSync } from 'child_process';
 import type { InspectorResult } from './types';
 
-/** 仓库根（src/inspectors/daily-health.ts → 上三级） */
+/**
+ * 仓库根（v1.6.0 BUG-54 修复：原上三级对 src 态差一级——
+ * src/inspectors/ 需上四级（src→daemon→engine→仓库根）；dist/inspectors/ 上三级。
+ * 用 __dirname 末段判形态：以 'src' 收尾 → 四级；否则（dist 或安装态）→ 三级。
+ */
 function repoRoot(): string {
-  return join(__dirname, '..', '..', '..');
+  const fromSrc = __dirname.split(sep).slice(-2, -1)[0] === 'src';
+  return fromSrc ? join(__dirname, '..', '..', '..', '..') : join(__dirname, '..', '..', '..');
 }
 
 export function runDailyHealth(_dataDir?: string): InspectorResult {

@@ -196,7 +196,7 @@ describe('scanAll 汇总（同一审计出口）', () => {
 // v1.4.5 T16: discoverAgentConfigs 候选表补 install.sh 实际部署路径
 // ============================================================
 import { readFileSync } from 'fs';
-import { discoverAgentConfigs } from '../cli/agent-shield';
+import { discoverAgentConfigs } from '../cli/agent-shield-cli';
 
 /** 读 agent-shield.ts 源码文本（零 LLM 依赖约束等的源码级断言用） */
 function readFileSyncSource(): string {

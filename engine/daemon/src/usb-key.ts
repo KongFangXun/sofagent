@@ -29,7 +29,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { encryptPayload, AES_KEY_BYTES, GCM_IV_BYTES, GCM_TAG_BYTES, getDataDir } from '@sofagent/core';
+import { encryptPayload, AES_KEY_BYTES, GCM_IV_BYTES, GCM_TAG_BYTES, getDataDir, resolveHomeDir } from '@sofagent/core';
 import { collectFiles, computeUsbSignature, writeSignatureManifest } from './usb-signature';
 import type { FederationConfig } from './usb-detect';
 
@@ -376,7 +376,7 @@ export function burnWorkflowsToUsb(
   if (!fs.existsSync(sourceDir)) {
     // 兼容旧数据：迁移期同时探测无 /data 层的旧路径（口径 = <SOFAGENT_HOME>/workflow-store），
     // 命中提示迁移（一次性提示）
-    const legacyDir = path.join(process.env.SOFAGENT_HOME ?? path.join(os.homedir(), '.sofagent'), 'workflow-store');
+    const legacyDir = path.join(resolveHomeDir(), 'workflow-store'); // v1.6.0 BUG-76：SSOT 收敛
     if (fs.existsSync(legacyDir)) {
       console.warn(`ℹ️ [usb-key] 检测到旧路径 workflow-store（${legacyDir}），建议迁移到 data/ 下（新写侧口径）`);
       sourceDir = legacyDir;

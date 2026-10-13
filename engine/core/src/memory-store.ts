@@ -159,7 +159,11 @@ function readIndex(memoryRoot: string): MemoryIndex {
   if (!existsSync(indexPath)) return {};
   try {
     return JSON.parse(readFileSync(indexPath, 'utf-8')) as MemoryIndex;
-  } catch {
+  } catch (err) {
+    // v1.6.0 BUG-53：索引损坏可见降级（非静默）——留证 + 回退空索引
+    const corrupt = `${indexPath}.corrupt-${Date.now()}`;
+    try { renameSync(indexPath, corrupt); } catch { /* 留证失败不掩盖原错误 */ }
+    console.warn(`[memory-store] 索引读取失败（${(err as Error).message}）——已移至 ${corrupt} 可人工恢复，回退空索引`);
     return {};
   }
 }
@@ -176,7 +180,11 @@ function readArchiveIndex(memoryRoot: string): ArchiveIndex {
   if (!existsSync(p)) return {};
   try {
     return JSON.parse(readFileSync(p, 'utf-8')) as ArchiveIndex;
-  } catch {
+  } catch (err) {
+    // v1.6.0 BUG-53：同 readIndex 口径——损坏可见降级
+    const corrupt = `${p}.corrupt-${Date.now()}`;
+    try { renameSync(p, corrupt); } catch { /* 留证失败不掩盖原错误 */ }
+    console.warn(`[memory-store] 归档索引读取失败（${(err as Error).message}）——已移至 ${corrupt} 可人工恢复，回退空索引`);
     return {};
   }
 }
@@ -608,6 +616,7 @@ export function createMemoryStore(
       const index = readIndex(memoryRoot);
       const archiveIndex = readArchiveIndex(memoryRoot);
       let moved = 0;
+      let migrationFailures = 0; // v1.6.0 BUG-53：迁移失败计数（结束摘要输出）
       for (const key of Object.keys(index)) {
         const factId = index[key];
         if (!factId) continue;
@@ -615,9 +624,17 @@ export function createMemoryStore(
         const src = resolveFactPath(memoryRoot, bucket, factId);
         if (!src) continue;
         let fact: MemoryFact | null = null;
+        let parseFailed = false;
         try {
           fact = markdownToFact(readFileSync(src, 'utf-8'), factId);
         } catch {
+          parseFailed = true;
+        }
+        if (parseFailed || !fact) {
+          if (parseFailed) {
+            migrationFailures++;
+            console.warn(`[memory-store] 归档迁移：fact 解析失败（${src}）——保留原文件跳过`);
+          }
           continue;
         }
         if (!fact) continue;
@@ -626,7 +643,9 @@ export function createMemoryStore(
         mkdirSync(dirname(dest), { recursive: true, mode: 0o700 });
         try {
           renameSync(src, dest);
-        } catch {
+        } catch (err) {
+          migrationFailures++;
+          console.warn(`[memory-store] 归档迁移：rename 失败（${src} → ${dest}：${(err as Error).message}）——跳过`);
           continue;
         }
         archiveIndex[key] = { factId, archivedAt: new Date().toISOString() };
@@ -636,6 +655,10 @@ export function createMemoryStore(
       if (moved > 0) {
         writeIndex(memoryRoot, index);
         writeArchiveIndex(memoryRoot, archiveIndex);
+      }
+      // v1.6.0 BUG-53：迁移失败摘要（失败不留痕=「跑了没记」不可区分——对齐空 catch 静默吞错禁令）
+      if (migrationFailures > 0) {
+        console.warn(`[memory-store] 归档迁移结束：${moved} 条成功 · ${migrationFailures} 条失败（逐条原因见上方 warn）`);
       }
       return moved;
     },

@@ -18,6 +18,7 @@
 // ============================================================
 
 import * as fs from 'fs';
+import { resolveHomeDir } from '@sofagent/core'; // v1.6.0 BUG-76：家目录 SSOT
 import * as path from 'path';
 import { isPrivateWebhookUrl } from '@sofagent/audit';
 
@@ -49,7 +50,7 @@ export interface WebhookChannelHealth {
  */
 export function readWebhookChannelHealth(dataDir?: string): WebhookChannelHealth | null {
   try {
-    const base = dataDir || process.env.SOFAGENT_DATA || path.join(process.env.SOFAGENT_HOME || path.join(require('os').homedir(), '.sofagent'), 'data');
+    const base = dataDir || process.env.SOFAGENT_DATA || path.join(resolveHomeDir(), 'data'); // v1.6.0 BUG-76：SSOT 收敛
     const healthPath = path.join(base, 'daemon-health.json');
     if (!fs.existsSync(healthPath)) return null;
     const raw = JSON.parse(fs.readFileSync(healthPath, 'utf-8')) as { webhook?: unknown };
@@ -72,7 +73,7 @@ export function readWebhookChannelHealth(dataDir?: string): WebhookChannelHealth
  */
 function writeWebhookChannelHealth(patch: Partial<WebhookChannelHealth>): void {
   try {
-    const base = process.env.SOFAGENT_DATA || path.join(process.env.SOFAGENT_HOME || path.join(require('os').homedir(), '.sofagent'), 'data');
+    const base = process.env.SOFAGENT_DATA || path.join(resolveHomeDir(), 'data'); // v1.6.0 BUG-76：SSOT 收敛
     const healthPath = path.join(base, 'daemon-health.json');
     let raw: Record<string, unknown> = {};
     if (fs.existsSync(healthPath)) {

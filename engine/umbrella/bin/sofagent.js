@@ -232,7 +232,7 @@ function spawnDomain(domain, args) {
   }
   const result = spawnSync(process.execPath, [target.cliPath, ...target.args], {
     stdio: 'inherit',
-    env: { ...process.env, SOFAGENT_SINGLE_ENTRY: '1' },
+    env: { ...process.env, SOFAGENT_SINGLE_ENTRY: '1' }, // 保留作单入口标记（无读者——v1.6.0 BUG-56 同批口径）
   });
   if (result.error) {
     console.error(`[sofagent] 启动域「${domain}」失败：${result.error.message}`);

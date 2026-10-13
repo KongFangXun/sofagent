@@ -224,8 +224,8 @@ export interface CreateBaselineSnapshotOptions extends FourLayerCollectorOptions
 // 摘要工具
 // ────────────────────────────────────────────────────────────
 
-/** sha256 前 N 位 hex */
-function sha256Hex(input: string, len: number): string {
+/** sha256 前 N 位 hex（v1.6.0 BUG-76：包内共享导出——validator-health 同款收敛，消灭复制漂移面） */
+export function sha256Hex(input: string, len: number): string {
   return createHash('sha256').update(input).digest('hex').slice(0, len);
 }
 

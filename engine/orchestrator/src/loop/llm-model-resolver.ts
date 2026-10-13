@@ -95,6 +95,24 @@ export async function resolveLLMModel(role: 'engineer' | 'reviewer' | null = nul
     return null;
   }
 
+  // v1.6.0 BUG-57：Anthropic 厂商分支——@langchain/anthropic 此前是 root 声明
+  // 的 optional 死依赖（注释声称「运行时动态加载 ChatAnthropic」但全仓零引用）。
+  // 实现与声明对齐：anthropic 厂商走 ChatAnthropic 动态 import（optional——
+  // 未安装时降级零工具路径并如实提示，不假装已支持）。
+  if (providerKey === 'anthropic') {
+    try {
+      const { ChatAnthropic } = await import('@langchain/anthropic');
+      const model = new ChatAnthropic({
+        modelName: modelName || 'claude-3-5-sonnet-latest',
+        anthropicApiKey: apiKey,
+      });
+      return { model };
+    } catch {
+      console.warn('[sofagent] @langchain/anthropic 未安装或初始化失败（optional 依赖）——降级到零工具路径');
+      return null;
+    }
+  }
+
   try {
     const { ChatOpenAI } = await import('@langchain/openai');
     const model = new ChatOpenAI({

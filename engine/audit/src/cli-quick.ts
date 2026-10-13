@@ -396,7 +396,7 @@ export function runCliQuick(argv: string[]): number {
       // 路由到完整引擎（dist/index.js）
       const indexPath = join(__dirname, 'index.js');
       // v1.5.7 F6：自动路由属于「单入口内部转发」，不是用户直敲旧命令——
-      // 置 SOFAGENT_SINGLE_ENTRY=1（与 umbrella 路由同键同义），quick 侧本条
+      // 置 SOFAGENT_SINGLE_ENTRY=1（与 umbrella 路由同键同义——v1.6.0 BUG-56：该键当前无读者，保留作单入口标记），quick 侧本条
       // 弃用提示已在上方打印、full 侧 (index.ts) 同键静默，避免一次调用叠两条提示。
       // 直敲旧命令路径（不经本分支）零改动——提示行为不变。
       process.env.SOFAGENT_SINGLE_ENTRY = '1';

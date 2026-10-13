@@ -19,7 +19,6 @@ import { checkConflict } from './conflict-check';
 import { checkDoctorHealth } from './doctor-checker';
 import { checkKnowledgeFreshness } from './knowledge-freshness';
 import { checkKnowledgeHealth } from './knowledge-health';
-import { checkSkillStaleness } from './skill-staleness';
 import { accumulateWarnings } from './warn-accumulator';
 import { generateDataSovereigntyDaily } from './data-sovereignty-daily';
 import { generateDataSovereigntyWeekly } from './data-sovereignty-weekly';
@@ -108,7 +107,6 @@ export const INSPECTORS: Readonly<Record<string, InspectorEntry>> = {
   'conflict-check': { fn: checkConflict, layer: 'L2', enabled: true },
   'knowledge-freshness': { fn: checkKnowledgeFreshness, layer: 'L2', enabled: true },
   'knowledge-health': { fn: checkKnowledgeHealth, layer: 'L2', enabled: true },
-  'skill-staleness': { fn: checkSkillStaleness, layer: 'L2', enabled: false },
   'data-sovereignty-weekly': { fn: generateDataSovereigntyWeekly, layer: 'L2', enabled: true },
   'evolve-trigger': { fn: runEvolveTrigger, layer: 'L2', enabled: true },
   'trend-aggregator': { fn: runTrendAggregator, layer: 'L2', enabled: true },

@@ -29,7 +29,7 @@ import { join, dirname } from 'path';
 import { createHash, createHmac, randomBytes } from 'crypto';
 import { hostname, userInfo, homedir } from 'os';
 import { execSync } from 'child_process';
-import { AUDIT_HISTORY, AUDIT_DECISION_LOG } from './data-paths';
+import { AUDIT_HISTORY, AUDIT_DECISION_LOG, resolveHomeDir } from './data-paths';
 // F-29：链校验解密通路——加密基建同包（无依赖方向问题），复用 age-wrapper/key-manager
 import { isAgePayload, decryptWithAge } from './crypto/age-wrapper';
 import { loadDataKey, listArchivedKeys, keysDirPath, DATA_KEY_RECOVERY_HINT } from './crypto/key-manager';
@@ -387,7 +387,7 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
         ageKeyCache = undefined;
       }
     }
-    const sofagentHome = process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
+    const sofagentHome = resolveHomeDir(); // v1.6.0 BUG-76：SSOT 收敛
     const candidates: Buffer[] = [];
     const cur = loadDataKey(sofagentHome);
     if (cur !== null) candidates.push(cur);
@@ -436,7 +436,7 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
         //    不影响其余明文链，但整链条数与锚点计数不符即红）。
         if (!foundUnverifiablePre) {
           foundUnverifiablePre = true;
-          unverifiablePreNote = `${keysDirPath(process.env.SOFAGENT_HOME || join(homedir(), '.sofagent'))}/data.key 缺失或与全部归档钥不匹配`;
+          unverifiablePreNote = `${keysDirPath(resolveHomeDir())}/data.key 缺失或与全部归档钥不匹配`; // v1.6.0 BUG-76：SSOT 收敛
         }
         continue;
       }

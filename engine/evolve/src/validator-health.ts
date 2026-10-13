@@ -145,9 +145,8 @@ const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
 /** 两时刻之间的天数（to − from；可注入参照时刻——供测试锚定确定性） */
 const daysBetween = (fromIso: string, toIso: string): number =>
   (new Date(toIso).getTime() - new Date(fromIso).getTime()) / 86_400_000;
-function sha256Hex(input: string, len: number): string {
-  return createHash('sha256').update(input).digest('hex').slice(0, len);
-}
+// v1.6.0 BUG-76：sha256Hex 收敛——包内共享 baseline-snapshot 的导出实现（同签名，消灭复制漂移面）
+import { sha256Hex } from './baseline-snapshot';
 function avg(xs: number[]): number {
   return xs.length === 0 ? 0 : xs.reduce((a, b) => a + b, 0) / xs.length;
 }

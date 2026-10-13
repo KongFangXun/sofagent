@@ -238,6 +238,14 @@ deploy_scripts() {
     src="${SCRIPT_DIR}/engine/scripts/${script}"; dst="${SCRIPTS_DST}/${script}"
     if [ -f "$src" ]; then cp "$src" "$dst"; chmod +x "$dst"; ok "配套脚本已部署: $dst"
     else warn "找不到 ${script}，跳过"; fi
+    # v1.6.0 BUG-55：daily-health.sh 额外软链一份到 $SOFAGENT_HOME/scripts/——
+    # 读侧（daemon daily-health.ts:31）只查该路径，平台安装态巡检此前恒跳过。
+    # 单文件例外（其余脚本读侧均查 ${TARGET}/scripts/），在此注明理由。
+    if [ "$script" = "daily-health.sh" ] && [ -f "$dst" ]; then
+      local DH_HOME_DIR="${SOFAGENT_HOME:-$HOME/.sofagent}/scripts"
+      mkdir -p "$DH_HOME_DIR" 2>/dev/null || true
+      ln -sf "$dst" "${DH_HOME_DIR}/daily-health.sh" 2>/dev/null || true
+    fi
   done
   src="${SCRIPT_DIR}/engine/scripts/lib/config.sh"; dst="${SCRIPTS_DST}/lib/config.sh"  # 部署共享配置加载器
   if [ -f "$src" ]; then mkdir -p "$(dirname "$dst")"; cp "$src" "$dst"; ok "配置加载器已部署: $dst"

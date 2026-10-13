@@ -8,7 +8,8 @@ import type { InspectorResult } from './types';
 /**
  * Skill 陈旧度检测
  *
- * 当前默认禁用，需要 eval 数据支持后才启用。
+ * v1.6.0 BUG-58：无排期未转正——已从巡检注册表移出（registry 不再登记）；
+ * 函数保留因 @public 基线承诺（semver 锁定）。转正条件：eval 数据面就绪。
  */
 export function checkSkillStaleness(_projectDir: string): InspectorResult {
   return {

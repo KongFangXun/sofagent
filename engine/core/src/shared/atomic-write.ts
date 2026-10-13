@@ -12,7 +12,7 @@
 // ${stateFile}.tmp.${pid}.${randomBytes(4).toString('hex')} 防并发冲突。
 // ============================================================
 
-import { writeFileSync, renameSync, existsSync, readFileSync, copyFileSync, unlinkSync, openSync, closeSync, statSync } from 'fs';
+import { lstatSync, realpathSync, writeFileSync, renameSync, existsSync, readFileSync, copyFileSync, unlinkSync, openSync, closeSync, statSync } from 'fs';
 import { randomBytes } from 'crypto';
 
 /**
@@ -114,10 +114,21 @@ export function withFileLockSync<T>(filePath: string, fn: () => T): T {
  * @param content  要写入的内容
  */
 export function atomicWriteSync(filePath: string, content: string): void {
-  const tmp = tmpPath(filePath);
+  // v1.6.0 BUG-69：symlink 防御——目标为符号链接时 rename 会原地摧毁链接本体
+  // （lstat isSymbolicLink true→false，SOFAGENT_HOME 被 symlink 时用户不知情失去
+  // 所有权）。解析真实路径后写真实目标，保持 symlink 语义与用户所有权。
+  let target = filePath;
+  try {
+    if (lstatSync(filePath).isSymbolicLink()) {
+      target = realpathSync(filePath);
+    }
+  } catch {
+    /* 目标不存在（首写）——直接写原路径 */
+  }
+  const tmp = tmpPath(target);
   writeFileSync(tmp, content, 'utf-8');
   try {
-    renameSync(tmp, filePath);
+    renameSync(tmp, target);
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code === 'EXDEV') {
@@ -146,10 +157,19 @@ export function atomicAppendSync(filePath: string, line: string): void {
       existing = '';
     }
 
-    const tmp = tmpPath(filePath);
+    // v1.6.0 BUG-69：同 atomicWriteSync 的 symlink 防御（append 面）
+    let appendTarget = filePath;
+    try {
+      if (lstatSync(filePath).isSymbolicLink()) {
+        appendTarget = realpathSync(filePath);
+      }
+    } catch {
+      /* 首写——直接原路径 */
+    }
+    const tmp = tmpPath(appendTarget);
     writeFileSync(tmp, existing + line + '\n', 'utf-8');
     try {
-      renameSync(tmp, filePath);
+      renameSync(tmp, appendTarget);
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code;
       if (code === 'EXDEV') {
