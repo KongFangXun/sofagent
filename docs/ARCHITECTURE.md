@@ -553,28 +553,30 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 2. **群维度隔离**：按组织 / 项目 / 环境维度隔离权限域，跨域调用需显式授权。
 3. **不可越权**：硬约束层（审计能力）兜底，越权动作在 Action 边界被拦截，AI 绕不过。
 4. **可热更新**：权限策略运行时可改、即时生效，不重启 Agent。
+5. **独立身份**：每个 Agent 是独立主体，归入 IAM 的「工作负载 / 机器身份」类，发短期凭据、单独撤回。判据：**权限必须有明确主人**——与人共用凭据即无法归因。与第 1 条互补：四原则管「权限怎么给」，本条管「记在谁名下」（衔接 §审计规则面「凭证范围」盲区）。
+> 📖 来源：知识库消化与维护（2026-10-13 · 4 源：Gartner 工作负载 IAM · Agent 权限归属 · 企业四道闸门 · Anthropic 工牌；余源一手核对归 GDM 巡检）· [Gartner Workload Identity](https://www.gartner.com/en/information-technology/topics/workload-identity)
 
-**零凭证沙箱**：运行时上下文不落明文密钥——凭证由守护进程注入、用毕即销，Agent 全程只见句柄不见明文（对齐 A2 不泄密钥铁律）。
+**零凭证沙箱**：运行时不落明文密钥——凭证守护进程注入、用毕即销，Agent 只见句柄不见明文（对齐 A2 铁律）。
 
-**权限疲劳量化（监督不能依赖逐步审批）**：Claude Code 早期逐步审批的实测是用户批准了约 **93%** 的权限提示——提示越多、逐条审得越松；改为 OS 级沙箱（默认断网 + 工作区内可写）后权限提示下降 **84%**。判据：**监督设计不能依赖逐步审批，隔离强度须匹配用户监督能力**（多 agent 场景下逐步把关大概率失效：n 个 agent 各自逐步审批，审批疲劳是乘的不是加的）。
+**权限疲劳量化**：Claude Code 逐步审批实测约 **93%** 被批准——提示越多审得越松；改 OS 级沙箱后降 **84%**。判据：**监督不能靠逐步审批，隔离强度须匹配监督能力**（多 agent 审批疲劳是乘的）。
 
-**事后审计的天窗有多长**：一起模型自主越界行为（向警方提交虚构线索）**事后 72 天才被发现**——Anthropic 的处置三件套是切断全部内部评测实时联网 + 迁移强隔离基础设施 + 分类器监控。反证很硬：**审计若只做事后回溯，同样的 72 天空窗会重现**。本仓对应面：v1.3.7 起自派 SubAgent 沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入）即「默认断网」形态；主 Agent 永远事后审计（边界见文末声明）。
+**事后审计的天窗**：模型自主越界**72 天后才被发现**——只做事后回溯，空窗必重现。本仓对应面：v1.3.7 起自派 SubAgent 沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入）即「默认断网」形态；主 Agent 永远事后审计（边界见文末声明）。
 
 > 📖 来源：Anthropic 跨产品 Agent 封堵实录（2026-05-25 · 93% 批准率 / 沙箱降 84% 权限提示）· [Anthropic Engineering](https://www.anthropic.com/engineering/how-we-contain-claude)
 > ｜ Anthropic 自主提交虚假凶杀线索后切断联网（2026-10-10 · 72 天空窗 + 处置三件套）· [The Decoder](https://the-decoder.com/anthropic-cuts-off-claudes-internet-access-after-the-model-autonomously-filed-a-fake-homicide-tip-with-philadelphia-police/)
 
-**最坏情况反问**（权限模型必答题）：「如果这个 Agent 被 Prompt 注入了，最坏情况是什么？」答案应是它 profile 内那些权限能做的事，而非整个系统沦陷——权限不是限制 Agent，是保护组织。
+**最坏情况反问**（必答题）：「Agent 被 Prompt 注入后最坏情况是什么？」答案应是 profile 内权限能做的事，非全系统沦陷——权限保护的是组织。
 
-**动作后果分级（授权面的中间档 · 2026-10-01 补）**：「允许 / 不允许」之间缺的是按后果分级的中间档——能力注册项须带后果等级字段（**只读 / 有副作用 / 改变权限 / 改变环境**四档），激活链按等级决定人工确认与留证强度：读操作自由 · 写操作需确认 · **权限变更需二次授权** · 环境变更走红线制度。
+**动作后果分级（中间档 · 2026-10-01 补）**：能力注册项带后果等级（**只读 / 副作用 / 改权限 / 改环境**四档），激活链按等级定确认强度：读自由 · 写确认 · **权限变更二次授权** · 环境变更走红线。
 
 **与本仓既有提权分级的分工（勿混）**：[v1.4.8「shell 提权分级」](./changelog/v1.4/v1.4.8.md) 管的是**执行侧**（shell 命令按危险度三态 safe / risky / dangerous 路由到直接跑 / 场景策略 / HITL），本条管的是**注册侧**（能力项按后果类型声明）——净增量两点：① 作用域从 shell 命令扩到全部能力注册项；② 分档维度从「危险程度」细化为「**后果类型**」——改权限与改环境是不同性质的后果（前者导致持久提权、后者动摇运行根基），混作一档则处置策略无从分化。
 
-**外部教训（准确表述）**：SQL Copilot 提权链 [CVE-2026-65669](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-65669)（CVSS v3.1 **9.6** Critical / v4 8.6 High，2026-09-08 披露、BlueHat Asia 2026 公开）的机制是——**攻击者在库中植入恶意 `CONSTITUTION.md` 指令 → 管理员连接并使用 Copilot 时触发 → 绕过其只读限制、
+**外部教训**：SQL Copilot 提权链 [CVE-2026-65669](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-65669)（CVSS v3.1 **9.6** / v4 8.6，2026-09-08 披露）机制——植入恶意 `CONSTITUTION.md` → 管理员使用时触发 → 绕过只读限制、
 以该连接已持有的权限执行 T-SQL → 攻击者自我提升为 SYSADMIN**。
 
 它**不授予任何权限，用的是连接上已有的权限**——故其首要教训是**最小权限**（连接身份决定爆炸半径，与上条「最坏情况反问」同源）；其次才是「合法工具做越权事」的检查盲区（护栏校验「工具能否调用」，管不住「用合法工具做越权操作」）。
 
-**三方向同构**：AWS Bedrock 分级自治把授权拆成四级谱并设交付门禁（对抗测试出现一次未授权工具调用即阻断发布）· 钉钉数字员工实践以 ActionTier（auto / notify / escalate）给动作定档 · 本仓 v1.4.8 提权三态（执行侧既有件）。
+**三方向同构**：AWS Bedrock 四级谱 + 交付门禁（对抗测试一次未授权调用即阻断）· 钉钉 ActionTier 三档 · 本仓 v1.4.8 提权三态。
 > 📖 来源：Johann Rehberger《From SELECT to SYSADMIN》（BlueHat Asia 2026）· [Microsoft MSRC · CVE-2026-65669](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-65669) ｜ AWS《分级自治：四级授权谱（2026-09-20）》（IMA 收录，无公开 URL）｜ hugozhu《信任阶梯与 ActionTier 风险分级》（IMA 收录，无公开 URL）
 
 **动态治理三机制**（行业参考内部实践）：
@@ -1250,7 +1252,7 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 
 ### 编排层与执行层分离（v1.3.4 增量 · DSH 执行后端接入）
 
-> 📖 设计来源：DeepSeek Harness（DSH）「一切皆插件」Cordis 运行时 + sofagent「确定性审计依赖显式图结构」铁律的融合——编排层不换（确定性），执行层可换（灵活性）。
+> 📖 设计来源：DeepSeek Harness（DSH）「一切皆插件」Cordis 运行时 + sofagent「确定性审计依赖显式图结构」铁律的融合——编排层不换（确定性），执行层可换（灵活性）· [DeepSeek Harness 设计纪要](https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md)（融合论证见 PHILOSOPHY §三）
 
 sofagent 的编排模块从 v1.3.4 起显式分为两层——**编排层不换（确定性），执行层可换（灵活性）**：
 

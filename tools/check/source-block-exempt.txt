@@ -2,4 +2,3 @@
 缺日期	docs/ARCHITECTURE.md	1
 缺日期	docs/ROADMAP.md	1
 缺链接	SECURITY.md	1
-缺链接	docs/ARCHITECTURE.md	1
