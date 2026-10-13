@@ -253,6 +253,8 @@ git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
 > 🔴 **push 前置检查：workspace 包与 lock 同步**：新增 workspace 包但 lock file 未同步时，push 后多个 CI 工作流（pr-check/verify/audit/windows-ci）在 `npm ci` 严格校验上**同根因全红**（本地 `npm install` 会静默补齐所以本地全绿，CI `npm ci` 直接炸）。
 >**push 前必跑**：`npm ci --dry-run 2>&1 | grep -c "^npm error Missing"` 期望 0——非 0 则 `npm install --package-lock-only` 补齐 lock 后随代码同 commit。
 >
+> 🔴 **新 job 用到 git tag / 全历史的守卫必须 fetch-depth: 0**（v1.5.9 实锤）：check-test-count 的历史冻结豁免用 `git tag -l` 判「已发版行」——浅检出下 tag 为空 ⇒ 豁免失效 ⇒ 历史版本行被误判漂移（本地有 tag 全绿、CI 无 tag 假红，属「本地绿 CI 红」第四类根因）。pr-check 的 build-and-test job 已补；新增 job 复制时必带。
+
 > 🔴 **CI 全绿是打 tag 的硬前置**：push 之后必须**轮询等到全绿**（不是看一眼就走）——`exit 0` 之前禁止进入步骤六。CI 红着打 tag 会让用户装到坏版本（tag 是安装入口的锚点），回滚成本远高于等待 2-5 分钟。**轮询必须前台执行**：上述 while 循环在 session 前台逐轮跑（每轮一查 + sleep 60），严禁包进 run_in_background——挂后台 = session 空闲 = 界面无进展反馈。轮询脚本如下（循环跑直到 exit 0，每次间隔 60s）：
 
 ```bash
@@ -308,7 +310,10 @@ done
 
 > ⚠️ **bump 批 commit 前必跑 `git status --porcelain` 检视暂存面**：bump 涉数百文件，惯用 `git add -A` 会把**旁生目录**（实测：audit-baseline-sync 在无 SOFAGENT_HOME 时把锚文件写进 `./undefined/`）一并收入。检视发现非 bump 目标路径即先清（`git rm -r --cached <dir>` + 删目录 + 产品侧登记修复）。
 
-## 步骤五：版本 bump + 安装入口随版同步 ☑
+## 步骤五：版本 bump（含哈希回填唯一正确时点）
+
+> 🔴 **install.sh 钉值 / lib 哈希回填必须与 bump 同批、tag 同 commit**（v1.5.9 两轮实测）：tag 前回填会被 check-version 对照**旧 tag** 判「哈希漂移」假红（CI 的对照物是最新已发版 tag）；tag 后才回填则安装链钉值空窗。唯一正确时点 = 步骤五 bump 批内（按 bump 后工作区文件计算哈希），随 tag 指向的 commit 一起落地。
+## 步骤五：版本 bump + 安装入口随版同步 + 安装入口随版同步 ☑
 
 > 🔴 **本步骤是全流程唯一的 bump 时点**——阶段二~八全程 `package.json` 保持上一版号（SOP 设计的待发版中间态，见 [02 步骤一](./02-dev.md)）。SSOT 升级落在本步骤，且必须与安装入口 URL、bootstrap 哈希、状态翻牌**同一个 commit** 收口，才能「tag 前自洽」（tag 指向的必须是已 bump 的 commit）。
 
