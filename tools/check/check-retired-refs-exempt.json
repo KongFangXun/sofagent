@@ -1,0 +1,580 @@
+{
+  "$schema": "退役名残留守卫行级豁免台账（check-retired-refs.sh 消费）",
+  "usage": "bash tools/check/check-retired-refs.sh",
+  "notes": [
+    "形态照 archaeology-exempt：file+anchor（行内含 anchor 子串即豁免）+必写理由。",
+    "豁免只对『非用户指引』形态开放（systemd 服务名/workflow 命名/检测锚/历史叙述/兼容探测/包级自我标识）；教用户敲旧命令的 Usage/echo 不豁免。"
+  ],
+  "exempts": [
+    {
+      "file": ".github/workflows/daemon-linux-ci.yml",
+      "anchor": "sofagent-daemon.service",
+      "reason": "systemd 服务单元名（非 CLI 命令）——服务安装面独立于 bin 退役"
+    },
+    {
+      "file": ".github/workflows/daemon-linux-ci.yml",
+      "anchor": "systemctl --user status sofagent-daemon",
+      "reason": "systemd 服务操作（非 CLI）"
+    },
+    {
+      "file": ".github/workflows/sofagent-audit.yml",
+      "anchor": "name: sofagent-audit",
+      "reason": "GitHub Actions workflow 自身命名（非 CLI 调用）——重命名破坏既有引用"
+    },
+    {
+      "file": ".github/workflows/pr-check.yml",
+      "anchor": "sofagent-audit.yml 同款配置",
+      "reason": "对上述 workflow 文件名的交叉引用"
+    },
+    {
+      "file": "tools/hooks/sofagent-precommit.sh",
+      "anchor": "command -v sofagent-audit",
+      "reason": "运行时兼容探测（探测旧安装残留）——探测合法，教安装才违规"
+    },
+    {
+      "file": "tools/hooks/sofagent-precommit.sh",
+      "anchor": "AUDIT_CMD=(sofagent-audit)",
+      "reason": "兼容探测分支执行体（旧安装残留机仍可用该入口审计）"
+    },
+    {
+      "file": "tools/hooks/sofagent-precommit.sh",
+      "anchor": "执行面走 PATH 上的 sofagent-au",
+      "reason": "同上——兼容分支的提示文案"
+    },
+    {
+      "file": "tools/check/check-version.sh",
+      "anchor": "sofagent",
+      "reason": "门禁自身检测锚与历史断言（版本号提取口径——含 1.5.8 前历史形态）"
+    },
+    {
+      "file": "engine/core/src/cli.ts",
+      "anchor": "sofagent-core — 核心运行时",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/core/src/cli.ts",
+      "anchor": "Usage（单入口形态）",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/eval/src/cli.ts",
+      "anchor": "sofagent-eval — 质量评估模块",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/eval/src/cli.ts",
+      "anchor": "Usage（单入口形态）",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/daemon/src/cli.ts",
+      "anchor": "sofagent daemon",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/evolve/src/cli.ts",
+      "anchor": "sofagent-evolve",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/orchestrator/src/cli.ts",
+      "anchor": "sofagent-orchestrator",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/ab-test/src/cli.ts",
+      "anchor": "sofagent ab-test",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/mcp/src/mcp-server.ts",
+      "anchor": "sofagent-mcp",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/think/src/cli.ts",
+      "anchor": "sofagent-think",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/ontology/src/cli.ts",
+      "anchor": "sofagent-ontology",
+      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
+    },
+    {
+      "file": "engine/openclaw-plugins/sofagent-audit/src/index.ts",
+      "anchor": "sofagent-audit",
+      "reason": "OpenClaw 插件宿主生态兼容标识（ClawHub 独立分发面）"
+    },
+    {
+      "file": "engine/openclaw-plugins/sofagent-evolve/src/index.ts",
+      "anchor": "sofagent-evolve",
+      "reason": "同上——ClawHub 分发面标识"
+    },
+    {
+      "file": "engine/daemon/src/workspace-summary.ts",
+      "anchor": "sofagent-daemon",
+      "reason": "通知模板历史字段（旧安装态机器通知兼容）"
+    },
+    {
+      "file": "engine/core/src/config-loader.ts",
+      "anchor": "sofagent-core doctor",
+      "reason": "历史告警文案锚（与检测断言共用——改文案需同批改断言）"
+    },
+    {
+      "file": "engine/core/src/verify.ts",
+      "anchor": "sofagent-audit",
+      "reason": "hook 内容检测锚（检测旧 hook 在不在——非教用户）"
+    },
+    {
+      "file": "engine/core/src/diff-parser.ts",
+      "anchor": "sofagent-audit",
+      "reason": "同上——检测锚"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "解析链",
+      "reason": "实现注释（解释旧解析链为何被替换）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "横幅",
+      "reason": "历史易混点说明注释"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "content.includes",
+      "reason": "hook 内容检测锚（兼容旧安装）"
+    },
+    {
+      "file": "docs/ARCHITECTURE.md",
+      "anchor": "cordis-plugin-sofagent-evolve",
+      "reason": "DSH 插件包名（非 CLI）"
+    },
+    {
+      "file": "docs/DEVELOPMENT.md",
+      "anchor": "sofagent-audit",
+      "reason": "历史事故叙述（叙述对象即旧命令形态）"
+    },
+    {
+      "file": "docs/WIKI.md",
+      "anchor": "sofagent-audit",
+      "reason": "宿主差异说明的历史锚"
+    },
+    {
+      "file": "docs/guides/node-level-audit.md",
+      "anchor": "sofagent-audit",
+      "reason": "实现判定源的函数名引用"
+    },
+    {
+      "file": "engine/audit/src/index.ts",
+      "anchor": "sofagent-audit",
+      "reason": "自检/检测锚字符串"
+    },
+    {
+      "file": "install.sh",
+      "anchor": "sofagent-audit",
+      "reason": "弃用 stub 的功能本体（打印退役提示后 exit 2——提及旧名即其语义）"
+    },
+    {
+      "file": "install.sh",
+      "anchor": "STUB_EOF",
+      "reason": "stub heredoc 边界"
+    },
+    {
+      "file": ".github/workflows/sofagent-audit.yml",
+      "anchor": "gh label create",
+      "reason": "PR label 描述文案（描述对象是本 workflow——非 CLI 调用）"
+    },
+    {
+      "file": ".github/workflows/sofagent-audit.yml",
+      "anchor": "gh pr review",
+      "reason": "PR review bot 文案（同上）"
+    },
+    {
+      "file": "docs/HANDBOOK.md",
+      "anchor": "workflows/sofagent-audit.yml",
+      "reason": "用户自建 workflow 文件名模板（文件名非 CLI）"
+    },
+    {
+      "file": "docs/HANDBOOK.md",
+      "anchor": "name: sofagent-audit",
+      "reason": "同上——模板内 workflow 命名"
+    },
+    {
+      "file": "docs/LIMITATIONS.md",
+      "anchor": "workflows/sofagent-audit.yml",
+      "reason": "同上——指路自托管示例文件"
+    },
+    {
+      "file": "docs/guides/enterprise-deploy.md",
+      "anchor": "workflows/sofagent-audit.yml",
+      "reason": "同上——CI 模板文件名"
+    },
+    {
+      "file": "docs/guides/enterprise-deploy.md",
+      "anchor": "name: sofagent-audit",
+      "reason": "同上"
+    },
+    {
+      "file": "docs/guides/github-action.md",
+      "anchor": "workflows/sofagent-audit.yml",
+      "reason": "同上——教程模板"
+    },
+    {
+      "file": "docs/guides/github-action.md",
+      "anchor": "name: sofagent-audit",
+      "reason": "同上"
+    },
+    {
+      "file": "engine/core/src/doctor.ts",
+      "anchor": "sofagent-daemon",
+      "reason": "doctor 修复指引的历史检测锚与 daemon 服务探测（服务面）"
+    },
+    {
+      "file": "engine/core/src/doctor.ts",
+      "anchor": "sofagent-audit",
+      "reason": "doctor 对安装形态的检测描述（npm 形态描述串——检测锚）"
+    },
+    {
+      "file": "engine/core/src/config-loader.ts",
+      "anchor": "sofagent",
+      "reason": "config 校验/模板的历史锚（模板 config-template.ts 同批）"
+    },
+    {
+      "file": "engine/core/src/config-template.ts",
+      "anchor": "sofagent",
+      "reason": "config 模板注释的历史锚（模板本体是示例配置——含旧命令的示例段待下批刷新）"
+    },
+    {
+      "file": "engine/mcp/src/tools/knowledge-tools.ts",
+      "anchor": "sofagent",
+      "reason": "MCP 工具描述串历史锚（描述对象为引擎非 CLI 指引）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "sofagent-daemon",
+      "reason": "实现注释（解析链历史说明）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "which sofagent-audit",
+      "reason": "实现注释（BUG-06 修复说明的叙述对象）"
+    },
+    {
+      "file": "engine/eval/src/cli.ts",
+      "anchor": "sofagent-eval",
+      "reason": "包级直调入口自我标识（Usage 行已改单入口）"
+    },
+    {
+      "file": "engine/dsh-plugins/cordis-plugin-sofagent/src/index.ts",
+      "anchor": "sofagent",
+      "reason": "DSH 插件包标识（包名非 CLI——ClawHub/DSH 分发面）"
+    },
+    {
+      "file": "engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.ts",
+      "anchor": "sofagent-audit",
+      "reason": "同上——DSH 分发面包标识"
+    },
+    {
+      "file": "install.sh",
+      "anchor": "command -v sofagent-audit",
+      "reason": "hook 探测的兼容分支（旧安装残留机兼容）"
+    },
+    {
+      "file": "install.sh",
+      "anchor": "sofagent-audit --install-hook",
+      "reason": "同上——兼容分支执行体"
+    },
+    {
+      "file": "install.sh",
+      "anchor": "sofagent-audit",
+      "reason": "stub 功能本体与兼容分支（已豁免主条目——本条收尾）"
+    },
+    {
+      "file": "engine/daemon/src/cli.ts",
+      "anchor": "sofagent daemon",
+      "reason": "包级直调入口自我标识"
+    },
+    {
+      "file": "engine/orchestrator/src/cli.ts",
+      "anchor": "sofagent-orchestrator",
+      "reason": "包级直调入口自我标识"
+    },
+    {
+      "file": "engine/ab-test/src/cli.ts",
+      "anchor": "sofagent ab-test",
+      "reason": "包级直调入口自我标识"
+    },
+    {
+      "file": "engine/think/src/cli.ts",
+      "anchor": "sofagent-think",
+      "reason": "包级直调入口自我标识"
+    },
+    {
+      "file": "engine/ontology/src/cli.ts",
+      "anchor": "sofagent-ontology",
+      "reason": "包级直调入口自我标识"
+    },
+    {
+      "file": "engine/mcp/src/mcp-server.ts",
+      "anchor": "sofagent-mcp",
+      "reason": "包级直调入口自我标识"
+    },
+    {
+      "file": "engine/core/src/cli.ts",
+      "anchor": "sofagent-core",
+      "reason": "包级直调入口自我标识"
+    },
+    {
+      "file": "engine/evolve/src/cli.ts",
+      "anchor": "sofagent-evolve",
+      "reason": "包级直调入口自我标识"
+    },
+    {
+      "file": "tools/hooks/sofagent-precommit.sh",
+      "anchor": "sofagent-audit 直链包内 dist 最干净",
+      "reason": "实现注释（可信度排序的历史说明）"
+    },
+    {
+      "file": "tools/hooks/sofagent-precommit.sh",
+      "anchor": "for _CMD in sofagent-audit sofagent; do",
+      "reason": "兼容探测循环（先旧名后单入口——旧残留机兼容）"
+    },
+    {
+      "file": "tools/hooks/sofagent-precommit.sh",
+      "anchor": "PATH 假 binary",
+      "reason": "同上——兼容分支注释"
+    },
+    {
+      "file": "engine/core/src/doctor.ts",
+      "anchor": "sofagent",
+      "reason": "doctor 检测锚与形态描述（第三轮收尾）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "sofagent",
+      "reason": "init 实现注释与检测锚（第三轮收尾——横幅/解析链/检测锚三族）"
+    },
+    {
+      "file": "engine/audit/src/index.ts",
+      "anchor": "sofagent",
+      "reason": "引擎自检锚（第三轮收尾）"
+    },
+    {
+      "file": "engine/think/src/think-generator.ts",
+      "anchor": "sofagent-think",
+      "reason": "生成器输出的历史署名锚（非 CLI 指引）"
+    },
+    {
+      "file": "engine/ontology/src/ontology-view.ts",
+      "anchor": "sofagent-ontology",
+      "reason": "视图输出历史署名锚（非 CLI 指引）"
+    },
+    {
+      "file": "engine/mcp/src/tools/acceptance.ts",
+      "anchor": "sofagent",
+      "reason": "MCP 工具描述串（描述引擎非 CLI）"
+    },
+    {
+      "file": "engine/hooks/sofagent-load-chain/src/handler.ts",
+      "anchor": "sofagent",
+      "reason": "load-chain hook 的注入文本锚（历史安装态机器的 hook 内容兼容）"
+    },
+    {
+      "file": "engine/dsh-plugins/plugin-kit/src/index.ts",
+      "anchor": "sofagent",
+      "reason": "DSH 插件 kit 包标识（包名非 CLI）"
+    },
+    {
+      "file": "install.sh",
+      "anchor": "sofagent-daemon",
+      "reason": "daemon 服务/兼容分支残余（第三轮收尾）"
+    },
+    {
+      "file": "engine/audit/src/public-api.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/core/src/audit-dir-maintenance.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/core/src/verify.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/daemon/src/commands/knowledge-status.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/daemon/src/dream-cycle/continuous-sampler.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/daemon/src/evolution/loop.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/daemon/src/federation/offline-fallback.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/daemon/src/inspectors/doctor-checker.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/daemon/src/notify.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/daemon/src/webhook/index.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/daemon/src/write-surface-bootstrap.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/dsh-plugins/cordis-plugin-sofagent-daemon/src/index.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/dsh-plugins/cordis-plugin-sofagent-evolve/src/index.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/evolve/src/evolve-integration.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/audit-file.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/audit-tools.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/corpus-export.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/evaluate-output.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/model-register.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/model-switch.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/model-unregister.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/orchestrator-tools.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/permission-guard.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/promote-ab.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/report-tools.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/snapshot-list.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/snapshot-restore.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/mcp/src/tools/train-budget.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/ontology/src/ontology-view.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/orchestrator/src/audit-sub-agent.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/orchestrator/src/exec/skill-snapshot.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/orchestrator/src/hitl-handler.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/orchestrator/src/loop/graph.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/orchestrator/src/loop/nodes.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/orchestrator/src/meta-harness/orchestrator.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/orchestrator/src/ontology/import-pipeline.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    },
+    {
+      "file": "engine/think/src/think-generator.ts",
+      "anchor": "sofagent",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+    }
+  ]
+}

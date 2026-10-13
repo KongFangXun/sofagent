@@ -76,7 +76,7 @@ describe('inspector-layers', () => {
       expect(names).toContain('conflict-check');
       expect(names).toContain('knowledge-freshness');
       expect(names).toContain('knowledge-health');
-      expect(names).toContain('skill-staleness');
+      expect(names).toContain('weekly-digest'); // v1.6.0 BUG-58：skill-staleness 已移出，锚改 weekly-digest
       expect(names).toContain('data-sovereignty-weekly');
     });
 
@@ -132,8 +132,8 @@ describe('inspector-layers', () => {
     it('L2 执行返回结果数组（enabled 条目——disabled 不执行）', () => {
       const result = runLayeredInspection(tmpDir, 'L2');
       expect(result.layer).toBe('L2');
-      // v1.4.8 条目 2：registry 尊重 enabled 位（skill-staleness=false 不执行）
-      expect(result.results).toHaveLength(listInspectors('L2').length - 1); // 9 注册 - 1 disabled（v1.5.1 章二 weekly-digest 入 L2）
+      // v1.6.0 BUG-58：skill-staleness 已移出注册表——8 注册全 enabled 执行
+      expect(result.results).toHaveLength(listInspectors('L2').length);
     });
 
     it('L3 执行返回结果数组', () => {
@@ -164,9 +164,9 @@ describe('inspector-layers', () => {
   describe('runAllLayers', () => {
     it('全量执行结果数 = 各层 enabled 条目之和（disabled 不执行）', () => {
       const results = runAllLayers(tmpDir);
-      // v1.4.8 条目 2：26 注册 - 1 disabled（skill-staleness）= 25 执行（v1.5.1 章二 weekly-digest 入 L2）
+      // v1.6.0 BUG-58：skill-staleness 移出后 26 注册全 enabled = 26 执行
       const expected = (['L1', 'L2', 'L3'] as const).reduce(
-        (sum, l) => sum + listInspectors(l).length - (l === 'L2' ? 1 : 0), 0,
+        (sum, l) => sum + listInspectors(l).length, 0,
       );
       expect(results).toHaveLength(expected);
     });

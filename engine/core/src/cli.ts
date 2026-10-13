@@ -17,7 +17,7 @@ const args = isFlagRouter ? ['doctor', ...rawArgs] : rawArgs;
 async function main() {
   if (!subcommand || subcommand === '--help') {
     console.log('sofagent-core — 核心运行时 / doctor / 配置解析 / 通用类型');
-    console.log('Usage: sofagent-core <subcommand> [options]');
+    console.log('Usage（单入口形态）: sofagent core <subcommand> [options]（本直调入口为包级调试面）');
     console.log('');
     console.log('Subcommands:');
     console.log('  doctor        运行健康检查（环境 / 配置 / 数据目录 / Hook / 依赖）');

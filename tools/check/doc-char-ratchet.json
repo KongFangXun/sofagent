@@ -1,25 +1,25 @@
 {
-  "README.md": 20846,
-  "README.en.md": 40664,
+  "README.md": 21060,
+  "README.en.md": 40736,
   "CHANGELOG.md": 16246,
   "SECURITY.md": 50965,
   "CONTRIBUTING.md": 12849,
   "docs/API.md": 15400,
-  "docs/ARCHITECTURE.md": 89591,
+  "docs/ARCHITECTURE.md": 89614,
   "docs/COMMUNITY.md": 2414,
-  "docs/DEVELOPMENT.md": 32317,
-  "docs/HANDBOOK.md": 32831,
-  "docs/LIMITATIONS.md": 43132,
-  "docs/PHILOSOPHY.md": 34402,
+  "docs/DEVELOPMENT.md": 32526,
+  "docs/HANDBOOK.md": 32943,
+  "docs/LIMITATIONS.md": 43424,
+  "docs/PHILOSOPHY.md": 34475,
   "docs/ROADMAP.md": 18269,
   "docs/THANKS.md": 16876,
   "docs/VALIDATION.md": 21991,
-  "docs/WIKI.md": 23505,
-  "FDE/GUIDE.md": 43582,
+  "docs/WIKI.md": 23512,
+  "FDE/GUIDE.md": 43906,
   "FDE/README.md": 5164,
   "SKILL/SKILL.md": 7299,
   "SKILL/AGENTS.md": 7623,
-  "tools/README.md": 23140,
+  "tools/README.md": 23532,
   "_meta": {
     "counter": "Unicode 码点数（node [...text].length，含空白与标记符号；单一口径）。**不是行数**——实测：把 300 字墙式单行折成 6 行，行数 ×6.0 而字符数仅 +1.7%，故行数会把「排版优化」记成「膨胀事故」。",
     "why_not_lines": "本仓 LIMIT_A 注释实录 20+ 次「折行 → 撞预算 → 上调上限」（7180→7200→7470→7520→7620→7680→7480）——可读性动作反被预算惩罚。行数只影响源文件观感，字符数才近似「读者要读多少」。",
@@ -29,6 +29,6 @@
     "opening_rule": "抬头块 = H1 到首个 `## ` 之间的正文；字数只计文本字符，剔除装饰行（HTML 标签行 / 纯图片 / 纯徽章 / HTML 注释 / `---`）与 YAML front matter。超限处置三选一：下沉正文 / 精简 / 淘汰。",
     "origin": "文档瘦身批（2026-09-29）：口径由「物理行数」换成「字符数」（用户裁定：行数是坏指标，控字数不控行数）。基线 = 换算时点实测值。",
     "consumed_by": "doc-discipline.sh Face 6（字数棘轮）+ Face 7（抬头块闸）",
-    "note": "v1.6.0-bugfix Batch C 修复性净增同步基线（均两轮自精简后剩余为任务书必要内容）：README.md +110（翻牌补行/--platform 披露/首屏折叠）;SECURITY.md +73（密钥隔离披露）;docs/API.md +2（GMT+8 措辞）;docs/COMMUNITY.md +2（GMT+8）;docs/LIMITATIONS.md +224（Dream Cycle 落点条目）;docs/PHILOSOPHY.md +66（open-core 对齐）;docs/ROADMAP.md +283（迭代表 v1.5.9 行）;docs/THANKS.md +2（GMT+8）;docs/WIKI.md +31（日期对齐）;FDE/README.md +79（S1M 排期限定+零依赖锚定）"
+    "note": "v1.6.0-bugfix Batch C 修复性净增同步基线（均两轮自精简后剩余为任务书必要内容）：README.md +110（翻牌补行/--platform 披露/首屏折叠）;SECURITY.md +73（密钥隔离披露）;docs/API.md +2（GMT+8 措辞）;docs/COMMUNITY.md +2（GMT+8）;docs/LIMITATIONS.md +224（Dream Cycle 落点条目）;docs/PHILOSOPHY.md +66（open-core 对齐）;docs/ROADMAP.md +283（迭代表 v1.5.9 行）;docs/THANKS.md +2（GMT+8）;docs/WIKI.md +31（日期对齐）;FDE/README.md +79（S1M 排期限定+零依赖锚定） | v1.6.0 Batch D/E/G 修复性净增二次同步：README.md 20846→21060(+214);README.en.md 40664→40736(+72);docs/ARCHITECTURE.md 89591→89614(+23);docs/DEVELOPMENT.md 32317→32526(+209);docs/HANDBOOK.md 32831→32943(+112);docs/LIMITATIONS.md 43132→43424(+292);docs/PHILOSOPHY.md 34402→34475(+73);docs/WIKI.md 23505→23512(+7);FDE/GUIDE.md 43582→43906(+324);tools/README.md 23140→23532(+392)"
   }
 }

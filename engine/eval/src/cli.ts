@@ -258,7 +258,7 @@ export async function main(cliArgs?: string[]): Promise<void> {
   if (!subcommand || subcommand === '--help' || subcommand === '-h') {
     console.log('sofagent-eval — 质量评估模块');
     console.log('');
-    console.log('Usage: sofagent-eval run [options]');
+    console.log('Usage（单入口形态）: sofagent eval run [options]（本直调入口为包级调试面）');
     console.log('');
     console.log('Options:');
     console.log('  --golden-set <path>  golden set YAML 路径（默认 engine/eval/data/golden-set.yaml）');

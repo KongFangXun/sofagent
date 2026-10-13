@@ -210,7 +210,7 @@ describe('discoverAgentConfigs 候选表（T16）', () => {
     // symlink 目录，及旧复数 skills/sofagent 兼容项。
     // 源码里路径是 join 分段写法（'.sofagent', 'skill', 'SKILL.md'），断言
     // 按分段文本匹配（比连续串更强——同时锁定各段使用常量拼接的事实）
-    const src = readFileSync(join(__dirname, '..', 'cli', 'agent-shield.ts'), 'utf-8');
+    const src = readFileSync(join(__dirname, '..', 'cli', 'agent-shield-cli.ts'), 'utf-8');
     expect(src).toContain("'.sofagent', 'skill', 'SKILL.md'"); // install.sh 单数源
     expect(src).toContain("'.sofagent', 'skills', 'sofagent', 'SKILL.md'"); // 旧复数兼容
     expect(src).toContain("'.workbuddy', 'skills', 'sofagent', 'SKILL.md'");

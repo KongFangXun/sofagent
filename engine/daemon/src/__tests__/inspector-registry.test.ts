@@ -20,7 +20,7 @@ const GOLDEN_L1 = [
   'daily-health', // F-47：每日健康巡检挂进 daemon 调度链（承诺「第一天产出」不再依赖 OS cron）
 ];
 const GOLDEN_L2 = [
-  'conflict-check', 'knowledge-freshness', 'knowledge-health', 'skill-staleness',
+  'conflict-check', 'knowledge-freshness', 'knowledge-health',
   'data-sovereignty-weekly', 'evolve-trigger', 'trend-aggregator', 'commons-health',
   'weekly-digest', // v1.5.1 章二：理解债务周报（注册即跑——L2 @weekly）
 ];
@@ -32,13 +32,13 @@ describe('巡检器金名单（条目 2 第 0 步——防漏挂/防漂移）', 
   it('L1 金名单精确匹配（15 个，含 audit-trail 漂移修复 + daily-health + maintenance-daily）', () => {
     expect(listInspectors('L1')).toEqual(GOLDEN_L1);
   });
-  it('L2 金名单精确匹配（9 个，含 v1.5.1 章二 weekly-digest）', () => {
+  it('L2 金名单精确匹配（8 个，含 v1.5.1 章二 weekly-digest）——skill-staleness 已移出（v1.6.0 BUG-58）', () => {
     expect(listInspectors('L2')).toEqual(GOLDEN_L2);
   });
   it('L3 金名单精确匹配（4 个）', () => {
     expect(listInspectors('L3')).toEqual(GOLDEN_L3);
   });
-  it('注册表无重名（27 条目键唯一）', () => {
+  it('注册表无重名（26 条目键唯一）', () => {
     const names = Object.keys(INSPECTORS);
     expect(new Set(names).size).toBe(names.length);
   });
@@ -48,7 +48,7 @@ describe('巡检器金名单（条目 2 第 0 步——防漏挂/防漂移）', 
     expect(getLayerInspectorNames('L3')).toEqual(listInspectors('L3'));
   });
   it('runLayeredInspection 实际执行集合 == 金名单（cron 各层真实跑什么）', () => {
-    // 用真执行验证：结果条目名集合（含 disabled 的 skill-staleness 除外）与金名单一致
+    // 用真执行验证：结果条目名集合与金名单一致（skill-staleness 已移出注册表）
     // 在临时目录跑（巡检器对空目录安全——大多返回 not-triggered）
     const os = require('os') as typeof import('os');
     const fs = require('fs') as typeof import('fs');
@@ -57,7 +57,7 @@ describe('巡检器金名单（条目 2 第 0 步——防漏挂/防漂移）', 
     try {
       const r1 = runLayeredInspection(tmp, 'L1', 'manual');
       const executedNames = r1.results.map((x) => x.name);
-      // disabled 条目（skill-staleness）不在 L1；enabled 全跑
+      // 全部 enabled 条目执行
       expect(executedNames.sort()).toEqual(GOLDEN_L1.slice().sort());
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });

@@ -87,13 +87,34 @@ describe('failure-ledger', () => {
       expect(lines.length).toBe(3);
     });
 
-    it('同聚类同因去重（v1.6.0 BUG-37 行为锁：重跑不涨行数）', () => {
-      recordFailure(makeRecord('skill-a', 'mode-1', undefined, { sameReason: true }));
-      recordFailure(makeRecord('skill-a', 'mode-1', undefined, { sameReason: true }));
-      recordFailure(makeRecord('skill-a', 'mode-1', undefined, { sameReason: true }));
+    it('同聚类同因去重（v1.6.0 BUG-37 行为锁：巡检源重跑不涨行数）', () => {
+      const inspRecord = (skillId: string, failureMode: string): FailureRecord => ({
+        timestamp: new Date().toISOString(),
+        skillId,
+        failureMode,
+        reason: `${failureMode} detail`,
+        source: 'inspector', // 巡检源——BUG-37 的真实去重面（每周重录形态）
+      });
+      recordFailure(inspRecord('skill-a', 'mode-1'));
+      recordFailure(inspRecord('skill-a', 'mode-1'));
+      recordFailure(inspRecord('skill-a', 'mode-1'));
 
       const lines = fs.readFileSync(resolveFailureLedgerPath(), 'utf-8').trim().split('\n');
-      expect(lines.length).toBe(1); // 同 skill|mode|reason 只落一条
+      expect(lines.length).toBe(1); // 巡检源同 skill|mode|reason|source 只落一条
+    });
+
+    it('执行源累计不查重（v1.6.0 BUG-37 回归锁：auto-trigger 聚类计数依赖）', () => {
+      for (let i = 0; i < 3; i++) {
+        recordFailure({
+          timestamp: `2025-01-0${i + 1}T00:00:00Z`,
+          skillId: 'skill-b',
+          failureMode: 'mode-2',
+          reason: 'mode-2',
+          source: 'auto-trigger',
+        });
+      }
+      const lines = fs.readFileSync(resolveFailureLedgerPath(), 'utf-8').trim().split('\n');
+      expect(lines.length).toBe(3); // 执行源同因反复失败必须累计（阈值触发依赖）
     });
 
     it('自动创建 evolve 子目录', () => {

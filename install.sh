@@ -835,7 +835,7 @@ echo "ℹ️ Evolve 自进化能力：内置 native gate（v1.4.8+），零外�
 echo ""
 echo "可选 npm 包（上述未自动安装，按需运行）："
 echo "  npm install -g @sofagent/orchestrator   # 独立编排模块"
-echo "  npm install -g @sofagent/daemon          # 守护进程（手动 sofagent-daemon start 拉起，不注册常驻服务）"
+echo "  npm install -g sofagent                 # 守护进程（手动 sofagent daemon start 拉起，不注册常驻服务）"
 echo "  npm install -g @sofagent/core            # 基础设施（doctor/verify）"
 echo "  npm install -g @sofagent/ontology        # 本体模型"
 
@@ -845,7 +845,7 @@ echo "  💡 编排模块为独立可选包 @sofagent/orchestrator，需单独�
 # ── v1.5.0: 首部署确定性 cron job 可选分支（--with-first-deploy-cron flag，默认不装）──
 # 部署完成即有一个确定性定时任务在跑（daily-health 每日巡检）——客户第一天看到
 # 产出。执行载体为 OS 原生 cron + 独立脚本（${TARGET}/scripts/daily-health.sh），
-# 不依赖任何常驻进程（原「TS daemon scheduler 内 tick」路径需手动 sofagent-daemon
+# 不依赖任何常驻进程（原「TS daemon scheduler 内 tick」路径需手动 sofagent daemon
 # start 拉起进程才会触发——进程无人拉起 = 任务永不执行，故弃用）。
 # TS daemon（evolve-trigger/dream-cycle/scheduler 宿主）保持「手动 start」定位。
 # 设计约束（对齐 --with-im-bridge 可选分支纪律）：

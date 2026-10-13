@@ -1,0 +1,13 @@
+{
+  "$schema": "env 读写闭环守卫豁免台账（check-env-wiring.mjs 消费）",
+  "usage": "node tools/check/check-env-wiring.mjs",
+  "notes": [
+    "key 级豁免，必写理由。"
+  ],
+  "exempts": [
+    {
+      "key": "SOFAGENT_SINGLE_ENTRY",
+      "reason": "单入口标记（v1.6.0 BUG-56 选定方案 b：保留 env 钩子作标记，无读者属预期——三处注释已改真）"
+    }
+  ]
+}

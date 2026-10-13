@@ -65,6 +65,10 @@
 | `check/check-shell-injection.sh` | 命令注入静态扫（engine 源码面：execSync 模板插值/字符串拼接注入形态——v1.4.3 安全修复批防线） | CI |
 | `check/check-action-pins.sh` | GitHub Actions SHA pin 对账（uses: 完整 commit SHA 与行内注释 tag 指向一致性，离线降级 exit 0） | CI / 发版前 / 定期 |
 | `check/check-storefront.sh` | 仓外门面对账（GitHub description/homepage/topics 数字 vs 仓内实数；离线 SKIP 可见不假绿） | CI（离线 SKIP 不阻断）/ 发版 SOP 阶段八/九 |
+| `check/check-retired-refs.sh` | 退役名残留守卫（v1.6.0 BUG-42 治本：12 旧 bin 的引用面全扫，语境豁免 + 行级台账） | pre-push / 改退役面后 |
+| `check/check-release-state.mjs` | 发版翻牌四面对账（迭代历程含已发版行 / 规划表无已发版 / 主题词一致 / changelog 目录状态） | 发版 SOP 翻牌后 |
+| `check/check-env-wiring.mjs` | env 读写闭环守卫（SOFAGENT_* 只写不读判红——BUG-56 族防复发） | pre-push / 改 env 面后 |
+| `check/check-devlog-unique.mjs` | devlog 数字唯一（限定词词表 SSOT）+ README 能力表三档枚举守卫 | 发版 SOP / 改 devlog 后 |
 | `check/check-npm-claims.mjs` | registry 实测声称对账（活文档面 `npm view <pkg> dist-tags` 与「当前为 …」两种值声称 vs `--prefer-online` 真值——无 npm view 时回退行内包名；≥3 重试 + timeout；离线 SKIP 不假绿；（详→注-5） | CI（pre-push 3i · 离线 SKIP 不阻断）/ 改 README/docs 后 |
 | `check/npm-claims-exempt.json` | npm 实测声称豁免台账：行级 `{file, anchor, reason}` 锚串豁免（锚须唯一、仍是命中行、理由须实质，任一不成立即 exit 2；**空 = 无债正常态**） | 被 check-npm-claims.mjs 消费 |
 | `check/check-shellcheck.sh` | 全仓 shellcheck（**CI 同口径**：按 shell shebang 扫全仓含无扩展名 hook；`-s bash -S warning -e SC2034/SC1090/SC1091`）——补 CI 与本地扫描面口径差 |

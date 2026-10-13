@@ -89,13 +89,18 @@ export function recordFailure(record: FailureRecord): void {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
-  // v1.6.0 BUG-37：写入前查重——同 skill|failureMode 聚类已存在且 reason 未变时
-  // 不重复追加（保留首条 + 进程缓存 lastSeen 更新），消灭「每周重录同一批 ⇒
-  // 单调涨到 2707 条」形态。reason 变化（新模式）视为新条目照常录入。
+  // v1.6.0 BUG-37：写入前查重——同 skill|failureMode|reason|source 的记录已存在时
+  // 不重复追加（保留首条 + 进程缓存 lastSeen 更新），消灭「巡检器每周重录同一批 ⇒
+  // 单调涨到 2707 条」形态。键含 source：auto-trigger 的同类失败累计（每次 source
+  // 相同但语义是「重复发生」）……不——auto-trigger source 恒为 'auto-trigger' 且
+  // reason 恒为 failureMode，同类反复失败会被吞 ⇒ 破坏聚类计数。修正口径：
+  // 只对 source=inspector/巡检类（重录形态）查重，auto-trigger/orchestrator-checker
+  // 等执行时记录（真实每次失败）不查重。
+  const DEDUP_SOURCES = new Set(['inspector', 'daily-recap', 'weekly-recap']);
   try {
-    if (existsSync(ledgerPath)) {
+    if (existsSync(ledgerPath) && DEDUP_SOURCES.has(record.source)) {
       const lines = readFileSync(ledgerPath, 'utf-8').split('\n').filter(Boolean);
-      const dupKey = (r: FailureRecord): string => `${r.skillId}::${r.failureMode}::${r.reason}`;
+      const dupKey = (r: FailureRecord): string => `${r.skillId}::${r.failureMode}::${r.reason}::${r.source}`;
       const incoming = dupKey(record);
       for (let i = lines.length - 1; i >= 0; i--) {
         let prev: FailureRecord | null = null;

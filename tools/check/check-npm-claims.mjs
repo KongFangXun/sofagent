@@ -370,7 +370,7 @@ function main() {
 
   const exemptKeys = new Set(exempt.map((e) => `${e.file}:${e.line}`));
   const pending = claims.filter((c) => !exemptKeys.has(`${c.file}:${c.line}`));
-  const asserts = claims.length;
+  let asserts = claims.length;
   let skipped = unparsed.length;
 
   console.log(`  扫描面：${files.length} 个 .md（根 README 双语 + docs/ 非 changelog 区）`);
@@ -431,6 +431,30 @@ function main() {
     console.log('');
     console.log('──── 豁免放行明细（--list-exempt）────');
     for (const e of exempt) console.log(`  [exempt] ${e.file}:${e.line} 「${e.pkg}」latest=${e.claimed} —— ${e.reason}`);
+  }
+
+  // v1.6.0 BUG-42/G-9：npx 指引的 bin 存在性对账（P0 族 registry 级防复发）
+  {
+    const actionYml = fs.readFileSync('action.yml', 'utf8');
+    const m = actionYml.match(/npx -y -p (\S+?)@([\d.]+) (\S+)/);
+    if (m) {
+      asserts++;
+      try {
+        const out = execFileSync('npm', ['view', m[1] + '@' + m[2], 'bin', '--json'], { encoding: 'utf8' });
+        const bin = JSON.parse(out || '{}');
+        const cmd = m[3];
+        const has = bin && (bin[cmd] !== undefined || Object.values(bin).some((v) => String(v).includes(cmd)));
+        if (!has) {
+          console.error('  ❌ [bin 对账] action.yml npx 命令「' + cmd + '」不在 ' + m[1] + '@' + m[2] + ' 的 bin——干净 runner 必 127');
+          fails++;
+        } else {
+          console.log('  ✓ [bin 对账] action.yml npx「' + m[1] + '@' + m[2] + ' ' + cmd + '」bin 存在');
+        }
+      } catch {
+        console.log('  ⏭️ [bin 对账] npm view 不可达——SKIP（发布前补跑）');
+        skipped++;
+      }
+    }
   }
 
   console.log('');

@@ -41,7 +41,7 @@ export function notify(
  * daemon 启动 banner
  */
 export function banner(projectDir: string): void {
-  console.log(`sofagent-daemon v${VERSION} — 启动守护进程`);
+  console.log(`sofagent daemon v${VERSION} — 守护进程通知面`);
   console.log(`  监控目录: ${projectDir}`);
   console.log('');
 }
