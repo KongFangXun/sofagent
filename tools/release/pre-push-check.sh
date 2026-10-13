@@ -958,7 +958,16 @@ if [ -n "$SSOT_VERSION" ] && grep -q "v${SSOT_VERSION}" <<< "$(git tag -l "v${SS
   if grep -q "${SSOT_VERSION}" <<< "$TAG_MSG"; then
     check_pass "Tag v${SSOT_VERSION} message 含版本号"
   else
-    check_fail "Tag v${SSOT_VERSION} message 与版本号不一致（message: \"${TAG_MSG}\"）"
+    # 历史豁免（与下方 commit message 校验同款纪律）：lightweight tag 的 subject
+    # 即 commit subject（不可独立改写）；tag 指向非 HEAD 时属历史污点不阻断，
+    # tag 指向 HEAD 时是本轮问题 → FAIL。
+    TAG_MSG_COMMIT=$(git rev-parse "v${SSOT_VERSION}^{commit}" 2>/dev/null || true)
+    HEAD_NOW=$(git rev-parse HEAD 2>/dev/null || true)
+    if [ "$TAG_MSG_COMMIT" = "$HEAD_NOW" ]; then
+      check_fail "Tag v${SSOT_VERSION} message 与版本号不一致（message: \"${TAG_MSG}\"）"
+    else
+      check_pass "Tag v${SSOT_VERSION} 指向历史 commit（非 HEAD），tag subject 不含版本号属历史污点——已豁免（同 commit message 校验纪律）"
+    fi
   fi
 
   # v1.1.3 教训补强：tag 指向的 commit message 也必须含版本号

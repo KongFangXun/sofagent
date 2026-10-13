@@ -1,5 +1,5 @@
 // ============================================================
-// init.ts · sofagent audit --init 一键初始化
+// init.ts · sofagent audit --init 一键初始化 · v1.5.9
 // v1.3 新增：一条命令完成 3 步
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
