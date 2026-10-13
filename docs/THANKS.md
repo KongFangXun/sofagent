@@ -150,7 +150,7 @@
 - **[Drex](https://github.com/nace-ai/drex-decision-models)** · Nace.AI — 开源判定件族：v1.5 9B / DLM 8B 扩散 LM，均带独立 pointer head、复用 Kev 代码；代码 Apache-2.0、**权重非通行开源**（Open RAIL-M / CC BY-NC 4.0，商用须另授权）；自报 Decision Index 0.3.1 公开面 58.08（**厂商自测、本仓未复算**）。
 - **[Sieve](https://huggingface.co/sthanika-ai/Sieve-31B)** · sthanika-ai — 判定件族 0.8B–31B、**全 Apache-2.0**：**读出＝末层隐状态 × 选项标签行 + 定温 softmax**、不生成文本，与「编码器 + 判定头」同路线；0.8B 与本仓 0.5B 同量级。自报 Decision Index 0.3 公开面：4B 50.06 / 9B-v2 53.35 / 27B 60.04 / 31B 62.52（**厂商自测、未上榜单**）。
 - **[Can Language Models Learn When to Abstain?](https://arxiv.org/abs/2610.13821)** — 弃权能力的两条实现路对照：训练模型自身 vs 另训一个答案检查组件；以「答对加分 / 答错扣分 / 允许弃权」的评分在 Qwen3-14B 上跨三训练种子与两个留出置信阈值比较 ⇒ 弃权该内建还是外挂，有可复算的实验口径（第三方论文、本仓未复算）
-- **[Open Jev](https://github.com/intikhab49/open-jev-typed-decision-engine)** · intikhab49 — 150M 编码器 + 单次前向 + 类型化问题（`noul`/`choice`/`score`）；400 例自测 ensemble 0.6965 / ECE 0.0565 对 Jev 0.7270 / ECE 0.1440 ⇒ **校准优于 Jev 2.5×**，T4 半小时可训；Apache-2.0，与「编码器+判定头」同路线（**厂商自测、本仓未复算**）
+- **[Open Jev](https://github.com/intikhab49/open-jev-typed-decision-engine)** · intikhab49 — 150M 编码器 + 单次前向 + 类型化问题（`noul`/`choice`/`score`）；400 例自测 ensemble 0.6965 / ECE 0.0565 对 Jev 0.7270 / 0.1440 ⇒ **校准优于 Jev 2.5×**（Jev 零样本、本件同分布 1,016 例训练），T4 半小时可训；Apache-2.0，与「编码器+判定头」同路线（**厂商自测、本仓未复算**）
 - **[LLM2Jev](https://github.com/Yinsongxu/LLM2Jev)** · Yinsongxu — prefill-only 读出（不逐 token 解码）把任意本地 LLM 变结构化判定件 ⇒ 非自回归路线的外部同款；Apache-2.0（自报）
 - **[vLLM-Jev](https://github.com/mode-io/vllm-jev)** · mode-io — 判定件的原生 vLLM 服务化（部署面参照）；Apache-2.0
 
