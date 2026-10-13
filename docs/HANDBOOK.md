@@ -476,7 +476,7 @@ jobs:
 
 | 能力 | 版本 | 一句话 | 明细 |
 |---|---|---|---|
-| 进化模块·写面审计与元验证 | v1.5.9 | 写面留痕（HMAC · fail-closed）· 能力基线（可回滚）· 配置面契约 · 验证器老化 · 红队自测 · RSI 升格 · 旧 shim 退役（破坏性） | [日志](./changelog/v1.5/v1.5.9.md) |
+| 进化模块·写面审计与元验证 | v1.5.9 | 写面留痕（HMAC · fail-closed；查询 `sofagent evolve writesurface list`）· 能力基线（`sofagent evolve baseline list/show/restore`）· 配置面契约 · 验证器老化（SDK 面）· 红队自测（`sofagent evolve redteam --run`）· RSI 升格 · 旧 shim 退役（破坏性） | [日志](./changelog/v1.5/v1.5.9.md) |
 | 审计模块·覆盖面扩展 | v1.5.7 | SMB 场景审计 · 规则 25→28 · 决策类型 17→18 · 浏览器底座退役 · 能力面治理（五维健康度） | [日志](./changelog/v1.5/v1.5.7.md) |
 | 存量收敛·单入口与数据面 | v1.5.6 | CLI 单入口收敛（13 bin → 单入口）· 数据生命周期治理（归档分层 · doctor 健康度）· 沉淀记忆项目作用域 | [日志](./changelog/v1.5/v1.5.6.md) |
 

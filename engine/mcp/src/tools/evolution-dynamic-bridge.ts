@@ -8,11 +8,11 @@
 //      L4 分发出口——动态工具面被 commons_invoke 命中时走这里）
 //
 // 🔴 工具数口径（v1.5.3 第七章三验收铁律）：
-//   - 静态计数 = tool-registry.ts TOOLS 顶层 name 数 = 83（本版
+//   - 静态计数 = tool-registry.ts TOOLS 顶层 name 数 = 104（本版
 //     +train_serve/train_compliance/train_deliverable 三件）；
-//   - L4 进化工具**不进 83 静态计数**——check-version.sh 只数
+//   - L4 进化工具**不进 104 静态计数**——check-version.sh 只数
 //     tool-registry.ts 顶层 name，动态面天然不在其守卫面内；
-//   - tools/list 实际返回数 = 83 + 动态注册数（getDynamicTools
+//   - tools/list 实际返回数 = 104 + 动态注册数（getDynamicTools
 //     合并 memory_backends 与 L4 进化两个来源）；
 //   - 本文件不写死任何计数——一切以 TOOLS.length 与动态表实时值为准。
 //

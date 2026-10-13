@@ -210,13 +210,13 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 | Capability | One-liner | Reachable |
 |---|---|---|
-| **Write-surface audit trail** | Full trail on prompt/memory write surfaces, reusing the HMAC audit chain; no trail = rollback (fail-closed) | Wired |
-| **Capability baseline lineage** | Four-layer state snapshots + content-addressed ids + predecessor chain; answers "how did it behave back then" and rolls back | Wired |
-| **Load-chain config contract** | 18-field SSOT bidirectional reconciliation (impl ↔ declaration) across four config layers; unrouted keys mechanically detectable | Wired |
-| **Validator aging detection** | Three-state drift triage (real failure / env drift / insufficient evidence); advisory, non-blocking | Wired |
-| **Transparency repo & adversary self-test** | Red-team runner with 9 paired cases (blocked / detection-evidenced) across tamper·forge·bypass attack surfaces | Wired |
-| **evolve promoted to RSI module** | Zero logic change, mount-point migration only; write-surface narrowing (control-plane deny / traversal deny / writable allow) | Wired |
-| **Legacy command shims retired** | 12 old bins (sofagent-audit etc.) explicitly removed after compatibility window; single entry only | ⚠️ Breaking |
+| **Write-surface audit trail** | Full trail on prompt/memory write surfaces, reusing the HMAC audit chain; no trail = rollback (fail-closed) | In-process (daemon-wired; query via `sofagent evolve writesurface list`) |
+| **Capability baseline lineage** | Four-layer state snapshots + content-addressed ids + predecessor chain; answers "how did it behave back then" and rolls back | CLI reachable (`sofagent evolve baseline list/show/restore`) |
+| **Load-chain config contract** | 18-field SSOT bidirectional reconciliation (impl ↔ declaration) across four config layers; unrouted keys mechanically detectable | In-process (gate: `check-loadchain-config`) |
+| **Validator aging detection** | Three-state drift triage (real failure / env drift / insufficient evidence); advisory, non-blocking | SDK-face (entry scheduled for a later release) |
+| **Transparency repo & adversary self-test** | Red-team runner with 9 paired cases (blocked / detection-evidenced) across tamper·forge·bypass attack surfaces | CLI reachable (`sofagent evolve redteam --list/--run`) |
+| **evolve promoted to RSI module** | Zero logic change, mount-point migration only; write-surface narrowing (control-plane deny / traversal deny / writable allow) | In-process (mount migration, no standalone command) |
+| **Legacy command shims retired** | 12 old bins (sofagent-audit etc.) explicitly removed after compatibility window; single entry only | ⚠️ Breaking (CLI surface change) |
 
 > 📌 Full evidence in the [v1.5.9 devlog](./docs/changelog/v1.5/v1.5.9.md); older capability sections in [CHANGELOG](./CHANGELOG.md).
 ## The Two FDE Harness Phases

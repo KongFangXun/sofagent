@@ -14,6 +14,9 @@ async function main() {
     console.log('  check <path>   扫描 Skill 文件安全性');
     console.log('  propose        生成 DSH 技能更新提案（F14 · v1.5.7——buildProposerPrompt 拼装 + 模型输出安全闸解析）');
     console.log('  skill-health   五维技能健康度（v1.5.7 章四——report 出报告与退役候选 / archive 归档 / restore 回滚）');
+    console.log('  baseline       能力基线版本线读出口（v1.6.0 BUG-13——list 列快照 / show <id> 看四层 / restore <id> 回滚）');
+    console.log('  redteam        敌手自测入口（v1.6.0 BUG-13——--list 列 9 用例 / --run [case] 跑两态判定）');
+    console.log('  writesurface   写面留痕查询（v1.6.0 BUG-13——list --recent N 读最近 N 条留痕记录）');
     process.exit(0);
   }
 
@@ -226,9 +229,109 @@ async function main() {
       console.error('Usage: sofagent-evolve skill-health <report|archive|restore> [options]');
       process.exit(1);
     }
+    case 'baseline': {
+      // v1.6.0 BUG-13/74：能力基线版本线读出口——此前 19 导出仅 1 个被 daemon 半接线，
+      // 用户无任何命令可看/可回滚（「写进黑匣子」）。本组三动作消灭读出口缺失。
+      const action = args[1] ?? 'list';
+      const baseline = await import('./baseline-snapshot');
+      const flag = (name: string): string | undefined => {
+        const i = args.indexOf(`--${name}`);
+        return i !== -1 ? args[i + 1] : undefined;
+      };
+      const dataDir = flag('data');
+
+      if (action === 'list') {
+        const chain = baseline.loadBaselineChain(dataDir);
+        if (chain.length === 0) {
+          console.log('（基线链为空——首次写面变更后由 daemon 引导自动落快照）');
+          process.exit(0);
+        }
+        console.log(`能力基线链（${chain.length} 个快照，新→旧）：`);
+        for (const snap of chain.slice().reverse()) {
+          console.log(`  ${snap.id}  ${snap.createdAt}  [${snap.trigger.kind}/${snap.trigger.source}]  prompt@${snap.state.prompt.version}  prev=${String(snap.prevId)}`);
+        }
+        process.exit(0);
+      }
+
+      if (action === 'show') {
+        const id = args[2];
+        if (!id) {
+          console.error('❌ baseline show 需要 <snapshot-id> 参数（先 baseline list 查 id）');
+          process.exit(1);
+        }
+        const chain = baseline.loadBaselineChain(dataDir);
+        const snap = chain.find((x) => x.id === id || x.id.startsWith(id));
+        if (!snap) {
+          console.error(`❌ 未找到快照 ${id}（链内 ${chain.length} 个）`);
+          process.exit(1);
+        }
+        console.log(JSON.stringify(snap, null, 2));
+        process.exit(0);
+      }
+
+      if (action === 'restore') {
+        const id = args[2];
+        if (!id || !args.includes('--yes')) {
+          console.error('❌ baseline restore 需要 <snapshot-id> --yes（显式放行——回滚是破坏性动作）');
+          console.error('   用法: sofagent evolve baseline restore <id> --yes [--data <dir>]');
+          process.exit(1);
+        }
+        const record = baseline.rollbackToBaseline(id, dataDir ? { dataDir } : {});
+        console.log(`✅ 已回滚到基线 ${id}`);
+        console.log(`   实际恢复: ${record.outcome.restored.join(', ') || '无'}`);
+        console.log(`   只引用未动: ${record.outcome.skipped.join(', ') || '无'}`);
+        process.exit(0);
+      }
+
+      console.error(`Unknown baseline action: ${action}`);
+      console.error('Usage: sofagent evolve baseline <list|show|restore> [options]');
+      process.exit(1);
+    }
+
+    case 'redteam': {
+      // v1.6.0 BUG-13：透明仓与敌手自测用户入口——复用 tools/check/red-team-runner.mjs
+      // 既有 9 用例两态判定执行器（子进程转调，不复制实现）。
+      const { spawnSync } = await import('node:child_process');
+      const { resolve } = await import('node:path');
+      const runnerPath = resolve(__dirname, '..', '..', '..', 'tools', 'check', 'red-team-runner.mjs');
+      const rest = args.slice(1);
+      if (!rest.includes('--list') && !rest.includes('--run')) {
+        console.log('敌手自测（红队执行器 9 用例 · 两态判定 BLOCKED/DETECTED-UNBLOCKED/PENETRATED/BLIND）');
+        console.log('  sofagent evolve redteam --list        列出全部用例');
+        console.log('  sofagent evolve redteam --run [case]  跑全部或指定用例（退出码 0 绿/1 穿透/2 失明）');
+        process.exit(0);
+      }
+      const r = spawnSync(process.execPath, [runnerPath, ...rest], { stdio: 'inherit' });
+      process.exit(r.status === null ? 2 : r.status);
+    }
+
+    case 'writesurface': {
+      // v1.6.0 BUG-13：写面留痕最小查询面——消灭「留痕发生了但用户看不见」。
+      // 读侧复用 @sofagent/audit 的 loadWriteSurfaceLog（留痕 SSOT，不另建第二份读逻辑）。
+      const action = args[1] ?? 'list';
+      if (action !== 'list') {
+        console.error(`Unknown writesurface action: ${action}`);
+        process.exit(1);
+      }
+      const recentIdx = args.indexOf('--recent');
+      const n = recentIdx !== -1 ? Math.max(1, Number(args[recentIdx + 1]) || 10) : 10;
+      const { loadWriteSurfaceLog } = await import('@sofagent/audit');
+      const entries = loadWriteSurfaceLog();
+      if (entries.length === 0) {
+        console.log('（写面留痕为空——daemon 引导后的 prompt/memory 写变更会落痕）');
+        process.exit(0);
+      }
+      const tail = entries.slice(-n).reverse();
+      console.log(`写面留痕（最近 ${tail.length}/${entries.length} 条，新→旧）：`);
+      for (const e of tail) {
+        console.log(`  ${e.ts}  [${e.surface}]  ${e.actor}  ${e.summary ?? ''}`);
+      }
+      process.exit(0);
+    }
+
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-evolve <run|check|propose|skill-health>');
+      console.error('Usage: sofagent evolve <run|check|propose|skill-health|baseline|redteam|writesurface>');
       process.exit(1);
   }
 }

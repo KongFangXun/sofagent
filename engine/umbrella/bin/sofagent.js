@@ -42,7 +42,7 @@ const DOMAINS = {
   device: { pkg: '@sofagent/daemon', file: 'cli.js', note: '设备面 · create-usb-key 等' },
   train: { pkg: '@sofagent/orchestrator', file: 'cli.js', note: '训练子命令（train …）' },
   ontology: { pkg: '@sofagent/ontology', file: 'cli.js' },
-  evolve: { pkg: '@sofagent/evolve', file: 'cli.js' },
+  evolve: { pkg: '@sofagent/evolve', file: 'cli.js', note: 'skill-health / baseline 版本线 / redteam 自测 / writesurface 留痕查询' },
   eval: { pkg: '@sofagent/eval', file: 'cli.js' },
   think: { pkg: '@sofagent/think', file: 'cli.js' },
   'ab-test': { pkg: '@sofagent/ab-test', file: 'cli.js' },

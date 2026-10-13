@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：406 个场景（v1.5.9 承接 v1.5.8 B 类 3 场景 +3：S478 准入门接线行为锁 / S479 只读位 fail-closed 锁 / S480 reward basis 无硬编码数字锁）（前值 401：v1.5.7 阶段四 A 类分发 +4：S474 审计三规则与双落点 / S475 章四能力治理 / S476 章五可拔契约+域 barrel 等价 / S477 章七国标+章九 ACS 结论）（前值 397：v1.5.6 coverage S473；SSOT=check-test-count 校验，口径=scenario 行数）（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
+# 场景数：406 个场景（v1.5.9 承接 v1.5.8 B 类 +5：S478 准入门接线行为锁 / S479 只读位 fail-closed 锁 / S480 reward basis 无硬编码数字锁 + S481 七章一维收口行为锁（1243dee24）+ S482 章五 FDE Handbook 升格行为锁（R1 verdict 闭环批））（前值 401：v1.5.7 阶段四 A 类分发 +4：S474 审计三规则与双落点 / S475 章四能力治理 / S476 章五可拔契约+域 barrel 等价 / S477 章七国标+章九 ACS 结论）（前值 397：v1.5.6 coverage S473；SSOT=check-test-count 校验，口径=scenario 行数）（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
 # 编号跳号豁免：S1~S293 间 70 个空洞号（v1.2.x 瘦身既成事实）；新编号=当前最大+1 顺延禁回填；版本段 grep "─── v" 定位
 # 口径注意：底部「$PASSED 通过」是断言通过数（≠场景数，含跳过场景），勿混用
 # 用法：bash playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）

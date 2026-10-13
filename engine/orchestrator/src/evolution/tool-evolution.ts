@@ -16,9 +16,9 @@
 //       台账），MCP 层消费 getApprovedEvolvedTools() 注册进动态工具面
 //       （getDynamicTools——默认空、运行时注册）
 //
-// ⚠️ 工具数口径（任务书铁律）：L4 注册工具走动态面，**不进 83 静态计数**
+// ⚠️ 工具数口径（任务书铁律）：L4 注册工具走动态面，**不进 104 静态计数**（v1.6.0 BUG-70 勘误：83 系 v1.4.5 时点陈旧计数）
 //   （check-version 只数 tool-registry.ts 顶层 name）；tools/list 实际
-//   返回数 = 83 + 动态注册数。该口径写在 MCP 层桥接文件，此处只管台账。
+//   返回数 = 104 + 动态注册数。该口径写在 MCP 层桥接文件，此处只管台账。
 //
 // 审计：提名/审批/注册三动作全走 emitDecision（kind=EVOLUTION——
 // 与 instinct→skill、rule-promote 同类：经验层进化）。
@@ -383,7 +383,7 @@ export interface RegisterResult {
  * 管线步骤四：批准候选注册进工具箱（台账置 registered）。
  *
  * 注册态候选由 MCP 层的进化动态桥（getApprovedEvolvedTools 消费方）
- * 在 tools/list 时合并进动态面——**不进 83 静态计数**。
+ * 在 tools/list 时合并进动态面——**不进 104 静态计数**。
  *
  * @param input 注册入参
  * @param dataDir 可选的数据目录覆盖（测试用）
@@ -424,7 +424,7 @@ export function registerApprovedTool(input: RegisterInput, dataDir?: string): Re
       kind: 'EVOLUTION',
       moment: 'EVOLVE',
       why: {
-        text: `L4 自写工具「${entry.toolName}」注册进工具箱（动态面——不进 83 静态计数）`,
+        text: `L4 自写工具「${entry.toolName}」注册进工具箱（动态面——不进 104 静态计数）`,
         tags: ['evolution', 'l4-tool', 'register'],
         confidence: 'high',
       },
@@ -453,8 +453,8 @@ export function registerApprovedTool(input: RegisterInput, dataDir?: string): Re
  * 取全部注册态候选（MCP 动态桥消费）。
  *
  * ⚠️ 口径：这里返回的是 L4 运行时注册源——MCP 层将其注册进
- * getDynamicTools() 动态面；**83 静态计数（tool-registry.ts 顶层
- * name）不含这些工具**，tools/list 实际返回数 = 83 + 动态注册数。
+ * getDynamicTools() 动态面；**104 静态计数（tool-registry.ts 顶层
+ * name）不含这些工具**，tools/list 实际返回数 = 104 + 动态注册数。
  *
  * @param dataDir 可选的数据目录覆盖（测试用）
  * @returns 注册态候选的运行时形态（缺省空数组——动态面默认空）

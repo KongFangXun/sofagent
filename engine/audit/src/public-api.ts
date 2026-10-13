@@ -167,6 +167,8 @@
 // 完成注册（core 不得静态依赖 audit，方向单向）。按 tools/check/public-api.mjs
 // 的 @internal 语义不计入 public API 基线（不承诺 semver 稳定性）。
 /* @internal */ export { createWriteSurfaceTracer } from './write-surface-log';
+// v1.6.0 BUG-13：写面留痕读出口（evolve CLI writesurface list 消费——留痕 SSOT 单源）
+/* @internal */ export { loadWriteSurfaceLog } from './write-surface-log';
 
 // ── 训练语料导出（MCP corpus_export 经包 main 入口消费此面）──
 /* @public */ export { exportRuleCorpus, generateVerifiers, buildRuleCorpusBody, signBody, jsonToYaml } from './export/exporter';

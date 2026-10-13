@@ -8,7 +8,7 @@
 //   三、人审铁律：未人审的候选不可注册（approved 是注册前置）
 //   四、状态机：非法流转被拒（registered 不可再审等）
 //   五、MCP 消费：getApprovedEvolvedTools 只吐注册态（口径=动态面
-//       默认空——不进 83 静态计数，静态面断言见 mcp 包测试）
+//       默认空——不进 104 静态计数（v1.6.0 BUG-70 勘误），静态面断言见 mcp 包测试）
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
