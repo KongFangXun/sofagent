@@ -85,7 +85,7 @@
 
 - **平台无关、即挂即用**：嵌在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）与模型层之间，不替代模型，只补「可靠执行」——对 Agent 约束、对模型治理。（Cursor 社区验证中；完整宿主档位矩阵以 [README · 多平台挂载](../README.md) 为准）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent audit` 双 Agent。
-- **一个入口，一条命令**（v1.5.6）：命令行从 13 条收成 `sofagent <域> <动作>`（15 域 + 保留字直答）；旧命令 `sofagent-audit` / `sofagent-core` 等**已退役**（兼容期届满）。
+- **一个入口，一条命令**（v1.5.6）：命令行从 13 条收成 `sofagent <域> <动作>`（16 域 + 保留字直答）；旧命令 `sofagent-audit` / `sofagent-core` 等**已退役**（兼容期届满）。
 - **📚 五能力叙事定稿**（v1.4.4）：注入 · 审计 · 回溯 · 沉淀 · 进化——五词定型全站落位（第五能力英文 Distill），「本体结构」全站改称「本体数据」（ontology）。
 
 > 📌 各版本演进明细见 [CHANGELOG](../CHANGELOG.md)（能力已并入当前版本，不逐版列举）。

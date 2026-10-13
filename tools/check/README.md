@@ -1,6 +1,6 @@
 # tools/check/ · 门禁一览
 
-> 本目录承载 sofagent 的**机器门禁集**（65 个 `.sh`/`.mjs` 脚本 + 台账/基线 JSON + `lib/` 共享库）。本表只登记现状（v1.5.9），不做脚本拆分。
+> 本目录承载 sofagent 的**机器门禁集**（66 个 `.sh`/`.mjs` 脚本 + 台账/基线 JSON + `lib/` 共享库）。本表只登记现状（v1.5.9），不做脚本拆分。
 > 执行入口：多数脚本可直接 `bash tools/check/<name>.sh` 单跑；发版链路由 `tools/release/pre-push-check.sh` 与 `docs/changelog/releasing.md` SOP 汇编调用。
 
 ## 门禁 → 管哪个面（65 脚本）
@@ -105,4 +105,4 @@
 
 `archaeology-exempt.json` · `claims-sdk-ledger.json` · `cross-package-relative-exempt.json` · `dependency-direction.yml` · `doc-char-ratchet.json` · `doc-ratchet.json` · `doc-score-baseline.json` · `knowledge-legacy-path-exempt.json` · `literals.json` · `npm-claims-exempt.json` · `prompt-fork-baseline.json` · `public-api-baseline.json` · `silent-catch-baseline.json` · `silent-catch-io-ledger.json` · `silent-catch-prefilter-exempt.json` · `sop-integrity-baseline.json` · `source-block-exempt.txt` · `table-shape-baseline.json` · `vitest-setup.mjs`（测试共享设置）· `lib/`（共享 bash/node 库）
 
-> ⚠️ 计数口径：65 = 门禁脚本 63 + 共享工具 2（`resolve-section.sh` / `sync-test-count.sh` 归入表内登记）。新增门禁时同步本表与 `check-gate-inventory.sh` 台账。
+> ⚠️ 计数口径：66 = 门禁脚本 64 + 共享工具 2（`resolve-section.sh` / `sync-test-count.sh` 归入表内登记）。新增门禁时同步本表与 `check-gate-inventory.sh` 台账。
