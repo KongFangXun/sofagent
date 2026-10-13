@@ -124,7 +124,7 @@
 - **[AnyJev](https://github.com/nokia-applied-research/AnyJev)** · Nokia — 读出校准免训练两件套：先验除法+旋转平均（自报）
 - **[TensorFlow.js](https://github.com/tensorflow/tfjs)** + [tfjs-models](https://github.com/tensorflow/tfjs-models) · Google — 一套 API 四后端+模型即 npm 包的十年先例
 - **[Verdict / rlcd-modernbert-151m](https://huggingface.co/heman10x/rlcd-modernbert-151m)** · Heman10x-NGU —「编码器+判定头」最早可复算建仓时点（2026-09-17）
-- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-10-12 站点 / 数据端点面 **v1.6.0**（协议 `jevbench::v1.6` · `n_ranked` 92 · 全量重测），release 面仍 v1.4.2 ⇒ 六面不同步（读数据端点，不采渲染页）
+- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-10-13 数据端点面 **v1.6.1**（协议仍 `jevbench::v1.6` · `n_ranked` 92→**135** · `roster_count` **173** · `source_sha256` 换值；v1.6.0 端点仍在但冻结返旧值），release 面仍 v1.4.2 ⇒ 六面不同步（读数据端点，不采渲染页）
 - **[AgentGovBench](https://github.com/agentic-control-plane/agentgovbench)** + **[ST-WebAgentBench](https://github.com/segev-shlomov/ST-WebAgentBench)** — 治理对照基准两件套（CuP 双轴指标）；其「Harness honesty」修订公开固化：制造证据不计分、**空审计日志不算通过**、报错场景留在分母
 - **[NIST 官方标准面](https://www.nist.gov/artificial-intelligence/ai-agent-standards-initiative)**（CAISSI 三支柱 + RFI + NCCoE 四功能域 + AI 800 系列）— agent = 非人类身份 principal；双身份令牌
 - **[Jev-Mem](https://arxiv.org/abs/2609.23986)** — System One 控制面管 agentic memory
@@ -150,6 +150,9 @@
 - **[Drex](https://github.com/nace-ai/drex-decision-models)** · Nace.AI — 开源判定件族：v1.5 9B / DLM 8B 扩散 LM，均带独立 pointer head、复用 Kev 代码；代码 Apache-2.0、**权重非通行开源**（Open RAIL-M / CC BY-NC 4.0，商用须另授权）；自报 Decision Index 0.3.1 公开面 58.08（**厂商自测、本仓未复算**）。
 - **[Sieve](https://huggingface.co/sthanika-ai/Sieve-31B)** · sthanika-ai — 判定件族 0.8B–31B、**全 Apache-2.0**：**读出＝末层隐状态 × 选项标签行 + 定温 softmax**、不生成文本，与「编码器 + 判定头」同路线；0.8B 与本仓 0.5B 同量级。自报 Decision Index 0.3 公开面：4B 50.06 / 9B-v2 53.35 / 27B 60.04 / 31B 62.52（**厂商自测、未上榜单**）。
 - **[Can Language Models Learn When to Abstain?](https://arxiv.org/abs/2610.13821)** — 弃权能力的两条实现路对照：训练模型自身 vs 另训一个答案检查组件；以「答对加分 / 答错扣分 / 允许弃权」的评分在 Qwen3-14B 上跨三训练种子与两个留出置信阈值比较 ⇒ 弃权该内建还是外挂，有可复算的实验口径（第三方论文、本仓未复算）
+- **[Open Jev](https://github.com/intikhab49/open-jev-typed-decision-engine)** · intikhab49 — 150M 编码器 + 单次前向 + 类型化问题（`noul`/`choice`/`score`）；400 例自测 ensemble 0.6965 / ECE 0.0565 对 Jev 0.7270 / ECE 0.1440 ⇒ **校准优于 Jev 2.5×**，T4 半小时可训；Apache-2.0，与「编码器+判定头」同路线（**厂商自测、本仓未复算**）
+- **[LLM2Jev](https://github.com/Yinsongxu/LLM2Jev)** · Yinsongxu — prefill-only 读出（不逐 token 解码）把任意本地 LLM 变结构化判定件 ⇒ 非自回归路线的外部同款；Apache-2.0（自报）
+- **[vLLM-Jev](https://github.com/mode-io/vllm-jev)** · mode-io — 判定件的原生 vLLM 服务化（部署面参照）；Apache-2.0
 
 ### 认知与反馈
 
@@ -164,6 +167,9 @@
 - **[From Reactive Containment to Proactive Assurance](https://arxiv.org/abs/2610.12463)** — 2026 年三类 agent 越权事件复盘 ⇒「先围堵、后保证」的教训（第三方转述、本仓未复算）。
 - **[Accurate but Not Humble](https://arxiv.org/abs/2610.12360)** — 知识冲突下 agent 的「认识论谦逊」评估：以轨迹级三维度 Identify / Solve / Escalate 度量其承认并上报不确定性的意愿（第三方论文、本仓未复算）
 - **[AI Models Can Provably Hide Arbitrary Capabilities](https://arxiv.org/abs/2610.13928)** — 构造性反例：把加密神经网络嵌入宿主权重、仅在收到秘密触发词时解密执行 ⇒ 「隐藏能力可被引出」这一**能力评测的前提**在对抗条件下不成立；评测可靠性本身需要威胁模型（第三方论文、本仓未复算）
+- **[AI Decision System](https://github.com/BichengWang/ai-decision-system)** · Bicheng Wang — AI 辅助 go/no-go 决策的**可重放、离线可验**记录 + policy-gated 审批 + A/B ship gate 与 release gate ⇒ 与「审计留痕 + 审批分级」治理面同族；MIT（自报）
+- **[Decision OS LoopKit](https://github.com/shin4141/decision-os-v13-loopkit)** · shin4141 — 把完成记录转成**治理化次循环决策**（GO / HOLD / CAP / BLOCK）⇒ RSI 停环与晋级判定的外部同形；MIT（自报）
+- **[Decision Intelligence Runtime](https://github.com/huka81/decision-intelligence-runtime)** · huka81 — 神经符号运行时：概率 LLM 推理与确定性内核执行**零信任特权分离** + 实时不变量防漂移 + 决策遥测 ⇒ 约束层与审计层同族；Apache-2.0（自报）
 
 
 ## 工具与实践
