@@ -36,10 +36,20 @@
 
 > 💬 **一句话版本**：进场时它替你把业务摸清、写成文件；离场后你的数字员工每次改代码、动文件，都按文件过一道安检、留一份记录、存一个快照——出事能查、能回滚。
 
-> 🏢 **组织视角版本**：AI 落地卡点已从「模型够不够聪明」迁到「组织敢不敢接」——能不能进组织架构、有没有账号、绩效怎么算、做错了怎么退。sofagent 是给数字员工办入职的制度：进场把岗位职责写成文件，离场按文件做绩效考核（每次变更留证据）、组织记忆（沉淀机制随使用迭代，边界见 [LIMITATIONS](./docs/LIMITATIONS.md)）、试错容错（做错退得回）。给 AI 发工号前，先装 sofagent。
+<details>
+<summary>🏢 组织视角（点开）</summary>
 
-> 🧩 **一句话（三因子口径，术语见〈[什么是 FDE Harness](#什么是-fde-harness)〉）**：sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M，把判定从生成里分出来的决策模型）排期 v1.6.0–v1.9.0 建设、v2.0.0 宣告。三层各司其职、不互替。
+> AI 落地卡点已从「模型够不够聪明」迁到「组织敢不敢接」——能不能进组织架构、有没有账号、绩效怎么算、做错了怎么退。sofagent 是给数字员工办入职的制度：进场把岗位职责写成文件，离场按文件做绩效考核（每次变更留证据）、组织记忆（沉淀机制随使用迭代，边界见 [LIMITATIONS](./docs/LIMITATIONS.md)）、试错容错（做错退得回）。给 AI 发工号前，先装 sofagent。
+
+</details>
+
+<details>
+<summary>🧩 三因子口径（点开，术语见〈<a href="#什么是-fde-harness">什么是 FDE Harness</a>〉）</summary>
+
+> sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M，把判定从生成里分出来的决策模型）排期 v1.6.0–v1.9.0 建设、v2.0.0 宣告。三层各司其职、不互替。
 > 身份公式定稿 **FDEing × S1A（S1A = S1M + Harness）**，口径 SSOT = [PHILOSOPHY · 身份口径](./docs/PHILOSOPHY.md)。
+
+</details>
 
 **开源 FDE Harness 层**（Harness = 「缰绳」，套住 Agent 的治理层；FDE = Forward Deployed Engineer 前线部署工程师，详见〈什么是 FDE Harness〉）——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理：进场把业务判断写成文件（工作流/本体数据/AI 节点），离场按文件审计每次变更。约束层五种能力（注入·审计·回溯·沉淀·进化），五种形态分发（FDE 插件 / Skill / MCP / CLI / Dashboard）。
 sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（管住强度按宿主分档：DSH/OpenClaw 硬注入可拦截，其余档位为建议性注入 + git hook 审计兜底——见〈多平台挂载〉档位表）。
@@ -59,7 +69,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 </details>
 
-**30 秒轻量试用**（首次含 npx 拉包，复跑秒级；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
+**30 秒–2 分钟轻量试用**（首次含 npx 拉包约 30 秒–2 分钟（网络依赖），复跑秒级；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
 > 💡 只要审计 CLI、不想拉全量依赖树？改装裸名总包：`npm i -g sofagent`（裸名总包，单入口 `sofagent audit`；能力面见 [LIMITATIONS · 包依赖](./docs/LIMITATIONS.md)）。
 
@@ -186,7 +196,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | 岗位职责说明书 | 进场冻结的交付物（merge_criteria / approver / trigger） |
 | 绩效考核 | 审计留痕 + 治理 KPI 面板（v1.5.0） |
 | 组织记忆 | 知识沉淀（think.md 反思 + knowledge/） |
-| 培训体系 | 经验→考核→晋级的自进化链（v1.5.8 已交付） |
+| 培训体系 | 经验→考核→晋级的自进化链（v1.5.8 SDK 面先行；用户可触达入口与效果验证见 [ROADMAP](./docs/ROADMAP.md)/[LIMITATIONS](./docs/LIMITATIONS.md)） |
 | 试错容错 | 快照回滚 + 能力基线版本线（v1.5.9 已交付） |
 | 劳动合同边界 | 可拔契约与主干能力清单（v1.5.7 交付；开关面与门控见 [ARCHITECTURE](./docs/ARCHITECTURE.md)） |
 
@@ -234,7 +244,8 @@ sofagent audit --doctor    # 验证环境（可选）
 > 🔧 **新装机器首跑 `--doctor` 报「未建立 dist 基线」？** 运行 `sofagent audit --doctor --baseline` 建立基线（信任锚 = 你此刻确认 dist 可信的时刻——防影子审计器劫持，故不自动记录）。
 
 
-> 💡 安装脚本写 `~/.sofagent/`（数据）+ `~/.local/bin`（CLI）；**仅显式传 `--platform <平台>` 时才写该平台集成目录**（默认不探测不修改）；npm 权限不足时 CLI fallback 到 `/usr/local/bin`，其余系统文件零改动。`--init` 装三层防线 hook（pre-commit / commit-msg / post-commit 对账）；
+> 💡 安装脚本写 `~/.sofagent/`（数据）+ `~/.local/bin`（CLI）；**仅显式传 `--platform <平台>` 时才写该平台集成目录**（默认不探测不修改）；npm 权限不足时 CLI fallback 到 `/usr/local/bin`，其余系统文件零改动。
+> ⚠️ **显式指定 `--platform` 时会向该平台的宿主配置写入薄挂载**：claude → `~/.claude/settings.json` · codex → `~/.codex/AGENTS.md` · gemini → `~/.gemini/GEMINI.md` · workbuddy / cursor → 对应 `mcp.json` · 各平台另写 `fde.md`；**均为合并写入 + 自动备份 + 幂等**。**默认不传 `--platform` 零宿主配置写入**。`--init` 装三层防线 hook（pre-commit / commit-msg / post-commit 对账）；
 >`--no-verify` 可跳过 **pre-commit 与 commit-msg 两层防线**；**post-commit 事后对账不受影响**（git 原生开关不作用于它）——防的是诚实 Agent 疏忽而非恶意绕过，被跳过的 commit 由 post-commit 留痕（提示「疑似绕过」）但不阻断；个人兜底三件：CI 侧 `sofagent audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
 > 📌 **install.sh 是企业设备安装器**——装在企业跑 AI 节点的设备上（约束层 + daemon 巡检 + 单机 dashboard）；FDE 自己的电脑不需要跑，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论），详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
@@ -279,7 +290,7 @@ sofagent audit --doctor    # 验证环境（可选）
 > | 完整安装（含 daemon / dashboard） | `bootstrap.sh` / `install.sh`（见上） |
 >
 > - **旧命令已退役**：12 个旧 bin 兼容期已满**移除**，统一走单入口。
-> - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
+> - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态、1.5.8 时点实测 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
 >   **只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g sofagent`。
 > - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。
 

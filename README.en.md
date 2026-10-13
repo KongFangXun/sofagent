@@ -1,7 +1,7 @@
 # sofagent
 
 <p align="center">
- <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/banner.png" alt="sofagent" width="100%" />
+ <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/banner.png" alt="sofagent — FDE Harness: commit-time audit for AI coding agents (banner subtitle in Chinese; canonical capability numbers: 28 rules / 104 MCP tools — see tables below)" width="100%" />
 </p>
 
 <!-- H1 & banner split: the H1 is the repo name and semantic anchor (search engines / no-image environments / screen readers); the banner carries the visuals -->

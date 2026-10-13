@@ -1,11 +1,11 @@
 # tools/check/ · 门禁一览
 
-> 本目录承载 sofagent 的**机器门禁集**（53 个 `.sh`/`.mjs` 脚本 + 台账/基线 JSON + `lib/` 共享库）。本表只登记现状（v1.5.8），不做脚本拆分。
+> 本目录承载 sofagent 的**机器门禁集**（62 个 `.sh`/`.mjs` 脚本 + 台账/基线 JSON + `lib/` 共享库）。本表只登记现状（v1.5.9），不做脚本拆分。
 > 执行入口：多数脚本可直接 `bash tools/check/<name>.sh` 单跑；发版链路由 `tools/release/pre-push-check.sh` 与 `docs/changelog/releasing.md` SOP 汇编调用。
 
-## 门禁 → 管哪个面（53 脚本）
+## 门禁 → 管哪个面（62 脚本）
 
-### 文档与声称面（14）
+### 文档与声称面（16）
 
 | 脚本 | 管什么 |
 |---|---|
@@ -23,6 +23,8 @@
 | `check-table-shape.mjs` | 表格形态门禁（形状 + 注引用） |
 | `check-archaeology.sh` | 规则文档「禁考古」守卫（豁免见 `archaeology-exempt.json`） |
 | `check-cjk-var.sh` | shell 变量定界守卫（CJK 变量名） |
+| `check-stale-docs.mjs` | 陈旧文档检测（引用目标漂移/过期口径） |
+| `check-docs-all.sh` | 文档门禁汇总入口（7 道子门禁一次跑） |
 
 ### 规则与审计面（4）
 
@@ -33,7 +35,7 @@
 | `check-paired-records.mjs` | 判决类记录成对完整门禁 |
 | `public-api.mjs` | public API 变更检测（`public-api-baseline.json`） |
 
-### 代码与接线面（14）
+### 代码与接线面（17）
 
 | 脚本 | 管什么 |
 |---|---|
@@ -51,8 +53,11 @@
 | `check-home-resolution-parity.mjs` | 家目录解析口径对照共享守卫 |
 | `check-legacy-knowledge-path.mjs` | 知识库旧路径残留守卫 |
 | `check-deps.sh` | 依赖健康检查 |
+| `check-loop-bare-return.mjs` | 循环裸 return 守卫（for/of 内 return 语义陷阱） |
+| `check-loadchain-config.mjs` | 加载链配置面契约守卫（18 字段 SSOT 对账） |
+| `red-team-runner.mjs` | 红队两态执行器（透明仓与敌手自测 9 用例） |
 
-### 工具与资产面（6）
+### 工具与资产面（7）
 
 | 脚本 | 管什么 |
 |---|---|
@@ -62,6 +67,7 @@
 | `check-tool-health.sh` | 工具脚本健康检查（阶段九执行体） |
 | `test-count.sh` | 汇总 workspace 各包测试数（SSOT 反查，门禁用） |
 | `sync-test-count.sh` | 测试数四文件一键同步（非门禁，修复工具） |
+| `check-platform-hooks.sh` | 平台 hooks 配置形态守卫（.cursor/.claude 等挂载面） |
 
 ### 发版与 SOP 面（8）
 
@@ -76,7 +82,7 @@
 | `check-npm-claims.mjs` | registry 实测声称对账（`npm-claims-exempt.json`） |
 | `check-fresh-eyes-artifacts.mjs` | fresh-eyes 产物契约守闸 |
 
-### 规划与边界面（7）
+### 规划与边界面（10）
 
 | 脚本 | 管什么 |
 |---|---|
@@ -85,6 +91,9 @@
 | `check-open-boundary.sh` | 开源/商业边界守卫 |
 | `check-spec-first.mjs` | 规范先行硬禁令门禁（只提示不阻断） |
 | `check-forge-branches.sh` | FORGE 分支收编标记对账 |
+| `check-sdk-waiver-progress.mjs` | SDK 豁免进度对账（豁免不再增长纪律） |
+| `check-retirement-due.sh` | shim 届满退役守卫（capabilities 台账对账） |
+| `check-cross-worktree-drift.mjs` | 跨 worktree 漂移检测（并发施工面） |
 | `check-claims.mjs`（同上） | — |
 | `resolve-section.sh` | 行号 → markdown 段落归属解析器（非门禁，共享工具） |
 
@@ -92,4 +101,4 @@
 
 `archaeology-exempt.json` · `claims-sdk-ledger.json` · `cross-package-relative-exempt.json` · `dependency-direction.yml` · `doc-char-ratchet.json` · `doc-ratchet.json` · `doc-score-baseline.json` · `knowledge-legacy-path-exempt.json` · `literals.json` · `npm-claims-exempt.json` · `prompt-fork-baseline.json` · `public-api-baseline.json` · `silent-catch-baseline.json` · `silent-catch-io-ledger.json` · `silent-catch-prefilter-exempt.json` · `sop-integrity-baseline.json` · `source-block-exempt.txt` · `table-shape-baseline.json` · `vitest-setup.mjs`（测试共享设置）· `lib/`（共享 bash/node 库）
 
-> ⚠️ 计数口径：53 = 门禁脚本 51 + 共享工具 2（`resolve-section.sh` / `sync-test-count.sh` 归入表内登记）。新增门禁时同步本表与 `check-gate-inventory.sh` 台账。
+> ⚠️ 计数口径：62 = 门禁脚本 60 + 共享工具 2（`resolve-section.sh` / `sync-test-count.sh` 归入表内登记）。新增门禁时同步本表与 `check-gate-inventory.sh` 台账。

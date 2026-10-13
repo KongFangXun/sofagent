@@ -23,7 +23,7 @@ FDE 把这件事倒过来：先逐岗位梳理工作流，构建本体图谱，�
 > 🔗 **FDE 与约束层的相位关系**：FDE 是判断的**生成相位**——进场把判断做出来（哪里上 AI、标准是什么、谁拍板），并冻结成 `merge_criteria` / `approver` / `trigger.schedule` / ontology 这些机器可判定的格式；约束层是判断的**驻留相位**——人离场后按冻结的判断 7×24 执行，并在进化时写回（branch 晋 trunk、think.md 蒸馏）。三重角色里，①是生成、②是交接（激活链即交接协议）、③是驻留期的持续养护。**没有 FDE，约束层没有判据可执行；
 >没有约束层，FDE 的判断随人离场蒸发**——这就是「FDE Harness」名字的由来：不是两个功能的拼盘，是同一件事的两个相位。
 >
-> 🧠 **自研 S1M，FDE 是打法**：这套体系里的判断本体是 sofagent 自研的 S1M（System One Model）——不生成文字、只输出类型化决策与校准概率的判定模型；FDE 可以理解为我们的打法，或者场景——万物皆可 FDEing：任何业务对象、流程、节点都能被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」，而这条链上每一个「该不该 / 行不行 / 值不值」就是 S1M 的工作面。思维方式三问：做任何事前先想——workflow 怎么搭 / AI 节点是什么 / 怎么让 AI 更好地帮你实现。
+> 🧠 **自研 S1M，FDE 是打法**：这套体系里的判断本体是 sofagent 自研的 S1M（System One Model，判定层——排期 v1.6.0–v1.9.0 施工、v2.0.0 宣告，见 [ROADMAP](../docs/ROADMAP.md)）——不生成文字、只输出类型化决策与校准概率的判定模型；FDE 可以理解为我们的打法，或者场景——万物皆可 FDEing：任何业务对象、流程、节点都能被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」，而这条链上每一个「该不该 / 行不行 / 值不值」就是 S1M 的工作面。思维方式三问：做任何事前先想——workflow 怎么搭 / AI 节点是什么 / 怎么让 AI 更好地帮你实现。
 >FDE 定义场景，S1M 执行判断，Harness 保证判断被治理。S1M 在 FDE 全生命周期每个决策点上的归属判定，见 [S1M-DECISION-POINTS.md](./S1M-DECISION-POINTS.md)。**FDEing 是动词**（FDE 是名词；见 [PHILOSOPHY](../docs/PHILOSOPHY.md)「从 FDE 到 FDEing」）。
 
 ## AI 时代的组织：从「飞书式」到「GitHub 式」
@@ -49,7 +49,7 @@ FDE 支持两种使用方式——根据你的需求选择：
 1. **装 Skill**：在你的 AI 工具里安装 FDE Skill——[ClawHub 页面](https://clawhub.ai/kongfangxun/skills/sofagent)一条命令安装（或 SkillHub 搜 `sofagent`）
 2. **开口**：对 AI 说「帮我做 FDE 诊断」——Agent 按 SKILL.md 阶段路由从进场开始引导（梳理 → 深挖 → 量化 → 交付）
 3. **首个产出物**：一份企业画像（岗位 × 五要素表）+ 候选 AI 节点清单（🔄 自动执行 / ⚡ 强化岗位 / 👤 暂不动，含年节省估算）
-4. **不需要 Node.js**：FDE Skill 是纯方法论 Skill，零依赖；之后要审计/回滚/daemon 常驻再装主包（[install.sh](../install.sh)，装在企业设备）
+4. **不需要 Node.js**：FDE Skill 是纯方法论 Skill，零依赖（仅指 FDE Skill 本体无运行时依赖；主包依赖树 602 个的口径见主 README 安装节）；之后要审计/回滚/daemon 常驻再装主包（[install.sh](../install.sh)，装在企业设备）
    > ⚠️ **完整 clone 要求**：主包依赖仓库内全套资产（SKILL/ 发布源 + engine/ 源码 + tools/ 工具链），FDE 无独立安装包——装主包需 `git clone` 完整 sofagent 仓库（不能只拷 install.sh），在企业设备上执行 `bash install.sh`。
 
 > 💡 完整方法论（四阶段十二步）见 [GUIDE.md](./GUIDE.md)——最短路径走的是 §1-§2 的浓缩版；想纯手动梳理（Excel + 人脑）也按 GUIDE 逐步走即可。
