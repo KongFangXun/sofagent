@@ -1988,6 +1988,12 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
     console.log('     未检查 ≠ 通过：这些规则本次未执行，事后取证不得把本行读成「无问题」（见 docs/LIMITATIONS.md）');
   }
 
+  // v1.6.0 BUG-77：非法 config 回退默认的可见性——头部警告与尾部汇总不再割裂。
+  // config-loader 回退默认时置此标记（本进程内），汇总段复读一次状态行。
+  if (process.env.__SOFAGENT_CONFIG_FALLBACK === '1') {
+    console.log('  ⚙️ [sofagent] 配置回退默认（原配置非法未生效）——本行与头部警告同义，确认你已知晓');
+  }
+
   // 规则网格——一行展示全部规则状态
   console.log('');
   const gridParts = results.rules.map((r) => {

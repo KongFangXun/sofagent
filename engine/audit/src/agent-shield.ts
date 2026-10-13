@@ -86,7 +86,8 @@ const AGENT_CONFIG_PATTERNS: Array<{ pattern: RegExp; severity: 'FAIL' | 'WARN';
   { pattern: /(?<!不能|请勿|不要|无法|绝不)(忽略|无视|跳过)[^。；\n]{0,8}(指令|规则|约束|限制)/, severity: 'FAIL', message: 'Agent 配置含指令覆盖注入（中文）' },
   { pattern: /ignore\s+(all\s+)?(previous|above|prior)\s+(instructions?|rules?)/i, severity: 'FAIL', message: 'Agent 配置含指令覆盖注入（英文）' },
   { pattern: /(你现在是|act\s+as)\s*(一个)?\s*(不受限制|unrestricted)/i, severity: 'WARN', message: 'Agent 配置含越狱人格设定' },
-  { pattern: /(禁用|关闭|绕过|bypass|disable)\s*(审计|约束|沙箱|audit|sandbox|guard)/i, severity: 'FAIL', message: 'Agent 配置指令尝试禁用约束层' },
+  // v1.6.0 BUG-28：否定前瞻——「不会/别/勿/禁止被」等反向表述不命中（「我们不会禁用审计」是良性承诺）
+  { pattern: /(?<!不会|不|别|勿|禁止被|绝不|从不)(禁用|关闭|绕过|bypass|disable)\s*(审计|约束|沙箱|audit|sandbox|guard)/i, severity: 'FAIL', message: 'Agent 配置指令尝试禁用约束层' },
   { pattern: /(不要|无需|不必)(记录|留痕|审计)/, severity: 'WARN', message: 'Agent 配置指令尝试抑制审计' },
 ];
 

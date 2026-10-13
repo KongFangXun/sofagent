@@ -76,8 +76,19 @@ interface MergeDoc {
  * 裁决规则（#3：trust 优先于 mtime）——同 id 两个版本选胜者
  */
 export function pickWinner(a: KnowledgeQueryResult, b: KnowledgeQueryResult): KnowledgeQueryResult {
-  const trustA = TRUST_ORDER[a.trust ?? 'internal'];
-  const trustB = TRUST_ORDER[b.trust ?? 'internal'];
+  // v1.6.0 BUG-29：防御性断言（fail-loud）——trust 值须在白名单内。
+  // 契约：peer 自报 trust 在 query-router 归一为 'user'|'internal' 后到达本函数；
+  // 未归一的野值（TRUST_ORDER 查不到 → undefined）会让比较变成 NaN 语义（恒 false），
+  // 裁决静默退化为 mtime——契约被违反时应当崩，不应当悄悄选错胜者。
+  const TRUST_WHITELIST = new Set(Object.keys(TRUST_ORDER));
+  for (const [label, entry] of [['a', a], ['b', b]] as const) {
+    const t = entry.trust ?? 'internal';
+    if (!TRUST_WHITELIST.has(t)) {
+      throw new Error(`[federation] pickWinner 收到未归一的 trust 值（entry ${label}: ${String(t)}）——peer 结果必须先经 query-router 归一为 ${[...TRUST_WHITELIST].join('|')}`);
+    }
+  }
+  const trustA = TRUST_ORDER[a.trust ?? 'internal']!;
+  const trustB = TRUST_ORDER[b.trust ?? 'internal']!;
   if (trustA !== trustB) return trustA > trustB ? a : b;
   const mtimeA = a.mtime ?? 0;
   const mtimeB = b.mtime ?? 0;

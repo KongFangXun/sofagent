@@ -420,6 +420,36 @@ export function scanA2(ctx: AuditContext): RuleScan {
     }
   }
 
+  // v1.6.0 BUG-26：拼接形态启发式——同一 hunk 内相邻两行拼后命中已知密钥正则时报
+  // WARN（不 FAIL，保守防误报——行内换行/字符串拼接是合法高频形态，只对「拼出
+  // 完整已知格式密钥」的窄面提示）。正负样例进规则自测 schema（fail-closed 纪律）。
+  const joinDetections: string[] = [];
+  for (const file of diffFiles) {
+    const addedLines: string[] = [];
+    for (const line of file.lines) {
+      if (line.startsWith('+') && !isDiffFileHeader(line)) {
+        addedLines.push(line.substring(1).replace(/[\u200B\u200C\u200D\uFEFF]/g, ''));
+      }
+    }
+    for (let i = 0; i + 1 < addedLines.length; i++) {
+      const cur = addedLines[i]!;
+      const next = addedLines[i + 1]!;
+      const joined = cur + next;
+      for (const { pattern, label, contextKeyword } of SECRET_PATTERNS) {
+        // 只看带明确格式锚的模式（AKIA 等），跳过裸 40 位 base64 类高误报面
+        if (contextKeyword) continue;
+        if (pattern.test(joined) && !pattern.test(cur) && !pattern.test(next)) {
+          joinDetections.push(`${file.path}: 相邻两行拼接后命中 ${label}（行 ${i + 1}-${i + 2}）`);
+          break;
+        }
+      }
+    }
+  }
+  if (joinDetections.length > 0 && status === 'PASS') {
+    status = 'WARN';
+    details.push(`疑似跨行拼接密钥（启发式·WARN）: ${joinDetections.slice(0, 3).join('; ')}${joinDetections.length > 3 ? ` 等 ${joinDetections.length} 处` : ''}`);
+  }
+
   if (groupedDetections.size > 0) {
     status = 'FAIL';
     const parts: string[] = [];

@@ -135,12 +135,23 @@ try {
     }
     if (entry.commitPhase === "pre-commit" && entry.parentSha === PARENT_SHA) {
       // 主题消歧：记录的 task（hook 写入时来自 commit message 主题行）与本 commit
-      // 主题不一致 → 这是相邻 commit 的审计记录，不认领，继续找。
+      // 主题不一致 → 两种形态：
+      //   v1.4.8 原判：相邻 commit 的审计记录，不认领，继续找；
+      //   v1.6.0 BUG-25 补：主题不一致但**同 tree**（同 author、tree 包含或相同）——
+      //     高度疑似「--no-verify 提交后改写 message」的绕过形态，升级 WARN 不静默 skip
+      //     （判据保守：tree 必须可比且一致/包含才升——纯文本差异仍走原 continue 路径）。
       const recordSubject = (typeof entry.task === "string" && entry.task.trim() !== ""
         ? entry.task
         : (typeof entry.commitMsg === "string" ? (entry.commitMsg.split("\n")[0] || "") : "")
       ).trim();
       if (COMMIT_SUBJECT && recordSubject && recordSubject !== COMMIT_SUBJECT) {
+        const entryTree = typeof entry.treeSha === "string" ? entry.treeSha.trim() : "";
+        if (entryTree && COMMIT_TREE && entryTree === COMMIT_TREE) {
+          console.log("  ⚠️ [sofagent] 疑似 --no-verify 绕过（改写消息）：审计记录与本 commit tree 一致但主题不同——");
+          console.log("      记录主题: " + recordSubject.slice(0, 80));
+          console.log("      本 commit: " + COMMIT_SUBJECT.slice(0, 80));
+          console.log("      建议: sofagent audit --verify-commit " + COMMIT_SHA + " 复核");
+        }
         continue;
       }
       // v1.4.8 F-16: 第三重对账——treeSha 内容指纹。记录含 treeSha 且与本 commit

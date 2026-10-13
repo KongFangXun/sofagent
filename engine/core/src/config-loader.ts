@@ -337,6 +337,8 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
       // v1.3.8 P1-B3：补 [sofagent] 前缀——解析失败必须显式可见，不静默
       console.warn(`[sofagent] ⚠️ ${err.message}`);
       console.warn('[sofagent] ⚠️ config.yml 格式错误，已回退默认配置。运行 sofagent-core doctor 诊断');
+      // v1.6.0 BUG-77：置回退标记——full 引擎汇总段复读状态行（防用户只看尾部横幅误信配置生效）
+      process.env.__SOFAGENT_CONFIG_FALLBACK = '1';
       return safeDefaults();
     }
     throw err;

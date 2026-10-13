@@ -259,6 +259,11 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ## 三、安全与信任模型局限
 
+### ⚙️ config 检测面的两个路径边界
+
+- **hook 路径以 `--diff --cached --silent --ci` 调用，不含 `--strict`**；config 被篡改时 hook 路径仅 WARN——CI 侧 `--strict` 为强制兜底。
+- **quick 模式（hook 路径）不读 `config.yml`**——config 相关检测（A4 删配置等）在 hook 路径不生效；full 模式（`sofagent audit --full`）读取 config 且非法 config 回退默认时在汇总横幅复读「配置回退默认」状态行。
+
 ### 🔐 审计面的「授权过程」记录不全
 
 审计规则的检查对象是**变更产物 / 动作形态 / 声明清单比对**三类——`A15`（节点未声明 actions）与 `A16`（非声明范围变更）比对的是**事前静态配置**，不是**运行时授权过程**（谁批的 / 何时批的 / 批的范围）。**声明 ≠ 授权**：workflow 里写了 actions，不代表每个动作都走过该走的审批；审批链事实不在审计输入里。
