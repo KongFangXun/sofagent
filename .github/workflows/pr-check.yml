@@ -203,6 +203,11 @@ jobs:
         run: npm install --no-save @rollup/rollup-linux-x64-gnu
       - name: Build (workspace 拓扑序)
         run: npm run build
+      # v1.6.0 BUG-30：聚合 tsconfig type-check 进 CI（兑现注释承诺——
+      # 此前「type-check 覆盖」名不副实：各包各自 tsc 但聚合根配置从不执行，
+      # paths 缺失的映射只在聚合面暴露）。若暴露存量类型错误修到零（不绕过）。
+      - name: Aggregate type-check (root tsconfig)
+        run: npx tsc --noEmit -p tsconfig.json
       # 模板漂移总闸（六断言：HOOK 部署文件 / openclaw 双 manifest / core dist 时效 /
       # load-chain 双份 handler / cordis.patch.yml 版本 / 插件清单生成式幂等）。
       # 🔴 放在 `npm run build` 之后：断言三比对 `engine/core/dist/config-template.js` 的

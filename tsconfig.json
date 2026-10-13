@@ -29,6 +29,9 @@
       "@sofagent/core": [
         "./engine/core/src"
       ],
+      "@sofagent/train": [
+        "./engine/train/src"
+      ],
       "@sofagent/audit": [
         "./engine/audit/src/public-api"
       ],

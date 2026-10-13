@@ -74,6 +74,11 @@
 | 加载链 Hook | `engine/hooks/sofagent-load-chain/` |
 
 
+### 依赖方向纪律
+
+包间依赖单向（inject→core→audit→orchestrator 等，机械守卫 `tools/check/dependency-direction.sh`）。
+已知例外：core 测试层静态 import `@sofagent/audit`（`engine/core/src/__tests__/history-archive.test.ts`）——源码层零反向依赖口径不变（测试消费编译产物做链校验对照，非源码依赖）。
+
 ## 一、工作原理
 
 > 一句话：开发者视角的 FDEing——Skill 结构、加载链与闸门就是 FDEing 在工程面的实体；本仓自身的开发流程也是被 FDEing 的对象（每个 PR 过审计链，与交付给企业的治理同构）。

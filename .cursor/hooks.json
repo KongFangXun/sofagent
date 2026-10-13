@@ -1,9 +1,9 @@
 {
   "version": 1,
   "hooks": {
-    "postToolUse": [
+    "preToolUse": [
       {
-        "command": "bash \"$PWD/tools/hooks/sofagent-precommit.sh\"",
+        "command": "bash \"$SOFAGENT_HOME/hooks/sofagent-precommit.sh\"",
         "matcher": "Shell"
       }
     ]

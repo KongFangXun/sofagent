@@ -174,12 +174,8 @@ sofagent：说一句话 → MCP 调用 → 返回结果
 
 ### 系统暴露的能力（Agent 视角）
 
-Agent 连上来第一件事就是 `list_capabilities`，然后自己知道能调什么：
-- 🤖 FORGE 自迭代——自动写代码、自动审、自动发版
-- 📚 知识联邦——设备 A 踩的坑，设备 B 直接查
-- 💿 USB 配置——说一句，写好的 U 盘插上就能用
-- 🔐 安全加密——多设备通信全自动加密
-- 📋 发版 SOP——从审查到 git tag 全自动
+Agent 连上来第一件事就是 `list_capabilities`，然后自己知道能调什么（实返 18 能力单元 · 六域）：
+- 💉 注入 · 🔍 审计 · ⏪ 回溯 · 📚 沉淀 · 🧬 进化 · ⚙️ 执行——约束层五能力 + 执行域的可拔能力地图（`engine/capabilities.json` 18 单元，档位/依赖级联/关档失效面逐单元可查；知识联邦属回溯/沉淀域的联邦查询面）
 
 
 ## 三、怎么跑——架构全景
@@ -431,7 +427,7 @@ FDE 一线观察指出：AI 项目失败的最根因往往不是技术，而是�
 |---|---|---|---|
 | ① 交付物 | workflow.yml + ontology + skills/ | `.sofagent/` 目录（activate 读它） | ✅ 已实现 |
 | ② 离场报告 | FDE 经验（踩坑/调试难点/可复用模式） | `delivery-report.md`（FDE/templates/） | ✅ 模板已建 |
-| ③ 知识聚合 | 多客户报告 → 统一知识库 | `knowledge/`（Dream Cycle 自动派生） | ✅ 已实现 |
+| ③ 知识聚合 | 多客户报告 → 统一知识库 | `knowledge/`（Dream Cycle 自动派生） | ✅（机器自动面）/ ⚠️（跨客户汇聚待授权门，见 FDE/templates/delivery-report.md 授权字段） |
 | ④ 模型精调 | 知识库 → QLoRA 训练语料 | `sofagent-model` CLI | 🟠 排期中（[v1.7.0](./changelog/v1.7/v1.7.0.md) 本地 LoRA 档 + [v1.8.0](./changelog/v1.8/v1.8.0.md) 权重分发） |
 
 **为什么离场报告是关键**：交付物（①）是结构化的，但 FDE 脑子里的经验（②）是非结构化的——散落在对话、录音、个人笔记里，会随时间流失。`delivery-report.md` 就是把这个「漏斗」接住：离场时强制回写一份，飞轮才有数据可转。没有它，飞轮缺一齿，转不起来。
