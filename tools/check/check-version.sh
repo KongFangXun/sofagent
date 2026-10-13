@@ -449,15 +449,40 @@ for readme in \
       report_ok "$(basename "${readme}")" "v${found_ver}"
     fi
   else
-    # 2 段格式：与 SSOT 2 段比较
-    if [[ "${found_2seg}" != "${SSOT_2SEG}" ]]; then
-      report_error "${readme}" "version-v${found_ver}" "version-v${SSOT_2SEG}"
-    else
-      report_ok "$(basename "${readme}")" "v${found_ver}"
+      # 2 段格式：与 SSOT 2 段比较
+      if [[ "${found_2seg}" != "${SSOT_2SEG}" ]]; then
+        report_error "${readme}" "version-v${found_ver}" "version-v${SSOT_2SEG}"
+      else
+        report_ok "$(basename "${readme}")" "v${found_ver}"
+      fi
     fi
-  fi
-done
-echo ""
+  done
+  echo ""
+
+# ── 7b. README 双语「npm 可安装最新版」声称行 = SSOT ─────────────
+# 实测缺口（v1.5.9 发版日 2026-10-13）：该行不在 bump-version.sh 十三步替换面内，
+# 发版后仍指旧版 ⇒ check-npm-claims（CI 联网版）红、但本地 check-version 不拦——
+# 等到 CI 才发现=晚一轮。本断言为**本地离线版**：只比文档 vs SSOT（不联网），
+# 与 CI 的 check-npm-claims.mjs（文档 vs registry）互补成两层。
+  echo -e "${BOLD}── [6b/14] README npm claims 行 ──${NC}"
+  for readme in \
+    "${PROJECT_ROOT}/README.md" \
+    "${PROJECT_ROOT}/README.en.md"; do
+    [[ -f "${readme}" ]] || continue
+    # 中英同形：`@sofagent/audit@X.Y.Z`（出现在「版本说明/Version note」行）
+    claim=$(grep -oE '@sofagent/audit@[0-9]+\.[0-9]+\.[0-9]+' "${readme}" | head -1)
+    if [[ -z "${claim}" ]]; then
+      echo -e "  ${YELLOW}⚠${NC} 未找到 npm claims 行: $(basename "${readme}")（若已移除该行，删本断言）"
+      continue
+    fi
+    claim_ver="${claim##*@}"
+    if [[ "${claim_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${readme}" "audit@${claim_ver}" "audit@${SSOT_VERSION}"
+    else
+      report_ok "$(basename "${readme}")" "npm claims @${claim_ver}"
+    fi
+  done
+  echo ""
 
 # ── 8. 检查 SKILL.md frontmatter version: X.Y ─────────────────
 echo -e "${BOLD}── [7/14] SKILL.md frontmatter ──${NC}"
