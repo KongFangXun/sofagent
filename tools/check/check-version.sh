@@ -874,15 +874,17 @@ fi
 echo ""
 
 # ── 12. 检查全局 npm 二进制版本与 SSOT 是否一致 ─
+# v1.6.0 零遗留复审：探测目标从退役名 sofagent-audit 改单入口 sofagent
+#（旧名探测在本机存留旧 wrapper 时报「无法解析」假警告——退役名探测本身即错误口径）
 echo -e "${BOLD}── [14/14] 全局 npm 二进制版本 ──${NC}"
-if command -v sofagent-audit >/dev/null 2>&1; then
+if command -v sofagent >/dev/null 2>&1; then
   bin_ver=$(sofagent audit --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   if [[ -z "${bin_ver}" ]]; then
-    report_warn "sofagent-audit" "无法解析二进制版本号（输出格式异常）"
+    report_warn "sofagent" "无法解析二进制版本号（输出格式异常）"
   elif [[ "${bin_ver}" != "${SSOT_VERSION}" ]]; then
-    report_warn "sofagent-audit" "全局安装: v${bin_ver}，SSOT: v${SSOT_VERSION} —— 请运行 npm install -g @sofagent/audit@latest"
+    report_warn "sofagent" "全局安装: v${bin_ver}，SSOT: v${SSOT_VERSION} —— 请运行 npm install -g sofagent@latest"
   else
-    report_ok "sofagent-audit" "v${bin_ver}"
+    report_ok "sofagent" "v${bin_ver}"
   fi
 else
   # CI runner 无全局安装属环境常态（非版本漂移）——计入 SKIPS 而非 WARNINGS：
@@ -1438,9 +1440,10 @@ if [[ -d "${MCP_SRC_DIR}" ]] && [[ -f "${SKILL_FILE}" ]]; then
   #   v1.2.5 时点快照，属合法历史数据，不扫不改。
   ARCH_FILE="${PROJECT_ROOT}/docs/ARCHITECTURE.md"
   if [[ -f "${ARCH_FILE}" ]]; then
-    # 提取能力总览段（## 能力与状态总览 → ### 对外核心能力）中的「（N tools）」声称
-    ARCH_CLAIMED=$(sed -n '/^## 能力与状态总览/,/^### 对外核心能力/p' "${ARCH_FILE}" 2>/dev/null \
-      | grep -oE '[（(][0-9]+ tools[）)]' | grep -oE '[0-9]+' | head -1)
+    # 提取「（N tools）」声称（v1.6.0 零遗留复审：原段范围锚「能力总览→对外核心能力」
+    # 与文档结构漂移致断言空转（104 tools 声称在段外 :266）——改全文首个 N tools 锚）
+    ARCH_CLAIMED=$(grep -oE '[（(][0-9]+ tools[）)]' "${ARCH_FILE}" 2>/dev/null \
+      | grep -oE '[0-9]+' | head -1)
     if [[ -n "${ARCH_CLAIMED}" ]] && [[ "${ARCH_CLAIMED}" != "${REGISTERED_COUNT}" ]]; then
       echo "  ❌ ARCHITECTURE 能力总览表声称 ${ARCH_CLAIMED} tools，mcp/src/ 注册 ${REGISTERED_COUNT} 个"
       ERRORS=$((ERRORS + 1))

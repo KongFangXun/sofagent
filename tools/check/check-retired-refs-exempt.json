@@ -43,8 +43,8 @@
     },
     {
       "file": "tools/check/check-version.sh",
-      "anchor": "sofagent",
-      "reason": "门禁自身检测锚与历史断言（版本号提取口径——含 1.5.8 前历史形态）"
+      "anchor": "sofagent-",
+      "reason": "门禁自身检测锚与历史断言（版本号提取口径——含 1.5.8 前历史形态）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/core/src/cli.ts",
@@ -238,18 +238,18 @@
     },
     {
       "file": "engine/core/src/config-loader.ts",
-      "anchor": "sofagent",
-      "reason": "config 校验/模板的历史锚（模板 config-template.ts 同批）"
+      "anchor": "sofagent-",
+      "reason": "config 校验/模板的历史锚（模板 config-template.ts 同批）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/core/src/config-template.ts",
-      "anchor": "sofagent",
-      "reason": "config 模板注释的历史锚（模板本体是示例配置——含旧命令的示例段待下批刷新）"
+      "anchor": "sofagent-",
+      "reason": "config 模板注释的历史锚（模板本体是示例配置——含旧命令的示例段待下批刷新）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/knowledge-tools.ts",
-      "anchor": "sofagent",
-      "reason": "MCP 工具描述串历史锚（描述对象为引擎非 CLI 指引）"
+      "anchor": "sofagent-",
+      "reason": "MCP 工具描述串历史锚（描述对象为引擎非 CLI 指引）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/audit/src/commands/init.ts",
@@ -268,8 +268,8 @@
     },
     {
       "file": "engine/dsh-plugins/cordis-plugin-sofagent/src/index.ts",
-      "anchor": "sofagent",
-      "reason": "DSH 插件包标识（包名非 CLI——ClawHub/DSH 分发面）"
+      "anchor": "sofagent-",
+      "reason": "DSH 插件包标识（包名非 CLI——ClawHub/DSH 分发面）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.ts",
@@ -348,18 +348,18 @@
     },
     {
       "file": "engine/core/src/doctor.ts",
-      "anchor": "sofagent",
-      "reason": "doctor 检测锚与形态描述（第三轮收尾）"
+      "anchor": "sofagent-",
+      "reason": "doctor 检测锚与形态描述（第三轮收尾）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/audit/src/commands/init.ts",
-      "anchor": "sofagent",
-      "reason": "init 实现注释与检测锚（第三轮收尾——横幅/解析链/检测锚三族）"
+      "anchor": "sofagent-",
+      "reason": "init 实现注释与检测锚（第三轮收尾——横幅/解析链/检测锚三族）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/audit/src/index.ts",
-      "anchor": "sofagent",
-      "reason": "引擎自检锚（第三轮收尾）"
+      "anchor": "sofagent-",
+      "reason": "引擎自检锚（第三轮收尾）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/think/src/think-generator.ts",
@@ -373,18 +373,18 @@
     },
     {
       "file": "engine/mcp/src/tools/acceptance.ts",
-      "anchor": "sofagent",
-      "reason": "MCP 工具描述串（描述引擎非 CLI）"
+      "anchor": "sofagent-",
+      "reason": "MCP 工具描述串（描述引擎非 CLI）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/hooks/sofagent-load-chain/src/handler.ts",
-      "anchor": "sofagent",
-      "reason": "load-chain hook 的注入文本锚（历史安装态机器的 hook 内容兼容）"
+      "anchor": "sofagent-",
+      "reason": "load-chain hook 的注入文本锚（历史安装态机器的 hook 内容兼容）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/dsh-plugins/plugin-kit/src/index.ts",
-      "anchor": "sofagent",
-      "reason": "DSH 插件 kit 包标识（包名非 CLI）"
+      "anchor": "sofagent-",
+      "reason": "DSH 插件 kit 包标识（包名非 CLI）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "install.sh",
@@ -393,188 +393,188 @@
     },
     {
       "file": "engine/audit/src/public-api.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/core/src/audit-dir-maintenance.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/core/src/verify.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/daemon/src/commands/knowledge-status.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/daemon/src/dream-cycle/continuous-sampler.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/daemon/src/evolution/loop.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/daemon/src/federation/offline-fallback.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/daemon/src/inspectors/doctor-checker.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/daemon/src/notify.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/daemon/src/webhook/index.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/daemon/src/write-surface-bootstrap.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/dsh-plugins/cordis-plugin-sofagent-daemon/src/index.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/dsh-plugins/cordis-plugin-sofagent-evolve/src/index.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/evolve/src/evolve-integration.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/audit-file.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/audit-tools.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/corpus-export.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/evaluate-output.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/model-register.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/model-switch.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/model-unregister.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/orchestrator-tools.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/permission-guard.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/promote-ab.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/report-tools.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/snapshot-list.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/snapshot-restore.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/mcp/src/tools/train-budget.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/ontology/src/ontology-view.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/orchestrator/src/audit-sub-agent.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/orchestrator/src/exec/skill-snapshot.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/orchestrator/src/hitl-handler.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/orchestrator/src/loop/graph.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/orchestrator/src/loop/nodes.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/orchestrator/src/meta-harness/orchestrator.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/orchestrator/src/ontology/import-pipeline.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
       "file": "engine/think/src/think-generator.ts",
-      "anchor": "sofagent",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）"
+      "anchor": "sofagent-",
+      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     }
   ]
 }

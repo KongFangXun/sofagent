@@ -649,6 +649,10 @@ if command -v npm &>/dev/null; then
     cat > "$NPM_GLOBAL_BIN/sofagent" << WRAPPER_EOF
 #!/usr/bin/env bash
 # sofagent 单入口 wrapper（从仓库本地 dist 安装——audit-first：无参直通审计）
+# 参数改写：\`sofagent audit <X>\` → 去掉 audit 域词直传引擎（index.js 无 audit 子命令——
+# 首参即范围/flag）；\`sofagent <X>\` 直传。其余域（evolve/core/...）本地 dist 态
+# 不含路由，打印指引。
+if [ "\$1" = "audit" ]; then shift; fi
 exec node "$LOCAL_AUDIT_DIST" "\$@"
 WRAPPER_EOF
     chmod +x "$NPM_GLOBAL_BIN/sofagent" 2>/dev/null || true
@@ -1073,6 +1077,7 @@ CLIEOF
   "name": "sofagent-router",
   "private": true,
   "version": "${VERSION}",
+  "type": "module",
   "description": "sofagent 单入口域路由（安装态自包含形态）——由 install.sh 生成，勿手工编辑",
   "dependencies": {
     "@sofagent/audit": "${VERSION}",
