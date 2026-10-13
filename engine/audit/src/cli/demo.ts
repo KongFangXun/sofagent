@@ -10,7 +10,7 @@
 //    （package.json bin → dist/cli-quick.js），本模块由 cli-quick 的
 //    `argv[2] === 'demo'` 分支调用。**不新增 bin**——不碰「13 bin → 1」收敛叙事，
 //    且传播命令与试用命令同体（看完 demo 去掉 `demo` 就是真审计）。
-//    主分发形态：`npx -y -p sofagent sofagent audit demo`（单入口；旧 `sofagent-audit` 为兼容期 shim）
+//    主分发形态：`npx -y -p sofagent sofagent audit demo`（单入口；旧 `sofagent-audit` 已于 v1.5.9 退役）
 //
 // 🔴 确定性与真实性双约束：
 //    ① 固定种子（demo-fixtures/seed.ts）+ 固定 git 日期/身份 + 固定沙箱密钥
@@ -820,7 +820,7 @@ export function runDemo(opts: { speed: DemoSpeed; outDir: string; templateDir?: 
     p.line('');
     p.line('❌ 未找到完整引擎入口（dist/index.js）——demo 需要它来让 git hook 拉起真实审计。');
     p.line('   仓库内请先构建：npm run build --workspace=engine/audit');
-    p.line('   或直接用 npm 分发形态：npx -y -p @sofagent/audit sofagent-audit demo');
+    p.line('   或直接用 npm 分发形态：npx -y -p sofagent sofagent audit demo');
     return {
       exitCode: 1,
       sandboxDir: '',
@@ -1036,9 +1036,9 @@ export function demoHelpText(): string {
     'sofagent audit demo — 五分钟戏剧弧（一条命令，亲眼看一次拦截发生）',
     '',
     '用法：',
-    '  npx -y -p @sofagent/audit sofagent-audit demo                 五幕完整版',
-    '  npx -y -p @sofagent/audit sofagent-audit demo --speed fast    60 秒精简版（跳幕①②直入拦截）',
-    '  npx -y -p @sofagent/audit sofagent-audit demo --out <dir>     指定产物目录（缺省 `<dataDir>/demo`，即 `$SOFAGENT_DATA/demo`）',
+    '  npx -y -p sofagent sofagent audit demo                        五幕完整版',
+    '  npx -y -p sofagent sofagent audit demo --speed fast           60 秒精简版（跳幕①②直入拦截）',
+    '  npx -y -p sofagent sofagent audit demo --out <dir>            指定产物目录（缺省 `<dataDir>/demo`，即 `$SOFAGENT_DATA/demo`）',
     '',
     '五幕：',
     '  幕 0  沙箱构建——只在 /tmp 建演示仓库，真实文件零接触',

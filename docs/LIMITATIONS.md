@@ -174,7 +174,7 @@ PowerShell 脚本（`.ps1`）作为 bash 脚本的平行实现存在，但**功�
 - **构建产物不等价（如实声明）**：`engine/audit` 的 `postbuild` 在 **Windows 跳过「信任锚同步」**（该步为 bash 脚本，`win32` 分支直接 `exit(0)`）——`dist/` 不含同步后基线，改由 hook 首次运行时记录；**macOS / Linux 上该步执行且失败即 `exit(1)`**（宁可不产出，不产出陈旧基线）。
   后果：**同一份源码在 Windows 与 Unix 上构建出的 `@sofagent/audit` 产物，信任锚状态可能不同**。跨平台分发 / 复现构建 / 校验发布物时须知悉这一点——此处**不承诺**两平台构建产物字节等价（对齐仓内「不虚标」纪律）。
 
-**建议**：Windows 用户优先用 `npx @sofagent/audit`（npm 包，全功能），bash 脚本用 Git Bash / WSL 运行。PowerShell 脚本作为后备，不作为主路径。
+**建议**：Windows 用户优先用 `npx -y -p sofagent sofagent audit`（npm 裸名总包，全功能），bash 脚本用 Git Bash / WSL 运行。PowerShell 脚本作为后备，不作为主路径。
 
 
 ### ⏸️ 中间检查点挂起
@@ -326,7 +326,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >     steps:
 >       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 >         with: { fetch-depth: 0 }          # --diff 需完整 git 历史
->       - run: npm install -g @sofagent/audit
+>       - run: npm install -g sofagent
 >       - run: sofagent audit --diff HEAD~1..HEAD --ci   # 接管道先 set -o pipefail
 > ```
 

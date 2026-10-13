@@ -111,8 +111,8 @@ if [ "$GLOBAL_MODE" -eq 1 ]; then
   " 2>/dev/null)
 
   if [ -z "$GLOBAL_ROOT" ] || [ ! -d "$GLOBAL_ROOT" ]; then
-    echo "❌ 未解析到全局安装的 @sofagent/audit"
-    echo "   请先安装: npm install -g @sofagent/audit"
+    echo "❌ 未解析到全局安装的审计引擎（@sofagent/audit 经 sofagent 总包分发）"
+    echo "   请先安装: npm install -g sofagent"
     exit 1
   fi
 

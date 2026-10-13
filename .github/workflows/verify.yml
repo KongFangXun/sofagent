@@ -99,8 +99,8 @@ jobs:
   # 运行形态说明：**跑本分支构建出的 dist**（不是 npx）。
   #   npx 会从 registry 装**已发布版本**，那测的是上一个发版而不是本次改动——
   #   「主分发形态是 npx」是给用户的传播面，不是 CI 的被测对象；CI 必须测
-  #   当前分支的真实产物。dist/cli-quick.js 即 package.json 里 sofagent-audit
-  #   这个 bin 的实体，与 npx 装到的入口是同一个文件。
+  #   当前分支的真实产物。dist/cli-quick.js 即 audit 域实现入口（经 umbrella
+  #   单入口转发），与 npx 装到的入口是同一个文件。
   demo:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-26.04

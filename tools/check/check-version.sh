@@ -28,7 +28,7 @@ export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 #  10. ROADMAP 「现在在哪」节标题
 #  11. package-lock.json 双包版本
 #  12. .ts 文件头注释版本号
-#  13. 全局 npm 二进制版本（sofagent-audit --version）
+#  13. 全局 npm 二进制版本（sofagent audit --version，经单入口）
 #  14. 文档示例版本号占位符（docs/ 下 @sofagent/*@<真实版本> = bug，应用 <LATEST>）
 #  15-24. ROADMAP/WIKI/MCP 工具数/安装入口 tag/构建产物/lock 同步/CHANGELOG 顶版漂移等
 #  25. 待发版窗口三态一致性（B1：CHANGELOG 收录 × 双语 README 状态行 × 安装 URL 配套齐）
@@ -876,7 +876,7 @@ echo ""
 # ── 12. 检查全局 npm 二进制版本与 SSOT 是否一致 ─
 echo -e "${BOLD}── [14/14] 全局 npm 二进制版本 ──${NC}"
 if command -v sofagent-audit >/dev/null 2>&1; then
-  bin_ver=$(sofagent-audit --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  bin_ver=$(sofagent audit --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   if [[ -z "${bin_ver}" ]]; then
     report_warn "sofagent-audit" "无法解析二进制版本号（输出格式异常）"
   elif [[ "${bin_ver}" != "${SSOT_VERSION}" ]]; then

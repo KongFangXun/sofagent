@@ -11,8 +11,8 @@
 //   构建产物 dist/ 会被 npm run build 覆盖，勿直接改 dist 文件。
 //
 // 用法：
-//   npx -y -p @sofagent/audit sofagent-audit               # 审计最近一次 commit（官方入口）
-//   npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD  # 审计指定范围
+//   npx -y -p sofagent sofagent audit                      # 审计最近一次 commit（官方入口）
+//   npx -y -p sofagent sofagent audit --diff HEAD~3..HEAD  # 审计指定范围
 //
 // 设计约束：
 //   - 零配置——不读 .sofagent/，不依赖 SKILL 加载链
@@ -444,23 +444,23 @@ export function runCliQuick(argv: string[]): number {
     console.log(`sofagent audit v${VERSION}`);
     console.log('sofagent audit — AI Agent 行为审计\n');
     console.log('用法（quick 只读审计，零安装）：');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit              审计最近一次 commit（官方入口，始终最新；不写 history.jsonl 无留痕，适合临时检查）');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（quick 模式直接跑，规则覆盖面同 quick；不写 history.jsonl）');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit -v, --version 显示版本号');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit -h, --help    显示此帮助\n');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit --stats          审计聚合报告（近 30 天治理 KPI——v1.4.3）');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit --stats --days 7  窗口可调（近 7 天）');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit --stats --json   机器可读 JSON（SIEM/监控消费）\n');
+    console.log('  npx -y -p sofagent sofagent audit                     审计最近一次 commit（官方入口，始终最新；不写 history.jsonl 无留痕，适合临时检查）');
+    console.log('  npx -y -p sofagent sofagent audit --diff HEAD~3..HEAD  审计指定范围（quick 模式直接跑，规则覆盖面同 quick；不写 history.jsonl）');
+    console.log('  npx -y -p sofagent sofagent audit -v, --version      显示版本号');
+    console.log('  npx -y -p sofagent sofagent audit -h, --help         显示此帮助\n');
+    console.log('  npx -y -p sofagent sofagent audit --stats             审计聚合报告（近 30 天治理 KPI——v1.4.3）');
+    console.log('  npx -y -p sofagent sofagent audit --stats --days 7    窗口可调（近 7 天）');
+    console.log('  npx -y -p sofagent sofagent audit --stats --json      机器可读 JSON（SIEM/监控消费）\n');
     // v1.5.1 第八章：demo 子命令披露（本行是纯新增——既有各行的文案与顺序一字未动）
-    console.log('  npx -y -p @sofagent/audit sofagent-audit demo           五分钟戏剧弧（亲眼看一次拦截发生，v1.5.1）');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit demo --speed fast  60 秒精简版（跳幕①②直入拦截）\n');
+    console.log('  npx -y -p sofagent sofagent audit demo                五分钟戏剧弧（亲眼看一次拦截发生，v1.5.1）');
+    console.log('  npx -y -p sofagent sofagent audit demo --speed fast   60 秒精简版（跳幕①②直入拦截）\n');
     // v1.3.9 四十四：双模式边界一次性讲清——此前用户敲 --init/--doctor 撞二次安装门槛
     // 却无处查边界，这里显式并列 quick flag 集 vs 完整引擎 flag 集 + 升级命令。
     console.log('双模式边界：');
     console.log('  quick 模式（本入口，零安装只读审计）仅支持：[diff 范围参数] + -h/--help + -v/--version + --stats/--days/--json；');
     console.log('  （--ruleset 等完整引擎 flag 传入时 quick 会自动路由完整引擎不报错——见下方 flag 清单）');
     console.log('  完整引擎（--init/--doctor/--diff/--cached/--ruleset/--task/--commit-msg 等）需 --init 装 hook 或全局安装；');
-    console.log('  从 quick 升级到完整：npm install -g @sofagent/audit（或 npx -y -p @sofagent/audit sofagent-audit-full）\n');
+    console.log('  从 quick 升级到完整：sofagent audit --full <范围>（或 npm install -g sofagent 后 sofagent audit --full）\n');
     console.log('以下 flag 需完整引擎（sofagent audit --full 或全局安装），quick 模式会自动路由或提示安装：');
     console.log('  --init              安装 git hook（每次 commit 自动审计）');
     console.log('  --doctor            健康诊断 + 完整性校验');
@@ -578,7 +578,7 @@ export function runCliQuick(argv: string[]): number {
     require.resolve('@sofagent/core');
   } catch {
     console.error('[sofagent] 检测到在仓库内直跑且实现依赖尚未安装/构建——请先在仓库根执行：npm install && npm run build');
-    console.error('[sofagent] 或使用免安装入口：npx -y -p @sofagent/audit sofagent-audit');
+    console.error('[sofagent] 或使用免安装入口：npx -y -p sofagent sofagent audit');
     return 3;
   }
 

@@ -6,8 +6,8 @@ const subcommand = args[0];
 
 async function main() {
   if (!subcommand || subcommand === '--help') {
-    console.log('sofagent-ab-test — A/B 测试框架 / 对比实验 / 指标显著性 / 实验报告');
-    console.log('Usage: sofagent-ab-test <subcommand> [options]');
+    console.log('sofagent ab-test — A/B 测试框架 / 对比实验 / 指标显著性 / 实验报告');
+    console.log('Usage: sofagent ab-test <subcommand> [options]');
     console.log('');
     console.log('Subcommands:');
     console.log('  run      运行 A/B 对比测试');
@@ -59,7 +59,7 @@ async function main() {
         scoreWeights: DEFAULT_SCORE_WEIGHTS,
       };
 
-      console.log(`sofagent-ab-test v${require('../package.json').version} — 运行 A/B 测试`);
+      console.log(`sofagent ab-test v${require('../package.json').version} — 运行 A/B 测试`);
       console.log(`  Current:   ${config.current}`);
       console.log(`  Candidate: ${config.candidate}`);
       console.log(`  EvalSet:   ${config.evalSet}`);
@@ -163,7 +163,7 @@ async function main() {
         scoreWeights: DEFAULT_SCORE_WEIGHTS,
       };
 
-      console.log(`sofagent-ab-test v1.1.0 — 晋升决策`);
+      console.log(`sofagent ab-test v1.1.0 — 晋升决策`);
       try {
         // 从 golden-set YAML 加载测试用例（与 run 子命令一致）
         type PEvalTestCase = { id: string; description: string; input: Record<string, unknown>; expected: Record<string, unknown>; tags?: string[] };
@@ -215,7 +215,7 @@ async function main() {
     }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-ab-test <run|promote>');
+      console.error('Usage: sofagent ab-test <run|promote>');
       process.exit(1);
   }
 }

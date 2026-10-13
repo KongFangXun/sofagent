@@ -844,8 +844,8 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-gear"></i></span>快速安装</div></div>
     <div class="section-body">
       <div class="install-box" style="margin-bottom:8px">
-        <code>bash install.sh &amp;&amp; sofagent-audit --init</code>
-        <button class="copy-btn" onclick="copyPrompt(this, 'bash install.sh && sofagent-audit --init')">复制</button>
+        <code>bash install.sh &amp;&amp; sofagent audit --init</code>
+        <button class="copy-btn" onclick="copyPrompt(this, 'bash install.sh && sofagent audit --init')">复制</button>
       </div>
       <div class="hint12">或 npx 零安装：<code class="code-chip">npx @sofagent/audit --init</code> · 需要 Node.js ≥ 18 + git</div>
     </div>
@@ -1206,7 +1206,7 @@ build → acceptance → regression → coverage，
           <div class="step-desc">
             <strong>方式 1 · WorkBuddy</strong>：搜索 <code class="code-chip">sofagent</code> → 点击安装 → Agent 自动加载 FDE Skill<br>
             <strong>方式 2 · OpenClaw</strong>：<code class="code-chip">bash install.sh</code> → 自动配置 Skill 加载链<br>
-            <strong>方式 3 · npm 全局安装</strong>：<code class="code-chip">npm i -g @sofagent/audit && sofagent-audit --init</code>
+            <strong>方式 3 · npm 全局安装</strong>：<code class="code-chip">npm i -g sofagent && sofagent audit --init</code>
           </div>
         </div>
         <div class="step-card">

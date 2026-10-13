@@ -246,7 +246,7 @@ audit rules (the full 28 need `extendedRulesEnabled: true`), snapshots stay roll
 **Release stage (read before installing)**: sofagent is in its **Alpha construction period** (v1.x)—the feature surface moves fast and **no interface stability is promised**; read the
 [CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
 
-The matching npm release-channel policy: **no dist-tag split—`latest` is the newest version**—`npx @sofagent/audit` pulls the current latest by default, no tag needed (version numbers
+The matching npm release-channel policy: **no dist-tag split—`latest` is the newest version**—`npx -y -p sofagent sofagent audit` pulls the current latest by default, no tag needed (version numbers
 carry the stage semantics: v1.x alpha construction period / beta from v2.0.0).
 The `alpha` tag remains as a historical release trace and isn't maintained.
 
@@ -262,7 +262,7 @@ The `alpha` tag remains as a historical release trace and isn't maintained.
 npx -y -p sofagent sofagent audit
 ```
 
-> 💡 Only want the audit CLI without the full dependency tree? Install the scoped package instead: `npm i -g @sofagent/audit` (far smaller footprint; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
+> 💡 Only want the audit CLI without the full dependency tree? Install the umbrella package instead: `npm i -g sofagent` (far smaller footprint; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
 
 > 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active—quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). `--init` installs the hook (still the same 17 default
 >rules); the full 28 additionally require `extendedRulesEnabled: true` in `.sofagent/config.yml`—see [LIMITATIONS §3](./docs/LIMITATIONS.md).
@@ -325,7 +325,7 @@ the installed UI is the source of truth.)</sub></p>
 > | **Web** | `sofagent web` (available in the install.sh-installed state) · repo-mode `node tools/dashboard/serve-dashboard.mjs` | Browser visualization (localhost:3780) | Boss / IT visual review |
 > | **macOS double-click** | Double-click `start-dashboard.command` | macOS shortcut to the Web version (macOS double-click entry only) | macOS users |
 >
-> ⚠️ **Dashboard availability boundary**: all three entries ship with the **`install.sh`-installed state**; a package installed via `npm i @sofagent/audit` does **not** contain the dashboard static assets (`tools/dashboard/` isn't distributed—the root `files` list keeps only root-level
+> ⚠️ **Dashboard availability boundary**: all three entries ship with the **`install.sh`-installed state**; a package installed via `npm i sofagent` does **not** contain the dashboard static assets (`tools/dashboard/` isn't distributed—the root `files` list keeps only root-level
 >essentials). npm-only installs get the CLI + MCP surface; **for the Dashboard use the full install** (bootstrap.sh / install.sh).
 
 > 👁️ **Agent's view**: with hooks installed, every commit triggers an audit—PASS prints a short echo then passes (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there's no separate GUI on the Agent side (see [PHILOSOPHY
@@ -353,7 +353,7 @@ the installed UI is the source of truth.)</sub></p>
 > - **Legacy commands retired**: the 12 old bins (`sofagent-audit` etc.) passed their compatibility window and **have been removed**; the former 13 bins are now served by the single entry.
 > - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; transitive deps measured via `npm ls --all --parseable | wc -l` = 603 lines (1 project-root line ⇒ 602 packages;
 > basis: installed `npm i sofagent@1.5.8` · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10), 5 carry native modules and install scripts—new npm versions don't run unreviewed install scripts, so those native builds are **silently skipped**).
->**For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or the scoped package `npm i -g @sofagent/audit`.
+>**For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or `npm i -g sofagent`.
 > - **Retired legacy proxy package**: the bare-name `sofagent-audit` (no scope) on npm is the old proxy package—**unpublished on 2026-09-26**; don't install it.
 
 **Rule marketplace**—community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):

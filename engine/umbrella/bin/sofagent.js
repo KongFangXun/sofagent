@@ -104,7 +104,7 @@ function printHelp() {
   console.log('  sofagent team formation --list              列出六种内置阵型');
   console.log('  sofagent train doctor --gpu                 训练环境体检');
   console.log('');
-  console.log('旧命令（sofagent-audit / sofagent-daemon / …）进入兼容期：仍可用，会提示新入口。');
+  console.log('旧命令（sofagent-audit 等 12 个）已于 v1.5.9 退役——统一走本单入口。');
 }
 
 // dashboard / web / data 依赖安装态资产——转交安装态 wrapper（~/.sofagent/bin/sofagent）

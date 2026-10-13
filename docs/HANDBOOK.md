@@ -201,7 +201,7 @@ cd sofagent && bash install.sh
 |---|---|---|---|
 | npx 临时 | `npx -y -p sofagent sofagent audit` | 用完即走 | 任意仓库快速审计、一次性检查 |
 | npm 项目内 | `npm install @sofagent/audit` | 随项目，版本锁进 package-lock | 固定依赖的团队项目 |
-| npm 全局 | `npm install -g @sofagent/audit` | 装一次到处用 | 跨仓库日常审计、daemon 常驻 |
+| npm 全局 | `npm install -g sofagent` | 装一次到处用 | 跨仓库日常审计、daemon 常驻 |
 
 #### 安装常见问题
 

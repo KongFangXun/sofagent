@@ -253,8 +253,8 @@ else
     # 风险由 commit-msg hook 的非 PATH 解析兜底），完整性校验走 SKIP 分支
     AUDIT_CMD=(sofagent-audit)
   else
-    echo "❌ sofagent-audit 未安装，审计未运行"
-    echo "   请运行: npm install -g @sofagent/audit"
+    echo "❌ sofagent 审计引擎未安装，审计未运行"
+    echo "   请运行: npm install -g sofagent"
     exit "$BLOCK_EXIT"
   fi
 fi
@@ -374,7 +374,7 @@ elif [ -n "${AUDIT_GLOBAL_DIST:-}" ]; then
       echo "   恢复（按序尝试，任选其一）："
       echo "     ① 仓库内同步信任锚：bash tools/audit-baseline-sync.sh --global"
       echo "     ② 删陈旧锚后重装 hook：rm -f \"\$HOME/.sofagent/internal/audit-global-dist-hash.txt\" && sofagent audit --install-hook"
-      echo "   ⚠️ 同版本 npm install -g @sofagent/audit 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。"
+      echo "   ⚠️ 同版本 npm install -g sofagent 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。"
       exit "$BLOCK_EXIT"
     fi
   fi

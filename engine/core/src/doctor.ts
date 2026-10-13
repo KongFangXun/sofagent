@@ -70,7 +70,7 @@ function repairHint(cmd: string) { console.log(`     修复：${cmd}`); }
 /**
  * 安装形态（v1.4.9 P1-13）：
  *   `'repo'` = 仓库克隆 / install.sh 安装（install.sh 在安装根可见）
- *   `'npm'`  = 纯 npm 安装（`npm i -g @sofagent/audit` 等，tarball 内无 install.sh）
+ *   `'npm'`  = 纯 npm 安装（`npm i -g sofagent` 等，tarball 内无 install.sh）
  */
 export type InstallShape = 'repo' | 'npm';
 
@@ -126,7 +126,7 @@ function compareVersionTriple(a: string, b: string): number {
 //     （更新 VERSION 文件 / 重装同步）；
 //   · homeVersionFile 新于 engine VERSION（**运行引擎旧**——用户先升级了安装器/其他
 //     机器写了新版本号，本机引擎还是旧的）：修法不是改文件，而是升级引擎本身。
-//     旧文案在 1.5.2 实测指向「装回旧版」（npm i -g @sofagent/audit@<engine 旧版本>）
+//     旧文案在 1.5.2 实测指向「装回旧版」（npm i -g sofagent@<engine 旧版本>）
 //     ——把用户往回带。判据用 compareVersions（@sofagent/rules 单源实现）。
 export function formatVersionRepairHint(
   shape: InstallShape,
@@ -137,14 +137,14 @@ export function formatVersionRepairHint(
   // F49 ③：引擎旧于安装标记（homeVersionFile 新）——任何安装形态的修法都是升级引擎，
   // 与「文件滞后」两向分开（改文件只会掩盖引擎陈旧）。
   if (situation === 'engine-outdated') {
-    return `运行引擎（${version}）旧于安装标记——升级引擎：npm i -g @sofagent/audit@latest（升级后本提示消失；VERSION 文件勿手改）`;
+    return `运行引擎（${version}）旧于安装标记——升级引擎：npm i -g sofagent@latest（升级后本提示消失；VERSION 文件勿手改）`;
   }
   if (shape === 'npm') {
     // npm 形态无 install.sh：修法是升级 npm 包（或直接改该文件）。
     // 括号里保留「无 install.sh」这句解释是刻意的——用户若看过旧提示会疑惑脚本去哪了；
     // 但**不得出现 `bash install.sh` 这个可执行修法**（npm 机器上没有该脚本）。
     return situation === 'mismatch'
-      ? `npm 全局安装形态无 install.sh——升级到匹配版本：npm i -g @sofagent/audit@${version}（或手动更新 ${homeVersionFile}）`
+      ? `npm 全局安装形态无 install.sh——升级到匹配版本：npm i -g sofagent@${version}（或手动更新 ${homeVersionFile}）`
       : `npm 全局安装形态无 install.sh——该文件由安装器生成，npm 安装不产生它；手动创建 ${homeVersionFile} 并写入当前引擎版本：echo ${version} > ${homeVersionFile}`;
   }
   return situation === 'mismatch'
@@ -744,7 +744,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           // （其机器上没有仓库/工程脚本，重装包才是可达修法）。
           repairHint(
             detectInstallShape() === 'npm'
-              ? '重新安装 sofagent 以恢复原始 dist：npm i -g @sofagent/audit@latest（npm 安装形态无本地构建）'
+              ? '重新安装 sofagent 以恢复原始 dist：npm i -g sofagent@latest（npm 安装形态无本地构建）'
               : '重新安装 sofagent（npm run build --workspace=engine/audit 或 sofagent audit --install-hook）以恢复原始 dist',
           );
           distIntegrityOk = false;
@@ -768,7 +768,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     warn('audit dist/index.js 未找到——dist 完整性检查（影子审计器劫持防护）不可用');
     repairHint(
       detectInstallShape() === 'npm'
-        ? '重装 npm 包：npm i -g @sofagent/audit@latest（dist 随包分发，缺失即安装不完整）'
+        ? '重装 npm 包：npm i -g sofagent@latest（dist 随包分发，缺失即安装不完整）'
         : 'npm run build --workspace=engine/audit（monorepo）或安装 @sofagent/audit',
     );
     distIntegrityOk = false;
@@ -1112,10 +1112,10 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         const heartbeatStale = !dh.lastHeartbeat || (Date.now() - new Date(dh.lastHeartbeat).getTime()) > 10 * 60 * 1000;
         if (dh.lastExitCode !== undefined && dh.lastExitCode !== 0 && heartbeatStale) {
           fail(`daemon 守护已死亡（exit ${dh.lastExitCode}${dh.stoppedReason ? `，原因 ${dh.stoppedReason}` : ''}——最后心跳 ${dh.lastHeartbeat}）`);
-          repairHint('sofagent-daemon start（重启守护进程）；若反复 exit 78 查看启动日志定位致命错误');
+          repairHint('sofagent daemon start（重启守护进程）；若反复 exit 78 查看启动日志定位致命错误');
         } else if (dh.status === 'stopped' || heartbeatStale) {
           warn(`daemon 已停止运行（最后心跳 ${dh.lastHeartbeat ?? '无'}${dh.lastExitCode !== undefined ? `，exit ${dh.lastExitCode}` : ''}）`);
-          repairHint('sofagent-daemon start（按需重启守护进程）');
+          repairHint('sofagent daemon start（按需重启守护进程）');
         } else if (dh.status === 'degraded') {
           warn(`daemon 降级运行中（PID ${dh.pid ?? '?'}）`);
           repairHint('sofagent-daemon doctor（查看降级原因）');
@@ -1124,10 +1124,10 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         }
       } catch (parseErr) {
         warn(`daemon-health.json 解析失败: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`);
-        repairHint('sofagent-daemon start（下次心跳写入会覆盖修复）');
+        repairHint('sofagent daemon start（下次心跳写入会覆盖修复）');
       }
     } else {
-      info('daemon 从未运行过（daemon-health.json 不存在）——审计核心功能不依赖守护，按需 sofagent-daemon start');
+      info('daemon 从未运行过（daemon-health.json 不存在）——审计核心功能不依赖守护，按需 sofagent daemon start');
     }
   } catch (err) {
     info(`daemon 状态检查异常（已跳过）: ${err instanceof Error ? err.message : String(err)}`);

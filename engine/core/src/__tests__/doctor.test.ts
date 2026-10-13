@@ -263,7 +263,7 @@ describe('doctor daemon 守护感知（v1.4.4 #32+47）', () => {
     expect(out).toContain('daemon 守护已死亡');
     expect(out).toContain('exit 78');
     expect(out).toContain('uncaught-exception');
-    expect(out).toContain('sofagent-daemon start');
+    expect(out).toContain('sofagent daemon start');
   });
 
   it('daemon 运行中（心跳新鲜）→ OK 零误报', () => {
@@ -318,7 +318,7 @@ describe('doctor daemon 守护感知（v1.4.4 #32+47）', () => {
     runDoctor(t.tmpHome);
     const out = t.output();
     expect(out).toContain('daemon-health.json 解析失败');
-    expect(out).toContain('sofagent-daemon start');
+    expect(out).toContain('sofagent daemon start');
   });
 });
 
@@ -346,7 +346,7 @@ describe('doctor 版本修复提示按安装形态分流（v1.4.9 P1-13）', () 
       // 锁「可执行修法」而非裸子串：npm 提示里刻意保留「无 install.sh」这句解释
       // （用户看过旧提示会疑惑脚本去哪了），故断言点必须是 **bash install.sh** 这条命令。
       expect(mismatch).not.toContain('bash install.sh');
-      expect(mismatch).toContain('npm i -g @sofagent/audit@1.4.8');
+      expect(mismatch).toContain('npm i -g sofagent@1.4.8');
       expect(mismatch).toContain(versionFile);
 
       const missing = formatVersionRepairHint('npm', 'missing', versionFile, '1.4.8');
@@ -388,7 +388,7 @@ describe('doctor 版本修复提示方向分流（F49）', () => {
     // 引擎 1.5.2，VERSION 写 1.5.7 → 引擎落后
     const hint = formatVersionRepairHint('npm', 'engine-outdated', versionFile, '1.5.2');
     expect(hint).toContain('升级引擎');
-    expect(hint).toContain('npm i -g @sofagent/audit@latest');
+    expect(hint).toContain('npm i -g sofagent@latest');
     // 不得把旧引擎版本号当安装目标（1.5.2 实测缺陷：提示装回旧版）
     expect(hint).not.toContain('@sofagent/audit@1.5.2');
     expect(hint).not.toContain('bash install.sh');
@@ -408,7 +408,7 @@ describe('doctor 版本修复提示方向分流（F49）', () => {
       runDoctor(projDir);
       const output = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
       expect(output).toContain('引擎落后于安装标记');
-      expect(output).toContain('npm i -g @sofagent/audit@latest');
+      expect(output).toContain('npm i -g sofagent@latest');
       // 不再出现旧向文案的「发版后未同步」定性
       expect(output).not.toContain('发版后未同步');
     } finally {

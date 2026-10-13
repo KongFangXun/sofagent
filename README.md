@@ -61,7 +61,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **30 秒轻量试用**（首次含 npx 拉包，复跑秒级；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
-> 💡 只要审计 CLI、不想拉全量依赖树？改装 scoped 包：`npm i -g @sofagent/audit`（体积与依赖面小得多，能力面见 [LIMITATIONS · 包依赖](./docs/LIMITATIONS.md)）。
+> 💡 只要审计 CLI、不想拉全量依赖树？改装裸名总包：`npm i -g sofagent`（裸名总包，单入口 `sofagent audit`；能力面见 [LIMITATIONS · 包依赖](./docs/LIMITATIONS.md)）。
 
 > 💡 试用时提交消息请写 **≥6 字符**（如 `initial audit test`）——A19 质量规则（编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）对超短消息（`init`/`add`）判红属设计意图（防无意义提交信息），不是故障。
 
@@ -196,7 +196,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **版本阶段（装前必读）**：sofagent 处于**阿尔法施工期**（v1.x）——功能面快速变动，**不承诺接口稳定**，跨版本升级前先读 [CHANGELOG](./CHANGELOG.md)。自 **v2.0.0** 起进入贝塔阶段。
 
-对应的 npm 发布通道策略：**npm 不做 dist-tag 分道，`latest` 即最新版**——`npx @sofagent/audit` 默认拉到当前最新版本，无需指定标签（版本号承载阶段语义：v1.x 阿尔法施工期 / v2.0.0 起贝塔期）。`alpha` tag 保留为历史发布痕迹不维护。
+对应的 npm 发布通道策略：**npm 不做 dist-tag 分道，`latest` 即最新版**——`npx -y -p sofagent sofagent audit` 默认拉到当前最新版本，无需指定标签（版本号承载阶段语义：v1.x 阿尔法施工期 / v2.0.0 起贝塔期）。`alpha` tag 保留为历史发布痕迹不维护。
 
 > ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户**写入侧**隔离尚未落地（v0 已交付查询侧隔离：orgId 过滤 + data/<tenant>/ 路径地基，见 LIMITATIONS）。
 >强合规场景建议 CI 兜底 + 文件权限锁（`chmod 400 .sofagent/config.yml`——辅助层，对同用户进程无效，见 [LIMITATIONS §三](./docs/LIMITATIONS.md)），不要用单机默认配置直接上生产。
@@ -257,7 +257,7 @@ sofagent audit --doctor    # 验证环境（可选）
 > | **Web 版** | `sofagent web`（install.sh 安装态可用）· 仓库态 `node tools/dashboard/serve-dashboard.mjs` | 浏览器可视化（localhost:3780） | 老板 / IT 可视化看 |
 > | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式（仅 macOS 双击入口） | macOS 用户 |
 >
-> ⚠️ **Dashboard 可得性边界**：三入口均**随 `install.sh` 安装态提供**；`npm i @sofagent/audit` 直装的包**不含 dashboard 静态资产**（`tools/dashboard/` 未随包分发）——npm 直装用户得到 CLI + MCP 能力面，**要 Dashboard 请走完整安装**（bootstrap.sh / install.sh）。
+> ⚠️ **Dashboard 可得性边界**：三入口均**随 `install.sh` 安装态提供**；`npm i sofagent` 直装的包**不含 dashboard 静态资产**（`tools/dashboard/` 未随包分发）——npm 直装用户得到 CLI + MCP 能力面，**要 Dashboard 请走完整安装**（bootstrap.sh / install.sh）。
 
 > 👁️ **Agent 视角**：装完 hook 后每次 commit 触发审计——PASS 输出简短回声后放行（自动快照），违规直接打进终端输出并按配置推送 Webhook / IM，Agent 侧无独立图形界面（详见 [PHILOSOPHY §二](./docs/PHILOSOPHY.md#系统暴露的能力agent-视角)）。
 
@@ -280,7 +280,7 @@ sofagent audit --doctor    # 验证环境（可选）
 >
 > - **旧命令已退役**：12 个旧 bin 兼容期已满**移除**，统一走单入口。
 > - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
->   **只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g @sofagent/audit`。
+>   **只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g sofagent`。
 > - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。
 
 **规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（plugin 类规则默认关闭，需显式 opt-in，见 SECURITY）：

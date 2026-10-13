@@ -196,20 +196,13 @@ function extractFirstPlistString(plistContent: string): string | null {
 function resolveDaemonEntry(cwd: string): { cliPath: string; args: string[] } | null {
   const candidates: string[] = [];
 
-  // 1. 全局 sofagent-daemon
+  // 1. 全局单入口 sofagent（umbrella 存在时经其派生 daemon 域）
+  // v1.6.0 BUG-06 修复：旧候选 which sofagent-daemon / which sofagent-audit（同目录推断）
+  // 两条路径均已死（12 个旧 bin 已于 v1.5.9 退役）——改为 which sofagent。
   try {
-    const cmd = platform() === 'win32' ? 'where sofagent-daemon' : 'which sofagent-daemon';
+    const cmd = platform() === 'win32' ? 'where sofagent' : 'which sofagent';
     const p = (execSync(cmd, { encoding: 'utf-8' }).trim().split('\n')[0]) || '';
     if (p) candidates.push(p);
-  } catch { /* 未安装 */ }
-
-  // 2. bin 映射 `sofagent-audit` 同目录下的 sofagent-daemon（bin 名定位——保留旧名因它是 npm bin 注册名）
-  try {
-    const cmd = platform() === 'win32' ? 'where sofagent-audit' : 'which sofagent-audit';
-    const auditPath = (execSync(cmd, { encoding: 'utf-8' }).trim().split('\n')[0]) || '';
-    const auditBinDir = auditPath.substring(0, auditPath.lastIndexOf('/'));
-    const candidateDaemon = `${auditBinDir}/sofagent-daemon`;
-    if (existsSync(candidateDaemon)) candidates.push(candidateDaemon);
   } catch { /* 未安装 */ }
 
   // 3. 项目内 engine/daemon/dist/cli.js（v1.2.5 修正前缀：旧结构 sofagent/daemon/ 已搬迁到 engine/daemon/）
@@ -222,10 +215,10 @@ function resolveDaemonEntry(cwd: string): { cliPath: string; args: string[] } | 
     };
   }
 
-  // 4. 全局入口存在 → 用其绝对路径 + 'start'
+  // 2. 全局入口存在 → 经单入口派生 daemon 域（sofagent daemon start）
   const globalEntry = candidates.find((p) => existsSync(p));
   if (globalEntry) {
-    return { cliPath: globalEntry, args: ['start'] };
+    return { cliPath: globalEntry, args: ['daemon', 'start'] };
   }
 
   // 全部落空 → daemon 未安装（npx / 未全局安装场景）
@@ -822,7 +815,7 @@ export function runInit(): void {
       const skipReason = isInteractive() ? '用户拒绝' : '非交互环境（stdin/stdout 非 TTY，默认 N）';
       console.log(`  ⚠️ [sofagent] daemon 常驻服务未注册（原因：${skipReason}）——补装：sofagent audit --init --register-daemon`);
       console.log('  → git commit 审计不受影响（hook 已安装，daemon 仅负责 7×24 常驻监控）');
-      console.log('  → 也可不经 --init：npm install -g @sofagent/daemon 后运行 sofagent-daemon start');
+      console.log('  → 也可不经 --init：npm install -g sofagent 后运行 sofagent daemon start');
     } else {
       try {
         registerDaemon(cwd);

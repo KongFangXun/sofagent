@@ -1298,7 +1298,7 @@ Agent 定义在 `SKILL/agents/{name}/SKILL.md`，`parseSkillMd()` 读 front matt
 
 ### Agent 平台在架构中的角色
 
-**审计层不依赖任何特定平台**——sofagent audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 Agent 平台（OpenClaw / WorkBuddy 等），开发者也可通过 `bash install.sh`（推荐）或 `npm install -g @sofagent/audit`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
+**审计层不依赖任何特定平台**——sofagent audit 是独立 TypeScript CLI，输入 git diff，输出 exit code。即使不装 Agent 平台（OpenClaw / WorkBuddy 等），开发者也可通过 `bash install.sh`（推荐）或 `npm install -g sofagent`（高级/开发者路径）配 commit-msg hook，让任何 Agent 平台的提交经过审计。
 
 **编排层当前走 LangGraph createReactAgent**——`compose --task` CLI 入口，任何 Agent 平台都能用。迁移路径：ao（AutoGen）→ DeepAgents（v1.0.7）→ LangGraph createReactAgent（v1.2.0，deepagents 已弃用）。
 

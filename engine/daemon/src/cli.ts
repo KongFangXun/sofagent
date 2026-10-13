@@ -30,8 +30,8 @@ async function main() {
     process.exit(0);
   }
   if (!subcommand || subcommand === '--help') {
-    console.log('sofagent-daemon — 持续审计 / 文件监听 / 自动修复循环');
-    console.log('Usage: sofagent-daemon <subcommand> [options]');
+    console.log('sofagent daemon — 持续审计 / 文件监听 / 自动修复循环');
+    console.log('Usage: sofagent daemon <subcommand> [options]');
     console.log('');
     console.log('Subcommands:');
     console.log('  start                        启动守护进程（cron + 文件监听）');
@@ -116,7 +116,7 @@ async function main() {
         }
         default:
           console.error('❌ 未知 knowledge 子命令: ' + (action || ''));
-          console.error('   用法: sofagent-daemon knowledge <status>');
+          console.error('   用法: sofagent daemon knowledge <status>');
           process.exit(1);
       }
       break;
@@ -135,7 +135,7 @@ async function main() {
         const entriesPath = entriesIdx !== -1 ? args[entriesIdx + 1] : undefined;
         if (!entriesPath) {
           console.error('❌ evolve init-registry 需要 --entries <json 文件>');
-          console.error('   用法: sofagent-daemon evolve init-registry --entries <domain-verifiers.json>');
+          console.error('   用法: sofagent daemon evolve init-registry --entries <domain-verifiers.json>');
           process.exit(1);
         }
         const { readFileSync } = await import('fs');
@@ -171,7 +171,7 @@ async function main() {
         break;
       }
       console.error('❌ 未知 evolve 子命令: ' + (action || ''));
-      console.error('   用法: sofagent-daemon evolve <cycle|init-registry>');
+      console.error('   用法: sofagent daemon evolve <cycle|init-registry>');
       process.exit(1);
       break;
     }
@@ -179,8 +179,8 @@ async function main() {
       // --help/-h 在子命令后也打印帮助退出，不误触发真启动（2026-08-18 修复：
       // `start --help` 原先被当未知 flag 忽略直接拉起守护进程）
       if (args.includes('--help') || args.includes('-h')) {
-        console.log('sofagent-daemon start — 启动守护进程（cron + 文件监听）');
-        console.log('Usage: sofagent-daemon start [--usb-root <path>]');
+        console.log('sofagent daemon start — 启动守护进程（cron + 文件监听）');
+        console.log('Usage: sofagent daemon start [--usb-root <path>]');
         process.exit(0);
       }
       const projectDir = process.cwd();
@@ -194,7 +194,7 @@ async function main() {
           process.exit(1);
         }
         const { startUsbRuntime } = await import('./usb-runtime');
-        console.log(`sofagent-daemon v${VERSION} — U 盘便携运行时启动`);
+        console.log(`sofagent daemon v${VERSION} — U 盘便携运行时启动`);
         await startUsbRuntime(usbRoot, projectDir);
         break;
       }
@@ -205,7 +205,7 @@ async function main() {
       const { startWatching, formatFileWatchStartLine } = await import('./fs-watch');
       const { runFilesystemAudit } = await import('./run-fs-audit');
 
-      console.log(`sofagent-daemon v${VERSION} — 启动守护进程`);
+      console.log(`sofagent daemon v${VERSION} — 启动守护进程`);
       console.log(`  监控目录: ${projectDir}`);
       console.log('');
 
@@ -491,7 +491,7 @@ async function main() {
         }
         default:
           console.error('❌ 未知 snapshot 子命令: ' + (action || ''));
-          console.error('   用法: sofagent-daemon snapshot <list|restore>');
+          console.error('   用法: sofagent daemon snapshot <list|restore>');
           process.exit(1);
       }
       break;
@@ -512,7 +512,7 @@ async function main() {
       }
       if (!role || !target || !platform) {
         console.error('❌ create-usb-key 需要 --role / --target / --platform 三个参数');
-        console.error('   用法: sofagent-daemon create-usb-key --role "财务审计节点" --target /Volumes/SOFAGENT --platform macos');
+        console.error('   用法: sofagent daemon create-usb-key --role "财务审计节点" --target /Volumes/SOFAGENT --platform macos');
         process.exit(1);
       }
       if (platform !== 'macos' && platform !== 'linux' && platform !== 'win') {
@@ -520,7 +520,7 @@ async function main() {
         process.exit(1);
       }
       const { createUsbKey } = await import('./usb-key');
-      console.log(`sofagent-daemon v${VERSION} — 写入 U 盘完整运行时`);
+      console.log(`sofagent daemon v${VERSION} — 写入 U 盘完整运行时`);
       console.log(`  角色: ${role} · 目标: ${target} · 平台: ${platform}`);
       const result = await createUsbKey({
         role,
@@ -562,7 +562,7 @@ async function main() {
         if (result.details) {
           console.log(`  最近错误: ${result.details.lastError ?? '无'}`);
         }
-        console.log('  修复: sofagent-daemon start（重启守护进程）');
+        console.log('  修复: sofagent daemon start（重启守护进程）');
         process.exit(1);
       } else {
         console.log(`⚠️ ${result.message}`);
@@ -833,14 +833,14 @@ async function main() {
         }
         default:
           console.error('❌ 未知 scheduler 子命令: ' + (action || ''));
-          console.error('   用法: sofagent-daemon scheduler <create|list|pause|resume|trigger|history|delete> [task-id]');
+          console.error('   用法: sofagent daemon scheduler <create|list|pause|resume|trigger|history|delete> [task-id]');
           process.exit(1);
       }
       break;
     }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-daemon <start|create-usb-key|snapshot|knowledge|scheduler|evolve|doctor> [options]');
+      console.error('Usage: sofagent daemon <start|create-usb-key|snapshot|knowledge|scheduler|evolve|doctor> [options]');
       process.exit(1);
   }
 }
