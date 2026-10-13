@@ -22,9 +22,9 @@ import {
   validateCriterion,
   CriteriaSchemaError,
   type AuditCriterion,
-} from '../../../audit/src/rules/criteria/criteria-schema';
-import { lintCriteria, lintOrFail, hardLabelList } from '../../../audit/src/rules/criteria/criteria-quality-lint';
-import { AUDIT_CRITERIA, AUDIT_CRITERIA_RECONCILIATION } from '../../../audit/src/rules/criteria/audit-criteria';
+} from '@sofagent/audit';
+import { lintCriteria, lintOrFail, hardLabelList } from '@sofagent/audit';
+import { AUDIT_CRITERIA, AUDIT_CRITERIA_RECONCILIATION } from '@sofagent/audit';
 
 function cloneReady(): AuditCriterion[] {
   // 取一条合规判据做模板（A1-1）

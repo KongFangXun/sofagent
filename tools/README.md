@@ -71,6 +71,8 @@
 | `check/check-devlog-unique.mjs` | devlog 数字唯一（限定词词表 SSOT）+ README 能力表三档枚举守卫 | 发版 SOP / 改 devlog 后 |
 | `check/check-npm-claims.mjs` | registry 实测声称对账（活文档面 `npm view <pkg> dist-tags` 与「当前为 …」两种值声称 vs `--prefer-online` 真值——无 npm view 时回退行内包名；≥3 重试 + timeout；离线 SKIP 不假绿；（详→注-5） | CI（pre-push 3i · 离线 SKIP 不阻断）/ 改 README/docs 后 |
 | `check/npm-claims-exempt.json` | npm 实测声称豁免台账：行级 `{file, anchor, reason}` 锚串豁免（锚须唯一、仍是命中行、理由须实质，任一不成立即 exit 2；**空 = 无债正常态**） | 被 check-npm-claims.mjs 消费 |
+| `check/check-retired-refs-exempt.json` | 退役名残留守卫行级豁免台账（file+anchor 子串命中+理由；只对非用户指引形态开放） | 被 check-retired-refs.sh 消费 |
+| `check/check-env-wiring-exempt.json` | env 读写闭环守卫 key 级豁免台账（带理由） | 被 check-env-wiring.mjs 消费 |
 | `check/check-shellcheck.sh` | 全仓 shellcheck（**CI 同口径**：按 shell shebang 扫全仓含无扩展名 hook；`-s bash -S warning -e SC2034/SC1090/SC1091`）——补 CI 与本地扫描面口径差 |
 | `check/check-forge-branches.sh` | 分支收编标记对账（tag `forge-merged-*` / 分支名 `-merged-YYYYMMDD` 双形态判定；未标记分支 INFO 四要素列出供人工确认，输出字符级截断防 U+FFFD） | 发版 SOP / 定期 |
 | `check/check-literals.sh` | 手填字面量对账（`check/literals.json` 注册表驱动——同一事实被手抄两份时比对「手填值 vs 实算真值」；数据驱动，新增字面量只登记一行，非「保密字面量扫描」） | CI |

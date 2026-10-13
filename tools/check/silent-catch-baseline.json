@@ -336,5 +336,11 @@
   "tools/release/gitdata-push.mjs::#1::catch { /* HEAD 无跟踪（理论不可达——entries 全来自 HEAD diff/ls-tree） */ }",
   "tools/release/gitdata-push.mjs::#1::catch { /* 无本地 ref 记录 */ }",
   "tools/report/evolution-report.mjs::#1::catch { // 坏行跳过 }",
-  "tools/report/evolution-report.mjs::#2::catch { // 坏行跳过 }"
+  "tools/report/evolution-report.mjs::#2::catch { // 坏行跳过 }",
+  "engine/core/src/memory-store.ts::#1::catch { /* 留证失败不掩盖原错误 */ }",
+  "engine/core/src/memory-store.ts::#2::catch { /* 留证失败不掩盖原错误 */ }",
+  "engine/core/src/shared/atomic-write.ts::#1::catch { /* 目标不存在（首写）——直接写原路径 */ }",
+  "engine/core/src/shared/atomic-write.ts::#1::catch { /* 首写——直接原路径 */ }",
+  "engine/evolve/src/cli.ts::#1::catch { /* 遥测失败不阻断提案链 */ }",
+  "engine/evolve/src/failure-ledger.ts::#1::catch { // 查重读失败——保守照常录入（宁可重复不丢证据） }"
 ]

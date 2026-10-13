@@ -102,7 +102,7 @@ NC='\033[0m'
 #     （全仓只出现在 load-chain-compact.test.ts）。本版接线进
 #     engine/inject/src/index.ts 的 buildConstrainedSystemPrompt（env 门控、
 #     缺省关闭）⇒ 已为真接线，**不许走 --known-pending 豁免**。
-SYMBOLS="runInspectors:engine/daemon/src/inspectors/index.ts:via=analyzeAuditHistory,checkConflict,checkDoctorHealth,checkKnowledgeFreshness,checkKnowledgeHealth,checkSkillStaleness,runAuditTrailInspector
+SYMBOLS="runInspectors:engine/daemon/src/inspectors/index.ts:via=analyzeAuditHistory,checkConflict,checkDoctorHealth,checkKnowledgeFreshness,checkKnowledgeHealth,runAuditTrailInspector
 runAllLayers:engine/daemon/src/inspector-layers.ts:via=runLayeredInspection
 runDreamCycle:engine/daemon/src/dream-cycle/state-machine.ts
 registerBuiltinSlashCommands:engine/core/src/slash-commands/index.ts

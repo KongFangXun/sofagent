@@ -1,6 +1,6 @@
 
-const { JudgeRuntime } = require("/Users/kongfangxun/WorkBuddy/sofagent/engine/orchestrator/dist/router/judge-runtime.js");
-const { evaluateZeroShot } = require("/Users/kongfangxun/WorkBuddy/sofagent/engine/orchestrator/dist/router/judge-eval.js");
+const { JudgeRuntime } = require("../engine/orchestrator/dist/router/judge-runtime.js");
+const { evaluateZeroShot } = require("../engine/orchestrator/dist/router/judge-eval.js");
 const enc = {
   modelRevision: "mock-contract-v1",
   maxContextTokens: 512,

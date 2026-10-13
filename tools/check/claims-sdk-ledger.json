@@ -9,6 +9,11 @@
     "engine/orchestrator/src/worklog/attribution.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
     "engine/orchestrator/src/worklog/dream-sandbox.ts": "v1.5.4 tag 期交付的 SDK/内部面（本地 worktree git describe 解析到 v1.5.3 判为新增件——文件自 v1.5.4 bump 批 623fe0b79 起未动，非本轮新增；按维护者裁定登记 SDK 面保留）",
     "engine/audit/src/industry-overlay.ts": "v1.3.7 交付的行业 overlay 自动发现（竞品吸收②）——本批仅 +3 行 SMB 键位（章一场景接入）；文件级零生产消费系既有形态（overlay 经 ruleset-loader 运行时按需加载非静态 import），按维护者裁定登记 SDK 面保留",
-    "engine/audit/src/cli-quick.ts": "零配置快审 CLI——经 umbrella 单入口**按路径 spawn 路由**调用（非静态 import），静态扫描不可见 ⇒ 非「零生产消费」。v1.5.9 旧 bin `sofagent-audit` 退役后，唯一调用形态即单入口路由，故登记 SDK 面保留（检查自陈通道：接线 / 登记 SDK 面台账 / 退役 三选一）。"
+    "engine/audit/src/cli-quick.ts": "零配置快审 CLI——经 umbrella 单入口**按路径 spawn 路由**调用（非静态 import），静态扫描不可见 ⇒ 非「零生产消费」。v1.5.9 旧 bin `sofagent-audit` 退役后，唯一调用形态即单入口路由，故登记 SDK 面保留（检查自陈通道：接线 / 登记 SDK 面台账 / 退役 三选一）。",
+    "engine/audit/src/rules/criteria/audit-criteria.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役",
+    "engine/audit/src/rules/criteria/criteria-quality-lint.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役",
+    "engine/orchestrator/src/router/collectors/active-sampling.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役",
+    "engine/orchestrator/src/router/collectors/hard-sample-collector.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役",
+    "engine/orchestrator/src/router/judge-eval.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役"
   }
 }

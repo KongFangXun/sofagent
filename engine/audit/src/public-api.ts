@@ -170,6 +170,29 @@
 // v1.6.0 BUG-13：写面留痕读出口（evolve CLI writesurface list 消费——留痕 SSOT 单源）
 /* @internal */ export { loadWriteSurfaceLog } from './write-surface-log';
 
+// v1.6.0 判定底座 SDK 面：判据三件公开导出（orchestrator 消费方经包名引用）
+export type {
+  AuditCriterion,
+  CriterionSet,
+  DefenseLine,
+  Disposition,
+  ProbabilitySource,
+  EvidenceReadiness,
+  AbstainReason,
+} from './rules/criteria/criteria-schema';
+export {
+  loadCriterionSet,
+  isCriterionEnabled,
+  validateCriterion,
+  CriteriaSchemaError,
+} from './rules/criteria/criteria-schema';
+export {
+  lintCriteria,
+  lintOrFail,
+  hardLabelList,
+} from './rules/criteria/criteria-quality-lint';
+export { AUDIT_CRITERIA, AUDIT_CRITERIA_RECONCILIATION } from './rules/criteria/audit-criteria';
+
 // ── 训练语料导出（MCP corpus_export 经包 main 入口消费此面）──
 /* @public */ export { exportRuleCorpus, generateVerifiers, buildRuleCorpusBody, signBody, jsonToYaml } from './export/exporter';
 /* @public */ export { buildVerifiersManifest, buildVerifiersWithOverrides, severityWeightOf } from './export/reward-mapping';
