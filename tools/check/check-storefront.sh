@@ -261,11 +261,11 @@ if [ -n "$GH_TOPIC_COUNT" ]; then
   if [ "$GH_TOPIC_COUNT" -lt 10 ] || [ "$GH_TOPIC_COUNT" -gt 20 ]; then
     echo "  ❌ [topics] 数量 ${GH_TOPIC_COUNT} 不在 [10,20]——过少放弃站内搜索入口，过多稀释相关性"
     FAILS=$((FAILS + 1))
-  elif [ -n "$GH_TOPIC_LIST" ] && ! echo "$GH_TOPIC_LIST" | grep -qi 'fde'; then
+  elif [ -n "$GH_TOPIC_LIST" ] && ! grep -qi 'fde' <<< "$GH_TOPIC_LIST"; then
     echo "  ❌ [topics] 身份词 fde 缺席——差异化身份词（description/glama 均拿它当第一差异化词）不在 topics"
     echo "      当前：${GH_TOPIC_LIST}"
     FAILS=$((FAILS + 1))
-  elif [ -n "$GH_TOPIC_LIST" ] && ! { echo "$GH_TOPIC_LIST" | grep -qiE 'mcp|ai-agents|llm'; }; then
+  elif [ -n "$GH_TOPIC_LIST" ] && ! grep -qiE 'mcp|ai-agents|llm' <<< "$GH_TOPIC_LIST"; then
     echo "  ❌ [topics] 核心品类词（mcp / ai-agents / llm 至少其一）缺席"
     echo "      当前：${GH_TOPIC_LIST}"
     FAILS=$((FAILS + 1))
