@@ -5,14 +5,14 @@
   "SECURITY.md": 50965,
   "CONTRIBUTING.md": 12849,
   "docs/API.md": 15400,
-  "docs/ARCHITECTURE.md": 90423,
+  "docs/ARCHITECTURE.md": 90781,
   "docs/COMMUNITY.md": 2414,
   "docs/DEVELOPMENT.md": 32526,
   "docs/HANDBOOK.md": 32943,
   "docs/LIMITATIONS.md": 43424,
   "docs/PHILOSOPHY.md": 34475,
   "docs/ROADMAP.md": 18269,
-  "docs/THANKS.md": 18016,
+  "docs/THANKS.md": 18037,
   "docs/VALIDATION.md": 21991,
   "docs/WIKI.md": 23512,
   "FDE/GUIDE.md": 43906,
@@ -29,6 +29,6 @@
     "opening_rule": "抬头块 = H1 到首个 `## ` 之间的正文；字数只计文本字符，剔除装饰行（HTML 标签行 / 纯图片 / 纯徽章 / HTML 注释 / `---`）与 YAML front matter。超限处置三选一：下沉正文 / 精简 / 淘汰。",
     "origin": "文档瘦身批（2026-09-29）：口径由「物理行数」换成「字符数」（用户裁定：行数是坏指标，控字数不控行数）。基线 = 换算时点实测值。",
     "consumed_by": "doc-discipline.sh Face 6（字数棘轮）+ Face 7（抬头块闸）",
-    "note": "v1.6.0-bugfix Batch C 修复性净增同步基线（均两轮自精简后剩余为任务书必要内容）：README.md +110（翻牌补行/--platform 披露/首屏折叠）;SECURITY.md +73（密钥隔离披露）;docs/API.md +2（GMT+8 措辞）;docs/COMMUNITY.md +2（GMT+8）;docs/LIMITATIONS.md +224（Dream Cycle 落点条目）;docs/PHILOSOPHY.md +66（open-core 对齐）;docs/ROADMAP.md +283（迭代表 v1.5.9 行）;docs/THANKS.md +2（GMT+8）;docs/WIKI.md +31（日期对齐）;FDE/README.md +79（S1M 排期限定+零依赖锚定） | v1.6.0 Batch D/E/G 修复性净增二次同步：README.md 20846→21060(+214);README.en.md 40664→40736(+72);docs/ARCHITECTURE.md 89591→89614(+23);docs/DEVELOPMENT.md 32317→32526(+209);docs/HANDBOOK.md 32831→32943(+112);docs/LIMITATIONS.md 43132→43424(+292);docs/PHILOSOPHY.md 34402→34475(+73);docs/WIKI.md 23505→23512(+7);FDE/GUIDE.md 43582→43906(+324);tools/README.md 23140→23532(+392)；2026-10-13 判定件生态落盘批三上调 docs/THANKS.md 16876→18016（+1140）：六条外部对照件来源行（DM-1 Open Jev 150M 编码器单前向出类型化问题、400 例自测校准优于 Jev 2.5× · DM-2 LLM2Jev · DM-3 vLLM-Jev · GOV-1 AI Decision System · RSI-1 Decision OS LoopKit · RSI-2 Decision Intelligence Runtime）+ jevbench 行数据端点面读数前移 v1.6.1（n_ranked 92→135 / roster_count 173 / source_sha256 换值）。三道闸：① 口径无误（GitHub repo API 实核许可与星数 · jevbench 数据端点重取）② 无陈旧可清（jevbench 行属旧读数替换，旧值已删）③ 正当新增；属外部对照件登记，无同文档可移出项；单行体例压至 ≤300 字符且单行加粗 ≤4 对（Open Jev 行首版 337 UTF-16 / 加粗 7 对 ⇒ 压至 283 / 3 对），Face 5 墙式行实测未升 | v1.6.0-dev 开工基线同步：docs/ARCHITECTURE.md 89614→89802（+188：知识库消化新增『独立身份』IAM 条目（外部并行 session 产物，已精简）+ 两处来源块补链接（Face 3b 存量债清偿）——两轮自精简后剩余为有价值内容） | 基线回调 89802→89695：并行 9e85e7696 等量移出后字数回落——收紧留痕（债减少） | v1.6.0-dev 章一：ARCHITECTURE 89695→90423（+728 判定三原语节——章一任务书落点）"
+    "note": "v1.6.0-bugfix Batch C 修复性净增同步基线（均两轮自精简后剩余为任务书必要内容）：README.md +110（翻牌补行/--platform 披露/首屏折叠）;SECURITY.md +73（密钥隔离披露）;docs/API.md +2（GMT+8 措辞）;docs/COMMUNITY.md +2（GMT+8）;docs/LIMITATIONS.md +224（Dream Cycle 落点条目）;docs/PHILOSOPHY.md +66（open-core 对齐）;docs/ROADMAP.md +283（迭代表 v1.5.9 行）;docs/THANKS.md +2（GMT+8）;docs/WIKI.md +31（日期对齐）;FDE/README.md +79（S1M 排期限定+零依赖锚定） | v1.6.0 Batch D/E/G 修复性净增二次同步：README.md 20846→21060(+214);README.en.md 40664→40736(+72);docs/ARCHITECTURE.md 89591→89614(+23);docs/DEVELOPMENT.md 32317→32526(+209);docs/HANDBOOK.md 32831→32943(+112);docs/LIMITATIONS.md 43132→43424(+292);docs/PHILOSOPHY.md 34402→34475(+73);docs/WIKI.md 23505→23512(+7);FDE/GUIDE.md 43582→43906(+324);tools/README.md 23140→23532(+392)；2026-10-13 判定件生态落盘批三上调 docs/THANKS.md 16876→18016（+1140）；同日批四二次修订 18016→18037（+21）：Open Jev 行补「Jev 零样本、本件同分布 1,016 例训练」口径（本地实核厂商 README 与 measured.json 后）：六条外部对照件来源行（DM-1 Open Jev 150M 编码器单前向出类型化问题、400 例自测校准优于 Jev 2.5× · DM-2 LLM2Jev · DM-3 vLLM-Jev · GOV-1 AI Decision System · RSI-1 Decision OS LoopKit · RSI-2 Decision Intelligence Runtime）+ jevbench 行数据端点面读数前移 v1.6.1（n_ranked 92→135 / roster_count 173 / source_sha256 换值）。三道闸：① 口径无误（GitHub repo API 实核许可与星数 · jevbench 数据端点重取）② 无陈旧可清（jevbench 行属旧读数替换，旧值已删）③ 正当新增；属外部对照件登记，无同文档可移出项；单行体例压至 ≤300 字符且单行加粗 ≤4 对（Open Jev 行首版 337 UTF-16 / 加粗 7 对 ⇒ 压至 283 / 3 对），Face 5 墙式行实测未升 | v1.6.0-dev 开工基线同步：docs/ARCHITECTURE.md 89614→89802（+188：知识库消化新增『独立身份』IAM 条目（外部并行 session 产物，已精简）+ 两处来源块补链接（Face 3b 存量债清偿）——两轮自精简后剩余为有价值内容） | 基线回调 89802→89695：并行 9e85e7696 等量移出后字数回落——收紧留痕（债减少） | v1.6.0-dev 章一：ARCHITECTURE 89695→90423（+728 判定三原语节——章一任务书落点） | v1.6.0-dev 章二：ARCHITECTURE 90423→90776（+353 判据集与规则集关系节） | 章二收口：路径同步+wall 折行（90776→90780）"
   }
 }
