@@ -15,7 +15,7 @@
 # ============================================================
 set -uo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$PROJECT_ROOT"
+cd "$PROJECT_ROOT" || exit 1
 
 python3 - <<'PYEOF'
 import json, os, re, sys
