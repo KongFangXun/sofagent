@@ -640,14 +640,27 @@ if command -v npm &>/dev/null; then
   info "  dist 路径探测: $LOCAL_AUDIT_DIST $([ -f "$LOCAL_AUDIT_DIST" ] && echo '存在 → 走仓库本地 dist' || echo '不存在 → 走全局 npm 包')"
   if [ -f "$LOCAL_AUDIT_DIST" ]; then
     # 仓库本地构建已就绪，创建 wrapper 到全局路径
+    # v1.6.0 BUG-48 修复：旧 wrapper 名 sofagent-audit 已于 v1.5.9 显式退役（S222/S476
+    # 反向断言在案），安装器不得复活退役名。改为：
+    #   ① sofagent 单入口 wrapper（本地 dist 直跑，本地分支的主出口）；
+    #   ② sofagent-audit 降为弃用 stub（打印退役提示 + 新入口后 exit 2，与 v2.0.0
+    #     章六「显式退役」语义一致，不破坏既有引用的可发现性）。
     mkdir -p "$NPM_GLOBAL_BIN" 2>/dev/null || true
-    cat > "$NPM_GLOBAL_BIN/sofagent-audit" << WRAPPER_EOF
+    cat > "$NPM_GLOBAL_BIN/sofagent" << WRAPPER_EOF
 #!/usr/bin/env bash
-# sofagent-audit wrapper（从仓库本地 dist 安装）
+# sofagent 单入口 wrapper（从仓库本地 dist 安装——audit-first：无参直通审计）
 exec node "$LOCAL_AUDIT_DIST" "\$@"
 WRAPPER_EOF
+    chmod +x "$NPM_GLOBAL_BIN/sofagent" 2>/dev/null || true
+    cat > "$NPM_GLOBAL_BIN/sofagent-audit" << STUB_EOF
+#!/usr/bin/env bash
+# sofagent-audit 已于 v1.5.9 退役（兼容期届满，12 个旧 bin 显式移除）。
+# 统一走单入口：sofagent audit <范围>（如 sofagent audit HEAD~1..HEAD）。
+echo "❌ sofagent-audit 已于 v1.5.9 退役——统一走单入口：sofagent audit <范围>" >&2
+exit 2
+STUB_EOF
     chmod +x "$NPM_GLOBAL_BIN/sofagent-audit" 2>/dev/null || true
-    ok "  @sofagent/audit 已从仓库本地安装（$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "v${VERSION}")）"
+    ok "  @sofagent/audit 已从仓库本地安装（$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "v${VERSION}")）——入口：sofagent"
   else
     # @latest → 固定版本（供应链纪律：安装版本与仓库声明一致，不漂移到未审的 registry 最新）
     # v1.5.2 修复：@latest 降级改为 fail-closed（供应链纪律兑现）
@@ -712,13 +725,23 @@ deploy_hook            # Step 6: 部署加载链 Hook（仅 OpenClaw）
 # 防「hook 没装成但摘要说已就绪，下次 commit 自动生效」的假承诺。
 INSTALL_HOOK_STATUS="skipped"
 export INSTALL_HOOK_STATUS
-if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
+# v1.6.0 BUG-46 修复：原门槛 `command -v sofagent-audit` 恒假（bin 已于 v1.5.9 退役）
+# ⇒ 主安装路径 hooks 永不安装（F-28 补装分支成死代码）。
+# 门槛改确定性路径判定（不依赖 PATH 时序——Step 6.5 跑在 Step 8.5 symlink 之前，
+# command -v sofagent 首装时仍为假，不得用）：
+#   ① install.sh 自己产出的确定性 router 路径；
+#   ② 本地 audit dist 直跑（node .../dist/index.js --install-hook，不经 PATH）。
+if { [ -f "$SOFAGENT_HOME/bin/sofagent-router" ] || [ -f "$LOCAL_AUDIT_DIST" ] || [ -n "$(npm root -g 2>/dev/null)" ]; } && git rev-parse --git-dir >/dev/null 2>&1; then
   info "Step 6.5 · 安装 git commit-msg + post-commit hook..."
-  if sofagent-audit --install-hook 2>/dev/null; then
+  if [ -f "$SOFAGENT_HOME/bin/sofagent-router" ] && node "$SOFAGENT_HOME/bin/sofagent-router" audit --install-hook 2>/dev/null; then
     ok "  git commit-msg + post-commit hook 已安装"
     INSTALL_HOOK_STATUS="ok"; export INSTALL_HOOK_STATUS
+  elif [ -f "$LOCAL_AUDIT_DIST" ] && node "$LOCAL_AUDIT_DIST" --install-hook 2>/dev/null; then
+    # 本地 dist 直跑（不经 PATH）：registry 未发布本版时仍可装 hook
+    ok "  git commit-msg + post-commit hook 已安装（本地 dist 直装）"
+    INSTALL_HOOK_STATUS="ok"; export INSTALL_HOOK_STATUS
   else
-    warn "  git hook 安装失败，请手动运行 sofagent-audit --init"
+    warn "  git hook 安装失败，请手动运行: sofagent audit --install-hook"
     INSTALL_HOOK_STATUS="failed"; export INSTALL_HOOK_STATUS
   fi
   # hook 版本对账提示（只提示不阻断——升级感知，防「引擎已升级、仓库跑旧 hook」）
@@ -948,7 +971,7 @@ case "$COMMAND" in
       echo "daemon: not initialized"
     fi
     echo "data: $SOFAGENT_HOME/data/"
-    echo "note: registry 态不含仓库审计命令——仓库审计用 sofagent-audit（npx -p @sofagent/audit sofagent-audit）"
+    echo "note: registry 态不含仓库审计命令——仓库审计用 sofagent audit（npx -y -p sofagent sofagent audit）"
     ;;
   where)
     # 安装位置
@@ -1028,18 +1051,55 @@ CLIEOF
   # v1.5.6 章一：登记域路由（npm 裸名 sofagent）供 wrapper 非保留字命令转发。
   # v1.5.7 F22：router 源优先「安装态持久位置」——仓库 clone（--remote / curl pipe bash）
   # 场景下 SCRIPT_DIR 位于易失目录，软链直指 clone 内文件会在源清理后悬空
-  # （实测复现：clone 删除后 sofagent-router → 不存在目标）。改为先把 umbrella 入口
-  # 复制到 $SOFAGENT_HOME/bin/sofagent-router.js 留存副本，软链指向该副本
-  # （拷贝自包含，与 Dashboard 入口的「易失源拷贝」先例同模式）；全局 npm 探测
-  # 保留为无仓库源时的回退（npm 全局根是持久位置，无需拷贝）。
+  # （实测复现：clone 删除后 sofagent-router → 不存在目标）。
+  # v1.6.0 BUG-47 修复：单纯拷贝 sofagent.js 到 $SOFAGENT_HOME/bin/ 不足以让
+  # router 解析——router 的 createRequire 从**自身位置**解析 @sofagent/* 域包，
+  # 拷贝副本脱离 node_modules 解析链 ⇒ `sofagent <域>` 恒 MODULE_NOT_FOUND；
+  # 且 wrapper 用 exec 转发，副本存在即取代进程，全局 npm 回退分支永不可达。
+  # 选定方案 a（侵入度最小）：把 umbrella 包**整体**安装到用户态——
+  # $SOFAGENT_HOME/lib/sofagent-router/ 写最小 package.json（钉 ${VERSION}，禁硬编码）
+  # + npm install --omit=dev + 拷 sofagent.js 入内——router 从自身位置即可解析。
   local router_src=""
+  local router_install_ok=0
+  local router_home_lib="${SOFAGENT_HOME}/lib/sofagent-router"
   if [ -f "${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js" ]; then
-    local router_persistent="${SOFAGENT_HOME}/bin/sofagent-router.js"
-    if cp "${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js" "$router_persistent" 2>/dev/null && [ -f "$router_persistent" ]; then
-      router_src="$router_persistent"
-      ok "  域路由入口已留存持久副本（防易失源悬空）：$router_persistent"
+    # 步骤 1：构建用户态自包含路由包（持久、独立于 clone 源与全局 npm）
+    mkdir -p "${router_home_lib}/bin" 2>/dev/null || true
+    local router_pkg_json="${router_home_lib}/package.json"
+    if ! [ -f "$router_pkg_json" ] || grep -q '"version"' "$router_pkg_json" 2>/dev/null; then
+      # 每次安装重写（版本钉值随 VERSION 变量走——禁硬编码，防 lockfile 类漂移）
+      cat > "$router_pkg_json" << ROUTERPKG_EOF
+{
+  "name": "sofagent-router",
+  "private": true,
+  "version": "${VERSION}",
+  "description": "sofagent 单入口域路由（安装态自包含形态）——由 install.sh 生成，勿手工编辑",
+  "dependencies": {
+    "@sofagent/audit": "${VERSION}",
+    "@sofagent/core": "${VERSION}",
+    "@sofagent/daemon": "${VERSION}",
+    "@sofagent/orchestrator": "${VERSION}",
+    "@sofagent/ontology": "${VERSION}",
+    "@sofagent/evolve": "${VERSION}",
+    "@sofagent/eval": "${VERSION}",
+    "@sofagent/think": "${VERSION}",
+    "@sofagent/ab-test": "${VERSION}",
+    "@sofagent/mcp": "${VERSION}"
+  }
+}
+ROUTERPKG_EOF
+    fi
+    if cp "${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js" "${router_home_lib}/bin/sofagent.js" 2>/dev/null && [ -f "${router_home_lib}/bin/sofagent.js" ]; then
+      if npm install --omit=dev --prefix "${router_home_lib}" >/dev/null 2>&1; then
+        router_src="${router_home_lib}/bin/sofagent.js"
+        router_install_ok=1
+        ok "  域路由已整体安装到用户态（自包含，clone 删除/无全局包均可用）：${router_home_lib}"
+      else
+        warn "  域路由依赖安装失败（npm install --prefix ${router_home_lib}）——回退软链仓库源（易失源场景可能悬空）"
+        router_src="${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js"
+      fi
     else
-      warn "  域路由持久副本拷贝失败（${router_persistent}）——回退直链仓库源（易失源场景可能悬空）"
+      warn "  域路由入口拷贝失败（${router_home_lib}/bin/sofagent.js）——回退直链仓库源（易失源场景可能悬空）"
       router_src="${SCRIPT_DIR}/engine/umbrella/bin/sofagent.js"
     fi
   else
@@ -1047,6 +1107,7 @@ CLIEOF
     g_npm_root="$(npm root -g 2>/dev/null || true)"
     if [ -n "$g_npm_root" ] && [ -f "$g_npm_root/sofagent/bin/sofagent.js" ]; then
       router_src="$g_npm_root/sofagent/bin/sofagent.js"
+      router_install_ok=1
     fi
   fi
   if [ -n "$router_src" ]; then
@@ -1789,8 +1850,8 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   # ── v1.4.3 第九章：完成提示分层（三条产品线——命令逐条真实，无断头路）──
   echo -e "  ${BOLD}装好即用（核心约束层）：${NC}"
   echo -e "  · ${BOLD}sofagent web${NC} 起 Dashboard（工作明细/图谱/审计分析/训练任务区块）"
-  echo -e "  · ${BOLD}sofagent-audit <范围>${NC} 审计一次变更（如 sofagent-audit HEAD~1..HEAD）"
-  echo -e "  · ${BOLD}sofagent-audit --stats${NC} 看近 30 天治理 KPI（触发率/阻断率——v1.4.3）"
+  echo -e "  · ${BOLD}sofagent audit <范围>${NC} 审计一次变更（如 sofagent audit HEAD~1..HEAD）"
+  echo -e "  · ${BOLD}sofagent audit --full --stats${NC} 看近 30 天治理 KPI（触发率/阻断率——v1.4.3）"
   echo ""
   echo -e "  ${BOLD}可选·后训模块（需要 GPU 环境）：${NC}"
   echo -e "  · 先体检：${BOLD}bash tools/train/train-env-init.sh${NC} 一键装训练环境（含反作弊双防线默认配置）"

@@ -100,11 +100,18 @@ export function getEnvFingerprint(dataDir?: string): string {
 
 /**
  * HMAC 密钥路径（v1.1.8+）
- * 来自 ~/.sofagent-key（建议 chmod 600，Agent 默认不读取）。
- * 支持 SOFAGENT_KEY_PATH 环境变量覆盖（测试隔离用，避免测试触碰真实密钥）。
+ * 优先级：SOFAGENT_KEY_PATH 覆盖 > $SOFAGENT_HOME/.sofagent-key（密钥随隔离面走，
+ * v1.6.0 BUG-51：企业多项目隔离叙事下链签名密钥不再全局单点）> 旧路径
+ * ~/.sofagent-key（向后兼容：已存在的旧路径密钥自动被读，doctor 提示迁移）。
  */
 function getSofagentKeyPath(): string {
-  return process.env.SOFAGENT_KEY_PATH || join(homedir(), '.sofagent-key');
+  if (process.env.SOFAGENT_KEY_PATH) return process.env.SOFAGENT_KEY_PATH;
+  // 隔离面优先：SOFAGENT_HOME 设定时密钥随面走（同一隔离面共用同一把密钥，
+  // 不同隔离面互不可见——与 data 目录的隔离语义一致）
+  const home = process.env.SOFAGENT_HOME;
+  if (home) return join(home, '.sofagent-key');
+  // 兼容旧路径：未设 SOFAGENT_HOME 时旧位置仍有效（历史链签名不失效）
+  return join(homedir(), '.sofagent-key');
 }
 
 /** 本进程内「缺失即生成」的密钥缓存——同进程同一路径只生成一次（避免并发写多个密钥文件） */

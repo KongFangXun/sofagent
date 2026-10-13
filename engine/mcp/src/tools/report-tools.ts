@@ -27,7 +27,9 @@ interface CapabilityManifest {
     dependsOn: string[];
     disabledImpact: string;
   }>;
-  shims: Array<{ id: string; cli: string; trigger: string; action: string }>;
+  /** v1.5.9 键迁移：shims → shimsRetired（12 条退役台账；shims 保留空数组兼容旧读侧） */
+  shims: Array<{ id: string; cli: string; trigger?: string; action?: string }>;
+  shimsRetired?: Array<{ id: string; carrier: string; cli: string; retiredIn: string; reason: string }>;
 }
 
 /**
@@ -59,6 +61,8 @@ function loadCapabilityManifest(): CapabilityManifest | null {
   if (p === '') return null;
   try {
     const doc = JSON.parse(readFileSync(p, 'utf8')) as CapabilityManifest;
+    // v1.6.0 BUG-04 修复：shimsRetired 用 Array.isArray 判可达（v1.5.9 键迁移后
+    // 旧判定只查 doc.shims——两侧同读空数组导致「[]==[]」假绿与「台账 0 条」误渲染）
     if (!doc || !Array.isArray(doc.capabilities) || !Array.isArray(doc.shims)) return null;
     return doc;
   } catch {
@@ -128,7 +132,7 @@ export function listCapabilities(): ToolResult {
           dependsOn: string[];
           disabledImpact: string;
         }>;
-        shimRegistry: { count: number; note: string; shims: Array<{ id: string; cli: string; trigger: string; action: string }> };
+        shimsRetiredRegistry: { count: number; note: string; entries: Array<{ cli: string; carrier: string; retiredIn: string; reason: string }> };
       }
     | { source: string } = manifest
     ? {
@@ -144,10 +148,16 @@ export function listCapabilities(): ToolResult {
           dependsOn: c.dependsOn,
           disabledImpact: c.disabledImpact,
         })),
-        shimRegistry: {
-          count: manifest.shims.length,
-          note: '旧命令转发 shim 退役台账（触发条件 = 兼容期届满，动作 = 移除；名单 SSOT = docs/changelog/v1.5/v1.5.6.md 章一附录）',
-          shims: manifest.shims.map((s) => ({ id: s.id, cli: s.cli, trigger: s.trigger, action: s.action })),
+        // v1.6.0 BUG-04：渲染退役台账（shimsRetired），不再渲染已迁空的 shims
+        shimsRetiredRegistry: {
+          count: Array.isArray(manifest.shimsRetired) ? manifest.shimsRetired.length : 0,
+          note: '旧命令转发 shim 退役台账（已全退役；名单 SSOT = engine/capabilities.json shimsRetired）',
+          entries: (Array.isArray(manifest.shimsRetired) ? manifest.shimsRetired : []).map((s) => ({
+            cli: s.cli,
+            carrier: s.carrier,
+            retiredIn: s.retiredIn,
+            reason: s.reason,
+          })),
         },
       }
     : {
@@ -171,7 +181,10 @@ export function listCapabilities(): ToolResult {
       lines.push(`  - [${u.domain}] ${u.id}（载体 ${u.carrier}）：档位 ${u.gate} 默认${u.gateDefault ? '开' : '关'}${'env' in u ? `（env: ${u.env}）` : ''}${dep}`);
       lines.push(`      关档失效面：${u.disabledImpact}`);
     }
-    lines.push(`  - shim 台账：${capabilityMap.shimRegistry.count} 条旧命令转发 shim（${capabilityMap.shimRegistry.shims.map((s) => s.cli).join(' / ')}）`);
+    lines.push(`  - shim 退役台账：${capabilityMap.shimsRetiredRegistry.count} 条（已全退役）`);
+    for (const e of capabilityMap.shimsRetiredRegistry.entries) {
+      lines.push(`      · ${e.cli}（载体 ${e.carrier}）— ${e.retiredIn} 退役：${e.reason}`);
+    }
   } else {
     lines.push(`可拔能力地图：${capabilityMap.source}`);
   }

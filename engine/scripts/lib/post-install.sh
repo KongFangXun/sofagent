@@ -91,11 +91,11 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   # 「cat docs/HANDBOOK.md」是仓库相对路径，仅在 git clone install.sh 形态下成立。
   # npm 全局安装形态（install.sh 内 npm install -g @sofagent/audit 分支）下
   # CWD 无 engine/ 与 docs/ 目录，指路断链。判定：安装产物目录里有 verify.sh
-  # 则给仓库内相对路径；否则给全局命令形态（sofagent-core verify / npm docs）。
-  if [ -f "${SOFAGENT_HOME}/bin/sofagent" ] && command -v sofagent-core >/dev/null 2>&1; then
+  # 则给仓库内相对路径；否则给全局命令形态（sofagent core verify / npm docs）。
+  if [ -f "${SOFAGENT_HOME}/bin/sofagent" ] && command -v sofagent >/dev/null 2>&1; then
     # npm 全局形态：CLI 已入 PATH
-    echo "  1. 验证安装：sofagent-core verify"
-    echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
+    echo "  1. 验证安装：sofagent core verify"
+    echo "  2. 在你的 git 项目初始化审计：sofagent audit --init"
     echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
     echo "  4. 5 分钟入门：npm docs @sofagent/audit（或访问仓库 docs/HANDBOOK.md）"
   else
@@ -104,12 +104,12 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
     # 相对路径必断链，按 verify.sh 存在性分流，改指全局命令 + PATH 修复提示（v1.4.8 修复）
     if [ -f "${SCRIPT_DIR:-}/engine/scripts/verify.sh" ]; then
       echo "  1. 验证安装：bash \"${SCRIPT_DIR}/engine/scripts/verify.sh\""
-      echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
+      echo "  2. 在你的 git 项目初始化审计：sofagent audit --init"
       echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
       echo "  4. 5 分钟入门：cat \"${SCRIPT_DIR}/docs/HANDBOOK.md\""
     else
-      echo '  1. 验证安装：npm install -g @sofagent/core && sofagent-core verify（bootstrap 形态只装 @sofagent/audit，core 属按需可选包；若 command not found，先: export PATH="$HOME/.local/bin:$PATH"，步骤 2 的 sofagent-audit --init 同样依赖此 PATH）'
-      echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
+      echo '  1. 验证安装：npm install -g sofagent && sofagent core verify（bootstrap 形态只装 @sofagent/audit，裸名总包属按需可选；若 command not found，先: export PATH="$HOME/.local/bin:$PATH"，步骤 2 的 sofagent audit --init 同样依赖此 PATH）'
+      echo "  2. 在你的 git 项目初始化审计：sofagent audit --init"
       echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
       echo "  4. 5 分钟入门：npm docs @sofagent/audit（或访问仓库 docs/HANDBOOK.md）"
     fi
@@ -128,8 +128,8 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   # 原无条件「已就绪，下次 commit 自动生效」在 hook 未装成时是假承诺。
   case "${INSTALL_HOOK_STATUS:-skipped}" in
     ok)      echo "  ✅ sofagent 已就绪，下次 git commit 自动生效" ;;
-    failed)  echo "  ⚠️  git hook 安装失败——下次 git commit 不会自动审计，请手动运行: sofagent-audit --init" ;;
-    *)       echo "  ℹ️  当前目录非 git 仓库或引擎未就绪——hook 未安装；进入 git 项目后运行: sofagent-audit --init" ;;
+    failed)  echo "  ⚠️  git hook 安装失败——下次 git commit 不会自动审计，请手动运行: sofagent audit --init" ;;
+    *)       echo "  ℹ️  当前目录非 git 仓库或引擎未就绪——hook 未安装；进入 git 项目后运行: sofagent audit --init" ;;
   esac
   [ "$PLATFORM" = "openclaw" ] || return 0
   # API Key 提醒 + Hook 状态提示（仅 OpenClaw）
@@ -146,7 +146,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
     echo "  ⚠️  Hook 未注册 → 约束层不会自动加载"
     echo "     在 ${HOOK_CONFIG} 的 hooks.internal.entries 添加："; echo '     {"sofagent-load-chain":{"enabled":true}}'
   fi
-  echo '  💡 运行 `sofagent-core verify` 验证安装是否完整。'
+  echo '  💡 运行 `sofagent core verify` 验证安装是否完整。'
 }
 # v1.2.2 F-09: 关键组件部署校验——安装后自检
 verify_component_integrity() {
