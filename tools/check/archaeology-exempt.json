@@ -111,6 +111,31 @@
       "file": "playbook/regression-checklist.md",
       "anchor": "dist 规则数非 17/28，README 同步",
       "reason": "断言行内注释的版本口径（17 默认/28 总规则数对账）——能力版本门槛类（对齐『vX.Y.Z+ 起支持』豁免判据），非出身考古"
+    },
+    {
+      "file": "docs/changelog/releasing/05-release-gate.md",
+      "anchor": "driver 启动时自动扫描最近 run 的 `resume-point.json`",
+      "reason": "v1.5.9 实锤注记=故障出处标注（断点劫持案例的版本溯源），非规则生效条件"
+    },
+    {
+      "file": "docs/changelog/releasing/09-publish.md",
+      "anchor": "🔴 **新 job 用到 git tag / 全历史的守卫必须 fetch-depth: 0**",
+      "reason": "v1.5.9 实锤注记=故障出处标注（浅检假红案例溯源）"
+    },
+    {
+      "file": "docs/changelog/releasing/09-publish.md",
+      "anchor": "🔴 **install.sh 钉值 / lib 哈希回填必须与 bump 同批、tag 同 commit**",
+      "reason": "v1.5.9 两轮实测注记=时序规则的经验出处"
+    },
+    {
+      "file": "docs/changelog/releasing/09-publish.md",
+      "anchor": "本轮（v1.5.9）实测补充——bump 手工配套清单",
+      "reason": "清单标题的版本出处标注（清单本体是通用规则）"
+    },
+    {
+      "file": "docs/changelog/releasing/troubleshooting.md",
+      "anchor": "处方唯一源（v1.5.9 两轮实测收口",
+      "reason": "出处标注（处方本体通用）"
     }
   ],
   "exemptAnchors_spec": {

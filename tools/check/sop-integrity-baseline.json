@@ -7,7 +7,8 @@
   "a4MinHeadings": 2,
   "indexExempt": [
     "auto-converge-protocol.md",
-    "troubleshooting.md"
+    "troubleshooting.md",
+    "release-artifacts.md"
   ],
   "files": {
     "01-review.md": {
