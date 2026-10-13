@@ -106,9 +106,26 @@ export const workflowDocSchema = z.object({
           .object({ schedule: z.string().min(1, 'trigger.schedule 非空') })
           .optional(),
         visibility: z.enum(['open', 'private', 'result-only']).optional(),
+        /** 人工红线（v1.6.0 章十：凭证变更/资金操作类节点永远产 PR 待审——approver: "auto" 不可覆盖） */
+        humanOnly: z.boolean().optional(),
       }),
     )
     .min(1, 'nodes 至少 1 个'),
+  /** 循环声明块（v1.6.0 章十：缺整块 = 非 loop workflow 行为零变化） */
+  loop: z
+    .object({
+      enabled: z.boolean(),
+      exit_when: z.string().min(1, 'loop.exit_when 非空（退出判据——fail-closed）'),
+      max_iterations: z.number().int().min(1, 'loop.max_iterations ≥1（防死循环）'),
+      budget: z.object({
+        max_tokens_per_cycle: z.number().min(1),
+        max_cycles_per_day: z.number().min(1),
+      }),
+      idle: z.object({ probe: z.string().min(1) }).optional(),
+      readonly: z.boolean().optional(),
+      concurrency: z.object({ max_running_cycles_per_owner: z.number().int().min(1) }).optional(),
+    })
+    .optional(),
   merge_criteria: z.array(z.record(z.string(), z.unknown())).optional(),
   approver: z
     .object({
@@ -119,6 +136,27 @@ export const workflowDocSchema = z.object({
     })
     .optional(),
 });
+
+/**
+ * humanOnly 互斥断言（v1.6.0 章十）：humanOnly: true 节点永远产 PR 待审——
+ * approver.kind === 'agent'（自动批准）与之并存即拒载（红线不可被策略覆盖）。
+ * 同时校验 loop.enabled=true 时 exit_when 必在（schema 层第二道 fail-closed）。
+ */
+export function assertLoopAndHumanOnlyInvariants(workflow: {
+  nodes: Array<{ humanOnly?: boolean }>;
+  loop?: { enabled: boolean; exit_when: string };
+  approver?: { kind?: string };
+}): string[] {
+  const errs: string[] = [];
+  const hasHumanOnly = workflow.nodes.some((n) => n.humanOnly === true);
+  if (hasHumanOnly && workflow.approver?.kind === 'agent') {
+    errs.push('humanOnly: true 节点与 approver.kind="agent"（自动批准）并存——人工红线不可被 approver 策略覆盖（fail-closed 拒载）');
+  }
+  if (workflow.loop?.enabled === true && (!workflow.loop.exit_when || workflow.loop.exit_when.trim() === '')) {
+    errs.push('loop.enabled=true 但 exit_when 缺失/不可判定——自循环必须声明退出条件（fail-closed 拒载）');
+  }
+  return errs;
+}
 
 /** workflow_create 入参 */
 export const workflowCreateSchema = z.object({

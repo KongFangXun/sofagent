@@ -137,6 +137,29 @@ export interface ParsedWorkflow {
   mergeCriteria?: MergeCriterion[];
   /** 审阅协议：approver（审阅批准者，v1.3.6 新增） */
   approver?: WorkflowApprover;
+  /** 循环声明块（v1.6.0 章十：自循环 workflow 的防护三件套） */
+  loop?: LoopBlock;
+}
+
+/** 循环声明块（v1.6.0 章十——缺整块 = 非 loop workflow，行为零变化） */
+export interface LoopBlock {
+  /** 显式声明这是自循环 workflow */
+  enabled: boolean;
+  /** 退出判据（merge_criteria 同款机器可判定语法——缺失或不可判定即拒载） */
+  exitWhen: string;
+  /** 迭代硬上限（防死循环） */
+  maxIterations: number;
+  /** 预算熔断 */
+  budget: {
+    maxTokensPerCycle: number;
+    maxCyclesPerDay: number;
+  };
+  /** 闲时只读探针（订阅 timer.tick 做只读巡检，产出 PR 提案而非直接改） */
+  idle?: { probe: string };
+  /** 闲时探针只读 */
+  readonly?: boolean;
+  /** owner 级并发额度（超限的新循环排队不启动） */
+  concurrency?: { maxRunningCyclesPerOwner: number };
 }
 
 /** SubAgent 配置（供 dag-runner 封装为 task tool） */
@@ -471,8 +494,13 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
     }
   }
 
-  // 环检测（DFS 三色标记）
-  assertAcyclic(nodes);
+  // 环检测（DFS 三色标记）——v1.6.0 章十改判：loop.enabled 的自循环 workflow
+  // 排除出 DAG 环检查（改查「事件环有退出条件」——exit_when 校验见 loop 块提取）；
+  // 非 loop workflow 的 DAG 禁环约束不变（确定性审计依赖）。
+  const isLoopWorkflow = typeof wfObj['loop'] === 'object' && (wfObj['loop'] as Record<string, unknown>)['enabled'] === true;
+  if (!isLoopWorkflow) {
+    assertAcyclic(nodes);
+  }
 
   // ── 审阅协议字段提取（v1.3.6 新增 · GitHub 式协作底座）──
   // merge_criteria / approver 原样透传（schema 结构校验在 container.ts，
@@ -485,12 +513,51 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
       ? (wfObj['approver'] as WorkflowApprover)
       : undefined;
 
+  // ── 循环声明块提取（v1.6.0 章十：loop: 缺整块 = 非 loop workflow）──
+  let loop: LoopBlock | undefined;
+  const loopRaw = wfObj['loop'];
+  if (typeof loopRaw === 'object' && loopRaw !== null) {
+    const lb = loopRaw as Record<string, unknown>;
+    const enabled = lb['enabled'] === true;
+    const exitWhen = typeof lb['exit_when'] === 'string' ? (lb['exit_when'] as string) : undefined;
+    const maxIterations = typeof lb['max_iterations'] === 'number' ? (lb['max_iterations'] as number) : undefined;
+    const budgetRaw = typeof lb['budget'] === 'object' && lb['budget'] !== null ? (lb['budget'] as Record<string, unknown>) : undefined;
+    const maxTokensPerCycle = budgetRaw && typeof budgetRaw['max_tokens_per_cycle'] === 'number' ? (budgetRaw['max_tokens_per_cycle'] as number) : undefined;
+    const maxCyclesPerDay = budgetRaw && typeof budgetRaw['max_cycles_per_day'] === 'number' ? (budgetRaw['max_cycles_per_day'] as number) : undefined;
+    const idleRaw = typeof lb['idle'] === 'object' && lb['idle'] !== null ? (lb['idle'] as Record<string, unknown>) : undefined;
+    const idleProbe = idleRaw && typeof idleRaw['probe'] === 'string' ? (idleRaw['probe'] as string) : undefined;
+    const concurrencyRaw = typeof lb['concurrency'] === 'object' && lb['concurrency'] !== null ? (lb['concurrency'] as Record<string, unknown>) : undefined;
+    const maxRunning = concurrencyRaw && typeof concurrencyRaw['max_running_cycles_per_owner'] === 'number' ? (concurrencyRaw['max_running_cycles_per_owner'] as number) : undefined;
+    if (enabled) {
+      // fail-closed：exit_when 缺失或不可判定即拒载（报错含修复指引）
+      if (!exitWhen || exitWhen.trim().length === 0) {
+        throw new WorkflowParseError('loop.enabled=true 但 exit_when 缺失——自循环 workflow 必须声明退出判据（fail-closed 拒载）。修法：在 loop: 块补 exit_when: "<merge_criteria 同款语法>"');
+      }
+      if (maxIterations === undefined || maxIterations < 1) {
+        throw new WorkflowParseError('loop.enabled=true 但 max_iterations 缺失或 <1（迭代硬上限——防死循环）');
+      }
+      if (maxTokensPerCycle === undefined || maxCyclesPerDay === undefined) {
+        throw new WorkflowParseError('loop.enabled=true 但 budget.max_tokens_per_cycle / max_cycles_per_day 缺失（预算熔断字段必填）');
+      }
+      loop = {
+        enabled,
+        exitWhen,
+        maxIterations,
+        budget: { maxTokensPerCycle, maxCyclesPerDay },
+        ...(idleProbe ? { idle: { probe: idleProbe } } : {}),
+        ...(typeof lb['readonly'] === 'boolean' ? { readonly: lb['readonly'] as boolean } : {}),
+        ...(maxRunning !== undefined ? { concurrency: { maxRunningCyclesPerOwner: maxRunning } } : { concurrency: { maxRunningCyclesPerOwner: 3 } }),
+      };
+    }
+  }
+
   return {
     name: typeof wfObj.name === 'string' ? wfObj.name : 'unnamed-workflow',
     description: typeof wfObj.description === 'string' ? wfObj.description : '',
     nodes,
     ...(mergeCriteria !== undefined ? { mergeCriteria } : {}),
     ...(approver !== undefined ? { approver } : {}),
+    ...(loop !== undefined ? { loop } : {}),
   };
 }
 

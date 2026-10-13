@@ -105,6 +105,35 @@ async function main() {
       const action = args[1];
       const projectDir = process.cwd();
       switch (action) {
+        // ── v1.6.0 章十：全停管理命令（循环失控时的人工熔断位）──
+        case 'pause': {
+          // sofagent daemon pause --reason "<text>"：一键挂起全部循环 workflow
+          //（含排队中的并发请求一并冻结）；写暂停标记文件，事件面读标记停派
+          const { writeFileSync, existsSync, readFileSync, rmSync } = await import('fs');
+          const { join } = await import('path');
+          const { getDataDir } = await import('@sofagent/core');
+          const reasonIdx = args.indexOf('--reason');
+          const reason = reasonIdx !== -1 ? (args[reasonIdx + 1] ?? 'operator-requested') : 'operator-requested';
+          const markerPath = join(getDataDir(), 'loop-pause.json');
+          writeFileSync(markerPath, JSON.stringify({ paused: true, reason, pausedAt: new Date().toISOString() }, null, 2));
+          console.log(`⏸️  已暂停全部循环 workflow（原因：${reason}）——排队请求一并冻结`);
+          console.log('   恢复：sofagent daemon resume');
+          process.exit(0);
+        }
+        case 'resume': {
+          const { existsSync, readFileSync, rmSync } = await import('fs');
+          const { join } = await import('path');
+          const { getDataDir } = await import('@sofagent/core');
+          const markerPath = join(getDataDir(), 'loop-pause.json');
+          if (existsSync(markerPath)) {
+            const marker = JSON.parse(readFileSync(markerPath, 'utf-8')) as { pausedAt: string; reason: string };
+            rmSync(markerPath);
+            console.log(`▶️  已恢复循环 workflow（此前暂停于 ${marker.pausedAt}，原因：${marker.reason}）`);
+          } else {
+            console.log('▶️  无暂停标记——循环本就在运行态');
+          }
+          process.exit(0);
+        }
         case 'status': {
           // 延迟加载 commands/knowledge-status（避免拖累 CLI 启动）
           const { knowledgeStatus, formatKnowledgeStatus } = await import(

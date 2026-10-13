@@ -96,6 +96,43 @@ export interface ShouldRunResult {
 // 固定判定顺序（契约）
 // ────────────────────────────────────────────────────────────
 
+/**
+ * 循环预算探针（v1.6.0 章十）：quota 面消费 loop.budget 块——
+ * 单轮 token 超预算或日循环数超上限 ⇒ 挂起（进死信通道，人处置后 resume 恢复），
+ * 非静默终止（「挂起非失败，事件不丢」同款语义）。
+ */
+export function checkLoopBudgetSuspends(opts: {
+  loop?: { budget: { maxTokensPerCycle: number; maxCyclesPerDay: number }; maxIterations: number };
+  currentCycleTokens: number;
+  cyclesToday: number;
+  iterationsSoFar: number;
+}): ShouldRunSuspension | undefined {
+  const { loop } = opts;
+  if (!loop) return undefined; // 非 loop workflow——quota 面走既有 COST 探针
+  if (opts.currentCycleTokens > loop.budget.maxTokensPerCycle) {
+    return {
+      question: 'quota',
+      reason: `本轮 token ${opts.currentCycleTokens} 超 loop.budget.max_tokens_per_cycle ${loop.budget.maxTokensPerCycle}——预算熔断挂起（进死信，人处置后 resume）`,
+      resumeHint: '调高预算或人工确认后 sofagent daemon resume',
+    };
+  }
+  if (opts.cyclesToday > loop.budget.maxCyclesPerDay) {
+    return {
+      question: 'quota',
+      reason: `今日循环 ${opts.cyclesToday} 轮超 max_cycles_per_day ${loop.budget.maxCyclesPerDay}——日预算熔断挂起`,
+      resumeHint: '次日自动恢复或 sofagent daemon resume',
+    };
+  }
+  if (opts.iterationsSoFar >= loop.maxIterations) {
+    return {
+      question: 'quota',
+      reason: `迭代 ${opts.iterationsSoFar} 达 max_iterations ${loop.maxIterations} 硬上限——迭代熔断挂起（人判定是否继续）`,
+      resumeHint: '确认继续则上调 max_iterations 后 resume',
+    };
+  }
+  return undefined;
+}
+
 /** 五问判定顺序（fail-fast——首个不通过即挂起并如实报告是哪一问） */
 export const SHOULD_RUN_ORDER: readonly ShouldRunQuestion[] = [
   'health',
