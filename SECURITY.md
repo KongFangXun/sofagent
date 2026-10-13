@@ -70,7 +70,7 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 |---|---|---|---|---|
 | `runtime-audit.jsonl`（运行时审计日志） | `data/audit/runtime/<repo-hash>/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash） | 事中（审计中间件随每次工具调用落盘） | FORGE（**项目内部自迭代工具链，非产品能力**）自托管路径已交付；约束层侧同构隔离已落地（§四详述） |
 | data-sovereignty 审计日志 | `data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash；旧版无段历史读侧 fallback 原地可读） | 事后可追溯 | 约束层侧 repo-hash 隔离已落地（复用 FORGE 方案）；多项目仍需 `SOFAGENT_HOME` 按项目分目录时可用 |
-| `history.jsonl`（commit 级审计历史） | `~/.sofagent/data/audit/`（全局） | 全局 append-only（HMAC 签名链要求全量连续，跨仓查询是运维刚需） | 事后（HMAC 链 + `--doctor` 校验；锚点防尾部截断） | 全局共享是设计决策；无密钥时退化为弱校验 hash chain（同用户进程可重算，见 §四 HMAC 段）；**HMAC 签名密钥随隔离面走**（设 `SOFAGENT_HOME` 时密钥在 `$SOFAGENT_HOME/.sofagent-key`，未设时兼容旧路径 `~/.sofagent-key`——多项目隔离时各面密钥互不可见） |
+| `history.jsonl`（commit 级审计历史） | `~/.sofagent/data/audit/`（全局） | 全局 append-only（HMAC 签名链要求全量连续，跨仓查询是运维刚需） | 事后（HMAC 链 + `--doctor` 校验；锚点防尾部截断） | 全局共享是设计决策；无密钥时退化为弱校验 hash chain（见 §四 HMAC 段）；**HMAC 密钥随隔离面走**（`SOFAGENT_HOME` 设 → `$SOFAGENT_HOME/.sofagent-key`，未设 → 兼容旧路径） |
 | `knowledge/`（知识沉淀） | `data/knowledge/` | 全局共享（无租户/项目维度，多域数据会串） | sensitivity 分级是**分级标注非门禁**（L0-L3 分层脱敏管道事前打码） | 多租户抽象层 v0（**查询侧**）已随 v1.4.7 交付；**写入侧隔离尚未落地**（见 [LIMITATIONS](./docs/LIMITATIONS.md)）；当前定位单机单用户 |
 | `task/logs/` 与 `think.md` | `data/task/logs/`、`data/think.md` | 全局明文 | 事前脱敏（sanitize() 写入前打码，脱敏是**掩码非加密**） | 附链目录不在加密范围（加密仅覆盖审计历史主链）；强合规场景建议外部加密卷 |
 

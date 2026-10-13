@@ -351,7 +351,7 @@ the installed UI is the source of truth.)</sub></p>
 > | Full install (daemon / dashboard) | `bootstrap.sh` / `install.sh` (above) |
 >
 > - **Legacy commands retired**: the 12 old bins (`sofagent-audit` etc.) passed their compatibility window and **have been removed**; the former 13 bins are now served by the single entry.
-> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; transitive deps measured via `npm ls --all --parseable | wc -l` = 603 lines (1 project-root line ⇒ 602 packages;
+> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; transitive deps measured 602 packages (`npm ls --all --parseable`, measured at `npm i sofagent@1.5.8` time;
 > basis: installed `npm i sofagent@1.5.8` · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10), 5 carry native modules and install scripts—new npm versions don't run unreviewed install scripts, so those native builds are **silently skipped**).
 >**For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or `npm i -g sofagent`.
 > - **Retired legacy proxy package**: the bare-name `sofagent-audit` (no scope) on npm is the old proxy package—**unpublished on 2026-09-26**; don't install it.
@@ -403,7 +403,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 6067 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
+> 🧪 **Engineering credibility** (current): 6068 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
 > **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
 >the load-chain utility package and dsh-plugin-kit are outside this counting standard)—they aren't the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account—see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever

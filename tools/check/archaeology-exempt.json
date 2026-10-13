@@ -136,6 +136,11 @@
       "file": "docs/changelog/releasing/troubleshooting.md",
       "anchor": "处方唯一源（v1.5.9 两轮实测收口",
       "reason": "出处标注（处方本体通用）"
+    },
+    {
+      "file": "docs/ROADMAP.md",
+      "anchor": "v2.0.0 时点不锁死",
+      "reason": "版本边界纪律的排期语义本体：v2.0.0 是规则讨论对象（时点机制/迭代域边界），非历史考古；删版本号则排期规则不可定位（v1.6.0 BUG-71 时区批施工时豁免登记）"
     }
   ],
   "exemptAnchors_spec": {

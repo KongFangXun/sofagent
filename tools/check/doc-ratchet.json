@@ -78,5 +78,9 @@
   "tools/check/README.md": {
     "wall": 1,
     "cell": 0
+  },
+  "FDE/README.md": {
+    "wall": 1,
+    "cell": 4
   }
 }

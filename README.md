@@ -69,9 +69,9 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 </details>
 
-**30 秒–2 分钟轻量试用**（首次含 npx 拉包约 30 秒–2 分钟（网络依赖），复跑秒级；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
+**30 秒–2 分钟轻量试用**（首次含 npx 拉包（网络依赖），复跑秒级；单次引擎审计约 1.1 秒，口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
-> 💡 只要审计 CLI、不想拉全量依赖树？改装裸名总包：`npm i -g sofagent`（裸名总包，单入口 `sofagent audit`；能力面见 [LIMITATIONS · 包依赖](./docs/LIMITATIONS.md)）。
+> 💡 只要审计 CLI、不想拉全量依赖树？改装裸名总包：`npm i -g sofagent`（单入口 `sofagent audit`；能力面见 [LIMITATIONS](./docs/LIMITATIONS.md)）。
 
 > 💡 试用时提交消息请写 **≥6 字符**（如 `initial audit test`）——A19 质量规则（编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）对超短消息（`init`/`add`）判红属设计意图（防无意义提交信息），不是故障。
 
@@ -196,7 +196,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | 岗位职责说明书 | 进场冻结的交付物（merge_criteria / approver / trigger） |
 | 绩效考核 | 审计留痕 + 治理 KPI 面板（v1.5.0） |
 | 组织记忆 | 知识沉淀（think.md 反思 + knowledge/） |
-| 培训体系 | 经验→考核→晋级的自进化链（v1.5.8 SDK 面先行；用户可触达入口与效果验证见 [ROADMAP](./docs/ROADMAP.md)/[LIMITATIONS](./docs/LIMITATIONS.md)） |
+| 培训体系 | 经验→考核→晋级的自进化链（v1.5.8 SDK 面先行；入口与效果边界见 [LIMITATIONS](./docs/LIMITATIONS.md)） |
 | 试错容错 | 快照回滚 + 能力基线版本线（v1.5.9 已交付） |
 | 劳动合同边界 | 可拔契约与主干能力清单（v1.5.7 交付；开关面与门控见 [ARCHITECTURE](./docs/ARCHITECTURE.md)） |
 
@@ -245,7 +245,7 @@ sofagent audit --doctor    # 验证环境（可选）
 
 
 > 💡 安装脚本写 `~/.sofagent/`（数据）+ `~/.local/bin`（CLI）；**仅显式传 `--platform <平台>` 时才写该平台集成目录**（默认不探测不修改）；npm 权限不足时 CLI fallback 到 `/usr/local/bin`，其余系统文件零改动。
-> ⚠️ **显式指定 `--platform` 时会向该平台的宿主配置写入薄挂载**：claude → `~/.claude/settings.json` · codex → `~/.codex/AGENTS.md` · gemini → `~/.gemini/GEMINI.md` · workbuddy / cursor → 对应 `mcp.json` · 各平台另写 `fde.md`；**均为合并写入 + 自动备份 + 幂等**。**默认不传 `--platform` 零宿主配置写入**。`--init` 装三层防线 hook（pre-commit / commit-msg / post-commit 对账）；
+> ⚠️ 显式 `--platform` 会写该平台宿主配置（claude/codex/gemini/workbuddy/cursor 的 settings·AGENTS·GEMINI·mcp.json 及各平台 fde.md；合并写入+自动备份+幂等）。**默认不传 `--platform` 零宿主配置写入**。`--init` 装三层防线 hook（pre-commit / commit-msg / post-commit 对账）；
 >`--no-verify` 可跳过 **pre-commit 与 commit-msg 两层防线**；**post-commit 事后对账不受影响**（git 原生开关不作用于它）——防的是诚实 Agent 疏忽而非恶意绕过，被跳过的 commit 由 post-commit 留痕（提示「疑似绕过」）但不阻断；个人兜底三件：CI 侧 `sofagent audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
 > 📌 **install.sh 是企业设备安装器**——装在企业跑 AI 节点的设备上（约束层 + daemon 巡检 + 单机 dashboard）；FDE 自己的电脑不需要跑，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论），详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
@@ -290,7 +290,7 @@ sofagent audit --doctor    # 验证环境（可选）
 > | 完整安装（含 daemon / dashboard） | `bootstrap.sh` / `install.sh`（见上） |
 >
 > - **旧命令已退役**：12 个旧 bin 兼容期已满**移除**，统一走单入口。
-> - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖数以 `npm ls --all --parseable | wc -l` 实测 603 行（含 1 行项目根 ⇒ 602 个包；口径：`npm i sofagent@1.5.8` 安装态、1.5.8 时点实测 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
+> - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖实测 602 包（`npm ls --all --parseable` 口径：`npm i sofagent@1.5.8` 时点实测 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
 >   **只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g sofagent`。
 > - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。
 
@@ -340,7 +340,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：6067 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
+> 🧪 **工程可信度**（当前口径）：6068 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
 > **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 共 25 个，插件与工具包不计）——非同一集合。
 > 测试数二口径：**发版时点值**（各版本 `4805→4903` 增量账）与**当前实测值**（上方行）；权威值以 `tools/check/check-test-count.sh` 实跑为准；性能数据为单机参考值。
 
