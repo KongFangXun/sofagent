@@ -20,7 +20,6 @@
 // v1.4.5 第五章：训练产物归档任务（@weekly 冷存 + 90 天覆写销毁 + 磁盘预警）
 /* @public */ export {
   DEFAULT_TRAIN_ARCHIVE_CONFIG,
-  loadTrainArchiveConfig,
   runTrainArchiveTask,
 } from './tasks/train-archive';
 /* @public */ export type { TrainArchiveConfig, TrainArchiveTaskResult } from './tasks/train-archive';

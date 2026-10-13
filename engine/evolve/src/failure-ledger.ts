@@ -84,12 +84,39 @@ function clusterKey(skillId: string, failureMode: string): string {
  * @param record 失败记录
  */
 export function recordFailure(record: FailureRecord): void {
-  // 1. 持久化到 JSONL
   const ledgerPath = resolveFailureLedgerPath();
   const dir = dirname(ledgerPath);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
+  // v1.6.0 BUG-37：写入前查重——同 skill|failureMode 聚类已存在且 reason 未变时
+  // 不重复追加（保留首条 + 进程缓存 lastSeen 更新），消灭「每周重录同一批 ⇒
+  // 单调涨到 2707 条」形态。reason 变化（新模式）视为新条目照常录入。
+  try {
+    if (existsSync(ledgerPath)) {
+      const lines = readFileSync(ledgerPath, 'utf-8').split('\n').filter(Boolean);
+      const dupKey = (r: FailureRecord): string => `${r.skillId}::${r.failureMode}::${r.reason}`;
+      const incoming = dupKey(record);
+      for (let i = lines.length - 1; i >= 0; i--) {
+        let prev: FailureRecord | null = null;
+        try {
+          prev = JSON.parse(lines[i]!) as FailureRecord;
+        } catch {
+          continue;
+        }
+        if (prev && dupKey(prev) === incoming) {
+          // 同聚类同因——去重命中：只更新缓存不落盘
+          const key = clusterKey(record.skillId, record.failureMode);
+          const cached = patternCache.get(key);
+          if (cached) cached.lastSeen = record.timestamp;
+          return;
+        }
+      }
+    }
+  } catch {
+    // 查重读失败——保守照常录入（宁可重复不丢证据）
+  }
+  // 1. 持久化到 JSONL
   appendFileSync(ledgerPath, JSON.stringify(record) + '\n', 'utf-8');
 
   // 2. 更新进程内缓存

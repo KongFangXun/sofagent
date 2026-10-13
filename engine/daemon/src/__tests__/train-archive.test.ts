@@ -14,11 +14,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import {
-  loadTrainArchiveConfig,
-  DEFAULT_TRAIN_ARCHIVE_CONFIG,
-  runTrainArchiveTask,
-} from '../tasks/train-archive';
+import { DEFAULT_TRAIN_ARCHIVE_CONFIG, runTrainArchiveTask } from '../tasks/train-archive';
 import { loadTrainArchiveCronConfig } from '../cron';
 
 let tmpProjectDir: string;
@@ -48,40 +44,35 @@ const writeWatch = (content: string) => {
   fs.writeFileSync(path.join(tmpProjectDir, '.sofagent', 'watch.yml'), content, 'utf-8');
 };
 
-describe('loadTrainArchiveConfig（watch.yml train-archive: 段）', () => {
-  it('test_loadTrainArchiveConfig_段缺失_返回默认weekly启用', () => {
-    const config = loadTrainArchiveConfig(tmpProjectDir);
-    expect(config).toEqual(DEFAULT_TRAIN_ARCHIVE_CONFIG);
+describe('loadTrainArchiveCronConfig（watch.yml train-archive: 段）', () => {
+  it('test_loadTrainArchiveCronConfig_段缺失_返回默认weekly启用', () => {
+    const config = loadTrainArchiveCronConfig(tmpProjectDir);
     expect(config.enabled).toBe(true);
     expect(config.schedule).toBe('@weekly');
-    expect(config.purge).toBe(true);
-    expect(config.diskCheck).toBe(true);
   });
 
-  it('test_loadTrainArchiveConfig_显式enabledFalse_返回禁用', () => {
+  it('test_loadTrainArchiveCronConfig_显式enabledFalse_返回禁用', () => {
     writeWatch('train-archive:\n  enabled: false\n');
-    const config = loadTrainArchiveConfig(tmpProjectDir);
+    const config = loadTrainArchiveCronConfig(tmpProjectDir);
     expect(config.enabled).toBe(false);
   });
 
-  it('test_loadTrainArchiveConfig_覆盖schedule与子开关', () => {
+  it('test_loadTrainArchiveCronConfig_覆盖schedule', () => {
     writeWatch([
       'train-archive:',
       '  enabled: true',
       '  schedule: "@monthly"',
-      '  purge: false',
-      '  diskCheck: false',
     ].join('\n'));
-    const config = loadTrainArchiveConfig(tmpProjectDir);
+    const config = loadTrainArchiveCronConfig(tmpProjectDir);
     expect(config.schedule).toBe('@monthly');
-    expect(config.purge).toBe(false);
-    expect(config.diskCheck).toBe(false);
+    // purge/diskCheck 子开关不属 cron 薄适配面（两键口径）——子开关经
+    // runTrainArchiveTask 的 config 传入（v1.6.0 BUG-38：cron 现已传 config）
   });
 
-  it('test_loadTrainArchiveConfig_坏YAML_不抛错返回默认', () => {
+  it('test_loadTrainArchiveCronConfig_坏YAML_不抛错返回默认', () => {
     writeWatch('train-archive: [unclosed');
-    expect(() => loadTrainArchiveConfig(tmpProjectDir)).not.toThrow();
-    expect(loadTrainArchiveConfig(tmpProjectDir).enabled).toBe(true);
+    expect(() => loadTrainArchiveCronConfig(tmpProjectDir)).not.toThrow();
+    expect(loadTrainArchiveCronConfig(tmpProjectDir).enabled).toBe(true);
   });
 });
 

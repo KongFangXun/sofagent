@@ -427,12 +427,17 @@ export function createForgeDriverBase(config = {}) {
     const pointerDir = dirname(runDir);
     const pointerPath = join(pointerDir, 'latest.json');
     if (!existsSync(pointerDir)) mkdirSync(pointerDir, { recursive: true });
+    // v1.6.0 BUG-39：非完成态 run 不劫持 latest 指针——stopReason 属
+    // {aborted-signal, dry-run} 时标记 ignored（resume/候选消费侧跳过该指针，
+    // 不把「当日真最新 PASS」的候选误导向 aborted run——孤儿指针劫持修复）。
+    const NON_TERMINAL_STOP = new Set(['aborted-signal', 'dry-run']);
     const pointer = {
       runDir: relativeRunDir(runDir),
       driver: driverName,
       stopReason,
       totalRounds,
       counts,
+      ...(NON_TERMINAL_STOP.has(stopReason) ? { ignored: true, ignoredReason: 'non-terminal stop——latest 指针不应被 aborted/dry-run run 劫持' } : {}),
       timestamp: new Date().toISOString(),
     };
     writeFileSync(pointerPath, JSON.stringify(pointer, null, 2) + '\n');

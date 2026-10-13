@@ -12,7 +12,6 @@
 /* @public */ export type { CronJob } from '../cron';
 /* @public */ export {
   DEFAULT_TRAIN_ARCHIVE_CONFIG,
-  loadTrainArchiveConfig,
   runTrainArchiveTask,
 } from '../tasks/train-archive';
 /* @public */ export type { TrainArchiveConfig, TrainArchiveTaskResult } from '../tasks/train-archive';

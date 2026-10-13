@@ -254,6 +254,26 @@ if [ -z "$GH_DESC" ] && [ -z "$GH_HOME" ] && [ -z "$GH_TOPIC_COUNT" ]; then
   exit 0
 fi
 
+# ── 断言 ⓪：topics 面（v1.6.0 BUG-40——GH_TOPIC_COUNT 此前采集后从不参与断言）──
+GH_TOPIC_LIST=$(gh api repos/KongFangXun/sofagent --jq 'join(",")' 2>/dev/null || echo "")
+if [ -n "$GH_TOPIC_COUNT" ]; then
+  ASSERTS=$((ASSERTS + 1))
+  if [ "$GH_TOPIC_COUNT" -lt 10 ] || [ "$GH_TOPIC_COUNT" -gt 20 ]; then
+    echo "  ❌ [topics] 数量 ${GH_TOPIC_COUNT} 不在 [10,20]——过少放弃站内搜索入口，过多稀释相关性"
+    FAILS=$((FAILS + 1))
+  elif [ -n "$GH_TOPIC_LIST" ] && ! echo "$GH_TOPIC_LIST" | grep -qi 'fde'; then
+    echo "  ❌ [topics] 身份词 fde 缺席——差异化身份词（description/glama 均拿它当第一差异化词）不在 topics"
+    echo "      当前：${GH_TOPIC_LIST}"
+    FAILS=$((FAILS + 1))
+  elif [ -n "$GH_TOPIC_LIST" ] && ! { echo "$GH_TOPIC_LIST" | grep -qiE 'mcp|ai-agents|llm'; }; then
+    echo "  ❌ [topics] 核心品类词（mcp / ai-agents / llm 至少其一）缺席"
+    echo "      当前：${GH_TOPIC_LIST}"
+    FAILS=$((FAILS + 1))
+  else
+    echo "  ✓ [topics] ${GH_TOPIC_COUNT} 个且含身份词与核心品类词"
+  fi
+fi
+
 # ── 断言 ①：description 工具数 ──
 # 匹配「(N tools」形态——括号内可以是「(79 tools)」单声称，也可「(80 tools, 13 plugins)」复合声称
 DESC_TOOLS=$(echo "$GH_DESC" | grep -oE '\(([0-9]+) tools' | grep -oE '[0-9]+' || echo "")

@@ -51,28 +51,6 @@ interface WatchConfigTrainArchive {
  * 语义（对齐 loadDreamCycleConfig）：段缺失 → 默认 @weekly 启用；
  * 显式 enabled: false 关闭；坏 YAML fail-open 返回默认启用。
  */
-export function loadTrainArchiveConfig(projectDir: string): TrainArchiveConfig {
-  const watchYml = join(projectDir, '.sofagent', 'watch.yml');
-  if (!existsSync(watchYml)) return { ...DEFAULT_TRAIN_ARCHIVE_CONFIG };
-  try {
-    const raw = yamlLoad(readFileSync(watchYml, 'utf-8')) as WatchConfigTrainArchive | null;
-    const section = raw?.['train-archive'];
-    if (!section || typeof section !== 'object') return { ...DEFAULT_TRAIN_ARCHIVE_CONFIG };
-    const s = section as Record<string, unknown>;
-    return {
-      enabled: s.enabled === false ? false : true,
-      schedule:
-        s.schedule === '@daily' || s.schedule === '@monthly'
-          ? s.schedule
-          : '@weekly',
-      purge: s.purge === false ? false : true,
-      diskCheck: s.diskCheck === false ? false : true,
-    };
-  } catch {
-    return { ...DEFAULT_TRAIN_ARCHIVE_CONFIG };
-  }
-}
-
 /** 单次归档轮次结果（runTrainArchiveTask 输出——daemon 日志与测试消费） */
 export interface TrainArchiveTaskResult {
   /** 扫描的企业分区数（data/train/ 下全部企业目录——治理无差别覆盖） */
@@ -127,7 +105,7 @@ export async function runTrainArchiveTask(
   try {
     orch = (await import('@sofagent/train')) as typeof import('@sofagent/train');
   } catch {
-    console.warn('[train-archive] @sofagent/orchestrator 不可用——本轮归档跳过（裁剪安装形态）');
+    console.warn('[train-archive] @sofagent/train 不可用——本轮归档跳过（裁剪安装形态）');
     return result;
   }
 

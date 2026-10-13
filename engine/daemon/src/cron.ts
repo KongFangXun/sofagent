@@ -519,7 +519,7 @@ export function startCron(projectDir: string): number {
                 diskWarning: { warning: boolean };
               }>;
             };
-            const result = await runTrainArchiveTask(dataDir);
+            const result = await runTrainArchiveTask(dataDir, { config: trainArchiveConfig });
             const archivedTotal = result.archives.reduce((s, a) => s + a.archived, 0);
             const purgedTotal = result.purges.reduce((s, p) => s + p.purged, 0);
             const diskTag = result.diskWarning.warning ? ' ⚠ 磁盘预警已打出' : '';

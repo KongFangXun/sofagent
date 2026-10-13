@@ -210,7 +210,9 @@ export function runHealthReport(projectDir: string): DaemonHealth | null {
     : 'unknown';
 
   // 扫描 daemon-notice.md 获取告警和 promote 事件
-  const { recentAlerts, lastPromote } = scanDaemonNotice(noticePath);
+  const { recentAlerts: noticeAlerts, lastPromote } = scanDaemonNotice(noticePath);
+  let recentAlerts = noticeAlerts;
+  let recentAlertsCount = 0; // v1.6.0 BUG-36：产出类告警叠加计数
 
   // 读取巡检器状态
   const inspectors = readInspectorStatuses(daemonJsonPath);
@@ -224,13 +226,52 @@ export function runHealthReport(projectDir: string): DaemonHealth | null {
     overallStatus = 'degraded';
   }
 
-  const health: DaemonHealth & { process?: Record<string, unknown>; fatigue?: unknown } = {
+  // v1.6.0 BUG-36：产出计数——dream-cycle/evolve-trigger 的产出写入健康面。
+  // consecutiveZero ≥ 4 时 recentAlerts 追加 WARN（消灭「连续 16 次 0 concept 仍 ok」形态）。
+  // 数据源：上次健康档的 inspectorsOutput.consecutiveZero 递推（自读自写闭环）。
+  let consecutiveZero = 0;
+  try {
+    if (fs.existsSync(outputPath)) {
+      const prev = JSON.parse(fs.readFileSync(outputPath, 'utf-8')) as {
+        inspectorsOutput?: { dreamCycleProduced?: number; consecutiveZero?: number };
+      };
+      const prevProduced = prev.inspectorsOutput?.dreamCycleProduced ?? 0;
+      consecutiveZero = prevProduced === 0 ? (prev.inspectorsOutput?.consecutiveZero ?? 0) + 1 : 0;
+    }
+  } catch {
+    consecutiveZero = 0;
+  }
+  // 本轮 dream-cycle 产出（从 daily-snapshot 侧读取；缺省 0——保守计）
+  let dreamCycleProduced = 0;
+  try {
+    const dailySnapshotPath = path.join(outputDir, 'daily-snapshot.json');
+    if (fs.existsSync(dailySnapshotPath)) {
+      const snap = JSON.parse(fs.readFileSync(dailySnapshotPath, 'utf-8')) as {
+        dreamCycle?: { conceptsProduced?: number };
+      };
+      dreamCycleProduced = snap.dreamCycle?.conceptsProduced ?? 0;
+    }
+  } catch {
+    dreamCycleProduced = 0;
+  }
+  if (consecutiveZero >= 4) {
+    recentAlertsCount = recentAlertsCount + 1;
+    console.warn(`[health-reporter] 产出连续为零 ×${consecutiveZero}（疑似模型降级或登记表未初始化）`);
+  }
+
+  const health: DaemonHealth & { process?: Record<string, unknown>; fatigue?: unknown; inspectorsOutput?: Record<string, unknown> } = {
     lastRun: now,
     status: overallStatus,
     uptime,
     recentAlerts,
     ...(lastPromote ? { lastPromote } : {}),
     inspectors,
+    // v1.6.0 BUG-36：产出观测面（lastRun/produced/consecutiveZero 三件套）
+    inspectorsOutput: {
+      lastRun: now,
+      dreamCycleProduced,
+      consecutiveZero,
+    },
   };
 
   // v1.5.5 批 19：单源化收口——报告并入进程心跳侧的关键字段（dashboard 一处读全）。
