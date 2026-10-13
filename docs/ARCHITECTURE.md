@@ -968,6 +968,14 @@ System One 行业印证节已归档（判据句保留在 §三 判定化边界�
 
 **与既有置信度并存**：`'high'|'med'|'low'` 三档与 Noul 概率双向保序映射（0.9/0.6/0.3 ↔ 阈值 0.75/0.45）——旧消费方不动，新消费方走概率面；decision-log / HMAC 链 schema 不因本层改变。
 
+### 判定数据集三元组
+
+判定训练/评测数据契约是三元组 `(state, questions, answers)`（`engine/orchestrator/src/router/decision-dataset-schema.ts`）——与三原语类型同构零分叉；概率目标三形态可表达（choice 分布 / score 区间 / noul 真值概率），只有硬标签的数据集训不出校准。
+
+标注来源三档随样本走（deterministic / model-judge / human-only——训练侧按档加权），与 TrainChannel 数据面在血缘锚点（轨迹/PR/HITL 反向追溯）与租户隔离（enterpriseId 分区）上衔接。加载 fail-closed 六断言：删句样本不入训练（缺失≠为假）/ 对比样本 no-probability-target 不进校准 / 家族级切分 / benchmark 构建期拒绝 / 租户必填 / 血缘必填——写成字段与加载断言而非流程纪律（流程纪律会腐烂，字段约束不会）。
+
+公开对照集（XNLI / MASSIVE / STS-B + Kev 三套 6,436 条 + SearchDecision-Bench 68.3 万软标签）只作对照不进训练集；判据跨域映射按认知负载等价类（二分/多选/序数）类内同 state 同金标同评测器、类间不比，仅 result 一维参与对照。
+
 ### 判据集与规则集的关系
 
 规则（`engine/audit/src/rules/`）回答「怎么扫」，判据（`engine/audit/src/rules/criteria/`）回答「要判断什么 + 据什么判断」——
