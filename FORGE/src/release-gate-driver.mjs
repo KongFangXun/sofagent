@@ -350,6 +350,7 @@ function parseArgs(argv) {
     else if (a === '--check-alive') args.checkAlive     = argv[++i];
     // v1.3.8 交付七：判断层瘦身——一次启动直达四步，跳过 acceptance 分片
     else if (a === '--judgment-only')    args.judgmentOnly    = true;
+    else if (a === '--no-resume')        args.noResume        = true;   // 跳过断点自动检测，强制全新起跑（多轮修复期用——断点劫持根治开关）
     else if (a === '--acceptance-range') args.acceptanceRange = argv[++i];
     // F 修复链**默认启用**（loop 自主收敛：verdict FAIL → f-diagnose → f-fix → f-audit → 下一轮 V，
     // 最多 MAX_FIX_ROUNDS 轮）。原 v1.3.8 的「默认关闭、修复责任交回主 session」设计使每轮 FAIL 都要
@@ -3093,7 +3094,7 @@ async function main() {
   // 存在可续跑断点（verdict-done FAIL / f-round-done 未收敛）则自动进入
   // resume 模式（等价显式传参）；断点显示已收敛 PASS 由下方消费逻辑直接退出。
   // 🔴 只做入口接线，不改 resume 语义。
-  if (!args.resume && !args.dryRun && !args.worker && !args.step) {
+  if (!args.resume && !args.dryRun && !args.worker && !args.step && !args.noResume) {
     try {
       const candidate = discoverLatestRunDir();
       if (candidate) {

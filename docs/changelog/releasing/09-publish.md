@@ -310,10 +310,10 @@ done
 
 > ⚠️ **bump 批 commit 前必跑 `git status --porcelain` 检视暂存面**：bump 涉数百文件，惯用 `git add -A` 会把**旁生目录**（实测：audit-baseline-sync 在无 SOFAGENT_HOME 时把锚文件写进 `./undefined/`）一并收入。检视发现非 bump 目标路径即先清（`git rm -r --cached <dir>` + 删目录 + 产品侧登记修复）。
 
-## 步骤五：版本 bump（含哈希回填唯一正确时点）
+### 🔴 哈希回填时点纪律（步骤五的前置必读）
 
 > 🔴 **install.sh 钉值 / lib 哈希回填必须与 bump 同批、tag 同 commit**（v1.5.9 两轮实测）：tag 前回填会被 check-version 对照**旧 tag** 判「哈希漂移」假红（CI 的对照物是最新已发版 tag）；tag 后才回填则安装链钉值空窗。唯一正确时点 = 步骤五 bump 批内（按 bump 后工作区文件计算哈希），随 tag 指向的 commit 一起落地。
-## 步骤五：版本 bump + 安装入口随版同步 + 安装入口随版同步 ☑
+## 步骤五：版本 bump + 安装入口随版同步 ☑
 
 > 🔴 **本步骤是全流程唯一的 bump 时点**——阶段二~八全程 `package.json` 保持上一版号（SOP 设计的待发版中间态，见 [02 步骤一](./02-dev.md)）。SSOT 升级落在本步骤，且必须与安装入口 URL、bootstrap 哈希、状态翻牌**同一个 commit** 收口，才能「tag 前自洽」（tag 指向的必须是已 bump 的 commit）。
 
@@ -610,7 +610,7 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
 ---
 
 > **本版发版期新沉淀（六条实测经验）**：
-> ① release.yml 的 audit/mcp publish 可能遇 npm 服务端瞬时 E404（PUT 根路径 404，二次确认不存在）——处置：worktree 本地手动重发两包（登录态在开发者侧），入队行确认即成功，CI 侧红不阻塞。
+> ① release.yml 的 audit/mcp publish 可能遇 npm 服务端瞬时 E404——处置见 [troubleshooting · npm publish 三态处置](./troubleshooting.md#npm-publish-三态处置-e404--e403--时序红)（唯一源，本地重发 + registry 复验流程）。
 > ② check-npm-claims 会扫 README 双语版本声称 vs registry 真值——bump 后 publish 前必然红（窗口态），登记 npm-claims-exempt.json 锚式豁免（publish 后声称自动转真值）。
 > ③ skillhub CLI 已收紧 SKILL.md frontmatter 校验（必须有闭合 `---`）——历史文件无闭合标记的会拒收，补标记即可。
 > ④ ClawHub package publish 已收紧 dist 校验（runtimeExtensions 声明的 ./dist/index.js 必须在包内）——OpenClaw 插件发布前须 `npm run build`；openclawVersion 钉值须随 registry 当前版更新。

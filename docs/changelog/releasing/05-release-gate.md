@@ -11,7 +11,7 @@
 
 ## 🔴 断点归档纪律（多轮修复期必读）
 
-driver 启动时自动扫描最近 run 的 `resume-point.json`：`verdict-done/FAIL` 或 `f-round-done/非PASS` 断点会**劫持新一轮直接进 F 链**、跳过判断层四步（v1.5.9 实锤：R4 四次尝试全被劫持）。且 **FAIL 后 driver 会落新断点**——归档一次不够（打地鼠）。正确流程：**每次启动判断层前归档当日活动断点**（改名 `resume-point.json.archived-*` 保留不删）→ FAIL 落地后**先停 driver 再归档新断点** → 再重跑。跨午夜注意：driver 按日期字符串倒序取最新日期目录，次日残留 run 会优先被捡。历史日期目录的断点不会被捡（只看最新一天），无需清理。
+driver 启动时自动扫描最近 run 的 `resume-point.json`：`verdict-done/FAIL` 或 `f-round-done/非PASS` 断点会**劫持新一轮直接进 F 链**、跳过判断层四步（v1.5.9 实锤：R4 四次尝试全被劫持）。且 **FAIL 后 driver 会落新断点**——归档一次不够（打地鼠）。正确流程（二选一）：**首选 `--no-resume` 开关**（driver 已支持——跳过断点自动检测、强制全新起跑，无需手动归档）；无开关的旧版本 fallback = 每次启动判断层前归档当日活动断点（改名 `resume-point.json.archived-*` 保留不删）→ FAIL 落地后先停 driver 再归档新断点 → 再重跑。跨午夜注意：driver 按日期字符串倒序取最新日期目录，次日残留 run 会优先被捡。历史日期目录的断点不会被捡（只看最新一天），无需清理。
 
 ## 步骤
 

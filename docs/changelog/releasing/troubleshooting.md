@@ -135,3 +135,16 @@ gh api repos/O/R/git/refs/heads/main -X PATCH -f sha=<新commit>
 
 **🔴 第五坑（连续推送）——tree 参数必须 stdin JSON**：gh CLI 命令行拼 `tree[][path]=…` 数组参数，17 文件 = 68 个参数直接报 `accepts 1 arg(s), received 69`——tree 创建必须 `--input -` 从 stdin 传 `{"base_tree":…,"tree":[…]}` JSON（gitdata-push.mjs 已内置）。
 另：连续 API 推送时本地无上次 API commit 对象，`git diff <remoteSha>..HEAD` 炸——脚本用 compare API 兜底取变更清单（status=diverged 时拒绝盲推）。
+
+## npm publish 三态处置（E404 / E403 / 时序红）
+
+> 处方唯一源（v1.5.9 两轮实测收口；09-publish 只留指针）。**判定顺序：先 registry 复验，再动手。**
+
+| 形态 | 判定 | 处置 |
+|---|---|---|
+| **E404**（PUT 根路径 404，二次确认版本不存在） | npm 服务端瞬时故障（非凭证问题） | 本地手动重发该包（登录态在开发者侧）→ 入队行确认即成功，CI 侧红不阻塞 |
+| **E403** `cannot publish over the previously published version` | **该版本已发成功**——重发撞车，不是失败 | 不处置。以 `npm view <pkg> version --prefer-online` 为准；registry 传播可达数分钟，重查 |
+| **E404 且 registry 二次确认该版本不存在**（CI 的幂等分支） | 同 E404 时序：先发后查、传播未达 | 等 ≥5 分钟重查；仍无再按 E404 重发流程 |
+| **verify/install CI 红「registry 无本版」** | 发布时序固有（publish 在 CI 之后） | 不视为 CI 阻塞——publish 完成后 `gh run rerun <id> --failed`，转绿才算收口（时序固有 vs 真回归的唯一分界动作） |
+
+🔴 三条铁律：① 判定一律 `--prefer-online`（裸查询吃本地缓存，发版 session 内误报上版号）；② rerun 幂等豁免分支存在，重复 rerun 不会重复发布；③ 本地重发成功后，CI 同 run 的 rerun 若仍红，先查 registry 传播再判定。

@@ -34,6 +34,8 @@
 > 阶段九步骤七仍跑三道工序，性质是**复核 + 落终版**。
 >
 > 🔴 **发布物落盘铁律**：发布 prompt + release note body 等发布物，统一落盘 `~/Desktop/`（命名 `vX.Y.Z-publish-prompt.md` / `release-note-vX.Y.Z-body.md`，与阶段一审查草稿/阶段十一 dev-prompt 的桌面惯例一致）。**禁止自建新目录**（如需留存走既有标准位置）——发版产物一律桌面，SOP 引用的路径只有两种：仓库内既有文件 或 `~/Desktop/`。
+
+> 📋 命名规范 / 五条铁律 / body 检查点已收口至 [release-artifacts.md](./release-artifacts.md)（唯一源），本处不再展开。
 >
 > 🔴 **提取源同步纪律**：发布 body 从 devlog「Release Notes」段提取——**body 的任何修正必须同批改 devlog 源**（尾链/链接/数字皆然），否则下次提取复发旧错；发布物与提取源双向一致才算定稿。
 
