@@ -37,6 +37,26 @@ describe('三头分发与批量并行', () => {
     expect(result.modelRevision).toBe('rev-abc'); // 权重溯源随判定
     expect(new Set(result.answers.map((a) => a.questionId)).size).toBe(3); // 无串扰无缺问
   });
+
+  it('test_judge_三问只编码1次（spy 计数 encode 调用 == 1）', () => {
+    const base = mockEncoder('rev-once');
+    let encodeCalls = 0;
+    const spyEncoder: EncoderLike = {
+      ...base,
+      encode(state: string): number[][] {
+        encodeCalls += 1;
+        return base.encode(state);
+      },
+    };
+    const rt = new JudgeRuntime(spyEncoder);
+    const choiceQ = makeChoiceQuestion('qc', '选形态', [{ id: 'a', label: '自动' }, { id: 'b', label: '强化' }], FALLBACK);
+    const scoreQ: ScoreQuestion = { kind: 'score', id: 'qs', question: '风险分', min: 0, max: 10 };
+    const noulQ: NoulQuestion = { kind: 'noul', id: 'qn', question: '放行' };
+    const result = rt.judge({ state: 'some state', questions: [choiceQ, scoreQ, noulQ] });
+    expect(result.answers).toHaveLength(3);
+    // 一次编码多头并行（claim 的机械锁）——三问共享同一次编码，非逐问重复
+    expect(encodeCalls).toBe(1);
+  });
 });
 
 describe('不占主模型槽位（行为锁）', () => {

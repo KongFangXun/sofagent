@@ -98,12 +98,12 @@ describe('对比样本四步构造', () => {
   const fact = (statement: string, status: FactProposition['status']): FactProposition => ({ statement, status });
   const FOCUS = '文件 secret.env 在白名单外';
 
-  function pairSamples(withNecessity = true): DecisionSample[] {
+  function pairSamples(withNecessity = true, familyId = 'fam-1'): DecisionSample[] {
     const q: DatasetQuestion = { kind: 'noul', id: 'q1', question: '该提交应拦截吗？' };
     return buildContrastivePair({
-      familyId: 'fam-1',
-      state: '新增文件 secret.env',
-      counterfactualState: '新增文件 example.env',
+      familyId,
+      state: `新增文件 secret.env（${familyId}）`,
+      counterfactualState: `新增文件 example.env（${familyId}）`,
       changedWords: 1,
       focusFact: FOCUS,
       question: q,
@@ -119,7 +119,7 @@ describe('对比样本四步构造', () => {
       },
       enterpriseId: 'ent-a',
       lang: 'zh',
-      provenance: { traceId: 'tr-pair' },
+      provenance: { traceId: `tr-pair-${familyId}` },
     });
   }
 
@@ -155,12 +155,24 @@ describe('对比样本四步构造', () => {
     const split = loadDataset(pair);
     expect(split.calibration.some((s) => s.contrastive)).toBe(false);
   });
-  it('test_familySplit_同家族不跨训练评测', () => {
-    const pair = pairSamples();
-    // 手动把一员塞进评测——家族出现在两侧应被 loadDataset 拒（构造后 load 全 train 则无漏）
-    const split = loadDataset(pair);
-    expect(split.train).toHaveLength(2);
-    expect(split.eval).toHaveLength(0);
+  it('test_familySplit_同家族不跨训练评测（可失败：多家族下两侧非空且无交叉）', () => {
+    // 四家族 → 首见定侧（%4===3 → eval）：fam-0/1/2 训练侧、fam-3 评测侧。
+    // 旧实现 eval 恒空 ⇒ ① 可失败（假绿已消）。
+    const split = loadDataset(['fam-0', 'fam-1', 'fam-2', 'fam-3'].flatMap((fam) => pairSamples(true, fam)));
+    const famsOf = (arr: DecisionSample[]) => new Set(arr.map((s) => s.contrastive!.familyId));
+    // ① 切分真实发生：train / eval 均非空
+    expect(split.train.length).toBeGreaterThan(0);
+    expect(split.eval.length).toBeGreaterThan(0);
+    // ② 家族无交叉：同一来源家族不跨训练/评测集
+    const trainFams = famsOf(split.train);
+    for (const f of famsOf(split.eval)) expect(trainFams.has(f)).toBe(false);
+  });
+
+  it('test_familySplit_家族跨集_拒载（泄漏断言可失败）', () => {
+    // 构造泄漏：benchmark 样本与训练家族共 familyId ⇒ 评测侧出现训练家族 ⇒ 拒载。
+    const [base] = pairSamples(); // fam-1 → 训练侧
+    const leakingBenchmark = { ...base, benchmark: ['xnli'] }; // 同 fam-1，benchmark → 评测侧
+    expect(() => loadDataset([base, leakingBenchmark])).toThrow(/家族级泄漏/);
   });
 });
 

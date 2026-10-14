@@ -19,6 +19,8 @@
 
 import type { SofagentEvent } from './types';
 import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 // ────────────────────────────────────────────────────────────
 // 类型
@@ -131,6 +133,145 @@ export function checkLoopBudgetSuspends(opts: {
     };
   }
   return undefined;
+}
+
+// ────────────────────────────────────────────────────────────
+// 起轮前闸（v1.6.0 章十）：loop 全停标记 + 预算熔断
+// ────────────────────────────────────────────────────────────
+
+/**
+ * 循环全停标记文件名。路径解析口径与 daemon 侧
+ * `join(getDataDir(), 'loop-pause.json')`（`engine/daemon/src/cli.ts` 的
+ * `daemon pause` 写点）一致——本模块以 `deps.dataDir` 为数据目录根
+ * （生产装配时 `dataDir = loadEnvConfig().dataDir`，与 core `getDataDir()`
+ * 同源：两者均以 SOFAGENT_DATA 为首选），故
+ * `join(deps.dataDir, LOOP_PAUSE_MARKER)` 与 daemon 写点同址。
+ */
+export const LOOP_PAUSE_MARKER = 'loop-pause.json';
+
+/** 循环全停标记内容（`daemon pause` 写入） */
+export interface LoopPauseMarker {
+  paused: boolean;
+  reason?: string;
+  pausedAt?: string;
+}
+
+/**
+ * 读循环全停标记（v1.6.0 章十：`daemon pause` 写、事件派发面读）。
+ *
+ * 🔴 降级铁律：标记不存在 / 不可读 / JSON 损坏 → 返回 undefined（视为未暂停）——
+ * 绝不因缺数据挂起生产事件（与下方 permissiveProbe 同一条铁律）。
+ *
+ * @param dataDir 数据目录根（与 daemon 写点同址）
+ * @returns 暂停态标记（仅 `paused === true` 时返回）；其余情形 undefined
+ */
+export function readLoopPauseMarker(dataDir: string): LoopPauseMarker | undefined {
+  const markerPath = join(dataDir, LOOP_PAUSE_MARKER);
+  try {
+    if (!existsSync(markerPath)) return undefined;
+    const parsed = JSON.parse(readFileSync(markerPath, 'utf-8')) as Partial<LoopPauseMarker>;
+    if (parsed.paused !== true) return undefined; // 非暂停态（含 {paused:false}）
+    return {
+      paused: true,
+      ...(typeof parsed.reason === 'string' ? { reason: parsed.reason } : {}),
+      ...(typeof parsed.pausedAt === 'string' ? { pausedAt: parsed.pausedAt } : {}),
+    };
+  } catch {
+    return undefined; // 标记损坏 / 读失败 → 降级放行（缺数据不挂起生产事件）
+  }
+}
+
+/** loop 预算上下文（事件 metadata 透传——起轮前闸据此判预算熔断） */
+export interface LoopBudgetContext {
+  budget: { maxTokensPerCycle: number; maxCyclesPerDay: number };
+  maxIterations: number;
+  currentCycleTokens: number;
+  cyclesToday: number;
+  iterationsSoFar: number;
+}
+
+/**
+ * 从事件 metadata 提取 loop 预算上下文。
+ *
+ * loop 运行器派发新一轮时在 `metadata.loop` 附 loop 声明块（含 budget /
+ * maxIterations）+ `metadata.{currentCycleTokens,cyclesToday,iterationsSoFar}`
+ * 三个进度读数；上下文不全（非 loop 轮次 / 字段缺失 / 类型不符）→ undefined
+ * （不判预算，放行——缺数据不挂起生产事件）。
+ */
+function readLoopBudgetContext(event?: SofagentEvent): LoopBudgetContext | undefined {
+  const meta = event?.metadata;
+  if (!meta) return undefined;
+  const loop = meta['loop'];
+  if (typeof loop !== 'object' || loop === null) return undefined;
+  const l = loop as Record<string, unknown>;
+  const budget = l['budget'];
+  if (typeof budget !== 'object' || budget === null) return undefined;
+  const b = budget as Record<string, unknown>;
+  const maxTokensPerCycle = b['maxTokensPerCycle'];
+  const maxCyclesPerDay = b['maxCyclesPerDay'];
+  const maxIterations = l['maxIterations'];
+  const currentCycleTokens = meta['currentCycleTokens'];
+  const cyclesToday = meta['cyclesToday'];
+  const iterationsSoFar = meta['iterationsSoFar'];
+  if (
+    typeof maxTokensPerCycle !== 'number' || typeof maxCyclesPerDay !== 'number'
+    || typeof maxIterations !== 'number' || typeof currentCycleTokens !== 'number'
+    || typeof cyclesToday !== 'number' || typeof iterationsSoFar !== 'number'
+  ) {
+    return undefined;
+  }
+  return {
+    budget: { maxTokensPerCycle, maxCyclesPerDay },
+    maxIterations,
+    currentCycleTokens,
+    cyclesToday,
+    iterationsSoFar,
+  };
+}
+
+/** 起轮前闸输入 */
+export interface LoopStartGateInput {
+  /** 数据目录根（读 loop-pause.json） */
+  dataDir: string;
+  /** 触发派发的事件（携带 loop 预算上下文时走预算熔断） */
+  event?: SofagentEvent;
+}
+
+/**
+ * 起轮前闸（v1.6.0 章十）：决定「是否启动新一轮 loop」前的统一判定。
+ *
+ * ① **全停标记**——`loop-pause.json` 在位（`daemon pause` 写入）⇒ 挂起，不启动
+ *    新轮次（返回挂起态、不静默吞掉；`daemon resume` 清标记后自动恢复）。
+ * ② **预算熔断**——事件携带 loop 预算上下文时经 `checkLoopBudgetSuspends` 判
+ *    （单轮 token / 日循环数 / 迭代上限任一超限 ⇒ 挂起）。
+ *
+ * 两者同为「起轮前闸」，返回同一 `ShouldRunSuspension`（question='quota'）；
+ * 无标记且无预算上下文 → undefined（放行，默认态零行为变化）。
+ *
+ * @param input 数据目录 + 触发事件（可选）
+ * @returns 挂起详情（不启动新轮次时）；否则 undefined
+ */
+export function checkLoopStartGate(input: LoopStartGateInput): ShouldRunSuspension | undefined {
+  // ① 全停标记（daemon pause 写、此处读——此前零消费者 ⇒ CLI 输出虚假成功的根因）
+  const marker = readLoopPauseMarker(input.dataDir);
+  if (marker?.paused) {
+    const at = marker.pausedAt ? `（暂停于 ${marker.pausedAt}）` : '';
+    const reason = marker.reason ?? 'operator-requested';
+    return {
+      question: 'quota',
+      reason: `循环全停标记在位${at}——不启动新一轮 loop（原因：${reason}）`,
+      resumeHint: '人工确认后 sofagent daemon resume 清除暂停标记，自动恢复派发',
+    };
+  }
+  // ② 预算熔断（事件携带 loop 预算上下文才判——否则非 loop 轮次，放行）
+  const ctx = readLoopBudgetContext(input.event);
+  if (!ctx) return undefined;
+  return checkLoopBudgetSuspends({
+    loop: { budget: ctx.budget, maxIterations: ctx.maxIterations },
+    currentCycleTokens: ctx.currentCycleTokens,
+    cyclesToday: ctx.cyclesToday,
+    iterationsSoFar: ctx.iterationsSoFar,
+  });
 }
 
 /** 五问判定顺序（fail-fast——首个不通过即挂起并如实报告是哪一问） */
@@ -268,6 +409,9 @@ export function createShouldRunGate(probes: ShouldRunProbes = {}): ShouldRunGate
  *     （对齐 `node-executor.ts` 的 checkHITL 判定依据）；缺省 / 抛错 / 无节点 id → 通过。
  *   · `queryCostDecisions`（quota）——提供时存在 COST 配额告警记录才挂起（对齐
  *     `DecisionKind='COST'` 超支 WARN 可查态）；缺省 / 抛错 → 通过。
+ *   · **起轮前闸**（quota，v1.6.0 章十）——读 `deps.dataDir` 下 `loop-pause.json`
+ *     全停标记（`checkLoopStartGate`）+ 事件 `metadata.loop` 预算上下文经
+ *     `checkLoopBudgetSuspends` 判预算熔断；标记缺失 / 损坏 / 无预算上下文 → 通过。
  *   · `evidence`——**新引入判定位**（仓内无「证据就绪」运行时常量，已在
  *     ShouldRunQuestion 注释如实标注），缺省一律恒通过；保留可覆盖接口。
  *   · `focus`——并发写纪律探针（v1.5.5 批 18 接线，消费 `@sofagent/audit` 的
@@ -364,8 +508,16 @@ export function createDefaultShouldRunGate(deps: DefaultShouldRunGateDeps): Shou
     return { ok: true };
   };
 
-  // quota ← COST 决策可查态（存在配额告警 → 挂起）
-  const quota: ShouldRunProbe = () => {
+  // quota ← ① 起轮前闸（v1.6.0 章十：loop 全停标记 + loop 预算熔断）
+  //          ② 既有 COST 决策可查态（存在配额告警 → 挂起）
+  const quota: ShouldRunProbe = (event) => {
+    // ① 起轮前闸——暂停标记在位 / loop 预算熔断 → 挂起（不启动新轮次）；
+    //    使 readLoopPauseMarker / checkLoopBudgetSuspends 成为**生产可达**。
+    const loopStart = checkLoopStartGate({ dataDir: deps.dataDir, event });
+    if (loopStart) {
+      return { ok: false, detail: loopStart.reason, resumeHint: loopStart.resumeHint };
+    }
+    // ② 既有 COST 面
     const query = deps.queryCostDecisions;
     if (!query) return { ok: true };
     const hits = query(deps.dataDir);

@@ -35,19 +35,30 @@ export class JudgeRuntime {
     if (encoded.length > this.encoder.maxContextTokens) {
       throw new JudgeHeadError(`state ${encoded.length} tokens 超上限 ${this.encoder.maxContextTokens}——fail-closed`);
     }
+    // 🔒 一次编码多头并行（行为锁）：把**已编码表示**传入各判定头——头对同一 state
+    // 复用本次编码，不再逐问各自 encode(state)。此前每个 head 内部各自 encode ⇒ N 问
+    // 共 N+1 次编码，与模块头 claim 相悖；此处以「同 state 命中已编码缓存」的编码器
+    // 视图传入，使实现与 claim 对齐（head 契约不变——换基座仍只换 EncoderLike 实现）。
+    const sharedEncoder: EncoderLike = {
+      modelRevision: this.encoder.modelRevision,
+      maxContextTokens: this.encoder.maxContextTokens,
+      encode: (state: string): number[][] => (state === request.state ? encoded : this.encoder.encode(state)),
+      isSingleToken: (text: string): boolean => this.encoder.isSingleToken(text),
+      decodeToken: (token: number): string => this.encoder.decodeToken(token),
+    };
     const answers: DecisionAnswer[] = request.questions.map((q) => {
       switch (q.kind) {
         case 'choice': {
-          const out = choiceHead(this.encoder, request.state, q.options.map((o) => o.label), q.options.map((o) => o.id));
+          const out = choiceHead(sharedEncoder, request.state, q.options.map((o) => o.label), q.options.map((o) => o.id));
           const top = Object.entries(out.scores).sort((a, b) => b[1] - a[1])[0]!;
           return makeChoiceAnswer(q, top[0], out.scores);
         }
         case 'score': {
-          const out = scoreHead(this.encoder, request.state, { min: q.min, max: q.max });
+          const out = scoreHead(sharedEncoder, request.state, { min: q.min, max: q.max });
           return makeScoreAnswer(q, out.value, out.interval, (out.interval.upper - out.interval.lower) / 2);
         }
         case 'noul': {
-          const out = noulHead(this.encoder, request.state);
+          const out = noulHead(sharedEncoder, request.state);
           return makeNoulAnswer(q, out.probability);
         }
       }

@@ -315,3 +315,69 @@ describe('focus 探针（并发写纪律接线 · v1.5.5 批 18）', () => {
     }
   }, 30_000);
 });
+
+// ============================================================
+// v1.6.0 章十：起轮前闸（loop 全停标记 + 预算熔断）
+// ============================================================
+describe('章十 · 起轮前闸（全停标记 + 预算熔断）', () => {
+  it('loop-pause.json 在位 → 事件挂起（daemon pause 的生产消费者；清标记后自动恢复）', async () => {
+    const markerPath = path.join(tmpDir, 'loop-pause.json');
+    fs.writeFileSync(
+      markerPath,
+      JSON.stringify({ paused: true, reason: 'test-halt', pausedAt: '2026-10-14T00:00:00.000Z' }),
+    );
+    const bus = makeBus(createDefaultShouldRunGate({ dataDir: tmpDir }));
+    const received: string[] = [];
+    bus.subscribe(EVENT_TYPES.NODE_OUTPUT, (e) => {
+      received.push(e.id);
+    });
+
+    const blocked = await bus.publish(nodeOutputInput('loop-1'));
+    expect(blocked.delivered).toBe(false);
+    expect(blocked.suspended).toBe(true);
+    expect(blocked.suspension?.question).toBe('quota');
+    expect(blocked.suspension?.reason).toContain('全停');
+    expect(received).toEqual([]);
+    expect(bus.listDeadLetters()).toEqual([]); // 挂起非失败
+
+    // daemon resume 清标记 → 下一次 publish 触发自动恢复，挂起事件被真正投递
+    fs.rmSync(markerPath);
+    await bus.publish(nodeOutputInput('loop-2'));
+    expect(received).toContain('loop-1');
+    expect(received).toContain('loop-2');
+  });
+
+  it('无标记且无 loop 预算上下文 → 零行为变化（正常投递）', async () => {
+    const bus = makeBus(createDefaultShouldRunGate({ dataDir: tmpDir }));
+    const r = await bus.publish(nodeOutputInput('noop-1'));
+    expect(r.delivered).toBe(true);
+    expect(r.suspended).toBeUndefined();
+  });
+
+  it('标记损坏 → 降级放行（缺数据不挂起生产事件）', async () => {
+    fs.writeFileSync(path.join(tmpDir, 'loop-pause.json'), '{ not json');
+    const bus = makeBus(createDefaultShouldRunGate({ dataDir: tmpDir }));
+    const r = await bus.publish(nodeOutputInput('corrupt-1'));
+    expect(r.delivered).toBe(true);
+    expect(r.suspended).toBeUndefined();
+  });
+
+  it('loop 预算上下文超限 → 预算熔断挂起（checkLoopBudgetSuspends 生产可达）', async () => {
+    const bus = makeBus(createDefaultShouldRunGate({ dataDir: tmpDir }));
+    const r = await bus.publish({
+      id: 'budget-1',
+      type: EVENT_TYPES.NODE_OUTPUT,
+      source: 'node-output' as const,
+      payload: { workflowId: 'wf', nodeId: 'n1', output: 'ok', success: true },
+      metadata: {
+        loop: { budget: { maxTokensPerCycle: 100, maxCyclesPerDay: 10 }, maxIterations: 5 },
+        currentCycleTokens: 999, // 超 100
+        cyclesToday: 1,
+        iterationsSoFar: 1,
+      },
+    });
+    expect(r.suspended).toBe(true);
+    expect(r.suspension?.question).toBe('quota');
+    expect(r.suspension?.reason).toContain('token');
+  });
+});

@@ -109,12 +109,17 @@ async function main() {
         case 'pause': {
           // sofagent daemon pause --reason "<text>"：一键挂起全部循环 workflow
           //（含排队中的并发请求一并冻结）；写暂停标记文件，事件面读标记停派
-          const { writeFileSync, existsSync, readFileSync, rmSync } = await import('fs');
-          const { join } = await import('path');
+          //（生产消费者 = orchestrator events/should-run.ts 的 checkLoopStartGate，
+          //  已接进派发前置 shouldRunGate 的 quota 面）。写前兜底建数据目录——
+          // 首用（目录未建）时 writeFileSync 会抛 ENOENT。
+          const { writeFileSync, mkdirSync, existsSync } = await import('fs');
+          const { join, dirname } = await import('path');
           const { getDataDir } = await import('@sofagent/core');
           const reasonIdx = args.indexOf('--reason');
           const reason = reasonIdx !== -1 ? (args[reasonIdx + 1] ?? 'operator-requested') : 'operator-requested';
           const markerPath = join(getDataDir(), 'loop-pause.json');
+          const markerDir = dirname(markerPath);
+          if (!existsSync(markerDir)) mkdirSync(markerDir, { recursive: true });
           writeFileSync(markerPath, JSON.stringify({ paused: true, reason, pausedAt: new Date().toISOString() }, null, 2));
           console.log(`⏸️  已暂停全部循环 workflow（原因：${reason}）——排队请求一并冻结`);
           console.log('   恢复：sofagent daemon resume');
@@ -126,9 +131,17 @@ async function main() {
           const { getDataDir } = await import('@sofagent/core');
           const markerPath = join(getDataDir(), 'loop-pause.json');
           if (existsSync(markerPath)) {
-            const marker = JSON.parse(readFileSync(markerPath, 'utf-8')) as { pausedAt: string; reason: string };
+            let marker: { pausedAt?: string; reason?: string } = {};
+            try {
+              marker = JSON.parse(readFileSync(markerPath, 'utf-8')) as { pausedAt?: string; reason?: string };
+            } catch (err) {
+              // 标记损坏：报可读错误并退出非零（不裸崩，也不误报「已恢复」）
+              console.error(`❌ 暂停标记损坏，无法恢复：${markerPath}（${(err as Error).message}）`);
+              console.error('   修法：删除损坏的 loop-pause.json 后重跑 resume，或手工确认循环为运行态');
+              process.exit(1);
+            }
             rmSync(markerPath);
-            console.log(`▶️  已恢复循环 workflow（此前暂停于 ${marker.pausedAt}，原因：${marker.reason}）`);
+            console.log(`▶️  已恢复循环 workflow（此前暂停于 ${marker.pausedAt ?? '未知时刻'}，原因：${marker.reason ?? '未记录'}）`);
           } else {
             console.log('▶️  无暂停标记——循环本就在运行态');
           }

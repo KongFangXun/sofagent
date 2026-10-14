@@ -457,3 +457,5 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 2026-10-12     | 20261012-07    | release-gate | 28   | SKIP       | FAIL       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-12/run-07
 
 2026-10-12     | 20261012-08    | release-gate | 4    | PASS       | PASS       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-12/run-08
+
+2026-10-14     | 20261014-01    | fresh-eyes   | 1    | 0          | 5          | 16       | human-stop（四角色流水线跑完 1 轮：A 12 视角审 → B 修 → C 独立验收 → D 对抗裁决，REOPEN=0；4/5 P1 闭环且经 C/D 独立取证复核，F-03 exit_when 可判定文法无 SSOT ⇒ 编排者裁定转章二，N-3 同类 fail-open 并入；A 报 16 P2 + C 追加 3 P2 未处理。未跑 round-02：唯一未闭环项依赖章二 SSOT，重跑无新证据=Token-Burn 反模式，且处 peak 计费窗口） | FORGE/SKILL/fresh-eyes-loop/runs/2026/10/14/run-01

@@ -217,30 +217,60 @@ export function validateSample(s: DecisionSample): string[] {
 
 // ── 数据集加载校验（fail-closed 整批）──────────────────
 
+/**
+ * 家族键（家族级切分单元）：对比样本取 `contrastive.familyId`，否则取血缘锚点键
+ * （轨迹粒度——同一轨迹/会话/PR 视为同源家族，整体留同侧）。两条口径同源，
+ * 均保证「同源不跨训练/评测集」。
+ */
+function familyKeyOf(s: DecisionSample): string {
+  return (
+    s.contrastive?.familyId
+    ?? s.provenance.traceId
+    ?? s.provenance.hitlSessionId
+    ?? `pr-${s.provenance.prNumber ?? 'x'}`
+  );
+}
+
 export function loadDataset(samples: DecisionSample[]): DatasetSplit {
   const errs: string[] = [];
   const train: DecisionSample[] = [];
   const evalSet: DecisionSample[] = [];
   const calibration: DecisionSample[] = [];
   const deletionChecks: DecisionSample[] = [];
-  const families = new Map<string, Set<'train' | 'eval'>>();
+
+  // 家族级切分（同源家族不跨训练/评测集，纪律③）：家族键 → 侧，**首见定侧**
+  //（%4===3 → eval，≈25% 评测侧——复用 collectors/index.ts 既有「轨迹粒度切分 +
+  // hash 轮转近似均衡」纪律，不另造规则）。同家族后续样本一律沿用首见侧。
+  const familySide = new Map<string, 'train' | 'eval'>();
+  let toggle = 0;
+  const assignSide = (fam: string): 'train' | 'eval' => {
+    let side = familySide.get(fam);
+    if (side === undefined) {
+      side = toggle % 4 === 3 ? 'eval' : 'train';
+      toggle += 1;
+      familySide.set(fam, side);
+    }
+    return side;
+  };
 
   samples.forEach((s, i) => {
     const sampleErrs = validateSample(s);
     for (const e of sampleErrs) errs.push(`样本[${i}]：${e}`);
 
-    // ① 删句样本不入训练集（「缺失 ≠ 为假」——加载期断言）；且不属评测面
-    //（家族级切分按训练/评测两侧计——校验桶不算评测侧）
+    // ① 删句样本不入训练集（「缺失 ≠ 为假」——加载期断言）；只作必要性校验，
+    //    不属训练/评测任一侧（家族级切分按训练/评测两侧计）。
     if (s.contrastive?.isDeletionVariant) {
       deletionChecks.push(s); // 只作必要性校验
       return;
     }
-    // ② benchmark 标记——构建期拒绝进训练
+    // ② benchmark 标记——构建期拒绝进训练（对照面 = 评测侧）
     if (s.benchmark && s.benchmark.length > 0) {
       evalSet.push(s); // 对照面可用
       return;
     }
-    // ③ 对比样本 no-probability-target 不进校准集（门四联动）
+    // ③ 家族级切分：同家族整体留同侧（家族键 = familyId，否则轨迹粒度键）
+    const side = assignSide(familyKeyOf(s));
+    // ④ 对比样本 no-probability-target 不进校准集（门四联动）
     const hasProbTarget = s.answers.some((a) =>
       (a.kind === 'choice' && a.distribution) ||
       (a.kind === 'score' && a.interval) ||
@@ -249,23 +279,22 @@ export function loadDataset(samples: DecisionSample[]): DatasetSplit {
     if (hasProbTarget && !s.contrastive) {
       calibration.push(s);
     }
-    train.push(s);
-    if (s.contrastive) {
-      const fam = s.contrastive.familyId;
-      const side = families.get(fam) ?? new Set();
-      side.add('train');
-      families.set(fam, side);
-    }
+    (side === 'train' ? train : evalSet).push(s);
   });
-  // ④ 家族级切分：同家族不跨训练/评测（评测侧检查）
-  const trainFamilies = new Set<string>();
-  for (const [k, v] of families) if (v.has('train')) trainFamilies.add(k);
-  for (let i = 0; i < evalSet.length; i++) {
-    const fam = evalSet[i]!.contrastive?.familyId;
-    if (fam && trainFamilies.has(fam)) {
+
+  // ⑤ 家族级泄漏检查：同一家族键同时出现在训练与评测集 → 拒载（fail-closed）。
+  //    按**实际落集**对账（而非仅记侧），故 benchmark 携带与训练家族同 familyId 时
+  //    亦被拦下——真断言，不回落到恒真。
+  const trainFamilies = new Set(train.map(familyKeyOf));
+  const reportedLeak = new Set<string>();
+  for (const s of evalSet) {
+    const fam = familyKeyOf(s);
+    if (trainFamilies.has(fam) && !reportedLeak.has(fam)) {
+      reportedLeak.add(fam);
       errs.push(`家族级泄漏：familyId=${fam} 同时出现在训练与评测集`);
     }
   }
+
   if (errs.length > 0) {
     throw new DatasetSchemaError(`数据集加载被拒（${errs.length} 处，fail-closed）：\n  ${errs.slice(0, 20).join('\n  ')}${errs.length > 20 ? `\n  …共 ${errs.length} 处` : ''}`);
   }

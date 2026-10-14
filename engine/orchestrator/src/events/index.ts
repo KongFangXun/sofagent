@@ -6,6 +6,8 @@ export { EventBus } from './bus';
 export type { EventBusOptions, EventHandler, EventSubscriptionHandle, DeadLetterInput, PendingDispatch } from './bus';
 // v1.5.3 第三章：运行时 should-run 判定链（五问 + 派发前置挂起/自动恢复）
 export { shouldRun, createShouldRunGate, createDefaultShouldRunGate, buildEnterpriseEventBusOptions, SHOULD_RUN_ORDER } from './should-run';
+// v1.6.0 章十：起轮前闸（loop 全停标记 + 预算熔断——daemon pause 的生产消费者）
+export { checkLoopBudgetSuspends, checkLoopStartGate, readLoopPauseMarker, LOOP_PAUSE_MARKER } from './should-run';
 export type {
   ShouldRunQuestion,
   ShouldRunCheck,
@@ -17,6 +19,9 @@ export type {
   ShouldRunGate,
   DefaultShouldRunGateDeps,
   EnterpriseEventBusOptions,
+  LoopPauseMarker,
+  LoopBudgetContext,
+  LoopStartGateInput,
 } from './should-run';
 export {
   createNodeOutputSource,
