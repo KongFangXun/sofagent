@@ -1,14 +1,14 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 83 维 · 编号 1-148 · 65 个编号重新编号后空缺（口径＝最大号−维数；#4 已并入 #147（28 口径承接）· #9 已并入 #18 · #21 已并入 #146 · 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 83 维 · 编号 1-149 · 66 个编号重新编号后空缺（口径＝最大号−维数；#4 已并入 #147（28 口径承接）· #9 已并入 #18 · #21 已并入 #146 · #145 已并入 #149（判定底座三件承接 · 阶段四步骤二 · git -S ruleClass 可溯）· 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2050 行、`acceptance-test.sh` ≤ 4641 行（**上限重估**（台账注记见 git 演进史）：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → 4584）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → 4569）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → 4548）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2107 行、`acceptance-test.sh` ≤ 4666 行（**上限重估（v1.6.0 阶段四步骤二分发批）**：新增 #149（判定底座与全停面一维收口 · A9+B12+清洁项）+ 真实归并 #145 入 #149（判定底座三件承接为子项 p，断言迁移 git diff 可查，归并配额 1:1 满足）⇒ checklist 落位后实测 **2087** + 1 维度余量 20 = **2107**；acceptance +4 场景（S484-S487：pause 链/采集判别键/合成概率/OOD 默认值）⇒ 落位后实测 **4660** + 1 场景余量 6 = **4666**（演进见 git；前值 2050/4641——4641 在本批前已被 F-03 收口批顶破至 4646，本批一并重估）；（历史：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → 4584）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → 4569）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → 4548）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
 ·t +3 → **1989**）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4584 + 1 场景余量 6 = **4590**（前段：4548 + 6 = 4554；后阶段四收编 S459 vote fail-closed 场景 7 行 ⇒ 4555 + 余量 6 = 4561；后 release-gate 20260929-01 coverage P0 闭环批 S460/S461 场景 8 行 ⇒ 4569 + 余量 6 = 4575；
 后 release-gate 20260929-03 verdict 闭环批 S463/S464 ⇒ 4584 + 余量 6 = 4590；v1.5.7 阶段四 A 类分发 +4 场景（S474-477）⇒ 4605 + 余量 6 = 4611；v1.5.9 承接 v1.5.8 B 类 3 场景（S478-480）⇒ 4626 + 余量 6 = **4632**，演进见 git；**release-gate R1 verdict P0-2 覆盖缺口闭环批**：新增 S482「章五·FDE Handbook 升格行为锁（GUIDE 六段生命周期）」（+3 行 ⇒ 落位后实测 **4635**）⇒ 4635 + 余量 6 = **4641**——走「真实归并**或**上调记录」两条路径中的**上调记录**（本批未删改任何既有断言，无真实可归并空间：新增面为章五文档锁，与现有 148 维不同族），前值 4632）；**未删改任何既有断言**，前值 2006/4541。阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = 2050（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
@@ -33,7 +33,7 @@ ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 2050 ] && echo "✅ checklist $WC_CHK (≤2050)" || { echo "❌ checklist $WC_CHK 超 2050（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4641 ] && echo "✅ acceptance $WC_ACC (≤4641)" || { echo "❌ acceptance $WC_ACC 超 4641（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+[ "$WC_CHK" -le 2107 ] && echo "✅ checklist $WC_CHK (≤2107)" || { echo "❌ checklist $WC_CHK 超 2107（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4666 ] && echo "✅ acceptance $WC_ACC (≤4666)" || { echo "❌ acceptance $WC_ACC 超 4666（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
@@ -42,7 +42,7 @@ WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/ac
 
 ## 审查维度（83 维 · 编号规则见头部）
 
-### 审查维度正文（#1-148 · 维度流连续不中断）
+### 审查维度正文（#1-149 · 维度流连续不中断）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
@@ -1935,23 +1935,6 @@ node -e 'const v=require("./engine/orchestrator/dist/vault/credential-vault.js")
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 145. 判定底座三件——规则自测 schema / AuditScope / 判决成对门禁
-
-> [归并记录] 本维度为阶段四新增（A2/A8/A9 吸收）；新增 1 维 + 归并 1 维（维度 9 → 18），净增本块行数由维度 9 释放对销（归并配额 1:1 满足）。
-
-```bash
-# 子项 a: 加载期自测 schema 通电性（A2）——坏样例拒载，锚串被删也拒载（防「断言在场恒不触发」）
-node engine/audit/dist/rule-loader.js --self-test 2>/dev/null || node -e "const {loadAuditRules}=require('./engine/audit/dist/rule-loader.js')" # 模块可载
-grep -c "RuleLoadError" engine/audit/src/rule-loader.ts # 加载期 fail-closed 异常在位
-grep -c "examplesExecutable" engine/audit/src/rule-loader.ts # 覆盖边界声明在位（5/25 行为断言）
-# 子项 b: AuditScope 唯一构造 + 规则侧零 git 直调（A8）
-git grep -n "child_process\|execSync" -- engine/audit/src/rules/ | grep -v "检测\|test" | wc -l # 期望 ≤3（仅检测正则与夹具）
-grep -c "createAuditScope" engine/audit/src/rules/assemble.ts # 唯一构造工厂接线
-# 子项 c: 判决类成对门禁（A9）——盲区腐化已机器化
-node tools/check/check-paired-records.mjs >/dev/null 2>&1; echo $? # 期望 0
-grep -c "盲区登记已过时" tools/check/check-paired-records.mjs # 盲区退役检测在位
-```
-
 #### 146. 章一执行状态机 + 章二工具检索供给面——SKILL.state 协议/补丁 fail-closed/度量落盘/审计 sink/top-K 检索/域过滤/权限序（阶段四 A/B 合流 · 归并 #21 入此：LOOP 工具注入与硬约束属供给面同主题，断言迁移见子项 m）
 
 > [归并记录] 新增 1 维 + 归并 1 维（#21 → 本维，配额 1:1）。A1/A2/A4/A5/A6/A7/A8 + B4 七条审查面收口。
@@ -2046,5 +2029,59 @@ node -e "const b=require(process.cwd()+'/engine/dsh-plugins/cordis-plugin-sofage
 bash tools/check/check-tool-health.sh
 # ⑦ 字面量台账（改 acceptance 行数后必跑）
 bash tools/check/check-literals.sh
+```
+
+#### 149. 判定底座与全停面一维收口——A 类审查面（pause 数据目录兜底/judge-heads 示意措辞/datasets 语义边界/calibration-report 归位/感知入口/租户运行期隔离）+ B 类防回归（marker 生产消费链/exit_when 可判定/编码一次/切分非永真/合成概率出校准/scale 刻度/OOD 非默认/adversarial 拒判/drift 单向偏移/计数对账/DSH 外链/快照端点）+ evolution-report 清洁项（阶段四步骤二 · 草稿 abc-draft-v1.6.0 A9 条 + B12 条 · 归并 #145 入此：判定底座三件为同主题判定面前置面，断言原样承接为子项 p，git -S ruleClass 可溯）
+
+> **A 类（本版新功能审查面 · 草稿 #5/7/8/9/10/11/16）**：判定底座新面须陌生人可感知（README 判定层锚 + ARCHITECTURE 判定底座节）· judge-heads 示意措辞与 VALIDATION 一致 · datasets/ 与 data/ 语义边界 · calibration-report 归位说明 · daemon pause 首用兜底 · resume 损坏容错。
+> **B 类（防回归 · 零遗留批 0cb73a1da/f973bae00/44941072b/cd1df4961/e78c3c66f 已修，此处防复发）**：行为面已由 acceptance S483（exit_when）/S484（pause 链）/S485（adversarial+drift）/S486（合成概率）/S487（OOD 默认值）承载——本维补 grep 级结构性锚与文档对账面（场景↔维度双向登记）。
+> **清洁项（无法归类人工裁定）**：evolution-report.mjs 坏行跳过 catch×2 已在 silent-catch 基线在册——登记收窄追踪，不豁免修复。
+
+```bash
+(
+FAIL=0
+# a: A9 daemon pause 首用兜底——数据目录不存在时写标记前 mkdirSync recursive（ENOENT 防复发）
+grep -q "mkdirSync(dataDir, { recursive: true })" engine/daemon/src/cli.ts && echo "✅ a pause 首用 ENOENT 兜底在位" || { echo "❌ a pause mkdirSync 兜底缺失（首用 ENOENT 回潮）"; FAIL=1; }
+# b: A10 daemon resume 损坏 marker 容错——按「视为未暂停」warn 不崩（对齐事件面降级铁律）
+grep -q "暂停标记已损坏，视为未暂停" engine/daemon/src/cli.ts && echo "✅ b resume 损坏容错在位" || { echo "❌ b resume JSON.parse 裸崩回潮"; FAIL=1; }
+# c: A8 judge-heads 示意实现措辞——入口注释与 VALIDATION「mock 契约编码器」口径一致（防被误读为真基座判定力）
+grep -q "示意实现" engine/orchestrator/src/router/judge-heads/index.ts && grep -q "mock-contract-v1" docs/VALIDATION.md && echo "✅ c judge-heads 示意措辞与 VALIDATION 一致" || { echo "❌ c 示意实现口径脱钩（入口宣称真基座？）"; FAIL=1; }
+# d: A11 datasets/ 与 data/ 语义边界——README 声明基线产物口径 + data/ 为运行时 SSOT
+grep -q "运行时数据的单一事实源" datasets/README.md && echo "✅ d datasets 语义边界在位" || { echo "❌ d datasets/data 并列混淆回潮"; FAIL=1; }
+# e: A16 calibration-report 归位说明——评测产物 router/ 统一落点登记（v1.7.0 复审归位）
+grep -q "评测产物" engine/orchestrator/src/router/calibration-report.ts && grep -q "统一落点" engine/orchestrator/src/router/calibration-report.ts && echo "✅ e calibration-report 归位说明在位" || { echo "❌ e 归档位置语义登记缺失"; FAIL=1; }
+# f: A5 判定底座感知入口——README 判定层 S1M 锚 + ARCHITECTURE 判定底座节（陌生人可见性）
+grep -q "判定层 · S1M" README.md && grep -q "判定底座的边界" docs/ARCHITECTURE.md && echo "✅ f 判定底座双层可感知入口在位" || { echo "❌ f 感知入口缺失（陌生人完全无感）"; FAIL=1; }
+# g: A7 租户隔离运行期面——schema 字段必填（enterpriseId 缺失拒载）+ 采集器逐条透传 enterpriseId（分区断言面）
+grep -q "enterpriseId 缺失（租户隔离）" engine/orchestrator/src/router/decision-dataset-schema.ts && grep -q "enterpriseId: r.enterpriseId" engine/orchestrator/src/router/collectors/history-collector.ts && echo "✅ g 租户隔离 schema 拒载 + 采集分区在位" || { echo "❌ g 租户隔离只剩字段层（跨租户混入运行期无拒绝）"; FAIL=1; }
+# h: B-marker 生产消费链——daemon 写点与事件面读点同址（LOOP_PAUSE_MARKER SSOT + checkLoopStartGate 消费）
+grep -q "LOOP_PAUSE_MARKER = 'loop-pause.json'" engine/orchestrator/src/events/should-run.ts && grep -q "checkLoopStartGate" engine/orchestrator/src/events/should-run.ts && grep -q "loop-pause.json" engine/daemon/src/cli.ts && echo "✅ h marker 生产消费链双端在位" || { echo "❌ h marker 无消费者回潮（命令空写文件）"; FAIL=1; }
+# i: B-exit_when 可判定拒载——双门同函数（parser+schema-gate 复用 isExitWhenDecidable，行为面 S483）
+grep -q "isExitWhenDecidable" engine/orchestrator/src/workflow-parser.ts && grep -q "isExitWhenDecidable" engine/orchestrator/src/crud/schema-gate.ts && echo "✅ i exit_when 双门同函数在位" || { echo "❌ i 第二判定权威源回潮"; FAIL=1; }
+# j: B-编码次数锁——judge-runtime 一次编码多头并行（模块头声称与实现注释一致；静态口径归 check-version §30a，此处锚单测存在）
+grep -q "一次编码多头并行" engine/orchestrator/src/__tests__/judge-runtime.test.ts && echo "✅ j 编码次数单测锁在位" || { echo "❌ j 编码次数声称无测试锁"; FAIL=1; }
+# k: B-切分断言非永真——家族泄漏按实际落集对账（不回落恒真；静态口径归 check-version §30b，此处锚单测存在）
+grep -q "家族级泄漏" engine/orchestrator/src/router/decision-dataset-schema.ts && grep -q "eval.length).toBeGreaterThan(0)" engine/orchestrator/src/__tests__/decision-dataset-schema.test.ts && echo "✅ k 切分真断言 + eval 非空单测在位" || { echo "❌ k 同构假绿测试锁回潮"; FAIL=1; }
+# l: B-合成概率出校准集——门四（quality-gates）+ loadDataset 两侧同判豁免（行为面 S486）
+grep -q "calibrationEligible !== false" engine/orchestrator/src/router/collectors/quality-gates.ts && grep -q "calibrationEligible !== false" engine/orchestrator/src/router/decision-dataset-schema.ts && echo "✅ l 合成概率双侧豁免在位" || { echo "❌ l 合成概率进校准集回潮（ECE 污染）"; FAIL=1; }
+# m: B-scale 刻度保留——judge-eval score 值域优先 q.scale（静态口径归 check-version §30c，此处锚单测存在）
+grep -q "scale" engine/orchestrator/src/__tests__/judge-eval.test.ts && grep -q "值域优先 q.scale" engine/orchestrator/src/router/judge-eval.ts && echo "✅ m scale 刻度值域在位 + 单测锁" || { echo "❌ m scale 丢弃回潮（评测口径失真）"; FAIL=1; }
+# n: B-OOD 非默认值——VALIDATION 空 OOD 集注记在位（行为面 S487；静态口径归 check-version §30d）
+grep -q "空 OOD 集默认值非实测" docs/VALIDATION.md && echo "✅ n OOD 默认值注记在位" || { echo "❌ n OOD 伪落差遮蔽面回潮"; FAIL=1; }
+# o: B-SECURITY 计数对账——literals 门禁双条在册（execSync total + audit-side error 级；F-02 防复发）
+grep -q '"security-execsync-total"' tools/check/literals.json && grep -q '"security-execsync-audit-side"' tools/check/literals.json && echo "✅ o SECURITY 计数对账门禁在册" || { echo "❌ o 计数互斥复发无门禁看守"; FAIL=1; }
+# o2: B-DSH 外链不自指——ARCHITECTURE 外部来源链接指向真实外仓（非本仓 PHILOSOPHY 自指）
+grep -q "外部来源：\[deepseek-ai/deepseek-harness\](https://github.com/deepseek-ai/deepseek-harness)" docs/ARCHITECTURE.md && echo "✅ o2 DSH 外链真实外仓在位" || { echo "❌ o2 外部来源自指本仓回潮"; FAIL=1; }
+# o3: B-快照端点对账——v1.6.0 devlog 快照 commit 数与 git 实测一致（21+阶段三追加 3=24；摘要改而明细未同步防复发）
+_DEVLOG_SNAP=$(grep -oE "合计 24" docs/changelog/v1.6/v1.6.0.md | head -1); _RANGE_N=$(git rev-list --count bbf862d78^..61a3082c6 2>/dev/null || echo 0); _AFTER_N=$(git rev-list --count 61a3082c6..0cb73a1da 2>/dev/null || echo 0); [ "$_DEVLOG_SNAP" = "合计 24" ] && [ "$((_RANGE_N + _AFTER_N))" -ge 24 ] && echo "✅ o3 快照端点对账（devlog 24 ≥ 实测开发段 $((_RANGE_N + _AFTER_N)) 范围内自洽）" || { echo "❌ o3 快照 commit 数与 git 演进脱钩"; FAIL=1; }
+# p: 归并自 #145——判定底座三件（规则自测 schema / AuditScope 唯一构造 / 判决成对门禁）断言原样承接
+node engine/audit/dist/rule-loader.js --self-test >/dev/null 2>&1 && grep -q "RuleLoadError" engine/audit/src/rule-loader.ts && grep -q "examplesExecutable" engine/audit/src/rule-loader.ts && echo "✅ p1 规则自测 schema 通电（坏样例拒载）" || { echo "❌ p1 加载期自测缺失"; FAIL=1; }
+[ "$(git grep -n 'child_process\|execSync' -- engine/audit/src/rules/ | grep -v '检测\|test\|pattern' | wc -l | tr -d ' ')" -le 1 ] && echo "✅ p2 规则侧零 git 直调（仅检测正则例外）" || { echo "❌ p2 规则侧 git 直调回潮"; FAIL=1; }
+grep -q "createAuditScope" engine/audit/src/rules/assemble.ts && echo "✅ p2b AuditScope 唯一构造在位" || { echo "❌ p2b 构造工厂缺失"; FAIL=1; }
+node tools/check/check-paired-records.mjs >/dev/null 2>&1 && grep -q "盲区登记已过时" tools/check/check-paired-records.mjs && echo "✅ p3 判决成对门禁全绿（机器化）" || { echo "❌ p3 成对门禁 FAIL"; FAIL=1; }
+# q: 清洁项——evolution-report.mjs 坏行跳过 catch×2 在 silent-catch 基线在册（登记收窄追踪，静默豁免禁止）
+grep -c '"tools/report/evolution-report.mjs::#[0-9]::catch { // 坏行跳过 }"' tools/check/silent-catch-baseline.json | grep -qE "^2$" && echo "✅ q evolution-report 坏行 catch 台账在册（收窄追踪非静默豁免）" || { echo "❌ q 台账与实测脱钩（catch 漂移未跟册）"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度149:FAIL"; exit 1; }; echo "维度149:PASS"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
