@@ -98,15 +98,35 @@ export function assertHardSampleKind(input: HardSampleInput): { ok: true } | { o
       const dft = evidence.driftObserved;
       if (!dft) return { ok: false, reason: '⑥漂移：缺 driftObserved 证据' };
       if (!dft.t1 || !dft.t2) return { ok: false, reason: '⑥漂移：须同记两时点（否则不可复现）' };
+      // 最小断言：可靠图单向偏移（fresh-eyes run-01 项 7）——两时点各产分桶
+      // 命中数组，须至少一桶发生单调变化（逐桶差值存在非零项）才算 drift 类。
+      // 此前仅查 t1/t2 非空——空数组/全等数组也落 ok:true，把「无漂移」误归
+      // drift 类（台账虚高）。长度不齐 = 分桶口径漂了，同为不可判证据。
+      const t1 = dft.t1BucketReliability;
+      const t2 = dft.t2BucketReliability;
+      if (!Array.isArray(t1) || !Array.isArray(t2) || t1.length === 0 || t1.length !== t2.length) {
+        return { ok: false, reason: '⑥漂移：两时点分桶可靠图数组缺失或长度不齐（须同口径同桶数）' };
+      }
+      const deltas = t1.map((v, i) => (t2[i] as number) - v);
+      if (deltas.every((d) => d === 0)) {
+        return { ok: false, reason: '⑥漂移：两时点分桶可靠图逐桶零变化——无单向偏移不构成本类' };
+      }
       return { ok: true };
     }
     case 'adversarial': {
       const adv = evidence.adversarialForm;
       if (!adv) return { ok: false, reason: '⑦对抗：缺 adversarialForm 证据' };
-      if ('inducedAnswerShift' in adv) {
-        if (!adv.inducedAnswerShift) return { ok: false, reason: '⑦对抗：同一事实换措辞答案未变——非诱导偏移样本' };
-      } else if ('carriesPolicyText' in adv) {
-        if (!adv.carriesPolicyText) return { ok: false, reason: '⑦对抗：未携带授权/政策类文本——非越权形态' };
+      // 判别键先校验（fresh-eyes run-01 项 6）：空对象/无判别键的 adversarialForm
+      // 此前直落 ok:true（`in` 检查全不命中即漏过）——先验必需判别键在位，缺键拒收。
+      const hasShiftKey = 'inducedAnswerShift' in adv;
+      const hasPolicyKey = 'carriesPolicyText' in adv;
+      if (!hasShiftKey && !hasPolicyKey) {
+        return { ok: false, reason: '⑦对抗：adversarialForm 缺判别键（须 inducedAnswerShift 或 carriesPolicyText 至少其一）' };
+      }
+      if (hasShiftKey) {
+        if (!(adv as { inducedAnswerShift: boolean }).inducedAnswerShift) return { ok: false, reason: '⑦对抗：同一事实换措辞答案未变——非诱导偏移样本' };
+      } else {
+        if (!(adv as { carriesPolicyText: boolean }).carriesPolicyText) return { ok: false, reason: '⑦对抗：未携带授权/政策类文本——非越权形态' };
       }
       return { ok: true };
     }

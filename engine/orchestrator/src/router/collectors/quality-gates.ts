@@ -85,14 +85,18 @@ export function runQualityGates(samples: DecisionSample[], opts: QualityGatesOpt
       }
     }
     // ── 门四 校准标注 ──
+    // 判据（fresh-eyes run-01 项 9 对齐）：只有能表达**概率目标**的样本进校准集
+    // （choice 分布 / score 区间 / noul 真值概率）——且概率语义须真实：采集器
+    // 标 calibrationEligible=false（硬 disposition 映射出的合成概率——映射常数
+    // 非概率目标）同判豁免。
     const hasProbTarget = s.answers.some((a) =>
       (a.kind === 'choice' && a.distribution) ||
       (a.kind === 'score' && a.interval) ||
       (a.kind === 'noul' && a.probability !== undefined),
     );
-    if (hasProbTarget) {
+    if (hasProbTarget && s.calibrationEligible !== false) {
       calibrationEligible.push(s);
-    } else {
+    } else if (!hasProbTarget) {
       noProbabilityTarget.push(s); // 硬标签：标 no-probability-target 不进校准
     }
     passed.push(s);

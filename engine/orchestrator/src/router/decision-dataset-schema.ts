@@ -109,6 +109,17 @@ export interface DecisionSample {
   lang: 'zh' | 'en';
   /** 对比样本元数据（有=对比对成员） */
   contrastive?: ContrastivePairMeta;
+  /**
+   * 校准集资格显式豁免位（fresh-eyes run-01 项 9，缺省 = 可进）。
+   *
+   * 门四判据是「只有能表达概率目标的样本进校准集」——概率目标指样本
+   * 携带**真实的**概率语义（choice 分布 / score 区间 / noul 真值概率）。
+   * 硬 disposition 映射出来的合成概率（allow→0.9 之类）表达的是档位承诺
+   * 而非概率目标，进校准集会把「映射常数」当「校准读数」污染 ECE。
+   * 采集器确认样本概率为合成映射时标 `false`（history-collector 已标），
+   * 门四与 loadDataset 两侧同判豁免；训练面不受影响（样本照常 passed）。
+   */
+  calibrationEligible?: boolean;
 }
 
 /** 数据集切分（三集分工 + 校验桶） */
@@ -270,13 +281,16 @@ export function loadDataset(samples: DecisionSample[]): DatasetSplit {
     }
     // ③ 家族级切分：同家族整体留同侧（家族键 = familyId，否则轨迹粒度键）
     const side = assignSide(familyKeyOf(s));
-    // ④ 对比样本 no-probability-target 不进校准集（门四联动）
+    // ④ 对比样本 no-probability-target 不进校准集（门四联动）；
+    //    合成概率样本（calibrationEligible=false，如 history-collector 的
+    //    disposition 硬映射概率）同判豁免——「能表达概率目标」与「有个数字」
+    //    不是一回事，映射常数不构成校准读数。
     const hasProbTarget = s.answers.some((a) =>
       (a.kind === 'choice' && a.distribution) ||
       (a.kind === 'score' && a.interval) ||
       (a.kind === 'noul' && a.probability !== undefined),
     );
-    if (hasProbTarget && !s.contrastive) {
+    if (hasProbTarget && !s.contrastive && s.calibrationEligible !== false) {
       calibration.push(s);
     }
     (side === 'train' ? train : evalSet).push(s);

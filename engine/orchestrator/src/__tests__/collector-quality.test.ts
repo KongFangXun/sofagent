@@ -82,6 +82,17 @@ describe('门四 校准标注', () => {
     expect(r.calibrationEligible).toContain(soft);
     expect(r.calibrationEligible).not.toContain(hard);
   });
+  it('test_gate4_合成概率样本calibrationEligible=false_不进校准（run-01 项 9）', () => {
+    // history-collector 的 disposition 硬映射概率（allow→0.9）——有概率形态但语义
+    // 是映射常数，门四判「能表达概率目标」须真实概率语义 ⇒ 豁免位 false 不进校准集
+    const syntheticProb = mkSample({ calibrationEligible: false });
+    const genuineProb = mkSample();
+    const r = runQualityGates([syntheticProb, genuineProb]);
+    expect(r.calibrationEligible).not.toContain(syntheticProb);
+    expect(r.calibrationEligible).toContain(genuineProb);
+    expect(r.noProbabilityTarget).not.toContain(syntheticProb); // 有概率形态，非 no-target
+    expect(r.passed).toContain(syntheticProb); // 训练/评测面不受影响
+  });
 });
 
 describe('主动学习四类选样', () => {

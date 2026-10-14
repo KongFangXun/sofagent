@@ -30,6 +30,9 @@ describe('三源抽取', () => {
     expect(r.accepted).toHaveLength(1);
     expect(validateSample(r.accepted[0]!)).toHaveLength(0); // 与章五校验器兼容
     expect(r.accepted[0]!.label.source).toBe('deterministic');
+    // run-01 项 9：disposition→概率是硬编码映射（allow→0.9 档位承诺），非真实
+    // 概率目标——采集器标 calibrationEligible=false，不进校准集（防映射常数污染 ECE）
+    expect(r.accepted[0]!.calibrationEligible).toBe(false);
   });
   it('test_historyCollector_未建链_拒收且原因可查', () => {
     const r = collectFromHistory([{ traceId: 'tr-2', statePrefix: 's', actualDisposition: 'allow', chainAnchored: false, enterpriseId: 'e', lang: 'zh' }]);
@@ -141,10 +144,39 @@ describe('九类采集点归类判据', () => {
     expect(assertHardSampleKind({ kind: 'drift', sample, evidence: { driftObserved: { t1BucketReliability: [0.8], t2BucketReliability: [0.5], t1: '2026-09', t2: '2026-10' } } }).ok).toBe(true);
     expect(assertHardSampleKind({ kind: 'drift', sample, evidence: { driftObserved: { t1BucketReliability: [], t2BucketReliability: [], t1: '', t2: '' } } }).ok).toBe(false);
   });
+  it('test_hard6_漂移_逐桶零变化不构成本类（run-01 项 7）', () => {
+    // 两时点在位但可靠图无单向偏移（全等数组）——此前仅查 t1/t2 非空即落 ok
+    const noDrift = assertHardSampleKind({
+      kind: 'drift', sample,
+      evidence: { driftObserved: { t1BucketReliability: [0.8, 0.6], t2BucketReliability: [0.8, 0.6], t1: '2026-09', t2: '2026-10' } },
+    });
+    expect(noDrift.ok).toBe(false);
+    if (!noDrift.ok) expect(noDrift.reason).toContain('逐桶零变化');
+    // 长度不齐（分桶口径漂移）同样拒收
+    const mismatched = assertHardSampleKind({
+      kind: 'drift', sample,
+      evidence: { driftObserved: { t1BucketReliability: [0.8], t2BucketReliability: [0.8, 0.5], t1: '2026-09', t2: '2026-10' } },
+    });
+    expect(mismatched.ok).toBe(false);
+    // 至少一桶单调变化才算 drift 类
+    expect(assertHardSampleKind({
+      kind: 'drift', sample,
+      evidence: { driftObserved: { t1BucketReliability: [0.8, 0.6], t2BucketReliability: [0.7, 0.6], t1: '2026-09', t2: '2026-10' } },
+    }).ok).toBe(true);
+  });
   it('test_hard7_对抗_两形态判据', () => {
     expect(assertHardSampleKind({ kind: 'adversarial', sample, evidence: { adversarialForm: { inducedAnswerShift: true } } }).ok).toBe(true);
     expect(assertHardSampleKind({ kind: 'adversarial', sample, evidence: { adversarialForm: { carriesPolicyText: true } } }).ok).toBe(true);
     expect(assertHardSampleKind({ kind: 'adversarial', sample, evidence: { adversarialForm: { carriesPolicyText: false } } }).ok).toBe(false);
+  });
+  it('test_hard7_对抗_缺判别键拒收（run-01 项 6）', () => {
+    // 空对象/无判别键——此前 `in` 检查全不命中直落 ok:true（归类虚高）
+    const empty = assertHardSampleKind({ kind: 'adversarial', sample, evidence: { adversarialForm: {} } });
+    expect(empty.ok).toBe(false);
+    if (!empty.ok) expect(empty.reason).toContain('缺判别键');
+    // 无关键段的对象同样拒收
+    const noKeys = assertHardSampleKind({ kind: 'adversarial', sample, evidence: { adversarialForm: { note: '看起来像对抗样本' } as never } });
+    expect(noKeys.ok).toBe(false);
   });
   it('test_hard8_对齐分歧_两侧一致不构成', () => {
     expect(assertHardSampleKind({ kind: 'alignment-disagreement', sample, evidence: { labelConflict: { modelLabel: 'allow', humanLabel: 'deny' } } }).ok).toBe(true);

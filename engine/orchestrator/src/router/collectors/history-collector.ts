@@ -67,6 +67,13 @@ export function collectFromHistory(records: TraceRecord[]): CollectResult {
       provenance: { traceId: r.traceId } satisfies ProvenanceAnchor,
       enterpriseId: r.enterpriseId,
       lang: r.lang,
+      // 不进校准集（fresh-eyes run-01 项 9）：上面的 probability 是 disposition
+      // → 概率的**硬编码档位映射**（allow→0.9 / block→0.95），不是模型/人给出的
+      // 概率判断——门四「只有能表达概率目标的样本进校准集」要求概率语义真实
+      // （choice 分布 / score 区间 / noul 真值概率），映射常数进校准集会把常数
+      // 当读数污染 ECE。标 false 显式豁免（字段缺省 true，不影响其他采集源）；
+      // 样本照常进训练/评测面（答案本身是可复算的事实记录）。
+      calibrationEligible: false,
     });
   }
   return { accepted, rejected };

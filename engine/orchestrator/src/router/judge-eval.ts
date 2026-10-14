@@ -72,9 +72,18 @@ export function evaluateZeroShot(
     // choice 侧补 isFallback 标记位与兜底候选由判据集消费方保证）
     const questions = s.questions.map((q): DecisionQuestion => {
       if (q.kind !== 'choice') {
-        return q.kind === 'score'
-          ? { kind: 'score', id: q.id, question: q.question, min: (q as { min?: number }).min ?? 0, max: (q as { max?: number }).max ?? 10 }
-          : { kind: 'noul', id: q.id, question: q.question };
+        if (q.kind === 'score') {
+          // score 值域优先 q.scale（fresh-eyes run-01 项 8：此前恒 ??0/??10
+          // 丢弃 scale——DatasetQuestion.scale 为 2-10 级刻度数组，首尾即
+          // [min,max]；两者皆无才用默认 0-10）。
+          const scaleNums = (q.scale ?? []).filter((v) => typeof v === 'number');
+          const scaleMin = scaleNums.length > 0 ? Math.min(...(scaleNums as number[])) : undefined;
+          const scaleMax = scaleNums.length > 0 ? Math.max(...(scaleNums as number[])) : undefined;
+          const min = (q as { min?: number }).min ?? scaleMin ?? 0;
+          const max = (q as { max?: number }).max ?? scaleMax ?? 10;
+          return { kind: 'score', id: q.id, question: q.question, min, max };
+        }
+        return { kind: 'noul', id: q.id, question: q.question };
       }
       const labels = q.options ?? [];
       return {

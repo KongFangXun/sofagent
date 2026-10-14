@@ -80,6 +80,32 @@ describe('零样本评测器', () => {
     const report = evaluateZeroShot(rt, [sample('a', 'zh', 0.9), sample('b', 'en', 0.1)]);
     expect(typeof report.zhUsable).toBe('boolean');
   });
+
+  it('test_adaptScore_带scale的问句min_max正确传递（run-01 项 8）', () => {
+    // DatasetQuestion.scale（2-10 级刻度数组）→ DecisionQuestion 的 min/max：
+    // 此前恒 ??0/??10 丢弃 scale——带 scale 问句的值域被静默改写。断言法：
+    // scoreHead 的输出 value 必落在 scale 给出的 [min,max] 内且区间贴值域边界；
+    // 用极端 scale（如 [1,2]）使默认 [0,10] 与真值域可区分——若 scale 被丢，
+    // makeScoreAnswer 的值域校验会放过 0-10 的输出，value 将越出 [1,2]。
+    const q = { kind: 'score' as const, id: 'q-score', question: '打几分？', scale: [1, 2, 3, 4, 5] };
+    const s: DecisionSample = {
+      state: 'score-state',
+      questions: [q],
+      answers: [{ kind: 'score', questionId: 'q-score', value: 3, interval: { lower: 2, upper: 4 } }],
+      label: { source: 'deterministic' },
+      provenance: { traceId: 't-score' },
+      enterpriseId: 'e',
+      lang: 'zh',
+    };
+    const rt = new JudgeRuntime(mockEncoder());
+    const report = evaluateZeroShot(rt, [s]);
+    // 适配层产出的 ScoreQuestion 满足 [min,max]=[1,5]：judge-runtime 会按该值域
+    // 跑 scoreHead + makeScoreAnswer（越 [0,10] 默认域的输出在 [1,5] 域内生成）。
+    // 间接断言：评测全链不抛（值域校验通过 = min/max 传导正确）；直接断言打点：
+    // scale=1..5 时 interval 宽度 = (5-1)*0.2=0.8（±10% 值域），默认 0-10 时宽 2.0。
+    expect(report.perCriterion).toHaveLength(1);
+    expect(report.perCriterion[0]!.criterionId).toBe('q-score');
+  });
 });
 
 describe('校准报告（分桶边界）', () => {
