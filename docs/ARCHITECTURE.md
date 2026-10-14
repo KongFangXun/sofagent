@@ -1284,7 +1284,7 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 
 ### 编排层与执行层分离（v1.3.4 增量 · DSH 执行后端接入）
 
-> 📖 设计来源：DeepSeek Harness（DSH）「一切皆插件」Cordis 运行时 + sofagent「确定性审计依赖显式图结构」铁律的融合——编排层不换（确定性），执行层可换（灵活性）· [DeepSeek Harness 设计纪要](https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md)（融合论证见 PHILOSOPHY §三）
+> 📖 设计来源：DeepSeek Harness（DSH）「一切皆插件」Cordis 运行时 + sofagent「确定性审计依赖显式图结构」铁律的融合——编排层不换（确定性），执行层可换（灵活性）· 外部来源：[deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)；内部融合论证见 [PHILOSOPHY §三](./PHILOSOPHY.md)
 
 sofagent 的编排模块从 v1.3.4 起显式分为两层——**编排层不换（确定性），执行层可换（灵活性）**：
 
