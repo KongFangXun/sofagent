@@ -2468,6 +2468,91 @@ else
 fi
 echo ""
 
+# ── 30. 判定底座静态锚串对账（v1.6.0 阶段四步骤二分发 · A 类 #3/#4/#14/#15 + 计数类）──
+# 背景（fresh-eyes run-01 / 阶段四草稿 A 类分发）：判定底座（router/）的行为锁主面已由
+#   acceptance S483-S487 与 checklist 承载；本节补**跨文件口径锚**——模块头声称与实现注释
+#   措辞一致、评测口径注记与快照产物一致。锚串措辞一律取自源文件注释**实际写法**
+#   （先读源再写锚，防锚不匹配假红）。
+echo "=== 30. 判定底座静态锚串对账（编码一次/切分非永真/scale 保留/OOD 默认值注记） ==="
+JUDGE_RUNTIME="${PROJECT_ROOT}/engine/orchestrator/src/router/judge-runtime.ts"
+DATASET_SCHEMA="${PROJECT_ROOT}/engine/orchestrator/src/router/decision-dataset-schema.ts"
+JUDGE_EVAL="${PROJECT_ROOT}/engine/orchestrator/src/router/judge-eval.ts"
+VALIDATION="${PROJECT_ROOT}/docs/VALIDATION.md"
+# 30a. 多头判定「一次编码」（A 类 #3）——judge-runtime 头部声称「同 state 多问一次编码多头并行」，
+#      实现侧须有「一次编码（多问共享」共享编码注释（claim 与实现同文件对齐，缺一即空声称）
+if [ -f "$JUDGE_RUNTIME" ]; then
+  if grep -q "一次编码（多问共享" "$JUDGE_RUNTIME" && grep -q "一次编码多头并行" "$JUDGE_RUNTIME"; then
+    echo -e "  ${GREEN}✓${NC} 判定底座一次编码：模块声称与实现锚一致（多问共享编码，非逐问重复）"
+    CHECKS=$((CHECKS + 1))
+  else
+    echo -e "  ${RED}✗${NC} judge-runtime 一次编码锚漂移：缺「一次编码（多问共享」或「一次编码多头并行」——多头判定的编码次数声称与实现脱钩（A 类 #3）"
+    ERRORS=$((ERRORS + 1))
+  fi
+else
+  echo -e "  ${YELLOW}⚠${NC} judge-runtime.ts 不存在（结构变化？人工确认）"
+  WARNINGS=$((WARNINGS + 1))
+fi
+# 30b. 数据集切分断言非永真（A 类 #4）——loadDataset 家族级泄漏检查须「按实际落集对账
+#      + 不回落到恒真」注释锚在位（同构假绿测试锁切分能力的防复发面）
+if [ -f "$DATASET_SCHEMA" ]; then
+  if grep -q "不回落到恒真" "$DATASET_SCHEMA" && grep -q "实际落集" "$DATASET_SCHEMA"; then
+    echo -e "  ${GREEN}✓${NC} 数据集切分：家族泄漏按实际落集对账（真断言，非恒真）"
+    CHECKS=$((CHECKS + 1))
+  else
+    echo -e "  ${RED}✗${NC} decision-dataset-schema 切分断言锚漂移：缺「实际落集」或「不回落到恒真」——泄漏检查可能回落恒真假绿（A 类 #4）"
+    ERRORS=$((ERRORS + 1))
+  fi
+else
+  echo -e "  ${YELLOW}⚠${NC} decision-dataset-schema.ts 不存在（结构变化？人工确认）"
+  WARNINGS=$((WARNINGS + 1))
+fi
+# 30c. score 值域保留 q.scale（A 类 #15）——judge-eval 的 scale 优先注释锚
+if [ -f "$JUDGE_EVAL" ]; then
+  if grep -q "score 值域优先 q.scale" "$JUDGE_EVAL"; then
+    echo -e "  ${GREEN}✓${NC} 评测 score 值域优先 q.scale（刻度不丢弃，评测口径不失真）"
+    CHECKS=$((CHECKS + 1))
+  else
+    echo -e "  ${RED}✗${NC} judge-eval scale 锚漂移：缺「score 值域优先 q.scale」——DatasetQuestion→DecisionQuestion 适配可能回退恒 0/10 丢刻度（A 类 #15）"
+    ERRORS=$((ERRORS + 1))
+  fi
+else
+  echo -e "  ${YELLOW}⚠${NC} judge-eval.ts 不存在（结构变化？人工确认）"
+  WARNINGS=$((WARNINGS + 1))
+fi
+# 30d. OOD 空集默认值注记（A 类 #14）——VALIDATION 基线表须注明「空 OOD 集默认值非实测」
+#      （avg([])=0 伪落差遮蔽面——基线快照与口径注记同批）
+if [ -f "$VALIDATION" ]; then
+  if grep -q "空 OOD 集默认值非实测" "$VALIDATION"; then
+    echo -e "  ${GREEN}✓${NC} VALIDATION OOD 默认值注记在位（0.000 非实测口径显式披露）"
+    CHECKS=$((CHECKS + 1))
+  else
+    echo -e "  ${RED}✗${NC} VALIDATION 缺「空 OOD 集默认值非实测」注记——OOD=0.000 伪 generalizationGap 落差将被误读为实测（A 类 #14）"
+    ERRORS=$((ERRORS + 1))
+  fi
+else
+  echo -e "  ${YELLOW}⚠${NC} docs/VALIDATION.md 不存在（结构变化？人工确认）"
+  WARNINGS=$((WARNINGS + 1))
+fi
+# 30e. 计数类对账（A 类计数族）——SECURITY execSync 精确边界计数走 literals 门禁
+#      （security-execsync-total / security-execsync-audit-side 两条 error 级已在册），
+#      此处只验门禁条目存在（防台账静默丢失后计数互斥复发）
+LITERALS_JSON="${PROJECT_ROOT}/tools/check/literals.json"
+if [ -f "$LITERALS_JSON" ]; then
+  _lit_total=$(grep -c '"security-execsync-total"' "$LITERALS_JSON" || true)
+  _lit_audit=$(grep -c '"security-execsync-audit-side"' "$LITERALS_JSON" || true)
+  if [ "${_lit_total}" -ge 1 ] && [ "${_lit_audit}" -ge 1 ]; then
+    echo -e "  ${GREEN}✓${NC} SECURITY 计数对账门禁在册（execSync total + audit-side 双条 error 级）"
+    CHECKS=$((CHECKS + 1))
+  else
+    echo -e "  ${RED}✗${NC} literals.json 缺 SECURITY execSync 计数对账条目——「摘要改而明细未同步」互斥复发无门禁看守（F-02）"
+    ERRORS=$((ERRORS + 1))
+  fi
+else
+  echo -e "  ${YELLOW}⚠${NC} tools/check/literals.json 不存在（结构变化？人工确认）"
+  WARNINGS=$((WARNINGS + 1))
+fi
+echo ""
+
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then
   TOTAL=$((CHECKS + ERRORS))
