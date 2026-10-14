@@ -901,9 +901,16 @@ async function s426() {
   if (dimClaim && Number(dimClaim[1]) !== dimActual) bad.push('checklist 维度声称 ' + dimClaim[1] + ' ≠ 实际 ' + dimActual);
   const numMax = (rc.match(/^#### (\d+)\./gm) || []).map((s) => Number(s.replace(/\D/g, '')));
   if (dimClaim && numMax.length && Math.max(...numMax) !== Number(dimClaim[2])) bad.push('checklist 编号上界声称 ' + dimClaim[2] + ' ≠ 实际 ' + Math.max(...numMax));
-  if (!/regression-checklist\.md\` ≤ 2050 行、\`acceptance-test\.sh\` ≤ 4641 行/.test(rc)) bad.push('警戒线双值锚漂移');
+  // 双值锚改为**从 checklist 头部动态提取**（SSOT）——本仓公约 §96 / 铁律 2「警戒线数值只在
+  //   checklist 头部声明一处，其余文档一律引用不写死」；写死会在每次合法抬线后产生假红
+  //   （实锤：头部按「上限重估」抬至 2107/4666 后，写死的 2050/4641 触发假红）。
+  //   判据与 check-review-system.sh §1d 同源（同款提取正则）。
+  const mChk = rc.match(/regression-checklist\.md\`? ≤ ?(\d+) 行/);
+  const mAcc = rc.match(/acceptance-test\.sh\`? ≤ ?(\d+) 行/);
+  if (!mChk || !mAcc) bad.push('警戒线双值锚漂移（头部未提取到双值 SSOT）');
+  const limChk = mChk ? Number(mChk[1]) : null;
   const rcLines = (rc.match(/\n/g) || []).length; // wc -l 口径（与 check-review-system 同——换行符数，非 split 段数）
-  if (rcLines > 2050) bad.push('checklist 超警戒线:' + rcLines);
+  if (limChk !== null && rcLines > limChk) bad.push('checklist 超警戒线:' + rcLines);
   // ② C 类锚：calibration v1.4.9 收编 5 条特征锚（提取为空/同构替换 SSOT/死断言可达性/重跑全量/协议升级归 C）
   const cal = read('playbook/fresh-eyes-calibration.md');
   for (const anchor of [
