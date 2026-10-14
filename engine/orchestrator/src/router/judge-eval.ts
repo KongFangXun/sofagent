@@ -75,10 +75,13 @@ export function evaluateZeroShot(
         if (q.kind === 'score') {
           // score 值域优先 q.scale（fresh-eyes run-01 项 8：此前恒 ??0/??10
           // 丢弃 scale——DatasetQuestion.scale 为 2-10 级刻度数组，首尾即
-          // [min,max]；两者皆无才用默认 0-10）。
-          const scaleNums = (q.scale ?? []).filter((v) => typeof v === 'number');
-          const scaleMin = scaleNums.length > 0 ? Math.min(...(scaleNums as number[])) : undefined;
-          const scaleMax = scaleNums.length > 0 ? Math.max(...(scaleNums as number[])) : undefined;
+          // [min,max]；两者皆无才用默认 0-10）。schema 类型为 string[]
+          //（刻度可为数字串），Number() 归一解析，NaN 项剔除。
+          const scaleNums = (q.scale ?? [])
+            .map((v) => (typeof v === 'number' ? v : Number(v)))
+            .filter((v) => Number.isFinite(v));
+          const scaleMin = scaleNums.length > 0 ? Math.min(...scaleNums) : undefined;
+          const scaleMax = scaleNums.length > 0 ? Math.max(...scaleNums) : undefined;
           const min = (q as { min?: number }).min ?? scaleMin ?? 0;
           const max = (q as { max?: number }).max ?? scaleMax ?? 10;
           return { kind: 'score', id: q.id, question: q.question, min, max };
