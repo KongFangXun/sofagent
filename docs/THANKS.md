@@ -97,6 +97,7 @@
 - **[E-Ledger: Safe, Persistent, and Evolving Agent Harness](https://arxiv.org/abs/2610.11552)** — 面向部分可观测的长程任务：每个动作执行前先过策略批准层 + 维护「已验证隐藏规则」的世界账本（第三方论文、本仓未复算）
 - **[DuplexAgent-RSI](https://arxiv.org/abs/2610.11299)** — 递归改进落在 harness 的协调层（任务受理 / 进度 / 取消 / 替换 / 结果交付），不落在权重（第三方论文、本仓未复算）
 - **[Recurrent Harness for Agentic Continual Learning](https://arxiv.org/abs/2610.12668)** — ReHarness：harness 状态不再只靠前向信息流演化、也不依赖额外回放或验证数据，而是做成**循环**结构以在长交互流上持续适应分布漂移 ⇒ 「harness 自更新」多了一种须被审计观察的形态（第三方论文、本仓未复算）
+- **[AI 研发自动化与智能爆炸]**（[arXiv 2609.36054](https://arxiv.org/abs/2609.36054) · Hinton / Bengio / Barto 等 22 人立场论文 · CASP）— 推演「AI 接管 AI 研发」的爆炸机制（有效研发劳动力 + 参数 r）与四道摩擦；治理首优「独立审计 + 越权监测」与约束层同向（本仓未复算）
 
 ### 判定与校准
 
