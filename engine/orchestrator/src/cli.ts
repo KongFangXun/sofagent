@@ -420,6 +420,24 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
               })();
         const eventOutput = eventBus === null ? null : createNodeOutputSource(eventBus);
         const eventHandled = new Set<string>();
+        // N-1 预算喂数点（fresh-eyes run-01 项 5）：workflow 带 `loop:` 声明块时，
+        // 节点产出事件携带 metadata.loop（budget + maxIterations）+ 三个进度读数，
+        // 事件派发面的 checkLoopBudgetSuspends 据此判预算熔断。进度口径（本版
+        // 最小接线）：cyclesToday/iterationsSoFar 按节点产出事件计数递增，
+        // currentCycleTokens 以节点输出文本长度近似（token 估算的保守下界——
+        // 真实 token 计量接 LLM 遥测时替换读数源，判定逻辑不动）。
+        const wfLoop = composeResult.workflow.loop;
+        let loopCyclesToday = 0;
+        let loopIterationsSoFar = 0;
+        const loopBudgetOf = (currentCycleTokens: number) =>
+          wfLoop === undefined
+            ? undefined
+            : {
+                loop: { budget: { ...wfLoop.budget }, maxIterations: wfLoop.maxIterations },
+                currentCycleTokens,
+                cyclesToday: loopCyclesToday,
+                iterationsSoFar: loopIterationsSoFar,
+              };
         const eventRouter =
           eventBus === null
             ? null
@@ -532,11 +550,16 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
           // v1.5.1 第一章：节点产出进总线（下游 `on:` 据此触发）
           // （无 `on:` 声明时 eventOutput 为 null——不落盘、不发送）
           if (eventOutput) {
+            loopIterationsSoFar += 1;
+            if (loopIterationsSoFar === 1) loopCyclesToday = 1; // 首事件即首轮启动
             await eventOutput.emitCompletion({
               workflowId: composeResult.workflow.name,
               nodeId: graphNode.id,
               output: result.output,
               success: result.success,
+              ...(loopBudgetOf(result.output.length) !== undefined
+                ? { loopBudget: loopBudgetOf(result.output.length) }
+                : {}),
             });
           }
         }

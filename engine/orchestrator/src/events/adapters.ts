@@ -59,6 +59,23 @@ export interface NodeCompletionInput {
   causationId?: string;
   /** 附加元数据（agentId / sessionId 等） */
   metadata?: Record<string, unknown>;
+  /**
+   * loop 预算上下文（v1.6.0 章十 · N-1 喂数点）：带 `loop:` 声明块的 workflow
+   * 在节点产出事件上写入 `metadata.loop`（budget + maxIterations）与三个进度
+   * 读数（currentCycleTokens / cyclesToday / iterationsSoFar）——事件派发面
+   * should-run.ts 的 readLoopBudgetContext 据此做预算熔断判定（超限挂起）。
+   * 缺省 undefined = 非 loop 轮次，不写 loop 元数据（零行为变化）。
+   */
+  loopBudget?: {
+    /** workflow `loop:` 块解析结果（budget + maxIterations——读键与 readLoopBudgetContext 对齐） */
+    loop: { budget: { maxTokensPerCycle: number; maxCyclesPerDay: number }; maxIterations: number };
+    /** 本轮已耗 token（超 maxTokensPerCycle 即熔断挂起） */
+    currentCycleTokens: number;
+    /** 今日已跑轮数（超 maxCyclesPerDay 即熔断挂起） */
+    cyclesToday: number;
+    /** 累计迭代数（达 maxIterations 即熔断挂起——人判定是否继续） */
+    iterationsSoFar: number;
+  };
 }
 
 /** 上游节点产出源 */
@@ -80,6 +97,20 @@ export function createNodeOutputSource(bus: EventBus): NodeOutputSource {
       if (!input.workflowId || !input.nodeId) {
         throw new Error('[events:node-output] workflowId 与 nodeId 必填（产出事件无归属节点 = 无法路由）');
       }
+      // N-1 预算喂数点（fresh-eyes run-01 项 5）：带 loop 块的 workflow 事件
+      // 写入 metadata.loop + 三个进度读数——键名与 should-run.ts 的
+      // readLoopBudgetContext 实读键逐一对齐（budget.maxTokensPerCycle /
+      // budget.maxCyclesPerDay / maxIterations / currentCycleTokens /
+      // cyclesToday / iterationsSoFar）。此前 checkLoopBudgetSuspends 生产
+      // 可达但 metadata.loop 无生产写入方（探针永空转）——此处补上唯一工厂侧
+      // 喂数点。缺 loopBudget = 非 loop 轮次，metadata 零变化。
+      const metadata: Record<string, unknown> = { ...(input.metadata ?? {}) };
+      if (input.loopBudget !== undefined) {
+        metadata['loop'] = input.loopBudget.loop;
+        metadata['currentCycleTokens'] = input.loopBudget.currentCycleTokens;
+        metadata['cyclesToday'] = input.loopBudget.cyclesToday;
+        metadata['iterationsSoFar'] = input.loopBudget.iterationsSoFar;
+      }
       return bus.publish({
         type: EVENT_TYPES.NODE_OUTPUT,
         source: 'node-output',
@@ -92,7 +123,7 @@ export function createNodeOutputSource(bus: EventBus): NodeOutputSource {
         ...(input.correlationId !== undefined ? { correlationId: input.correlationId } : {}),
         ...(input.causationId !== undefined ? { causationId: input.causationId } : {}),
         workflowId: input.workflowId,
-        ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+        ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
       });
     },
   };

@@ -380,4 +380,53 @@ describe('章十 · 起轮前闸（全停标记 + 预算熔断）', () => {
     expect(r.suspension?.question).toBe('quota');
     expect(r.suspension?.reason).toContain('token');
   });
+
+  it('N-1 喂数点端到端：事件工厂带 loop 块创建后 metadata.loop 在位且超限挂起（run-01 项 5）', async () => {
+    // 事件创建走生产工厂 createNodeOutputSource（loopBudget 入参）——断言：
+    // ① 产出事件 metadata.loop 键位与 readLoopBudgetContext 实读键逐一对齐；
+    // ② 超限读数经生产 gate 端到端触发预算熔断挂起（探针不再空转）。
+    const { createNodeOutputSource } = await import('../events/adapters');
+    const bus = makeBus(createDefaultShouldRunGate({ dataDir: tmpDir }));
+    const source = createNodeOutputSource(bus);
+    const r = await source.emitCompletion({
+      workflowId: 'wf-loop',
+      nodeId: 'n1',
+      output: 'x'.repeat(50),
+      success: true,
+      loopBudget: {
+        loop: { budget: { maxTokensPerCycle: 100, maxCyclesPerDay: 10 }, maxIterations: 5 },
+        currentCycleTokens: 999, // 超 maxTokensPerCycle=100
+        cyclesToday: 1,
+        iterationsSoFar: 1,
+      },
+    });
+    // ① metadata.loop 在位且键名对齐（budget.maxTokensPerCycle/maxCyclesPerDay + maxIterations + 三进度读数）
+    expect(r.event.metadata?.['loop']).toEqual({
+      budget: { maxTokensPerCycle: 100, maxCyclesPerDay: 10 },
+      maxIterations: 5,
+    });
+    expect(r.event.metadata?.['currentCycleTokens']).toBe(999);
+    expect(r.event.metadata?.['cyclesToday']).toBe(1);
+    expect(r.event.metadata?.['iterationsSoFar']).toBe(1);
+    // ② 端到端：超限 → 生产 gate 挂起（quota 面，非死信）
+    expect(r.delivered).toBe(false);
+    expect(r.suspended).toBe(true);
+    expect(r.suspension?.question).toBe('quota');
+    expect(r.suspension?.reason).toContain('token');
+  });
+
+  it('N-1 喂数点：无 loopBudget 入参 → metadata 零 loop 键（非 loop 轮次零行为变化）', async () => {
+    const { createNodeOutputSource } = await import('../events/adapters');
+    const bus = makeBus(createDefaultShouldRunGate({ dataDir: tmpDir }));
+    const source = createNodeOutputSource(bus);
+    const r = await source.emitCompletion({
+      workflowId: 'wf-plain',
+      nodeId: 'n1',
+      output: 'ok',
+      success: true,
+    });
+    expect(r.event.metadata?.['loop']).toBeUndefined();
+    expect(r.event.metadata?.['currentCycleTokens']).toBeUndefined();
+    expect(r.delivered).toBe(true); // 无预算上下文 → 放行
+  });
 });
