@@ -16,6 +16,9 @@
 // ============================================================
 
 import { z } from 'zod';
+// F-03+N-3 收口：exit_when 可判定性与 parser 侧同函数收口（单一判定权威，
+// 不在 schema-gate 重复实现——本包内横向引用，无循环依赖）
+import { isExitWhenDecidable } from '../workflow-parser';
 
 /** 糖宏表（与 daemon scheduler.ts expandCronSugar 同表——分属两包不互相 import，语义对齐注释互指） */
 const CRON_SUGAR = new Set(['@daily', '@weekly', '@monthly']);
@@ -140,7 +143,9 @@ export const workflowDocSchema = z.object({
 /**
  * humanOnly 互斥断言（v1.6.0 章十）：humanOnly: true 节点永远产 PR 待审——
  * approver.kind === 'agent'（自动批准）与之并存即拒载（红线不可被策略覆盖）。
- * 同时校验 loop.enabled=true 时 exit_when 必在（schema 层第二道 fail-closed）。
+ * 同时校验 loop.enabled=true 时 exit_when 必在且**可判定**（schema 层第二道
+ * fail-closed——F-03+N-3 收口：与 parser 侧同函数 isExitWhenDecidable，
+ * 垃圾串/未知变量/赋值副作用/残缺表达式均拒载）。
  */
 export function assertLoopAndHumanOnlyInvariants(workflow: {
   nodes: Array<{ humanOnly?: boolean }>;
@@ -152,8 +157,16 @@ export function assertLoopAndHumanOnlyInvariants(workflow: {
   if (hasHumanOnly && workflow.approver?.kind === 'agent') {
     errs.push('humanOnly: true 节点与 approver.kind="agent"（自动批准）并存——人工红线不可被 approver 策略覆盖（fail-closed 拒载）');
   }
-  if (workflow.loop?.enabled === true && (!workflow.loop.exit_when || workflow.loop.exit_when.trim() === '')) {
-    errs.push('loop.enabled=true 但 exit_when 缺失/不可判定——自循环必须声明退出条件（fail-closed 拒载）');
+  if (workflow.loop?.enabled === true) {
+    if (!workflow.loop.exit_when || workflow.loop.exit_when.trim() === '') {
+      errs.push('loop.enabled=true 但 exit_when 缺失/不可判定——自循环必须声明退出条件（fail-closed 拒载）');
+    } else {
+      // 非空但不可判定 → 拒载（与 parser 侧同一判定函数，第二道 fail-closed）
+      const decidability = isExitWhenDecidable(workflow.loop.exit_when);
+      if (!decidability.ok) {
+        errs.push(`loop.exit_when 不可判定（fail-closed 拒载）：${decidability.reason ?? '未知原因'}`);
+      }
+    }
   }
   return errs;
 }

@@ -25,6 +25,7 @@ import { atomicWriteSync } from '@sofagent/core';
 import {
   gateOrThrow,
   validateWorkflowCrons,
+  assertLoopAndHumanOnlyInvariants,
   workflowCreateSchema,
   workflowUpdateSchema,
   workflowNodeAddSchema,
@@ -286,6 +287,16 @@ export async function workflowCreate(
     };
   }
 
+  // loop/humanOnly 语义断言（F-03+N-3 收口：exit_when 可判定性等不变量——
+  // 语义门不可达 = schema-gate 的 fail-closed 只在测试里生效，本接线堵生产缺口）
+  const invariantIssues = assertLoopAndHumanOnlyInvariants(args.workflow);
+  if (invariantIssues.length > 0) {
+    return {
+      text: `[sofagent] workflow_create 失败：语义断言不通过（${invariantIssues.length} 项）：${invariantIssues[0]}`,
+      data: { isError: true, action: 'create', workflowId: id, issues: invariantIssues, auditLogged: false },
+    };
+  }
+
   const now = new Date().toISOString();
   const stored: StoredWorkflow = {
     id,
@@ -339,6 +350,15 @@ export async function workflowUpdate(
     return {
       text: `[sofagent] workflow_update 失败：trigger.schedule 非法（${cronIssues.length} 项）：${cronIssues[0]}`,
       data: { isError: true, action: 'update', workflowId: args.workflow_id, issues: cronIssues, auditLogged: false },
+    };
+  }
+
+  // loop/humanOnly 语义断言（F-03+N-3 收口——与 create 同一语义门，双写路径同堵）
+  const invariantIssues = assertLoopAndHumanOnlyInvariants(args.workflow);
+  if (invariantIssues.length > 0) {
+    return {
+      text: `[sofagent] workflow_update 失败：语义断言不通过（${invariantIssues.length} 项）：${invariantIssues[0]}`,
+      data: { isError: true, action: 'update', workflowId: args.workflow_id, issues: invariantIssues, auditLogged: false },
     };
   }
 

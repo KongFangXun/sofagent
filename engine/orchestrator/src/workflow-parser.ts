@@ -192,6 +192,170 @@ export class WorkflowParseError extends Error {
 }
 
 // ────────────────────────────────────────────────────────────
+// exit_when 可判定性（fresh-eyes run-01 F-03+N-3 收口）
+// ────────────────────────────────────────────────────────────
+
+/**
+ * exit_when 已知变量白名单（loop 运行时可观测的进度读数）。
+ *
+ * 口径来源：cli.ts 的 N-1 预算喂数点实际写入事件 metadata 的三个进度读数
+ * （`iterationsSoFar` / `cyclesToday` / currentCycleTokens）+ 预算声明块
+ * 本身——退出判据只允许引用这些**运行时真实可得**的量，防止「声明了却永不
+ * 可判」的静默失效。命名取 camelCase 声明口径（iterations / tokens /
+ * cyclesToday）；运行器接真实求值时以本表为绑定面。
+ */
+export const KNOWN_EXIT_WHEN_VARS: readonly string[] = [
+  'iterations',
+  'tokens',
+  'cyclesToday',
+  'exitFlag',
+  'lastOutput',
+];
+
+/**
+ * exit_when 可判定性校验结果。
+ *
+ * - `ok: true`——表达式满足最小判定契约，可判定
+ * - `ok: false`——`reason` 含机器可定位的拒载原因 + 修复指引（可用变量列表）
+ */
+export interface ExitWhenDecidability {
+  ok: boolean;
+  reason?: string;
+}
+
+/** 标识符词法（字母/下划线开头，后随字母数字下划线） */
+const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** 字面量保留字（不参与引用封闭检查——非变量引用） */
+const LITERAL_KEYWORDS: readonly string[] = ['true', 'false', 'null', 'and', 'or', 'not'];
+
+/** 裸赋值/自增自减副作用（先剔除合法双字符运算符后匹配） */
+const ASSIGNMENT_RE = /(?<![=!<>+\-])(=(?!=)|\+\+|--)/;
+
+/**
+ * exit_when 可判定性判定（最小判定契约——不发明 DSL 文法，避免第二权威源）。
+ *
+ * 三条机械检查（对齐 devlog 章二判据 schema 的「可判定性」硬判据母体）：
+ *   ① **引用封闭**——表达式中出现的标识符 ⊆ knownVars（引用运行时不可得的
+ *      变量 = 判据永不可判，fail-closed 拒载）
+ *   ② **无赋值副作用**——不含裸 `=`（`==` / `!=` / `<=` / `>=` 合法）、
+ *      不含 `++` / `--`（判据是断言不是语句，不得有副作用）
+ *   ③ **双目平衡**——括号配平 + 比较运算符两侧非空（`>= 10` / `x >=`
+ *      形态的残缺表达式拒载）
+ *
+ * 注意：本函数只做**可判定性**判定，不改变任何求值语义（仓内 exit_when
+ * 当前为「提取-存储」态，无求值实现——校验是纯增量）。
+ *
+ * @param expr exit_when 表达式串
+ * @param knownVars 已知变量白名单（生产传 KNOWN_EXIT_WHEN_VARS）
+ * @returns { ok, reason? }——ok=false 时 reason 含原因与修复指引
+ */
+export function isExitWhenDecidable(
+  expr: string,
+  knownVars: readonly string[] = KNOWN_EXIT_WHEN_VARS,
+): ExitWhenDecidability {
+  const trimmed = expr.trim();
+
+  // ⓪ 非空（缺失/纯空白由调用方的「缺失」分支先拦，此处兜底）
+  if (trimmed.length === 0) {
+    return { ok: false, reason: 'exit_when 为空串——退出判据不可判定' };
+  }
+
+  // ① 引用封闭：标识符 ⊆ 白名单（数字/布尔字面量、字符串字面量内文不查）
+  //    字符串字面量替换为占位 token（后续操作数检查据此识别「该侧非空」）
+  const stringStripped = trimmed.replace(/(["'])(?:\\.|(?!\1).)*\1/g, ' __STR__ ');
+  const identifiers = stringStripped
+    .split(/[^A-Za-z0-9_.]+/)
+    .filter((tok) => tok.length > 0 && !/^\d+(\.\d+)?$/.test(tok) && tok !== '__STR__'); // 去数字/占位 token
+  const unknown: string[] = [];
+  for (const tok of identifiers) {
+    if (LITERAL_KEYWORDS.includes(tok)) continue; // true/false/null 等保留字非变量
+    // 属性访问形态（a.b）取根标识符参与封闭检查（白名单按根名匹配）
+    const root = IDENT_RE.test(tok) ? tok : tok.split('.')[0]!;
+    if (root.length > 0 && !knownVars.includes(root)) {
+      if (!unknown.includes(tok)) unknown.push(tok);
+    }
+  }
+  if (unknown.length > 0) {
+    return {
+      ok: false,
+      reason:
+        `exit_when 引用了未知变量「${unknown.join('、')}」——退出判据必须由运行时可得变量组成（引用封闭 fail-closed）。` +
+        `修法：改用已知变量（可用变量：${knownVars.join('、')}）`,
+    };
+  }
+
+  // ② 无赋值副作用：裸 = / ++ / --（先剔除 ==、!=、<=、>=、+= 等合法双字符形态）
+  if (ASSIGNMENT_RE.test(stringStripped)) {
+    return {
+      ok: false,
+      reason:
+        'exit_when 含赋值或自增自减副作用（裸 = / ++ / --）——退出判据是断言不是语句。' +
+        '修法：改用比较运算（==、!=、<=、>=），可用变量：' + knownVars.join('、'),
+    };
+  }
+
+  // ③ 双目平衡：括号配平 + 比较运算符两侧非空
+  let depth = 0;
+  let minDepth = 0;
+  for (const ch of stringStripped) {
+    if (ch === '(') depth += 1;
+    else if (ch === ')') {
+      depth -= 1;
+      if (depth < minDepth) minDepth = depth;
+    }
+  }
+  if (depth !== 0 || minDepth < 0) {
+    return {
+      ok: false,
+      reason:
+        'exit_when 括号不配平——残缺表达式不可判定。' +
+        '修法：补全左右括号，可用变量：' + knownVars.join('、'),
+    };
+  }
+
+  // ③b 比较运算符两侧非空：按运算符切分后任一侧为空段即残缺
+  //    （split 产生空串段 = 该侧操作数缺失；`>= 10` 左空 / `x >=` 右空 /
+  //     `x >= && y` 右侧被逻辑符截断——三者都恰好留下一个空段）
+  const parenStripped = stringStripped.replace(/\(|\)/g, ' ');
+  const hasComparison = /(?:==|!=|<=|>=|<|>|&&|\|\|)/.test(parenStripped);
+  if (hasComparison) {
+    const parts = parenStripped.split(/\s*(?:==|!=|<=|>=|<|>|&&|\|\|)\s*/);
+    const emptySides = parts.filter((s) => s.trim().length === 0).length;
+    if (emptySides > 0 || parts.length < 2) {
+      return {
+        ok: false,
+        reason:
+          'exit_when 比较运算符两侧操作数缺失——残缺表达式不可判定。' +
+          '修法：补全左右操作数（如 iterations >= 10），可用变量：' + knownVars.join('、'),
+      };
+    }
+    // 操作数须为 ASCII 词法（自然语言操作数如「效果满意 == true」不可判定——
+    // CJK 在标识符抽取时被当分隔符，引用封闭查不到，此处补位拦截）
+    const nonAscii = parts.filter((s) => !/^[A-Za-z0-9_.\s]*$/.test(s));
+    if (nonAscii.length > 0) {
+      return {
+        ok: false,
+        reason:
+          `exit_when 操作数含非 ASCII 词法（「${nonAscii.map((s) => s.trim()).join('、')}」）——` +
+          '自然语言判据机器不可判定。修法：改用已知变量写断言（如 iterations >= 10），可用变量：' + knownVars.join('、'),
+      };
+    }
+  }
+  // 孤立标识符（无任何运算符）：只剩裸变量名，非布尔断言形态，拒载
+  if (!hasComparison && !/^(?:true|false)$/.test(parenStripped.replace(/\s+/g, ''))) {
+    return {
+      ok: false,
+      reason:
+        'exit_when 缺少比较运算符——单一量不构成布尔断言，不可判定。' +
+        '修法：补比较运算（如 iterations >= 10），可用变量：' + knownVars.join('、'),
+    };
+  }
+
+  return { ok: true };
+}
+
+// ────────────────────────────────────────────────────────────
 // agent 映射表（架构师定稿 · T04 映射依据）
 // ────────────────────────────────────────────────────────────
 
@@ -532,6 +696,15 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
       // fail-closed：exit_when 缺失或不可判定即拒载（报错含修复指引）
       if (!exitWhen || exitWhen.trim().length === 0) {
         throw new WorkflowParseError('loop.enabled=true 但 exit_when 缺失——自循环 workflow 必须声明退出判据（fail-closed 拒载）。修法：在 loop: 块补 exit_when: "<merge_criteria 同款语法>"');
+      }
+      // fail-closed 第二道（F-03+N-3 收口）：非空但不可判定的表达式同样拒载
+      // （缺失检查只挡「没写」，这里挡「写了但机器判不了」——垃圾串/未知变量/
+      // 赋值副作用/残缺表达式均在此拦截）
+      const decidability = isExitWhenDecidable(exitWhen);
+      if (!decidability.ok) {
+        throw new WorkflowParseError(
+          `loop.exit_when 不可判定（fail-closed 拒载）：${decidability.reason ?? '未知原因'}`,
+        );
       }
       if (maxIterations === undefined || maxIterations < 1) {
         throw new WorkflowParseError('loop.enabled=true 但 max_iterations 缺失或 <1（迭代硬上限——防死循环）');

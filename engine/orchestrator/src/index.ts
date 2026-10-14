@@ -29,8 +29,10 @@
   mapAgentType,
   resolveAgent,
   WorkflowParseError,
+  isExitWhenDecidable,
+  KNOWN_EXIT_WHEN_VARS,
 } from './workflow-parser';
-/* @public */ export type { WorkflowNode, ParsedWorkflow, SubAgentConfig, MergeCriterion, WorkflowApprover } from './workflow-parser';
+/* @public */ export type { WorkflowNode, ParsedWorkflow, SubAgentConfig, MergeCriterion, WorkflowApprover, ExitWhenDecidability, LoopBlock } from './workflow-parser';
 
 // Workflow Container（外部提交通道 · v1.3.6 交付 ①）
 /* @public */ export {
@@ -61,6 +63,7 @@
   SchemaGateError,
   validateCronSchedule,
   validateWorkflowCrons,
+  assertLoopAndHumanOnlyInvariants,
   workflowCreateSchema,
   workflowUpdateSchema,
   workflowNodeAddSchema,
