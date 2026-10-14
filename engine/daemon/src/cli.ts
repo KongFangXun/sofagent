@@ -107,21 +107,23 @@ async function main() {
       switch (action) {
         // ── v1.6.0 章十：全停管理命令（循环失控时的人工熔断位）──
         case 'pause': {
-          // sofagent daemon pause --reason "<text>"：一键挂起全部循环 workflow
-          //（含排队中的并发请求一并冻结）；写暂停标记文件，事件面读标记停派
-          //（生产消费者 = orchestrator events/should-run.ts 的 checkLoopStartGate，
-          //  已接进派发前置 shouldRunGate 的 quota 面）。写前兜底建数据目录——
-          // 首用（目录未建）时 writeFileSync 会抛 ENOENT。
-          const { writeFileSync, mkdirSync, existsSync } = await import('fs');
-          const { join, dirname } = await import('path');
+          // sofagent daemon pause --reason "<text>"：一键挂起全部事件调度
+          //（含循环 workflow 与排队中的并发请求一并冻结）；写暂停标记文件，
+          // 事件面读标记停派（生产消费者 = orchestrator events/should-run.ts 的
+          // checkLoopStartGate，已接进派发前置 shouldRunGate 的 quota 面——
+          // 挂起面覆盖所有经 shouldRunGate 的事件，非仅 loop 轮次）。
+          // 写前兜底建数据目录（mkdirSync recursive 幂等，无需 existsSync 前置）——
+          // 首用（目录未建）时 writeFileSync 会抛 ENOENT（fresh-eyes run-01 项 1）。
+          const { writeFileSync, mkdirSync } = await import('fs');
+          const { join } = await import('path');
           const { getDataDir } = await import('@sofagent/core');
           const reasonIdx = args.indexOf('--reason');
           const reason = reasonIdx !== -1 ? (args[reasonIdx + 1] ?? 'operator-requested') : 'operator-requested';
-          const markerPath = join(getDataDir(), 'loop-pause.json');
-          const markerDir = dirname(markerPath);
-          if (!existsSync(markerDir)) mkdirSync(markerDir, { recursive: true });
+          const dataDir = getDataDir();
+          const markerPath = join(dataDir, 'loop-pause.json');
+          mkdirSync(dataDir, { recursive: true });
           writeFileSync(markerPath, JSON.stringify({ paused: true, reason, pausedAt: new Date().toISOString() }, null, 2));
-          console.log(`⏸️  已暂停全部循环 workflow（原因：${reason}）——排队请求一并冻结`);
+          console.log(`⏸️  已挂起全部事件调度（含循环 workflow）（原因：${reason}）——排队请求一并冻结`);
           console.log('   恢复：sofagent daemon resume');
           process.exit(0);
         }
@@ -131,19 +133,21 @@ async function main() {
           const { getDataDir } = await import('@sofagent/core');
           const markerPath = join(getDataDir(), 'loop-pause.json');
           if (existsSync(markerPath)) {
-            let marker: { pausedAt?: string; reason?: string } = {};
+            let marker: { pausedAt?: string; reason?: string } | null = null;
             try {
               marker = JSON.parse(readFileSync(markerPath, 'utf-8')) as { pausedAt?: string; reason?: string };
             } catch (err) {
-              // 标记损坏：报可读错误并退出非零（不裸崩，也不误报「已恢复」）
-              console.error(`❌ 暂停标记损坏，无法恢复：${markerPath}（${(err as Error).message}）`);
-              console.error('   修法：删除损坏的 loop-pause.json 后重跑 resume，或手工确认循环为运行态');
-              process.exit(1);
+              // 标记损坏：按「已损坏，视为未暂停」处理并 warn（fresh-eyes run-01 项 2）——
+              // 与事件面 readLoopPauseMarker 的降级铁律同语义（损坏 → 降级放行，缺数据
+              // 不挂起生产事件）；此处 CLI 侧同样不崩不阻断：清掉损坏标记后照常恢复，
+              // 损坏详情 warn 留痕供运维追查（不裸崩，也不误报「已恢复」——标记本身
+              // 已不可信，恢复态由清除动作保证）。
+              console.warn(`⚠️  暂停标记已损坏，视为未暂停（${(err as Error).message}）——将删除损坏标记 ${markerPath}`);
             }
             rmSync(markerPath);
-            console.log(`▶️  已恢复循环 workflow（此前暂停于 ${marker.pausedAt ?? '未知时刻'}，原因：${marker.reason ?? '未记录'}）`);
+            console.log(`▶️  已恢复事件调度（含循环 workflow）（此前暂停于 ${marker?.pausedAt ?? '未知时刻'}，原因：${marker?.reason ?? '未记录（或标记已损坏）'}）`);
           } else {
-            console.log('▶️  无暂停标记——循环本就在运行态');
+            console.log('▶️  无暂停标记——事件调度本就在运行态');
           }
           process.exit(0);
         }
