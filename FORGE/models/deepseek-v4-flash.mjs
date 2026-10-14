@@ -15,7 +15,7 @@ export default {
     output: 4.0,
     currency: 'CNY',
     source: 'https://api-docs.deepseek.com/quick_start/pricing',
-    note: '官方以 USD 计价：off-peak $0.15 in / $0.6 out（cache hit $0.003），peak 为 2 倍；本表按汇率 6.71 折算为 CNY 供估算',
+    note: '官方以 USD 计价：off-peak $0.15 in / $0.6 out（cache hit $0.003），peak 为 2 倍（peak=周一至五 01:00-04:00/06:00-10:00 UTC）；本表按汇率 6.71 折算为 CNY 供估算（折算时点 @2026-09）',
     billing: 'pay-as-you-go',
   },
 };
