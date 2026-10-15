@@ -833,7 +833,12 @@ function buildPrecheckEvidence(runDir, stepDef, target = '') {
         if (Array.isArray(data.scenarios)) {
           lines.push(`  - 场景索引（${data.scenarios.length}，全量）:`);
           for (const s of data.scenarios) {
-            lines.push(`    * S${s.label ?? s.num} ${s.title ?? ''}`);
+            // 2026-10-15 修复（run-01 coverage FAIL 根因）：与上方 20261007-04 同族同函数——
+            // scenarios 段同样只打了 label/title，**逐场景执行结果 result 被丢弃**，coverage
+            // worker 看不到任何 PASS/FAIL ⇒ 按 fail-closed 判「无执行结果」直接 FAIL（实锤：
+            // precheck 里 411 条全带 result=PASS，worker 却零可见）。执行结果字段必须随行注入。
+            const rs = s.result ? ` 〚result=${s.result}〛` : '';
+            lines.push(`    * S${s.label ?? s.num} ${s.title ?? ''}${rs}`);
           }
         }
         blocks.push(lines.join('\n'));
@@ -2419,8 +2424,14 @@ function parseChangelogModules(changelogRelPath) {
  * @returns {{source: string|null, results: Map<string,string>}}
  */
 function parseAcceptanceResults(runDir) {
-  const candidates = [join(runDir, 'acceptance-raw.log'), join(REPO_ROOT, 'acceptance-raw.log')];
-  const logPath = candidates.find((p) => existsSync(p)) || null;
+  // 2026-10-15 修复（run-01 coverage FAIL 根因②③）：① SOFAGENT_ACCEPTANCE_LOG 显式覆盖
+  // 须最高优先——复用路径通常不在 runDir 内（脚本层预跑日志落别处 + env 指路），旧实现
+  // 候选表不含该 env ⇒ 真日志不可达，只能落到陈旧兜底里；② 去掉 REPO_ROOT 兜底候选——
+  // 仓库根残留的陈旧 acceptance-raw.log（BUG-26 已知污染形态，实测 10-09 的 483/483 旧账）
+  // 会被命中，令 parse 结果停在旧版本真值。日志只认「env 显式路径 → runDir」两个来源。
+  const candidates = [process.env.SOFAGENT_ACCEPTANCE_LOG, join(runDir, 'acceptance-raw.log')]
+    .filter((p) => p && existsSync(p));
+  const logPath = candidates[0] ?? null;
   const results = new Map();
   if (!logPath) return { source: null, results };
   let src;
