@@ -80,13 +80,16 @@ export function skillReuseRateFromImpactLedger(dataDir: string): OptionalMetric 
   const { rows } = readJsonl(join(dataDir, 'skill-evolution', 'skill-impact.jsonl'));
   if (rows.length === 0) return null;
   const accepted = rows.filter((r) => r['verdict'] === 'accepted').length;
-  // 有 invocation 计数字段则用真复用率；否则 accepted 产出比（同源台账两种口径均记录在案）
+  // 真复用率分支（invocations/productions）：生产 SkillImpactEntry 当前无此二字段
+  // （2026-10-15 实测核对 skill-impact-ledger.ts——只有 proposalId/skillPath/verdict 等），
+  // 故该分支现世恒不触发、恒走 accepted 占比口径——注释如实声明，不再宣称「两种口径均记录在案」；
+  // 字段未来补齐时此分支自动启用（消费方已就绪）。
   const inv = rows.map((r) => Number(r['invocations'])).filter((v) => Number.isFinite(v));
   const prod = rows.map((r) => Number(r['productions'])).filter((v) => Number.isFinite(v));
   if (inv.length === rows.length && prod.length === rows.length && prod.some((v) => v > 0)) {
     return sum(inv) / sum(prod);
   }
-  return accepted / rows.length;
+  return accepted / rows.length; // 现行口径：accepted 占比（invocations 字段未接线前的 fallback）
 }
 
 /** ④ 纠偏介入率：decision-log.jsonl 中 ESCALATE_REPORT 占比（低 = 好） */
