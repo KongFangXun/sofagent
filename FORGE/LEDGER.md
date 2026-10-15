@@ -465,3 +465,6 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 2026-10-15     | 20261015-01    | release-gate | 4    | SKIP       | PASS       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-15/run-01
 
 2026-10-15     | 20261015-02    | release-gate | 4    | SKIP       | PASS       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-15/run-02
+
+2026-10-15     | 20261015-03    | release-gate | 4    | PASS       | PASS       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-15/run-03
+<!-- 20261015-03 终态更正（主 session 零信任复验后收编）：首次 driver 解析 ERROR（verdict 步产物截断 27 行、latency 12.9s）→ 按 SOP「ERROR 双查」定向重跑该步（--step verdict）产出完整 128 行 → verdict=PASS（P0=0/P1=2/P2=12）。acceptance 真跑两次 493/493（凭据两次被防线④拒——并发 session 长跑期间提交 5 次，material 有效性成立：v1.6.0 devlog/acceptance-test/engine 均未被触碰）。P1×2（章一/章八 EXEMPT 承载面）属判读漂移类，主流裁决 SKIP（豁免清单已登记 reason/trigger）。复验三件套：判定行含 PASS ✓ / stepErrors=[] ✓ / 未进 F 链 ✓。 -->

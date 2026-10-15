@@ -28,7 +28,7 @@
 | 一·架构设计 | [./architecture.md](./architecture.md) | **执行后端三层（DSH CLI 桥接 → createReactAgent fallback → 禁 createDeepAgent）** · Driver-Worker 编排 · 步骤定义 · 目录架构 |
 | 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · **六角色（A/B/C/D/V/F）统一走 glm-5.3-flash** · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
-| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **守卫 fail-loud（PASS 更不可信）** · **冻结窗口锁（防并行会话误改）→ 已退役（死检查收口·哨点化判据）** · **fresh-eyes 四连事故（窗口冲突/修复静默丢失/降级滚雪球/API 漂移全灭）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step · **编排循环退役与单步执行器（整合归一·能力交接清单）** |
+| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **守卫 fail-loud（PASS 更不可信）** · **冻结窗口锁（防并行会话误改）→ 已退役（死检查收口·哨点化判据）** · **fresh-eyes 四连事故（窗口冲突/修复静默丢失/降级滚雪球/API 漂移全灭）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step · **编排循环退役与单步执行器（整合归一·能力交接清单）** · **证据注入面失配事故（注入面≥消费面 / 同族修复扫全段 / 抽取面收窄为结构化标记 / 兜底路径同源 / ERROR 定向重跑 / 凭据指纹粒度冲突）** |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 | 十一·发版流水线连续执行 | [./release-automation.md](./release-automation.md) | **判定前置（verdict + 前置条件清单）** · **停手条件预置（护栏内自动/出护栏停手）** · **文件即状态跨 session 接力** · 每步门禁即时验证 · **外部依赖降级通道预案化** · 多 session 并发 · 险情实录（CI 密钥 fail-closed / bump 行首锚 / sed 静默空转 / 守卫互斥 / 合法红 / 数字时点性） · 连跑最小闭环判据 |
 | 十二·收口验证循环 | [./verification-loop.md](./verification-loop.md) | **追问-物证-修复-重验循环** · 六层病谱系（物理→纪律→事实→时序→格式→引用，每层由上层修复引入）· 险情实录五则（版本号当过程快照 / 前置门成环 / 单数据点掀整账 / 桌面单点故障 / 对账件没跟）· 行为缺陷→机械纪律转化路径 |
@@ -204,6 +204,9 @@
 | 48 | 事故教训不及时回写 lessons，换 session 重踩同款 | 四·四连事故横向教训⑤ |
 | 49 | driver resume 断点劫持新 run（旧断点接管新意图，白跑一轮） | 引擎/工具通用坑位 #23 |
 | 50 | `$(cmd \| head -1)` 无匹配 pipefail 杀整脚本 | 引擎/工具通用坑位 #24 |
+| 51 | 注入层丢字段（同函数另一段被漏修）→ worker 零证据判 FAIL，三轮误修错对象 | 四·注入面失配事故 |
+| 52 | 场景号正则全文误抽领域术语（同族三次）→ 免检与锚互斥判 P0 | 四·注入面失配事故 |
+| 53 | 解析器候选表含废弃历史落点 → 命中陈旧日志，真值停在旧版本 | 四·注入面失配事故 |
 
 ### 关键设计决策速查
 
