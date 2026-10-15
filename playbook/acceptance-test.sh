@@ -6,7 +6,10 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：411 个场景（v1.6.0 阶段四步骤二分发 +4：S484 pause 全停命令行为锁（#1/#2/#9/#10 合壳·marker 消费链/ENOENT 兜底/损坏降级/文案对齐）/ S485 采集归类判别键（#12/#13·adversarial 拒判+drift 单向偏移）/ S486 合成概率不进校准集（#6·calibrationEligible 双侧豁免）/ S487 OOD 空集默认值与快照对账（#14·含 datasets 语义边界））（前值 407：v1.6.0 章二收口批 +1：S483 exit_when 可判定性行为锁（F-03+N-3：parser+schema-gate 双门同函数 fail-closed））（前值 406：v1.5.9 承接 v1.5.8 B 类 +5：S478 准入门接线行为锁 / S479 只读位 fail-closed 锁 / S480 reward basis 无硬编码数字锁 + S481 七章一维收口行为锁（1243dee24）+ S482 章五 FDE Handbook 升格行为锁（R1 verdict 闭环批））（前值 401：v1.5.7 阶段四 A 类分发 +4：S474 审计三规则与双落点 / S475 章四能力治理 / S476 章五可拔契约+域 barrel 等价 / S477 章七国标+章九 ACS 结论）（前值 397：v1.5.6 coverage S473；SSOT=check-test-count 校验，口径=scenario 行数）（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
+# 场景数：411 个场景（编号口径声明：**编号非连续**——S1–S487 中有 76 个历史空号
+# （退役/归并/重构所致），计数 SSOT = 本文件 scenario 行数（check-test-count.sh 机械对账），
+# 非最大编号；空号不代表缺失，亦无须逐号登记——任何新增场景只须编号顺延当前最大号。
+# 411 个场景（v1.6.0 阶段四步骤二分发 +4：S484 pause 全停命令行为锁（#1/#2/#9/#10 合壳·marker 消费链/ENOENT 兜底/损坏降级/文案对齐）/ S485 采集归类判别键（#12/#13·adversarial 拒判+drift 单向偏移）/ S486 合成概率不进校准集（#6·calibrationEligible 双侧豁免）/ S487 OOD 空集默认值与快照对账（#14·含 datasets 语义边界））（前值 407：v1.6.0 章二收口批 +1：S483 exit_when 可判定性行为锁（F-03+N-3：parser+schema-gate 双门同函数 fail-closed））（前值 406：v1.5.9 承接 v1.5.8 B 类 +5：S478 准入门接线行为锁 / S479 只读位 fail-closed 锁 / S480 reward basis 无硬编码数字锁 + S481 七章一维收口行为锁（1243dee24）+ S482 章五 FDE Handbook 升格行为锁（R1 verdict 闭环批））（前值 401：v1.5.7 阶段四 A 类分发 +4：S474 审计三规则与双落点 / S475 章四能力治理 / S476 章五可拔契约+域 barrel 等价 / S477 章七国标+章九 ACS 结论）（前值 397：v1.5.6 coverage S473；SSOT=check-test-count 校验，口径=scenario 行数）（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
 # 编号跳号豁免：S1~S293 间 70 个空洞号（v1.2.x 瘦身既成事实）；新编号=当前最大+1 顺延禁回填；版本段 grep "─── v" 定位
 # 口径注意：底部「$PASSED 通过」是断言通过数（≠场景数，含跳过场景），勿混用
 # 用法：bash playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
@@ -441,6 +444,9 @@ elif grep -q "未知子命令" <<< "$VERIFY_OUT"; then pass
 else SHIM_OK=false; fail "verify 移除后无引导输出"; fi
 scenario 33 "CLI 审计输出含签名行"
 cd "$TMP_REPO"
+# 注意：本场景 config 刻意禁用 A7 ⇒ 审计头「16 项检查」是配置生效的预期结果
+# （默认集容量仍为 17——两个口径不同：前者=本次执行项数、后者=规则集容量），
+# 非缺陷；release-gate coverage 审读时勿按计数漂移判定。
 printf 'audit:\n  rules:\n    a7: false\n' > "$TMP_REPO/.sofagent/config.yml"
 echo "# signature test" >> README.md; git add README.md
 GIT_EDITOR=true git commit --quiet -m "sig: normal commit" 2>&1 || true

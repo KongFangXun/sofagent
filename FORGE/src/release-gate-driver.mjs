@@ -2393,11 +2393,24 @@ function parseChangelogModules(changelogRelPath) {
     // v1.4.8 run-02 实证：此前模块只有 title，V 只能标「映射矩阵完全缺失」——清单两侧各持
     // 一半线索（模块无场景、场景无模块），故补这一侧的结构化线索（非替代 V 的语义判定）。
     let body = '';
-    for (let j = i + 1; j < lines.length && !/^##\s/.test(lines[j]); j++) body += lines[j] + '\n';
+    const anchorLines = [];
+    for (let j = i + 1; j < lines.length && !/^##\s/.test(lines[j]); j++) {
+      body += lines[j] + '\n';
+      // 2026-10-15 修复（run-02 coverage P0-1）：场景号抽取面从「模块全文」收窄为
+      // **锚登记行**（`> 🔗 **承载场景（章↔场景双向登记）**：…`，v1.5.7 起沿用的结构化约定）。
+      // 同族三次误抽实锤：20261007-04（S1M/SSO/S3 产品词）、v1.5.8 章一（「S1 Bench」术语）、
+      // 2026-10-15（模块八正文「S1 / S2 职责分工」= 被引论文 System1/System2 分工术语）——
+      // 上次靠「数字后不得紧跟字母」只堵了 S1M 形态，空格+斜杠术语（S1 / S2）仍漏网，
+      // 导致模块八同时带 EXEMPT 与错配锚 ⇒ coverage 判「免检与锚互斥」P0。
+      // 纯正则无法区分「S1 场景号」与「S1 术语」两种语义（同一字面），故取结构性识别面：
+      // 只有显式锚登记行才计入 module↔scenario 对账；无锚登记行的模块在该面判零锚
+      // （fail-closed 正确方向——缺登记会在 coverage 暴露而非静默误抽）。
+      if (/🔗\s*\*\*承载场景/.test(lines[j])) anchorLines.push(lines[j]);
+    }
     const refs = new Set();
-    // 20261007-04 修复：S1M/SSO/S3 等产品词被当场景号误抓（章六实锤锚了无关的
+    // 20261007-04 修复（保留）：S1M/SSO/S3 等产品词被当场景号误抓（章六实锤锚了无关的
     // S1「Fresh install」）——数字后不得紧跟字母（S1M 的 M 排除 S1）。
-    for (const r of body.matchAll(/S(\d{1,3})(?![a-zA-Z0-9])[a-z]?(?:\s*[-–~]\s*S?(\d{1,3}[a-z]?))?/g)) {
+    for (const r of anchorLines.join('\n').matchAll(/S(\d{1,3})(?![a-zA-Z0-9])[a-z]?(?:\s*[-–~]\s*S?(\d{1,3}[a-z]?))?/g)) {
       refs.add('S' + r[1]);
       if (r[2]) {
         const a = parseInt(r[1], 10), b = parseInt(r[2], 10);
