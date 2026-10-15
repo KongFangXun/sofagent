@@ -56,7 +56,7 @@
 
 ## FDE Harness 能替你干什么
 
-> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是**一层 FDE Harness**——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE Harness 层，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。
+> 先讲「价值」再讲「怎么用」。sofagent 不是工具包，而是**一层 FDE Harness**——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。
 >完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。把下面这份清单读成一句话：**你的每个业务对象都能被 FDEing 一遍**——FDE 是名词（岗位 / 方法论），FDEing 是动词（把这套打法跑一遍）。
 
 **已经能替你干的事**（按两相位分组——进场生成判断 / 离场驻留判断）：
@@ -74,7 +74,7 @@
 - **经验不串项目**（v1.5.6）：审批入池的沉淀记忆默认钉到**当前项目**（按仓库解析），跨项目与用户全局不自动共享；复用走显式导出/导入 + 血缘与审批留痕。
 - **规则自测、写错即曝**（v1.5.3）：审计规则统一为一套引擎（tool-level 与 git-diff 共用同一定义、两种触发时机），**每条规则强制携带正负样例**（必须命中/必须不命中），加载时断言 fail-closed——写错当场拒载；多规则命中取最严，FAIL 报文附替代建议。运维侧同版补 **doctor 修复闭环**：`sofagent core doctor --refresh` 先备份、再一键重置默认、出前后 diff 报告。
 - **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 自动注册企业 SubAgent → 编排成 LangGraph 工作流 → 带 HITL 与审计地自动跑（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN），交付物从「一堆静态文档」变成「会自己跑的系统」。详见 [激活链设计](./guides/fde-activation-chain.md)。
-- **循环任务可管可停**（v1.6.0）：workflow 支持 `loop:` 循环声明（退出条件可判定性加载期校验，写错拒载）；`sofagent daemon pause --reason` 一键冻结全部事件调度、`resume` 恢复；预算/轮次超限自动挂起进死信，人处置后可恢复。
+- **循环任务可管可停**（v1.6.0）：workflow 支持 `loop:` 循环声明（退出条件加载期校验，写错拒载）；`daemon pause --reason` 冻结全部事件调度、`resume` 恢复；预算超限自动挂起进死信，可恢复。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
 - **📡 训练信号与部署闭环**（v1.4.4）：`corpus_export` 语料导出三件套（规则/FDE 方法论/带标签样本，28 编号位 + reward 骨架 + 脱敏聚合）；企业专属模型本地权重部署（`model_register source: 'local-path'` + sha256 篡改拒绝 + rollback-weights 回滚）；训练产物→注册自动衔接（train done + eval pass）；`train compare` 多基座 ROI 排序；决策因果链与先例检索（`causedBy` 因果边）；
@@ -477,7 +477,7 @@ jobs:
 
 | 能力 | 版本 | 一句话 | 明细 |
 |---|---|---|---|
-| 判定底座·阶段一 | v1.6.0 | 判定从「代码里的匹配逻辑」变为可训练/可校验/可举证的判据数据：三原语类型定稿 · **36 条判据**重述 · 数据集三元组 · 三源采集+九类困难样本 · 四道质量门 · 判定头契约（真基座 v1.8.0）· 零样本基线如实落数 · `loop:` 循环语义。**SDK 面先行**（用户入口排 v1.8.0） | [日志](./changelog/v1.6/v1.6.0.md) |
+| 判定底座·阶段一 | v1.6.0 | 判定从「匹配逻辑」变为可训练/可校验/可举证的判据数据：三原语定稿 · **36 条判据**重述 · 数据集三元组 · 三源采集+九类困难样本 · 四道质量门 · 判定头契约 · 零样本基线如实落数 · `loop:` 循环语义。**SDK 面先行** | [日志](./changelog/v1.6/v1.6.0.md) |
 | 进化模块·写面审计与元验证 | v1.5.9 | 写面留痕（HMAC · fail-closed；查询 `sofagent evolve writesurface list`）· 能力基线（`sofagent evolve baseline list/show/restore`）· 配置面契约 · 验证器老化（SDK 面）· 红队自测（`sofagent evolve redteam --run`）· RSI 升格 · 旧 shim 退役（破坏性） | [日志](./changelog/v1.5/v1.5.9.md) |
 
 

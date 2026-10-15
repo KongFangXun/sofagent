@@ -26,7 +26,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.9: Evolution Module · Write-Surface Audit & Meta-Validation](#v159-evolution-module--write-surface-audit--meta-validation)
+- [v1.6.0: Decision Substrate · Stage 1 (Criteria & Data Foundation)](#v160-decision-substrate--stage-1-criteria--data-foundation)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -206,19 +206,19 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## v1.6.0: Decision Substrate · Stage 1 (Criteria & Data Foundation)
 
-🧭 **Turning "judgment" from hard-coded matching logic into trainable, verifiable, evidence-backed criteria data** — the first of four substrate stages (v1.6–v1.9). This release trains nothing and wires nothing: its deliverable is a finalized criteria schema plus the data foundation.
+🧭 **Turning "judgment" from hard-coded matching logic into trainable, verifiable, evidence-backed criteria data** — first of four substrate stages (v1.6–v1.9). Trains nothing, wires nothing: the deliverable is a finalized criteria schema plus the data foundation.
 
 | Capability | One-liner | Reachable |
 |---|---|---|
-| **Three primitives** | Choice (selected + full candidate distribution) / Score (value + interval) / Noul (truth probability) typed answers finalized; closed question-set binding and candidate fallback are fail-closed | SDK surface (package-level type contracts) |
-| **Audit criteria restatement** | The current 28 rules restated as **36 criteria** (two-part: criterion + evidence, zero-gap bidirectional reconciliation) with a four-hard-rule fail-closed quality lint | SDK surface (criteria data + validator) |
-| **Dataset triple format** | (state / questions / labeled answers) isomorphic to the primitives; four-step contrastive construction · family-level split · replay-leak guard | SDK surface (format validator) |
-| **Collection & quality gates** | Three-source collectors (history/HITL/PR) + nine hard-sample collection points + four quality gates + active sampling | SDK surface (collectors and gates) |
-| **Judge-head contract** | `EncoderLike` contract interface (swap backbones without touching judge heads) + the three primitive judge heads (reference implementation; real backbone scheduled v1.8.0) | SDK surface (contract + multi-head runtime) |
-| **Zero-shot baseline** | A self-produced baseline **recorded as-is** (mock contract encoder, Chinese/English split, unembellished) — the quantifiable denominator for "how much will training add" in stage 2 | Reproducible artifacts (`datasets/`) |
-| **Loop workflow semantics** | `loop:` declaration block + fail-closed `exit_when` decidability + budget circuit-breaker suspension + `sofagent daemon pause/resume` | CLI-reachable (daemon pause/resume) |
+| **Three primitives** | Choice (selected + full distribution) / Score (value + interval) / Noul (truth probability) typed answers; question-set binding and candidate fallback are fail-closed | SDK surface (type contracts) |
+| **Audit criteria restatement** | 28 rules restated as **36 criteria** (criterion + evidence, zero-gap reconciliation) with a four-hard-rule fail-closed lint | SDK surface (criteria + validator) |
+| **Dataset triple format** | (state / questions / answers) isomorphic to the primitives; four-step contrastive construction · family-level split · replay-leak guard | SDK surface (format validator) |
+| **Collection & gates** | Three-source collectors (history/HITL/PR) + nine hard-sample points + four quality gates + active sampling | SDK surface |
+| **Judge-head contract** | `EncoderLike` interface (swap backbones without touching heads) + three primitive judge heads (reference impl; real backbone in v1.8.0) | SDK surface |
+| **Zero-shot baseline** | Self-produced baseline **recorded as-is** (mock encoder, zh/en split, unembellished) — the denominator for "how much training adds" in stage 2 | Reproducible (`datasets/`) |
+| **Loop workflow semantics** | `loop:` declaration + fail-closed `exit_when` decidability + budget suspension + `daemon pause/resume` | CLI-reachable |
 
-> 📌 This release is **SDK-surface first**: user-facing entry points for the decision substrate (CLI/MCP domains) are scheduled for v1.8.0. Full evidence in the [v1.6.0 devlog](./docs/changelog/v1.6/v1.6.0.md); older capability sections in [CHANGELOG](./CHANGELOG.md).
+> 📌 **SDK-surface first**: user-facing entries (CLI/MCP) are scheduled for v1.8.0. Full evidence in the [v1.6.0 devlog](./docs/changelog/v1.6/v1.6.0.md); older sections in [CHANGELOG](./CHANGELOG.md).
 ## The Two FDE Harness Phases
 
 **How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**:
