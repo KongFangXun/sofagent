@@ -141,6 +141,36 @@
       "file": "docs/ROADMAP.md",
       "anchor": "v2.0.0 时点不锁死",
       "reason": "版本边界纪律的排期语义本体：v2.0.0 是规则讨论对象（时点机制/迭代域边界），非历史考古；删版本号则排期规则不可定位（v1.6.0 BUG-71 时区批施工时豁免登记）"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "## 阶段四校准收编（v1.6.0 · run-01 四角色盲审",
+      "reason": "校准收编存档的节标题身份+runDir 出处指针——同款先例：本表「## v1.4.9 审查校准收编」「## 阶段四校准（run-01 收编」两锚（节标题版本号是节的身份，去版本后与相邻节同名不可区分；run-01 是可复算定位键非跑批叙事，删它则校准条目无法回溯 FORGE/SKILL/fresh-eyes-loop/runs/2026/10 原始审查证据）"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "**上限重估（v1.6.0 阶段四步骤二分发批）**",
+      "reason": "行数警戒线历史账（前值/演进台账叙事）——regression-checklist 文件头本就是增量账本体，历史读数属合法台账面（同款先例：「后 release-gate 20260929-03 verdict 闭环批 S463/S464」锚）"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "#### 149. 判定底座与全停面一维收口",
+      "reason": "回归维度编号标题的批次出身注——维度断言本体有效（git -S ruleClass 可溯）（同款先例：「#### 147. v1.5.7 审查批一维收口」锚）"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "calibration-report 归位说明——评测产物 router/ 统一落点登记（v1.7.0 复审归位）",
+      "reason": "断言行内注释的复审时点指针——复审动作属 v1.7.0 排期语义（规则讨论对象），删版本号则复审排期不可定位（同款先例：docs/ROADMAP.md「v2.0.0 时点不锁死」锚——版本号是排期规则本体）"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "B-快照端点对账——v1.6.0 devlog 快照 commit 数",
+      "reason": "断言的对照对象指针——v1.6.0 devlog 是该对账断言的对照物本体（grep 目标 docs/changelog/v1.6/v1.6.0.md），版本号在此是待核字面量非出身叙事（同款先例：「dist 规则数非 17/28」锚的版本口径款）"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "> 来源：run-01（deepseek-flash V4.1 首轮）A 类 16 条",
+      "reason": "校准来源的 runDir 出处指针（同款先例：本表「## 阶段四校准（run-01 收编」锚）——run 编号是可复算定位键（FORGE/SKILL/fresh-eyes-loop/runs/2026/10/run-01），非跑批叙事；删它则 4 条收编教训无法回溯原始审查证据（A/C 类计数与合并原则的对照源）"
     }
   ],
   "exemptAnchors_spec": {
