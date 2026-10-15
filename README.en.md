@@ -204,21 +204,21 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.9: Evolution Module · Write-Surface Audit & Meta-Validation
+## v1.6.0: Decision Substrate · Stage 1 (Criteria & Data Foundation)
 
-🧬 **A black box for self-improvement — every evolutionary step is logged, rollback-able, and the gate itself never ages**:
+🧭 **Turning "judgment" from hard-coded matching logic into trainable, verifiable, evidence-backed criteria data** — the first of four substrate stages (v1.6–v1.9). This release trains nothing and wires nothing: its deliverable is a finalized criteria schema plus the data foundation.
 
 | Capability | One-liner | Reachable |
 |---|---|---|
-| **Write-surface audit trail** | Full trail on prompt/memory write surfaces, reusing the HMAC audit chain; no trail = rollback (fail-closed) | In-process (daemon-wired; query via `sofagent evolve writesurface list`) |
-| **Capability baseline lineage** | Four-layer state snapshots + content-addressed ids + predecessor chain; answers "how did it behave back then" and rolls back | CLI reachable (`sofagent evolve baseline list/show/restore`) |
-| **Load-chain config contract** | 18-field SSOT bidirectional reconciliation (impl ↔ declaration) across four config layers; unrouted keys mechanically detectable | In-process (gate: `check-loadchain-config`) |
-| **Validator aging detection** | Three-state drift triage (real failure / env drift / insufficient evidence); advisory, non-blocking | SDK-face (entry scheduled for a later release) |
-| **Transparency repo & adversary self-test** | Red-team runner with 9 paired cases (blocked / detection-evidenced) across tamper·forge·bypass attack surfaces | CLI reachable (`sofagent evolve redteam --list/--run`) |
-| **evolve promoted to RSI module** | Zero logic change, mount-point migration only; write-surface narrowing (control-plane deny / traversal deny / writable allow) | In-process (mount migration, no standalone command) |
-| **Legacy command shims retired** | 12 old bins (sofagent-audit etc.) explicitly removed after compatibility window; single entry only | ⚠️ Breaking (CLI surface change) |
+| **Three primitives** | Choice (selected + full candidate distribution) / Score (value + interval) / Noul (truth probability) typed answers finalized; closed question-set binding and candidate fallback are fail-closed | SDK surface (package-level type contracts) |
+| **Audit criteria restatement** | The current 28 rules restated as **36 criteria** (two-part: criterion + evidence, zero-gap bidirectional reconciliation) with a four-hard-rule fail-closed quality lint | SDK surface (criteria data + validator) |
+| **Dataset triple format** | (state / questions / labeled answers) isomorphic to the primitives; four-step contrastive construction · family-level split · replay-leak guard | SDK surface (format validator) |
+| **Collection & quality gates** | Three-source collectors (history/HITL/PR) + nine hard-sample collection points + four quality gates + active sampling | SDK surface (collectors and gates) |
+| **Judge-head contract** | `EncoderLike` contract interface (swap backbones without touching judge heads) + the three primitive judge heads (reference implementation; real backbone scheduled v1.8.0) | SDK surface (contract + multi-head runtime) |
+| **Zero-shot baseline** | A self-produced baseline **recorded as-is** (mock contract encoder, Chinese/English split, unembellished) — the quantifiable denominator for "how much will training add" in stage 2 | Reproducible artifacts (`datasets/`) |
+| **Loop workflow semantics** | `loop:` declaration block + fail-closed `exit_when` decidability + budget circuit-breaker suspension + `sofagent daemon pause/resume` | CLI-reachable (daemon pause/resume) |
 
-> 📌 Full evidence in the [v1.5.9 devlog](./docs/changelog/v1.5/v1.5.9.md); older capability sections in [CHANGELOG](./CHANGELOG.md).
+> 📌 This release is **SDK-surface first**: user-facing entry points for the decision substrate (CLI/MCP domains) are scheduled for v1.8.0. Full evidence in the [v1.6.0 devlog](./docs/changelog/v1.6/v1.6.0.md); older capability sections in [CHANGELOG](./CHANGELOG.md).
 ## The Two FDE Harness Phases
 
 **How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**:

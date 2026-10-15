@@ -252,7 +252,7 @@ graph TB
 | 项 | 值 |
 |---|---|
 | 当前版本 | **v1.5.9**（2026-10-13，✅ 已发版 · 进化模块 · 写面审计与元验证） |
-| 下一版 | **v1.6.0**（📋 规划中——S1M 判定形态与判据面；以 [ROADMAP](./ROADMAP.md) 为准） |
+| 下一版 | **v1.6.0**（🚧 开发完成待发版——判定底座 · 阶段一（判据与数据地基）；以 [ROADMAP](./ROADMAP.md) 为准） |
 | 测试覆盖 | 6230 测试 / 13 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
 | 审计规则 | 28 条（17 默认 + 11 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)） |
 | FORGE | release-gate-loop 运行中 · fresh-eyes-loop 按需人工触发 |
