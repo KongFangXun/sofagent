@@ -1,9 +1,9 @@
-// cordis-plugin-sofagent-evolve · DSH 反向插件（v1.5.9 章七：进化面升格 RSI 独立模块）
+// cordis-plugin-sofagent-evolve · DSH 反向插件（v1.6.0 章七：进化面升格 RSI 独立模块）
 // seam 挂载：session/event + fs/write-intent
 // # 语义：① 会话事件流中的 Turn 结束（turn/end）→ 经验沉淀（think.md 反思）
 //         ② 文件写入意图拦截（写面权限窄化——模型只写 memory / skill，控制面写入即拒）
 // RSI 模块定位（manifest 声明含此七项）：准入门 / 晋级 / 经验池 / 考核 / 写面审计 / 能力基线 / 透明仓
-//   —— 产品形态自 v1.5.9 起从 harness 主干功能**改挂**本插件（DSH 七款之一，插件位已存在，
+//   —— 产品形态自 v1.6.0 起从 harness 主干功能**改挂**本插件（DSH 七款之一，插件位已存在，
 //      零迁移成本：改的是归属标注与 manifest 声明，不是代码搬移）。沉淀留主干（数据管道），
 //      进化独立成 RSI 插件（决策管道）；换掉本插件 ≠ 失去审计与沉淀（主干完整性不受插件存废影响）。
 //   治理件（门禁 / 台账 / 验证器）全在插件内可独立拔插：写面边界（write-surface-boundary.ts）

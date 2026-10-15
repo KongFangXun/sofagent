@@ -1,6 +1,6 @@
 # FDE Handbook · 万物皆可 FDEing 的打法手册
 
-> v1.5.9 · 2026-10-13（UTC）· ✅ 已发版 · 孔放勋
+> v1.6.0 · 2026-10-15（UTC）· ✅ 已发版 · 孔放勋
 
 > FDE 诊断方法论——梳理 workflow、定义 ontology、交付双图谱（Workflow + Ontology）、判定 AI 节点。**人读手册**：读完能独立做一次 FDE 诊断、判断客户成熟度；Agent 操作指令见 [SKILL/SKILL.md](../SKILL/SKILL.md)。激活链（交付后自动运转）见 [5.12](#512-交付之后激活链从交付物到自动运转)；纯手工交付可不依赖它。
 

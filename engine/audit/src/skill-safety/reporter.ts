@@ -1,5 +1,5 @@
 // ============================================================
-// reporter.ts（原 rules/skill-safety-reporter.ts · v1.5.9 BUG-18 迁至 src/skill-safety/）· Skill 安全审查——输出格式化
+// reporter.ts（原 rules/skill-safety-reporter.ts · v1.6.0 BUG-18 迁至 src/skill-safety/）· Skill 安全审查——输出格式化
 // ============================================================
 
 import { type SafetyHit, type SafetyResult } from './rules';

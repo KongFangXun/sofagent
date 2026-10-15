@@ -1,4 +1,4 @@
-// instinct/store.ts · instinct 池持久化 + 血缘字段承载（v1.5.9 章三前置件）
+// instinct/store.ts · instinct 池持久化 + 血缘字段承载（v1.6.0 章三前置件）
 //
 // 实测基线：extractor 的 InstinctItem 仅 7 字段、extractInstincts 每次从
 // think.md + decision-log.jsonl 现场重算、池中条目从不落盘——「读 verified 态」

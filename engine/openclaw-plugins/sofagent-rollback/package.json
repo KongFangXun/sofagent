@@ -1,6 +1,6 @@
 {
   "name": "sofagent-rollback",
-  "version": "1.5.9",
+  "version": "1.6.0",
   "private": true,
   "description": "给 OpenClaw 加上快照回溯——出错时用 sofagent_rollback 按 git 快照一键回滚本次改动",
   "main": "dist/index.js",
@@ -42,7 +42,7 @@
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "optionalDependencies": {
-    "@sofagent/core": "1.5.9"
+    "@sofagent/core": "1.6.0"
   },
   "devDependencies": {
     "@types/node": "^24.13.4",

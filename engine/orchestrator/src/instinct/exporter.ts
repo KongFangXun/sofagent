@@ -1,4 +1,4 @@
-// instinct/exporter.ts · instinct 池筛选导出（v1.5.9 章三）
+// instinct/exporter.ts · instinct 池筛选导出（v1.6.0 章三）
 //
 // 打通 Data-RSI 断链的上半段：从 instinct 池筛选「高置信度 + 已考核（verified）」
 // 条目导出为训练记录。三道门：

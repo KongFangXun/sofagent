@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/audit",
-  "version": "1.5.9",
+  "version": "1.6.0",
   "description": "Commit-time audit for AI coding agents — scans git diff against 28 discipline rules (secret leaks, out-of-scope edits, injection, permission lines), tamper-evident chain + snapshots. CLI: npx -y -p sofagent sofagent audit, or the sofagent single entry.",
   "main": "./dist/public-api.js",
   "types": "dist/public-api.d.ts",
@@ -73,9 +73,9 @@
   ],
   "dependencies": {
     "js-yaml": "^5.4.2",
-    "@sofagent/ontology": "1.5.9",
-    "@sofagent/core": "1.5.9",
-    "@sofagent/rules": "1.5.9",
+    "@sofagent/ontology": "1.6.0",
+    "@sofagent/core": "1.6.0",
+    "@sofagent/rules": "1.6.0",
     "archiver": "^8.0.0"
   }
 }

@@ -4,7 +4,7 @@
 
 <p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.9 · 2026-10-13（GMT+8）· ✅ 已发版（[CHANGELOG](./CHANGELOG.md)）· 孔放勋
+> v1.6.0 · 2026-10-15（GMT+8）· ✅ 已发版（[CHANGELOG](./CHANGELOG.md)）· 孔放勋
 >
 > 按安全主题组织，企业 IT 可按主题快速定位。各能力的引入版本在小节正文首句注明。
 

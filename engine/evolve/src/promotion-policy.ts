@@ -1,4 +1,4 @@
-// promotion-policy.ts · 三层晋级判据纯函数（v1.5.9 章二）
+// promotion-policy.ts · 三层晋级判据纯函数（v1.6.0 章二）
 //
 // 两 substrate 成本模型的显式化：注入租用（每次推理重付）/ skill 半持久 /
 // 微调摊销（一次付清）。何时升层此前靠人拍——本文件给可计算判据：
@@ -7,7 +7,7 @@
 //         语义——本模块只出判定，不新建回退机制）
 //   人审门：promote-train 只提示不执行（FDE 确认队列）
 //   台账：每次判定落 decision-log（判据快照可追溯——经 core 的
-//         emitAuditDecision；v1.5.9 该符号已 @public 导出，生产由
+//         emitAuditDecision；v1.6.0 该符号已 @public 导出，生产由
 //         createCoreDecisionWriter() 接线，见下）
 //
 // 晋级四道证据门槛（evidenceGates）：留出集优先 / 严格优于历史最佳 /

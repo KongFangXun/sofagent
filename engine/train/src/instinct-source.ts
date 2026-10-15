@@ -1,4 +1,4 @@
-// instinct-source.ts · instinct 数据源适配器（v1.5.9 章三 · train 包侧）
+// instinct-source.ts · instinct 数据源适配器（v1.6.0 章三 · train 包侧）
 //
 // 形态对齐 db-source.ts 先例（v1.5.7 章一）：「文件接入之外的第二入口」——
 // 本文件把 orchestrator instinct 池的**导出记录**归一到 data-ingest 的
