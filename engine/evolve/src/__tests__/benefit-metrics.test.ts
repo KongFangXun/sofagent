@@ -35,12 +35,22 @@ describe('章二 · 四指标取数（既有台账——零新数据源）', () 
     rmSync(d, { recursive: true, force: true });
   });
 
-  it('② 复发率：failure-ledger.jsonl 重复模式占比', () => {
+  it('② 复发率：failure-ledger.jsonl 重复模式占比（生产 schema——FailureRecord 字段，禁自造字段）', () => {
     const d = makeDataDir();
+    // 生产写入方 failure-ledger.ts 的 FailureRecord：timestamp/skillId/failureMode/reason/source
+    // （correctApproach/ruleTriggered 可选）——无 pattern/id/occurrences 字段（历史缺陷：测试自造
+    //  pattern 字段导致恒绿、生产恒 null，2026-10-15 修复并锁生产 schema）
+    const rec = (skillId: string, failureMode: string, reason: string) => ({
+      timestamp: '2026-10-15T00:00:00.000Z',
+      skillId,
+      failureMode,
+      reason,
+      source: 'orchestrator-checker',
+    });
     write(d, join('evolve', 'failure-ledger.jsonl'), [
-      { pattern: 'p1', occurrences: 3 },
-      { pattern: 'p1', occurrences: 2 },
-      { pattern: 'p2', occurrences: 1 },
+      rec('skill-a', 'format-mismatch', '产出格式不符'),
+      rec('skill-a', 'format-mismatch', '同模式再犯'), // 同 failureMode 复发
+      rec('skill-b', 'empty-output', '产出为空'),
     ]);
     const r = recurrenceRateFromFailureLedger(d);
     expect(r).toBeCloseTo(0.5); // 2 模式之一复发

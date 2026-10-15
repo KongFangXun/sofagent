@@ -57,13 +57,15 @@ export function passRateTrendFromAbHistory(dataDir: string, window = 20): Option
   return avg(lastHalf) - avg(firstHalf);
 }
 
-/** ② 错题本复发率：failure-ledger.jsonl 中重复模式占比（低 = 好） */
+/** ② 错题本复发率：failure-ledger.jsonl 中重复模式占比（低 = 好）
+ *  模式口径 = failureMode（生产 FailureRecord 字段——「重复模式」在语义上即失败模式的重复；
+ *  2026-10-15 修复：原实现读 pattern/id，两字段在生产台账中不存在 ⇒ 恒返回 null） */
 export function recurrenceRateFromFailureLedger(dataDir: string): OptionalMetric {
   const { rows } = readJsonl(join(dataDir, 'evolve', 'failure-ledger.jsonl'));
   if (rows.length === 0) return null;
   const byPattern = new Map<string, number>();
   for (const r of rows) {
-    const p = String(r['pattern'] ?? r['id'] ?? '');
+    const p = String(r['failureMode'] ?? r['pattern'] ?? r['id'] ?? '');
     if (!p) continue;
     byPattern.set(p, (byPattern.get(p) ?? 0) + (Number(r['occurrences']) || 1));
   }
