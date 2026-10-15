@@ -74,7 +74,7 @@ version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 
 </details>
 
-> **Version note**: v1.6.0 release pipeline in flight — once npm publish completes, the installable npm version will be v1.6.0 (current value per registry).
+> **Version note**: v1.6.0 was released (2026-10-15); the latest installable npm version is `@sofagent/audit@1.6.0`.
 
 ## Should you install it?
 
