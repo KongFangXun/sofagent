@@ -157,12 +157,10 @@ compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 #        judgeAdmission 此前被 auto-trigger.ts 包内 import 判一跳断链，本版经
 #        daemon 生产链路形成跨包出口后摘除）。
 #   清偿进度读数：`node tools/check/check-sdk-waiver-progress.mjs`（对 HEAD = 0 / 47）。
-#   下面白名单仅余 5 条 v1.6.0 到期项（本版不转红、不处置——勿误判为漏项）。
-SDK_FACE_WAIVER="initialNodeState:SDK 面易名重导出（initialState 的稳定别名）——底层符号生产实调于 node-executor:v1.6.0
-executionStep:SDK 面易名重导出（step 的稳定别名）——底层符号为协议核心生产实调:v1.6.0
-listNodeKinds:SDK 面枚举器（与 getSchema 同文件同消费面）——schema 注册表对外自描述 API:v1.6.0
-setExecutionAuditSink:SDK 面易名重导出（setAuditSink 的稳定别名）——audit-digest 接线保留口:v1.6.0
-statefulMetricsFileSink:SDK 面易名重导出（fileSink 的稳定别名）——度量落盘外部注入保留口:v1.6.0"
+#   下面白名单仅余 1 条（listNodeKinds · v1.7.0 到期 · 判定底座 SDK 面先行、消费方排期接线版）。
+#   v1.6.0 到期的 4 条（initialNodeState / executionStep / setExecutionAuditSink /
+#   statefulMetricsFileSink）已于 v1.6.0 bump 批**清偿摘除**（均已具备生产调用点）。
+SDK_FACE_WAIVER="listNodeKinds:SDK 面枚举器（与 getSchema 同文件同消费面）——schema 注册表对外自描述 API，判定底座阶段一 SDK 面先行、消费方排期接线版:v1.7.0"
 
 # ── --since <prev-tag>：版本 diff 驱动模式 ──
 # 用 git diff <prev-tag>..HEAD 提取 engine/**/src/*.ts 新增的 @public 导出
