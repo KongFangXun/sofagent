@@ -93,7 +93,9 @@ REPO_SLUG="${SOFAGENT_REPO_SLUG:-KongFangXun/sofagent}"
 if ! command -v gh >/dev/null 2>&1; then
   _say_fail "gh 不可用 —— 无法验证 main 的三条 workflow（按非通过处理，不静默跳过）"
 else
-  _runs_json=$(gh run list --repo "$REPO_SLUG" --branch main --limit 30 --json name,conclusion,headSha 2>/dev/null || true)
+  # 🔴 一并取 status：只取 conclusion 时「run 未跑完」与「无 run」都表现为空值，
+  #   会把「CI 还在跑」误报成「收口不放行」（实测误报一次，人工复核才排除）。
+  _runs_json=$(gh run list --repo "$REPO_SLUG" --branch main --limit 30 --json name,conclusion,headSha,status 2>/dev/null || true)
   if [ -z "$_runs_json" ]; then
     _say_fail "gh 查询失败（离线 / 未登录）—— 按非通过处理，须在可联网环境补跑"
   else
@@ -105,7 +107,7 @@ else
         const mine=runs.filter(r=>!head||r.headSha===head);
         const out=[];
         for(const w of want){const r=mine.find(x=>x.name===w);
-          out.push(w+':'+(r?r.conclusion:'absent'));}
+          out.push(w+':'+(r?(r.conclusion||'__pending__'):'absent'));}
         process.stdout.write(out.join(' '));
       });" "$_head" 2>/dev/null || echo "parse-error")
     echo "      最近提交 ${_head:0:8} 的结论：${_res}"
@@ -124,6 +126,15 @@ else
                   --jq '[.[] | select(.name=="pr-check" or .name=="verify" or .name=="sofagent-audit")] | .[0:3] | map(.name+":"+.conclusion) | join(" ")' 2>/dev/null || echo "")
         echo "      ⏭️  HEAD 未推送（无对应 workflow run）——本项属「推送后复核」，此处降级跳过"
         echo "          main 最新一轮参照：${_latest:-（查询失败）}"
+        CLOSE_SKIPS=$((CLOSE_SKIPS + 1))
+        ;;
+      *__pending__*)
+        # 🔴 三态之第三态：run 存在但未跑完（queued / in_progress）。语义上与「无 run（未推送）」
+        #   同属**待定**、与「failed」完全不同——判红会把「CI 还在跑」误报成「收口不放行」；
+        #   静默跳过则把「未验证」伪装成「通过」。故显式降级跳过（⏭️ 可见、计入 SKIPS），
+        #   等 CI 跑完后复跑本项即可。断言强度不变：completed 且非 success 仍走下方 * 判红。
+        echo "      ⏳ 本提交的 workflow 尚未跑完（待定，不等于失败）——等 CI 完成后复跑本项"
+        echo "          待跑：$(printf '%s' "$_res" | tr ' ' '\n' | grep '__pending__' | tr '\n' ' ')"
         CLOSE_SKIPS=$((CLOSE_SKIPS + 1))
         ;;
       *)
