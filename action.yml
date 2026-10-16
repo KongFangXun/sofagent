@@ -33,7 +33,7 @@ runs:
         # 发版时同步更新此版本号（与 package.json version + CHANGELOG 对齐）。
         # v1.6.0 BUG-01 修复：旧 bin sofagent-audit-full 已于 v1.5.9 退役（干净 runner exit 127）——
         # 改走 sofagent 裸名总包单入口（sofagent audit --full），flag 集逐项保留。
-        npx -y -p sofagent@1.5.9 sofagent audit --full \
+        npx -y -p sofagent@1.6.0 sofagent audit --full \
           --diff "${{ inputs.diff-range }}" \
           --ruleset "${{ inputs.ruleset }}" \
           ${{ inputs.strict == 'true' && '--strict' || '' }} \
