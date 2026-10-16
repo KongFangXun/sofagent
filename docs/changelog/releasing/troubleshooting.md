@@ -35,6 +35,14 @@ env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u al
 
 发布流水线跨多 session（本 session 收尾 + 其他 session 在途）时，`git add -A` 会把**其他 session 的在途改动**一并吞进本任务 commit（曾一次吞 19 文件含他人 package.json 与 2041 行 lock 删除——审计 A3/A11 警告才暴露，若已 push 将污染远端）。**收编一律逐文件 add**（任务清单内的文件显式列出）；审计 A3「不改越界」警告是最后的拦截线——**警告出现即说明混入了清单外文件，必须 reset 拆分重提，禁止带病 push**。
 
+#### 同源风险的第二种形态：共享 index 被并发 commit 消费
+
+逐文件 `add` 只解决「吞进他人改动」，解决不了**反向**的「他人 commit 把本 session 已 add 的内容一并提走」——`git add` 与 `git commit` 之间**非原子**，另一 session 的 `git commit` 会在该窗口把整个 index（含本 session 暂存路径）落成**它自己的** commit。
+
+- 判据：`git log -1 --stat` 的改动清单与 commit message 对不上；或 `git show --name-only <sha>` 出现非本任务路径。审计 hook 会报「疑似 --no-verify 绕过（改写消息）：记录主题 X ≠ 本 commit Y」——**该告警即此形态的信号**，勿当噪声忽略。
+- 处置：**先停手**（他 session 在途时不得改写历史）；确权后以「reword 该 commit + rebase 其后继」还原**内容归属**（二者均未 push 时安全；rebase 后核对 `git rev-parse HEAD^{tree}` 与 rebase 前一致，证明树内容零改动）。
+- 预防：`git add` 与 `git commit` 合并为一条不被打断的串行动作（`git add <paths> && git commit …`），提交后立即 `git log -1 --stat` 复核；跨 session 共写同仓时优先 `git worktree add` 隔离工作副本。
+
 ### 🔴 凭证类 403 的诊断序（push 被拒 ≠ 网络问题）
 
 > 症状：`git push` 报 `remote: Permission to <owner>/<repo>.git denied to <owner>` + `403`，
