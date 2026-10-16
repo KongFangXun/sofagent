@@ -226,6 +226,12 @@
 - **平台侧 OOM/限流的重试纪律**：ClawHub Convex 512MB OOM 等 reset（8-59s 提示值）后重试即成；SkillHub「发布频率过高」等 60s+ 补发即成——都不是包问题，重试间隔从提示值取（勿猜）；连环失败时把逐款间隔从 20s 拉到 40s。
 - **bump 残留有五类长尾形态**：本轮实测——package-lock version 字段（需 --package-lock-only 重生成）/ 生成器常量（TRAIN_DELIVERABLE_GENERATOR_VERSION）/ 深读文档正文「当前 vX.Y」行（WIKI·evidence·SECURITY）/ docs/guides 全目录文档头日期 / root package.json 依赖段 + ROADMAP 版本头描述行（关键词与 CHANGELOG 标题重合度断言会抓错版）。
   校准：bump 后 check-version 红的每一行都按类处置，勿只改第一处就复跑（本轮五轮才清零）。
+- **门禁的「覆盖形态盲区」= 装了但没通电**：断言以 `grep <限定形态>` 驱动时，被扫对象的书写形态一变（如钉值从 `@sofagent/<pkg>@X.Y.Z` 改成裸名 `pkg@X.Y.Z`），扫描面会静默归零而仍打印「✓ 无违规」。判据：**命中数为 0 恒等于失明，不得算通过**——断言须自带「扫描面 0 行即报红」的空转守门；改覆盖形态时同批补负向探针，两态（回退旧值 / 删掉被扫行）都必须红。
+- **动态计数不可跨树引用**：质量表的计数行（`check-version N/N 项`、`pre-push N 项 · 0 失败`）随树内容浮动，开发期与发版期读数本就不同；沿用更早阶段的读数即对外失真。生成发布说明时**当轮重跑回填**；跨源不一致时列各源原值 + 出处交作者裁定，禁自拼第三种写法。
+- **共享 index 是并发写者之间的隐式通信面**：`git add` 与 `git commit` 之间非原子——他人 `git commit` 会在该窗口把本 session 暂存的内容一并提走（客户端仍回 exit 0，本地无从察觉）。审计 hook 的「疑似 --no-verify 绕过（改写消息）」告警即此形态信号，不是噪声。预防：add 与 commit 合并成不被打断的串行动作，提交后立即核 `git log -1 --stat`；跨 session 共写同仓优先 `git worktree` 隔离。
+- **已发布声称与计数面互相锁死**：版本发布后，回归维度数 / 场景数 / 测试数已写进发布说明与 ROADMAP 的对外声称——此时再扩计数面（新增维度、新增场景）会让已发布声称当场失真。发版期发现的**流程类**问题应回写校准档案与 releasing SOP，而不是趁势扩维度；要扩就等下一版并把全部声称面同批改齐。
+- **分发通道以平台实际状态为准，且必须逐款复核**：CLI 的输出形态（警告/修复提示 vs 「已提交」）不是成败判据，唯一判据是平台 API 的 `latestVersion`/`scanStatus`；同批分发里「部分款静默未发」是常态（实测同批四款 CLI 全回提示形态、API 复核四款全停旧版），逐款复核后可重发补齐，抽查必漏。
+- **`launchctl bootstrap` 的 EIO 是瞬态**：重载守护进程时 `Bootstrap failed: 5: Input/output error` 常伴随旧 job 尚未完全卸载；`bootout` 后重试一次即成。判据用**日志版本号 = 本版**，`state = running` 不算过。
 
 ## 阶段四校准（run-01 收编 + 阶段三修复批复盘 · v1.5.5）
 
