@@ -164,6 +164,43 @@ else
   _say_fail "release.yml 豁免判定断链：需 $NPM_RETRY_SCRIPT 在位（含 E404+二次确认）且两处调用引用、workflow 内零内联词表"
 fi
 
+# ── ⑥ OpenClaw 插件 openclawVersion 钉值 vs registry 当前版（本脚本新增）──
+# 为什么落在收口门禁而非常驻 check-version：SOP 要求该钉值「随 registry 当前版更新」，
+# 但 OpenClaw 在两次发版之间会继续发版 ⇒ 常驻断言会在平日常态噪红（不得为转绿而删断言，
+# 正确做法是放对时机）。发版窗口内「四款同值 且 = registry 当前版」才是正确判据；
+# 离线 / 无 npm 时显式降级跳过（可见、不静默）。
+# 实测背景：该钉值曾在发版时漏更新（四款一致地停在上一版），无断言 ⇒ 零信号出闸，
+# 直到 ClawHub 发布回报告警才暴露。
+echo "=== ⑥ OpenClaw 插件 openclawVersion 钉值 vs registry ==="
+OC_DIRS=0
+OC_VALS=""
+for _f in engine/openclaw-plugins/*/package.json; do
+  [ -f "$_f" ] || continue
+  OC_DIRS=$((OC_DIRS + 1))
+  _v=$(grep -oE '"openclawVersion"[[:space:]]*:[[:space:]]*"[^"]+"' "$_f" 2>/dev/null | grep -oE '"[0-9][^"]+"' | tr -d '"')
+  if [ -n "$_v" ]; then OC_VALS="${OC_VALS}${_v}"$'\n'; else OC_VALS="${OC_VALS}__缺失__"$'\n'; fi
+done
+OC_REG=$(npm view openclaw version 2>/dev/null | tail -1 | tr -d '[:space:]')
+if [ "$OC_DIRS" -eq 0 ]; then
+  _say_fail "未找到 engine/openclaw-plugins/*/package.json（路径漂移？）"
+elif [ -z "$OC_REG" ]; then
+  echo "  ⏭️  npm 查询失败（离线 / 未登录）——本项属发布窗口断言，须在可联网环境补跑"
+  CLOSE_SKIPS=$((CLOSE_SKIPS + 1))
+elif printf '%s' "$OC_VALS" | grep -q '__缺失__'; then
+  _say_fail "有插件未声明 openclaw.build.openclawVersion（ClawHub code-plugin 发布必需元数据）"
+else
+  OC_UNIQ=$(printf '%s' "$OC_VALS" | grep -v '^$' | sort -u | wc -l | tr -d ' ')
+  OC_VAL=$(printf '%s' "$OC_VALS" | grep -v '^$' | head -1)
+  if [ "$OC_UNIQ" != "1" ]; then
+    _say_fail "openclawVersion 四款不一致（$(printf '%s' "$OC_VALS" | grep -v '^$' | sort -u | tr '\n' ' ')）——须四款同值"
+  elif [ "$OC_VAL" != "$OC_REG" ]; then
+    _say_fail "openclawVersion 钉值 ${OC_VAL} ≠ registry 当前版 ${OC_REG}——发版须同批更新（四款）"
+  else
+    _say_pass "openclawVersion 四款同值且 = registry 当前版（${OC_REG}）"
+  fi
+fi
+echo ""
+
 echo "═══════════════════════════════════════════════════════════"
 if [ "$FAIL" -eq 0 ]; then
   echo -e "  \033[32m✓ 发版收口门禁全过（${PASS} 项通过${CLOSE_SKIPS:+, ${CLOSE_SKIPS} 项降级跳过}）\033[0m"
