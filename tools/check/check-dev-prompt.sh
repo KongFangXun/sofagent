@@ -1095,6 +1095,49 @@ else
   fi
 fi
 
+# ─── 7. 验收块逐字对账（SSOT 开发日志 · 脚本内建，取代人工 diff）───
+# 为什么内建：此前该对账是 releasing SOP 里的一条人工 diff 命令，两个实测风险——
+#   ① 忘了跑（结构已漂移却零信号）；② 模式以 `-` 开头时 `grep -qF "$l"` 被当选项、
+#   整批假红（实测 71 条全数误报「缺失」）。内建后「跑 ① 即覆盖」，人工只剩判读。
+# SSOT 选取：取 prompt 内声明的 `docs/changelog/vX.Y/vX.Y.0.md` 中**版本最新者**
+#   （prompt 常同时声明前置依赖版与目标版，取最新即目标版）。
+echo "--- 7. 验收块逐字对账（与 SSOT 开发日志）---"
+ACC_SSOT=$(grep -oE 'docs/changelog/v[0-9.]+/v[0-9.]+\.md' "$FILE" 2>/dev/null | sort -u -V | tail -1)
+if [ -z "$ACC_SSOT" ] || [ ! -f "$ACC_SSOT" ]; then
+  echo "  （prompt 未声明可读的 SSOT 开发日志路径，跳过逐字对账）"
+else
+  if diff <(awk '/^### 验收标准/{f=1;next} /^## /{f=0} f&&/^- \[ \] /' "$ACC_SSOT") \
+          <(grep '^- \[ \] ' "$FILE") > /dev/null 2>&1; then
+    printf '  ✅ 与 %s 逐字零差（%s 条）\n' "$ACC_SSOT" "$(grep -c '^- \[ \] ' "$FILE")"
+    OKS=$((OKS + 1))
+  else
+    printf '  %s 验收块与 %s 有差——逐行核对（语义压缩即丢判据；人工命令见 releasing SOP 步骤七 ①b）\n' "$EMARK" "$ACC_SSOT"
+    mark_err
+  fi
+fi
+echo ""
+
+# ─── 8. 验收条目纯度（判据只写「什么算过」· 依据归章体）───
+# 实测形态：单条 1549 字符，把品类印证 / 外部形态登记 / arXiv 引用与判据混装在同一
+#   checkbox 里 ⇒ 执行方无法据此判「过没过」。标记面（日期 / arXiv / 「登记）」）在现有
+#   任务书里零命中，故命中即真信号；长度面取 600 字符作提示阈值（现有最长 520）。
+echo "--- 8. 验收条目纯度（依据不得混装进判据）---"
+ACC_DIRTY=$(grep -nE '^- \[ \].*(20[0-9]{2}-[0-9]{2}-[0-9]{2}|arXiv|登记）)' "$FILE" 2>/dev/null || true)
+if [ -n "$ACC_DIRTY" ]; then
+  printf '  %s 验收条目含依据标记（日期 / arXiv / 登记）——依据应归章体，判据只留判定条件：\n' "$EMARK"
+  printf '%s\n' "$ACC_DIRTY" | cut -c1-110 | sed 's/^/      /'
+  mark_err
+else
+  echo "  ✅ 无依据标记混装（日期 / arXiv / 登记 三面零命中）"
+  OKS=$((OKS + 1))
+fi
+ACC_LONG=$(grep '^- \[ \] ' "$FILE" 2>/dev/null | awk 'length>600{c++}END{print c+0}')
+if [ "$ACC_LONG" -gt 0 ]; then
+  printf '  ⚠️  %s 条验收超过 600 字符——复核是否叙事混装（超长条目通常判不了）\n' "$ACC_LONG"
+  WARNINGS=$((WARNINGS + ACC_LONG))
+fi
+echo ""
+
 # ─── 汇总 ───
 echo "=== 汇总 ==="
 echo "  ✅ 一致: $OKS"
