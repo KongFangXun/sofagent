@@ -1470,27 +1470,43 @@ fi
 echo ""
 
 # ── v1.3.0: action.yml 版本锁定检查（fresh-eyes P1-10）──
-echo "=== 19. action.yml @sofagent/* 版本锁定 ==="
+# 🔴 覆盖面（补盲）：两种钉值形态都必须对账——
+#   ① scope 形态 `@sofagent/<pkg>@X.Y.Z`
+#   ② 裸名总包形态 `sofagent@X.Y.Z`（`npx -y -p sofagent@X.Y.Z …`）
+#   成因：BUG-01 修复把 npx 目标从 `@sofagent/audit@X` + 旧 bin 改为裸名总包单入口后，
+#   钉值行不含 `@sofagent/`，被旧的 `grep -E '@sofagent/'` 驱动整行漏掉 ⇒ 本项对该版
+#   变成**空转绿**（扫描面 0 行仍打印 ✓），tag 内钉值停留在上一版。故本项同时补
+#   「扫描面为 0 即报红」的空转守门（fail-closed：覆盖面失明不得假绿）。
+echo "=== 19. action.yml 版本钉值锁定（@sofagent/* + 裸名 sofagent@） ==="
 ACTION_FILE="${PROJECT_ROOT}/action.yml"
 if [[ -f "${ACTION_FILE}" ]]; then
   ACTION_LOCK_OK=true
-  # 扫描 action.yml 中所有 @sofagent/* 引用，检查是否锁定到当前版本
+  ACTION_LOCK_SCANNED=0
+  # 扫描两种形态的钉值引用，检查是否锁定到当前版本
   while IFS= read -r line; do
-    # 提取 @sofagent/xxx@x.y.z 中的版本号
-    locked_ver=$(echo "$line" | grep -oE '@sofagent/[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    # 提取 `@sofagent/xxx@x.y.z`（scope）或 `sofagent@x.y.z`（裸名）中的版本号
+    locked_ver=$(echo "$line" | grep -oE '(@sofagent/[a-z-]+@|sofagent@)[0-9]+\.[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     unlocked=$(echo "$line" | grep -oE '@sofagent/[a-z-]+[^@]' | head -1)
     if [[ -z "$locked_ver" ]] && [[ -n "$unlocked" ]]; then
       echo -e "  ${RED}✗${NC} 版本未锁定: $(echo "$line" | sed 's/^[[:space:]]*//' | head -c 80)"
       ACTION_LOCK_OK=false
       ERRORS=$((ERRORS + 1))
-    elif [[ -n "$locked_ver" ]] && [[ "$locked_ver" != "$SSOT_VERSION" ]]; then
-      echo -e "  ${RED}✗${NC} 版本漂移: @sofagent/*@${locked_ver} ≠ SSOT ${SSOT_VERSION}"
-      ACTION_LOCK_OK=false
-      ERRORS=$((ERRORS + 1))
+    elif [[ -n "$locked_ver" ]]; then
+      ACTION_LOCK_SCANNED=$((ACTION_LOCK_SCANNED + 1))
+      if [[ "$locked_ver" != "$SSOT_VERSION" ]]; then
+        echo -e "  ${RED}✗${NC} 版本漂移: 钉值 ${locked_ver} ≠ SSOT ${SSOT_VERSION}"
+        echo -e "    ${RED}$(echo "$line" | sed 's/^[[:space:]]*//' | head -c 100)${NC}"
+        ACTION_LOCK_OK=false
+        ERRORS=$((ERRORS + 1))
+      fi
     fi
-  done < <(grep -E '@sofagent/' "${ACTION_FILE}" 2>/dev/null)
-  if $ACTION_LOCK_OK; then
-    echo -e "  ${GREEN}✓${NC} action.yml 中所有 @sofagent/* 引用已锁定到 v${SSOT_VERSION}"
+  done < <(grep -E '@sofagent/|sofagent@[0-9]' "${ACTION_FILE}" 2>/dev/null)
+  if $ACTION_LOCK_OK && [[ "${ACTION_LOCK_SCANNED}" -eq 0 ]]; then
+    echo -e "  ${RED}✗${NC} action.yml 未扫描到任何版本钉值行（覆盖面失明——拒绝假绿）"
+    ACTION_LOCK_OK=false
+    ERRORS=$((ERRORS + 1))
+  elif $ACTION_LOCK_OK; then
+    echo -e "  ${GREEN}✓${NC} action.yml 版本钉值已锁定到 v${SSOT_VERSION}（${ACTION_LOCK_SCANNED} 处）"
     CHECKS=$((CHECKS + 1))
   fi
 fi
