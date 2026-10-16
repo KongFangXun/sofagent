@@ -48,6 +48,7 @@
 ② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 直建 ref 的 lightweight tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight；经 git/tags 建 object 再建 ref 的通道产出直接是 annotated，免覆盖）；
 ③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内）
 > ⚠️ **发布物不得「放着不管」**：桌面可能被外部清理（实测：本版发布物在发版窗口内被清空，只剩无关文件）⇒ 发布物落盘后应**尽快消费**（步骤七 `gh release` 即用完），本步骤要么**归档进仓内 `docs/archive/`**、要么**显式删除**并在此登记；不登记 = 下轮无从判断「是清理了还是丢了」。
+④ **归档搬层后相对链接级数重算**——文档/发布物一旦移入更深的归档层（如 `docs/archive/release-artifacts/vX.Y.Z/`），**其内部相对链接的层级必须按新位置重算**：每下潜一层即多一级 `../`，写直觉层级必错。🔴 **这是排除面死链的重复来源**（实测三例同型事故全部源自「归档搬层未重算」，单次可达百处量级）。改完**当场跑排除面死链检查确认归零**，并抽验渲染形态（markdown 链接的括号在批量替换时易被吃掉）。**归属定位三步可复算**：`git log --diff-filter=A -- <归档目录>` 一次命中首加提交。
  
 
 | # | 完成 | 步骤 | 验证方式 |
