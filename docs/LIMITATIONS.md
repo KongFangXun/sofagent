@@ -153,9 +153,9 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 
 ## 二、平台与兼容性局限
 
-### 📦 v1.5.3：ClawHub OpenClaw 插件带 `manifest-unknown-fields` 告警（下一版修复）
+### 📦 ClawHub OpenClaw 插件带 `manifest-unknown-fields` 告警（v1.5.3 起持续）
 
-平台对 `openclaw.plugin.json` 顶层若干字段（`seam` / `seamSemantics` / `uiHints` 等）给出「非受支持字段」告警——**安装与使用不受影响**，仅为平台校验提示。处置方向是把这些字段移入平台受支持的承载位；下一版随插件重发时同批处理。
+平台对 `openclaw.plugin.json` 顶层字段（`seam` / `uiHints` 等）给出「非受支持字段」告警——**安装与使用不受影响**，仅平台校验提示。处置方向是把这些字段移入平台受支持的承载位；至 v1.6.0 重发仍复现（四款逐款回报）。
 
 ### 📦 v1.5.3：GitHub Release 工作流的自动发布密钥失效（手动发布兜底）
 
