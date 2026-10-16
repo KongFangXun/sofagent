@@ -43,8 +43,11 @@ npm ci --dry-run 2>&1 | grep -q "missing\|error" && echo "❌ lock 不一致" ||
 #    和 action.yml 各漏 1 处，靠 check-version 抓出才补上
 grep -rn '"@sofagent/' engine/*/package.json | grep -v "$(node -p "require('./package.json').version")" | grep -v "^.*:.*\"dev\|peer"
 # 期望：无输出（所有内部依赖版本 = 当前版本）。有输出 = 某些包的内部依赖版本未同步 bump
-grep -n '@sofagent/[a-z-]*@[0-9]' action.yml | grep -v "$(node -p "require('./package.json').version")"
-# 期望：无输出（action.yml 的 @sofagent/*@版本 全部 = 当前版本）
+# 🔴 action.yml 钉值**两种形态都要查**：scope 形态 `@sofagent/<pkg>@X.Y.Z` 与**裸名总包形态**
+#   `npx -y -p sofagent@X.Y.Z`。裸名形态不含 `@sofagent/` 子串——用 scope-only 正则查会**整行漏掉**
+#   （实测：钉值停在上一版照常出闸，下游 `uses: @vX.Y.Z` 实际跑到旧版 CLI）。本条期望同步为两形态全覆盖。
+grep -nE '(@sofagent/[a-z-]+@|sofagent@)[0-9]' action.yml | grep -v "$(node -p "require('./package.json').version")"
+# 期望：无输出（两种形态的钉值全部 = 当前版本）
 ```
 
 ---
@@ -293,6 +296,15 @@ console.log("\n✅ CI 全绿，可以打 tag");
   sleep 60
 done
 # exit 2 = 还在跑（循环重查） / exit 1 = 有失败（定位 → 修 → push → 重等，禁止打 tag） / exit 0 = 全绿
+#
+# 🔴 **预期红白名单**（命中即不按「有失败」处置，照常进下一步）：
+#   `verify` 在**「npm 尚未发布本版」的时点必红**——它按设计安装 `@sofagent/audit@<本版>`，
+#   目标版本不存在即 fail-closed 拒绝（供应链修复语义），不是故障。
+#   判别三件：① 红出现在 publish 之前的 verify run 上；② 失败步是「安装 audit」；
+#   ③ 本地 `npm view @sofagent/audit version` 仍为上一版。
+#   处置 = 照常打 tag + gh release；**publish 完成后 rerun 该 run，转绿即销案**
+#   （不转绿才是真回归，回到本节循环继续处理）。
+#   白名单外的一切红仍按「禁止打 tag」处置——白名单只豁免这一条时序固有形态。
 ```
 
 > 🔴 **禁自写轮询脚本替代上方官方段**：执行者常顺手用 `PENDING=$(gh run list ... | grep -c ...)` 自写简化版——zsh 下 grep 命中 0 行时 exit 1 触发 `|| echo 0`，`$()` 捕获 "0\n0" 双值 → `[ -eq ]` integer expression expected **死循环不退出**（CI 实际早已全绿，后台任务空转）。上方 node 单进程版无此陷阱；确需自写时，计数一律 `n=${n:-0}` 归一 + 用 `grep -q` 不用 `grep -c`。
@@ -462,6 +474,15 @@ else
   echo "🔴 tag ($TAG_SHA) ≠ HEAD ($HEAD_SHA)——tag 后有游离 commit"
   git log --oneline vX.Y.Z..HEAD
   echo "⚠️ 如果游离 commit 属于本版本，需要重新打 tag"
+fi
+
+# 🔴 **「tag 内不自洽」不止 bootstrap.sh 哈希一类**——凡「随版必须同步的钉值」漏在 tag 里都属此类。
+#    实测第二类 = **action.yml 的 npx 目标版本**：漏同步时 tag 内的 Action 指向上一版 CLI，
+#    而 `uses: <owner>/<repo>@vX.Y.Z` 正是发布说明推荐的用法 ⇒ 用户跑到的不是本版。
+#    处置与哈希回填同款：**补钉值的 commit 落盘后重打 tag**（`git tag -f -a vX.Y.Z -m … <commit>`
+#    + `git push origin vX.Y.Z --force`），并借这次覆盖把 lightweight tag 一并升级为 annotated。
+#    打完后复核三件：`git ls-remote --tags origin vX.Y.Z`（tag object SHA）/ `rev-parse vX.Y.Z^{commit}`
+#    / `git show vX.Y.Z:action.yml | grep -oE 'sofagent@[0-9.]+'` = 本版。
 fi
 ```
 
@@ -642,6 +663,8 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
 > 仍不是 npm 发布物（走 ClawHub 分发，见阶段十）。
 >
 > `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 `@sofagent/*` 手动 publish（11 个 `engine/<pkg>` 模块包（13 个模块包减去 auto 发布的 audit/mcp） + `load-chain` + `dsh-plugin-kit` = 13 包），再加裸名总包 `sofagent` 共 **14 包手动发布**。
+>
+> 🔴 **release.yml 未成功时，本步骤清单须把 audit + mcp 一并纳入**：release.yml 的 audit/mcp 可能因 E404（registry 侧瞬时态）/ E403 / 超时而**根本没发出去**——此时若按字面只发「其余 14 包」，总数会停在 21 而非 23。判别 = 按步骤七 artifact 表第 3 行对 23 包逐包做 registry HTTP 直查，**缺哪包就在本步骤补发哪包**；终局对账口径固定为 **23/23**，不接受「按清单发完了」这种过程性结论。
 >**再加七款 DSH 插件，本步骤发布面 = 23 包**（= 15 个 `@sofagent/*` scope 包 + 7 款 DSH 插件 + 1 个裸名总包；审计口径见步骤七 artifact 表第 3 行）。
 >
 > ⚠️ **`@sofagent/load-chain`（`engine/hooks/sofagent-load-chain/`）不在下方循环里**——下方循环写死 `engine/<pkg>` 布局，而它在 `engine/hooks/` 下，按「模块包」口径极易漏掉。必须把它加进循环与验证清单（仓内脚本 `publish-packages.sh` 已改为由根 workspaces 查表解析目录，不受此限）。

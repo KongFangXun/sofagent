@@ -31,6 +31,14 @@ env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u al
 
 > curl 探测代理端口存活：`curl -s -o /dev/null -w "%{http_code}" -x http://127.0.0.1:<端口> https://github.com`——200 = 端口可用（但 git 仍可能因 HTTP/2 失败，直接上 HTTP/1.1）。
 
+### 🔴 外部取数：单样本不得作为否定判据
+
+外部页面 / API 的取数**至少两次独立取样**（换 `Accept` 头、先存盘再解析），单次空响应或 0 命中**不足以**得出「拿不到 / 不存在 / 非服务端渲染」这类否定结论——实测：同一条 `curl | grep` 首次 0 命中被读成「页面不服务端渲染」，复跑同一命令得 12 命中。判据分层：**0 命中 → 先换法复测；两次同向才可下结论**。否定结论比肯定结论更需要证据。
+
+### 🔴 grep 模式取自数据行时必须加 `--`
+
+`grep -qxF "$line"` 在 `$line` 以连字符开头时会把模式当选项解析并报 `invalid option`——**判据整批假红**（实测：71 条验收条目逐条回查 devlog 时全数误报「缺失」，掩盖了真实结论）。凡模式取自数据行，一律写 `grep -qxF -- "$line"`。
+
 ### 🔴 多 session 并发期禁用 git add -A
 
 发布流水线跨多 session（本 session 收尾 + 其他 session 在途）时，`git add -A` 会把**其他 session 的在途改动**一并吞进本任务 commit（曾一次吞 19 文件含他人 package.json 与 2041 行 lock 删除——审计 A3/A11 警告才暴露，若已 push 将污染远端）。**收编一律逐文件 add**（任务清单内的文件显式列出）；审计 A3「不改越界」警告是最后的拦截线——**警告出现即说明混入了清单外文件，必须 reset 拆分重提，禁止带病 push**。
