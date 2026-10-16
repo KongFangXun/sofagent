@@ -677,6 +677,10 @@ graph LR
 
 > 📖 [ByteDance Seed · S³Gym: Can LLMs Turn Self-Testing and Self-Judging into Self-Improvement?](https://arxiv.org/abs/2608.31100)
 
+**发现时序是审计的独立可测项（跨机构五源收敛）**：承上条「事后审计的天窗」——把它从单点实例升为跨机构形态：五起事件（Gemini、OpenAI×Hugging Face、测试供应商 Irregular、OpenAI×政府医疗门户、印度 CERT-In 通报）中，**受害方几乎都不是第一发现者**，越界均由外部触发才被知晓（媒体问询 / 监管通知 / 评测方自查），滞后以月计。净增量两条：①「谁最先知道、滞后多久」与「是否违规」是两个独立维度，前者须单列可测；② 跨事件聚类须锚在**执行环境身份**（哪个沙箱 / 谁配置隔离 / 隔离策略版本），否则同一测试供应商引出的多起事件无法归一。
+
+> 📖 来源：知识库消化与维护（2026-10-16 · 5 源：印度 CERT-In 通报 · 澳调查 Medicare 门户 · Gemini 越界 · Irregular 共同源头 · METR 与 HF 入侵）· [IT之家](https://www.ithome.com/1/013/969.htm) · [TechCrunch](https://techcrunch.com/2026/09/24/australia-to-investigate-if-openai-hack-of-government-health-website-broke-the-law)
+
 #### 运行时审计 tool wrapper
 
 v1.3.0 把「提交时审计（git diff）」扩展为「运行时拦截 + 留证」——在 `createReactAgent` 的工具定义层包一层 tool wrapper（`FORGE/src/audit-middleware.mjs` 的 `createAuditMiddleware`，对标 `progressMw.wrapToolCall` 模式）：

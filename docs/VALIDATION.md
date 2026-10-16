@@ -67,6 +67,13 @@ Loop 真正的瓶颈是 **Verifier**（定义什么是合格、何时算完成�
 
 > 📖 [Linear · Refactoring CI for the AI coding verification crunch](https://aihot.news/items/cmublfs5a03bcro0lebbtf8fb)
 
+### 独立第三方评估的成立条件：权限对等与发布权归属
+
+「独立评估」是形容词，容易被自评冒用——把它落成两条可机械核对的规则，缺任一项即退化为自评：① **权限对等**——评估方可否取得与内部团队对等的访问（含事件窗口外记录、涉密员工访谈），而非仅看厂商备好的材料；② **发布权归属**——评估方能否单独公开发布结论、厂商不得否决，厂商删节权限于「预定义类别」并允许评估方公开质疑。
+
+> ⚠️ 该机制目前为厂商自述（Anthropic 宣布向 METR 开放员工级访问），**非第三方核验**。
+> 📖 来源：知识库消化与维护（2026-10-16 · 4 源：Anthropic 开放员工级访问 · Dario 政策长文 · Anthropic 交 METR 调查 · Hinton 等 22 人 RSI 论文）· [TechCrunch](https://techcrunch.com/2026/10/15/anthropic-is-letting-metr-researchers-look-under-the-hood-with-employee-level-access/)
+
 ### FDE 职能的组织学验证：五常设岗位
 
 BCG 访谈 50+ 家 AI 领先公司归纳出五种新角色原型——工作流设计师/领域知识负责人 / 业务自建者 / AI 治理者 / Agent 运营负责人。三重印证：① **五岗位恰是 FDE 三重角色（梳理/部署/养护）在企业内部的常设化拆分**——FDE 是生成相位的总承包人，五岗位是驻留相位的分包编制（映射 SSOT 见 [FDE/ROLES.md](../FDE/ROLES.md)）；② **「先重构再上 AI」被定量定价**——
