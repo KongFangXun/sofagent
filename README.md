@@ -10,6 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
 [![Version](https://img.shields.io/badge/Version-v1.6.0-16B8F3)](./CHANGELOG.md)
 ![npm](https://img.shields.io/npm/v/sofagent)
+![npm downloads](https://img.shields.io/npm/dw/%40sofagent%2Faudit)
 [![Stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
 
 </div>
