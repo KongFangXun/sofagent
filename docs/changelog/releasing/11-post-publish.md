@@ -219,12 +219,18 @@ bash tools/check/check-version.sh        # 期望全绿
 ## 开发 Prompt 校验循环（步骤七）
 
 ```
-① 跑 ./tools/check/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md（查"引用的东西存不存在"）
-   ①b 验收块逐字对账（🔴 机械判据，前缀匹配会全误报）：
-   for ln in $(awk '/### 验收标准/{f=1;next} /^## /{f=0} f&&/^- \[ \] /' docs/changelog/v<下一版>/v<下一版>.md | md5 -q); do :; done
-   diff <(awk '/### 验收标准/{f=1;next} /^## /{f=0} f&&/^- \[ \] /' docs/changelog/v<下一版>/v<下一版>.md) \
-        <(grep "^- \[ \] " ~/Desktop/vX.Y-dev-prompt.md) > /dev/null \
-     && echo "✅ 验收块逐字零差" || echo "🔴 验收块有差——逐行核对（语义压缩即丢判据）"
+① 跑 ./tools/check/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md（默认模式）
+   涵盖：引用存在性 + **验收块逐字对账**（第 7 项 · 脚本按 prompt 内声明的 SSOT 开发日志路径自动取版本最新者）
+   + **验收条目纯度**（第 8 项 · 依据 / 外部登记 / arXiv 引用不得混装进判据；超 600 字符提示复核）
+   → 人工不再手写 diff（旧人工命令的两个实测坑：忘了跑 ⇒ 结构漂移零信号；`grep` 模式以 `-` 开头被当选项 ⇒ 整批假红）
+①c 章节对照（🔴 机械判据 · **必跑**——此前只列为人工自查项，导致结构不合规的任务书照样过检）：
+   ./tools/check/check-dev-prompt.sh --section-reconcile docs/changelog/v<下一版>/v<下一版>.md ~/Desktop/vX.Y-dev-prompt.md
+   期望输出：`✅ 章节对照归一化对账：任务章双向齐（N 章同键）· 同键章任务分解条数 prompt ≥ devlog 验收条数 全过`
+   结构要求（不满足即报「任务章仅见于 devlog（prompt 缺）」）：
+     · prompt 的**任务章必须是 H2**、章名直接用 devlog 原题——`## 一、<devlog 章名>`（写成 H3 或自造前缀则归一化键不匹配）；
+     · 非任务节（任务 / 前置依赖 / 开工前置 / 交付纪律 / 边界 / 收工自检等）须以脚本 PROMPT_META 白名单前缀起头（如 `## 零、…`）才被豁免；
+     · 每章下的 `- [ ]` 条数须 ≥ 该章 devlog 验收条数。
+   🔴 退出码用重定向测量（`> f 2>&1; echo $?`），勿接管道（`| tail` 取到的是 tail 的码）。
 ② 脚本输出零 ❌ 后，再过一遍 playbook/dev-prompt-checklist.md 的 8 条自查
    （查"写法对不对/全不全/新不新"——函数签名准确性、注册点/数组归属、改造代码保留声明、已完成区剥离、强动词名副其实；第 7 条为**大版本深检六项**：minor 版或含 breaking 的 prompt 必跑，六类结构性错误是存在性脚本拦不住的——章节数对账/验收搬运对账/「不存在的东西当已存在写」（枚举值查源码）/移除面全枚举（@public 基线）/基线数字时效（排期快照重测）/ROADMAP 行交叉对账）
 ③ 两项都过 → **独立二轮深检**（🔴 prompt 不是写好就交——定稿前必须再做一轮**独立于首轮生成视角**的核查，结合 ROADMAP 行 + CHANGELOG 索引 + devlog 全文 + npm registry + 源码实查五源交叉。实证首轮零 ❌ 的 prompt 二轮仍抓出 3 处真问题：章七「移除 X 指向 X」笔误（旧包名写错）、章十重复排期（examples/justification 系存量，真实差距只剩 loader 断言）、章九现状基线缺失（ruleType 已在位被当新任务）。二轮深检的方法论：**每个「新增 X」条目先查 X 是否已存在**（grep 源码 + 实跑模块计数）——排期文档写「新增」时可能指的是数月前的状态；每个「移除/退役 X」条目查 X 的全部落点是否真存在可移除对象）
