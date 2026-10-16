@@ -69,7 +69,9 @@
 🔴 版本号对账已由 `check-version` **全项**机器化覆盖，但「文档说的能力/状态是否还是真的」缺专门步骤——发版后审查发现的已知问题须进 LIMITATIONS 如实披露，而非只留在 devlog）。三项：① **LIMITATIONS 已知问题披露**——发版期发现且未随版修复的用户可感知限制（安装入口断链 / 分发渠道异常标记 / 平台兼容缺口）逐条入册，注明「哪个版本修复」；② **WIKI「当前状态」节刷新**——当前版本 / 下一版描述 / 测试数 / 规则数对齐 ROADMAP 与 devlog 实况；
 ③ **CHANGELOG 索引行复核**——本版条目的能力摘要与 devlog 交付一致（索引是外部用户第一入口，摘要漂移 = 对外失真）。巡检发现的漂移当场修，同批 commit。**④ 发版即移出双清单**：a) ROADMAP——本版行自「版本规划」表移入「迭代历程」表（提炼一句话行 + changelog 链接；规划表只留未发版）；
 b) `tools/check/check-forms.mjs`——本版自 VERSION_SOURCES/EXPECTED_COUNTS/形态白名单三处移出（该守卫只扫未发版版本，已发版回填对账无意义且假红） | LIMITATIONS/WIKI/CHANGELOG 三处时效一致 + ROADMAP/check-forms 双移出
-a) ROADMAP——本版行自「版本规划」表移入「迭代历程」表（提炼一句话行 + changelog 链接；规划表只留未发版）；b) `tools/check/check-forms.mjs`——本版自 VERSION_SOURCES/EXPECTED_COUNTS/形态白名单三处移出（该守卫只扫未发版版本，已发版回填对账无意义且假红） 
+
+> 🔴 **ROADMAP 移表先算字数棘轮账**：新「迭代历程行」的长度必须 ≤ 被删的「规划版本行」——两表在同一份文档内，新增行比删掉的行长即触发字数棘轮。移完跑 `bash tools/check/doc-discipline.sh` 看 Face 6/8 读数；超基线就在新行内压缩（先删冗余修饰、再删次要交付项），**勿动台账基线**。
+> 🔴 **check-forms 移出须同批下调 A1 两个下界**：`MIN_FILES` / `MIN_CHAPTERS` 是零余量下界，移出一个版本文件而不同批下调即 A1 判「检查器失明」（拒绝假绿）。口径：先移出 → 跑一次 `node tools/check/check-forms.mjs` 读横幅的「N 文件 / M 需标注章」→ 再把两个常量设成该实测值（勿照抄上一版数值）。
 
 
 > 🔴 **步骤十一「本机 daemon 重载」补充①——主仓被并发长跑分支占用时的替代通道**：主仓本地领先/落后远端几十 commit（长跑分支态）时 pull 即 merge，不可行——此时**把 plist 指向交付 worktree**（发版 worktree 就是本版完整源码，dist 已 build，七依赖链全本版）：改 `ProgramArguments` 的 cli.js 路径与 `WorkingDirectory` 两处 → `bootout`+`bootstrap`（改路径 kickstart 不重读 plist）→ 日志核版本号。
