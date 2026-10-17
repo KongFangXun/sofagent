@@ -31,13 +31,16 @@
 
 | 编号 | 标准 | 载体（源） | 适用仓 | 强制级 | 判据 |
 |---|---|---|---|---|---|
-| D1 | changelog 写法与判级（X/Y/Z/R、退役地板、棘轮） | `changelog/_TEMPLATE.md` | 全仓 | blocking | 待实现 |
+| D1 | changelog 写法与判级（X/Y/Z/R、退役地板、棘轮） | `changelog/_TEMPLATE.md` | 全仓 | blocking | C5 棘轮 · C6 退役节（部分） |
 | D2 | devlog 写法（任务书驱动、单路径、边界声明） | `devlog/_TEMPLATE.md` | 全仓 | blocking | 待实现 |
-| D3 | changelog 目录形态与纪元说明 | `changelog/README.md` | 全仓 | warn | 待实现 |
+| D3 | changelog 目录形态与纪元说明 | `changelog/README.md` | 全仓 | warn | C6 扫描面（间接） |
 | D4 | 家族工具薄包装形态 | `tools/install-hooks.sh` | 全仓 | warn | 待实现 |
 
 > 强制级：**blocking** = 违反即红；**warn** = 只报不拦；**frozen** = 已冻结不再执行。
-> 判据列为「待实现」是现状而非遗漏——按 `tools/STANDARD.md` R1，指不到判据的条款只是登记，不是护栏。
+> 判据列写的是家族文档债务判据表的 **C 编号**（C1–C8），不写实现文件名——口径住判据表，住实现的不必再抄一遍。
+> 未标编号者尚无实现：按 `tools/STANDARD.md` R1，指不到判据的条款只是登记，不是护栏。
+
+> **适用范围**：本层只管**根级** `changelog/` `devlog/`。`docs/changelog/` 是 v1.x 历史冻结区，按旧格式成文、不回溯套用——回改冻结区等于篡改历史。
 
 ## 四、变更门槛
 
