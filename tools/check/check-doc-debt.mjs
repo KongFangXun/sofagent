@@ -267,12 +267,17 @@ function collect(root) {
   } catch (e) {
     return { blind: `无法列出跟踪文件（${String(e.message).split('\n')[0]}）——需在 git 仓内运行（R3：失灵可见，不以异常栈代替判定）` };
   }
-  const docs = tracked.map((f) => ({ f, txt: fs.readFileSync(path.join(root, f), 'utf8') }));
+  // 忽略目录（扫描面参数，R2 允许）：agent 本地状态等非项目内容不进判定。
+  // 事故：AIR 仓出现 .workbuddy/memory/*.md（agent 状态），被 C8 当未登记根级条目、被 C5 当新债拦下。
+  const IGN = (cfg.ignoreDirs || []).map((d) => String(d).replace(/\/+$/, ''));
+  const ignored = (f) => IGN.some((d) => f === d || f.startsWith(d + '/'));
+  const trackedKept = tracked.filter((f) => !ignored(f));
+  const docs = trackedKept.map((f) => ({ f, txt: fs.readFileSync(path.join(root, f), 'utf8') }));
 
   let topLevel = [];
   try {
     topLevel = [...new Set(execFileSync('git', ['-c', 'core.quotepath=false', 'ls-files'], { encoding: 'utf8', cwd: root })
-      .split('\n').filter(Boolean).map((f) => f.split('/')[0]))].filter((e) => e !== '.DS_Store');
+      .split('\n').filter(Boolean).filter((f) => !ignored(f)).map((f) => f.split('/')[0]))].filter((e) => e !== '.DS_Store');
   } catch { /* C8 退化：无顶层清单时按空集处理（不静默声称通过，下方打印）*/ }
 
   const sfr = valueOf('--sofagent');
@@ -287,7 +292,7 @@ function collect(root) {
       return { blind: `无法从 ${sg} 读 tag（${String(e.message).split('\n')[0]}）——拒绝假绿` };
     }
   }
-  return { cfg, docs, ctx: { root, tags, topLevel, countWallCell: null }, tracked };
+  return { cfg, docs, ctx: { root, tags, topLevel, countWallCell: null }, tracked: trackedKept };
 }
 
 // ── 主流程 ────────────────────────────────────────────────

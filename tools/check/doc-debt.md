@@ -60,6 +60,7 @@ node tools/check/check-doc-debt.mjs --version | --help
 | `termBlacklist` / `counts` | 术语旧称 / 计数口径 | — |
 | `bilingualPairs` | 双语配对；**无双语版的仓须写 `[]`**，不得留一个不存在的配对 | 留空差异会一直报「一侧缺席」 |
 | `rootWhitelist` | 根级白名单（按 git 实际顶层登记，**不得自造条目**） | 假条目=放水 |
+| `ignoreDirs` | 不进判定的目录（**只改扫描面**，R2 允许）。事故：AIR 出现 `.workbuddy/memory/*.md`（agent 本地状态），被 C8 当未登记根级条目、被 C5 当新债拦下 | 只放「非项目内容」；不得用它放过版本记录或文档 |
 | `exemptQuota` | 豁免额度 | 超额度即红 |
 
 ## 五、豁免台账（R4）
