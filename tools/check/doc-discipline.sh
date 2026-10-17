@@ -48,6 +48,8 @@
 # Face 9 净增量召回（2026-10-10）：新增来源块的关键词在活跃文档召回并打印（信息位，不自动红）。
 #   治「任务书自述净增量零命中而实测已有同源段落」——自述不是证据，命中必须被看见。
 # Face 6b 基线上调登记闸（2026-10-10）：字数基线上调必须在 _meta.note 记入文件名与理由。
+# Face 6 软读数（2026-10-17）：tools/README.md 移出硬字数棘轮——其长度由工具件数决定
+#   （每个 tracked 脚本必须登记，check-tool-health ⑦），改每次运行打印字数+件数、不阻断。
 #
 # ⚠️ 范围诚实披露（排除面 ≠ 无覆盖，但必须可见）：
 #   · Face 1-3（内部代号 / 私有路径 / 来源块）判定面 = 根级 *.md + docs/**/*.md。
@@ -269,6 +271,22 @@ else
   else
     REG_N=$(node -e 'const fs=require("fs");const o=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));console.log(Object.keys(o).filter(k=>k!=="_meta").length)' "$CHAR_RATCHET" 2>/dev/null || echo '?')
     echo "  ✓ 全部 ≤ 基线（${REG_N} 份核心文档；精简后请改小台账让 diff 记录）"
+  fi
+
+  # ── Face 6 软读数（不阻断）：tools/README.md ────────────────────────────
+  # 该文件长度由「工具件数」决定（每个 tracked 脚本必须登记一行，由 check-tool-health ⑦
+  # 强制），不因作者啰嗦而增长 ⇒ 按「长度由谁决定就归哪层」移出硬字数棘轮
+  # （与 F-idx / F-ledger / docs/WIKI / THANKS 同源）。2026-10-17 同日两次上调即实证：
+  # 上限追着件数跑，永远追不上。
+  # 移出 ≠ 失明：每次运行打印字数与登记件数，异常增长仍由人复核（排除面必须可见）。
+  if [ -f tools/README.md ]; then
+    SOFT_READ=$(node -e '
+      const fs=require("fs");
+      const t=fs.readFileSync("tools/README.md","utf8");
+      const rows=t.split("\n").filter((l)=>/^\|\s*`/.test(l)).length;
+      console.log([...t].length+" 字 / "+rows+" 件登记");
+    ' 2>/dev/null || echo "读数失败")
+    echo "  · 软读数（不阻断）：tools/README.md ${SOFT_READ}——长度由工具件数决定，已移出硬字数棘轮"
   fi
 
   # ── Face 6b 基线上调登记闸（2026-10-10 升级：抬上限必须有据）────────────
