@@ -211,13 +211,13 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 | Capability | One-liner | Reachable |
 |---|---|---|
-| **Three primitives** | Choice (selected + full distribution) / Score (value + interval) / Noul (truth probability) typed answers; question-set binding and candidate fallback are fail-closed | SDK surface (type contracts) |
-| **Audit criteria restatement** | 28 rules restated as **36 criteria** (criterion + evidence, zero-gap reconciliation) with a four-hard-rule fail-closed lint | SDK surface (criteria + validator) |
-| **Dataset triple format** | (state / questions / answers) isomorphic to the primitives; four-step contrastive construction · family-level split · replay-leak guard | SDK surface (format validator) |
-| **Collection & gates** | Three-source collectors (history/HITL/PR) + nine hard-sample points + four quality gates + active sampling | SDK surface |
-| **Judge-head contract** | `EncoderLike` interface (swap backbones without touching heads) + three primitive judge heads (reference impl; real backbone in v1.8.0) | SDK surface |
-| **Zero-shot baseline** | Self-produced baseline **recorded as-is** (mock encoder, zh/en split, unembellished) — the denominator for "how much training adds" in stage 2 | Reproducible (`datasets/`) |
-| **Loop workflow semantics** | `loop:` declaration + fail-closed `exit_when` decidability + budget suspension + `daemon pause/resume` | CLI-reachable |
+| **Three primitives** | Choice (selected + full distribution) / Score (value + interval) / Noul (truth probability) typed answers; question-set binding and candidate fallback are fail-closed | SDK-face (type contracts) |
+| **Audit criteria restatement** | 28 rules restated as **36 criteria** (criterion + evidence, zero-gap reconciliation) with a four-hard-rule fail-closed lint | SDK-face (criteria + validator) |
+| **Dataset triple format** | (state / questions / answers) isomorphic to the primitives; four-step contrastive construction · family-level split · replay-leak guard | SDK-face (format validator) |
+| **Collection & gates** | Three-source collectors (history/HITL/PR) + nine hard-sample points + four quality gates + active sampling | SDK-face |
+| **Judge-head contract** | `EncoderLike` interface (swap backbones without touching heads) + three primitive judge heads (reference impl; real backbone in v1.8.0) | SDK-face |
+| **Zero-shot baseline** | Self-produced baseline **recorded as-is** (mock encoder, zh/en split, unembellished) — the denominator for "how much training adds" in stage 2 | CLI reachable (`datasets/`) |
+| **Loop workflow semantics** | `loop:` declaration + fail-closed `exit_when` decidability + budget suspension + `daemon pause/resume` | CLI reachable |
 
 > 📌 **SDK-surface first**: user-facing entries (CLI/MCP) are scheduled for v1.8.0. Full evidence in the [v1.6.0 devlog](./docs/changelog/v1.6/v1.6.0.md); older sections in [CHANGELOG](./CHANGELOG.md).
 ## The Two FDE Harness Phases
