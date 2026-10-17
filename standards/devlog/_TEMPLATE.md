@@ -1,5 +1,5 @@
 # Devlog template
-> **家族统一标准**：源在 `sofagent/standards/templates/devlog/_TEMPLATE.md`；本文件为渲染产物，请勿在本仓修改。
+> **家族统一标准**：源在主仓 `sofagent/standards/`（同名同路径）；本文件为渲染产物，请勿在本仓修改。
 
 > **Path**: `devlog/v<X>/<X.Y.Z>.md` — keyed to the same version as the changelog. **Written first, drives implementation**; changelog is written after, for the outside. This file *is* the task brief: a start instruction only needs to point here.
 >

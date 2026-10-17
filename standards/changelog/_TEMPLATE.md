@@ -1,5 +1,5 @@
 # Changelog template
-> **家族统一标准**：源在 `sofagent/standards/templates/changelog/_TEMPLATE.md`；本文件为渲染产物，请勿在本仓修改。
+> **家族统一标准**：源在主仓 `sofagent/standards/`（同名同路径）；本文件为渲染产物，请勿在本仓修改。
 
 > **Path**: `changelog/v<X>/<X.Y.Z>.md` (grouped by major line: v0/ build era, v1/ post-stabilization).
 > **Version-level rules** (criterion = external contract surface):

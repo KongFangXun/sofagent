@@ -43,11 +43,11 @@
     "wall": 4,
     "cell": 0
   },
-  "standards/templates/changelog/_TEMPLATE.md": {
+  "standards/changelog/_TEMPLATE.md": {
     "wall": 1,
     "cell": 0
   },
-  "standards/templates/devlog/_TEMPLATE.md": {
+  "standards/devlog/_TEMPLATE.md": {
     "wall": 1,
     "cell": 0
   },
@@ -82,7 +82,7 @@
     "note15": "文档瘦身批（2026-10-02）：ARCHITECTURE wall 1→0（reflow 折墙式行，内容零损失）；ROADMAP cell 7→4（三个超长格拆注为 注-38/39/40，切口落在句读符上、定义行同文件在位，内容零损失，cell 回到基线 4）",
     "note16": "2026-10-08 知识库候选落盘批：PHILOSOPHY 基线 1→0 属纠偏而非本批清理——实测 HEAD 版本 wall 已为 0，台账记 1 是陈旧上限（债已还而账未改）。本批落盘未新增任何墙式行。按 rule「文件清零后从本表移除」本可摘除该条目，此处保留 0/0 是更严的选：本批正向 PHILOSOPHY 注入新内容，留册才能让新增行持续受棘轮约束（覆盖面断言只盯未登记的负债文件）。ARCHITECTURE 本批 wall/cell 均持平（1/4），台账未动；2026-10-09 主干合并补登：main 侧新增的 tools/README.md（0/0）登记项在合并中丢失，此处按 alpha 序补回（保留 main 侧登记意图，覆盖面断言不退化）。",
     "note17": "2026-10-16 并行批陈旧基线随动：FORGE/LEDGER.md 30→31（7f1cd508b「v1.6.0 台账登记」追加运行台账行致实测 31，基线未同步——属已提交内容，非本批新增；按 rule 登记=认债不放宽语义）",
-    "note18": "2026-10-17 标准源落盘批：standards/templates/ 两份模板源入册（changelog/_TEMPLATE.md wall 1 / devlog/_TEMPLATE.md wall 1）——文本继承自各仓既有模板（devlog 那份在四仓均按 wall 1 在册），本批把四份手抄副本收敛为唯一源；其中 devlog 补 1 行表模板行（原为无数据行的空表）、changelog/README 去量化 1 处（写死的仓数改「家族各仓」）。按 rule 登记=认债不放宽语义"
+    "note18": "2026-10-17 标准源落盘批：standards/ 下两份模板源入册（changelog/_TEMPLATE.md wall 1 / devlog/_TEMPLATE.md wall 1）——文本继承自各仓既有模板（devlog 那份在四仓均按 wall 1 在册），本批把四份手抄副本收敛为唯一源；其中 devlog 补 1 行表模板行（原为无数据行的空表）、changelog/README 去量化 1 处（写死的仓数改「家族各仓」）。按 rule 登记=认债不放宽语义"
   },
   "SKILL/SKILL.md": {},
   "tools/check/README.md": {
