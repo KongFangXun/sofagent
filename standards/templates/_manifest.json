@@ -1,0 +1,47 @@
+{
+  "_meta": "家族文档模板分发清单。源唯一住主仓 standards/templates/；各仓为渲染产物。当前无插值，故锚一与锚二同值；生成器落地后锚二才有独立信息量。",
+  "source_root": "standards/templates",
+  "render": "copy",
+  "entries": [
+    {
+      "source": "changelog/_TEMPLATE.md",
+      "sha256": "d0df41fcdad3ee7fe2e3187cc2ace38b0de104049213fce68b74fc122bd57bb5",
+      "targets": [
+        "sofagent-harness:changelog/_TEMPLATE.md",
+        "sofagent-s1m:changelog/_TEMPLATE.md",
+        "sofagent-rsi:changelog/_TEMPLATE.md",
+        "sofagent-fdeing:changelog/_TEMPLATE.md"
+      ]
+    },
+    {
+      "source": "devlog/_TEMPLATE.md",
+      "sha256": "b6891544555100311e4da189bb18cd8df717f68352551c73abb25ec7e8df22e4",
+      "targets": [
+        "sofagent-harness:devlog/_TEMPLATE.md",
+        "sofagent-s1m:devlog/_TEMPLATE.md",
+        "sofagent-rsi:devlog/_TEMPLATE.md",
+        "sofagent-fdeing:devlog/_TEMPLATE.md"
+      ]
+    },
+    {
+      "source": "changelog/README.md",
+      "sha256": "8548a01fcf65249f049afb42bed427c1be09666241654e2c707a555aaa04309b",
+      "targets": [
+        "sofagent-harness:changelog/README.md",
+        "sofagent-s1m:changelog/README.md",
+        "sofagent-rsi:changelog/README.md",
+        "sofagent-fdeing:changelog/README.md"
+      ]
+    },
+    {
+      "source": "tools/install-hooks.sh",
+      "sha256": "8c6dd1b36a580f1bf5c732bf8b534a4daa819c876cfade6bfb4be3d8b999643c",
+      "targets": [
+        "sofagent-harness:tools/install-hooks.sh",
+        "sofagent-s1m:tools/install-hooks.sh",
+        "sofagent-rsi:tools/install-hooks.sh",
+        "sofagent-fdeing:tools/install-hooks.sh"
+      ]
+    }
+  ]
+}
