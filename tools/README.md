@@ -70,6 +70,8 @@
 | `check/check-env-wiring.mjs` | env 读写闭环守卫（SOFAGENT_* 只写不读判红——BUG-56 族防复发） | pre-push / 改 env 面后 |
 | `check/check-devlog-unique.mjs` | devlog 数字唯一（限定词词表 SSOT）+ README 能力表三档枚举守卫 | 发版 SOP / 改 devlog 后 |
 | `check/check-standards.mjs` | 标准层一致性（源 ↔ 各仓落点） | 改 standards/ 后 |
+| `check/check-doc-debt.mjs` | 文档债务八类判据（唯一实现） | 改文档面后 |
+| `check/install-hooks.sh` | 门禁钩子安装器（幂等 · 跨形态） | 新仓接入时 |
 | `check/check-npm-claims.mjs` | registry 实测声称对账（活文档面 `npm view <pkg> dist-tags` 与「当前为 …」两种值声称 vs `--prefer-online` 真值——无 npm view 时回退行内包名；≥3 重试 + timeout；离线 SKIP 不假绿；（详→注-5） | CI（pre-push 3i · 离线 SKIP 不阻断）/ 改 README/docs 后 |
 | `check/npm-claims-exempt.json` | npm 实测声称豁免台账：行级 `{file, anchor, reason}` 锚串豁免（锚须唯一、仍是命中行、理由须实质，任一不成立即 exit 2；**空 = 无债正常态**） | 被 check-npm-claims.mjs 消费 |
 | `check/check-retired-refs-exempt.json` | 退役名残留守卫行级豁免台账（file+anchor 子串命中+理由；只对非用户指引形态开放） | 被 check-retired-refs.sh 消费 |

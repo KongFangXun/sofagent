@@ -85,6 +85,10 @@
     "note18": "2026-10-17 标准源落盘批：standards/ 下两份模板源入册（changelog/_TEMPLATE.md wall 1 / devlog/_TEMPLATE.md wall 1）——文本继承自各仓既有模板（devlog 那份在四仓均按 wall 1 在册），本批把四份手抄副本收敛为唯一源；其中 devlog 补 1 行表模板行（原为无数据行的空表）、changelog/README 去量化 1 处（写死的仓数改「家族各仓」）。按 rule 登记=认债不放宽语义"
   },
   "SKILL/SKILL.md": {},
+  "tools/STANDARD.md": {
+    "wall": 1,
+    "cell": 0
+  },
   "tools/check/README.md": {
     "wall": 1,
     "cell": 0
