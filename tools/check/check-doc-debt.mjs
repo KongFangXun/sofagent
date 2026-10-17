@@ -182,7 +182,13 @@ function run(cfg, docs, ctx) {
   // ── C6 退役节（节级判据：只认整篇豁免，行级不可越级 R4）────────
   const RETIRE_DOC = /(^|\/)changelog\/v[^/]+\/[^/]+\.md$/;
   const retireDocs = docs.filter(({ f }) => RETIRE_DOC.test(f));
-  if (!retireDocs.length) return { blind: 'C6 未找到任何 changelog/v*/ 版本记录——扫描面塌陷（R3）' };
+  // 仓型声明（R1 触发事故：AIR 首次接入家族门禁时 C6 因「无 changelog/v*/ 版本记录」而失明——
+  //    AIR 是研发/文档仓，**没有「按版本发布记录」这一对象**，不是扫描面塌陷）。
+  // ⇒ cfg.repoKind === 'docs' 时 C6 记 N/A 并**进 notes**（默认可见、--strict 下升为失败），
+  //    绝不静默跳过（R4：豁免必须可见且可被收紧）。
+  if (!retireDocs.length && cfg.repoKind === 'docs') {
+    notes.push('C6 退役节 N/A（repoKind=docs：本仓无 changelog/v*/ 版本记录，按仓型声明跳过——非静默通过）');
+  } else if (!retireDocs.length) return { blind: 'C6 未找到任何 changelog/v*/ 版本记录——扫描面塌陷（R3）' };
   const isSep = (l) => { const t = l.trim(); return t.startsWith('|') && /-/.test(t) && /^[|\s:\-]+$/.test(t); };
   for (const { f, txt } of retireDocs) {
     if (fileIgnored(f)) continue;
