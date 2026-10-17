@@ -98,6 +98,7 @@
 | `check-cross-worktree-drift.mjs` | 跨 worktree 漂移检测（并发施工面） |
 | `check-env-wiring.mjs` | env 读写闭环守卫（只写不读判红——v1.6.0 BUG-56 族） |
 | `check-devlog-unique.mjs` | devlog 数字唯一 + 能力表三档枚举守卫 |
+| `check-standards.mjs` | 家族标准层一致性（standards/ 唯一源 vs 各仓落点，逐字节比对） |
 | `check-claims.mjs`（同上） | — |
 | `resolve-section.sh` | 行号 → markdown 段落归属解析器（非门禁，共享工具） |
 
