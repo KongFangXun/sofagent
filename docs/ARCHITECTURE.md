@@ -584,6 +584,11 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 - 熔断拦截：高危操作实时拦截、等待人类确认。
 - 红线制度：超阈值动作（如合同金额 > 10 万）须 VP 签字等边际审批。
 
+**外部准入是独立依赖项（2026-10-17 补）**：Agent 对第三方服务 / 站点 / 机构的**代理访问权**不归自家权限模型——由对方单方面决定，且当前只有「本人 / 程序化接口」两档可辨；代理身份与真人无法区分时，机构只能**整类禁止**。判据：四原则管「我们能给多少」，外部准入管「对方允不允许」，二者正交——漏登记则权限设计再严也会在边界处失效。
+
+> 📖 来源：知识库消化与维护（2026-10-17 · 3 源跨域；银行侧与站点侧均为媒体转述、非监管原文，a16z 数字为图表周报口径）：金融 — 花旗 / 美银禁第三方 Agent 访问客户账户（FT 转述）｜ 内容与电商站 — Yelp 付费授权 · Delta / 摩根大通 / 嘉信屏蔽 · Cars.com / Amtrak 由可用转不可用（The Verge 梳理）· [Financial Times](https://www.ft.com/)
+> ｜ 浏览器宿主 — ChatGPT for Chrome 扩展同持多标签读取与代为操作、无权限中间档 · [The Verge](https://www.theverge.com/) ｜ [Andreessen Horowitz](https://a16z.com/)
+
 ### 联邦查询
 
 两台配对设备经 Agent 平台 channel（如 OpenClaw）互相查 knowledge/。纵深防御四层：MCP 走 stdio 本地进程通信（无网络监听面） → 平台 channel 路由 → **AES-256-GCM 应用加密**（审计结论：本地回环 ws:// 明文无 TLS，第 3 层是唯一保密防线）→ sensitivity frontmatter 过滤。
