@@ -8,14 +8,22 @@
 // 只对账「咱们四载体之间一致」），但**宿主那侧已经不是同一个世界了**。
 // 本脚本做的是「登记本 vs 宿主实测」的差集，把漂移在升级当天暴露出来，而不是等插件成片失效。
 //
-// 判定口径（三面）：
+// 判定口径（四面）：
 //   ① 宿主有、词表未登记 → DRIFT（宿主新增，或我们漏登）
-//   ② 词表登记、宿主没有 → DRIFT（宿主改名/移除——这类会让插件 seam 失效，最危险）
+//   ② 词表登记、宿主没有 → 分两种，**不得混判**：
+//      a. 仓内消费版本也没有 → DRIFT（真失效：宿主改名/移除，插件静默不生效，最危险）
+//      b. 仓内消费版本仍有 → NOTE（只是宿主 profile 版本落后，升级宿主即恢复）
+//      混判的代价：profile 常落后仓内数个 minor 线，混判会让 --strict 永久报红，
+//      噪声淹没「真失效」——实测 profile 0.1.2-alpha.1 vs 仓内 0.1.5-rc.3。
 //   ③ 宿主标记 deprecated 而词表未标注 → DRIFT（该 seam 不该用于新插件）
+//      例外：词表在**表外尾注**已登记为「已废弃、不得使用」⇒ 视为已标注，不报。
+//   ④ 宿主副本版本 ≠ 仓内消费版本 → NOTE（并集对账；单看宿主会漏掉仓内新版本才有的
+//      事件——实测漏掉 agent/assistant-stream，靠人工复算才发现）
 //
-// 覆盖面：DSH §1 五族 + OpenClaw §3 插件 hook union（.d.ts）+ OpenClaw §3b 内建 hook
-// （HOOK.md 机制，权威源 = 宿主 docs/automation/hooks.md 的事件表——内建事件不进
-// PLUGIN_HOOK_NAMES union，只查 .d.ts 会漏掉整族）。
+// 覆盖面：DSH §1 五族（宿主 profile 与仓内 node_modules **两面对账**）+ OpenClaw §3 插件
+// hook union（.d.ts）+ OpenClaw §3b 内建 hook（HOOK.md 机制，权威源 = 宿主
+// docs/automation/hooks.md 的事件表——内建事件不进 PLUGIN_HOOK_NAMES union，只查
+// .d.ts 会漏掉整族）。
 //
 // 只提示不阻断：默认 exit 0（漂移是信息，不是本仓的错）。--strict 时漂移 → exit 2。
 // 宿主不在场（未安装）→ 打印 SKIP 并说明原因，exit 0（**绝不静默通过**）。
@@ -38,10 +46,28 @@ const STRICT = process.argv.includes('--strict');
 
 const drifts = [];
 const skips = [];
+const notes = [];
 
 /** 从一段文本里按 `| \`名字\` |` 首列形态取登记名（锚定行首，避免抓到宿主包列） */
 function documentedRows(section) {
   return [...section.matchAll(/^\| `([A-Za-z0-9_:/.-]+)` \|/gm)].map((m) => m[1]);
+}
+
+/**
+ * 取「表外尾注」显式标注为已废弃的名字。
+ *
+ * 🔴 为什么需要：词表把宿主已废弃、**不得使用**的事件写在表外引用块（§3 尾注
+ * 「另有已废弃事件名 `a` / `b`，不得作为新插件的 seam」）。只读表行会把这类
+ * **已标注项**误报成「宿主有、词表未登记」——实测每轮 2 处纯噪声。
+ * 口径：引用块内含「废弃」且名字被反引号包裹 ⇒ 视为已登记（以「禁用」形态登记）。
+ */
+function notedDeprecated(section) {
+  const out = new Set();
+  for (const p of section.split(/\n{2,}/)) {
+    if (!p.trimStart().startsWith('>') || !/废弃/.test(p)) continue;
+    for (const m of p.matchAll(/`([a-z_]+)`/g)) out.add(m[1]);
+  }
+  return out;
 }
 
 /**
@@ -121,6 +147,28 @@ function openclawInternalFacts(dir) {
 function findDshHost() {
   const base = path.join(process.env.HOME ?? '', '.dsh/profiles/node_modules/@deepseek-ai');
   return fs.existsSync(base) ? base : null;
+}
+
+/**
+ * 仓内消费的 dsh 家族（node_modules 里真正跑构建/测试的那一份）。
+ *
+ * 🔴 为什么必须两面对账：宿主 profile 常落后于仓内消费版本（实测 profile 0.1.2-alpha.1
+ * vs 仓内 0.1.5-rc.3）。只对账宿主 ⇒ 新版本新增的事件**永远检测不到**（实测漏掉
+ * agent/assistant-stream，靠人工复算才发现）。仓内那份才是插件编译期面对的契约面。
+ */
+function findRepoDshHost() {
+  const base = path.join(REPO, 'node_modules/@deepseek-ai');
+  return fs.existsSync(base) ? base : null;
+}
+
+/** 读某份 dsh 家族主包版本（读不到返回 null，不抛） */
+function dshVersion(base) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(base, 'dsh/package.json'), 'utf8')).version ?? null;
+  } catch {
+    // 版本读不到不致命：返回 null，报告显示「版本未知」而不是中断整轮巡检
+    return null;
+  }
 }
 
 function dshFacts(base) {
@@ -205,7 +253,11 @@ if (!chosen) {
   if (others.length) console.log(`  ℹ 本机另有 ${others.length} 份副本（版本不同 → hook union 不同，未参与比对）：${others.map((c) => c.version).join(' / ')}`);
   const { file, union, deprecated } = openclawFacts(chosen.dir);
   console.log(`  宿主 OpenClaw：${chosen.version} · ${file} · union ${union.length} 个 / 废弃 ${deprecated.length} 个`);
-  for (const n of union.filter((x) => !ocDoc.includes(x))) drifts.push(`[OpenClaw] 宿主有、词表未登记：${n}${deprecated.includes(n) ? '（宿主已标废弃）' : ''}`);
+  const notedDep = notedDeprecated(ocSec); // 表外尾注已标注为废弃 ⇒ 已登记（禁用形态），不算漏登
+  if (notedDep.size) console.log(`  词表尾注已登记废弃 ${notedDep.size} 个（${[...notedDep].join(' / ')}）——不计漂移`);
+  for (const n of union.filter((x) => !ocDoc.includes(x) && !(deprecated.includes(x) && notedDep.has(x)))) {
+    drifts.push(`[OpenClaw] 宿主有、词表未登记：${n}${deprecated.includes(n) ? '（宿主已标废弃）' : ''}`);
+  }
   for (const n of ocDoc.filter((x) => !union.includes(x))) drifts.push(`[OpenClaw] 词表登记、宿主没有：${n}（该 seam 已失效，挂它的插件会静默不生效）`);
   for (const n of union.filter((x) => deprecated.includes(x) && ocDoc.includes(x))) drifts.push(`[OpenClaw] 词表登记了宿主已废弃的 hook：${n}`);
 
@@ -220,19 +272,57 @@ if (!chosen) {
   }
 }
 
-// ② DSH
+// ② DSH —— 宿主 profile 与仓内消费版本**两面对账**（版本常不同，单面对账会漏检新事件）
 const dshBase = findDshHost();
-if (!dshBase) {
-  skips.push('DSH 宿主未找到（~/.dsh/profiles/node_modules/@deepseek-ai 不存在）');
+const dshRepo = findRepoDshHost();
+const hostFacts = dshBase ? dshFacts(dshBase) : null;
+const repoFacts = dshRepo ? dshFacts(dshRepo) : null;
+const hostVer = dshBase ? dshVersion(dshBase) : null;
+const repoVer = dshRepo ? dshVersion(dshRepo) : null;
+
+if (!hostFacts && !repoFacts) {
+  skips.push('DSH 宿主与仓内副本均未找到（~/.dsh/profiles 与 node_modules/@deepseek-ai 都不存在）');
 } else {
-  const { names, exempt } = dshFacts(dshBase);
-  console.log(`  宿主 DSH：@deepseek-ai · 实测事件 ${names.length} 个${exempt.length ? `（另有 ${exempt.length} 个内部事件按 SEAMS.md §1 尾注豁免：${exempt.join(", ")}）` : ""}`);
-  for (const n2 of names.filter((x) => !dshDoc.includes(x))) drifts.push(`[DSH] 宿主有、词表未登记：${n2}`);
-  for (const n2 of dshDoc.filter((x) => !names.includes(x))) drifts.push(`[DSH] 词表登记、宿主没有：${n2}`);
+  const line = (f, ver, label) => {
+    const ex = f.exempt ?? [];
+    return `  ${label}：${ver ?? '版本未知'} · 实测事件 ${f.names.length} 个${ex.length ? `（另有 ${ex.length} 个内部事件按 SEAMS.md §1 尾注豁免：${ex.join(', ')}）` : ''}`;
+  };
+  if (hostFacts) console.log(line(hostFacts, hostVer, '宿主 DSH'));
+  if (repoFacts) console.log(line(repoFacts, repoVer, '仓内 DSH'));
+  if (hostFacts && repoFacts && hostVer !== repoVer) {
+    console.log('  ℹ 宿主与仓内版本不同 ⇒ 按**并集**对账（单看宿主会漏掉仓内新版本才有的事件）');
+  }
+
+  const hostNames = hostFacts?.names ?? [];
+  const repoNames = repoFacts?.names ?? [];
+  const allNames = [...new Set([...hostNames, ...repoNames])].sort();
+
+  for (const n2 of allNames.filter((x) => !dshDoc.includes(x))) {
+    if (hostNames.includes(n2)) drifts.push(`[DSH] 宿主有、词表未登记：${n2}`);
+    else drifts.push(`[DSH] 仓内版本有、词表未登记：${n2}（宿主 ${hostVer ?? '未知'} 无此事件，仓内 ${repoVer ?? '未知'} 有）`);
+  }
+  if (hostFacts) {
+    for (const n2 of dshDoc.filter((x) => !hostNames.includes(x))) {
+      if (repoNames.includes(n2)) {
+        // 仓内契约面仍有 ⇒ 不是「宿主移除/改名」，只是**宿主 profile 版本落后**。
+        // 二者后果不同：落后 = 升级宿主即恢复；移除 = 挂它的插件静默不生效。混为一谈
+        // 会让 --strict 永久报红（profile 常比仓内落后数个 minor 线），噪声淹没真失效。
+        notes.push(`[DSH] 宿主 profile 落后：${n2} 在仓内 ${repoVer ?? '未知'} 有、宿主 ${hostVer ?? '未知'} 无——宿主升级到该事件后才可挂`);
+      } else {
+        drifts.push(`[DSH] 词表登记、宿主与仓内均没有：${n2}（宿主改名或移除，挂它的插件会静默不生效——最危险）`);
+      }
+    }
+  } else {
+    skips.push('DSH 宿主未找到，跳过「词表登记、宿主没有」方向（仓内版本仍参与漏登检查）');
+  }
 }
 
 // ── 输出 ────────────────────────────────────────────────
 for (const s of skips) console.log(`  SKIP: ${s}`);
+if (notes.length) {
+  console.log(`  ℹ 版本落差 ${notes.length} 处（非失效，不进 drift、不触发 --strict）：`);
+  for (const n of notes) console.log(`    · ${n}`);
+}
 if (drifts.length === 0 && skips.length === 0) {
   console.log('  ✓ 零漂移：词表与两侧宿主实测一致');
 } else if (drifts.length === 0) {

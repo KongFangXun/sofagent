@@ -52,6 +52,7 @@
 | `agent/created` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 注册时派发（生命周期起点，经 ctx.events 派发） | 暂无 |
 | `agent/disposed` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 注销/释放时派发（生命周期终点） | 暂无 |
 | `agent/status` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 生命周期状态每次迁移时派发（载荷镜像当前状态） | 暂无 |
+| `agent/assistant-stream` | `@deepseek-ai/dsh-agent` | `lib/` | 助手流式帧派发（`frame` 为 start / chunk / end 逐帧发布，scope-filtered：按 agent 过滤）——增量输出观测点 | 暂无 |
 | `session/event` | `@deepseek-ai/dsh-session` | `lib/` | 会话事件流（`session.append` 追加即广播，listener 收 `(session, event)`；`turn/end` / `step/end` 等是 `event.type` 的取值，需自行过滤） | `evolve` |
 | `hook/invoked` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 外部 hook 调用**载荷类型**（经该协议发给仓外 hook 进程，非 ctx 订阅点） | 暂无 |
 | `hook/result` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 外部 hook 返回**载荷类型**（同上，非 ctx 订阅点） | 暂无 |
@@ -73,13 +74,13 @@ grep -rhoE "['\"][a-z]+/[a-z-]+['\"]" "$B/dsh-hook-protocol/lib/" | tr -d "\"'" 
 grep -rhoE "['\"]session/event['\"]" "$B/dsh-session/lib/"        | tr -d "\"'" | sort -u
 ```
 
-> 词汇表**只收宿主真实存在的生命周期事件名**（上表 24 条）。其中 5 条
+> 词汇表**只收宿主真实存在的生命周期事件名**（上表 25 条）。其中 5 条
 > `@deepseek-ai/dsh-hook-protocol` 的行是该协议的**事件载荷类型**——它们确实
 > 是宿主真实存在的字符串，但**交付对象是仓外 hook 进程**（子进程 / webhook），
 > **不是 `ctx.on` 能收到的 cordis 事件**。给插件写 seam 时只能用 ctx 事件名：
 > 把 `turn/end` 这类载荷类型当订阅点写，会得到一个**永不触发的订阅**（grep 能过、
 > 探针必挂）——turn 收尾的真实订阅点是 `session/event` + `event.type` 过滤。
-> 其余 19 条（`tools/*` · `fs/*` · `agent/*` · `session/event`）都是真实派发点。
+> 其余 20 条（`tools/*` · `fs/*` · `agent/*` · `session/event`）都是真实派发点。
 
 ## 2. DSH 侧 · 非 seam 的接入形态
 

@@ -563,7 +563,20 @@ function runChecks(root, opts = {}) {
     if (searched.length === 0) {
       N(SEAMS_MD, `反向检查搜索面为空：${e.pkg}/${e.dirGlob} 下无可搜文件——检查方式可能假空，拒绝假绿`);
     } else if (hits.length === 0) {
-      N(SEAMS_MD, `宿主未定义：${e.pkg}/${e.dirGlob} 里找不到「${e.seam}」（搜了 ${searched.length} 个文件）`);
+      // 回落：仓内消费版本（<repo>/node_modules）。
+      // 🔴 为什么必须回落：宿主 profile 常落后于仓内消费版本（实测 profile 0.1.2-alpha.1
+      //    vs 仓内 0.1.5-rc.3）。插件编译/测试面对的是仓内那份，它才是契约面；只看
+      //    宿主会把「新版本才有的 seam」判成虚构（假红，实测 agent/assistant-stream）。
+      //    真被上游移除的事件在两面都不存在 ⇒ 仍然 FAIL，判定未被放宽。
+      const repoNm = path.join(root, 'node_modules');
+      const alt = fs.existsSync(repoNm) ? grepHost(repoNm, e.pkg, e.dirGlob, e.seam) : { hits: [], searched: [] };
+      if (alt.hits.length > 0) {
+        notes.push(`DSH 反向 ✅ ${e.seam} → ${path.relative(repoNm, alt.hits[0])}（宿主 profile 落后，仓内消费版本有定义）`);
+      } else if (alt.searched.length === 0) {
+        N(SEAMS_MD, `宿主未定义：${e.pkg}/${e.dirGlob} 里找不到「${e.seam}」（搜了 ${searched.length} 个文件；仓内 node_modules 无该包，无法回落核验）`);
+      } else {
+        N(SEAMS_MD, `宿主未定义：${e.pkg}/${e.dirGlob} 里找不到「${e.seam}」（宿主搜 ${searched.length} 个文件、仓内搜 ${alt.searched.length} 个文件均无）`);
+      }
     } else {
       notes.push(`DSH 反向 ✅ ${e.seam} → ${path.relative(dshRoot, hits[0])}`);
     }
