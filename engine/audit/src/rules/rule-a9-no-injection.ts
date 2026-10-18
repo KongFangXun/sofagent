@@ -84,6 +84,12 @@ const MEDIUM_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
   { pattern: /\bexec\s*\(.*?(?:rm|curl|wget|bash|sh)\b/i, name: 'exec 执行危险命令' },
 ];
 
+// 呼语/第二人称标记（N12）：注释旁路的准入要件之一。
+// 为什么需要：MEDIUM 档中文模式「(绕过|跳过|关闭|禁用).{0,4}(审计|检查|规则|限制|安全)」
+// 会把「审计器讨论自己『跳过必须可审计』」的注释判成绕过审计（自指误报，实测 3 例）。
+// 判据要抓的是「有人在命令 AI 绕过约束」——命令必有对象，描述没有。
+const ADDRESSEE_RE = /(你|您|你们|你的|您的)|\b(you|your|yours)\b/i;
+
 /**
  * NFKC 归一化 + 零宽字符剥离 + leet speak 反转（供两处评分复用）
  * 全角字符转半角；leet 字符反转（1→i, 0→o, 3→e 等）
@@ -266,7 +272,37 @@ export function scanA9(ctx: AuditContext): RuleScan {
     // 可借 *.test.ts/__tests__/*.fixture 静默全绿）；命中照常收集，在下方分级
     // 判定处拆出降级 WARN 人工确认。
     const addedLines = getAddedLines(file);
+    // 块注释状态（跨行）：splitCodeContext 只认单行 `//` 与**同行** /* … */，
+    // JSDoc 的 `* …` 续行会被当成「代码」走完整 MEDIUM 档 —— 实测因此把
+    // 「注释里描述绕过」算成「代码里有绕过」（FP1/FP3）。此处显式跟踪块注释。
+    let inBlockComment = false;
     for (const line of addedLines) {
+      const trimmed = line.trim();
+      const opensBlock = /\/\*/.test(line);
+      const closesBlock = /\*\//.test(line);
+      const isBlockCommentLine = inBlockComment || (opensBlock && !closesBlock) || (!opensBlock && /^\*/.test(trimmed));
+
+      if (isBlockCommentLine) {
+        // 续行去掉注释标记，只留正文
+        const inner = trimmed.replace(/^\/\*+/, '').replace(/\*\/\s*$/, '').replace(/^\*+\s?/, '');
+        const high = scoreHighOnlyContext(inner);
+        if (high >= 0.8) {
+          hits.push({ file: file.path, line: trimmed, pattern: findBestPattern(line, normalizeLine(line)), score: high });
+        } else {
+          const cs = scoreLine(inner, false);
+          // N12：MEDIUM 命中且含呼语才 WARN；否则只是描述，记为 info（不计数）
+          if (cs >= 0.3 && cs < 0.8 && ADDRESSEE_RE.test(inner)) {
+            diffCommentWarns.push({ file: file.path, line: inner.trim().slice(0, 60), pattern: findBestPattern(inner, normalizeLine(inner)) });
+          }
+        }
+        if (opensBlock && !closesBlock) inBlockComment = true;
+        if (closesBlock) inBlockComment = false;
+        continue;
+      }
+
+      if (opensBlock && !closesBlock) inBlockComment = true;
+      if (closesBlock) inBlockComment = false;
+
       // 上下文感知扫描：
       //  - code（代码/正文）走完整模式（HIGH + MEDIUM）
       //  - literals（字符串字面量 + 注释）仅走 HIGH 置信度模式（MEDIUM 模糊档关闭）
@@ -290,8 +326,10 @@ export function scanA9(ctx: AuditContext): RuleScan {
       for (const commentText of comments) {
         const commentScore = scoreLine(commentText, false);
         if (commentScore >= 0.3 && commentScore < 0.8) {
-          // code 段未命中（codeScore < 0.3），但注释段命中了 MEDIUM → 记 WARN
-          if (codeScore < 0.3) {
+          // code 段未命中（codeScore < 0.3），且注释里有「对象」→ 才记 WARN
+          // N12：只有 MEDIUM 词面共现不够——必须同时有呼语/第二人称，
+          //      否则「描述绕过」会被当成「命令绕过」（自指误报的根因）。
+          if (codeScore < 0.3 && ADDRESSEE_RE.test(commentText)) {
             const normComment = normalizeLine(commentText);
             const commentPattern = normComment !== commentText
               ? findBestPattern(commentText, normComment)
