@@ -30,6 +30,13 @@ import path from 'node:path';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const readmePath = process.argv[2] ?? path.join(ROOT, 'README.md');
 
+// 超时与重试口径（2026-10-18 实修，见 gh() 内注释）：
+//   元数据/树查询 30s；blob 全文 90s（1.86MB README base64 后 2.5MB，30s 实测会超时）；
+//   重试 2 次（首发 + 2 次重试 = 最多 3 次尝试）。
+const GH_TIMEOUT_MS = 30_000;
+const GH_TIMEOUT_BLOB_MS = 90_000;
+const GH_RETRIES = 2;
+
 /** 抽取 README 中 *-listed-brightgreen 徽章的目标仓（去重、归一化为 owner/repo） */
 function extractListedRepos(text) {
   // badge 名允许 URL 编码字符（%20 等）与括号编码；目标 URL 允许带 `/blob/...` 子路径
@@ -50,23 +57,46 @@ function extractListedRepos(text) {
 }
 
 function ghAvailable() {
+  // 🔴 同 gh() 的重试纪律：入口探测一次失败就整段 SKIP（5 枚徽章全部「未验证」），
+  // 瞬断代价过大 ⇒ 复用 gh() 的重试路径。
   try {
-    execFileSync('gh', ['--version'], { stdio: 'ignore' });
+    gh(['--version']);
     return true;
   } catch {
     return false;
   }
 }
 
-function gh(args, timeout = 30_000) {
-  return execFileSync('gh', args, {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-    timeout,
-    // 🔴 maxBuffer：超大 README（如 punkpeye 1.86MB）base64 后超 execFileSync
-    // 默认 1MB 上限会抛错——实测根因，故显式抬高。
-    maxBuffer: 64 * 1024 * 1024,
-  });
+function gh(args, timeout = GH_TIMEOUT_MS) {
+  // 🔴 重试纪律（2026-10-18 实修）：单次失败必须重试再定性——本脚本原为「一次失败即降级」，
+  // 实测两类假象都源于此：① 瞬断 ⇒ SKIP（awesome-dsh-plugin 1.86MB README 报
+  // `spawnSync gh ETIMEDOUT`，门禁读成「检索命中·判据降级」）② 大 blob 30s 不够用。
+  // 判据：4xx（除 429）是确定性错误（路径不存在/鉴权），重试无意义；其余（超时/网络/5xx/429）重试。
+  let lastErr;
+  for (let attempt = 0; attempt <= GH_RETRIES; attempt++) {
+    try {
+      return execFileSync('gh', args, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout,
+        // 🔴 maxBuffer：超大 README（如 punkpeye 1.86MB）base64 后超 execFileSync
+        // 默认 1MB 上限会抛错——实测根因，故显式抬高。
+        maxBuffer: 64 * 1024 * 1024,
+      });
+    } catch (e) {
+      lastErr = e;
+      const msg = String(e.stderr ?? e.message ?? '');
+      const deterministic = /HTTP 4\d\d/.test(msg) && !/HTTP 429/.test(msg);
+      if (deterministic || attempt === GH_RETRIES) break;
+      sleepSync(1200 * (attempt + 1)); // 线性退避：1.2s / 2.4s
+    }
+  }
+  throw lastErr;
+}
+
+/** 同步退避（脚本为一次性 CLI，无需 async 化） */
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 /** 取目标仓 README 全文（blob 形态——绕开 /readme 端点的 512KB 截断与代码搜索的索引不全） */
@@ -90,7 +120,7 @@ function readmeFullText(repo, targetPath) {
     }
     if (!sha) continue;
     try {
-      const b64 = gh(['api', `repos/${repo}/git/blobs/${sha}`, '--jq', '.content']);
+      const b64 = gh(['api', `repos/${repo}/git/blobs/${sha}`, '--jq', '.content'], GH_TIMEOUT_BLOB_MS);
       return Buffer.from(b64.replace(/\s+/g, ''), 'base64').toString('utf8');
     } catch {
       continue;
