@@ -206,7 +206,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
-> 「分层模型架构」为探索方向核心技术骨架。当前版本未涉及，v3.0 启动（与多模态判定合并立项，SSOT：s1m-factory CHANGELOG）。
+> 「分层模型架构」为探索方向核心技术骨架。当前版本未涉及，v3.0 启动（与多模态判定合并立项，SSOT：factory VERSIONS.md）。
 
 ## 分层模型架构（v3.0 远景概述）
 
