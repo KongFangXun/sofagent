@@ -289,7 +289,6 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 以下数据被 ARCHITECTURE 与 PHILOSOPHY 以指针方式引用，集中于此：
 
 - **Harness-MU**（[arXiv:2606.21856](https://arxiv.org/abs/2606.21856)）：GPT 基座指令跟随 42.2%→91.2%（+48.9pt；冲突模式 30.9%→78.1%），访问控制攻击下隐私零泄露，wall-time 反降 11%。
-> 📦 **本条印证全文（多源数据与逐条出处）见 [归档 · validation-deep](./archive/validation-deep/section-fde-market-and-harness-research.md)。**
 
 **▍边界提示（一句话判据）**
 
@@ -312,6 +311,9 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
   同一模型换 Harness / Skill / 工具即等于换被测对象，故「模型升级了评测作废」与「Harness 改了评测同样作废」须同等对待。
   配套判据「**带着正确答案的失败**」（结果正确而过程错误）：只看终局答案会把它判成通过，须与结果轴**独立留痕、分别举证**。
 > 来源：美团 Agent 评测五层用例体系（AItest进阶之路）｜淘宝 LLM-as-Judge 日级工业化（大淘宝技术）
+
+- **出线判定须为 AND 复合门槛（五源）**——红线项（越权 / 伪造 / 数据外泄）须**一票否决且不参与加权**，关键短板须**穿透总分**而非被高分稀释；多分合成为一分时不取算术平均（一次越权不能被九次合规摊平），取两段式：先否决、再排序，命中即封顶不因后续改善回抬。与上条正交：彼管「被测对象是什么」，此管「多指标怎么合成才不掩盖灾难性失败」。
+> 来源：1688 · 双门槛出线判据（执行完整率 ≥90 AND 结果分 ≥80，94.41 分仍不准出）｜美团 · Agent 评测五层用例体系｜大淘宝技术 · LLM-as-Judge 日级工业化（2026-09-18）｜货拉拉技术 · 业务 Agent 评测平台（2026-10-14）｜叶小钗 · Agent 评测维度方法与落地（2026-08-25）
 
 - **pass^k 一致性抽验（单次通过 ≠ 稳定通过）**：回归验收抽验边缘场景，要求 **k 次重复稳定通过**而非单次成功——单次通过率会掩盖抖动的 harness。
   - ⚠️ 两条口径注记（**细节见归档**）：+54% 系 **pass^1 相对提升**、非 k 次一致性；同页已声明「多数场景推荐改用 extended thinking」⇒ 只按**方法论**采用。
