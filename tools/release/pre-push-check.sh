@@ -533,6 +533,24 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 3k. 家族标准层一致性（check-standards.mjs · 2026-10-18 接入）
+# 动机：check-gate-inventory C1 报本守卫「零调用点且未豁免」——标准层分叉恰是本仓
+# 实测事故类（建仓 24h 内 changelog 模板漂移两处、仓数四处手抄各说各话），
+# 有守卫却不接线 = 形同无守卫。判据 S1 源唯一 / S2 只由机器写（逐字节比对落点）。
+# 扫描面 = standards/_manifest.json 登记的仓；缺仓时脚本自身降级提示，不阻断。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3k. 家族标准层一致性 ──${NC}"
+  if node tools/check/check-standards.mjs >/dev/null 2>&1; then
+    check_pass "check-standards.mjs 通过（源唯一 · 落点逐字节相等）"
+  else
+    check_fail "check-standards.mjs 发现标准层分叉（源与落点不等 / 出现第三份副本）"
+    node tools/check/check-standards.mjs 2>&1 | grep "❌" | head -10
+    echo "  提示：非有意 → 用源覆盖落点；有意 → 先改源再重渲染全部落点（standards/README.md）"
+  fi
+fi
+
+# ════════════════════════════════════════
 # 3b. 跨文档锚点校验（check-anchors.mjs · v1.3.1 新增）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then

@@ -18,3 +18,4 @@ check-fresh-eyes-artifacts.mjs:fresh-eyes-loop harness 注入形态的产物契�
 sync-test-count.sh:手工预览工具——SOP 09-publish 步骤二/08-confirm 步骤二以「测试数疑漂时人工跑 --dry-run 预览归属」使用，不接自动调用面
 check-cross-worktree-drift.mjs:跨 worktree 文档漂移检测器——多分支并存时「漂移是事实不是违规」（仅红档=合并预演冲突才是真问题，黄档=并行演进合法），按设计**不接 pre-push** 等自动阻断链路；调用方是收敛批开工时的人工会话（`--report` 一页纸 / `--stale-days N` 三桶分档）。接进自动链路只会在每次推送时产出恒定噪声而无阻断价值。
 check-docs-all.sh:文档面全量收尾工具——把全部文档门禁串跑一遍供人工终检（SOP 06-doc-finalize / 07-tool-health 的收尾步骤用），按设计不接自动链路：它跑的就是 pre-push 里已逐项跑过的门禁，接进去等于重复全量扫描。原先在 C1 眼里「有调用点」只因 check-cross-worktree-drift.mjs 的**提示文案**里写了它的名字（非真实调用）——本行把这条假命中换成有论证的豁免。
+install-hooks.sh:git hook **安装器**（把 pre-push/commit-msg 等写入 .git/hooks/），不是判定器——没有判据、没有 0/1 结论，接进自动链路等于让门禁在每次推送时**改写调用者的 hooks 配置**（副作用型动作，且 CI 里无 .git/hooks 落点意义）。合法调用方 = `bash install.sh` 或用户显式安装时的人工步骤。
