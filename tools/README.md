@@ -103,7 +103,7 @@
 | `check/check-sdk-waiver-progress.mjs` | SDK-face 白名单清偿进度（到期数 / 已摘除数；`--require-zero`） | CI（pr-check） / 摘除符号后 |
 | `check/red-team-runner.mjs` | 红队用例执行器（两态判定：被拦 / 未拦有检出证据 / 穿透即红） | pre-push 5c / 改用例后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
-| `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 的「被收录」声称变可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 search API，防假阴性），输出 OK / MISSING / SKIP。（详→注-11） | 被 check-storefront 消费（需 gh 环境） |
+| `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 的「被收录」声称变可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 search API，防假阴性；gh 调用带**重试 2 次 + 分档超时**，blob 90s，防大 README 瞬断被误判「不可得」），输出 OK / MISSING / SKIP。（详→注-11） | 被 check-storefront 消费（需 gh 环境） |
 | `check/lib/unwired-reachability.mjs` | **生产可达判定内核**（`--since` 调用）：把「出现过该符号」升级为**生产可达**——① `import type`/类型注解位不计 ② 追链可达（断链即不算）③ 破循环自证。（详→注-12） |
 | `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
 | `check/check-table-shape.mjs` | 表格形态门禁（四断言）：① 超列（格数 > 表头列数，GFM 丢格）；② 孤儿行；③ 悬空注标（`（详→注-N）` 无定义）；④ 断句格（切口未落句读符）。内建 10 样本自检 | CI / 改 .md 表格后 / 发版 SOP |
