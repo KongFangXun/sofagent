@@ -278,7 +278,7 @@ function collect(root) {
   try {
     topLevel = [...new Set(execFileSync('git', ['-c', 'core.quotepath=false', 'ls-files'], { encoding: 'utf8', cwd: root })
       .split('\n').filter(Boolean).filter((f) => !ignored(f)).map((f) => f.split('/')[0]))].filter((e) => e !== '.DS_Store');
-  } catch { /* C8 退化：无顶层清单时按空集处理（不静默声称通过，下方打印）*/ }
+  } catch { /* C8 退化：无顶层清单时按空集处理，下方打印——为何可静默：退化在下方显式打印，不静默通过 */ }
 
   const sfr = valueOf('--sofagent');
   let tags = null;
