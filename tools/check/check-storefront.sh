@@ -345,6 +345,9 @@ fi
 # 排除：冻结区（docs/changelog/v1.0–v1.5 已发版 + docs/archive）、dist 构建产物、
 # 装置面（regression-checklist 自证探针 / LEDGER 历史裁定 / releasing SOP 历史收编表 /
 # dream-cycle 测试夹具 / 联邦 fixture 已同步）。
+# ⚠️ 裸「N 条」变体无语义约束（2026-10-18 实测假阳）：SEAMS.md 生命周期事件表 24→25 后，
+# 「上表 25 条」被本断言判红——实为事件计数非规则数。处置口径：**非规则计数一律用「项」**
+# （改量词消歧），**不收窄本断言**——裸变体是历史旧口径的最强兜底，收窄即漏报。
 echo ""
 echo "── 规则数口径五变体全仓扫描（活区零残留断言）──"
 STALE_HITS=$(grep -rnE "25 条|25条|25 discipline rules|27 条规则|24 git-diff|20 条纯 git-diff|20 条零 token|17 默认 \+ 8 扩展|17 默认 \+ 8\)" . \

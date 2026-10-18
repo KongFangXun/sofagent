@@ -74,7 +74,7 @@ grep -rhoE "['\"][a-z]+/[a-z-]+['\"]" "$B/dsh-hook-protocol/lib/" | tr -d "\"'" 
 grep -rhoE "['\"]session/event['\"]" "$B/dsh-session/lib/"        | tr -d "\"'" | sort -u
 ```
 
-> 词汇表**只收宿主真实存在的生命周期事件名**（上表 25 条）。其中 5 条
+> 词汇表**只收宿主真实存在的生命周期事件名**（上表 25 项）。其中 5 项
 > `@deepseek-ai/dsh-hook-protocol` 的行是该协议的**事件载荷类型**——它们确实
 > 是宿主真实存在的字符串，但**交付对象是仓外 hook 进程**（子进程 / webhook），
 > **不是 `ctx.on` 能收到的 cordis 事件**。给插件写 seam 时只能用 ctx 事件名：
