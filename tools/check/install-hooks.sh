@@ -67,7 +67,7 @@ fi
 rc=\$?
 if [ "\$rc" -ne 0 ]; then
   echo ""
-  echo "❌ 文档债务门禁未通过（rc=\$rc）——提交被拦。按明细修；正当提及须写入 tools/doc-debt-exempt.json 台账。"
+  echo "❌ 文档债务门禁未通过（rc=\${rc}）——提交被拦。按明细修；正当提及须写入 tools/doc-debt-exempt.json 台账。"
   echo "   （本次跳过：SKIP_DOC_DEBT=1 git commit ...）"
 fi
 exit \$rc
