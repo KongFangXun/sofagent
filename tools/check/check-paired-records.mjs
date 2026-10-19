@@ -2,7 +2,8 @@
 // ============================================================
 // check-paired-records.mjs · 判决类记录成对完整门禁（v1.5.3 第六章）
 // ============================================================
-// 用法: node tools/check/check-paired-records.mjs [--self-test]
+// 用法: node tools/check/check-paired-records.mjs [--self-test] [--root <dir>]
+//   --root <dir>  受试仓根（默认 = 本仓根；测试用它把注入隔离到临时面，不污染真实扫描面）
 //
 // 第六章验收：「凡判决必成对（N 态判据）」——**声明 N 态即须落 N 态**。
 // 机械普查全仓「判决类记录类型」（写出裁决/门禁/放行拦截语义的落盘面），
@@ -66,7 +67,15 @@
 import fs from 'fs';
 import path from 'path';
 
-const ROOT = path.resolve(import.meta.dirname, '../..');
+// ── 受试根：--root <dir> 可切换（缺省 = 本仓根，行为零变化）─────────────
+// 判定③④ 读 engine/audit/src/decision-schema.ts 等相对 ROOT 的登记文件——
+// --root 受试面须自带同构登记文件（测试夹具负责拷入），否则按登记腐化判红。
+function resolveRootFromArgv() {
+  const i = process.argv.indexOf('--root');
+  if (i < 0 || !process.argv[i + 1]) return path.resolve(import.meta.dirname, '../..');
+  return path.resolve(process.argv[i + 1]);
+}
+const ROOT = resolveRootFromArgv();
 const SELF_TEST = process.argv.includes('--self-test');
 
 // ── 判决类记录家族登记表（单一事实源——新类型必须同批登记）──────────────
