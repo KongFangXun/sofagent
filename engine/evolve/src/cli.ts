@@ -291,9 +291,19 @@ async function main() {
     case 'redteam': {
       // v1.6.0 BUG-13：透明仓与敌手自测用户入口——复用 tools/check/red-team-runner.mjs
       // 既有 9 用例两态判定执行器（子进程转调，不复制实现）。
+      // v1.6.0 BUG-26：resolve 后立即存在性校验——red-team-runner 属仓内工具面
+      // （tools/ 不随 npm 包分发），安装态（node_modules 内跑 dist）必缺。
+      // 缺失时显式 exit 3——旧形态抛 ENOENT 与「失明（BLIND）」判定撞退出码，
+      // 用户误读为红队穿透/失明结果；3 在本 CLI 无既有占用，语义=「安装态不可用」。
       const { spawnSync } = await import('node:child_process');
       const { resolve } = await import('node:path');
+      const { existsSync } = await import('node:fs');
       const runnerPath = resolve(__dirname, '..', '..', '..', 'tools', 'check', 'red-team-runner.mjs');
+      if (!existsSync(runnerPath)) {
+        console.error('❌ red-team-runner 属仓内工具面，安装态不可用——git clone 本仓库后在仓内运行。');
+        console.error(`   （已探测: ${runnerPath}）`);
+        process.exit(3);
+      }
       const rest = args.slice(1);
       if (!rest.includes('--list') && !rest.includes('--run')) {
         console.log('敌手自测（红队执行器 9 用例 · 两态判定 BLOCKED/DETECTED-UNBLOCKED/PENETRATED/BLIND）');
