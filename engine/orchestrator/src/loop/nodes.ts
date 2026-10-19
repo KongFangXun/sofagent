@@ -26,7 +26,11 @@
 import { writeGraphState } from './plan-node';
 import type { LoopGraphState, LoopNodeName, SessionGoalState } from './state';
 import type { LoopGraphDeps } from './deps-types';
-import { HITL_OPTIONS, shouldUseAsyncHITL, writeHITLRequest } from '../hitl';
+import {
+  HITL_OPTIONS,
+  shouldUseAsyncHITL,
+  writeHITLRequest,
+} from '../hitl';
 
 // ── 内部收编后保留的对外导出（import 面不变：仅换实现文件）──
 export {
@@ -40,10 +44,12 @@ export {
   DEFAULT_MAX_RETRIES,
   DEFAULT_ENGINEER_MAX_TURNS,
   DEFAULT_REVIEWER_MAX_TURNS,
+  isLoopAutoEnabled,
   resolveMaxTurns,
   defaultDeps,
   parseReviewerPass,
 } from './deps-defaults';
+import { isLoopAutoEnabled } from './deps-defaults';
 export type { AuditOutcome, HumanDecision, LoopGraphDeps } from './deps-types';
 // LLM provider/model/key 解析（v1.4.8 条目 4 范围回收——A2 函数调用 RHS 豁免后解锁独立成件）
 export { resolveLLMModel } from './llm-model-resolver';
@@ -307,7 +313,7 @@ export function makeHumanConfirmNode(deps: LoopGraphDeps) {
     }
 
     // ── CLI 同步降级模式：readline 阻塞等待（与 v1.2.1 一致）──
-    const isAuto = process.env.LOOP_AUTO === '1';
+    const isAuto = isLoopAutoEnabled();
     deps.log(isAuto ? '🤖 自动审核判定中...' : '🙋 等待人工确认（不限时）...');
     const decision = await deps.confirmHuman(state.artifacts.reviewReport);
 

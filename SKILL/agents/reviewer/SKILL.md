@@ -77,7 +77,7 @@ solves:
 - 你审查的不是最终 PR，而是 FORGE 中每个子任务的即时产出
 - engineer 拿到的是编排层（WorkBuddy 等）分解后的子任务，范围明确
 - 你的职责是：对照子任务描述 → 检查 engineer 产出 → 输出 IS_PASS
-- **你的 IS_PASS: YES/NO 是自动门控的核心输入**——在自动模式（LOOP_AUTO=1）下，你的判定直接决定流转（通过 → 下一个子任务 / 驳回 → engineer 修复）
+- **你的 IS_PASS: YES/NO 是自动门控的核心输入**——在自动模式（SOFAGENT_LOOP_AUTO=1，旧名 LOOP_AUTO 兼容一版）下，你的判定直接决定流转（通过 → 下一个子任务 / 驳回 → engineer 修复）
 
 **自动判定标准（IS_PASS: YES 的条件）：**
 

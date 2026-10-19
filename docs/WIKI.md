@@ -266,7 +266,7 @@ graph TB
 ⚠️ **术语声明（AI Agent 与人类读者必读）**：架构术语**定义处 = [ARCHITECTURE.md](./ARCHITECTURE.md)（单一 SSOT）**，[PHILOSOPHY.md](./PHILOSOPHY.md) 为论证处（引用不另立定义）——**约束层**（一个层五种能力：注入·审计·回溯·沉淀·进化，FORGE 为内部工具）；
 **产品身份三层口径**（工程层 FDEing / 判定层 S1M / 治理层 harness）见 [README · 三因子口径](../README.md)，身份公式 **FDEing × S1A（S1A = S1M + Harness）** 的 SSOT = [PHILOSOPHY · 身份口径](./PHILOSOPHY.md)。
 
-**双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `changelog/v1.0/`、`v1.1/` 为**历史快照**（"四引擎""认知底座"等旧术语不代表现行设计）；`docs/changelog/v1.5/` 为**当前版本目录**（后续排期内容不代表已交付能力）。**后训模块归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
+**双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `changelog/v1.0/`、`v1.1/` 为**历史快照**（"四引擎""认知底座"等旧术语不代表现行设计）；`docs/changelog/` 按次版本分目录**逐版归档**（当前版本 v1.6.0 见 `v1.6/`，其后为排期目录——排期内容不代表已交付能力）。**后训模块归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
 
 > **术语标准表述（SSOT）**：对外中文「约束层」、英文「Harness」；「Constraint Layer」「约束底座」为同义归并，不再单列。
 

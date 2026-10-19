@@ -28,6 +28,20 @@ import { getLoopSovereigntyMw, getLoopProgressMw, getLoopMandateGateMw } from '.
 /** 重试上限：第 3 轮重试后仍未过 → blocked 终态 */
 export const DEFAULT_MAX_RETRIES = 3;
 
+/**
+ * 是否启用 loop 自动确认模式（SOFAGENT_LOOP_AUTO=1）。
+ * v1.6.x：env 前缀约定统一为 SOFAGENT_*；旧名 LOOP_AUTO 保留读取兼容一版——
+ * 读到旧名且未设新名时打 stderr 弃用提示，下版移除。
+ */
+export function isLoopAutoEnabled(): boolean {
+  if (process.env.SOFAGENT_LOOP_AUTO === '1') return true;
+  if (process.env.SOFAGENT_LOOP_AUTO === undefined && process.env.LOOP_AUTO === '1') {
+    process.stderr.write('[sofagent] 弃用提示：LOOP_AUTO 已更名 SOFAGENT_LOOP_AUTO，旧名将在下版移除\n');
+    return true;
+  }
+  return false;
+}
+
 /** Agent 最大轮次默认值（v1.1.4 硬编码 20 → v1.1.5 可配置）
  * 配置位置：.sofagent/config.yml 的 loop.maxTurns.{engineer,reviewer}
  * config 不存在 → fallback 到此处默认值 */
@@ -149,7 +163,7 @@ export function parseReviewerPass(reviewReport: string): boolean | null {
 }
 
 /**
- * 自动确认——LOOP_AUTO=1 时根据 reviewer 的 IS_PASS 自动判定。
+ * 自动确认——SOFAGENT_LOOP_AUTO=1 时根据 reviewer 的 IS_PASS 自动判定。
  * IS_PASS: YES → y（通过）
  * IS_PASS: NO  → n（驳回回 engineer）
  * 无法解析      → n（保守默认驳回）
@@ -165,12 +179,12 @@ function autoConfirmHuman(reviewReport: string): HumanDecision {
 
 /**
  * 默认 HITL 实现。
- * LOOP_AUTO=1 时：自动根据 reviewer 的 IS_PASS 判定（不等待人工）。
- * LOOP_AUTO 未设时：stdin readline 等待人工 y/n（不限时）。
+ * SOFAGENT_LOOP_AUTO=1 时：自动根据 reviewer 的 IS_PASS 判定（不等待人工）。
+ * 未设时：stdin readline 等待人工 y/n（不限时）。
  */
 function defaultConfirmHuman(reviewReport: string): Promise<HumanDecision> {
-  // v1.1.4：LOOP_AUTO=1 时自动判定，不走 stdin readline
-  if (process.env.LOOP_AUTO === '1') {
+  // v1.1.4：SOFAGENT_LOOP_AUTO=1 时自动判定，不走 stdin readline（旧名 LOOP_AUTO 兼容读取）
+  if (isLoopAutoEnabled()) {
     const autoDecision = autoConfirmHuman(reviewReport);
     console.log(`\n🤖 自动模式判定: ${autoDecision === 'y' ? '✅ 通过 (IS_PASS: YES)' : '🔄 驳回 (IS_PASS: NO)'}`);
     return Promise.resolve(autoDecision);

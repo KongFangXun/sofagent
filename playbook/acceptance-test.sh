@@ -4609,7 +4609,7 @@ node -e 'const fs=require("fs"),{execFileSync}=require("child_process"),RP=proce
 $S476_OK && pass "章五可拔契约 + 域级 barrel 等价行为锁" || fail "章五契约面或 barrel 等价回潮"
 
 scenario 477 "v1.5.7 章七·国标对位 + 章九·ACS 评估结论锁——agent-audit-gap.md 5 标准 10 差距两态在位（覆盖/部分/待核，不虚标）/ policy-expression-evaluation.md 结论=不采纳 + 六维对照在位 / 分层口径与权威源一致（README 四档式 22+4+1+1=28）"; S477_OK=true
-node -e 'const fs=require("fs"),RP=process.env.PROJECT_ROOT,R=p=>fs.readFileSync(RP+p,"utf8"),bad=[];const gap=R("/docs/standards/agent-audit-gap.md");if(!/NIST|GB\/T/.test(gap))bad.push("国标对位缺标准锚");if(!/待核/.test(gap))bad.push("两态结论缺「待核」标注");const acs=R("/docs/guides/policy-expression-evaluation.md");if(!/不采纳/.test(acs))bad.push("ACS 结论漂移");const rm=R("/README.md");if(!/22 条基于 git diff/.test(rm)||!/4 条 hybrid/.test(rm)||!/1 条 filesystem/.test(rm)||!/1 条走 decision-log/.test(rm))bad.push("README 分层口径漂移");console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q "^OK" || S477_OK=false
+node -e 'const fs=require("fs"),RP=process.env.PROJECT_ROOT,R=p=>fs.readFileSync(RP+p,"utf8"),bad=[];const gap=R("/docs/standards-tracking/agent-audit-gap.md");if(!/NIST|GB\/T/.test(gap))bad.push("国标对位缺标准锚");if(!/待核/.test(gap))bad.push("两态结论缺「待核」标注");const acs=R("/docs/guides/policy-expression-evaluation.md");if(!/不采纳/.test(acs))bad.push("ACS 结论漂移");const rm=R("/README.md");if(!/22 条基于 git diff/.test(rm)||!/4 条 hybrid/.test(rm)||!/1 条 filesystem/.test(rm)||!/1 条走 decision-log/.test(rm))bad.push("README 分层口径漂移");console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q "^OK" || S477_OK=false
 $S477_OK && pass "章七国标对位 + 章九 ACS 结论 + 分层口径锁" || fail "章七/九或口径回潮"
 
 # ─── v1.5.9 承接 v1.5.8 B 类 3 场景（S478-S480 · 场景↔章双向登记：v1.5.9 devlog 头部〈由 v1.5.8 移入〉）───

@@ -267,6 +267,13 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 
 > ⚠️ **npm 安装态**：`npm uninstall -g @sofagent/audit` **不会**回收已装进仓库的 git hook——请在执行前后各跑一次上面的 uninstall 脚本（或手动删除 `.git/hooks/` 下含 `sofagent` 字样的三个文件）。
 
+**手动收尾两步**（uninstall 脚本不覆盖的残留）：
+
+1. **CLI 符号链接**：`rm -f ~/.local/bin/sofagent`（若 `command -v sofagent` 仍指向 `~/.local/bin/sofagent`）；
+2. **已配平台的集成文件回滚**：装过 `--platform <平台名>` 的宿主，进对应平台目录检查残留——`~/.openclaw/skills/sofagent/`、`~/.workbuddy/skills/sofagent/`、`~/.claude/`、`~/.cursor/` 下的 sofagent 挂载点（symlink/规则文件/拦截配置），逐一手动移除并还原安装前备份（`.pre-sofagent` 后缀）。
+
+**卸载核验**：`command -v sofagent && sofagent --version`——前者应无输出（符号已清），若仍有输出说明 CLI 残留，按上面两步收尾。
+
 
 ## 运行：每次变更都被管住
 

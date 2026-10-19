@@ -776,7 +776,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 >
 > 📌 本表是**能力对位表**而非认证声明——sofagent 未通过任何第三方安全认证，映射仅表示「对该威胁类别存在已披露的对策与边界」，不构成合规背书。
 >
-> 📌 **国标/国际标准对位**：GB/T 系列 Agent 相关标准与国际治理基准的跟踪登记与差距表见 [docs/standards/agent-audit-gap.md](./docs/standards/agent-audit-gap.md)（单 SSOT——本节不复制其内容）。
+> 📌 **国标/国际标准对位**：GB/T 系列 Agent 相关标准与国际治理基准的跟踪登记与差距表见 [docs/standards-tracking/agent-audit-gap.md](./docs/standards-tracking/agent-audit-gap.md)（单 SSOT——本节不复制其内容）。
 
 ### OWASP ASI 覆盖率进度（v1.5.7 章三登记）
 
