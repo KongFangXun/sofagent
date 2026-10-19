@@ -342,10 +342,11 @@ if (flagOf('--selftest')) {
   process.exit(okGreen && okRed ? 0 : 1);
 }
 
+const BLIND_USAGE = '用法：check-doc-debt.mjs --sofagent <家族主仓路径>（或于主仓根运行）';
 const c = collect(ROOT);
-if (c.blind) { console.error(`❌ ${REPO} 失明：${c.blind}`); process.exit(2); }
+if (c.blind) { console.error(`❌ ${REPO} 失明：${c.blind}`); console.error(BLIND_USAGE); process.exit(2); }
 const r = run(c.cfg, c.docs, c.ctx);
-if (r.blind) { console.error(`❌ ${REPO} 失明：${r.blind}`); process.exit(2); }
+if (r.blind) { console.error(`❌ ${REPO} 失明：${r.blind}`); console.error(BLIND_USAGE); process.exit(2); }
 
 if (flagOf('--update-ratchet')) {
   const live = c.docs.filter(({ f }) => !FROZEN.test(f)).map(({ f }) => f);

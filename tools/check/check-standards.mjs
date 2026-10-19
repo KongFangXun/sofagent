@@ -169,8 +169,13 @@ if (argv.includes('--selftest')) process.exit(selftest());
 
 const quiet = argv.includes('--quiet');
 const ri = argv.indexOf('--root');
-const familyRoot = ri >= 0 && argv[ri + 1] ? resolve(argv[ri + 1]) : resolve(MAIN, '..');
+const si = argv.indexOf('--sofagent');
+// --sofagent <主仓路径>：从主仓路径反推家族根（上一级），供在任意 cwd 自助接线
+const familyRoot = ri >= 0 && argv[ri + 1] ? resolve(argv[ri + 1])
+  : si >= 0 && argv[si + 1] ? resolve(argv[si + 1], '..')
+  : resolve(MAIN, '..');
 
+const BLIND_USAGE = '用法：check-standards.mjs --sofagent <家族主仓路径>（或于主仓根运行）';
 try {
   const r = check(MAIN, familyRoot);
   if (!quiet) {
@@ -184,6 +189,6 @@ try {
   console.log(`  ✓ 标准层一致：${r.files} 源 / ${r.compared} 落点逐字节相等，无第三份副本`);
   process.exit(0);
 } catch (e) {
-  if (e instanceof Blind) { console.error(`  ❌ 失明：${e.message}`); process.exit(2); }
-  console.error(`  ❌ 失明：未预期异常 ${e.message}`); process.exit(2);
+  if (e instanceof Blind) { console.error(`  ❌ 失明：${e.message}`); console.error(`  ${BLIND_USAGE}`); process.exit(2); }
+  console.error(`  ❌ 失明：未预期异常 ${e.message}`); console.error(`  ${BLIND_USAGE}`); process.exit(2);
 }
