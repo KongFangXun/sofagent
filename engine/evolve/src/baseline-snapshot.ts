@@ -47,9 +47,9 @@
 // （fail-closed：被篡改的快照拒绝回滚）。
 // ============================================================
 
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'fs';
 import { createHash } from 'crypto';
-import { dirname, join } from 'path';
+import { dirname, join, relative } from 'path';
 import {
   createMemoryStore,
   loadChainConfigFromEnv,
@@ -180,6 +180,16 @@ export interface BaselineSnapshot {
   stateHash: string;
   /** 前驱快照 id（链首 = null） */
   prevId: string | null;
+  /**
+   * v1.6.0 BUG-52：prompt/skill 层实际文件清单（相对路径 + 内容 sha256，按 path 排序）。
+  /**
+   * v1.6.0 BUG-52：prompt/skill 层实际文件清单（skill 根锚定 + 相对路径 +
+   * 内容 sha256，按 path 排序）。可选字段——无此字段的 legacy 快照走兼容
+   * 路径（verifySnapshotIntegrity 跳过第二判但提示「legacy 快照无文件
+   * 清单」，不判红）。快照 id 不含 manifest 摘要（manifest 是校验面不是
+   * 寻址面——同一能力状态的 id 保持稳定）。
+   */
+  fileManifest?: FileManifest;
 }
 
 /** 快照完整性判定 */
@@ -187,6 +197,32 @@ export interface SnapshotIntegrity {
   ok: boolean;
   /** 不 ok 时的原因 */
   reason?: string;
+  /** legacy 快照（无 fileManifest）通过第一判时的降级提示（不判红） */
+  notice?: string;
+}
+
+/**
+ * v1.6.0 BUG-52：文件清单条目——快照采集时刻 prompt/skill 层实际文件的
+ * 相对路径 + 内容哈希（防删除绕过：stateHash 只能发现「快照记录被改」，
+ * 发现不了「快照没改而磁盘文件被删/被改」）。
+ */
+export interface FileManifestEntry {
+  /** 相对 skill 根的文件路径（POSIX 分隔符，按 path 排序保证稳定） */
+  path: string;
+  /** 文件内容 sha256（全量 hex） */
+  sha256: string;
+}
+
+/**
+ * v1.6.0 BUG-52：prompt/skill 层实际文件清单（相对路径 + 内容 sha256，按 path 排序）。
+ * skillRoot 为采集时刻的 skill 根绝对路径（校验侧按此拼回绝对路径——环境变量
+ * 在校验时可能已指向别处，锚定采集时刻的根才可复算）。
+ */
+export interface FileManifest {
+  /** 采集时刻 skill 根绝对路径 */
+  skillRoot: string;
+  /** 文件清单（按 path 排序） */
+  files: FileManifestEntry[];
 }
 
 /** 版本链完整性判定 */
@@ -332,6 +368,49 @@ export function computeStateHash(state: FourLayerState): string {
 }
 
 // ────────────────────────────────────────────────────────────
+// BUG-52：fileManifest 采集与双判
+// ────────────────────────────────────────────────────────────
+
+/**
+ * 递归收集 skill 根下全部常规文件（.sofagent 文件面——prompt/skill 层实际
+ * 落盘处）的相对路径 + 内容 sha256，按 path 排序。符号链接不跟随（防循环
+ * 与意图外表态），目录本身不计。返回含根锚定（校验侧复算用）。
+ */
+export function collectFileManifest(skillRootOverride?: string): FileManifest {
+  const root = resolveSkillRoot(skillRootOverride);
+  const out: FileManifestEntry[] = [];
+  const walk = (dir: string): void => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return; // 根不存在/不可读 = 空清单（skill 层采集同款宽容语义）
+    }
+    for (const e of entries) {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) {
+        walk(full);
+      } else if (e.isFile()) {
+        try {
+          const content = readFileSync(full);
+          out.push({
+            path: relative(root, full).split('\\').join('/'),
+            sha256: createHash('sha256').update(content).digest('hex'),
+          });
+        } catch {
+          // 单文件读失败跳过（不因一个坏文件炸整条快照链）
+        }
+      }
+    }
+  };
+  walk(root);
+  return {
+    skillRoot: root,
+    files: out.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)),
+  };
+}
+
+// ────────────────────────────────────────────────────────────
 // 版本链：生成 / 读取 / 寻址 / 完整性
 // ────────────────────────────────────────────────────────────
 
@@ -390,6 +469,11 @@ export function createBaselineSnapshot(
 
   const snapshot: BaselineSnapshot = { id, createdAt, trigger: fullTrigger, state, stateHash, prevId };
 
+  // BUG-52：快照落链时同步固化文件清单——prompt/skill 层实际文件（skill 根下）
+  // 的根锚定+路径+内容哈希。verifySnapshotIntegrity 第二判据此发现「快照记录
+  // 未改而磁盘文件被删/被改」的绕过路径。
+  snapshot.fileManifest = collectFileManifest(opts.skillRoot);
+
   if (opts.persist !== false) {
     const p = resolveBaselineChainPath(opts.dataDir);
     mkdirSync(dirname(p), { recursive: true });
@@ -398,7 +482,14 @@ export function createBaselineSnapshot(
   return snapshot;
 }
 
-/** 快照完整性自证：重算 stateHash 与记录值比对（不一致 = 被篡改） */
+/**
+ * 快照完整性自证（BUG-52 起双判）：
+ * ① 重算 stateHash 与记录值比对（不一致 = 快照记录被篡改）；
+ * ② fileManifest 存在时逐项 existsSync + 哈希重算比对——文件被删除或改动
+ *    ⇒ ok:false（此前只改磁盘文件不动快照记录即可绕过第一判）。
+ * legacy 快照（无 fileManifest）：跳过第二判，notice 标「legacy 快照无文件
+ * 清单」——历史快照按当时语义放行（不判红），新快照一律带清单。
+ */
 export function verifySnapshotIntegrity(snapshot: BaselineSnapshot): SnapshotIntegrity {
   const recomputed = computeStateHash(snapshot.state);
   if (recomputed !== snapshot.stateHash) {
@@ -406,6 +497,34 @@ export function verifySnapshotIntegrity(snapshot: BaselineSnapshot): SnapshotInt
       ok: false,
       reason: `四层状态摘要不匹配：记录 ${snapshot.stateHash} / 重算 ${recomputed}——快照可能被篡改`,
     };
+  }
+  if (snapshot.fileManifest === undefined) {
+    return { ok: true, notice: 'legacy 快照无文件清单（fileManifest）——第二判（文件删除/改动检出）不适用，仅第一判（stateHash）通过' };
+  }
+  const { skillRoot: root, files: manifest } = snapshot.fileManifest;
+  if (manifest.length === 0) {
+    // 快照时刻 skill 根为空/不存在——与 skill 层采集同款宽容语义，不判红
+    return { ok: true, notice: '快照时刻文件清单为空（skill 根无文件）——第二判无对象' };
+  }
+  for (const entry of manifest) {
+    // 路径 sanitize：manifest 里的相对路径拼回采集时刻的 skill 根；路径遍历形态
+    // （../ 逃逸出根）按失配处理（清单与磁盘态失配的一类）
+    const full = join(root, entry.path);
+    if (!full.startsWith(root)) {
+      return { ok: false, reason: `文件清单路径越界：${entry.path}（文件被删除或改动——清单与磁盘态失配）` };
+    }
+    if (!existsSync(full)) {
+      return { ok: false, reason: `文件被删除或改动：${entry.path} 不存在（快照记录了 ${manifest.length} 个文件，第二判失配）` };
+    }
+    let current: string;
+    try {
+      current = createHash('sha256').update(readFileSync(full)).digest('hex');
+    } catch {
+      return { ok: false, reason: `文件被删除或改动：${entry.path} 读取失败（第二判失配）` };
+    }
+    if (current !== entry.sha256) {
+      return { ok: false, reason: `文件被删除或改动：${entry.path} 内容哈希失配（记录 ${entry.sha256.slice(0, 12)}… / 磁盘 ${current.slice(0, 12)}…）` };
+    }
   }
   return { ok: true };
 }

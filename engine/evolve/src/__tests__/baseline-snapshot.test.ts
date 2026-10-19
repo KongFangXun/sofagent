@@ -6,7 +6,7 @@
 // ============================================================
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { mkdtempSync, rmSync, existsSync } from 'fs';
+import { mkdtempSync, rmSync, existsSync, mkdirSync, writeFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { createMemoryStore } from '@sofagent/core';
@@ -49,9 +49,11 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  // 每测重置链与 evolve 台账；memory 事实按需重建
+  // 每测重置链与 evolve 台账；memory 事实按需重建；skill 根同步清理（BUG-52
+  // 文件清单用例会在根下摆文件，跨测残留会污染空清单/排序断言）
   rmSync(join(dataDir, 'evolve'), { recursive: true, force: true });
   rmSync(join(dataDir, 'memory'), { recursive: true, force: true });
+  for (const e of readdirSync(skillRoot)) rmSync(join(skillRoot, e), { recursive: true, force: true });
 });
 
 /** 造一个变更事件（at 递增由调用方给） */
@@ -253,5 +255,82 @@ describe('章二 · 回滚可举证（四层计划 + decision-log 留痕 + 引�
     expect(citation.stateSummary.promptVersion).toBe(snap.state.prompt.version);
     expect(citation.stateSummary.skillVersion).toBe(snap.state.skill.version);
     expect(citation.stateSummary.memoryAnchorCount).toBe(snap.state.memoryAnchors.length);
+  });
+});
+
+// ════════════════════════════════════════════════════════════
+describe('BUG-52 · fileManifest 双判（防删除绕过收口）', () => {
+  /** 在 skill 根摆两个文件（prompt/skill 层实际落盘处） */
+  function seedSkillFiles(): void {
+    mkdirSync(join(skillRoot, 'skills', 'demo'), { recursive: true });
+    writeFileSync(join(skillRoot, 'SKILL.md'), '# skill root\n');
+    writeFileSync(join(skillRoot, 'skills', 'demo', 'SKILL.md'), '# demo skill\n');
+  }
+
+  it('新快照自带 fileManifest：根锚定 + 相对路径 + 内容哈希、按 path 排序', () => {
+    seedSkillFiles();
+    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+    expect(snap.fileManifest).toBeDefined();
+    expect(snap.fileManifest!.skillRoot).toBe(skillRoot);
+    const paths = snap.fileManifest!.files.map((e) => e.path);
+    expect(paths).toEqual([...paths].sort());
+    expect(paths).toContain('SKILL.md');
+    expect(paths).toContain('skills/demo/SKILL.md');
+    expect(snap.fileManifest!.files[0]!.sha256).toMatch(/^[0-9a-f]{64}$/);
+    // 快照 id 不受 manifest 影响（manifest 是校验面不是寻址面）
+    expect(snap.id).toMatch(/^bs-[0-9a-f]{16}$/);
+    expect(verifySnapshotIntegrity(snap).ok).toBe(true);
+  });
+
+  it('态一（改文件 → 红）：磁盘文件改动后 stateHash 仍一致，但第二判失配', () => {
+    seedSkillFiles();
+    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+    writeFileSync(join(skillRoot, 'skills', 'demo', 'SKILL.md'), '# demo skill (被改动)\n');
+    const integ = verifySnapshotIntegrity(snap);
+    expect(integ.ok).toBe(false);
+    expect(String(integ.reason)).toContain('文件被删除或改动');
+    expect(String(integ.reason)).toContain('skills/demo/SKILL.md');
+  });
+
+  it('态二（删文件 → 红·主断言）：清单内文件被删除，第二判报不存在', () => {
+    seedSkillFiles();
+    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+    rmSync(join(skillRoot, 'skills', 'demo', 'SKILL.md'));
+    const integ = verifySnapshotIntegrity(snap);
+    expect(integ.ok).toBe(false);
+    expect(String(integ.reason)).toContain('文件被删除或改动');
+    expect(String(integ.reason)).toContain('不存在');
+    // reverse-probe：还原文件（内容回写）后恢复绿
+    writeFileSync(join(skillRoot, 'skills', 'demo', 'SKILL.md'), '# demo skill\n');
+    expect(verifySnapshotIntegrity(snap).ok).toBe(true);
+  });
+
+  it('态三（legacy 无 manifest → 过 + 提示）：跳过第二判不判红', () => {
+    seedSkillFiles();
+    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+    const legacy: BaselineSnapshot = (({ fileManifest: _omit, ...rest }) => rest)(snap) as BaselineSnapshot;
+    expect(legacy.fileManifest).toBeUndefined();
+    rmSync(join(skillRoot, 'skills', 'demo', 'SKILL.md')); // 即便文件已删——legacy 路径不判红
+    const integ = verifySnapshotIntegrity(legacy);
+    expect(integ.ok).toBe(true);
+    expect(String(integ.notice)).toContain('legacy 快照无文件清单');
+  });
+
+  it('空清单（skill 根无文件）→ ok + 提示（与 skill 层采集宽容语义对齐）', () => {
+    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+    expect(snap.fileManifest!.files).toEqual([]);
+    const integ = verifySnapshotIntegrity(snap);
+    expect(integ.ok).toBe(true);
+    expect(String(integ.notice ?? '')).toContain('清单为空');
+  });
+
+  it('链完整性判定沿用双判结果（删除文件后 verifyBaselineChain 失败）', () => {
+    seedSkillFiles();
+    createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    rmSync(join(skillRoot, 'skills', 'demo', 'SKILL.md'));
+    const chain = loadBaselineChain(dataDir);
+    const result = verifyBaselineChain(chain);
+    expect(result.ok).toBe(false);
+    expect(result.failures.some((f) => f.includes('文件被删除或改动'))).toBe(true);
   });
 });
