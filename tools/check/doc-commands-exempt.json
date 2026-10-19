@@ -1,0 +1,30 @@
+{
+  "$schema": "文档命令↔CLI 对账守卫行级豁免台账（check-doc-commands.mjs 消费）",
+  "usage": "node tools/check/check-doc-commands.mjs",
+  "notes": [
+    "形态对齐 check-retired-refs-exempt.json：file+anchor（行内含 anchor 子串即豁免）+必写理由。",
+    "豁免只对「非命令教学」形态开放（叙述性引用/子命令枚举占位/历史对照）；教用户执行的命令串不豁免——改文档。"
+  ],
+  "exempts": [
+    {
+      "file": "docs/WIKI.md",
+      "anchor": "sofagent demo",
+      "reason": "audit-first 回退形态——非域首参经 umbrella audit 参数面直达（sofagent.js:211 自述 demo 直达 audit），命令真实可执行"
+    },
+    {
+      "file": "docs/ROADMAP.md",
+      "anchor": "sofagent demo",
+      "reason": "历史交付叙述（v1.5.1 通道章回溯），同上 audit-first 回退形态，非新命令教学"
+    },
+    {
+      "file": "docs/ROADMAP.md",
+      "anchor": "sofagent doctor --migrate",
+      "reason": "规划中的未来命令（探索方向表内占位，尚未实现属表意）——守卫只校验现行命令树，规划态登记豁免"
+    },
+    {
+      "file": "docs/LIMITATIONS.md",
+      "anchor": "sofagent hub deploy",
+      "reason": "历史叙述——该 CLI 已随 v1.1.9 迁出 MIT scope 移至外部商业仓，引用是为说明边界非教学"
+    }
+  ]
+}

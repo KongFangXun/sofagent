@@ -508,6 +508,28 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 2i. 文档命令↔CLI 对账门禁（check-doc-commands.mjs · v1.7.0 BUG-39 接入）
+#   抽取文档中反引号 `sofagent <域> <动作>` 命令串，与 umbrella 单入口
+#   CLI 真实命令树（help 实跑）对账——文档教的每条命令都必须真实存在。
+#   三态：0 全绿 / 1 有不符 / 2 守卫空转（扫描面零提取，拒绝假绿）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 2i. 文档命令↔CLI 对账 ──${NC}"
+  _dc_output=$(node tools/check/check-doc-commands.mjs 2>&1)
+  _dc_rc=$?
+  if [ "$_dc_rc" -eq 0 ]; then
+    check_pass "check-doc-commands.mjs（文档命令与 CLI 命令树对账一致）"
+  elif [ "$_dc_rc" -eq 2 ]; then
+    check_fail "check-doc-commands.mjs 守卫空转（扫描面或提取数为零）"
+    printf '%s\n' "$_dc_output" | grep -E '❌|空转' | head -5 | sed 's/^/    /'
+  else
+    check_fail "check-doc-commands.mjs 发现文档命令与 CLI 不符（rc=${_dc_rc}）"
+    printf '%s\n' "$_dc_output" | grep -E '❌|未见' | head -5 | sed 's/^/    /'
+  fi
+  unset _dc_output _dc_rc
+fi
+
+# ════════════════════════════════════════
 # 3. 文档检查（check-docs.sh）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
