@@ -81,11 +81,9 @@ version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 
 | If you're... | Recommendation |
 |---|---|
-| **Adding discipline to an existing Agent**—you already run DSH / OpenClaw / WorkBuddy and want your AI to behave, leave traces, and stay roll-backable when things go wrong | ✅ **Install now**. The core value is exactly the constraint layer (inject · audit · rollback · distill ·
-evolve)—works right after installation |
+| **Adding discipline to an existing Agent**—you already run DSH / OpenClaw / WorkBuddy and want your AI to behave, leave traces, and stay roll-backable when things go wrong | ✅ **Install now**. The core value is exactly the constraint layer (inject · audit · rollback · distill · evolve)—works right after installation |
 | **A one-person company / SMB landing AI**—no dedicated engineer, you need a "never-quitting FDE" to map your workflow and deploy AI nodes | ✅ **Install now**. The FDE Harness layer is built for this—the full journey from mapping to deployment to post-departure audit |
-| **Looking for a turnkey enterprise Agent platform**—you expect a complete commercial product (multi-tenancy, permission management, billing, SLA) | ⏸️ **Hold off**. sofagent is an FDE Harness layer, not a platform product
-—platform-grade capabilities are out of this open-source repository's scope. Teams with integration capacity can still embed the constraint layer into their own platform as its governance module; if you need pure turnkey, look at platform products elsewhere |
+| **Looking for a turnkey enterprise Agent platform**—you expect a complete commercial product (multi-tenancy, permission management, billing, SLA) | ⏸️ **Hold off**. sofagent is an FDE Harness layer, not a platform product—platform-grade capabilities are out of this open-source repository's scope. Teams with integration capacity can still embed the constraint layer into their own platform as its governance module; if you need pure turnkey, look at platform products elsewhere |
 | **Researching / curious about constraint-layer design**—reading code, studying architecture, borrowing methodology | ✅ **Install now**. Full documentation ([HANDBOOK](./docs/HANDBOOK.md) / [ARCHITECTURE](./docs/ARCHITECTURE.md) / [PHILOSOPHY](./docs/PHILOSOPHY.md)), MIT licensed |
 
 **How does it relate to gitleaks / pre-commit?** (complementary, not substitutes)
