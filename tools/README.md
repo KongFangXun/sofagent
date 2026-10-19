@@ -100,6 +100,7 @@
 | `check/check-platform-hooks.sh` | 平台 hook 配置 schema 门禁（`.claude/settings.json` PreToolUse 内层 `hooks`+`type`；`.cursor/hooks.json` `version:1`+camelCase 事件+`Shell` matcher）——不符即 exit 2，防「配置不符 ⇒ 拦截静默失效」 | pre-push 第 1d 步 / 改平台 hook 配置后 |
 | `check/check-retirement-due.sh` | 声明体系到期消费者门禁（读 `capabilities.json` 的 `shims[].trigger` + `*-exempt.json` 到期条件 + ROADMAP，报「已届满未退役」；当前 12 个 shim 属 v2.0.0 裁定的**已登记欠账** ⇒ **非阻断巡检位**） | pre-push 第 1e 步（非阻断）/ 改 shim 台账或版本号后 |
 | `check/check-loadchain-config.mjs` | 加载链四层字段 SSOT ⇄ 实现双向对账（未路由 key ⇒ 红；`--selftest` 12 探针） | pre-push 2g / 改配置面后 |
+| `check/check-unwired-security.sh` | 未通电安全防线门禁（v1.6.1 BUG-23：零生产调用 × SECURITY.md「未接线/待接线」披露核对——未披露即红、已通电未摘除即红、锚点陈旧即红；登记表内嵌脚本） | pre-push 第 2h 步 / 改 SECURITY 防线声称或接线安全能力后 |
 | `check/check-sdk-waiver-progress.mjs` | SDK-face 白名单清偿进度（到期数 / 已摘除数；`--require-zero`） | CI（pr-check） / 摘除符号后 |
 | `check/red-team-runner.mjs` | 红队用例执行器（两态判定：被拦 / 未拦有检出证据 / 穿透即红） | pre-push 5c / 改用例后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |

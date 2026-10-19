@@ -122,6 +122,8 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 
 > 🔴 **OpenClaw channel 审计结论（v1.1.8 开发前置核实）**：OpenClaw 本地回环 ws:// 明文传输、无 TLS——**第 3 层 sofagent 应用加密是唯一保密防线**。因此 federation channel 只搬运密文帧（iv‖tag‖ciphertext），绝不触碰明文 payload；即使 channel 被中间人劫持，内容仍不可读（纵深防御原则，不依赖 channel 自身安全性）。
 
+> ⚠️ **peer 注册面未接线（v1.6.1 审查校准）**：`engine/daemon/src/federation/peers.ts` 的 `registerPeer` 无生产调用方（零生产调用点），联邦查询当前恒退化为纯本地且无日志——peers 注册表在生产链路上无人写入，`withOfflineFallback` 恒走「无 peer ⇒ 纯本地」分支。
+
 ### 配对与密钥管理
 
 
@@ -130,7 +132,7 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 | **三条配对路径** | A：6 位码 + 公钥指纹 y/N 人工确认（防中间人）· B：`~/.sofagent/federation.token` 文件带外交换（权限 600，v1.2.3 起，原环境变量方式已废弃）+ token-HMAC 公钥认证（CI/无人值守）· C：复用 v1.1.5 federation.json + HMAC `.sig` sidecar 验签（timingSafeEqual 恒定时间比较，缺失/篡改拒绝） |
 | **key 存储** | ECDH(prime256v1) + HKDF-SHA256 派生的 32 字节 AES key **只存内存**，不落盘明文；持久化（OS keychain / age）留 v1.1.9 |
 | **IV/nonce 管理** | 每条消息随机 12 字节 IV，绝不复用；GCM 16 字节认证标签校验失败即拒绝 |
-| **密钥轮换** | 24h 过渡窗口内旧 key 只解不加，过窗口销毁强制重新协商 |
+| **密钥轮换** | 24h 过渡窗口内旧 key 只解不加，过窗口销毁强制重新协商（⚠️ 能力已实现待接线：`rotateKey` / `shouldRotate` / `getDecryptionKeys` 均无生产调用方，轮换当前不会自动发生） |
 
 > ⚠️ **配对入口接线状态（v1.4.5 审查校准）**：`engine/core/src/crypto/pairing.ts` 的三条配对路径 API（`pairByCode` / `pairByToken` / `pairByFederationFile`，经 `@sofagent/core` 导出）已完整实现，但**交互式配对 CLI 入口尚未接线**（零生产调用点）。
 >当前实际可用的联邦配对是 **USB 路径**——`daemon/src/usb-detect.ts`（federation.json + HMAC `.sig` sidecar 验签）与 `usb-runtime.ts`（从 U 盘 federation.json 读 AES/HMAC key），其验签逻辑为独立实现、不经过 pairing.ts。三条配对路径的交互式 CLI 接线尚未交付。

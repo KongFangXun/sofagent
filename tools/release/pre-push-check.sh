@@ -485,6 +485,29 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 2h. 未通电安全防线门禁（check-unwired-security.sh · v1.6.1 BUG-23 接入）
+#   对登记表逐函数断言：零生产调用（未通电）的安全能力必须在 SECURITY.md
+#   有「未接线/待接线」披露标注；已通电则要求摘除登记（清偿即摘除纪律）。
+#   陈旧锚点（披露被删/改写）同样红——防「防线纸面在岗」漂移。
+#   三态：0 全绿 / 1 有违规 / 2 失明（登记表空 / SECURITY.md 缺失，拒绝假绿）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 2h. 未通电安全防线 ──${NC}"
+  _us_output=$(bash tools/check/check-unwired-security.sh 2>&1)
+  _us_rc=$?
+  if [ "$_us_rc" -eq 0 ]; then
+    check_pass "check-unwired-security.sh（未通电防线披露标注全在册 / 无陈旧登记）"
+  elif [ "$_us_rc" -eq 2 ]; then
+    check_fail "check-unwired-security.sh 检查器失明（exit 2——登记表空/SECURITY.md 缺失，拒绝假绿）"
+    printf '%s\n' "$_us_output" | grep -E '❌|✗|失明' | head -5 | sed 's/^/    /'
+  else
+    check_fail "check-unwired-security.sh 发现未披露/已通电未摘除防线（rc=${_us_rc}）"
+    printf '%s\n' "$_us_output" | grep -E '✗' | head -5 | sed 's/^/    /'
+  fi
+  unset _us_output _us_rc
+fi
+
+# ════════════════════════════════════════
 # 3. 文档检查（check-docs.sh）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
