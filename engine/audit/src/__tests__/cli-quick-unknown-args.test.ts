@@ -10,7 +10,7 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { execFileSync } from 'child_process';
 import { join, dirname } from 'path';
-import { existsSync, mkdtempSync, rmSync } from 'fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 
@@ -158,5 +158,56 @@ describe('cli-quick diff 范围有效性（v1.5.1 F1）', () => {
     const r = run([], dir);
     expect(r.status).toBe(0);
     expect(r.output).not.toContain('diff 解析失败');
+  });
+});
+
+// ============================================================
+// v1.6.0 BUG-08 · 首提交双消息矛盾行为锁
+// ------------------------------------------------------------
+// 缺陷（根 commit 有内容的仓库跑 quick 审计，同屏出现矛盾双标题）：
+//   ①「🔍 审计首个 commit（SHA）——首次提交无父基线，对比空树审计全部新增内容。」
+//   ②「🔍 审计最近一次 commit（SHA）」（generateQuickOutput 通用标题）
+//   另 parseDiff（diff-parser.ts）在 stderr 打「⚠️ 无 diff 基线…返回空 diff」
+//   与「正在审计」的事实矛盾。
+// 修复形态：① 措辞统一为「首提交无父基线，对比空树审计全部新增内容」；
+//   ② 在首提交补审场景抑制（suppressTitle）；③ parseDiff 提示降为 stdout ℹ️ 级
+//   且措辞与 ① 逐字一致。
+// ============================================================
+describe('cli-quick 首提交双消息矛盾（v1.6.0 BUG-08）', () => {
+  /** 与上方 F1 块同手法：跑 dist 产物取退出码 + 合流输出。 */
+  function runBare(args: string[], cwd?: string): { status: number | undefined; output: string } {
+    try {
+      const output = execFileSync(process.execPath, [QUICK_BIN, ...args], {
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        ...(cwd === undefined ? {} : { cwd }),
+      });
+      return { status: 0, output: String(output) };
+    } catch (err) {
+      const e = err as { status?: number; stdout?: string; stderr?: string };
+      return { status: e.status, output: `${e.stdout ?? ''}${e.stderr ?? ''}` };
+    }
+  }
+
+  it('根 commit 有内容：单一标题 + 措辞统一，不再出现「审计最近一次 commit」矛盾标题', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sofagent-b8-rootcommit-'));
+    tmpDirs.push(dir);
+    execFileSync('git', ['init', '-q'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    // 有内容的根 commit（触发补审主路径，而非 --allow-empty 的终态空路径）
+    writeFileSync(`${dir}/hello.txt`, 'hello sofagent\n');
+    execFileSync('git', ['add', '.'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    execFileSync(
+      'git',
+      ['-c', 'user.email=t@example.invalid', '-c', 'user.name=b8', 'commit', '-q', '-m', 'initial repository bootstrap'],
+      { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+    const r = runBare([], dir);
+    // 唯一标题：首个 commit + 统一措辞（与 diff-parser.ts 的 ℹ️ 行同款表述）
+    expect(r.output).toContain('审计首个 commit（');
+    expect(r.output).toContain('首提交无父基线，对比空树审计全部新增内容');
+    // 矛盾面消除：通用标题与旧告警形态不得再现
+    expect(r.output).not.toContain('审计最近一次 commit');
+    expect(r.output).not.toContain('无 diff 基线');
+    expect(r.output).not.toContain('首个 commit 无基线不审计');
   });
 });

@@ -276,23 +276,29 @@ export function formatQuickResult(rule: RuleCheck): string[] {
 export function generateQuickOutput(
   result: AuditResult,
   commitSha: string | null,
-  diffRange: string = 'HEAD~1..HEAD'
+  diffRange: string = 'HEAD~1..HEAD',
+  opts: { suppressTitle?: boolean } = {},
 ): string {
   const parts: string[] = [];
   const isRangeMode = diffRange !== 'HEAD~1..HEAD';
   const range = diffRange;
 
   // 标题行
-  if (commitSha && isRangeMode) {
-    // v1.3.5 #6: range 模式标题与实际审计范围一致，不再误称「最近一次 commit」
-    parts.push(`🔍 审计指定范围（${diffRange}）`);
-  } else if (commitSha) {
-    parts.push(`🔍 审计最近一次 commit（${commitSha}）`);
-  } else {
-    // v1.3.4 P2-15: SHA 为 null 时输出显著警告
-    parts.push(`🔍 审计最近一次 commit（⚠️ 无法获取 commit SHA）`);
+  // v1.6.0 BUG-08：suppressTitle——首提交补审场景的专属标题已在调用方打印
+  //   （「审计首个 commit——首提交无父基线，对比空树审计全部新增内容」），
+  //   再打通用「审计最近一次 commit」会造成同屏双消息矛盾。
+  if (opts.suppressTitle !== true) {
+    if (commitSha && isRangeMode) {
+      // v1.3.5 #6: range 模式标题与实际审计范围一致，不再误称「最近一次 commit」
+      parts.push(`🔍 审计指定范围（${diffRange}）`);
+    } else if (commitSha) {
+      parts.push(`🔍 审计最近一次 commit（${commitSha}）`);
+    } else {
+      // v1.3.4 P2-15: SHA 为 null 时输出显著警告
+      parts.push(`🔍 审计最近一次 commit（⚠️ 无法获取 commit SHA）`);
+    }
+    parts.push('');
   }
-  parts.push('');
 
   // 违规 / 警告详情
   let violationCount = 0;
@@ -728,7 +734,7 @@ export function runCliQuick(argv: string[]): number {
           diffFiles = [];
         }
         if (diffFiles.length > 0) {
-          console.log(`🔍 审计首个 commit（${commitSha}）——首次提交无父基线，对比空树审计全部新增内容。`);
+          console.log(`🔍 审计首个 commit（${commitSha}）——首提交无父基线，对比空树审计全部新增内容。`);
           console.log('');
           // 已有内容，继续下方规则运行（不 return）——message 检查在 17 条规则面内
         } else {
@@ -739,7 +745,7 @@ export function runCliQuick(argv: string[]): number {
           return 0;
         }
       } else {
-        console.log('ℹ️ [sofagent] 首个 commit 无基线不审计——没有前一个版本可对比，下次提交起自动生效。');
+        console.log('ℹ️ [sofagent] 首提交无父基线——对比空树审计全部新增内容。');
         return 0;
       }
     } else {
@@ -772,7 +778,10 @@ export function runCliQuick(argv: string[]): number {
   });
 
   // 7. 格式化输出（v1.3.5 #6: 传入 diffRange 供 range 模式标题感知）
-  const output = generateQuickOutput(result, commitSha, diffRange);
+  // v1.6.0 BUG-08：首提交补审场景标题已在 :731 打印（「审计首个 commit——首提交无父基线…」），
+  //   此处若再打「审计最近一次 commit」即同屏双标题互相矛盾——无基线补审路径跳过通用标题。
+  const isFirstCommitAudit = !hasParentCommit();
+  const output = generateQuickOutput(result, isFirstCommitAudit ? null : commitSha, diffRange, { suppressTitle: isFirstCommitAudit });
   console.log(output);
 
   // 8. 返回退出码

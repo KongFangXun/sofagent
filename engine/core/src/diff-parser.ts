@@ -308,11 +308,11 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
         if (process.env.SOFAGENT_DEBUG === '1') {
           console.error('[diff-parser] 验证 git ref 失败:', err instanceof Error ? err.message : String(err));
         }
-        // v1.3.8 P1-B1：此前的「首次提交，无需审计」提示改为 stderr + [sofagent] 前缀——
-        // 它是状态说明而非审计结果，混在 stdout 会让 quick 模式的输出顺序错乱
-        // （parseDiff 先打「无需审计」→ cli-quick 又打「审计最近一次 commit」，互相矛盾）。
-        // 调用方（cli-quick）已自带产品化的「首个 commit 无基线不审计」输出。
-        console.error('[sofagent] ⚠️ 无 diff 基线（首次提交或空仓库）——没有前一个版本可对比，本次返回空 diff。');
+        // v1.6.0 BUG-08：改 stderr+⚠️ 为 stdout+ℹ️ 并统一措辞——此前这条与
+        //   cli-quick:731 的「审计首个 commit——对比空树审计全部新增内容」双消息并存，
+        //   且「无 diff 基线/不审计」与「正在审计」互相矛盾；它是状态说明而非错误，
+        //   信息级走 stdout 与产品化输出同流，措辞与 cli-quick 逐字对齐。
+        console.log('[sofagent] ℹ️ 首提交无父基线——对比空树审计全部新增内容。');
         return files;
       }
     }
