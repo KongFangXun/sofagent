@@ -821,7 +821,13 @@ export function runAllChecks(
     const daemonJson = join(sofagentData, 'daemon.json');
 
     // daemon.sh 安装位置
+    // v1.6.0 BUG-24：daemon-install.sh 服务入口已搬持久根 $SOFAGENT_HOME/engine/scripts
+    // （默认 ~/.sofagent/engine/scripts）——候选链新增持久根；旧 ~/.openclaw/scripts 与
+    // cwd 相对路径保留（历史部署态兼容，均为 WARN 观察项非阻断）。
     let daemonScript = join(openclawDir, 'scripts', 'daemon.sh');
+    if (!existsSync(daemonScript)) {
+      daemonScript = join(HOME, '.sofagent', 'engine', 'scripts', 'daemon.sh');
+    }
     if (!existsSync(daemonScript)) {
       daemonScript = join(process.cwd(), 'sofagent', 'scripts', 'daemon.sh');
     }
