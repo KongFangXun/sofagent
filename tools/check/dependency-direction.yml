@@ -5,7 +5,7 @@
 #
 # 🔴 口径裁定（写进清单头部，避免与既有门禁混写——各口径全表见开发 Prompt「包计数术语表」SSOT）：
 #   ① 本清单覆盖 **build 序列 14 包** = 13 模块包 + engine/hooks/sofagent-load-chain（**不含 engine/umbrella**）。
-#      workspace 实为 27 项——另含 11 个 DSH/OpenClaw 插件（7+4）、engine/umbrella 与
+#      workspace 实为 29 项——另含 12 个 DSH/OpenClaw 插件（8+4）、engine/corpus、engine/umbrella 与
 #      engine/dsh-plugins/plugin-kit（v1.5.2 章九二轮起转入 workspace），三者均属适配层/分发层
 #      叶子，不在 npm 包依赖面边界清单范围。
 #   ② 模块包 14（含 umbrella）与 build 序列 14（不含 umbrella）在此统一取 **build 序列口径**
@@ -104,9 +104,9 @@ packages:
 #   · independent 各有发布通道，版本**可**不同步（check-version.sh §12b 内部依赖精确校验对其豁免）
 #   · detached    完全脱离发行物，不随任何发行物发版（同上豁免）
 # 覆盖不变量（由 check-version.sh §9e 断言，防漏登记）：
-#   sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 27 项）
+#   sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 29 项）
 #     = 14 个 engine 包（13 个 build 序列包 + umbrella）
-#       + engine/hooks/sofagent-load-chain + 7 个 DSH 插件 + 4 个 OpenClaw 插件
+#       + engine/hooks/sofagent-load-chain + 8 个 DSH 插件 + 4 个 OpenClaw 插件 + engine/corpus
 #       + engine/dsh-plugins/plugin-kit（v1.5.2 章九二轮起转 npm 发布物 @sofagent/dsh-plugin-kit）
 #   ⚠️ 枚举源必须是 package.json 的 workspaces 字段——`ls -d engine/*/` 只得 19 个目录，会漏 10+ 项。
 #   ⚠️ detached 段的 FORGE/ 是内部工具、**不属于** workspace，不计入这 27 项。
@@ -148,8 +148,11 @@ rhythm:
   #    （ClawHub package publish 校验硬要求），故本段对 OpenClaw 表达的是「发布通道独立」，
   #    版本自由度需 §9c 一并放开后才真正生效。
   independent:
-    - path: engine/dsh-plugins/cordis-plugin-sofagent*  # 走 SkillHub（DSH 插件家族 7 个；已排除 plugin-kit——它归 sync）
+    - path: engine/dsh-plugins/cordis-plugin-sofagent*  # 走 SkillHub（DSH 插件家族；已排除 plugin-kit——它归 sync）
     - path: engine/openclaw-plugins/*   # 走 ClawHub（OpenClaw 插件家族 4 个）
+    # 语料管道包 @sofagent/rsi-corpus：版本线独立（v0.1.0 起，不随主线 SSOT）、
+    # 行为等价基准冻结在 factory 侧 golden（本仓只搬运实现 + 判据文件）⇒ 归 independent。
+    - path: engine/corpus
 
   # ── 完全脱离：内部工具，不随任何发行物 ──
   detached:
