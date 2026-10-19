@@ -1364,6 +1364,8 @@ echo "=== 21. 文档视角数声称自洽（声称 ∈ {常规发版, 全量基�
 #   FE_REGULAR = 同文件分层表的「常规发版（1-N）」
 # 🔴 扫描面口径：只判**同时含 `fresh-eyes` 与「N 视角」**的行——不含 fresh-eyes 的
 #   「N 视角」是别的东西（如 Dashboard 面板数），纳入即成假阳性。
+#   扫描面必须含 playbook/（fresh-eyes 权威源所在目录）：只扫根 *.md + docs/ 时，
+#   权威源自述的口径漂移恰好落在守卫盲区（冻结区 changelog/archive/evidence 仍排除）。
 # 🔴 守卫空转防御（本仓反复出现的缺陷形态）：口径任一提取为空、或全仓零条声称被读到
 #   ⇒ FAIL——「读不到」不等于「零违规」，静默通过比没有这道守卫更危险。
 FE_TOTAL=$(grep -cE '^### .*视角[一二三四五六七八九十]+ \[' playbook/fresh-eyes-review.md 2>/dev/null || true)
@@ -1373,7 +1375,7 @@ const fs=require("fs"),cp=require("child_process");
 const total=process.argv[1], regular=process.argv[2];
 let files=[];
 try{ files=cp.execSync("git ls-files \"*.md\"").toString().trim().split("\n"); }catch(e){ console.log("SCAN_FAIL"); process.exit(0); }
-files=files.filter(f=>f && (/^[^\/]+\.md$/.test(f) || /^docs\//.test(f)) && !/^(docs\/(changelog|archive|evidence)\/|CONTRIBUTING\.md$)/.test(f));
+files=files.filter(f=>f && (/^[^\/]+\.md$/.test(f) || /^docs\//.test(f) || /^playbook\//.test(f)) && !/^(docs\/(changelog|archive|evidence)\/|playbook\/vendor\/|CONTRIBUTING\.md$)/.test(f));
 let claims=0; const viol=[];
 for(const f of files){
   let inf=false;
