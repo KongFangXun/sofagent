@@ -98,7 +98,7 @@ describe('R4-P0 · config.yml 签名旅程（编辑 → FAIL+指引 → 重签 �
     expect(threw).not.toBeNull();
     expect(threw).toBeInstanceOf(ConfigSignatureError);
     // spec 验收：报错含 --sign-config 逃生通道指引
-    expect((threw as Error).message).toContain('sofagent-audit --sign-config');
+    expect((threw as Error).message).toContain('sofagent audit --sign-config');
     expect((threw as Error).message).toContain('重新签名');
 
     // 重签（--sign-config 的库层等价调用）→ 恢复启动
@@ -126,7 +126,7 @@ describe('R4-P0 · config.yml 签名旅程（编辑 → FAIL+指引 → 重签 �
       threw = err;
     }
     expect(threw).toBeInstanceOf(ConfigSignatureError);
-    expect((threw as Error).message).toContain('sofagent-audit --sign-config');
+    expect((threw as Error).message).toContain('sofagent audit --sign-config');
   });
 
   it('旅程分支：重签后再次篡改 → 再次 FAIL（防「签一次永久免疫」误解）', () => {

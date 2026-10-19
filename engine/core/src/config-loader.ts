@@ -319,7 +319,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
     if (projectExists || homeExists) {
       console.warn('[sofagent] ⚠️ 配置文件存在但缺少 audit 段，使用默认配置。运行 sofagent-core doctor 诊断。');
     } else {
-      console.warn('[sofagent] ⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent-audit --init 生成配置。');
+      console.warn('[sofagent] ⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent audit --init 生成配置。');
     }
     return { ...DEFAULT_CONFIG };
   } catch (err) {
@@ -602,18 +602,18 @@ function verifyConfigSignature(
     }
     if (strict) {
       console.error(`❌ config.yml 含规则内容但无 signature 字段（strict 模式）——拒绝启动: ${filePath}`);
-      console.error(`   strict/CI 场景下删除签名字段视同篡改。确认非篡改后运行: sofagent-audit --sign-config`);
+      console.error(`   strict/CI 场景下删除签名字段视同篡改。确认非篡改后运行: sofagent audit --sign-config`);
       throw new ConfigSignatureError(
-        `配置文件含规则内容但缺少防篡改签名（strict 模式 fail-closed）。请运行 sofagent-audit --sign-config 重新签名，或确认配置内容后移除 strict 模式: ${filePath}`,
+        `配置文件含规则内容但缺少防篡改签名（strict 模式 fail-closed）。请运行 sofagent audit --sign-config 重新签名，或确认配置内容后移除 strict 模式: ${filePath}`,
         filePath,
       );
     }
     // fix(finding-12): env 级 fail-closed 开关——无签名时拒绝启动；strict 既有行为保持不变（向后兼容）。
     if (process.env['SOFAGENT_REQUIRE_SIGNED_CONFIG'] === '1') {
       console.error(`❌ SOFAGENT_REQUIRE_SIGNED_CONFIG=1：config.yml 含规则内容但无签名——拒绝启动: ${filePath}`);
-      console.error(`   签名方法：确认内容非篡改后运行 sofagent-audit --sign-config 重新签名。`);
+      console.error(`   签名方法：确认内容非篡改后运行 sofagent audit --sign-config 重新签名。`);
       throw new ConfigSignatureError(
-        `SOFAGENT_REQUIRE_SIGNED_CONFIG=1 强制要求签名：配置文件含规则内容但无签名，拒绝启动。请运行 sofagent-audit --sign-config 签名: ${filePath}`,
+        `SOFAGENT_REQUIRE_SIGNED_CONFIG=1 强制要求签名：配置文件含规则内容但无签名，拒绝启动。请运行 sofagent audit --sign-config 签名: ${filePath}`,
         filePath,
       );
     }
@@ -648,9 +648,9 @@ function verifyConfigSignature(
     //   降级方案：删除下方 throw 并恢复 console.error 即可回到 fail-open。
     console.error(`❌ config.yml signature 不匹配——内容可能被篡改或密钥不匹配。拒绝启动: ${filePath}`);
     // v1.4.5 (T1): 报错补逃生通道——用户需知道「确认非篡改后如何恢复启动」。
-    console.error(`   恢复指引：确认内容非篡改后，运行 sofagent-audit --sign-config 重新签名。`);
+    console.error(`   恢复指引：确认内容非篡改后，运行 sofagent audit --sign-config 重新签名。`);
     throw new ConfigSignatureError(
-      `配置文件签名校验失败，拒绝启动。请检查 config.yml 完整性，确认非篡改后运行 sofagent-audit --sign-config 重新签名: ${filePath}`,
+      `配置文件签名校验失败，拒绝启动。请检查 config.yml 完整性，确认非篡改后运行 sofagent audit --sign-config 重新签名: ${filePath}`,
       filePath,
     );
   }

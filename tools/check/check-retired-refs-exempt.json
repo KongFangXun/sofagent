@@ -239,12 +239,7 @@
     {
       "file": "engine/core/src/config-loader.ts",
       "anchor": "sofagent-",
-      "reason": "config 校验/模板的历史锚（模板 config-template.ts 同批）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
-    },
-    {
-      "file": "engine/core/src/config-template.ts",
-      "anchor": "sofagent-",
-      "reason": "config 模板注释的历史锚（模板本体是示例配置——含旧命令的示例段待下批刷新）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "reason": "config 校验/模板的历史锚（模板 config-template.ts 同批）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）（BUG-03 收窄：sign-config 六处与 --init 告警均已改单入口，anchor 仅保留给 sofagent-core doctor 历史告警文案与 ~/.sofagent-key 路径形态）"
     },
     {
       "file": "engine/mcp/src/tools/knowledge-tools.ts",

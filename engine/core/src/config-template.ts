@@ -9,16 +9,16 @@ import { VERSION } from './shared/constants';
 
 export const CONFIG_TEMPLATE = `# sofagent 审计配置
 # 文档: https://github.com/KongFangXun/sofagent#配置
-# 生成方式: sofagent-audit --init
+# 生成方式: sofagent audit --init
 #
 # sofagent 审计只检查进入 staging 的文件。
 # .gitignore 排除的文件不会被审计——这是 git 设计，不是审计缺陷。
 # 如果 Agent 用 git add -f 强制添加被忽略的文件，审计仍然会检测到。
 #
-# ⚠️ quick 模式（npx sofagent-audit，无参数）不读取本配置文件——
+# ⚠️ quick 模式（npx sofagent audit，无参数）不读取本配置文件——
 # 它只做只读快速审计（最近一次 commit），不加载 config.yml、不应用
 # lowRiskPatterns / rules / extendedRulesEnabled 等配置项。
-# 本配置仅在完整模式（sofagent-audit-full / git hook / --init 生成的项目级配置）下生效。
+# 本配置仅在完整模式（sofagent audit --full / git hook / --init 生成的项目级配置）下生效。
 
 audit:
   # 低风险文件模式（不计入 A3「不改越界」检查）
@@ -103,7 +103,7 @@ A24:
 #   2. 颁发签名：node tools/release/sign-config.mjs .sofagent/config.yml
 # 签名后 config.yml 顶层会多出 signature: <hex> 字段。
 # 加载时若签名不匹配会拒绝启动（fail-closed）——修改配置后需重新签名：
-#   sofagent-audit --sign-config
+#   sofagent audit --sign-config
 # 注意：strict/CI 模式下，「配置含规则内容但无签名」同样会拒绝启动。
 `;
 

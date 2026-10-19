@@ -63,7 +63,7 @@ describe('T1 · 删除式绕过收紧——「有规则内容但无签名」判�
     expect(threw).not.toBeNull();
     expect((threw as Error).name).toBe('ConfigSignatureError');
     expect((threw as Error).message).toContain('fail-closed');
-    expect((threw as Error).message).toContain('sofagent-audit --sign-config');
+    expect((threw as Error).message).toContain('sofagent audit --sign-config');
 
     warnSpy.mockRestore();
     errSpy.mockRestore();
@@ -156,7 +156,7 @@ describe('T1 · 删除式绕过收紧——「有规则内容但无签名」判�
 
     expect(threw).not.toBeNull();
     expect((threw as Error).name).toBe('ConfigSignatureError');
-    expect((threw as Error).message).toContain('sofagent-audit --sign-config');
+    expect((threw as Error).message).toContain('sofagent audit --sign-config');
     expect((threw as Error).message).toContain('重新签名');
 
     warnSpy.mockRestore();
