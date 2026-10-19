@@ -391,7 +391,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 
 > 🌏 Note: the linked docs (LIMITATIONS / ARCHITECTURE / PHILOSOPHY / WIKI / SECURITY …) are Chinese-first—English readers should rely on this README; full doc translation is tracked in issue #8.
 
-**Featured in** (community listings, incl. pending PRs):
+**Featured in** (community listings · 7 listed):
 
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
 [![awesome-dsh-plugin](https://img.shields.io/badge/awesome--dsh--plugin-listed-brightgreen)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
@@ -400,6 +400,9 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 [![awesome-deepseek-harness (0xsline)](https://img.shields.io/badge/awesome--deepseek--harness%20%280xsline%29-listed-brightgreen)](https://github.com/0xsline/awesome-deepseek-harness)
 [![awesome-deepseek-harness (Dominic)](https://img.shields.io/badge/awesome--deepseek--harness%20%28Dominic%29-listed-brightgreen)](https://github.com/Dominic789654/awesome-deepseek-harness)
 [![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-listed-brightgreen)](https://github.com/punkpeye/awesome-mcp-servers)
+
+**Pending submissions (PR open)**:
+
 [![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
 [![awesome-ai-agents (e2b)](https://img.shields.io/badge/awesome--ai--agents%20%28e2b%29-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
 

@@ -328,7 +328,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 
 ## 生态与文档索引
 
-**Featured in**（社区收录 · 含收录申请中）：
+**Featured in**（社区收录 · 7 项已收录）：
 
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
 [![awesome-dsh-plugin](https://img.shields.io/badge/awesome--dsh--plugin-listed-brightgreen)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
@@ -337,6 +337,9 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 [![awesome-deepseek-harness (0xsline)](https://img.shields.io/badge/awesome--deepseek--harness%20%280xsline%29-listed-brightgreen)](https://github.com/0xsline/awesome-deepseek-harness)
 [![awesome-deepseek-harness (Dominic)](https://img.shields.io/badge/awesome--deepseek--harness%20%28Dominic%29-listed-brightgreen)](https://github.com/Dominic789654/awesome-deepseek-harness)
 [![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-listed-brightgreen)](https://github.com/punkpeye/awesome-mcp-servers)
+
+**收录申请中（PR open）**：
+
 [![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
 [![awesome-ai-agents (e2b)](https://img.shields.io/badge/awesome--ai--agents%20%28e2b%29-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
 
