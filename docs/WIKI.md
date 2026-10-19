@@ -209,6 +209,9 @@ graph TB
 | `SECURITY.md` | 安全策略、审计规则清单 |
 | `CONTRIBUTING.md` | 贡献指南 |
 | `CODE_OF_CONDUCT.md` | 社区行为准则 |
+| `playbook/` | 审查方法论与验收脚本（fresh-eyes 视角族、回归清单、deep-module 审查；`vendor/` 为第三方上游原文，豁免计账） |
+| `standards/` | 家族标准源——各仓同名文件由本目录渲染（`docs/standards-tracking` 是其追踪面，勿混） |
+| `datasets/` | v1.6.0 零样本基线产物（复算需源码树 `npm run build` 后 `node datasets/baseline-zero-shot-run.js`，无 CLI 入口；运行时数据在 `data/`） |
 
 ### docs/ 目录
 
