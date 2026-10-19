@@ -5,7 +5,7 @@
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
 > v1.6.0 · 2026-10-15（GMT+8）· ✅ 已发版 · 孔放勋 · 判定底座 · 阶段一（判据与数据地基）。完整历史见 [CHANGELOG](../CHANGELOG.md)。
 
-产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
+产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。文中提及的仓外权威源（factory 等）见 [WIKI · 跨仓权威源索引](./WIKI.md#十跨仓权威源索引)。
 
 ## 目录
 
@@ -206,7 +206,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
-> 「分层模型架构」为探索方向核心技术骨架。当前版本未涉及，v3.0 启动（与多模态判定合并立项，SSOT：factory VERSIONS.md）。
+> 「分层模型架构」为探索方向核心技术骨架。当前版本未涉及，v3.0 启动（与多模态判定合并立项，SSOT：factory VERSIONS.md——factory 为判定底座与训练工程的姊妹仓·内部仓，开源面以本仓 README/WIKI 为准；跨仓权威源索引见 [WIKI §十](./WIKI.md#十跨仓权威源索引)）。
 
 ## 分层模型架构（v3.0 远景概述）
 
