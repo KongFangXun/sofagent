@@ -9,12 +9,12 @@
     "!dist/**/*.js.map",
     "!dist/**/*.d.ts.map",
     "!dist/**/*.test.*",
-    "capabilities.json",
     "README.md"
   ],
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc && npm run copy-assets",
+    "copy-assets": "node -e \"const fs=require('fs'),p=require('path');const src=p.resolve(__dirname,'..','capabilities.json');for(const d of ['dist','dist/tools']){fs.mkdirSync(d,{recursive:true});fs.cpSync(src,p.join(d,'capabilities.json'));if(!fs.existsSync(p.join(d,'capabilities.json'))){console.error('[copy-assets] ✗ '+d+'/capabilities.json 缺失——list_capabilities 能力地图在安装态将降级');process.exit(1)}}console.log('[copy-assets] ✓ capabilities.json 入 dist 与 dist/tools（安装态可达）')\"",
     "postbuild": "node -e \"const fs=require('fs'),path=require('path');if(process.platform==='win32'){console.log('[postbuild] Windows 平台跳过 bin 可执行位检查（Windows 无 POSIX 执行位，改用 .cmd shim）');process.exit(0)}for(const b of ['dist/mcp-server.js']){const p=path.join(__dirname,b);fs.chmodSync(p,0o755);if(!(fs.statSync(p).mode & 0o111)){console.error('❌ bin 入口不可执行: '+b);process.exit(1)}}\"",
     "prepublishOnly": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "check": "tsc --noEmit",

@@ -3,9 +3,9 @@
 // v1.6.0: 从 mcp-server.ts 提取
 // v1.5.7 章五: 从「工具清单」升级为「可拔能力地图」——接 engine/capabilities.json
 //   （主干能力清单 SSOT），返回档位名 + 默认值 + 依赖级联 + 关档失效面。
-//   读取方式：编译期打包 JSON 需各包 build 链配合，此处走**运行时相对解析**
-//   （process.cwd() 向上找 engine/capabilities.json——MCP server 的既定部署形态
-//   即仓内/安装态相邻目录）；文件缺席时**响亮降级**（标注 legacy 形态，不静默）。
+//   读取方式：v1.6.0 BUG-25 起 build 链把 capabilities.json 拷进 dist/（copy-assets），
+//   安装态同层可达；另保留仓内相对解析回退（源码态/仓根运行态）。文件缺席时
+//   **响亮降级**（标注 legacy 形态 = 安装态已知边界，不静默）。
 // ============================================================
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -33,16 +33,19 @@ interface CapabilityManifest {
 }
 
 /**
- * 解析 capabilities.json 路径——四级回退（与仓内数据目录解析纪律同族）：
- * ① 编译态：dist/tools/report-tools.js → 上三级 = engine/（dist/tools/ 深三层）
+ * 解析 capabilities.json 路径——五级回退（与仓内数据目录解析纪律同族）：
+ * ① 编译态（v1.6.0 BUG-25）：dist/tools/report-tools.js 同层 = dist/capabilities.json
+ *   （build 链 copy-assets 已把仓内 engine/capabilities.json 拷进 dist——安装态真实可达）
  * ② 源码态：src/tools/report-tools.ts → 上四级 = engine/（vitest 直跑 src）
- * ③ process.cwd()/engine/capabilities.json（仓内根运行态）
- * ④ process.cwd()/capabilities.json（安装态平铺）
+ * ③ 编译态旧布局：dist/tools/ 上三级 = engine/（仓内构建直跑，dist 内副本优先）
+ * ④ process.cwd()/engine/capabilities.json（仓内根运行态）
+ * ⑤ process.cwd()/capabilities.json（安装态平铺）
  */
 function resolveCapabilitiesPath(): string {
   const candidates: string[] = [
-    join(__dirname, '..', '..', '..', 'capabilities.json'),
+    join(__dirname, 'capabilities.json'),
     join(__dirname, '..', '..', '..', '..', 'capabilities.json'),
+    join(__dirname, '..', '..', '..', 'capabilities.json'),
     join(process.cwd(), 'engine', 'capabilities.json'),
     join(process.cwd(), 'capabilities.json'),
   ];
@@ -161,7 +164,7 @@ export function listCapabilities(): ToolResult {
         },
       }
     : {
-        source: 'legacy（engine/capabilities.json 不可达——运行目录非仓内/安装态，能力地图缺席。清单见仓库 engine/capabilities.json，校验器 tools/gen/gen-capability-manifest.mjs）',
+        source: 'legacy（能力清单未随包分发——安装态已知边界：该包构建时 capabilities.json 未拷入 dist；清单见仓库 engine/capabilities.json，校验器 tools/gen/gen-capability-manifest.mjs）',
       };
 
   const lines: string[] = ['[sofagent] 能力清单:', ''];
