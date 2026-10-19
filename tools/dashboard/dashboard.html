@@ -1575,7 +1575,9 @@ function renderTop3Trend(t){
   document.getElementById('trendChart').setAttribute('viewBox','0 0 500 160');
 }
 
-/* 统一渲染函数：API 路径和降级路径共用 */
+/* 统一渲染函数：API 路径和降级路径共用
+ * W8 BUG-47：占位中性化——无数据源时数值显示 '—'（不再用 575/12 冒充统计），
+ * 面板头部标注「数据源未接线（分片目录聚合排期待接线）」。 */
 function renderSovereigntyBox(sov,daemonStatus,auditTotal,todayCount){
   var el=document.getElementById('sovereigntyBox');
   if(!el)return;
@@ -1588,12 +1590,16 @@ function renderSovereigntyBox(sov,daemonStatus,auditTotal,todayCount){
     badge.style.alignItems='center';
     badge.innerHTML='<span class="sov-dot" style="background:'+dotCol+'"></span><span style="color:var(--text-s)">守护进程 '+escapeHtml(ds)+'</span>';
   }
+  // 占位模式：数值缺失（null/undefined）显示 '—'，不做任何统计冒充
+  var numOrDash=function(v){return (v===null||v===undefined)?'—':v};
+  var isPlaceholder=(sov.local===null||sov.local===undefined);
+  var headerLine=isPlaceholder?'<div style="font-size:10px;color:var(--text-s);text-align:center;padding:2px 0 6px">数据源未接线（分片目录聚合排期待接线）</div>':'';
   /* 四栏数字：本地执行 / 本地化率 / 云端调用 / 数据流出，无分割线（锁定小字在 section 外） */
-  el.innerHTML='<div class="chart-box" style="display:flex;align-items:center;justify-content:space-around;flex:1;min-height:56px;height:100%">'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+sov.local+'</div><div class="meta" style="margin-top:2px">本地执行</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+sov.localRate+'%</div><div class="meta" style="margin-top:2px">本地化率</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+sov.cloud+'</div><div class="meta" style="margin-top:2px">云端调用</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+(sov.outbound||0)+'</div><div class="meta" style="margin-top:2px">数据流出</div></div>'+
+  el.innerHTML=headerLine+'<div class="chart-box" style="display:flex;align-items:center;justify-content:space-around;flex:1;min-height:56px;height:100%">'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+numOrDash(sov.local)+'</div><div class="meta" style="margin-top:2px">本地执行</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+(isPlaceholder?'—':sov.localRate+'%')+'</div><div class="meta" style="margin-top:2px">本地化率</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+numOrDash(sov.cloud)+'</div><div class="meta" style="margin-top:2px">云端调用</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+(isPlaceholder?'—':(sov.outbound||0))+'</div><div class="meta" style="margin-top:2px">数据流出</div></div>'+
     '</div>';
 }
 
@@ -1681,16 +1687,16 @@ function renderTrendChart(records){
   renderDailyTrend(days);
 }
 
-/* 降级/示例数据路径的 wrapper */
+/* 降级/示例数据路径的 wrapper——W8 BUG-47：sData 缺失 = 数据源未接线，
+ * 全部传 null 显式占位（renderSovereigntyBox 显示 '—' + 未接线标注），
+ * 不再用 575/12 硬编码量级冒充统计。 */
 function renderSovereignty(sData,dh){
-  var local=sData?sData.localExecutions:575;
-  var cloud=sData?sData.cloudCalls:12;
-  var total=local+cloud;
-  var lr=Math.round(local*100/(total||1));
   renderSovereigntyBox({
-    cloud:cloud,local:local,total:total,localRate:lr,
-    outbound:sData?sData.dataOutflow:0,sensitive:0
-  },dh?dh.status:null,1204,6);
+    cloud:sData?sData.cloudCalls:null,
+    local:sData?sData.localExecutions:null,
+    total:null,localRate:null,
+    outbound:sData?sData.dataOutflow:null,sensitive:null
+  },dh?dh.status:null,null,null);
 }
 
 function loadSampleData(){
@@ -1775,8 +1781,9 @@ async function loadLiveDataFs(){
   var records=lines.map(function(l){try{return JSON.parse(l)}catch(e){return null}}).filter(Boolean);
   processAuditData(records);
   // sovereignty 聚合：服务端数据布局为 audit/data-sovereignty/<年>/<月>/*.jsonl（按目录分片），
-  // 不存在单文件形态——此处不读取（旧单文件路径已废弃，读取必空），展示默认占位值。
-  renderSovereignty({localExecutions:575,cloudCalls:12,dataOutflow:0},null);
+  // 不存在单文件形态——旧单文件路径已废弃，读取必空。W8 BUG-47：不造假数——
+  // 传 null 走显式占位（'—' + 未接线标注），分片目录聚合排期接线后再传真实聚合值。
+  renderSovereignty(null,null);
 }
 
 /* ===== GitHub Star Count ===== */
