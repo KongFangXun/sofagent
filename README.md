@@ -190,6 +190,8 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | **循环 workflow 语义** | `loop:` 声明块 + `exit_when` 可判定性 fail-closed + 预算熔断挂起 + `daemon knowledge pause/resume` | CLI 可达 |
 
 > 📌 本版 **SDK 面先行**：用户入口（CLI/MCP 域）排 v1.8.0。完整证据见 [v1.6.0 开发日志](./docs/changelog/v1.6/v1.6.0.md)；旧版能力段见 [CHANGELOG](./CHANGELOG.md)。
+>
+> 增注：上表「审计规则判据重述」一行 v1.7.0 起 CLI 可达（`sofagent audit --criteria`）——只读列示 36 条判据与阈值版本锚，上表历史行本身不变。
 
 ## FDE Harness 两阶段
 

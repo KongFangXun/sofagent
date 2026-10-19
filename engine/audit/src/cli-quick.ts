@@ -103,6 +103,42 @@ import { join } from 'path';
 import { parseDiff, isInGitRepo, VERSION, EXIT_ENGINE_CRASH, type DiffFile } from '@sofagent/core';
 import { runRules, type AuditResult, type RuleCheck } from './reporter';
 import { resolveDiffEndpoint } from './diff-ref';
+// v1.7.0 BUG-56：--criteria 只读出口（判据 SSOT 零入口 → quick 层最小可感知面）。
+// ⚠️ 顶层静态 import：AUDIT_CRITERIA 数据表不触发规则模块加载链（rules/index 的 28 条
+// 模块仍走 demo 的惰性 require），零配置审计路径（npx 30 秒 aha）的启动开销不变。
+import { AUDIT_CRITERIA, AUDIT_CRITERIA_RECONCILIATION } from './rules/criteria/audit-criteria';
+
+/**
+ * 判据表输出（v1.7.0 BUG-56）：--criteria 的行渲染——纯函数、可单测。
+ *
+ * 列口径：id / ruleId / primitive（三原语）/ question 摘要（截断 ~40 字符）/
+ * disposition / 阈值 + boundDistribution 版本锚。仅 35 条带 thresholds
+ * （A19-1 手写 stay-code 无）——阈值列对无阈值条目显示 '—'。
+ */
+export function renderCriteriaTable(): string[] {
+  const QUESTION_MAX = 40;
+  // CJK 与西文混排按码点直截（审计判据 question 为中文为主——宽度感知截断属
+  // 表格库职责，本出口保持零依赖；截断标记统一 '…'）
+  const truncate = (s: string): string =>
+    s.length <= QUESTION_MAX ? s : `${s.slice(0, QUESTION_MAX)}…`;
+  const thresholdOf = (t: { value: number; boundDistribution: string }[] | undefined): string => {
+    if (!t || t.length === 0) return '—';
+    return t.map((x) => `${x.value}@${x.boundDistribution}`).join(';');
+  };
+  const lines = ['ID | RULE | PRIMITIVE | QUESTION | DISPOSITION | THRESHOLD'];
+  for (const c of AUDIT_CRITERIA) {
+    lines.push(
+      `${c.id} | ${c.ruleId} | ${c.primitive} | ${truncate(c.question)} | ${c.disposition} | ${thresholdOf(c.thresholds)}`,
+    );
+  }
+  // 合计行动态算（禁硬编码——判据数随上游数据表演进）
+  const ruleCount = new Set(AUDIT_CRITERIA.map((c) => c.ruleId)).size;
+  const versionAnchor =
+    AUDIT_CRITERIA.find((c) => (c.thresholds ?? []).length > 0)?.thresholds[0]?.boundDistribution ??
+    'unknown';
+  lines.push(`合计：${AUDIT_CRITERIA.length} 条判据 · ${ruleCount} 规则全覆盖 · 阈值版本 ${versionAnchor}`);
+  return lines;
+}
 
 /**
  * 获取最近一次 commit 的短 SHA
@@ -484,7 +520,8 @@ export function runCliQuick(argv: string[]): number {
     console.log('  --sign-config       对 config.yml 签名（防篡改）');
     console.log('  --verify-chain      校验审计历史 HMAC 链完整性');
     console.log('  --verify-commit     校验单个 commit 完整性（v1.2.9+）');
-    console.log('  --support-bundle    打包诊断信息\n');
+    console.log('  --support-bundle    打包诊断信息');
+    console.log('  --criteria          列出全部审计判据（只读——quick 侧直接跑，v1.7.0）\n');
     // v1.4.9 P2-8：退出码此前只写在源码头注释里，`--help` 面零披露——
     // 用户（尤其 CI 里）拿到 3 无从查证。此处补全，与头注释同口径
     // （3 = 非 git 仓库为**本入口专属**；完整引擎把非 git 仓库记为 2）。
@@ -503,6 +540,19 @@ export function runCliQuick(argv: string[]): number {
     // 消除此前 quick 侧读 package.json、完整引擎侧读 VERSION 的双源偏差，
     // 亦使 help 顶部版本行与本行输出恒一致。
     console.log(`sofagent audit v${VERSION}`);
+    return 0;
+  }
+
+  // ── v1.7.0 BUG-56：--criteria 只读子命令 ──
+  // 定位：36 条判据已是 SSOT（rules/criteria/audit-criteria.ts 导出 AUDIT_CRITERIA）
+  // 但对 CLI 用户零入口——本分支给一层只读出口，不动判定逻辑。只读 = 不落数、
+  // 不读 .sofagent/、不依赖 git 仓库（判据表是引擎自带数据，与被审仓库无关）。
+  // 位置：与 --stats 同级（quick 侧本地分支），且在 isGitRepo 检查之前——
+  // 在任意目录可查（含非 git 目录）。
+  if (argv.includes('--criteria')) {
+    for (const line of renderCriteriaTable()) {
+      console.log(line);
+    }
     return 0;
   }
 
@@ -558,6 +608,8 @@ export function runCliQuick(argv: string[]): number {
     '--help', '-h', '--version', '-v',
     // v1.4.3 第七章：聚合指标参数组（--stats 主入口 + --days/--json 修饰）
     '--stats', '--days', '--json',
+    // v1.7.0 BUG-56：判据只读出口（quick 侧本地分支，不上方已拦截返回）
+    '--criteria',
   ]);
   // 承载安全语义的参数前缀——拼错即用法错误（exit 2），不静默放行
   const SEMANTIC_FLAG_PREFIXES = ['--ruleset', '--config', '--task', '--au', '--exclud', '--includ'];

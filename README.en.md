@@ -220,6 +220,8 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 | **Loop workflow semantics** | `loop:` declaration + fail-closed `exit_when` decidability + budget suspension + `daemon pause/resume` | CLI reachable |
 
 > 📌 **SDK-surface first**: user-facing entries (CLI/MCP) are scheduled for v1.8.0. Full evidence in the [v1.6.0 devlog](./docs/changelog/v1.6/v1.6.0.md); older sections in [CHANGELOG](./CHANGELOG.md).
+>
+> Addendum: the "Audit criteria restatement" row above is CLI-reachable as of v1.7.0 (`sofagent audit --criteria`) — a read-only listing of the 36 criteria with their threshold version anchors; the historical row above is unchanged.
 ## The Two FDE Harness Phases
 
 **How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**:
