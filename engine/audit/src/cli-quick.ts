@@ -411,7 +411,7 @@ export function runCliQuick(argv: string[]): number {
         console.log('   npm install -g @sofagent/audit');
         // v1.3.5 #12: 补 monorepo 路径——clone 本仓库直接跑 dist 的用户遇到的是
         //   MODULE_NOT_FOUND（见本文件头部依赖说明），需要本地装依赖+构建而非全局装包
-        console.log('   或本仓库内：npm install && npm run build，然后用 sofagent audit --full ' + arg);
+        console.log('   或本仓库内：npm install && npm run build，然后用 sofagent audit --full --diff <范围> ' + arg);
         return 1;
       }
     }
@@ -460,7 +460,7 @@ export function runCliQuick(argv: string[]): number {
     console.log('  quick 模式（本入口，零安装只读审计）仅支持：[diff 范围参数] + -h/--help + -v/--version + --stats/--days/--json；');
     console.log('  （--ruleset 等完整引擎 flag 传入时 quick 会自动路由完整引擎不报错——见下方 flag 清单）');
     console.log('  完整引擎（--init/--doctor/--diff/--cached/--ruleset/--task/--commit-msg 等）需 --init 装 hook 或全局安装；');
-    console.log('  从 quick 升级到完整：sofagent audit --full <范围>（或 npm install -g sofagent 后 sofagent audit --full）\n');
+    console.log('  从 quick 升级到完整：sofagent audit --full --diff <范围>（或 npm install -g sofagent 后 sofagent audit --full --diff <范围>）\n');
     console.log('以下 flag 需完整引擎（sofagent audit --full 或全局安装），quick 模式会自动路由或提示安装：');
     console.log('  --init              安装 git hook（每次 commit 自动审计）');
     console.log('  --doctor            健康诊断 + 完整性校验');

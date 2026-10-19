@@ -158,6 +158,19 @@ describe('退出码 help 披露面（v1.4.9 P2-8）', () => {
     }
   });
 
+  // v1.6.0 BUG-05：`sofagent audit --full` 裸调经 umbrella 路由剥掉 --full 后
+  //   以空参数抵达完整引擎用法屏——改前 exit 0（CI 把「什么都没做」当成功），
+  //   现改 exit 2（用法错误档）+ 首行操作指引（含「快速审计直接 sofagent audit」）。
+  it('完整引擎空参数（--full 裸调形态）：用法屏 exit 2 + 操作指引（改前 exit 0 死胡同）', () => {
+    const r = run(FULL_BIN, []);
+    expect(r.status).toBe(2);
+    expect(r.output).toContain('未指定任何操作');
+    expect(r.output).toContain('快速审计直接 sofagent audit');
+    // 指引命令须为可执行形态（--full --diff 成对出现），不再推荐裸 --full
+    expect(r.output).toContain('sofagent audit --full --diff HEAD~1..HEAD');
+    expect(r.output).not.toMatch(/sofagent audit --full\s+完整引擎/);
+  });
+
   // 🔴 真行为锁（v1.4.9 收尾新增）：两入口对同一处境给**不同**退出码——
   //   这不是缺陷而是**既定分工**：3 = 非 git 仓库是 quick 入口专属；完整引擎把
   //   「非 git 仓库」归入 2 档（`{ exitCode: 2, ..., error: 'NOT_A_GIT_REPO' }`）。
@@ -170,7 +183,7 @@ describe('退出码 help 披露面（v1.4.9 P2-8）', () => {
     const env: NodeJS.ProcessEnv = { ...process.env };
     delete env.SOFAGENT_HOME;
     delete env.SOFAGENT_HOME_ALLOWED_PREFIXES;
-    // ⚠️ 必须带 --silent：无参数时完整引擎只打印帮助即 exit 0（不进入审计路径），
+    // ⚠️ 必须带 --silent：无参数时完整引擎只打用法屏即 exit 2（BUG-05——不进入审计路径），
     //    那样断言「≠3」是**空转**（恒真）——只有走审计路径才真正暴露该码。
     const r = run(FULL_BIN, ['--silent'], { cwd: dir, env });
     expect(r.output).toContain('不在 git 仓库内');

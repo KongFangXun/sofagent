@@ -923,20 +923,23 @@ async function main(): Promise<void> {
 
   // P1-A9: 无参数运行静默写库——用户无意识触发真实审计并写入全局数据。
   // 无参数时（argv 仅含 node + 脚本路径，无任何 flag），改为输出 help 而非默认执行审计。
+  // v1.6.0 BUG-05：exit 0 → exit 2——`sofagent audit --full` 裸调经 umbrella 路由剥掉
+  //   --full 后以空参数抵达本屏，exit 0 让 CI/脚本把「什么都没做」当成功（死胡同假绿）。
+  //   用法错误属 2 档（与 --diff 无效 range 同族）；首行给操作指引让用户下一步可执行。
   if (process.argv.slice(2).length === 0) {
     console.log(`sofagent audit v${VERSION} · FDE Harness 的审计模块\n`);
-    console.log('⚠️  无参数运行不会执行审计。请指定要执行的操作：\n');
+    console.log('❌ 未指定任何操作，未执行审计（exit 2）。快速审计直接 sofagent audit；本引擎用法：\n');
     console.log('常用命令:');
-    console.log('  sofagent audit --init                           一键初始化（配置+hook+冒烟）');
-    console.log('  sofagent audit --diff HEAD~1..HEAD              审计最近一次 commit');
-    console.log('  sofagent audit --diff --cached                  审计暂存区（commit-msg hook 用）');
-    console.log('  sofagent audit --diff origin/main..HEAD         审计分支差异');
-    console.log('  sofagent audit --doctor                         运行环境健康检查');
-    console.log('  sofagent audit --verify-chain                   审计链完整性校验');
-    console.log('  sofagent audit --help                           查看全部命令');
+    console.log('  sofagent audit --full --diff HEAD~1..HEAD         审计最近一次 commit（完整引擎）');
+    console.log('  sofagent audit --full --diff --cached             审计暂存区（commit-msg hook 用）');
+    console.log('  sofagent audit --full --diff origin/main..HEAD    审计分支差异');
+    console.log('  sofagent audit --full --init                      一键初始化（配置+hook+冒烟）');
+    console.log('  sofagent audit --full --doctor                    运行环境健康检查');
+    console.log('  sofagent audit --full --verify-chain              审计链完整性校验');
+    console.log('  sofagent audit --help                             查看全部命令');
     console.log('');
-    console.log('提示：commit-msg hook 会自动运行审计，通常无需手动执行。');
-    exit(0);
+    console.log('提示：快速审计直接 sofagent audit（quick 只读、零安装）；commit-msg hook 会自动运行审计，通常无需手动执行。');
+    exit(2);
   }
 
   // --mcp 模式：MCP Server 已拆分为独立包 @sofagent/mcp
