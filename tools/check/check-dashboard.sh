@@ -47,6 +47,9 @@ _SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 REPO_ROOT="$(cd "${_SELF_DIR}/../.." && pwd)"
 HTML="${REPO_ROOT}/tools/dashboard/dashboard.html"
+# W8 BUG-18：纯函数外置 dashboard.js 后，onclick/定义双侧都必须把外置文件纳入扫描面
+# （emptyState 等外置函数产出的按钮 HTML 含 onclick 拼接；只扫 html 会假绿）
+JS="${REPO_ROOT}/tools/dashboard/dashboard.js"
 
 FAILS=0
 ASSERTS=0
@@ -150,6 +153,8 @@ fi
 # ── ⑤ onclick 引用未定义函数 ──
 # 定义面：function name( / const name = （含箭头函数赋值）；
 # JS 字符串拼接里的 onclick 同样计入（拼接产物进 DOM）。
+# W8 BUG-18：定义面与使用面均 = dashboard.html + dashboard.js（外置纯函数
+# 互相引用与产出 onclick——单扫 html 会漏定义漏使用，双漏即假绿）。
 ASSERTS=$((ASSERTS + 1))
 MISSING_FN=$(perl -0777 -ne '
   my %fns;
@@ -162,7 +167,7 @@ MISSING_FN=$(perl -0777 -ne '
   for my $h (sort keys %handlers) {
     print "$h\n" unless $fns{$h};
   }
-' "$HTML")
+' "$HTML" "$JS")
 if [ -n "$MISSING_FN" ]; then
   echo "  ❌ [⑤onclick未定义] onclick 引用了未定义的 JS 函数（点击无反应）："
   echo "$MISSING_FN" | sed 's/^/     /'
@@ -235,7 +240,7 @@ fi
 if [ -f "$HTML" ]; then
   DASH_LINES=$(wc -l < "$HTML" | tr -d ' ')
   DASH_INLINE=$(grep -c 'style="' "$HTML" || true)
-  MAX_LINES=3000   # 冻结上限 3000；v1.5.7 F39 实测 2997/3000（余量 3 行）——顶格附近，拆分评估已登记 ROADMAP
+  MAX_LINES=2800   # W8 BUG-18 纯函数外置 dashboard.js 后棘轮收紧：3000 → 2800（外置后实测 2783）
   MAX_INLINE=210   # 冻结上限 = 本版实测 192 + 余量 18
   if [ "$DASH_LINES" -gt "$MAX_LINES" ]; then
     echo "  ❌ [⑨体量与形态] dashboard.html 行数 ${DASH_LINES} 超冻结上限 ${MAX_LINES}——单文件形态已冻结：新增能力走模块化，不在此文件继续堆"
