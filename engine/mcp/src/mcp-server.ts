@@ -282,5 +282,32 @@ class McpServer {
 // 启动
 // ============================================================
 
+// W8 BUG-17：入口参数拦截——初始化协议前处理 --help/-h，未知参数一行警告照常启动。
+// 此前入口无视一切参数直接起服务：宿主侧 `mcp-server --help` 会挂起等 stdin 的
+// JSON-RPC（用户看到的是无响应，而不是用法）。
+const CLI_ARGS = process.argv.slice(2);
+if (CLI_ARGS.includes('--help') || CLI_ARGS.includes('-h')) {
+  process.stdout.write(`sofagent-mcp v${SERVER_VERSION} — sofagent MCP Server
+
+用法:
+  node mcp-server.js                # stdio JSON-RPC 服务（每行一条消息）
+  node mcp-server.js --help | -h    # 打印本用法并退出
+
+常用宿主挂载（stdio 传输）:
+  宿主以子进程拉起本入口并经 stdin/stdout 交换 JSON-RPC——
+  Claude Desktop / Cursor / MCP Inspector 等宿主在配置内填
+  "command": "node", "args": ["<本文件绝对路径>"] 即可。
+
+环境变量:
+  SOFAGENT_HOME       安装根目录（默认 ~/.sofagent；数据/密钥/锚点皆挂其下）
+  SOFAGENT_MCP_ROLES  工具角色分层（逗号分隔角色集；缺省或 all = 全量工具面）
+`);
+  process.exit(0);
+}
+for (const a of CLI_ARGS) {
+  // 未知参数不阻断启动（宿主可能注入自有参数），但必须失声一行——静默无视即 BUG-17 病灶
+  process.stderr.write(`[${SERVER_NAME}] 警告：未识别参数「${a}」（本入口仅支持 --help/-h）——忽略并继续启动\n`);
+}
+
 const server = new McpServer();
 server.start();
