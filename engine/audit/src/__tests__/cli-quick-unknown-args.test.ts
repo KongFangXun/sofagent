@@ -114,7 +114,20 @@ describe('cli-quick diff 范围有效性（v1.5.1 F1）', () => {
   });
 
   it('合法但确实无变更的范围 HEAD..HEAD → 仍 exit 0（守卫不得把空 diff 一律判红）', () => {
-    const r = run(['HEAD..HEAD']);
+    // BUG-20 浅历史边界自守：显式空范围会走 F1 消息面检查（checkEmptyBranchMessage
+    // 读被审仓 HEAD message 交给 A9/A19）——此前不传 cwd 跑在**宿主仓**上，「git init +
+    // 单 commit（短 message 如 init）」的浅历史源码树下 A19 判 FAIL → exit 1 假红。
+    // 照同文件 HEAD~2..HEAD 用例先例自造单 commit 临时仓（良性长 message），显式
+    // 固定被测口径，不依赖宿主仓历史形态；断言强度不变。
+    const dir = mkdtempSync(join(tmpdir(), 'sofagent-f1-emptyrange-'));
+    tmpDirs.push(dir);
+    execFileSync('git', ['init', '-q'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    execFileSync(
+      'git',
+      ['-c', 'user.email=t@example.invalid', '-c', 'user.name=f1', 'commit', '--allow-empty', '-q', '-m', 'initial repository bootstrap'],
+      { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] }
+    );
+    const r = run(['HEAD..HEAD'], dir);
     expect(r.status).toBe(0);
     expect(r.output).toContain('无文件变更');
     expect(r.output).toContain('HEAD..HEAD');

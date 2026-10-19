@@ -23,6 +23,16 @@ import type { DiffFile } from '@sofagent/core';
 /** 空 diff——规则全部 PASS（GB 条目独立验证，不受其他规则干扰） */
 const EMPTY_DIFF: DiffFile[] = [];
 
+/**
+ * BUG-20 浅历史边界自守：runRules 未注入 commitMsg 时，AuditScope 会惰性
+ * `git log -1` 读**宿主仓** HEAD message（A5/A19 的输入面）——「git init + 单
+ * commit（短 message 如 init）」的浅历史源码树下 A5 判 WARN（strict 升 FAIL），
+ * 把「GB48000 不影响 exitCode」的信息维度断言打成假红。此处显式注入固定良性
+ * message（scope 构造期显式注入优先、不触 git），判定与宿主仓形态解耦；
+ * 完整历史仓下宿主 HEAD 为良性长 message，行为逐字节一致，断言强度不变。
+ */
+const BENIGN_COMMIT_MSG = 'gb48000 信息维度回归：固定良性 commit message';
+
 describe('gb48000 · 条款映射清单（v1.3.1 交付 2）', () => {
   it('映射清单 8 条，与 CORE-OBJ/ACT/LNK/STM 对应', () => {
     expect(GB48000_CLAUSE_MAP.length).toBe(8);
@@ -74,13 +84,15 @@ describe('gb48000 · 审计维度 opt-in（不影响默认行为）', () => {
 
   it('GB48000 WARN 条目不影响 exitCode（信息维度）', () => {
     // 干净 diff → 无违规 → exit 0；GB 条目为 WARN 但不提升 exit
-    const result = runRules(EMPTY_DIFF, [], 'task', false, true, undefined, undefined, undefined, true);
+    // BUG-20：注入 BENIGN_COMMIT_MSG，防宿主仓 HEAD message 形态渗入判定（见常量注释）
+    const result = runRules(EMPTY_DIFF, [], 'task', false, true, BENIGN_COMMIT_MSG, undefined, undefined, true);
     expect(result.exitCode).toBe(0);
     expect(result.rules.find((r) => r.name === 'GB48000')?.status).toBe('WARN');
   });
 
   it('strict 模式下 GB48000 也不影响 exitCode（信息维度不被升级）', () => {
-    const result = runRules(EMPTY_DIFF, [], 'task', true, true, undefined, undefined, undefined, true);
+    // BUG-20：同上注入 BENIGN_COMMIT_MSG——strict 下宿主短 message 的 A5 WARN 会升 FAIL
+    const result = runRules(EMPTY_DIFF, [], 'task', true, true, BENIGN_COMMIT_MSG, undefined, undefined, true);
     expect(result.exitCode).toBe(0);
   });
 });

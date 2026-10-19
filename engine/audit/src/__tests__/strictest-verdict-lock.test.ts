@@ -128,8 +128,14 @@ describe('D2 · 多规则裁决「取最严」接线回归锁', () => {
   });
 
   it('真实路径端到端：runRules 的 exitCode 由统一聚合器产出（接线生效）', () => {
+    // BUG-20 浅历史边界自守：不注入 commitMsg 时 AuditScope 惰性 `git log -1` 读
+    // 宿主仓 HEAD message（A5 输入面）——「git init + 单 commit（短 message）」的
+    // 浅历史源码树下 A5 判 WARN，「全过 → 0」假红。显式注入良性 message（scope
+    // 构造期显式注入优先、不触 git）后判定与宿主仓形态解耦；完整历史仓下宿主
+    // HEAD 为良性长 message，行为逐字节一致，断言强度不变。
+    const benignMsg = '裁决接线端到端回归：固定良性 commit message';
     // 全过 → 0
-    const pass = runRules([makeDiffFile('src/index.ts', ['+const x = 1;'])], [], undefined, false, true, undefined, undefined, []);
+    const pass = runRules([makeDiffFile('src/index.ts', ['+const x = 1;'])], [], undefined, false, true, benignMsg, undefined, undefined, []);
     expect(pass.exitCode).toBe(0);
 
     // A1 敏感文件命中 → fast-fail 2（critical 层 FAIL 走同一聚合器）
