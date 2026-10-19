@@ -349,13 +349,21 @@ ENGINE_CRASH=0
 if grep -qE "^(Error|TypeError|ReferenceError|RangeError|SyntaxError|UnhandledPromiseRejection)|throw new Error|at Object\.<anonymous>|Node\.js v[0-9]+" "$AUDIT_STDERR" 2>/dev/null; then
   ENGINE_CRASH=1
 fi
-rm -f "$AUDIT_STDERR"
 
+# 拦截时回显引擎 stderr（head -40 截断）：签名失败/崩溃的具体原因不得被拦截横幅吞掉——
+# 用户修复依赖这些输出。放行路径（0/1）保持静默并在末尾 rm -f。
+# shellcheck disable=SC2317
+dump_engine_stderr() {
+  echo "   ── 引擎输出（截断）──"
+  head -40 "$AUDIT_STDERR" 2>/dev/null | sed 's/^/   /'
+}
 if [ $ENGINE_CRASH -eq 1 ]; then
   echo ""
   echo "❌ sofagent audit: 审计引擎异常（stderr 含崩溃特征）——审计未完成，commit 已阻止。"
   echo "   即使退出码为 0/1（旧版引擎无「崩溃=4」契约），崩溃也不得被当作「通过/警告」放行。"
   echo "   排查：SOFAGENT_HOME 越界 / Node 版本 / dist 完整性。"
+  dump_engine_stderr
+  rm -f "$AUDIT_STDERR"
   exit 1
 fi
 
@@ -363,6 +371,8 @@ if [ $EXIT_CODE -eq 2 ]; then
   echo ""
   echo "❌ sofagent audit: 检测到违规，commit 已阻止。"
   echo "   请修复违规项后重新提交。"
+  dump_engine_stderr
+  rm -f "$AUDIT_STDERR"
   exit 2
 fi
 
@@ -376,7 +386,11 @@ elif [ $EXIT_CODE -ne 0 ]; then
   echo "   上述五者之外的退出码 = 环境异常"
   echo "   （SOFAGENT_HOME 越界 fail-loud / Node 缺失 / dist 异常等）。静默放行 = 0 处违规但根本"
   echo "   没在看 = fail-open，故此处 fail-loud。"
+  dump_engine_stderr
+  rm -f "$AUDIT_STDERR"
   exit 1
 fi
+
+rm -f "$AUDIT_STDERR"
 
 exit 0
