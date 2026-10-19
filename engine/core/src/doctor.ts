@@ -22,7 +22,7 @@ import { homedir } from 'os';
 import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
-import { checkHistoryChainDetailed, validateHmacKey, getHistoryFilePath } from './audit-history';
+import { checkHistoryChainDetailed, validateHmacKey, getHistoryFilePath, getHistoryAnchorFilePath } from './audit-history';
 // F-11：静态 import（vitest ESM 下 require 相对路径不可用）
 import { isInitialized as _f11IsInit, loadDataKey as _f11LoadKey, keysDirPath as _f11KeysDir } from './crypto/key-manager';
 const _f11KeyMod = { isInitialized: _f11IsInit, loadDataKey: _f11LoadKey, keysDirPath: _f11KeysDir };
@@ -37,7 +37,6 @@ import { emitAuditDecision } from './audit-decision-writer';
 import { runAuditDirMaintenance } from './audit-dir-maintenance';
 // v1.5.6 章二：记忆作用域解析（doctor 披露本仓记忆钉在哪个 scope）
 import { resolveMemoryScope, createMemoryStore, MEMORY_DIR_FILE_WARN } from './memory-store';
-import { getHistoryAnchorFilePath } from './audit-history';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
@@ -966,6 +965,69 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   } catch (err) {
     // 非 git 仓库 / git 不可用——doctor 主流程已有环境检查兜底，这里不重复告警
     info(`未审计 commit 扫描跳过（git 不可用或非 git 仓库）: ${err instanceof Error ? err.message.split('\n')[0] : ''}`);
+  }
+
+  // 7c. decision-log 可解析率（W8 BUG-14：数据面腐化可观测）
+  // 读侧口径对齐 audit/inputs/decision-log-source.ts 的 readDecisionEntries：
+  //   一行合法 ⇔ JSON 可解析 且 kind ∈ 18 值枚举 且 ts/agentId/sessionId 为字符串。
+  //   该读侧把坏行「跳过并计数」——腐化在判定面是静默减员，doctor 侧给出可见信号：
+  //   失败率 >5% WARN、>30% FAIL，输出失败行数与总数。文件不存在按缺失项形态（信息级）。
+  console.log('\n── decision-log 可解析率 [全局数据面，非当前仓库] ──');
+  {
+    // 路径解析与 daemon 健康文件同款口径：resolveDataDir() 运行时重解析（尊重
+    // SOFAGENT_DATA / SOFAGENT_HOME 沙箱——vitest-setup.mjs 预置 SOFAGENT_DATA 时
+    // 读隔离面而非加载时快照）
+    const decisionLogPath = join(resolveDataDir(), 'audit', 'decision-log.jsonl');
+    if (existsSync(decisionLogPath)) {
+      // 与 decision-log-source.READABLE_KINDS 同源的单值枚举（core 不依赖 audit，
+      // 双落点纪律：写侧新增 kind 时须同批 decision-schema / decision-log 白名单 /
+      // 读侧数组 / 本表——见 decision-log-source.ts 的三处同批警告）
+      const READABLE_KINDS = new Set([
+        'SPEC_CHANGE', 'ARTIFACT_EDIT', 'TOOL_GATE', 'RULE_TOGGLE',
+        'ESCALATE_REPORT', 'FALLBACK_DEGRADE', 'CONFIG_CHANGE',
+        'KNOWLEDGE_DISTILL', 'ORCHESTRATION', 'EVOLUTION', 'TEAM', 'COMMONS',
+        'COST', 'COVERAGE', 'INVALIDATION', 'CREDENTIAL_RECONCILE',
+        'LEGACY_CLEANUP', 'DATA_PRODUCT',
+      ]);
+      let total = 0;
+      let bad = 0;
+      try {
+        const lines = readFileSync(decisionLogPath, 'utf-8').split('\n');
+        for (const line of lines) {
+          if (line.trim() === '') continue;
+          total++;
+          try {
+            const parsed = JSON.parse(line) as { kind?: unknown; ts?: unknown; agentId?: unknown; sessionId?: unknown };
+            const shapeOk = parsed !== null && typeof parsed === 'object' &&
+              typeof parsed.ts === 'string' && typeof parsed.agentId === 'string' &&
+              typeof parsed.sessionId === 'string' && typeof parsed.kind === 'string' &&
+              READABLE_KINDS.has(parsed.kind);
+            if (!shapeOk) bad++;
+          } catch {
+            bad++;
+          }
+        }
+        if (total === 0) {
+          info('decision-log.jsonl 为空文件（无决策记录可检）');
+        } else {
+          const rate = bad / total;
+          const pct = (rate * 100).toFixed(1);
+          if (rate > 0.3) {
+            fail(`decision-log 可解析率仅 ${(100 - rate * 100).toFixed(1)}%（${bad}/${total} 行失败，失败率 ${pct}% > 30%）——数据面大面积腐化，下游读侧正在静默减员`);
+            repairHint(`检查 ${decisionLogPath} 的写入方（并发写冲突/磁盘损坏）；链完整性另跑 sofagent audit --verify-chain 复核`);
+          } else if (rate > 0.05) {
+            warn(`decision-log 可解析率 ${(100 - rate * 100).toFixed(1)}%（${bad}/${total} 行失败，失败率 ${pct}% > 5%）——读侧跳过这些行，判定面事实减少`);
+            repairHint(`抽查 ${decisionLogPath} 坏行成因（半截 JSON / 非本文件写入方的行）；链完整性另跑 sofagent audit --verify-chain 复核`);
+          } else {
+            ok(`decision-log 可解析率 100%（${total} 行全部可解析，失败 ${bad} 行 ≤ 5% 阈值）`);
+          }
+        }
+      } catch (err) {
+        warn(`decision-log.jsonl 读取失败（已跳过）: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    } else {
+      info('decision-log.jsonl 不存在（未产生决策记录，跳过可解析率检查）');
+    }
   }
 
   // 8. Ontology 完整性检查（v1.4.3 十三）
