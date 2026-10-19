@@ -241,7 +241,7 @@ sofagent 不做 Prompt（那是模型的事），在 Context 层有约束注入�
 
 架构基因来自 Geoffrey Huntley 的 Ralph 循环：Agent 的记忆长在文件系统（git diff / task/logs / SKILL.md），不长在 Agent 内部。Agent 每次启动都是白纸——但它读到的文件，是上一次运行留下的完整经验。文件是持久证据，Agent 的记忆不是。
 
-> 📖 这条直觉已被清华唐杰团队的《Memory for Large Language Models》（2026）从架构层正面背书——应用层记忆要做的事不是「比模型更会回忆」（必输的赌局），而是守「模型永远给不了的」：全量 append-only 不忘、长在文件里可带走、入口在本地。详见 [VALIDATION · 记忆要笨](./VALIDATION.md#记忆要笨应用层记忆的死亡测试)。
+> 📖 这条直觉已被清华唐杰团队的《Memory for Large Language Models》（2026，[arXiv:2607.25380](https://arxiv.org/abs/2607.25380)）从架构层正面背书——应用层记忆要做的事不是「比模型更会回忆」（必输的赌局），而是守「模型永远给不了的」：全量 append-only 不忘、长在文件里可带走、入口在本地。详见 [VALIDATION · 记忆要笨](./VALIDATION.md#记忆要笨应用层记忆的死亡测试)。
 
 ### 主体性护栏——执行可外包，判断不可外包
 
@@ -302,7 +302,7 @@ sofagent 的审计能力 Gate + 硬规则正是这类锚点：审计只信 git d
 
 **边界**：拒绝权只对 Agent 自己的产出生效，不构成对人类提问的推辞；且拒绝必须连带「缺什么 + 谁来补」的补齐路径，否则退化为不作为。
 
-> 📖 [Databricks · Genie One 发布](https://www.databricks.com/blog) —— "When context is missing, AI fills the gap with guesses."（CEO Ali Ghodsi）
+> 📖 [Databricks · Genie One 发布（2026-06-16 · Data + AI Summit）](https://www.databricks.com/company/newsroom/press-releases/databricks-launches-genie-one-all-new-agentic-coworker-every-team) —— "When context is missing, AI fills the gap with guesses."（CEO Ali Ghodsi）
 
 ### 中立性——运动员不能兼任裁判
 
@@ -405,7 +405,7 @@ FDE 一线观察指出：AI 项目失败的最根因往往不是技术，而是�
 
 对约束层的含义两条：① **注入的输入源在业务侧**——约束应由业务口径沉淀而来，而非工程师拍脑袋写死在代码里（FDE 进场梳理正是这条的工程实现）；② **争议的正解通常是拆分而非统一**——「一个概念被迫服务两个目的」时拆成两个标签，双方的定义就都对。与上文合读即得**定义权双面**：系统侧管「什么算成功」（可验证、可审计、可复核），业务侧管「语义是什么」（业务裁决、IT 不越位）。
 
-> 📖 [老李说数 · 企业本体落地系列④：本体治理](https://mp.weixin.qq.com)
+> 📖 [老李说数（微信公众号） · 企业本体落地系列④：本体治理——业务部门如何深度参与](http://mp.weixin.qq.com/s?__biz=MzY5NTIxODg2NQ==&mid=2247484014&idx=1&sn=8e3d4887ea4c9acb59e9cea23d46d356&chksm=f50ca0cf94be0a6332ab59e6a632097dcbc6c33b05f210582ee8c49bf04345ff4041c8d58967#rd)
 
 ### 飞轮闭环——从一次交付到下一代模型
 
@@ -529,7 +529,7 @@ FDE 的核心是三个能力：
 **FDE 的双重身份——「人肉反向传播」**。Palantir 把 FDE 在内部定位为 "human equivalent of backpropagation"（产品研发的人肉反向传播）——既是客户现场的交付工程师，也是产品研发的反馈源。客户同时在为交付与产品研发买单。这一判断解释了为什么 FDE 天然是双向的：每次现场交付都是对产品的一次梯度信号——「这里缺什么原语」「那个口径有分歧」「这个动作没人能定义清楚」。
 sofagent 把这条双向职责**机制化**——进化能力（daemon 巡检 + think.md 反思 + Dream Cycle 知识提取）让经验回流不依赖个人自觉，FDE 离场后梯度信号仍在跑。
 
-> 📖 [Palantir Blog · Deployment Strategist 系列](https://blog.palantir.com)
+> 📖 [Palantir Blog · A Day in the Life of a Palantir Deployment Strategist](https://blog.palantir.com/a-day-in-the-life-of-a-palantir-deployment-strategist-951cb59a5a96)（Deployment Strategist 角色纪实；同系列另见 Dev versus Delta 等篇，具体篇目出处待补）
 
 FDE 入场时，不搭交互页面。做的事是：梳理 workflow 节点 → 定义输出终点 → 注入 AI 知识库。但产品化之后，**用户自己也能做**——这份文档就是教你怎么做。
 
