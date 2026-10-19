@@ -1,12 +1,12 @@
 # 安全策略
 
-> 🔴 **报告漏洞**：见本文 [§报告漏洞](#报告漏洞)（唯一上报入口——渠道 / 范围 / 响应预期以该节为准）。渠道为 **GitHub Security Advisory 单通道**——v1.3.6 起不再提供安全邮箱（无法保证收信），亦未提供加密公钥；勿经 issue 上报未公开漏洞。
-
 <p align="center"><img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > v1.6.0 · 2026-10-15（GMT+8）· ✅ 已发版（[CHANGELOG](./CHANGELOG.md)）· 孔放勋
 >
 > 按安全主题组织，企业 IT 可按主题快速定位。各能力的引入版本在小节正文首句注明。
+
+> 🔴 **报告漏洞**：见本文 [§报告漏洞](#报告漏洞)（唯一上报入口——渠道 / 范围 / 响应预期以该节为准）。渠道为 **GitHub Security Advisory 单通道**——v1.3.6 起不再提供安全邮箱（无法保证收信），亦未提供加密公钥；勿经 issue 上报未公开漏洞。
 
 ## 目录
 
@@ -618,7 +618,7 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 | 维度 | 说明 |
 |---|---|
 | **监控范围** | 仅 `data/` 工作目录 + 用户显式配置的路径（`config.yml` 中的 `daemon.watchPaths`）。不扫描用户其他文件。 |
-| **数据去向** | 所有数据本地存储（`data/` 目录下），不上传云端，不向外发送网络请求——除非用户显式配置 TencentDB Memory 集成（`install.sh --with-memory`，opt-in）或模型推理端点（Dream Cycle「真实大脑」/ train_serve，`SOFAGENT_MODEL_API_KEY` 等，opt-in，见本文[「已知风险」](#已知风险明文存储)例外二）或云 VM 执行面（v1.4.6 `train cloud`，经分拣闸放行的非敏感/脱敏训练数据 ssh 隧道上传云 VM，见例外三）。 |
+| **数据去向** | 所有数据本地存储（`data/` 目录下），不上传云端，不向外发送网络请求。例外（均 opt-in）：① TencentDB Memory 集成（`install.sh --with-memory`）；② 模型推理端点（Dream Cycle「真实大脑」/ train_serve，`SOFAGENT_MODEL_API_KEY` 等，见本文[「已知风险」](#已知风险明文存储)例外二）；③ 云 VM 执行面（v1.4.6 `train cloud`，经分拣闸放行的非敏感/脱敏训练数据 ssh 隧道上传云 VM，见例外三）。 |
 | **权限** | 只读监听文件事件（hash 变化检测 + cron 定时巡检）。**不修改用户文件、不删除文件、不外传数据**。审计发现写入 `daemon-health.json` 和 `history.jsonl`。 |
 | **审计结果推送** | **v1.2.1 已支持 Webhook 推送**（飞书/钉钉/企微，`engine/audit/src/webhook.ts` + `engine/daemon/src/notify.ts` + `push-target.ts`）。企业 IT 可配置 `webhook` 字段实现实时告警推送。 |
 
