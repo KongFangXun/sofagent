@@ -13,8 +13,8 @@
 ## 快速开始
 
 ```bash
-# 方式一：全局安装
-npm install -g @sofagent/audit
+# 方式一：全局安装（伞包单入口——npm 通道唯一形态，含完整依赖树）
+npm install -g sofagent
 
 # 方式二：项目内安装
 npm install --save-dev @sofagent/audit
@@ -154,7 +154,7 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '18'
-      - run: npm install -g @sofagent/audit
+      - run: npm install -g sofagent
       - run: sofagent audit --diff origin/main..HEAD --ci --json
 ```
 

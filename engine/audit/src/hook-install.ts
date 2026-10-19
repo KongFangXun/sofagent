@@ -398,7 +398,7 @@ export function installHooks(opts: InstallHooksOptions): InstallHooksResult {
         log('     · 仓库内：bash tools/audit-baseline-sync.sh --global（同步全局安装包口径信任锚，不污染本仓锚）');
         log('     · 通用：rm -f ~/.sofagent/internal/audit-global-dist-hash.txt && sofagent audit --install-hook');
         log('     · 通用：sofagent audit --doctor --baseline（新版已脱离本地 dist 依赖）');
-        log('   ⚠️ 同版本 npm install -g @sofagent/audit 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。');
+        log('   ⚠️ 同版本 npm install -g sofagent 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。');
       } else {
         const h = computeDistAggregateHash(join(globalPkg, 'dist'));
         if (h) {

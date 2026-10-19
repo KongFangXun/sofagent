@@ -100,7 +100,7 @@ chmod +x /tmp/fe-verify-bin/sofagent-audit
 mkdir -p /tmp/hook-test && cd /tmp/hook-test && rm -rf .git && git init
 # 🔴 修正：不再从 core 的 HOOK_TEMPLATE 导出取模板（该常量已 @deprecated——它曾与
 #    engine/audit/hooks/ 人工同步并漂移，正是 S51 假红根因）。改为走**真实安装路径**：
-#    `sofagent-audit --init`（唯一源 = hooks/ 目录），顺带让本步骤测的是用户实际拿到的 hook。
+#    `sofagent audit --init`（唯一源 = hooks/ 目录），顺带让本步骤测的是用户实际拿到的 hook。
 #    ⚠️ 必须用 $REPO 绝对路径——此刻 cwd 已是测试仓库，相对路径指不到本仓。
 node "$REPO/engine/audit/dist/index.js" --init >/dev/null 2>&1
 test -s .git/hooks/commit-msg || { echo "❌ hook 未安装——--init 异常，停手排查"; exit 1; }

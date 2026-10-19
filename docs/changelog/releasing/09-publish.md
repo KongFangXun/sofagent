@@ -57,9 +57,9 @@ grep -nE '(@sofagent/[a-z-]+@|sofagent@)[0-9]' action.yml | grep -v "$(node -p "
 > 全部验证通过、准备发布时，先把最新版装到本机——全局 npm 和本地 Skill 同步。这是发布前最后一道自用验证。
 
 ```bash
-# 全局安装最新 audit（从本地源码，不走 registry）
+# 全局安装最新 audit（从本地源码，不走 registry——伞包单入口，npm 通道唯一形态）
 cd engine/audit && npm run build && npm install -g . && cd ../..
-sofagent-audit --version  # 确认版本号
+sofagent --version  # 确认版本号
 
 # 本地 Skill 同步（WorkBuddy + OpenClaw）
 # 🔴 SKILL/harness/ 只有流程文件、没有 SKILL.md 主入口——
@@ -76,7 +76,7 @@ cp -r SKILL/agents/audit/ ~/.openclaw/skills/sofagent-audit/
 grep -m1 "^version" ~/.workbuddy/skills/sofagent/SKILL.md  # 期望 = 当前版本号，不匹配 = cp 路径漂移
 
 # dogfood
-sofagent-audit --doctor
+sofagent audit --doctor
 ```
 
 ---

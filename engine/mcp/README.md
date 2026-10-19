@@ -12,10 +12,10 @@
 npm install -g @sofagent/mcp
 ```
 
-或与 `@sofagent/audit` 一起安装（audit 包已内置 MCP Server）：
+或与 MCP 能力一起经伞包安装（npm 通道唯一形态，含完整依赖树）：
 
 ```bash
-npm install -g @sofagent/audit
+npm install -g sofagent
 ```
 
 ---

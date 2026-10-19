@@ -89,7 +89,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   echo ""
   # v1.4.5 (T5/R4): 按安装形态分流指路——原「bash engine/scripts/verify.sh」与
   # 「cat docs/HANDBOOK.md」是仓库相对路径，仅在 git clone install.sh 形态下成立。
-  # npm 全局安装形态（install.sh 内 npm install -g @sofagent/audit 分支）下
+  # npm 全局安装形态（install.sh 内 npm install -g @sofagent/audit 引擎库分支）下
   # CWD 无 engine/ 与 docs/ 目录，指路断链。判定：安装产物目录里有 verify.sh
   # 则给仓库内相对路径；否则给全局命令形态（sofagent core verify / npm docs）。
   if [ -f "${SOFAGENT_HOME}/bin/sofagent" ] && command -v sofagent >/dev/null 2>&1; then

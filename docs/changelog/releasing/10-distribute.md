@@ -156,19 +156,19 @@ done
 - 🔴 **新建 release 会撞已有 tag 报「invalid tag」**——marketplace 发布走**编辑已有 release** 路径（action.yml 文件页横幅的 Draft a release 仅首次/新 tag 用）
 - listing 元数据（name/description/icon/color）读**默认分支当前 action.yml**——改描述后 push 即生效，与 release 无关
 - 引用方 workflow 钉 tag（`KongFangXun/sofagent@vX.Y.Z`），新版不改变已有用户行为
-- 发版时 action.yml 内 `npx -p @sofagent/audit@X.Y.Z` 版本号同步 bump（既有铁律，见文件头注释）
+- 发版时 action.yml 内 `npx -y -p sofagent@X.Y.Z` 版本号同步 bump（既有铁律，见文件头注释——v1.6.0 BUG-01 起为伞包裸名单入口形态）
 
-**Release Notes 升级注意事项（每版检查一次）**：git hook（commit-msg/post-commit）是**拷贝**而非软链——本版 hook 行为有变更时（查 engine/audit/hooks/ 头部版本号是否 bump），release notes 须加一条「**升级后需重装 git hook**：`sofagent-audit --install-hook`（每个装过 hook 的仓库逐个重装）」。install.sh 升级路径有版本落后提示，但用户不重跑安装脚本就感知不到——release notes 是最后一块告知面。
+**Release Notes 升级注意事项（每版检查一次）**：git hook（commit-msg/post-commit）是**拷贝**而非软链——本版 hook 行为有变更时（查 engine/audit/hooks/ 头部版本号是否 bump），release notes 须加一条「**升级后需重装 git hook**：`sofagent audit --install-hook`（每个装过 hook 的仓库逐个重装）」。install.sh 升级路径有版本落后提示，但用户不重跑安装脚本就感知不到——release notes 是最后一块告知面。
 
 ---
 
 ## 步骤三：设备端安装 ☑
 
 ```bash
-# 1. 全局包更新（audit + core）
-npm install -g @sofagent/audit@latest @sofagent/core@latest
-sofagent-audit --version   # 确认 registry 版本
-npx -p @sofagent/core@<版本> sofagent --doctor   # 期望全部通过（bin 名 sofagent；🔴 --doctor 是 flag 不是子命令——传裸 `doctor` 会被 quick 模式当 diff ref，报「无法解析 diff 范围 doctor 的 ref」）
+# 1. 全局包更新（伞包单入口——npm 通道唯一形态，装完整依赖树）
+npm install -g sofagent@latest
+sofagent --version   # 确认 registry 版本
+sofagent audit --doctor   # 期望全部通过（🔴 --doctor 是 flag 不是子命令——传裸 `doctor` 会被 quick 模式当 diff ref，报「无法解析 diff 范围 doctor 的 ref」）
 
 # 2. Skill 同步（WorkBuddy + OpenClaw 双平台）
 # 🔴 主入口必须单独 cp：SKILL/harness/ 只有流程文件、不含 SKILL.md 主入口——

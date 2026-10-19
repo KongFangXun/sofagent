@@ -14,7 +14,7 @@
 #    ├─────────────────────────┼──────────────┼──────────────────────┤
 #    │ install.sh              │ 企业设备     │ 底座 + Agent Skill   │
 #    │ install.sh --base-only  │ 企业设备     │ 约束层（无 Skill）   │
-#    │ npx @sofagent/audit     │ 任意（临时） │ 零安装审计           │
+#    │ npx -p sofagent sofagent audit │ 任意（临时） │ 零安装审计           │
 #    └─────────────────────────┴──────────────┴──────────────────────┘
 #    ⚠️ FDE 不该在自己电脑跑 install.sh——FDE 的工具是 Skill + 未来商业模型。
 #    FORGE 是 sofagent 项目的自迭代开发工具包（管理代码变更，给开发者用），
@@ -364,7 +364,7 @@ if [ -n "${POLICY_FILE:-}" ]; then
       POLICY_GATE="$GATE_RESOLVED"
     else
       echo "❌ [policy] 校验器不可用（本地无 dist 且无全局安装 @sofagent/audit）——管控能力不得静默降级，安装中止" >&2
-      echo "   先 npm install && npm run build，或 npm install -g @sofagent/audit 后重试" >&2
+      echo "   先 npm install && npm run build，或 npm install -g sofagent 后重试" >&2
       exit 1
     fi
   fi
@@ -669,6 +669,8 @@ STUB_EOF
     # @latest → 固定版本（供应链纪律：安装版本与仓库声明一致，不漂移到未审的 registry 最新）
     # v1.5.2 修复：@latest 降级改为 fail-closed（供应链纪律兑现）
     info "  执行: npm install -g @sofagent/audit@${VERSION}"
+    # 说明：@sofagent/audit 是引擎库依赖（无独立 bin），CLI 单入口由上方 sofagent wrapper 交付——
+    # 此行装的是库本体，不与「伞包 npm 通道」叙事冲突。
     if npm install -g "@sofagent/audit@${VERSION}" 2>&1 | tail -1; then
       ok "  @sofagent/audit 已全局安装（v${VERSION}）"
     else
@@ -681,7 +683,7 @@ STUB_EOF
   fi
 else
   warn "  npm 不可用，跳过 @sofagent/audit 安装"
-  warn "  请安装 Node.js + npm 后手动运行: npm install -g @sofagent/audit"
+  warn "  请安装 Node.js + npm 后手动运行: npm install -g sofagent"
 fi
 
 # ════════════════════════════════════════

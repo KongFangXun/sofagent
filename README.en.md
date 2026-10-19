@@ -263,7 +263,7 @@ The `alpha` tag remains as a historical release trace and isn't maintained.
 npx -y -p sofagent sofagent audit
 ```
 
-> 💡 Only want the audit CLI without the full dependency tree? Install the umbrella package instead: `npm i -g sofagent` (far smaller footprint; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
+> 💡 The npm channel ships exactly one form — the umbrella package: `npm i -g sofagent` installs the **full dependency tree** (602-package basis below) — there is no smaller "lightweight" package. For a smaller footprint, use the ephemeral npx form (`npx -y -p sofagent sofagent audit`, nothing stays installed; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
 
 > 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active—quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). `--init` installs the hook (still the same 17 default
 >rules); the full 28 additionally require `extendedRulesEnabled: true` in `.sofagent/config.yml`—see [LIMITATIONS §3](./docs/LIMITATIONS.md).
@@ -354,7 +354,7 @@ the installed UI is the source of truth.)</sub></p>
 > - **Legacy commands retired**: the 12 old bins (`sofagent-audit` etc.) passed their compatibility window and **have been removed**; the former 13 bins are now served by the single entry.
 > - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; transitive deps measured 602 packages (`npm ls --all --parseable`, measured at `npm i sofagent@1.5.8` time;
 > basis: installed `npm i sofagent@1.5.8` · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10), 5 carry native modules and install scripts—new npm versions don't run unreviewed install scripts, so those native builds are **silently skipped**).
->**For the audit CLI only**, use `npx -y -p sofagent sofagent audit` or `npm i -g sofagent`.
+>**For the audit CLI only** (accepting the full dependency tree): `npm i -g sofagent`, then `sofagent audit`; to avoid a resident dependency tree, use the ephemeral `npx -y -p sofagent sofagent audit` form.
 > - **Retired legacy proxy package**: the bare-name `sofagent-audit` (no scope) on npm is the old proxy package—**unpublished on 2026-09-26**; don't install it.
 
 **Rule marketplace**—community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):

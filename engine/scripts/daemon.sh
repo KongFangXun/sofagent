@@ -238,7 +238,8 @@ _main_loop() {
       #   · 旧调用 `npx @sofagent/audit evolve-run …`：**死子命令**——实测「未知子命令: evolve-run」，
       #     `sofagent-audit --help` 已把它列入 v1.5.0 移除项（`evolve-run → sofagent-evolve`）；
       #   · 真实面：外部兼容层二进制 = `skillopt-sleep`（PyPI skillopt 0.2.0），自进化入口 =
-      #     `@sofagent/evolve` 的 bin（`sofagent-evolve` → dist/cli.js，native gate 内置）。
+      #     `@sofagent/evolve`（npm 单入口形态 = 伞包 sofagent 的 `sofagent evolve`；sofagent-evolve
+      #     旧 bin 已退役，TS daemon 由 daemon-dist/cli.js 承载，native gate 内置）。
       # 为什么是「明示废弃」而不是「静默 return」：旧版把两个都对不上真实面的名字写成
       #   「可选面未安装」，于是「路径已死」被伪装成「条件未满足」——正是 G-11 的缺陷形态。
       # 能力未丢：daemon 侧自进化由 `evolve-trigger.ts` inspector 承载

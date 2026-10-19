@@ -63,7 +63,7 @@
 
 #### 十四 · hook 生效确认
 
-本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源）<br>⚠️ `--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除**
+本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源）<br>⚠️ `--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除**
 `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好（实测：跑完 hook 版本仍未更新） 
 
 
@@ -87,7 +87,7 @@ b) `tools/check/check-forms.mjs`——本版自 VERSION_SOURCES/EXPECTED_COUNTS/
 > ① **真实 hooks 路径不是 `<repo>/.git/hooks`**——worktree 里 `.git` 是**文件**（指向主仓的 gitdir），
 >    hooks 实际在主仓实现目录。取真实路径用 `git rev-parse --git-path hooks`（本 worktree 实跑命中：
 >    直接看 `.git/hooks/` 会误判「无本机 hook」，而真实 hooks 在 `~/WorkBuddy/sofagent/.git/hooks`）。
-> ② **`sofagent-audit --init` 在 worktree 内安装 hook 会失败**（实跑 `ENOTDIR: mkdir <worktree>/.git/hooks`
+> ② **`sofagent audit --init` 在 worktree 内安装 hook 会失败**（实跑 `ENOTDIR: mkdir <worktree>/.git/hooks`
 >    ——安装器按 `<cwd>/.git/hooks` 拼路径，未走 `git rev-parse --git-path hooks`），且**此前的旧 hook 已在
 >    「先删后装」流程中被移除** → `--init` 失败后本仓处于**无 hook 状态**（后续 commit 不再被审计）。
 >    **安全修法（不依赖 CLI）**：备份 → 直接从 `engine/audit/hooks/` 拷贝三件并 `chmod +x` 到真实 hooks 路径
@@ -124,11 +124,10 @@ done   # 期望全部 latest=vX.Y.Z；scan=suspicious 未必是问题（测试�
 # ④ Marketplace：curl 版本页含本版号即免网页操作
 curl -s https://github.com/marketplace/actions/sofagent | grep -c "vX.Y.Z"   # 期望 ≥1
 
-# 全局安装更新（registry 已更新，本地仍是旧版本）
-npm install -g @sofagent/audit@latest @sofagent/core@latest
-sofagent-audit --version           # 期望 vX.Y.Z（🔴 用默认登录 shell 跑——本机多套 node runtime 各装全局包时，给命令注入 PATH 前缀会选中旧版二进制制造「版本不一致」假红，实测四 runtime 四版本并存）
-sofagent-audit --doctor            # 期望与当前版本 doctor 项数一致
-sofagent-core --doctor             # 期望全部通过
+# 全局安装更新（registry 已更新，本地仍是旧版本——伞包单入口，npm 通道唯一形态）
+npm install -g sofagent@latest
+sofagent --version               # 期望 vX.Y.Z（🔴 用默认登录 shell 跑——本机多套 node runtime 各装全局包时，给命令注入 PATH 前缀会选中旧版二进制制造「版本不一致」假红，实测四 runtime 四版本并存）
+sofagent audit --doctor          # 期望与当前版本 doctor 项数一致
 
 # 文档头发版状态翻转（「待发版」语义族 →「已发版」）——check-version F6 已锚定「待发版」
 # 🔴 预期红窗口（别误诊）：tag 建成 → 活文档头翻牌完成 之间，check-version §26「活文档待发版

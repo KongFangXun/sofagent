@@ -110,14 +110,14 @@ resolve_global_audit() {
         echo "        —— 该工具同步的是「全局安装包」口径的信任锚（audit-global-dist-hash.txt），"
         echo "           不污染本仓口径的锚（audit-dist-hash.txt）；全局包升级后锚陈旧即用它刷新"
         echo "     ② 删陈旧锚后重装 hook：rm -f \"\$HOME/.sofagent/internal/audit-global-dist-hash.txt\" && sofagent audit --install-hook"
-        echo "   ⚠️ 同版本 npm install -g @sofagent/audit 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。"
+        echo "   ⚠️ 同版本 npm install -g sofagent 无效：包内容不变 ⇒ 聚合哈希不变 ⇒ 仍被拦。"
         exit 1
       fi
     fi
     AUDIT_CMD=(node "$RESOLVED_ENTRY")
   else
     echo "❌ sofagent audit 未安装，审计未运行"
-    echo "   请运行: npm install -g @sofagent/audit"
+    echo "   请运行: npm install -g sofagent"
     exit 1
   fi
 }

@@ -7,7 +7,7 @@
 //   本文件 import @sofagent/core（见 package.json dependencies）。
 //   git clone 后直接跑 dist/cli-quick.js 会报 MODULE_NOT_FOUND——
 //   需先 `npm install`（根目录安装会 link workspace 依赖）或
-//   `npm install -g @sofagent/audit` 全局安装后再用 npx sofagent audit。
+//   `npm install -g sofagent`（伞包，npm 通道唯一形态——含完整依赖树）后再用 npx sofagent audit。
 //   构建产物 dist/ 会被 npm run build 覆盖，勿直接改 dist 文件。
 //
 // 用法：
@@ -414,7 +414,7 @@ export function runCliQuick(argv: string[]): number {
         return result.status ?? 1;
       } catch {
         console.log('⚠️  此命令需要完整安装：');
-        console.log('   npm install -g @sofagent/audit');
+        console.log('   npm install -g sofagent');
         // v1.3.5 #12: 补 monorepo 路径——clone 本仓库直接跑 dist 的用户遇到的是
         //   MODULE_NOT_FOUND（见本文件头部依赖说明），需要本地装依赖+构建而非全局装包
         console.log('   或本仓库内：npm install && npm run build，然后用 sofagent audit --full --diff <范围> ' + arg);
@@ -494,7 +494,7 @@ export function runCliQuick(argv: string[]): number {
     console.log('  2 = 有违规（另一来源：承载安全语义的参数拼错 = 用法错误，与审计发现共用 2）');
     console.log('  3 = 非 git 仓库 / diff 范围无法解析（含未知命令回退 audit 后的失败）');
     console.log('  4 = 引擎崩溃（uncaughtException / unhandledRejection 兜底）\n');
-    console.log('完整安装：npm install -g @sofagent/audit');
+    console.log('完整安装：npm install -g sofagent');
     return 0;
   }
 

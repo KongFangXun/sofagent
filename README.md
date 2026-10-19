@@ -72,7 +72,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **30 秒–2 分钟轻量试用**（首次含 npx 拉包（网络依赖），复跑秒级；单次引擎审计约 1.1 秒，口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
-> 💡 只要审计 CLI、不想拉全量依赖树？改装裸名总包：`npm i -g sofagent`（单入口 `sofagent audit`；能力面见 [LIMITATIONS](./docs/LIMITATIONS.md)）。
+> 💡 npm 通道只有伞包一个形态：`npm i -g sofagent` 装的就是**完整依赖树**（602 包口径见下）——不存在更小的「轻量包」。要更小安装面，用 npx 临时形态（`npx -y -p sofagent sofagent audit`，用完即弃不常驻；能力面见 [LIMITATIONS](./docs/LIMITATIONS.md)）。
 
 > 💡 试用时提交消息请写 **≥6 字符**（如 `initial audit test`）——A19 质量规则（编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）对超短消息（`init`/`add`）判红属设计意图（防无意义提交信息），不是故障。
 
@@ -293,7 +293,7 @@ sofagent audit --doctor    # 验证环境（可选）
 >
 > - **旧命令已退役**：12 个旧 bin 兼容期已满**移除**，统一走单入口。
 > - ⚠️ **`npm i -g sofagent` 带来完整依赖树**（含 orchestrator/mcp/train 等能力包；传递依赖实测 602 包（`npm ls --all --parseable` 口径：`npm i sofagent@1.5.8` 时点实测 · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10），5 个含原生模块——新版 npm 不执行未审阅 install script，其编译**静默跳过**）。
->   **只要审计 CLI** 用 `npx -y -p sofagent sofagent audit` 或 `npm i -g sofagent`。
+>   **只要审计 CLI**（接受完整依赖树取舍）：`npm i -g sofagent` 后用 `sofagent audit`；不想常驻依赖树则用 `npx -y -p sofagent sofagent audit` 临时形态。
 > - **已下架的旧代理包**：npm 上的 `sofagent-audit`（裸名、无 scope）是旧代理包，**已于 2026-09-26 下架**——不要安装。
 
 **规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（plugin 类规则默认关闭，需显式 opt-in，见 SECURITY）：
