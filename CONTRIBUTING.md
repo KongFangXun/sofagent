@@ -103,7 +103,7 @@ bash install.sh && bash engine/scripts/verify.sh
 
 | 目录 | 内容 |
 |---|---|
-| `engine/` | 13 个 @sofagent/* 模块包 + hooks/sofagent-load-chain 工具包 + umbrella/ 裸名总包——模块包全发布到 npm；另有 2 个插件族：`engine/dsh-plugins/`（7 款 DSH 插件：6 款原子 + 1 款聚合）+ `engine/openclaw-plugins/`（4 款） |
+| `engine/` | 13 个 @sofagent/* 模块包 + `corpus`（`@sofagent/rsi-corpus` 语料管道，独立版本线）+ hooks/sofagent-load-chain 工具包 + umbrella/ 裸名总包——模块包全发布到 npm；另有 2 个插件族：`engine/dsh-plugins/`（8 款 DSH 插件：7 款原子 + 1 款聚合）+ `engine/openclaw-plugins/`（4 款） |
 | `engine/audit/` | 审计核心：`src/rules/`（rule-a*.ts A1-A24）、`audit-trail.ts`、`permission/` 权限配置 |
 | `engine/core/src/` | 底座：配置 / 原子写入 / 哈希链 / 联邦合并 / 脱敏；`agent-identity.ts` 身份码 |
 | `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器 |

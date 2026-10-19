@@ -188,7 +188,7 @@ the platform:
 
 | Tier | Platform | Constraint injection | Mounting method |
 |---|---|---|---|
-| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` plugins mounted into the runtime (see Note 1) |
+| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 7 atomic `cordis-plugin-sofagent-*` plugins mounted into the runtime (see Note 1) |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
 | **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 28 rules, not call-level interception) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
@@ -387,6 +387,11 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 [![awesome-deepseek-harness (0xsline)](https://img.shields.io/badge/awesome--deepseek--harness%20%280xsline%29-listed-brightgreen)](https://github.com/0xsline/awesome-deepseek-harness)
 [![awesome-deepseek-harness (Dominic)](https://img.shields.io/badge/awesome--deepseek--harness%20%28Dominic%29-listed-brightgreen)](https://github.com/Dominic789654/awesome-deepseek-harness)
 [![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-listed-brightgreen)](https://github.com/punkpeye/awesome-mcp-servers)
+[![awesome-mcp-zh](https://img.shields.io/badge/awesome--mcp--zh-listed-brightgreen)](https://github.com/yzfly/Awesome-MCP-ZH)
+[![awesome-ai-agents-2026](https://img.shields.io/badge/awesome--ai--agents--2026%20%28ARUNAGIRINATHAN--K%29-listed-brightgreen)](https://github.com/ARUNAGIRINATHAN-K/awesome-ai-agents-2026)
+[![awesome-ai-governance](https://img.shields.io/badge/awesome--ai--governance-listed-brightgreen)](https://github.com/agentrust-io/awesome-ai-governance)
+[![awesome-auditable-ai](https://img.shields.io/badge/awesome--auditable--ai-listed-brightgreen)](https://github.com/yzhao062/awesome-auditable-ai)
+[![loop-engineering](https://img.shields.io/badge/loop--engineering-listed-brightgreen)](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/adopters.md)
 [![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
 [![awesome-ai-agents (e2b)](https://img.shields.io/badge/awesome--ai--agents%20%28e2b%29-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
 
@@ -394,7 +399,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 
 - DeepSeek Harness (upstream repository): <https://github.com/deepseek-ai/deepseek-harness>
 - Cordis runtime: <https://github.com/cordiverse/cordis>
-- 7 `cordis-plugin-sofagent*` plugin sources (6 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
+- 8 `cordis-plugin-sofagent*` plugin sources (7 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | What you want to know | Where |
 |---|---|
@@ -404,8 +409,8 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 6230 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
-> **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
+> 🧪 **Engineering credibility** (current): 6234 tests / 13 module packages + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
+> **Package-count standard** (disambiguation): workspace 29 = 13 module packages + `engine/corpus` (`@sofagent/rsi-corpus` corpus pipeline, independent version line) + load-chain + dsh-plugin-kit + umbrella + 8 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (27 workspaces bear a test script; plugin packages,
 >the load-chain utility package and dsh-plugin-kit are outside this counting standard)—they aren't the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account—see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever
 >`tools/check/check-test-count.sh` reports (`test-count.sh` produces the SSOT count, `check-test-count.sh` verifies doc-claimed figures for consistency)—counting standard in [WIKI package-count definition](./docs/WIKI.md#六当前状态). Review-environment notes in

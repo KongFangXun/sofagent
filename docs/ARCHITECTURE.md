@@ -212,10 +212,10 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，五种能力](#二约束层harness设计一个层五种能力)；未来方向见 [七、已知局限与未来方向](#七已知局限与未来方向)。
 
-### 27 个 workspace 源码包
+### 29 个 workspace 源码包
 
-构成以根 `package.json` 的 `workspaces` 为准：13 个 `@sofagent/*` 模块包 + 工具包 `load-chain` + 基座包 `dsh-plugin-kit`（已转 npm 发布物）+ 7 个 DSH 插件包（`cordis-plugin-sofagent*`，v1.4.9 P2 合并批 10→7）+ 4 个 OpenClaw 插件包 + 1 个 npm 裸名总包 `engine/umbrella`（包名 `sofagent`，聚合安装入口——不属模块包也不属插件）。
-其中 15 个发布为 `@sofagent` npm 包（13 模块包 + `load-chain` + `dsh-plugin-kit`），DSH 插件 7 款经 SkillHub + npm 双通道分发。统计口径与包数构成见 [WIKI](./WIKI.md)。
+构成以根 `package.json` 的 `workspaces` 为准：13 个 `@sofagent/*` 模块包 + 语料管道包 `engine/corpus`（`@sofagent/rsi-corpus`，独立版本线）+ 工具包 `load-chain` + 基座包 `dsh-plugin-kit`（已转 npm 发布物）+ 8 个 DSH 插件包（`cordis-plugin-sofagent*`）+ 4 个 OpenClaw 插件包 + 1 个 npm 裸名总包 `engine/umbrella`（包名 `sofagent`，聚合安装入口——不属模块包也不属插件）。
+其中 16 个发布为 `@sofagent` npm 包（13 模块包 + `corpus` + `load-chain` + `dsh-plugin-kit`），DSH 插件 8 款经 SkillHub + npm 双通道分发。统计口径与包数构成见 [WIKI](./WIKI.md)。
 
 | 包 | 职责 | 状态 |
 |---|---|---|
@@ -375,7 +375,7 @@ graph TB
 >
 > **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`serve-dashboard.mjs` 起服务）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，零依赖 bash）是同一 Dashboard 的两种产品入口：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。职责不同，勿混用/勿删其一。
 
-> 最小可用：只装 `@sofagent/audit` 就有纯审计（28 条规则，17 默认启用 + 11 扩展 opt-in + 快照 + 回滚）；全量形态为 27 个 workspace（包数构成权威表述见 [WIKI](./WIKI.md)），全装才是完整约束层。
+> 最小可用：只装 `@sofagent/audit` 就有纯审计（28 条规则，17 默认启用 + 11 扩展 opt-in + 快照 + 回滚）；全量形态为 29 个 workspace（包数构成权威表述见 [WIKI](./WIKI.md)），全装才是完整约束层。
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
