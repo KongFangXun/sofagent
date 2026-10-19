@@ -1,0 +1,21 @@
+{
+  "name": "@sofagent/rsi-corpus",
+  "version": "0.1.0",
+  "description": "语料管道——脱敏 L0/L1 + 三分拣（SENSITIVE/JUDGEMENT/ABSTAIN）。行为等价基准 = factory 仓 rsi/corpus/pipeline.mjs v0.1.0（golden 见 cordis-plugin-sofagent-rsi-corpus/GOLDEN.json）",
+  "license": "MIT",
+  "author": "KongFangXun",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "files": [
+    "src/"
+  ]
+}

@@ -93,6 +93,7 @@ grep -rhoE "['\"]session/event['\"]" "$B/dsh-session/lib/"        | tr -d "\"'" 
 | form | 接入形态 | 不通过宿主事件接入的理由 | 对外接口 | 插件 |
 |---|---|---|---|---|
 | `non-seam:tool-set` | tool 集（能力以工具形式暴露） | 能力按需调用、无生命周期时机——挂任何生命周期事件都会是「跑不到的假契约」；v1.4.9 P2 起 `fde` 为厚插件：本体 / FDE / 公地三域工具面（合并原 `commons` 与 `ontology` 条目），settings 三档分域可关 | `ctx.provide('sofagent.fde')` | `fde` |
+| `non-seam:tool-set` | tool 集（语料管道） | 能力按需调用、无生命周期时机——语料脱敏与三分拣是纯函数式 tool 调用，与 fde 同 form；行为等价基准 = factory 仓 `rsi/corpus/pipeline.mjs`（golden 见插件 `GOLDEN.json`） | `ctx.provide('sofagent.rsi-corpus')` | `rsi-corpus` |
 | `non-seam:host-process` | 独立调度进程 | 7×24 巡检是**进程级调度**（cron / 常驻），不寄生宿主事件循环 | `ctx.provide('sofagent.daemon')` | `daemon` |
 | `non-seam:plugin-suite` | 插件聚合（一次 apply 挂全套原子插件） | 自身**不挂任何宿主生命周期**——只依次调用 6 个原子插件的 `apply`；能力仍由各原子插件 `provide`，聚合层没有独立的事件时机，挂任何生命周期都会是「跑不到的假契约」 | `ctx.provide('sofagent.suite')` | `suite` |
 <!-- SEAM-VOCAB:DSH-FORM:END -->
