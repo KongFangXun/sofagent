@@ -79,7 +79,7 @@ export function snapshotList(args: SnapshotListArgs): SnapshotListResult {
   const lines: string[] = [];
   lines.push(`[sofagent] 快照时间线（${projectDir}，共 ${snapshots.length} 个${limit > 0 ? `，显示最近 ${selected.length} 个` : ''}）:`);
   if (selected.length === 0) {
-    lines.push('  （无快照——审计通过后会自动创建；也可先运行 sofagent-audit --init 初始化）');
+    lines.push('  （无快照——审计通过后会自动创建；也可先运行 sofagent audit --init 初始化）');
   } else {
     for (const s of selected) {
       lines.push(`  - ${s.shortSha} · ${s.timestamp} · ${s.fileCount} 文件（完整 SHA: ${s.sha}）`);

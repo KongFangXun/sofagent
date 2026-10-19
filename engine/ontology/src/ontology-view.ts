@@ -66,7 +66,7 @@ export function generateOntologyView(projectDir: string): string {
       '',
       '> 💡 **如何生成 Ontology？**',
       '>',
-      '> Ontology 由 FDE 部署流程自动生成——运行 `sofagent-audit --init` 初始化环境后，',
+      '> Ontology 由 FDE 部署流程自动生成——运行 `sofagent audit --init` 初始化环境后，',
       '> 在你的 Agent 中输入 `@sofagent-fde` 开始 FDE 部署流程，完成后本目录会自动填充：',
       '>   - `objects.yml` — 实体定义',
       '>   - `actions.yml` — 动作定义',
