@@ -38,7 +38,7 @@
 已加载来源：fresh-eyes 报告、BugFix 清单、新功能交付清单
 （跳过：复审报告——未提供）
 
-### 来源：fresh-eyes 报告（/Users/kongfangxun/Desktop/fresh-eyes-draft-v1.5.8.md）
+### 来源：fresh-eyes 报告（~/Desktop/fresh-eyes-draft-v1.5.8.md）
 
 # fresh-eyes 审查草稿 v1.5.8（16 视角 · 单次生成）
 
@@ -157,7 +157,7 @@
 
 ---
 
-### 来源：BugFix 清单（/Users/kongfangxun/Desktop/v1.5.8-bugfix-report.md）
+### 来源：BugFix 清单（~/Desktop/v1.5.8-bugfix-report.md）
 
 # sofagent v1.5.8 bugfix 清偿报告
 
