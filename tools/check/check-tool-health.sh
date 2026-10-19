@@ -164,8 +164,13 @@ HOOK_FILES="engine/audit/hooks/commit-msg engine/audit/hooks/post-commit"
 HOOK_STALE=0
 for _h in $HOOK_FILES; do
   if [ -f "$_h" ]; then
-    _hook_ver=$(head -4 "$_h" | grep -oE 'v?1\.[0-9]+\.[0-9]+' | head -1 | sed 's/^v//' || echo "")
-    if [ -n "$_hook_ver" ] && [ "$_hook_ver" != "$SSOT_VER" ]; then
+    # BUG-55：全文件首命中替代 head -4 切片——版本标记只要在文件内即可锚定，
+    # 头部加注释/版权头不应让切片失明。取空 = 失明，计该子项失败（HOOK_STALE）。
+    _hook_ver=$(grep -m1 -oE 'v?1\.[0-9]+\.[0-9]+' "$_h" | sed 's/^v//' || echo "")
+    if [ -z "$_hook_ver" ]; then
+      bad "未取到 hook 版本（失明）：$_h 全文件无 v1.x.y 版本标记——无法与 SSOT 对照" "    修复：在 hook 文件头补版本标记（随版 bump，check-version 覆盖项）"
+      HOOK_STALE=$((HOOK_STALE + 1))
+    elif [ "$_hook_ver" != "$SSOT_VER" ]; then
       bad "hook 版本标记滞后：$_h = v$_hook_ver ≠ SSOT v$SSOT_VER" "    修复：随版 bump（check-version 覆盖项，此处前置拦截）"
       HOOK_STALE=$((HOOK_STALE + 1))
     fi
