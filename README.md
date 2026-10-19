@@ -213,7 +213,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 > ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户**写入侧**隔离尚未落地（v0 已交付查询侧隔离：orgId 过滤 + data/<tenant>/ 路径地基，见 LIMITATIONS）。
 >强合规场景建议 CI 兜底 + 文件权限锁（`chmod 400 .sofagent/config.yml`——辅助层，对同用户进程无效，见 [LIMITATIONS §三](./docs/LIMITATIONS.md)），不要用单机默认配置直接上生产。
 >
-> 🔐 **数据主权**：运行时数据不出本机（除安装时 npm 拉包外不联网）；三个 opt-in 出口（云同步 / 模型推理端点 / 云 VM 执行面）需你显式配置，详见 [SECURITY](./SECURITY.md)。
+> 🔐 **数据主权**：运行时数据不出本机（除安装时 npm 拉包外不联网）；三个 opt-in 出口（云同步 / 模型推理端点 / 云 VM 执行面）需你显式配置（另：dashboard 打开时会匿名只读拉取 GitHub 公开 star 数，无用户数据外发、失败静默降级），详见 [SECURITY](./SECURITY.md)。
 
 **30 秒，零配置**（首次含 npx 拉包约 30 秒，复跑秒级——引擎本体约 1.1s，实测口径见上）——在任何 git 仓库跑一次审计：
 
