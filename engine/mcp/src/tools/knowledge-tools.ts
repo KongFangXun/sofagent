@@ -37,6 +37,9 @@ export function searchKnowledge(args: Record<string, unknown>): ToolResult | { e
       try {
         files = readdirSync(subDir).filter((f) => f.endsWith('.md'));
       } catch {
+        // 为何可吞：单目录不可读只影响该 kind 的检索面（其余 kind 照常返回）；
+        // 但绝不静默——stderr 一行信号，调用方（MCP 宿主日志）可见「结果可能不全」。
+        process.stderr.write(`[sofagent-mcp] 知识目录不可读（${kind}/），结果可能不全\n`);
         continue;
       }
       for (const f of files) {
@@ -45,6 +48,9 @@ export function searchKnowledge(args: Record<string, unknown>): ToolResult | { e
         try {
           content = readFileSync(fullPath, 'utf-8');
         } catch {
+          // 为何可吞：单文件读失败跳过该文件（不阻断整目录检索）；可见性由上层
+          // 计数承担——matches 少一条即少一条，配合目录级 stderr 信号不再全静默。
+          process.stderr.write(`[sofagent-mcp] 知识文件不可读（${kind}/${f}），结果可能不全\n`);
           continue;
         }
         const name = f.replace(/\.md$/, '');

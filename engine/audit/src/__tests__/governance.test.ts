@@ -3,8 +3,8 @@
 // 覆盖面：六卡聚合口径 + 空数据降级 + 周报/lineage 报告生成。
 // 测试隔离：全部走临时目录（不碰真实 ~/.sofagent/data）。
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'fs';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, chmodSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import {
@@ -235,6 +235,63 @@ function writeDecisionLogRaw(lines: string[]): void {
   mkdirSync(join(dataDir, 'audit'), { recursive: true });
   writeFileSync(join(dataDir, 'audit', 'decision-log.jsonl'), lines.join('\n') + '\n', 'utf8');
 }
+
+// ════════════════════════════════════════
+// W8 BUG-38：读侧聚合吞错收口——失败源可见性
+// ════════════════════════════════════════
+describe('源可用性台账（W8 BUG-38——分母缩水可见化）', () => {
+  it('全源健康 → sourceHealth 空 + 周报尾部「数据源 6/6 可用」', () => {
+    writeAuditHistory([
+      { timestamp: '2026-09-16T10:00:00Z', exitCode: 0, ruleResults: [], diffFileCount: 1, commitSha: 'abc' },
+    ]);
+    const report = computeGovernanceKpis({ dataDir, now: FIXED_NOW });
+    expect(report.sourceHealth).toEqual([]);
+    const md = formatGovernanceWeekly(report);
+    expect(md).toContain('数据源 6/6 可用');
+    expect(md).not.toContain('⚠️'); // 无失败源告警行
+  });
+
+  it('三源失败（decision-log / hitl-resolved / worklog-daily）→ 报表含「3/6 可用」且逐名列出', () => {
+    // 造齐三源的存在形态（文件/目录在），再 chmod 000 让三源真实不可读（比 mock
+    // fs 更接近真实故障形态——EACCES 由内核产生，非测试编造）
+    writeDecisionLog([{ ts: '2026-09-16T10:00:00Z', agentId: 'a', kind: 'TOOL_GATE', moment: 'ACT', why: 'x' }]);
+    mkdirSync(join(dataDir, 'hitl', 'resolved'), { recursive: true });
+    writeFileSync(join(dataDir, 'hitl', 'resolved', 'cp-1.json'), JSON.stringify({
+      checkpointId: 'cp-1', decision: 'approved', resolvedAt: '2026-09-16T11:00:00Z',
+      checkpoint: { createdAt: '2026-09-16T10:30:00Z' },
+    }));
+    mkdirSync(join(dataDir, 'dashboard'), { recursive: true });
+    writeFileSync(join(dataDir, 'dashboard', 'daily-2026-09-16.json'), JSON.stringify({
+      violations: 1, taskCount: 2, localOps: 3,
+    }));
+    writeAuditHistory([
+      { timestamp: '2026-09-16T10:00:00Z', exitCode: 0, ruleResults: [], diffFileCount: 1, commitSha: 'abc' },
+    ]);
+
+    // 三源失败形态 = **源目录/文件不可读**（readdir/readFile 整体抛错）：
+    // decision-log 锁文件（readFileSync 整体失败）；hitl resolved 与 dashboard
+    // 锁目录（readdirSync 失败——目录锁不影响 audit/，history 不受牵连）。
+    chmodSync(join(dataDir, 'audit', 'decision-log.jsonl'), 0o000);
+    chmodSync(join(dataDir, 'hitl', 'resolved'), 0o000);
+    chmodSync(join(dataDir, 'dashboard'), 0o000);
+    try {
+      const report = computeGovernanceKpis({ dataDir, now: FIXED_NOW });
+      const failedNames = new Set(report.sourceHealth.filter((h) => !h.ok).map((h) => h.name));
+      expect(failedNames).toEqual(new Set(['decision-log', 'hitl-resolved', 'worklog-daily']));
+      const md = formatGovernanceWeekly(report);
+      expect(md).toContain('数据源 3/6 可用');
+      expect(md).toContain('decision-log');
+      expect(md).toContain('hitl-resolved');
+      expect(md).toContain('worklog-daily');
+      expect(md).toContain('分母缩水');
+    } finally {
+      // 还原权限，rmSync 才能清理
+      chmodSync(join(dataDir, 'audit', 'decision-log.jsonl'), 0o644);
+      chmodSync(join(dataDir, 'hitl', 'resolved'), 0o755);
+      chmodSync(join(dataDir, 'dashboard'), 0o755);
+    }
+  });
+});
 
 describe('只读辅助出口（v1.5.0 章一）', () => {
   it('readDecisionEntries：坏行容忍 + limitEntries 截尾', () => {

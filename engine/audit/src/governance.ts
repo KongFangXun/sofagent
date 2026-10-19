@@ -94,6 +94,11 @@ export interface GovernanceKpiReport {
   };
   /** 决策高亮（消费 v1.4.4 因果链字段——causedBy/causalType 决策可追溯） */
   decisionHighlights: DecisionHighlight[];
+  /**
+   * W8 BUG-38：六源可用性台账（报表尾部「数据源 N/6 可用」的数据面）。
+   * 空 = 全部可用；非空条目 = 该源读取失败（ok=false）。
+   */
+  sourceHealth: SourceHealth[];
   generatedAt: string;
 }
 
@@ -135,6 +140,22 @@ export interface GovernanceOptions {
 // 数据源读取（全部只读）
 // ════════════════════════════════════════
 
+/**
+ * W8 BUG-38：六源可用性台账——读侧聚合的失败源记录面。
+ * 六源（与 computeGovernanceKpis 的读取面对应）：
+ *   history / decision-log / hitl-resolved / hitl-pending / worklog-daily / dataset-versions
+ * 读失败不再静默缩水分母：computeGovernanceKpis 逐源标记，
+ * formatGovernanceWeekly 尾部输出「数据源 N/6 可用」行。
+ */
+export interface SourceHealth {
+  /** 源名（如 'decision-log'） */
+  name: string;
+  /** 是否可用（false = 读取失败/目录不可读，非「数据为空」） */
+  ok: boolean;
+  /** 失败时的单行原因（成功为 undefined） */
+  reason?: string;
+}
+
 /** 缺省数据目录（与 stats.ts 同源约定） */
 function resolveDefaultDataDir(): string {
   const envDir = process.env.SOFAGENT_DATA;
@@ -147,15 +168,19 @@ function governanceDataDir(options?: GovernanceOptions): string {
   return options?.dataDir ?? resolveDefaultDataDir();
 }
 
-/** decision-log.jsonl 只读（坏行容忍——聚合观测面） */
-export function readDecisionEntries(dataDir?: string, limitEntries?: number): DecisionLogEntry[] {
+/** decision-log.jsonl 只读（坏行容忍——聚合观测面）。
+ * W8 BUG-38：读失败经 sourceHealth 上报（不再静默空数组冒充「零决策」）。 */
+export function readDecisionEntries(dataDir?: string, limitEntries?: number, sourceHealth?: SourceHealth[]): DecisionLogEntry[] {
   const base = dataDir ?? resolveDefaultDataDir();
   const filePath = join(base, 'audit', 'decision-log.jsonl');
-  if (!existsSync(filePath)) return [];
+  if (!existsSync(filePath)) return []; // 文件不存在 = 未启用该面（常态），不算失败源
   let content: string;
   try {
     content = readFileSync(filePath, 'utf-8');
-  } catch {
+  } catch (e) {
+    // 为何可吞：单源读失败不崩整份 KPI 报告（各卡独立降级）——但必须留痕：
+    // sourceHealth 记源名 + 原因，报表尾部「数据源 N/6 可用」可见。
+    sourceHealth?.push({ name: 'decision-log', ok: false, reason: e instanceof Error ? e.message : String(e) });
     return [];
   }
   const entries: DecisionLogEntry[] = [];
@@ -164,7 +189,7 @@ export function readDecisionEntries(dataDir?: string, limitEntries?: number): De
     try {
       entries.push(JSON.parse(line) as DecisionLogEntry);
     } catch {
-      /* 坏行跳过 */
+      /* 坏行跳过：单行 JSON 损坏不阻断聚合；行级腐化由 doctor 可解析率检查另行观测 */
     }
   }
   if (limitEntries !== undefined && entries.length > limitEntries) {
@@ -182,11 +207,19 @@ interface HitlResolvedFile {
   comment?: string;
   checkpoint?: { createdAt?: string };
 }
-function readHitlResolved(dataDir: string): HitlResolvedFile[] {
+function readHitlResolved(dataDir: string, sourceHealth?: SourceHealth[]): HitlResolvedFile[] {
   const dir = join(dataDir, hitlDirName(), 'resolved');
   if (!existsSync(dir)) return [];
+  let files: string[];
+  try {
+    files = readdirSync(dir);
+  } catch (e) {
+    // 为何可吞：目录不可读只降级 HITL 卡（其余卡独立），但记录失败源防分母静默缩水
+    sourceHealth?.push({ name: 'hitl-resolved', ok: false, reason: e instanceof Error ? e.message : String(e) });
+    return [];
+  }
   const out: HitlResolvedFile[] = [];
-  for (const f of readdirSync(dir)) {
+  for (const f of files) {
     if (!f.endsWith('.json')) continue;
     try {
       const d = JSON.parse(readFileSync(join(dir, f), 'utf8')) as HitlResolvedFile;
@@ -194,7 +227,7 @@ function readHitlResolved(dataDir: string): HitlResolvedFile[] {
         out.push(d);
       }
     } catch {
-      /* 坏文件跳过 */
+      /* 坏文件跳过：单文件损坏不阻断 HITL 聚合 */
     }
   }
   return out;
@@ -206,12 +239,14 @@ function hitlDirName(): string {
 }
 
 /** HITL pending 数量 */
-function countHitlPending(dataDir: string): number {
+function countHitlPending(dataDir: string, sourceHealth?: SourceHealth[]): number {
   const dir = join(dataDir, hitlDirName(), 'pending');
   if (!existsSync(dir)) return 0;
   try {
     return readdirSync(dir).filter((f) => f.endsWith('.json')).length;
-  } catch {
+  } catch (e) {
+    // 为何可吞：pending 计数失败只影响「待办」读数（resolved 面照常），记录失败源
+    sourceHealth?.push({ name: 'hitl-pending', ok: false, reason: e instanceof Error ? e.message : String(e) });
     return 0;
   }
 }
@@ -223,11 +258,19 @@ interface DailyRecord {
   taskCount: number;
   localOps: number;
 }
-function readDailyRecords(dataDir: string): DailyRecord[] {
+function readDailyRecords(dataDir: string, sourceHealth?: SourceHealth[]): DailyRecord[] {
   const dir = join(dataDir, 'dashboard');
   if (!existsSync(dir)) return [];
+  let files: string[];
+  try {
+    files = readdirSync(dir);
+  } catch (e) {
+    // 为何可吞：周环比卡独立降级（null），记录失败源防「分母缩水被当干净」
+    sourceHealth?.push({ name: 'worklog-daily', ok: false, reason: e instanceof Error ? e.message : String(e) });
+    return [];
+  }
   const out: DailyRecord[] = [];
-  for (const f of readdirSync(dir)) {
+  for (const f of files) {
     const m = /^daily-(\d{4}-\d{2}-\d{2})\.json$/.exec(f);
     if (!m) continue;
     try {
@@ -239,7 +282,7 @@ function readDailyRecords(dataDir: string): DailyRecord[] {
         localOps: Number(d.localOps) || 0,
       });
     } catch {
-      /* 坏文件跳过 */
+      /* 坏文件跳过：单日文件损坏不阻断周环比聚合 */
     }
   }
   return out.sort((a, b) => a.date.localeCompare(b.date));
@@ -262,7 +305,7 @@ interface DatasetVersionRaw {
   humanReview?: string;
   source?: string;
 }
-export function readDatasetVersionsLite(dataDir: string, limit = 8): { total: number; rows: DatasetVersionLite[] } {
+export function readDatasetVersionsLite(dataDir: string, limit = 8, sourceHealth?: SourceHealth[]): { total: number; rows: DatasetVersionLite[] } {
   const trainDir = join(dataDir, 'train');
   if (!existsSync(trainDir)) return { total: 0, rows: [] };
   const rows: DatasetVersionLite[] = [];
@@ -292,11 +335,12 @@ export function readDatasetVersionsLite(dataDir: string, limit = 8): { total: nu
             reviewStatus: normalizeReviewStatus(d.reviewStatus ?? d.humanReview),
           });
         } catch {
-          /* 坏行跳过 */
+          /* 坏行跳过：单行损坏不阻断台账聚合 */
         }
       }
-    } catch {
-      /* 读取失败跳过该企业 */
+    } catch (e) {
+      // 为何可吞：单企业目录读失败跳过该企业（其余企业照常聚合），记录失败源
+      sourceHealth?.push({ name: 'dataset-versions', ok: false, reason: `${ent}: ${e instanceof Error ? e.message : String(e)}` });
     }
   }
   // 最新在前（createdAt 倒序），抽样 limit 条
@@ -333,7 +377,21 @@ export function computeGovernanceKpis(options: GovernanceOptions = {}): Governan
   const windowStartMs = windowEndMs - days * DAY_MS;
   const dataDir = governanceDataDir(options);
 
+  // ── W8 BUG-38：六源可用性台账（失败源记录——分母缩水可见化）──
+  const sourceHealth: SourceHealth[] = [];
+  const TOTAL_SOURCES = 6;
+
   // ── ① 安全边界（history 窗口过滤——与 stats 同源） ──
+  // W8 BUG-38：readHistoryEntries 内部吞错降级空数组（stats 契约不动）——此处
+  // 先探测文件可读性，不可读即记失败源（防「读失败被当零历史」静默缩水分母）。
+  const historyFile = join(dataDir, 'audit', 'history.jsonl');
+  if (existsSync(historyFile)) {
+    try {
+      readFileSync(historyFile, 'utf-8');
+    } catch (e) {
+      sourceHealth.push({ name: 'history', ok: false, reason: e instanceof Error ? e.message : String(e) });
+    }
+  }
   const entries = readHistoryEntries(dataDir);
   const inWindow = entries.filter((e) => {
     const ts = Date.parse(e.timestamp);
@@ -370,7 +428,7 @@ export function computeGovernanceKpis(options: GovernanceOptions = {}): Governan
   const coverageRate = total > 0 ? round4(withSha / total) : null;
 
   // ── ③ HITL 响应时延 ──
-  const resolved = readHitlResolved(dataDir);
+  const resolved = readHitlResolved(dataDir, sourceHealth);
   const latencies: { checkpointId: string; latencyMs: number; decision: string }[] = [];
   for (const r of resolved) {
     const created = r.checkpoint?.createdAt ?? r.createdAt;
@@ -386,7 +444,7 @@ export function computeGovernanceKpis(options: GovernanceOptions = {}): Governan
   const avg = latencies.length > 0 ? Math.round(latencies.reduce((s, x) => s + x.latencyMs, 0) / latencies.length) : null;
 
   // ── ④ 周环比（worklog daily 聚合） ──
-  const daily = readDailyRecords(dataDir);
+  const daily = readDailyRecords(dataDir, sourceHealth);
   const todayStr = new Date(windowEndMs).toISOString().slice(0, 10);
   const weekAgoStr = new Date(windowEndMs - 7 * DAY_MS).toISOString().slice(0, 10);
   const twoWeekAgoStr = new Date(windowEndMs - 14 * DAY_MS).toISOString().slice(0, 10);
@@ -418,7 +476,7 @@ export function computeGovernanceKpis(options: GovernanceOptions = {}): Governan
   //   决策高亮的读数。另：失效标记条目自身是**元记录**（kind=INVALIDATION），
   //   不是 Agent 决策——一并排除，否则会给决策总数凭空 +1。
   const invalidated = collectInvalidations(dataDir);
-  const decisions = filterValid(readDecisionEntries(dataDir, 5000), invalidated)
+  const decisions = filterValid(readDecisionEntries(dataDir, 5000, sourceHealth), invalidated)
     .filter((d) => !isInvalidationMarker(d)); // 近 5000 条防超大日志
   const gateDecisions = decisions.filter((d) => d.kind === 'TOOL_GATE');
   const fp = new Map<string, { count: number; agentId: string }>();
@@ -472,7 +530,7 @@ export function computeGovernanceKpis(options: GovernanceOptions = {}): Governan
   }
 
   // ── 第七卡：数据集审阅面 ──
-  const ds = readDatasetVersionsLite(dataDir, sampleLimit);
+  const ds = readDatasetVersionsLite(dataDir, sampleLimit, sourceHealth);
   const datasetReview = {
     totalVersions: ds.total,
     pendingReview: ds.total - ds.rows.filter((r) => r.reviewStatus !== 'pending').length,
@@ -531,8 +589,15 @@ export function computeGovernanceKpis(options: GovernanceOptions = {}): Governan
     traceReconcile,
     datasetReview,
     decisionHighlights,
+    sourceHealth,
     generatedAt: new Date(windowEndMs).toISOString(),
   };
+}
+
+/** W8 BUG-38：源可用数计算（「N/6 可用」行）——失败源按源名去重（同源多次失败只计一） */
+export function countAvailableSources(health: SourceHealth[], total = 6): number {
+  const failedNames = new Set(health.filter((h) => !h.ok).map((h) => h.name));
+  return total - failedNames.size;
 }
 
 // ════════════════════════════════════════
@@ -604,6 +669,18 @@ export function formatGovernanceWeekly(report: GovernanceKpiReport): string {
       lines.push(
         `| ${h.ts.slice(0, 16).replace('T', ' ')} | ${h.agentId} | ${h.kind}${h.category ? `/${h.category}` : ''} | ${h.causalType ?? '—'} | ${h.causedByCount} | ${h.whySummary} |`,
       );
+    }
+  }
+  // W8 BUG-38：报表尾部源可用性行——读侧聚合的分母透明化（失败源逐名列出）
+  const avail = countAvailableSources(report.sourceHealth ?? []);
+  lines.push('', `数据源 ${avail}/6 可用`);
+  const failedSources = (report.sourceHealth ?? []).filter((h) => !h.ok);
+  if (failedSources.length > 0) {
+    const seen = new Set<string>();
+    for (const f of failedSources) {
+      if (seen.has(f.name)) continue;
+      seen.add(f.name);
+      lines.push(`- ⚠️ ${f.name}：${f.reason ?? '读取失败'}（相关卡片读数分母缩水，见各卡口径）`);
     }
   }
   return lines.join('\n');
