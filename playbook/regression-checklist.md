@@ -1796,7 +1796,7 @@ grep -q "parseDiff" engine/openclaw-plugins/*/index.ts 2>/dev/null || grep -rq "
 # B5: uninstall 回收清单与 install 支持面配对（cursor/gemini 不漏）——脚本在 engine/scripts/ 非仓库根
 grep -q "cursor" install.sh && grep -q "cursor" engine/scripts/uninstall.sh && grep -q "gemini" install.sh && grep -q "gemini" engine/scripts/uninstall.sh && echo "✅ uninstall 平台清单配对（cursor/gemini 在册）" || echo "❌ uninstall 漏平台（装得上卸不掉）"
 # B6: PERSPECTIVES 双清单启动对账在位（漂移 exit 1 自检内建）——脚本在 tools/gen/ 非 FORGE/src/
-grep -q "assertPerspectivesMatchPlaybook" tools/gen/gen-fresh-eyes-draft.mjs && echo "✅ PERSPECTIVES 双清单对账自检在位" || echo "❌ 16 视角双清单漂移防线丢失"
+grep -q "assertPerspectivesMatchPlaybook" tools/gen/gen-fresh-eyes-draft.mjs && echo "✅ PERSPECTIVES 双清单对账自检在位" || echo "❌ PERSPECTIVES 双清单漂移防线丢失"
 ) 2>&1 | tee "/tmp/regress-dim132-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim132-$$.log" && { rm -f "/tmp/regress-dim132-$$.log"; echo "维度132收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim132-$$.log"; echo "维度132收口:PASS"
 ```
 
