@@ -225,8 +225,19 @@ npx -y -p sofagent sofagent audit
 
 > ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent audit --init`（见下方完整安装）。
 
-拦截特定格式密钥泄漏时是这样的（真实输出；A2（编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式——sk- 形态需 ≥29 字符（主体 ≥27，厂商专属 sk-ant/sk-proj 等 ≥40），Stripe 下划线前缀 ≥24；更短/非标形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）。
-首屏的实拍图为 A1 场景（.env 敏感文件提交被拦、exit 2），A2 密钥格式检测为另一条规则，此处不重复截图。
+拦截特定格式密钥泄漏时是这样的（真实输出；A2（编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式——sk- 形态需 ≥29 字符（主体 ≥27，厂商专属 sk-ant/sk-proj 等 ≥40），Stripe 下划线前缀 ≥24；更短/非标形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）：
+
+```text
+$ npx -y -p sofagent sofagent audit
+[sofagent] ℹ️ 首提交无父基线——对比空树审计全部新增内容。
+🔍 审计首个 commit（4573bb8）——首提交无父基线，对比空树审计全部新增内容。
+
+❌ [sofagent] A2 不泄密钥 [底线]: 检测到疑似密钥/令牌泄漏: app.py: 检测到 AWS Access Key; app.py: 检测到 密钥赋值形态。密钥不应硬编码到源码中。
+
+📊 [sofagent] 1 条违规 · 7 条通过 · ⚠️ 9 条本批未检查（critical 命中后 fail-fast）
+```
+
+首屏实拍图为 A1 场景（.env 敏感文件提交被拦、exit 2）；上为 A2 密钥格式检测实拍（AWS `AKIA` 形态硬编码被拦——修法：移入 `.env` 并加入 `.gitignore`，或改从环境变量/密钥管理服务读取）。
 
 **完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
 

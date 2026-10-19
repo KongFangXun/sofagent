@@ -273,7 +273,20 @@ npx -y -p sofagent sofagent audit
 Here is what it looks like when a known-format secret leak gets blocked (real output). A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#28-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys—other known formats too.
 
 Length thresholds apply: generic sk- keys must be ≥29 characters total (≥27 after the sk- prefix; vendor-prefixed sk-ant-/sk-proj- etc. require ≥40), and Stripe sk_live_/sk_test_ require ≥24. Shorter or non-standard shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90).
-The screenshot on the first screen shows the A1 scenario (a .env sensitive-file commit blocked, exit 2); A2 secret-format detection is a separate rule, not repeated here.
+
+Real terminal output of an A2 hit (a hard-coded AWS `AKIA` access key in `app.py` gets blocked):
+
+```text
+$ npx -y -p sofagent sofagent audit
+[sofagent] ℹ️ 首提交无父基线——对比空树审计全部新增内容。
+🔍 审计首个 commit（4573bb8）——首提交无父基线，对比空树审计全部新增内容。
+
+❌ [sofagent] A2 不泄密钥 [底线]: 检测到疑似密钥/令牌泄漏: app.py: 检测到 AWS Access Key; app.py: 检测到 密钥赋值形态。密钥不应硬编码到源码中。
+
+📊 [sofagent] 1 条违规 · 7 条通过 · ⚠️ 9 条本批未检查（critical 命中后 fail-fast）
+```
+
+<sub>A2 secret-format detection in action: the engine flags a hard-coded AWS access key and fails fast. Fix: move the key into `.env` (git-ignored) or read it from environment variables / a secrets manager. The Chinese terminal output is preserved verbatim from a real run; the first-screen screenshot above shows the sibling A1 scenario (.env sensitive-file commit blocked, exit 2).</sub>
 
 **Full install** (Node.js ≥ 18, download and review before running)—**installed on the enterprise devices running the AI nodes**:
 
