@@ -226,9 +226,28 @@ else
   DRIFT=$((DRIFT + 1))
 fi
 
+# ═══ 断言七（v1.6.0 BUG-27）：主干能力清单守卫 ═══
+# gen-capability-manifest.mjs 是纯断言器（无生成物）——此前不在任何 CI 调度面
+# 上，shims 台账退役后守卫失明（本树 exit 2）也无人看见。接线进模板漂移总闸：
+# rc=0 绿 / rc=2 失明或违规红。判据已对齐 shim 退役现状（shims=[] 合法，
+# 台账对账 shimsRetired）。
+CAPGEN="tools/gen/gen-capability-manifest.mjs"
+if [ ! -f "$CAPGEN" ]; then
+  echo -e "  ${RED}✗${NC} 断言七：守卫脚本缺失 ${CAPGEN}——检查器失明"
+  exit 2
+fi
+if CAP_OUT=$(node "$CAPGEN" 2>&1); then
+  [ "$QUIET" = false ] && echo -e "  ${GREEN}✓${NC} 断言七：$(printf '%s\n' "$CAP_OUT" | tail -1)"
+  OK_COUNT=$((OK_COUNT + 1))
+else
+  echo -e "  ${RED}✗${NC} 断言七：capabilities.json 守卫失明或违规（幽灵名/级联/档位二义/shim 台账对账）"
+  printf '%s\n' "$CAP_OUT" | sed 's/^/      /'
+  DRIFT=$((DRIFT + 1))
+fi
+
 if [ "$DRIFT" -gt 0 ]; then
   echo -e "${RED}${BOLD}FAIL：模板漂移 ${DRIFT} 处${NC}"
   exit 1
 fi
-echo -e "${GREEN}${BOLD}OK：模板六断言全过（${OK_COUNT}/6）${NC}"
+echo -e "${GREEN}${BOLD}OK：模板七断言全过（${OK_COUNT}/7）${NC}"
 exit 0

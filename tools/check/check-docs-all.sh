@@ -30,7 +30,7 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 FAST=""
 [[ "${1:-}" == "--fast" ]] && FAST="--fast"
 
-declare -a NAMES=(check-forms check-anchors check-docs doc-discipline check-sop-integrity check-stale-docs doc-score check-retired-refs check-release-state check-devlog-unique check-env-wiring)
+declare -a NAMES=(check-forms check-anchors check-docs doc-discipline check-sop-integrity check-stale-docs doc-score check-retired-refs check-release-state check-devlog-unique check-env-wiring gen-capability-manifest)
 declare -a CMDS=(
   "node tools/check/check-forms.mjs"
   "node tools/check/check-anchors.mjs"
@@ -43,6 +43,7 @@ declare -a CMDS=(
   "node tools/check/check-release-state.mjs"
   "node tools/check/check-devlog-unique.mjs"
   "node tools/check/check-env-wiring.mjs"
+  "node tools/gen/gen-capability-manifest.mjs"
 )
 
 echo "════════ 收尾自检套餐（${FAST:+FAST 档}全量档）════════"

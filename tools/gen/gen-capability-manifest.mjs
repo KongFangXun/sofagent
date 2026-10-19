@@ -95,8 +95,17 @@ if (!capabilities || capabilities.length === 0) {
   console.error('[失明] capabilities.json 的 capabilities 为空或缺失——拒绝校验空清单');
   process.exit(2);
 }
-if (!shims || shims.length === 0) {
-  console.error('[失明] capabilities.json 的 shims 为空或缺失——12 shim 台账缺席');
+// BUG-27 两态判据：shims 键缺失 ⇒ 失明红（台账面缺席，无法对账）；shims 键存在
+// 且为空数组 ⇒ 合法（v1.5.9 起 12 shim 按 v2.0.0 章六显式退役、台账迁
+// shimsRetired——与 capabilities 的 retiredBins 同款「在场对账」语义：退役
+// 条目须在 shimsRetired 逐条对上账，空数组不再误判失明）。
+if (shims === null) {
+  console.error('[失明] capabilities.json 缺 shims 键——shim 台账面缺席（空数组=全部退役是合法态，缺键=对账面不存在）');
+  process.exit(2);
+}
+const shimsRetired = Array.isArray(doc.shimsRetired) ? doc.shimsRetired : null;
+if (shims.length === 0 && shimsRetired === null) {
+  console.error('[失明] capabilities.json 的 shims 为空数组但缺 shimsRetired 键——退役态无对账台账（shims 全退役时 shimsRetired 必须在场）');
   process.exit(2);
 }
 
@@ -227,11 +236,31 @@ for (const c of capabilities) {
   }
 }
 
-// ── C7 shim 台账 ────────────────────────────────────────────
+// ── C7 shim 台账（BUG-27 退役对齐：SSOT 名单成员在 shims ∪ shimsRetired 对账）──
+// v1.5.9 起 12 shim 全部退役（shims=[]、台账迁 shimsRetired）——在场断言改为
+// 「每个 SSOT 名单成员要么在 shims（现役）要么在 shimsRetired（退役）」，
+// 两处都不在 = 台账真缺席（红）；shimsRetired 条目做 cli 一致性核对。
+const retiredClis = new Set(
+  (shimsRetired ?? []).filter((s) => s && typeof s.cli === 'string').map((s) => s.cli),
+);
 const shimClis = shims.filter((s) => s && typeof s.cli === 'string').map((s) => s.cli);
 for (const cli of SHIM_CLI_SSOT) {
-  if (!shimClis.includes(cli)) {
-    push('C7', `shim 台账缺 v1.5.6 章一 SSOT 名单成员：${cli}`);
+  if (!shimClis.includes(cli) && !retiredClis.has(cli)) {
+    push('C7', `shim 台账缺 v1.5.6 章一 SSOT 名单成员：${cli}（shims 与 shimsRetired 均无——真缺席）`);
+  }
+}
+for (const s of shimsRetired ?? []) {
+  if (!s || typeof s !== 'object') continue;
+  if (!retiredClis.has(s.cli) || (shimClis.includes(s.cli))) {
+    push('C7', `退役 shim ${s.id} 的 cli "${s.cli}" 同时出现在现役/退役两侧或形态非法——台账二义`);
+  }
+  if (!SHIM_CLI_SSOT.includes(s.cli)) {
+    push('C7', `退役 shim ${s.id} 的 cli "${s.cli}" 不在 v1.5.6 章一 SSOT 名单内（名单以章一附录为唯一源）`);
+  }
+  for (const k of ['id', 'carrier', 'cli', 'retiredIn', 'reason']) {
+    if (typeof s[k] !== 'string' || s[k].trim() === '') {
+      push('C7', `退役 shim ${s.id ?? '?'} 缺字段或为空：${k}`);
+    }
   }
 }
 for (const s of shims) {
