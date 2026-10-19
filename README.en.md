@@ -257,7 +257,7 @@ The `alpha` tag remains as a historical release trace and isn't maintained.
 >
 > 🔐 **Data sovereignty**: runtime data never leaves your machine (no network access except the npm package fetch at install time); the three opt-in exits (cloud sync / model inference endpoint / cloud VM execution surface) require your explicit configuration (note: opening the dashboard anonymously fetches the public GitHub star count—read-only, no user data sent, silent fallback on failure)—see [SECURITY](./SECURITY.md).
 
-**30 seconds, zero setup** (first run includes the npx package fetch, ~30 seconds; reruns finish in seconds—the engine itself takes ~1.1s, measured basis above)—run an audit in any git repo:
+**30 seconds and up, zero setup** (first run includes the npx package fetch, ~30 seconds; reruns finish in seconds—the engine itself takes ~1.1s, measured basis above)—run an audit in any git repo:
 
 ```bash
 npx -y -p sofagent sofagent audit
