@@ -185,7 +185,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | **采集与质量门** | 三源采集（history/HITL/PR）+ 九类困难样本 + 四道质量门 + 主动选样 | SDK 面 |
 | **判定头契约** | `EncoderLike` 契约（换基座不改判定头）+ 三原语头示意实现（真基座排 v1.8.0） | SDK 面 |
 | **零样本基线** | 自产基线**如实落数**（mock 编码器，中英分列不修饰）——阶段二「训练提升多少」的分母 | CLI 可达（可复算） |
-| **循环 workflow 语义** | `loop:` 声明块 + `exit_when` 可判定性 fail-closed + 预算熔断挂起 + `daemon pause/resume` | CLI 可达 |
+| **循环 workflow 语义** | `loop:` 声明块 + `exit_when` 可判定性 fail-closed + 预算熔断挂起 + `daemon knowledge pause/resume` | CLI 可达 |
 
 > 📌 本版 **SDK 面先行**：用户入口（CLI/MCP 域）排 v1.8.0。完整证据见 [v1.6.0 开发日志](./docs/changelog/v1.6/v1.6.0.md)；旧版能力段见 [CHANGELOG](./CHANGELOG.md)。
 

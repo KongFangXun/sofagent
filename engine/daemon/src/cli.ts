@@ -42,6 +42,7 @@ async function main() {
     console.log('  snapshot list                列出所有快照');
     console.log('  snapshot restore <sha>       恢复到指定快照');
     console.log('  knowledge status             聚合知识库状态（Dream Cycle / 健康 / sensitivity）');
+    console.log('  knowledge pause|resume       全停管理——挂起/恢复全部事件调度（v1.6.0 章十 · pause 可带 --reason）');
     console.log('  worklog                      工作明细视图（v1.4.0 交付七）');
     console.log('  decision-tree                对话分支回溯视图（v1.4.0 交付七）');
     console.log('  billing                      账单周期聚合——agent × 自然月月结（v1.4.7 G8）');
@@ -107,7 +108,7 @@ async function main() {
       switch (action) {
         // ── v1.6.0 章十：全停管理命令（循环失控时的人工熔断位）──
         case 'pause': {
-          // sofagent daemon pause --reason "<text>"：一键挂起全部事件调度
+          // sofagent daemon knowledge pause --reason "<text>"：一键挂起全部事件调度
           //（含循环 workflow 与排队中的并发请求一并冻结）；写暂停标记文件，
           // 事件面读标记停派（生产消费者 = orchestrator events/should-run.ts 的
           // checkLoopStartGate，已接进派发前置 shouldRunGate 的 quota 面——
@@ -124,7 +125,7 @@ async function main() {
           mkdirSync(dataDir, { recursive: true });
           writeFileSync(markerPath, JSON.stringify({ paused: true, reason, pausedAt: new Date().toISOString() }, null, 2));
           console.log(`⏸️  已挂起全部事件调度（含循环 workflow）（原因：${reason}）——排队请求一并冻结`);
-          console.log('   恢复：sofagent daemon resume');
+          console.log('   恢复：sofagent daemon knowledge resume');
           process.exit(0);
         }
         case 'resume': {

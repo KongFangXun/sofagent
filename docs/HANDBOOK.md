@@ -74,7 +74,7 @@
 - **经验不串项目**（v1.5.6）：审批入池的沉淀记忆默认钉到**当前项目**（按仓库解析），跨项目与用户全局不自动共享；复用走显式导出/导入 + 血缘与审批留痕。
 - **规则自测、写错即曝**（v1.5.3）：审计规则统一为一套引擎（tool-level 与 git-diff 共用同一定义、两种触发时机），**每条规则强制携带正负样例**（必须命中/必须不命中），加载时断言 fail-closed——写错当场拒载；多规则命中取最严，FAIL 报文附替代建议。运维侧同版补 **doctor 修复闭环**：`sofagent core doctor --refresh` 先备份、再一键重置默认、出前后 diff 报告。
 - **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 自动注册企业 SubAgent → 编排成 LangGraph 工作流 → 带 HITL 与审计地自动跑（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN），交付物从「一堆静态文档」变成「会自己跑的系统」。详见 [激活链设计](./guides/fde-activation-chain.md)。
-- **循环任务可管可停**（v1.6.0）：workflow 支持 `loop:` 循环声明（退出条件加载期校验，写错拒载）；`daemon pause --reason` 冻结全部事件调度、`resume` 恢复；预算超限自动挂起进死信，可恢复。
+- **循环任务可管可停**（v1.6.0）：workflow 支持 `loop:` 循环声明（退出条件加载期校验，写错拒载）；`daemon knowledge pause --reason` 冻结全部事件调度、`knowledge resume` 恢复；预算超限自动挂起进死信，可恢复。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
 - **📡 训练信号与部署闭环**（v1.4.4）：`corpus_export` 语料导出三件套（规则/FDE 方法论/带标签样本，28 编号位 + reward 骨架 + 脱敏聚合）；企业专属模型本地权重部署（`model_register source: 'local-path'` + sha256 篡改拒绝 + rollback-weights 回滚）；训练产物→注册自动衔接（train done + eval pass）；`train compare` 多基座 ROI 排序；决策因果链与先例检索（`causedBy` 因果边）；
