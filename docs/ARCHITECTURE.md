@@ -697,7 +697,7 @@ graph LR
     C -->|FAIL| D[⛔ 拦截 + 运行时审计日志]
     C -->|requireApproval| E[⛔ HITL 待批准<br/>hitl_resolve 决策]
     C -->|WARN/PASS| F[✅ 放行 + 记日志]
-    D --> G[data/audit/runtime/&lt;repo-hash&gt;/<br/>（FORGE 路径已交付；约束层侧排 v1.3.9）]
+    D --> G[data/audit/runtime/&lt;repo-hash&gt;/<br/>（FORGE 路径与约束层侧均已交付）]
     E --> G
     F --> G
 ```

@@ -1537,6 +1537,53 @@ else
 fi
 ASSERTS=$((ASSERTS + 1))
 
+# ── 24b. mermaid 图内排期残留 ↔ git tag 一致性（BUG-53 · 图文字纳入 SSOT 断言面）──
+# 病根：ARCHITECTURE.md mermaid 节点文字曾残留「约束层侧排 v1.3.9」——正文 SSOT 已翻
+#   「已交付」而图内文字无人扫：图也是文档声称的一部分，读者同样当真。判据：docs/**
+#   *.md 的 mermaid 块内出现「排 v?X.Y(.Z)?」形态且该版本已有 git tag ⇒ 红（tag 即
+#   发版事实，图内「排 vX.Y.Z」与之矛盾即漏翻）；无 tag 的前瞻规划不阻断（正文允许
+#   规划，图内同权）。防空转：无命中时报告图内扫描块数；零块即红（docs/ 必有 mermaid）。
+echo "=== 24b. mermaid 图内排期残留 ↔ git tag 一致性（BUG-53）==="
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "  ⏭️ 无 git 上下文——mermaid 图内排期检查跳过"
+  SKIPS=$((SKIPS + 1))
+else
+  _MM_RAW=$(node -e '
+const fs=require("fs"),cp=require("child_process");
+let files=[];
+try{ files=cp.execSync("git ls-files \"docs/*.md\" \"docs/*/*.md\" \"docs/*/*/*.md\"").toString().trim().split("\n"); }catch(e){ console.log("SCAN_FAIL"); process.exit(0); }
+files=files.filter(f=>f && !/^docs\/(changelog|archive|evidence)\//.test(f));
+let blocks=0; const hits=[];
+const tagExists=raw=>{ const v=raw.replace(/^v/,""); try{ if(cp.execSync("git tag -l \"v"+v+"\"").toString().trim()) return true; }catch(e){} try{ if(cp.execSync("git tag -l \"v"+v+".*\"").toString().trim()) return true; }catch(e){} return false; };
+for(const f of files){
+  let inBlock=false;
+  for(const [i,l] of fs.readFileSync(f,"utf8").split("\n").entries()){
+    if(/^\s*```mermaid/.test(l)){ inBlock=true; blocks++; continue; }
+    if(/^\s*```/.test(l) && inBlock){ inBlock=false; continue; }
+    if(!inBlock) continue;
+    const m=l.match(/排\s*(v?[0-9]+(?:\.[0-9]+){1,2})/);
+    if(m && tagExists(m[1])) hits.push(f+":"+(i+1)+" 图内排期「"+m[0]+"」但 tag "+m[1].replace(/^v/,"v")+" 已存在（图文字漏翻——图也是 SSOT 断言面）");
+  }
+}
+console.log("BLOCKS="+blocks); hits.forEach(h=>console.log("HIT="+h));
+' 2>/dev/null || true)
+  _MM_N=$(printf '%s\n' "${_MM_RAW}" | sed -n 's/^BLOCKS=//p')
+  _MM_HITS=$(printf '%s\n' "${_MM_RAW}" | sed -n 's/^HIT=//p')
+  if [ -z "${_MM_N}" ]; then
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ §24b 扫描提取失败——守卫空转，拒绝静默通过"
+    ERRORS=$((ERRORS + 1))
+  elif [ "${_MM_N}" -eq 0 ]; then
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ §24b 扫描面失效：docs/ 零 mermaid 块被读到——守卫空转，拒绝静默通过"
+    ERRORS=$((ERRORS + 1))
+  elif [ -n "${_MM_HITS}" ]; then
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ §24b mermaid 图内排期残留（tag 已存在却仍写「排 vX.Y.Z」）——"
+    printf '%s\n' "${_MM_HITS}" | sed 's/^/     /'
+    ERRORS=$((ERRORS + 1))
+  else
+    ASSERTS=$((ASSERTS + 1)); echo "  ✓ §24b 图内扫描 ${_MM_N} 块，零排期残留（无「tag 已存在却图内写排期」）"
+  fi
+fi
+
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
 else
