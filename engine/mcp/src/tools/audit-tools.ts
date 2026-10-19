@@ -73,7 +73,16 @@ export function runAudit(
   }
 
   // 7. 格式化输出
-  const triggeredRules = results.rules.filter((r: AuditResult['rules'][number]) => r.status !== 'PASS');
+  // v1.6.0 C8+L10 对齐 CLI（engine/audit/src/index.ts:1953-1989）：SKIPPED 从逐条详情面**移出**。
+  //   改前 `status !== 'PASS'` 把 SKIPPED 一并纳入，被跳过的规则各渲染一行
+  //   「FAIL ... critical 层 N 条规则命中 FAIL，跳过后续层规则」——把「未检查」渲染成 FAIL，
+  //   与 CLI 终端语义不一致（真实违规 N 条却看起来像 N 红 + M 黄）。现改为：SKIPPED 只在
+  //   末尾**汇总一行**（含被跳过的规则码清单，用「本批未检查」而非「跳过」）。
+  //   机器可读契约不动：下方 data.triggeredRules/allRules 与各 status 取值一字未改。
+  const triggeredRules = results.rules.filter(
+    (r: AuditResult['rules'][number]) => r.status !== 'PASS' && r.status !== 'SKIPPED',
+  );
+  const skippedRules = results.rules.filter((r: AuditResult['rules'][number]) => r.status === 'SKIPPED');
   const verdict = results.exitCode === 0 ? 'PASS' : results.exitCode === 1 ? 'WARN' : 'FAIL';
 
   const lines: string[] = [];
@@ -89,8 +98,27 @@ export function runAudit(
     }
   }
 
-  if (triggeredRules.length === 0) {
+  if (triggeredRules.length === 0 && skippedRules.length === 0) {
     lines.push('[sofagent] ✅ 全部审计规则通过。');
+  }
+
+  // fail-fast 汇总（对齐 CLI index.ts:1981-1989）：早退未执行项集中一行，逐条行不渲染。
+  // 规则码取法与 CLI 一致：`id` 优先（插件/规则集条目），否则 A/E/R 系列编号，无编号回退规则名。
+  if (skippedRules.length > 0) {
+    const codeOf = (r: AuditResult['rules'][number]) => {
+      if (r.id) return r.id;
+      if (r.number >= 500) return `R${r.number - 500}`;
+      if (r.number >= 200) return `E${r.number - 200}`;
+      if (r.number > 0) return `A${r.number}`;
+      return r.name;
+    };
+    const codes = skippedRules.map(codeOf);
+    lines.push('');
+    lines.push(
+      `⏭️ [sofagent] fail-fast：critical 层已有 FAIL，以下 ${skippedRules.length} 条规则本批未检查——`
+      + `${codes.join(' ')}`,
+    );
+    lines.push('   未检查 ≠ 通过：这些规则本次未执行，事后取证不得把本行读成「无问题」（见 docs/LIMITATIONS.md）');
   }
 
   // S5 L4: webhook 推送（WARN/FAIL 时触发，推送失败不阻断审计）
