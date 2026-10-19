@@ -186,6 +186,16 @@ bash install.sh && bash engine/scripts/verify.sh
 
 > 📌 **提交者身份约定**：统一使用 `git config user.name KongFangXun`（与 GitHub 账号 [KongFangXun](https://github.com/KongFangXun) 一致；文档署名「孔放勋」与该账号为同一作者，关联说明见 [WIKI · 文件地图](./docs/WIKI.md#五文件地图)）。历史 11 条 `author=test` 提交与 `孔放勋`/`KongFangXun` 双身份并存属早期工具配置残留，**不改写历史**（冻结），本约定自登记起对新提交生效。
 
+### 提交身份自检
+
+每次提交前核对当前仓库的身份配置，防止新环境/新工具链缺省身份混入：
+
+```bash
+git config user.name && git config user.email   # 期望：KongFangXun / 与 GitHub 账号一致的邮箱
+```
+
+> 事故案例：2026-08 v1.3.1/v1.3.2 开发期，一台新配置机器的 git 缺省身份 `test@test.com` 混入 **11 条提交**（v1.3.1 范围 4 条 / v1.3.2 范围 7 条，清单见 v1.3.1 / v1.3.2 devlog 补记）——当时未改写历史（冻结），自此以提交前自检拦截。
+
 ## 开发环境 + 发版
 
 ```bash
