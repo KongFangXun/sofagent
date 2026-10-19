@@ -18,10 +18,16 @@ export const SECRET_PATTERNS: { pattern: RegExp; label: string; contextKeyword?:
   { pattern: /sk-proj-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Project Key' },
   { pattern: /sk-svcacct-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Service Account Key' },
   { pattern: /sk-admin-[a-zA-Z0-9_]{40,}/, label: 'OpenAI Admin Key' },
-  // 通用 sk- key（48 位匹配 OpenAI，32-47 位匹配 DeepSeek 等短 key 厂商）——
-  // ⚠️ 必须保持 32+ 宽口径，勿改回严格 48(修复：ToolGate 曾放行 32-47 位）
+  // 通用 sk- key（48 位匹配 OpenAI，28-47 位匹配 DeepSeek/short-key 厂商）——
+  // ⚠️ 必须保持 28+ 宽口径，勿改回严格 48(修复：ToolGate 曾放行 32-47 位）
   // v1.3.2 #46: 扩展支持连字符/下划线（部分厂商 key 含分隔符），首字符仍限字母数字。
-  { pattern: /sk-[a-zA-Z0-9][a-zA-Z0-9_\-]{31,}/, label: 'Possible API Key (OpenAI/DeepSeek)' },
+  // v1.6.0 BUG-51：{31,}→{26,}（sk- 后主体 ≥27 字符，即整 key ≥29 字符）——
+  // 红队实测裸串形态 `sk-live-abcdef1234567890abcdef`（27 位主体）整行/中缀
+  // 17 条全过 exit 0（赋值形态被「密钥赋值形态」兜住，裸串无兜底）。门槛评估：
+  // 降到 {27,}（主体≥28）仍不覆盖该实测样本；降至 {26,} 后全 workspace
+  // 25 套件 / audit 1568 用例零误报增量（对抗 golden-set 全绿），据此定门槛 {26,}。
+  // Stripe sk_(live|test)_ {24,} 门槛维持不变（下划线族另有专属正则）。
+  { pattern: /sk-[a-zA-Z0-9][a-zA-Z0-9_\-]{26,}/, label: 'Possible API Key (OpenAI/DeepSeek)' },
   { pattern: /gh[ps]_[A-Za-z0-9]{36}/, label: 'GitHub Token' },
   // v1.3.6 B24: Stripe 下划线前缀（sk_live_/sk_test_）——与现有 sk- 连字符族不同源，
   // 无论长短均不匹配旧模式（fresh-eyes 报告四实测 sk-live-abc123456789 放行暴露此洞）。

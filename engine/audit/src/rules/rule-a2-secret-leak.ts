@@ -26,9 +26,9 @@ import {
  * 单一事实源 = @sofagent/core shared/secret-patterns.ts（与 ToolGate
  *   tool-secret-leak 共用同一套正则，杜绝 32-47 位密钥被运行时防线放行的漂移）。
  * 确认——A2 本身无独立长度门槛，所有正则均来自 SECRET_PATTERNS。
- *   通用 sk- key 模式为 {32,}（覆盖 DeepSeek 等短 key），厂商专属模式
- *   （sk-ant/sk-proj/sk-svcacct/sk-admin）为 {40,}（厂商文档最小长度）。
- *
+ *   通用 sk- key 主体门槛为 ≥27 字符（v1.6.0 BUG-51 自 31 下探，全测试集
+ *   零误报增量），厂商专属模式（sk-ant/sk-proj/sk-svcacct/sk-admin）为
+ *   {40,}（厂商文档最小长度）。
  * 未覆盖的 key 格式（误报风险高，保守不加正则）：
  * - GLM（智谱）：格式为 id.secret 点分隔（如 8a3b1c2d9e7f4g5h.xxx），正则误报率高
  * - 通义千问：格式不确定

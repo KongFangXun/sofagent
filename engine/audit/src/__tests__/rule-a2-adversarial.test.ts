@@ -137,3 +137,36 @@ describe('F-2 · A2 赋值兜底词表补缺（AWS 生态高频变量名）', ()
     expect(rule.status).not.toBe('FAIL');
   });
 });
+
+describe('BUG-51 · 裸串短 key 拦截（门槛 {26,} 评估零误报增量后收口）', () => {
+  // 红队实测：裸串形态（整行/行中缀，无赋值语境）17 条全过 exit 0——赋值形态被
+  // 「密钥赋值形态」兜住，裸串无兜底。门槛评估：{27,}（主体≥28）不覆盖实测样本
+  // （27 位主体），降至 {26,}（主体≥27，整 key ≥29 字符）后全 workspace 零误报
+  // 增量，据此定槛。参考任务书样本：sk-live-abcdef1234567890abcdef（27 位主体）。
+
+  it('红队：整行裸串短 key（27 位主体）→ FAIL（修复前 exit 0 放行）', () => {
+    const rule = scanA2(ctxWith(['+sk-live-abcdef1234567890abcdef']));
+    expect(rule.status).toBe('FAIL');
+    expect(rule.details.join(' ')).toContain('Possible API Key');
+  });
+
+  it('红队：行中缀裸串短 key（前后有普通文本）→ FAIL', () => {
+    const rule = scanA2(ctxWith(['+see sk-live-abcdef1234567890abcdef in text']));
+    expect(rule.status).toBe('FAIL');
+  });
+
+  it('门槛边界：26 位主体（槛下一格）维持放行——门槛宣称 = 主体 ≥27', () => {
+    const rule = scanA2(ctxWith(['+sk-live-abcdef1234567890abcde']));
+    expect(rule.status).not.toBe('FAIL');
+  });
+
+  it('门槛边界：27 位主体（槛上）命中——与红队样本同长', () => {
+    const rule = scanA2(ctxWith(['+sk-abcdefghij0123456789abcdef1']));
+    expect(rule.status).toBe('FAIL');
+  });
+
+  it('对照：短普通串不误报（sk- 后主体 <27 位的自然词）', () => {
+    const rule = scanA2(ctxWith(['+const style = sk-lifestyle-default-theme-v2']));
+    expect(rule.status).not.toBe('FAIL');
+  });
+});
