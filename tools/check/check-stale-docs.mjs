@@ -116,14 +116,31 @@ if (pkgVersion) {
   }
 }
 
+// ── D. 已删数据文件名残留（登记清单）──
+// 登记形态：'文件名' → 活文档（非冻结面）出现该字面即报——文件本体已删，正文再提即
+// 僵尸概念（引用面闭环由各删除批收口，本判据兜底防回潮）。历史语境豁免：冻结区已由
+// FROZEN 排除，无需逐条豁免。
+const DELETED_FILE_NAMES = ['eval.md'];
+for (const f of mdFiles) {
+  const text = fs.readFileSync(f, 'utf-8');
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    for (const name of DELETED_FILE_NAMES) {
+      if (lines[i].includes(name)) {
+        issues.push({ kind: 'D-已删文件残留', file: f, line: i + 1, detail: `提及 ${name} 但该文件已删除——僵尸概念，改指现行面或删段`, excerpt: lines[i].slice(0, 100) });
+      }
+    }
+  }
+}
+
 // ── 输出 ──
 if (JSON_MODE) {
   console.log(JSON.stringify({ pkgVersion, issues }, null, 2));
 } else {
-  console.log(`═══ 过时内容检测（非冻结 ${mdFiles.length} 文档 · 三类判据）═══`);
+  console.log(`═══ 过时内容检测（非冻结 ${mdFiles.length} 文档 · 四类判据）═══`);
   console.log('');
   if (issues.length === 0) {
-    console.log('  ✓ 无状态滞后 / 无失效脚本引用 / 无版本头漂移');
+    console.log('  ✓ 无状态滞后 / 无失效脚本引用 / 无版本头漂移 / 无已删文件残留');
   } else {
     const byKind = {};
     for (const it of issues) (byKind[it.kind] ??= []).push(it);
@@ -136,7 +153,8 @@ if (JSON_MODE) {
       console.log('');
     }
     console.log('  修法：A 类改状态列（已发版版本从「规划中」前移）；B 类改叙述引用为现状脚本或删；');
-    console.log('  C 类核 package.json 后前移版本头（若属刻意的「上一版记录」则改措辞避免「当前」歧义）。');
+    console.log('  C 类核 package.json 后前移版本头（若属刻意的「上一版记录」则改措辞避免「当前」歧义）；');
+    console.log('  D 类改指现行评估面（decision-log / evolve baseline）或删该段。');
   }
 }
 process.exit(issues.length > 0 ? 1 : 0);

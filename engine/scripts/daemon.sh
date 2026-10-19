@@ -203,51 +203,11 @@ _main_loop() {
       _write_notice_if_stale "Ingest 触发——请运行 knowledge-maintain 提取最新 task/logs 中的知识"
     fi
 
-    # 7. Evolve 自进化调度（v1.0.4 → P0-7 管道接通）
-    # 读 eval.md → 阈值检测 → 24h 防抖 → 调 evolve-run
-    _trigger_evolve() {
-      # TODO-v1.3.0: eval.md 已在 v1.2.1 删除，Evolve 评分数据源待重新设计
-      # 读取 eval.md，检查累积评分条目数是否到阈值
-      local scoring_file="${REPO_ROOT}/SKILL/harness/data/eval.md"
-      local threshold=20  # 累积 20 条评分后触发
-      if [ ! -f "$scoring_file" ]; then
-        return
-      fi
-      local score_count
-      score_count=$(grep -c '^|' "$scoring_file" 2>/dev/null || true); score_count=${score_count:-0}
-      if [ "$score_count" -lt "$threshold" ]; then
-        return
-      fi
-
-      # 检查上次触发时间（24h 内不重复触发）
-      local last_trigger="${SOFAGENT_DATA}/.evolve-last-run"
-      if [ -f "$last_trigger" ]; then
-        local last_time
-        last_time=$(cat "$last_trigger" 2>/dev/null || echo 0)
-        local now
-        now=$(date +%s)
-        local diff=$((now - last_time))
-        if [ "$diff" -lt 86400 ]; then
-          return  # 24h 内已触发过
-        fi
-      fi
-
-      # ── 旧 CLI 触发路径：**已废弃**（v1.4.9 G-11）——处置 = 显式明示废弃，不给死 CLI 编名字 ──
-      # 取证（本版实测）：
-      #   · 旧探活名 `evolve-sleep`：`command -v` 无命中，全仓无此可执行；
-      #   · 旧调用 `npx @sofagent/audit evolve-run …`：**死子命令**——实测「未知子命令: evolve-run」，
-      #     `sofagent-audit --help` 已把它列入 v1.5.0 移除项（`evolve-run → sofagent-evolve`）；
-      #   · 真实面：外部兼容层二进制 = `skillopt-sleep`（PyPI skillopt 0.2.0），自进化入口 =
-      #     `@sofagent/evolve`（npm 单入口形态 = 伞包 sofagent 的 `sofagent evolve`；sofagent-evolve
-      #     旧 bin 已退役，TS daemon 由 daemon-dist/cli.js 承载，native gate 内置）。
-      # 为什么是「明示废弃」而不是「静默 return」：旧版把两个都对不上真实面的名字写成
-      #   「可选面未安装」，于是「路径已死」被伪装成「条件未满足」——正是 G-11 的缺陷形态。
-      # 能力未丢：daemon 侧自进化由 `evolve-trigger.ts` inspector 承载
-      #   （调用 @sofagent/evolve 的 autoTriggerAll，走 native gate）；本 bash 段是 v1.2 前遗留形态。
-      daemon_log "Evolve: 旧 CLI 触发路径已废弃（v1.4.9 G-11）——探活名 evolve-sleep 无此可执行、调用名 '@sofagent/audit evolve-run' 无此子命令；自进化改由 evolve-trigger inspector / native gate 承载。eval.md 已积累 ${score_count} 条，触发条件已满足，但本路径不再动作。"
-      return
-    }
-    _trigger_evolve
+    # 7. Evolve 自进化调度——本 bash 段已移除（评分数据源文件 v1.2.1 已删；旧 CLI 触发
+    #    路径 v1.4.9 G-11 明示废弃，此处原为读评分文件做阈值检测 + 24h 防抖 + 死子命令
+    #    evolve-run 调用）。现行面：自进化由 evolve-trigger inspector 承载（调用
+    #    @sofagent/evolve 的 autoTriggerAll，走 native gate；TS daemon 由
+    #    daemon-dist/cli.js 承载）。取证与处置详见 v1.4.9 G-11。
 
     sleep 30
   done
