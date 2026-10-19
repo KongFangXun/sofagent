@@ -60,8 +60,8 @@ for f in docs/changelog/v*/*.md; do v=$(basename "$f" .md); grep -q "尚未实�
 grep -A1 "## 规划中" CHANGELOG.md | head -1 # 期望：有「规划中」独立标题
 # 子项 d: README 对核心文档链接可发现性
 grep -c "ARCHITECTURE.md" README.md # 期望: ≥ 1
-# 子项 e: 当前版本条目不含审查元信息（原维度 48e）
-LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+'); sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次" && echo "⚠️ CHANGELOG 当前版本含审查元信息" || true
+# 子项 e: 当前版本条目不含审查元信息（原维度 48e）——锚形态：CHANGELOG 首条为 bullet（`- **vX.Y.Z** —`），非 `### [v` 标题
+LATEST_VER=$(grep -m1 -E '^(- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\* —|### \[v)' CHANGELOG.md | grep -oE '^- \*\*v[0-9.]+' | grep -oE 'v[0-9.]+'); if [ -z "$LATEST_VER" ]; then echo "⚠️ 版本锚提取为空——CHANGELOG 形态又变了"; exit 1; fi; LATEST_ESC=$(printf '%s' "$LATEST_VER" | sed 's/\./\\./g'); sed -n "/^- \*\*${LATEST_ESC}\*\* —/,/^- \*\*v[0-9]/p" CHANGELOG.md | sed '$d' | grep -qE "P[012]×|fresh-eyes|审查轮次" && echo "⚠️ CHANGELOG 当前版本含审查元信息" || true
 # 子项 f: ROADMAP 版本头描述与当前版本一致（原维度 48a）
 grep -m1 -E "^> v[0-9]+\.[0-9]+\.[0-9]+ · .*· (✅ 已发版|⏳)" docs/ROADMAP.md | grep -qE "后训模块|数据与评估|FDE Harness|六引擎|IM 桥|执行模块|单入口|存量收敛|数据面|写面审计|判定底座|判据" || echo "⚠️ ROADMAP 版本头描述可能错配" # 关键词随发版同步（v1.5.4 起含「执行模块」族，v1.5.6 起含「单入口/存量收敛/数据面」族，v1.5.9 起含「写面审计」族，v1.6.0 起含「判定底座/判据」族）；行号锚改内容锚——头部图区块曾使 :4 漂移
 # 子项 g: SECURITY.md 旧描述清理（原维度 48d）
@@ -69,7 +69,7 @@ grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 �
 # 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式） 防御（定谳尾判假）：`[ ] && echo ⚠️` 在健康态（相等）时 `[ ]` 返 1 → 整维度 exit=1 假红，改显式 if、健康态显式 exit 0
 SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^[0-9]+\. " || echo 0); if [ "$SKILL_BC" != "$SKILL_BA" ]; then echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"; exit 1; fi; echo "✅ SKILL.md 底线数一致 ($SKILL_BC)"
 # 子项 i: CHANGELOG 索引条目 + 日期链（归并原维度 107——索引是 check-version 日期提取的上游，漏了整条链断）
-CUR_VER=$(node -p "require('./package.json').version"); grep -q "\*\*v${CUR_VER}\*\* —" CHANGELOG.md || echo "⚠️ CHANGELOG 缺 v${CUR_VER} 索引条目（日期链会断）"; grep -m1 "v${CUR_VER}.*—" CHANGELOG.md | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" > /dev/null || true
+CUR_VER=$(node -p "require('./package.json').version"); grep -q "\*\*v${CUR_VER}\*\* —" CHANGELOG.md || echo "⚠️ CHANGELOG 缺 v${CUR_VER} 索引条目（日期链会断）"; grep -m1 -E "^\- \*\*v${CUR_VER}\*\* —" CHANGELOG.md | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" > /dev/null || echo "⚠️ v${CUR_VER} 索引条目日期缺失（形态：`- **vX.Y.Z** — … YYYY-MM-DD`）"
 # 子项 j: README 中英文版本段同步（归并原维度 68——版本号与描述同段，修一层必核另一层）
 CN_VER=$(grep -m1 -oE '^## v[0-9]+\.[0-9]+\.[0-9]+' README.md | grep -oE 'v[0-9.]+'); EN_VER=$(grep -m1 -oE '^## v[0-9]+\.[0-9]+\.[0-9]+' README.en.md | grep -oE 'v[0-9.]+'); [ -n "$CN_VER" ] && [ "$CN_VER" = "$EN_VER" ] && echo "✅ README 双语版本段一致 ($CN_VER)" || echo "⚠️ README 双语版本段不一致：CN=$CN_VER EN=$EN_VER"
 # 子项 k: 新文件版本头匹配当前 SSOT（归并原维度 78——开发期禁超前写下一版本号，bump 时统一提升）
