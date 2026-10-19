@@ -95,7 +95,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 |---|---|---|---|
 | 定位 | 密钥全量历史扫描 | 通用提交钩子框架 | Agent 行为审计约束层 |
 | 证据面 | 仓库文本模式 | 自定义脚本 | git diff 硬证据 + Agent 日志 + 决策留痕 |
-| 覆盖维度 | 密钥泄漏 | 任意（自己写） | 28 条规则：密钥/越界/注入/权限/后门 |
+| 覆盖维度 | 密钥泄漏 | 任意（自己写） | 28 条规则：密钥/越界/注入/权限/后门/数据产品 |
 | 部署成本 | 低——单二进制，零运行时依赖 | 低——随语言生态装一个 CLI | 中——企业设备需一次 `install.sh` 装约束层（也可先用 npx 零配置试用） |
 | 维护负担 | 低——规则随上游更新 | 中——自定义脚本需自己维护 | 中——规则与 hook 随本仓升级，但每版需重装 hook 并对齐配置 |
 | 建议 | 强密钥合规必配 | 已有体系可保留 | 与前两者并用，专注 Agent 治理维度 |
@@ -127,7 +127,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化（daemon 巡检需安装时显式确认，默认不装；QUICK_MODE / 非交互安装自动跳过），commit 时触发审计，人离场治理不离开
 - 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
-- 🧱 **规则与安全面：28 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截；fail-fast（critical 命中后其余跳过）、默认非 fail-closed（绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
+- 🧱 **规则与安全面：28 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截；fail-fast（critical 命中后其余跳过）、默认非 fail-closed（配置可被篡改、hook 可经 `--no-verify` 跳过——绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 - 🔧 **工具与能力面：104 个 MCP tool + 证据分档**——28 条规则中 22 条基于 git diff（本地生效、零 token）、4 条 hybrid（diff + Agent 日志）、1 条 filesystem 扫描、1 条走 decision-log（清单见 [SECURITY](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）。其中 commons_invoke 为 dry-run 预检语义（返回能力元数据与调用计划，真实执行由 Agent runtime 注入 executor；见 LIMITATIONS）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 - 🛡️ **AgentShield 五类配置面静态扫描**——`@public` SDK 能力（经 `createAgentShield` 调用），**不在 commit hook 链路上**，按需接入

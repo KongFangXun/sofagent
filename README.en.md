@@ -174,7 +174,7 @@ together by the deliverables handed over in between**:
  reliability gains of a governance constraint layer—directional reference only): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in
 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md) (write-surface audit coverage: the weight and skill surfaces have
  shipped; the prompt / memory surfaces shipped in v1.5.9)
-- **Capabilities are portable, never dead-bound to a platform**—the constraint layer is platform-agnostic; the methodology follows the business, not the platform
+- **Capabilities are portable, never dead-bound to a platform**—the constraint layer is platform-agnostic (what's portable is the constraint assets and the audit fallback; injection strength still varies by host tier: hard interception for DSH/OpenClaw, advisory injection + git-hook audit fallback elsewhere—see the tier table in "Multi-platform Mounting"); the methodology follows the business, not the platform
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself—the project is a complete FDE workflow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
