@@ -214,7 +214,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 | **Dataset triple format** | (state / questions / answers) isomorphic to the primitives; four-step contrastive construction · family-level split · replay-leak guard | SDK-face (format validator) |
 | **Collection & gates** | Three-source collectors (history/HITL/PR) + nine hard-sample points + four quality gates + active sampling | SDK-face |
 | **Judge-head contract** | `EncoderLike` interface (swap backbones without touching heads) + three primitive judge heads (reference impl; real backbone in v1.8.0) | SDK-face |
-| **Zero-shot baseline** | Self-produced baseline **recorded as-is** (mock encoder, zh/en split, unembellished) — the denominator for "how much training adds" in stage 2 | CLI reachable (`datasets/`) |
+| **Zero-shot baseline** | Self-produced baseline **recorded as-is** (mock encoder, zh/en split, unembellished) — the denominator for "how much training adds" in stage 2 | SDK surface · reproducible from the source tree (`npm run build`, then `node datasets/baseline-zero-shot-run.js`) |
 | **Loop workflow semantics** | `loop:` declaration + fail-closed `exit_when` decidability + budget suspension + `daemon pause/resume` | CLI reachable |
 
 > 📌 **SDK-surface first**: user-facing entries (CLI/MCP) are scheduled for v1.8.0. Full evidence in the [v1.6.0 devlog](./docs/changelog/v1.6/v1.6.0.md); older sections in [CHANGELOG](./CHANGELOG.md).
