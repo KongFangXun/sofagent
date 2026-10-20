@@ -32,6 +32,46 @@ export function needsUntrustedWrap(trust: Trust): boolean {
 }
 
 /**
+ * 模型控制 token 族——编码层注入面的中和表。
+ *
+ * 为什么需要（与层 1 标签包裹是两个不同的面）：
+ *   `<untrusted>` 包裹解决的是「模型该不该把它当指令」；控制 token 解决的是
+ *   「它有没有资格变成一个 token」。外部文本里写出 ChatML/Llama/DeepSeek 风格的
+ *   控制标记时，若原样进 tokenizer，某些 chat template 会把它编成真正的控制
+ *   token——数据面文本就此获得控制面语义（提前结束思考段、伪造角色轮次、
+ *   伪造工具调用边界）。这一步发生在「prompt 拼接完之后、模型前向之前」，
+ *   靠包裹与事后正则都拦不住。
+ *
+ * 处置口径：把分隔符转义为 HTML 实体（与同函数内 `</untrusted>` 的处理同一约定），
+ * 使原文「仍可被模型读到」，但**不再构成控制 token 的词表命中**。不删除内容——
+ * 删除会让下游读到残缺数据，且不可审计。
+ *
+ * 覆盖形态：ChatML（im_start/im_end/im_sep）、Llama-3（begin_of_text/eot_id/
+ * start_header_id）、DeepSeek（endoftext/User/Assistant）、推理段边界（think）、
+ * 工具调用分隔（DSML）。竖线同时覆盖 ASCII `|` 与全角 `｜`(U+FF5C)——此函数在
+ * 原文上跑、不经 NFKC 归一（归一是审计侧 normalizeLine 的事，属另一条链），
+ * 漏掉全角就等于漏掉一大类真实载荷（DeepSeek 系模板正用全角竖线）。
+ */
+const CONTROL_TOKEN_PATTERNS: RegExp[] = [
+  /<[|｜][A-Za-z_][A-Za-z_0-9]{0,30}[|｜]>/g,
+  /<\/?think>/gi,
+  /[|｜]\s*DSML\s*[|｜]/gi,
+];
+
+/**
+ * 中和外部内容中的模型控制 token 字面量（层 1 的编码面补充）。
+ * @param content 待中和的原文
+ * @returns 分隔符已转义为实体的文本（内容本身不删）
+ */
+export function neutralizeControlTokens(content: string): string {
+  return CONTROL_TOKEN_PATTERNS.reduce(
+    (acc, re) =>
+      acc.replace(re, (m) => m.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/[|｜]/g, '&#124;')),
+    content
+  );
+}
+
+/**
  * 层 1：外部内容 <untrusted> 标签包裹。
  *
  * 输出形如：
@@ -48,10 +88,14 @@ export function needsUntrustedWrap(trust: Trust): boolean {
  * @returns 包裹后的字符串
  */
 export function wrapUntrusted(content: string, source: UntrustedSource, meta?: UntrustedMeta): string {
+  // 编码面：先把控制 token 字面量中和，再做标签逃逸转义。
+  // 顺序不可颠倒——中和只动 `<`/`>`/`|`，不产生新的 `</untrusted>` 形态，
+  // 而标签转义会引入 `&lt;`，若先转义会让中和的正则再也匹配不到原始 `<|`。
+  const neutralized = neutralizeControlTokens(content);
   // 防标签逃逸：内容里的闭合标签先转义。
   // 容忍闭合标签内的空白与大小写变体（</untrusted > / </UNTRUSTED\n> / </ untrusted>）——
   // 只匹配精确字面量时，这些变体对多数 tokenizer/LLM 仍是闭合标签，可逃逸包裹边界。
-  const safeContent = content.replace(/<\/\s*untrusted\s*>/gi, '&lt;/untrusted&gt;');
+  const safeContent = neutralized.replace(/<\/\s*untrusted\s*>/gi, '&lt;/untrusted&gt;');
   const urlAttr = meta?.url ? ` url="${escapeAttr(meta.url)}"` : '';
   return `<untrusted source="${source}"${urlAttr}>\n${safeContent}\n</untrusted>`;
 }
