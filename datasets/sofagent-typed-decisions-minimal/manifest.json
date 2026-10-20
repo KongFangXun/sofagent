@@ -5,7 +5,15 @@
   "freezeNote": "冻结即单调：本集冻结后不得追加；追加须新建集并在两集文档显式声明新旧不可横比。",
   "frozenAt": "2026-10-20",
   "schema": "sofagent-typed-decisions-minimal/v1",
-  "questionFields": ["id", "criterionId", "language", "primitiveType", "question", "expectedAnswer", "privateHash"],
+  "questionFields": [
+    "id",
+    "criterionId",
+    "language",
+    "primitiveType",
+    "question",
+    "expectedAnswer",
+    "privateHash"
+  ],
   "lineCount": 370,
   "lineReconciliationFile": "line-reconciliation.json",
   "provenance": {
@@ -37,8 +45,12 @@
     "source": "deterministic",
     "recomputable": "expectedAnswer 由生成器模板参数复算（build-minimal-dataset.mjs 的 computeExpected）——标签可由代码复算，非人工标注"
   },
-  "languageSplit": { "zh": 185, "en": 185 },
+  "languageSplit": {
+    "zh": 185,
+    "en": 185
+  },
   "perCriterionQuestionRange": "每判据 10 题（zh/en 各 5）；语义失灵专项 10 题（五类 × zh/en 各 1）",
   "role": "评测集（evaluation set）——用「模型预测概率 × deterministic 结果」算 ECE / 一致率；与校准集正交（校准集门四管「什么能进」，本集管「在哪测」）",
-  "positioning": "内部校准对照底盘（不公开、不作对外验收线）——与 FDE-Bench（公开案例源 / 对外差异化标尺 / 禁入内部数据，v1.9.0 §五）定位不同，防混淆"
+  "positioning": "内部校准对照底盘（不公开、不作对外验收线）——与 FDE-Bench（公开案例源 / 对外差异化标尺 / 禁入内部数据，v1.9.0 §五）定位不同，防混淆",
+  "frozenArtifactsSha": "e80ab4508a55fcdc11960219d58af9ca8e7bc0769e0787f80f1942601a5173cd"
 }

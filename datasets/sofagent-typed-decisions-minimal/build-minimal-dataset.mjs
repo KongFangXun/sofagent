@@ -9,7 +9,7 @@
 // 污染声明 = 与公开基准/厂商评测集交集 0（privateHash 私有锚定）。
 // ============================================================
 import { createHash } from 'crypto';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { AUDIT_CRITERIA } from '../../engine/audit/dist/rules/criteria/audit-criteria.js';
@@ -134,6 +134,28 @@ function main() {
 
   const all = [...lines, ...semItems];
   const jsonl = all.map((l) => JSON.stringify(l)).join('\n') + '\n';
+
+  // ── 冻结 sha 锚定（复核第 1 轮 ⚪13：题集冻结后生成器不得静默改产物）──
+  // manifest.frozen=true 且带 frozenArtifactsSha 时：本次生成产物 sha 须与
+  // 冻结值逐字节一致——不符即拒写退出（「冻结即单调：变更须新建集」的
+  // 机制面，靠门禁不靠自觉）。
+  const manifestPath = join(here, 'manifest.json');
+  let frozenSha = null;
+  if (existsSync(manifestPath)) {
+    try {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      if (manifest.frozen && manifest.frozenArtifactsSha) frozenSha = manifest.frozenArtifactsSha;
+    } catch { /* manifest 坏损由 C6 门禁报——生成器只管冻结锚 */ }
+  }
+  const actualSha = createHash('sha256').update(jsonl).digest('hex');
+  if (frozenSha && actualSha !== frozenSha) {
+    console.error('[minimal-dataset] ✗ 题集已冻结——拒写（变更须新建集）');
+    console.error(`  冻结 sha（manifest.frozenArtifactsSha）：${frozenSha}`);
+    console.error(`  本次生成产物 sha                ：${actualSha}`);
+    console.error('  生成模板/判据集已变更但集已冻结——如确需新题集：新建集目录并在两集文档显式声明新旧不可横比');
+    process.exit(1);
+  }
+
   writeFileSync(join(here, 'questions.jsonl'), jsonl);
 
   // 行数对账输出（manifest 消费——各判据题数之和 == 总量）
