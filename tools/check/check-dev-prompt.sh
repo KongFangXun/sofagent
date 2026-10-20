@@ -325,6 +325,11 @@ var lines = c.split("\n");
 //    刻意**不用**「源文件反引号数 vs 提取结果」这类数据形状判据——合法文档
 //    （只含 `npm test`、`~/Desktop/` 之类）本就没有可提取引用，那样会误报。
 var F_RE = /`([^`]*\.(?:ts|sh|mjs|json|yml))`/g; // 文件路径
+// v1.7 补：.md 文档路径（必须含 `/`；剥锚点后再判存在性）——此前白名单不含 .md，
+//   任务书里的 `docs/VALIDATION.md` / `datasets/README.md` 等整片不在检查面内，
+//   造成「§级指针」盲区（doc review r2 P1-7 实证：连续两轮 P1 从该口子穿过）。
+//   只收含 `/` 的形态：裸 `a.md` 是章节名/文件名泛称，不是可解析路径。
+var MD_RE = /`([^`]*\/[^`]*\.md)(?:#[^`]*)?`/g;
 var N_RE = /`([a-zA-Z_][a-zA-Z0-9_]*)\(\)`/g;    // 函数名
 var D_RE = /`([^`]*\/)`/g;                       // 目录
 var L_RE = /`([^`]+)`\s*[（(]\s*(\d+)\s*行/g;    // 快照标记（路径 + 声明行数）
@@ -344,15 +349,17 @@ if (probeHit(N_RE, "`foo()`")) P_POS |= 2;
 if (probeHit(D_RE, "`engine/x/`")) P_POS |= 4;
 if (probeHit(L_RE, "`a.md`（12 行）")) P_POS |= 8;
 if (probeHit(A_RE, "`engine/x/a.ts` 的 `foo`")) P_POS |= 16;
+if (probeHit(MD_RE, "`docs/x.md`")) P_POS |= 32;
 
 if (!probeHit(F_RE, "`a.md`")) P_NEG |= 1;            // 扩展名白名单被放宽
 if (!probeHit(D_RE, "`engine/x/a.ts`")) P_NEG |= 2;   // 目录必须以 / 收尾
 if (!probeHit(N_RE, "`foo`")) P_NEG |= 4;             // 函数名必须带 ()
 if (!probeHit(L_RE, "`a.md`")) P_NEG |= 8;            // 快照必须带「N 行」
 if (!probeHit(A_RE, "`foo()`")) P_NEG |= 16;          // 归属必须「`file` 的 `sym`」双反引号形态
+if (!probeHit(MD_RE, "`a.md`")) P_NEG |= 32;          // .md 必须含 `/`（裸文件名不是路径）
 
-if (P_POS !== 31 || P_NEG !== 31) {
-  process.stderr.write("提取器自检失败：正向=" + P_POS + "/31 负向=" + P_NEG + "/31\n");
+if (P_POS !== 63 || P_NEG !== 63) {
+  process.stderr.write("提取器自检失败：正向=" + P_POS + "/63 负向=" + P_NEG + "/63\n");
   process.exit(3);
 }
 
@@ -561,6 +568,22 @@ lines.forEach(function(line) {
           : (isErratumRef(line, m.index, p) ? "erratum" : c));
         console.log("P|" + p + "|" + ctx);
       }
+    }
+  });
+});
+
+// 文档路径（.md）——复用 P| 通道，走同一存在性判定
+seen = {};
+lines.forEach(function(line) {
+  var c = lineCtx(line);
+  [...line.matchAll(MD_RE)].forEach(function(m) {
+    var p = m[1];
+    if (!p.includes("/") || p.includes("$") || p.includes("{") ||
+        p.includes("*") || p.includes("(") || p.startsWith("~") || p.match(/vX\.Y/)) return;
+    var k = "P|" + p;
+    if (!seen[k]) {
+      seen[k] = 1;
+      console.log("P|" + p + "|" + c);
     }
   });
 });
