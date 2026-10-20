@@ -48,9 +48,11 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
   - **是否可能跨境**：选用境外云主机即构成数据出境——**不做代判**（已过本地分拣闸 ≠ 已过出境评估：分拣闸管敏感度，不管司法辖区）。
   - **评估责任**：出境安全评估由用户侧合规自评，sofagent 不代为承担。
 
-> ⚠️ **归档产物路径披露**：`docs/archive/` 下的发布产物（prompt / 报告草稿）可能含维护者本地路径形态（v1.6.1 已脱敏至 `~/`，用户名级信息不再外泄）；归档件为历史快照，后续归档沿用同口径。
+> ⚠️ **归档产物路径披露**：`docs/archive/` 下的发布产物（prompt / 报告草稿）可能含维护者本地路径形态（v1.7.0 已脱敏至 `~/`，用户名级信息不再外泄）；归档件为历史快照，后续归档沿用同口径。
 
-- **例外四 · Dashboard star 数只读拉取**（v1.6.1 披露）：dashboard 页面右上角 star 计数由浏览器匿名 fetch GitHub 公开 API（`api.github.com/repos/KongFangXun/sofagent`，见 `tools/dashboard/dashboard.html` 的 `loadStarCount`）获取——**只读匿名拉取、无任何用户数据外发、失败静默降级**（catch 后仅显示 ★ 占位）。该条不属 opt-in 配置（打开 dashboard 即发生），但因「零用户数据外发 + 只读公开端点」如实补录于此，口径闭环。
+- **例外四 · Dashboard star 数只读拉取**（v1.7.0 披露）：dashboard 页面右上角 star 计数由浏览器匿名 fetch GitHub 公开 API（`api.github.com/repos/KongFangXun/sofagent`，见 `tools/dashboard/dashboard.html` 的 `loadStarCount`）获取——**只读匿名拉取、无任何用户数据外发、失败静默降级**（catch 后仅显示 ★ 占位）。
+  该条不属 opt-in 配置（打开 dashboard 即发生），但因「零用户数据外发 + 只读公开端点」
+  如实补录于此，口径闭环。
 
 > 🧭 **出口边界声明**：上述三个例外**默认全关**；开启后数据离开本机属用户自主取舍，与「数据不出本机」承诺互斥（与例外一既有表述同口径）。**本仓只声明现状与责任边界，不代判出境、不代为承担评估责任**——需要合规 / 法务签字的企业，请以本节三项为输入自行完成自评。
 
@@ -126,7 +128,7 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 
 > 🔴 **OpenClaw channel 审计结论（v1.1.8 开发前置核实）**：OpenClaw 本地回环 ws:// 明文传输、无 TLS——**第 3 层 sofagent 应用加密是唯一保密防线**。因此 federation channel 只搬运密文帧（iv‖tag‖ciphertext），绝不触碰明文 payload；即使 channel 被中间人劫持，内容仍不可读（纵深防御原则，不依赖 channel 自身安全性）。
 
-> ⚠️ **peer 注册面未接线（v1.6.1 审查校准）**：`engine/daemon/src/federation/peers.ts` 的 `registerPeer` 无生产调用方（零生产调用点），联邦查询当前恒退化为纯本地且无日志——peers 注册表在生产链路上无人写入，`withOfflineFallback` 恒走「无 peer ⇒ 纯本地」分支。
+> ⚠️ **peer 注册面未接线（v1.7.0 审查校准）**：`engine/daemon/src/federation/peers.ts` 的 `registerPeer` 无生产调用方（零生产调用点），联邦查询当前恒退化为纯本地且无日志——peers 注册表在生产链路上无人写入，`withOfflineFallback` 恒走「无 peer ⇒ 纯本地」分支。
 
 ### 配对与密钥管理
 
@@ -284,7 +286,8 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 >
 > **当前性质是「设计期已知缺口」而非「已暴露面」**：三条下发面尚未接真实传输通道（npm registry / 制品库 / 安装脚本均为**注入端口**，缺省只落盘内联内容），外部无法触达；**一旦接上真实传输，①② 直接构成远程包注入面**——信任锚与任务面验签须随该批落地。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md)。
 >
-> ③ **「外部无法触达」的射程声明（穷尽性交代）**：该断言的对象是**三条下发面**，不是 daemon 的全部网络面——daemon 进程本身**确有一个在监听的 HTTP 端点**：`startHealthEndpoint`（定义于 `engine/daemon/src/health-endpoint.ts`，其内 `http.createServer` + `server.listen(port, host)`；由 `engine/daemon/src/cli.ts` 的 `main` 内 daemon start 分支——`SOFAGENT_HEALTH_PORT` 显式配置时——在生产路径调用），
+> ③ **「外部无法触达」的射程声明（穷尽性交代）**：该断言的对象是**三条下发面**，不是 daemon 的全部网络面——daemon 进程本身
+> **确有一个在监听的 HTTP 端点**：`startHealthEndpoint`（定义于 `engine/daemon/src/health-endpoint.ts`，其内 `http.createServer` + `server.listen(port, host)`；由 `engine/daemon/src/cli.ts` 的 `main` 内 daemon start 分支——`SOFAGENT_HEALTH_PORT` 显式配置时——在生产路径调用），
 >但其 URL 分支只有 `GET /health` 与 `/health/`（同函数内）两支，只回健康三态、不接收下发内容、不写盘。⇒ 它是**只读探针面**，与三条下发面的入站路径无交集；三条下发面的事件入站仍是注入端口。
 
 
@@ -537,8 +540,11 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 与 `SOFAGENT_DATA` 同属环境变量信任边界，本节一并声明：
 
-- **`SOFAGENT_KEY_PATH`**（消费于 `engine/core/src/audit-history.ts` 的 `getSofagentKeyPath`）：HMAC 密钥路径覆盖，优先级为 `SOFAGENT_KEY_PATH > ~/.sofagent-key`。能设置该变量的攻击者可将签名密钥重定向到自控文件——写入侧与校验侧同读该密钥时链校验仍「通过」，但密钥已不在用户掌控。设计初衷同 `SOFAGENT_DATA`（测试隔离，如 `llm-call-trace.test.ts` 用其指向临时密钥）；风险分级与缓解同上节（本地低 / 共享中，防线是环境隔离非路径白名单）。
-- **`SOFAGENT_HOME_ALLOWED_PREFIXES`**（消费于 `engine/core/src/data-paths.ts` 的 `sanitizeSofagentHome`）：`SOFAGENT_HOME` 越界回退白名单的扩展入口（冒号分隔，企业场景显式扩展安装根前缀）。注意双向性：它既可把合法定制路径**收进来**（预期用途），也可把越界路径**放进来**——能设置该变量的攻击者可将 `SOFAGENT_HOME` 重定向到自控前缀下（数据落点与审计主链分家，同 [LIMITATIONS 数据目录解析](./docs/LIMITATIONS.md) 已披露的双轨风险叠加）。
+- **`SOFAGENT_KEY_PATH`**（消费于 `engine/core/src/audit-history.ts` 的 `getSofagentKeyPath`）：HMAC 密钥路径覆盖，优先级为 `SOFAGENT_KEY_PATH > ~/.sofagent-key`。能设置该变量的攻击者可将签名密钥重定向到自控文件——写入侧与校验侧同读该密钥时链校验仍「通过」，但密钥已不在用户掌控。
+  设计初衷同 `SOFAGENT_DATA`（测试隔离，如 `llm-call-trace.test.ts` 用其指向临时密钥）；
+  风险分级与缓解同上节（本地低 / 共享中，防线是环境隔离非路径白名单）。
+- **`SOFAGENT_HOME_ALLOWED_PREFIXES`**（消费于 `engine/core/src/data-paths.ts` 的 `sanitizeSofagentHome`）：`SOFAGENT_HOME` 越界回退白名单的扩展入口（冒号分隔，企业场景显式扩展安装根前缀）。注意双向性：它既可把合法定制路径**收进来**（预期用途），也可把越界路径**放进来**——能设置该变量的攻击者可将 `SOFAGENT_HOME` 重定向到自控前缀下（数据落点与审计主链分家，
+  同 [LIMITATIONS 数据目录解析](./docs/LIMITATIONS.md) 已披露的双轨风险叠加）。
   缓解同上节：入口环境清洗 + 部署期前缀清单管控。
 
 ### 已知绕过路径
@@ -735,7 +741,9 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 本节聚焦与安全策略直接相关的三条：
 
 1. **数据的主权属于客户**——在客户现场看到的数据，一个字节都不应该出现在不该出现的地方：不进 AI 训练数据（除非合同明确授权）、不进案例素材（除非客户书面同意）。sofagent 工程呼应：数据不出本机（§已知风险）+ 联邦查询可选（§一传输安全）+ sensitivity 分级（§二知识安全）+ 最小权限原则。
-2. **诚实报告结果，包括坏消息**——按结果收费的模式里最大的道德风险是粉饰结果。sofagent 工程呼应：审计模块 git diff 硬证据（28 条规则零 token 纯静态判定，不靠模型「自评」）+ HMAC 链防篡改（§四审计与存储安全）+ **commit 级审计日志（`history.jsonl` / `decision-log.jsonl`）为全局存储**；运行时审计日志（`runtime-audit.jsonl` 等）按 git 仓库隔离（FORGE 自托管路径与约束层侧 data-sovereignty / llm-calls 均已按 repo-hash 隔离，见 §四）。
+2. **诚实报告结果，包括坏消息**——按结果收费的模式里最大的道德风险是粉饰结果。sofagent 工程呼应：审计模块 git diff 硬证据（28 条规则零 token 纯静态判定，不靠模型「自评」）+ HMAC 链防篡改（§四审计与存储安全）+ **commit 级审计日志（`history.jsonl` / `decision-log.jsonl`）为全局存储**；
+   运行时审计日志（`runtime-audit.jsonl` 等）按 git 仓库隔离（FORGE 自托管路径与约束层侧
+   data-sovereignty / llm-calls 均已按 repo-hash 隔离，见 §四）。
 3. **不制造依赖，不贩卖恐惧**——不故意把系统做成黑箱让客户永远离不开你；不夸大「不用 AI 就会死」的恐慌促成交易。sofagent 工程呼应：MIT 开源（客户可自主审计代码）+ 交付物（ontology/workflow/skills）客户可自主维护 + FDE 离场机制（§五工程安全 install.sh 行为说明：只写入 `~/.sofagent/`，不锁死客户环境）。
 
 > 其余三条（把被替代的人当回事 / 对不该做的事说不 / 记住你代表技术本身）属 FDE 个人职业操守范畴，非安全工程范畴，详见 FDE/GUIDE.md。
