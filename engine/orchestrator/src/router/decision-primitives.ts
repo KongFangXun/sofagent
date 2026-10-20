@@ -101,6 +101,14 @@ export interface ChoiceAnswer {
   /** 全候选项概率分布（所有候选含兜底项各一项，和≈1，容差 1e-6） */
   distribution: Readonly<Record<string, number>>;
   /**
+   * 分布熵（v1.7.0 §五 补齐——可选字段向后兼容）：
+   * 归一熵 ∈ [0,1]（底 log(k)）。低熵=判定明确，高熵=选项间接近→
+   * 可作为「需复核」信号。完整输出面（含熵的构造与守卫）见
+   * decision-output.ts makeChoiceFullOutput——本字段是 Answer 层的
+   * 薄留痕位（既有消费方零改动）。
+   */
+  entropy?: number;
+  /**
    * 兜底项与弃权的区分留痕：
    *   fallbackSelected = true  ⇒ 模型「选中了兜底候选」（分类路径）
    *   abstained       = true  ⇒ 模型给出弃权态（ABSTAIN）
@@ -123,6 +131,15 @@ export interface ScoreAnswer {
   upper: number;
   /** 不确定度（≥0；区间宽度的另一种表达，二者须自洽：upper-lower ≈ 2σ 量级） */
   uncertainty: number;
+  /**
+   * 档位序（v1.7.0 §五 补齐——可选字段向后兼容）：
+   * value 在等宽 ordinalTotal 档中的档序（0 基）。序信息由 §二保序约束
+   * 保证不被校准破坏（RPS 优化出的序结构）。完整输出面（区间+序构造与
+   * 守卫）见 decision-output.ts makeScoreFullOutput。
+   */
+  ordinal?: number;
+  /** 档位总数（序/总数并列——序不可独读） */
+  ordinalTotal?: number;
 }
 
 /** Noul 答案：真值概率 */
@@ -131,6 +148,13 @@ export interface NoulAnswer {
   questionId: string;
   /** 判断成立的概率 ∈ [0,1] */
   probability: number;
+  /**
+   * 四态（v1.7.0 §五 补齐——可选字段向后兼容）：
+   * '成立'|'倾向成立'|'倾向不成立'|'不成立'——由校准后概率分段得出
+   * （分段口径 = §四门槛 ThresholdsByPrimitive，映射函数与边界留痕见
+   * decision-output.ts fourStateMapping / makeNoulFullOutput）。
+   */
+  fourState?: '成立' | '倾向成立' | '倾向不成立' | '不成立';
 }
 
 export type DecisionAnswer = ChoiceAnswer | ScoreAnswer | NoulAnswer;

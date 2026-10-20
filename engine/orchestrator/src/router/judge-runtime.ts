@@ -4,11 +4,21 @@
 //（非逐问重复编码）；判定不占本地主模型槽位（行为锁——判定期间无本地
 // 主模型推理请求，复用 v1.5.4 槽位信号量的独立判定槽位口径）；
 // 权重溯源落链（modelRevision 随判定结果进 decision-log 形态记录）。
+// v1.7.0 §五 生产装配：judgeFullOutputs 把判定头原始输出装配为三原语
+// 完整概率面（choice 分布+熵 / score 区间+序 / noul 概率+四态）——
+// 判定输出的汇聚点在此（多头结果 → FullOutput 的唯一生产装配位）。
 // ============================================================
 import type { EncoderLike } from './judge-heads';
 import { choiceHead, scoreHead, noulHead, JudgeHeadError } from './judge-heads';
 import type { DecisionRequest, DecisionResult, DecisionAnswer } from './decision-primitives';
 import { makeChoiceAnswer, makeScoreAnswer, makeNoulAnswer, validateDecisionPairing } from './decision-primitives';
+import {
+  makeChoiceFullOutput,
+  makeScoreFullOutput,
+  makeNoulFullOutput,
+  type PrimitiveFullOutput,
+  type SegmentBoundaries,
+} from './decision-output';
 
 /** 判定运行时（契约面——换基座只换 encoder 实现） */
 export class JudgeRuntime {
@@ -69,6 +79,87 @@ export class JudgeRuntime {
     };
     validateDecisionPairing(request, result);
     return result;
+  }
+
+  /**
+   * 三原语完整概率面装配（v1.7.0 §五 生产调用点）：
+   * 把判定头原始输出装配为 FullOutput 形态（choice 分布+熵 / score
+   * 区间+序 / noul 概率+四态）——「多头结果 → 完整输出」的唯一生产
+   * 装配位。§四门槛（ThresholdsByPrimitive）作为 noul 四态分段口径
+   * 传入（分段边界与弃权门槛同源——同一套原语分档面）。
+   *
+   * 校准联动：calibrationStatus='uncalibrated'（§二 ECE 未达阈或无读数
+   * 的默认态）→ 四态边界可算、照常落数，但消费守卫
+   * （assertConsumableForRouting）拦截其进入分流决策路径。
+   * 建议动作：熵/概率面只出建议（suggestedAction）不执法——执行权在
+   * 既有确定性规则与审计层（§五行为锁）。
+   */
+  judgeFullOutputs(input: {
+    request: Pick<DecisionRequest, 'state' | 'questions'>;
+    /** §四分档门槛（noul 四态分段口径——与弃权带同一来源） */
+    noulThresholds: { noul: { lowerBand: number; upperBand: number } };
+    /** 校准状态（缺省 uncalibrated——§二达阈读数接入前的保守默认） */
+    calibrationStatus?: 'calibrated' | 'uncalibrated';
+  }): PrimitiveFullOutput[] {
+    const calibrationStatus = input.calibrationStatus ?? 'uncalibrated';
+    // noul 分段边界由 §四门槛导出（noUpper=lowerBand / leanNoUpper=中点下 /
+    // leanYesLower=中点上 / yesLower=upperBand——分段口径与弃权带同源）
+    const lb = input.noulThresholds.noul.lowerBand;
+    const ub = input.noulThresholds.noul.upperBand;
+    const mid = (lb + ub) / 2;
+    const segmentBoundaries: SegmentBoundaries = {
+      noUpper: lb,
+      leanNoUpper: (lb + mid) / 2,
+      leanYesLower: (mid + ub) / 2,
+      yesLower: ub,
+    };
+    const encoded = this.encoder.encode(input.request.state);
+    const sharedEncoder: EncoderLike = {
+      modelRevision: this.encoder.modelRevision,
+      maxContextTokens: this.encoder.maxContextTokens,
+      encode: (state: string): number[][] => (state === input.request.state ? encoded : this.encoder.encode(state)),
+      isSingleToken: (text: string): boolean => this.encoder.isSingleToken(text),
+      decodeToken: (token: number): string => this.encoder.decodeToken(token),
+    };
+    return input.request.questions.map((q): PrimitiveFullOutput => {
+      switch (q.kind) {
+        case 'choice': {
+          const out = choiceHead(sharedEncoder, input.request.state, q.options.map((o) => o.label), q.options.map((o) => o.id));
+          const top = Object.entries(out.scores).sort((a, b) => b[1] - a[1])[0]!;
+          return makeChoiceFullOutput({
+            questionId: q.id,
+            selected: top[0],
+            distribution: out.scores,
+            calibrationStatus,
+            // 高熵（选项接近）→ 建议「复核」；低熵（判定明确）→ 建议「放行」
+            suggestedAction: '复核',
+          });
+        }
+        case 'score': {
+          const out = scoreHead(sharedEncoder, input.request.state, { min: q.min, max: q.max });
+          return makeScoreFullOutput({
+            questionId: q.id,
+            value: out.value,
+            credibleInterval: out.interval,
+            min: q.min,
+            max: q.max,
+            ordinalTotal: 3,
+            calibrationStatus,
+            suggestedAction: '复核',
+          });
+        }
+        case 'noul': {
+          const out = noulHead(sharedEncoder, input.request.state);
+          return makeNoulFullOutput({
+            questionId: q.id,
+            probability: out.probability,
+            segmentBoundaries,
+            calibrationStatus,
+            suggestedAction: '复核',
+          });
+        }
+      }
+    });
   }
 }
 
