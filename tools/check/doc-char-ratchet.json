@@ -2,7 +2,7 @@
   "README.md": 22053,
   "README.en.md": 42951,
   "CHANGELOG.md": 16246,
-  "SECURITY.md": 51760,
+  "SECURITY.md": 51785,
   "CONTRIBUTING.md": 13165,
   "docs/API.md": 15400,
   "docs/ARCHITECTURE.md": 93386,
@@ -28,6 +28,6 @@
     "opening_rule": "抬头块 = H1 到首个 `## ` 之间的正文；字数只计文本字符，剔除装饰行（HTML 标签行 / 纯图片 / 纯徽章 / HTML 注释 / `---`）与 YAML front matter。超限处置三选一：下沉正文 / 精简 / 淘汰。",
     "origin": "文档瘦身批（2026-09-29）：口径由「物理行数」换成「字符数」（用户裁定：行数是坏指标，控字数不控行数）。基线 = 换算时点实测值。",
     "consumed_by": "doc-discipline.sh Face 6（字数棘轮）+ Face 7（抬头块闸）",
-    "note": "① 基线为字符数棘轮：实测值 ≤ 基线 = 绿，只许降不许升（净增首选同文档移出等量字）。\\n② 调整须过三道闸（口径无误 / 无陈旧可清 / 正当新增）并在提交说明留证（文件名 + 增量 + 三闸理由）。\\n③ 历史流水见 git log --follow 本文件。 | 2026-10-20 v1.7.0 bugfix 批（任务书授权净增，四路审查修复落文档面）:11 文档基线随实测上调（README+935/README.en+2082/SECURITY+795/CONTRIBUTING+316/ARCHITECTURE+296/HANDBOOK+464/LIMITATIONS+317/PHILOSOPHY+528/ROADMAP+179/VALIDATION+9/WIKI+849）——净增内容为 A2 实拍/跨仓索引/身份自检/来源回源/排版重排等任务书指定项 涉及文件：README.md README.en.md SECURITY.md CONTRIBUTING.md docs/ARCHITECTURE.md docs/HANDBOOK.md docs/LIMITATIONS.md docs/PHILOSOPHY.md docs/ROADMAP.md docs/VALIDATION.md docs/WIKI.md"
+    "note": "① 基线为字符数棘轮：实测值 ≤ 基线 = 绿，只许降不许升（净增首选同文档移出等量字）。\\n② 调整须过三道闸（口径无误 / 无陈旧可清 / 正当新增）并在提交说明留证（文件名 + 增量 + 三闸理由）。\\n③ 历史流水见 git log --follow 本文件。 | 2026-10-20 v1.7.0 bugfix 批（任务书授权净增，四路审查修复落文档面）:11 文档基线随实测上调（README+935/README.en+2082/SECURITY+795/CONTRIBUTING+316/ARCHITECTURE+296/HANDBOOK+464/LIMITATIONS+317/PHILOSOPHY+528/ROADMAP+179/VALIDATION+9/WIKI+849）——净增内容为 A2 实拍/跨仓索引/身份自检/来源回源/排版重排等任务书指定项 涉及文件：README.md README.en.md SECURITY.md CONTRIBUTING.md docs/ARCHITECTURE.md docs/HANDBOOK.md docs/LIMITATIONS.md docs/PHILOSOPHY.md docs/ROADMAP.md docs/VALIDATION.md docs/WIKI.md ｜ 2026-10-20：SECURITY.md 51760→51785（+25）——5 条正文行折至 ≤300 字符墙式标准的排版动作，零内容增删（折行本身按 _meta 口径只增字符数）；同批未动其它文档基线。"
   }
 }

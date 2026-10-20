@@ -583,7 +583,12 @@ lines.forEach(function(line) {
     var k = "P|" + p;
     if (!seen[k]) {
       seen[k] = 1;
-      console.log("P|" + p + "|" + c);
+      // 与 F_RE 通道同款分类：新建/退场/勘误语境不得误判为「文件不存在」
+      var planned = isPendingRef(p, line, m.index);
+      var ctx = planned ? "planned"
+        : (isRetiredRef(line, m.index, p) ? "retired"
+        : (isErratumRef(line, m.index, p) ? "erratum" : c));
+      console.log("P|" + p + "|" + ctx);
     }
   });
 });
