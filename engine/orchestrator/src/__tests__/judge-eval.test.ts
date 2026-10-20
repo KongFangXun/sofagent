@@ -1,7 +1,18 @@
 // judge-eval.test.ts · 评测器单测（统计口径/分桶边界/中英分列/分布内外分列）
+// + v1.7.0 §六 三态对照/双指标分离/best-of-N/达阈判定（阶段二收口面）
 // ============================================================
 import { describe, it, expect } from 'vitest';
 import { evaluateZeroShot } from '../router/judge-eval';
+import {
+  readingFromReport,
+  judgeThresholdVerdict,
+  buildThreeStateComparison,
+  AGREEMENT_HARD_LINE,
+  ECE_HARD_LINE_JUDGE,
+  NOT_MEASURED,
+  type ThreeStateReading,
+  type BestOfNReading,
+} from '../router/judge-eval';
 import { computeCalibration, type CalibrationRecord } from '../router/calibration-report';
 import { JudgeRuntime } from '../router/judge-runtime';
 import type { EncoderLike } from '../router/judge-heads';
@@ -142,5 +153,109 @@ describe('校准报告（分桶边界）', () => {
   it('test_calibration_表述档位默认designGoal（不宣称verified）', () => {
     const r = computeCalibration([{ predicted: 0.5, actual: 1, lang: 'zh' }]);
     expect(r.claimLevel).toBe('design-goal'); // ECE 落数前对外只允许此表述
+  });
+});
+
+// ════════════════════════════════════════
+// v1.7.0 §六 · 三态对照 / 双指标分离 / best-of-N / 达阈判定
+// ════════════════════════════════════════
+
+/** 构造单态读数的便捷函数 */
+function reading(state: ThreeStateReading['state'], zh: number | 'not-measured', en: number | 'not-measured', eceZh: number | 'not-measured', eceEn: number | 'not-measured'): ThreeStateReading {
+  return { state, agreementZh: zh, agreementEn: en, eceZh, eceEn, sampleCount: 370 };
+}
+
+const bestOfN: BestOfNReading = { n: 4, selector: '判定头 max-prob 选优', agreementZh: NOT_MEASURED, agreementEn: NOT_MEASURED };
+
+describe('三态对照与达阈判定（§六收口面）', () => {
+  it('test_三态对照_结构含三态并列_双指标分离_不合并单一分数', () => {
+    const cmp = buildThreeStateComparison({
+      datasetId: 'sofagent-typed-decisions-minimal@1.0.0',
+      evaluatorVersion: 'judge-eval@v1.7.0',
+      zeroShot: reading('zeroShot', NOT_MEASURED, NOT_MEASURED, NOT_MEASURED, NOT_MEASURED),
+      trained: reading('trained', NOT_MEASURED, NOT_MEASURED, NOT_MEASURED, NOT_MEASURED),
+      calibrated: reading('calibrated', NOT_MEASURED, NOT_MEASURED, NOT_MEASURED, NOT_MEASURED),
+      bestOfN,
+    });
+    // 三态并列（第一态 = 本版实测接口，非 mock）
+    expect(cmp.states.map((s) => s.state)).toEqual(['zeroShot', 'trained', 'calibrated']);
+    // v1.6.0 mock 读数并列留档但不进对照列
+    expect(cmp.v1_6_mockArchive.note).toContain('不进对照列');
+    expect(cmp.states.every((s) => s.state !== 'mock')).toBe(true);
+    // 双指标分离：agreement 与 ece 各自独立字段（无单一综合分字段）
+    expect('compositeScore' in cmp).toBe(false);
+    expect(cmp.verdict.agreementPass !== undefined).toBe(true);
+    expect(cmp.verdict.ecePass !== undefined).toBe(true);
+  });
+
+  it('test_达阈判定_达标组_双线全过_阶段三启动', () => {
+    const baseline = reading('zeroShot', 0.60, 0.55, 0.30, 0.28);
+    const v = judgeThresholdVerdict([
+      baseline,
+      reading('trained', 0.72, 0.71, 0.12, 0.11),
+      reading('calibrated', 0.75, 0.73, 0.08, 0.09),
+    ], baseline);
+    expect(v.agreementPass).toBe(true); // zh 0.75 / en 0.73 均 ≥0.70 分列达线
+    expect(v.ecePass).toBe(true); // ECE 0.08/0.09 均 ≤0.10
+    expect(v.stageThree).toBe('proceed');
+    // 非自指：报相对基座提升 Δ 与线距
+    expect(v.reasons.join(' ')).toContain('相对基座提升 Δ');
+  });
+
+  it('test_达阈判定_未达标组_一致率一线未达_阶段三暂缓', () => {
+    // en 一致率 0.65 < 0.70——中英分列不合并计，一线未达即暂缓
+    const v = judgeThresholdVerdict([
+      reading('zeroShot', 0.60, 0.55, 0.30, 0.28),
+      reading('trained', 0.75, 0.65, 0.08, 0.09),
+    ]);
+    expect(v.agreementPass).toBe(false);
+    expect(v.ecePass).toBe(true);
+    expect(v.stageThree).toBe('deferred');
+    expect(v.reasons.join(' ')).toContain('阶段三暂缓');
+  });
+
+  it('test_达阈判定_mixed组_not_measured_未测不得记达标', () => {
+    // 本版实测环境 not-measured：第一态接口在案但无实机读数——未测不得记达标
+    const v = judgeThresholdVerdict([
+      reading('zeroShot', NOT_MEASURED, NOT_MEASURED, NOT_MEASURED, NOT_MEASURED),
+      reading('trained', NOT_MEASURED, NOT_MEASURED, NOT_MEASURED, NOT_MEASURED),
+    ]);
+    expect(v.agreementPass).toBe(false);
+    expect(v.ecePass).toBe(false);
+    expect(v.stageThree).toBe('deferred');
+    expect(v.reasons.join(' ')).toContain('未测不得记达标');
+  });
+
+  it('test_达阈判定_无有效态_readings空态_fail_closed', () => {
+    const v = judgeThresholdVerdict([reading('zeroShot', 0.9, 0.9, 0.05, 0.05)]);
+    expect(v.stageThree).toBe('deferred'); // 仅有 zeroShot 无 trained/calibrated——无有效态
+  });
+
+  it('test_bestOfN列_N与选择器口径随表落数', () => {
+    const cmp = buildThreeStateComparison({
+      datasetId: 'x', evaluatorVersion: 'v1',
+      zeroShot: reading('zeroShot', NOT_MEASURED, NOT_MEASURED, NOT_MEASURED, NOT_MEASURED),
+      trained: reading('trained', NOT_MEASURED, NOT_MEASURED, NOT_MEASURED, NOT_MEASURED),
+      calibrated: reading('calibrated', NOT_MEASURED, NOT_MEASURED, NOT_MEASURED, NOT_MEASURED),
+      bestOfN,
+    });
+    expect(cmp.bestOfN.n).toBe(4);
+    expect(cmp.bestOfN.selector).toContain('max-prob');
+    expect(cmp.bestOfN.agreementZh).toBe(NOT_MEASURED); // 无实机环境如实标注
+  });
+
+  it('test_冻结线常量在案_0_70与0_10_不得由实现结果反推', () => {
+    expect(AGREEMENT_HARD_LINE).toBe(0.70);
+    expect(ECE_HARD_LINE_JUDGE).toBe(0.10);
+  });
+
+  it('test_readingFromReport_空数据集产哨兵不产零', () => {
+    const rt = new JudgeRuntime(mockEncoder());
+    const report = evaluateZeroShot(rt, []);
+    const r = readingFromReport('zeroShot', report, { note: 'not-measured 环境（无实机基座）——如实标注' });
+    expect(r.sampleCount).toBe(0);
+    expect(r.agreementZh).toBe(NOT_MEASURED); // 空集不产 0（ECE=0 是完美校准，空集给 0 = 谎报最优）
+    expect(r.eceZh).toBe(NOT_MEASURED);
+    expect(r.note).toContain('如实标注');
   });
 });
