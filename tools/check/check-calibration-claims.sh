@@ -148,11 +148,19 @@ if [ -z "$FIT_STAT" ]; then
   echo "${RED}✗ 失明：calibration.ts STATISTIC_NAME 读不到（拟合统计量锚缺失）${NC}"
   exit 2
 fi
-# 决策路径声明（inDecisionPath: true）的 statistic 须与拟合统计量一致
+# 决策路径声明（inDecisionPath: true）的 statistic 须与拟合统计量一致。
+# 块数自检：解析出的声明块数须 == registry 登记数（REG_PATH_COUNT）——
+# 少解析 = 格式重构致扫描面塌缩（如 claim 块被压扁成一行）→ exit 2 失明
+# 拒绝假绿（复核第 1 轮：静默退化曾让 C2 空转全绿）。
 INCONSISTENT=$(node -e "
 const src = require('fs').readFileSync('$REGISTRY_SRC', 'utf8');
 // 提取 registerLegacyConfidenceClaims 内的声明块：逐段扫 statistic/calibStatus
 const blocks = src.split(/\{\s*\n\s*id:/).slice(1);
+const expected = ${REG_PATH_COUNT};
+if (blocks.length !== expected) {
+  console.error('  ✗ 失明：声明块解析 ' + blocks.length + ' 个 ≠ 登记数 ' + expected + '（格式重构致解析面塌缩——须修 C2 解析器）');
+  process.exit(2);
+}
 let bad = 0;
 for (const b of blocks) {
   const seg = b.slice(0, b.indexOf('},'));
@@ -165,12 +173,16 @@ for (const b of blocks) {
 }
 process.exit(bad > 0 ? 1 : 0);
 " 2>&1)
-if [ $? -ne 0 ]; then
+c2_rc=$?
+if [ "$c2_rc" -eq 2 ]; then
+  echo "${RED}${INCONSISTENT}${NC}"
+  exit 2
+elif [ "$c2_rc" -ne 0 ]; then
   echo "${RED}${INCONSISTENT}${NC}"
   echo "${RED}  ✗ C2 统计量不一致（消费面与拟合面不同源 = 消费从未被校准的量）${NC}"
   bad=1
 else
-  echo "${GREEN}  ✓ C2 统计量一致（决策路径声明 statistic == STATISTIC_NAME == ${FIT_STAT}；similarity-score 类非概率口径单独登记）${NC}"
+  echo "${GREEN}  ✓ C2 统计量一致（${REG_PATH_COUNT} 声明块全解析；决策路径声明 statistic == STATISTIC_NAME == ${FIT_STAT}；similarity-score 类非概率口径单独登记）${NC}"
 fi
 
 # ── C3 校准集隔离断言调用点存在性 ──────────────────────────
