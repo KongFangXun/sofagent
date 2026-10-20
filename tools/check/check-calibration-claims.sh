@@ -264,20 +264,54 @@ else
   c6_bad=0
   while IFS= read -r m; do
     [ -z "$m" ] && continue
-    # ① 来源构成 ② 行数对账（node 复算各部分和 == 总量）③ 污染声明
+    # ① 来源构成 ② 污染声明 ③ 行数对账（三方：manifest.rowReconciliation
+    # .perCriterionSum == line-reconciliation.json ΣperCriterion ==
+    # questions.jsonl 实际行数 == manifest.lineCount——复核第 1 轮：对账
+    # 分支曾按 m.sources（不存在的形态）判空空转，须按实际结构
+    # provenance.sourceComposition / provenance.rowReconciliation 适配）
     if ! node -e "
+      const fs = require('fs');
+      const path = require('path');
       const m = require('./$m');
-      const has = (k) => JSON.stringify(m).match(new RegExp(k, 'i'));
-      if (!m.sources && !m.composition && !has('source')) { console.error('  ✗ $m 缺来源构成节'); process.exit(1); }
-      if (!m.contamination && !m.pollution && !has('contamination|pollution|污染')) { console.error('  ✗ $m 缺污染声明节'); process.exit(1); }
-      // 行数对账：各部分 rows 之和 == totalRows（可复算）
-      if (m.sources && m.totalRows !== undefined) {
-        const sum = m.sources.reduce((a, s) => a + (s.rows || s.count || 0), 0);
-        if (sum !== m.totalRows) { console.error('  ✗ $m 行数对账失败：Σ部分=' + sum + ' ≠ 总量=' + m.totalRows); process.exit(1); }
+      const prov = m.provenance || {};
+      if (!prov.sourceComposition || !Array.isArray(prov.sourceComposition) || prov.sourceComposition.length === 0) {
+        console.error('  ✗ $m 缺来源构成节（provenance.sourceComposition）'); process.exit(1);
+      }
+      if (!prov.contaminationStatement) {
+        console.error('  ✗ $m 缺污染声明节（provenance.contaminationStatement）'); process.exit(1);
+      }
+      const rr = prov.rowReconciliation;
+      if (!rr || typeof rr.perCriterionSum !== 'number') {
+        console.error('  ✗ $m 缺行数对账节（provenance.rowReconciliation.perCriterionSum）'); process.exit(1);
+      }
+      const dir = path.dirname('./$m');
+      // 三方对账：manifest 声明值 ↔ 对账文件复算 ↔ 数据文件实际行数
+      const reconFile = path.join(dir, m.lineReconciliationFile || 'line-reconciliation.json');
+      let reconSum = null;
+      try {
+        const recon = JSON.parse(fs.readFileSync(reconFile, 'utf8'));
+        reconSum = Object.values(recon.perCriterion || {}).reduce((a, v) => a + Number(v), 0);
+      } catch (e) { /* 对账文件缺席按下方 lineCount 兜底分支报错 */ }
+      const dataFile = path.join(dir, 'questions.jsonl');
+      let actualLines = null;
+      try {
+        actualLines = fs.readFileSync(dataFile, 'utf8').split('\\n').filter((l) => l.trim() !== '').length;
+      } catch (e) { /* 数据文件缺席按下方对账失败报错 */ }
+      if (reconSum !== null && reconSum !== rr.perCriterionSum) {
+        console.error('  ✗ $m 行数对账失败：line-reconciliation ΣperCriterion=' + reconSum + ' ≠ manifest perCriterionSum=' + rr.perCriterionSum); process.exit(1);
+      }
+      if (actualLines !== null && m.lineCount !== undefined && actualLines !== m.lineCount) {
+        console.error('  ✗ $m 行数对账失败：questions.jsonl 实际 ' + actualLines + ' 行 ≠ manifest lineCount=' + m.lineCount); process.exit(1);
+      }
+      if (rr.total !== undefined && rr.total !== rr.perCriterionSum) {
+        console.error('  ✗ $m 行数对账失败：rowReconciliation.total=' + rr.total + ' ≠ perCriterionSum=' + rr.perCriterionSum); process.exit(1);
+      }
+      if (reconSum === null && actualLines === null) {
+        console.error('  ✗ $m 行数对账失明（line-reconciliation.json 与 questions.jsonl 均不可读——无对账面）'); process.exit(1);
       }
     "; then c6_bad=1; fi
   done <<<"$MANIFESTS"
-  [ "$c6_bad" -eq 1 ] && bad=1 || echo "${GREEN}  ✓ C6 manifest 三件套齐（来源构成/行数对账复算/污染声明）${NC}"
+  [ "$c6_bad" -eq 1 ] && bad=1 || echo "${GREEN}  ✓ C6 manifest 三件套齐（来源构成/行数对账三方复算：manifest ↔ line-reconciliation ↔ questions.jsonl 实际行数/污染声明）${NC}"
 fi
 
 # ── 汇总 ──────────────────────────────────────────────────
