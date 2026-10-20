@@ -20,6 +20,7 @@ import {
 } from '../memory-contract';
 import {
   needsUntrustedWrap,
+  neutralizeControlTokens,
   redactForPrompt,
   wrapUntrusted,
   type UntrustedSource,
@@ -54,13 +55,19 @@ export function sortByTrust<T extends TrustTagged>(entries: T[]): T[] {
 }
 
 /**
- * 进 prompt 前的一站式处理（层 4 脱敏 → 层 1 包裹）。
+ * 进 prompt 前的一站式处理（层 4 脱敏 → 控制 token 中和 → 层 1 包裹）。
  *
  * 流程：
  *   1. redactForPrompt(content, sensitivity) —— restricted 得占位串，其余脱敏
- *   2. trust 为 user/web → <untrusted> 包裹（source 取 trust；
+ *   2. **控制 token 中和**：四档 trust 一律做——untrusted 走的 wrapUntrusted 内已中和，
+ *      official/internal 不包裹，故在此显式中和（否则「可信」内容里的控制标记会绕过）
+ *   3. trust 为 user/web → <untrusted> 包裹（source 取 trust；
  *      外部传入 source 覆盖时优先——如 federation peer 内容 trust=user 但来源是联邦）
- *   3. official/internal → 不包裹，直接返回脱敏结果
+ *   4. official/internal → 不包裹，直接返回中和后的脱敏结果
+ *
+ * 为什么中和放在这一层（而不是只放 wrapUntrusted）：本函数是内容进 prompt 的**唯一收口**，
+ * 四档 trust 都经过它；只在包裹函数里做，等于把 official/internal 留成绕过路径。
+ * 中和是幂等的（实体化后的文本不再含控制 token 形态），故与 wrapUntrusted 内的一次叠加无害。
  *
  * @param content 条目内容
  * @param entry 条目的 trust/sensitivity
@@ -73,7 +80,7 @@ export function prepareForPrompt(
   source?: UntrustedSource,
 ): string {
   const redacted = redactForPrompt(content, entry.sensitivity);
-  if (!needsUntrustedWrap(entry.trust)) return redacted;
+  if (!needsUntrustedWrap(entry.trust)) return neutralizeControlTokens(redacted);
   // trust=user → source='user'；trust=web → source='web'（除非调用方覆盖）
   const resolvedSource: UntrustedSource = source ?? (entry.trust === 'web' ? 'web' : 'user');
   return wrapUntrusted(redacted, resolvedSource);
