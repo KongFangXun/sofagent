@@ -316,6 +316,20 @@ describe('§一 概率目标消费断言（硬标签拒载）', () => {
       }),
     ).toThrow(/no-probability-target/);
   });
+
+  it('test_preTrainCheck_空数据集_整体拒载（0样本通过0条即无效操作）', () => {
+    // 复核第 1 轮漏报面：空数组曾因 guard 带 samples.length>0 前置而全绿放行
+    expect(() =>
+      preTrainCheck({
+        criterionIds: ['c1'],
+        samples: [],
+        evaluatorVersion: 'eval-v0',
+        seed: 7,
+        learningRate: 5e-5,
+        learningRateDocumented: '5e-5',
+      }),
+    ).toThrow(/数据集为空/);
+  });
 });
 
 describe('§一 36 判据 × 中英覆盖检查（not-measured）', () => {

@@ -759,6 +759,10 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
             process.exit(1);
           }
           samples = parsed as RlcdTrainSample[];
+          if (samples.length === 0) {
+            console.error('❌ 数据集为空——拒载（空集训练是无效操作：0 样本通过 0 条，覆盖矩阵与配比落数全是空读数）');
+            process.exit(1);
+          }
         } catch (err) {
           console.error(`❌ 无法读取数据集 ${datasetPath}: ${(err as Error).message}`);
           process.exit(1);

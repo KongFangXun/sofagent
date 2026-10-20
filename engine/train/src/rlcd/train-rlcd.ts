@@ -555,8 +555,12 @@ export function preTrainCheck(input: {
       rejected += 1;
     }
   }
-  if (input.samples.length > 0 && passed === 0) {
-    throw new TrainRlcdError('全部样本缺概率目标（no-probability-target）——无 RLCD 可训数据');
+  if (passed === 0) {
+    throw new TrainRlcdError(
+      input.samples.length === 0
+        ? '数据集为空（0 样本通过 0 条）——空集训练是无效操作，fail-closed 拒载'
+        : '全部样本缺概率目标（no-probability-target）——无 RLCD 可训数据',
+    );
   }
   // 覆盖检查只计过断言的样本（拒载样本不进覆盖矩阵——它们不参与训练）
   const usable = input.samples.filter((s) => {
