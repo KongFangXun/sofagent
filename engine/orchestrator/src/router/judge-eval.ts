@@ -29,6 +29,10 @@ export interface CriterionStat {
   accuracy: number;
   /** 样本数 */
   count: number;
+  /** 样本数（中文侧——agreementZh 加权分母，与 en 分列） */
+  countZh: number;
+  /** 样本数（英文侧——agreementEn 加权分母，与 zh 分列） */
+  countEn: number;
   /** 按语言分列 */
   accuracyByLang: { zh: number; en: number };
 }
@@ -146,6 +150,8 @@ export function evaluateZeroShot(
     criterionId,
     accuracy: e.total === 0 ? 0 : e.hit / e.total,
     count: e.total,
+    countZh: e.totalZh,
+    countEn: e.totalEn,
     accuracyByLang: {
       zh: e.totalZh === 0 ? 0 : e.hitZh / e.totalZh,
       en: e.totalEn === 0 ? 0 : e.hitEn / e.totalEn,
@@ -184,8 +190,10 @@ export function evaluateZeroShot(
   const outAcc = avg(outDist);
 
   const calibration = computeCalibration(calibRecords);
-  const zhAcc = perCriterionOut.reduce((a, c) => a + c.accuracyByLang.zh * (c.count || 0), 0) / Math.max(1, perCriterionOut.reduce((a, c) => a + c.count, 0));
-  const enAcc = perCriterionOut.reduce((a, c) => a + c.accuracyByLang.en * (c.count || 0), 0) / Math.max(1, perCriterionOut.reduce((a, c) => a + c.count, 0));
+  // 中英分列准确率：各语言侧按**自身样本量**加权（分母 = ΣcountZh / ΣcountEn
+  // ——zh 读数不得作 en 分母，否则 en 读数是「en 准确率按全量加权」非 en 一致率）
+  const zhAcc = perCriterionOut.reduce((a, c) => a + c.accuracyByLang.zh * c.countZh, 0) / Math.max(1, perCriterionOut.reduce((a, c) => a + c.countZh, 0));
+  const enAcc = perCriterionOut.reduce((a, c) => a + c.accuracyByLang.en * c.countEn, 0) / Math.max(1, perCriterionOut.reduce((a, c) => a + c.countEn, 0));
   const zhEnGap = Math.abs(zhAcc - enAcc);
 
   const elapsedMs = Date.now() - startedAt;
@@ -295,16 +303,19 @@ export function readingFromReport(
 ): ThreeStateReading {
   const n = report.perCriterion.reduce((a, c) => a + c.count, 0);
   const notMeasured = n === 0;
-  // 逐判据一致率（zh/en 分列——样本加权合并到语言侧，语言内不合并）
-  const zhTotal = report.perCriterion.reduce((a, c) => a + c.count, 0);
-  const zhWeighted = report.perCriterion.reduce((a, c) => a + c.accuracyByLang.zh * c.count, 0);
-  const enWeighted = report.perCriterion.reduce((a, c) => a + c.accuracyByLang.en * c.count, 0);
+  // 逐判据一致率（zh/en 分列——各语言侧按自身样本量加权：zh 分母 = ΣcountZh、
+  // en 分母 = ΣcountEn。复核第 1 轮错位面：en 曾以全量 zhTotal 作分母，读数
+  // 变成「en 准确率按全量加权」而非 en 一致率，且直接进 0.70 达阈判定）
+  const zhTotal = report.perCriterion.reduce((a, c) => a + c.countZh, 0);
+  const enTotal = report.perCriterion.reduce((a, c) => a + c.countEn, 0);
+  const zhWeighted = report.perCriterion.reduce((a, c) => a + c.accuracyByLang.zh * c.countZh, 0);
+  const enWeighted = report.perCriterion.reduce((a, c) => a + c.accuracyByLang.en * c.countEn, 0);
   const eceZh = report.calibration.eceByLang.zh;
   const eceEn = report.calibration.eceByLang.en;
   return {
     state,
     agreementZh: notMeasured ? NOT_MEASURED : zhTotal === 0 ? 0 : zhWeighted / zhTotal,
-    agreementEn: notMeasured ? NOT_MEASURED : zhTotal === 0 ? 0 : enWeighted / zhTotal,
+    agreementEn: notMeasured ? NOT_MEASURED : enTotal === 0 ? 0 : enWeighted / enTotal,
     eceZh: notMeasured ? NOT_MEASURED : eceZh,
     eceEn: notMeasured ? NOT_MEASURED : eceEn,
     sampleCount: n,

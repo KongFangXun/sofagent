@@ -12,6 +12,7 @@ import {
   NOT_MEASURED,
   type ThreeStateReading,
   type BestOfNReading,
+  type BaselineReport,
 } from '../router/judge-eval';
 import { computeCalibration, type CalibrationRecord } from '../router/calibration-report';
 import { JudgeRuntime } from '../router/judge-runtime';
@@ -257,5 +258,78 @@ describe('三态对照与达阈判定（§六收口面）', () => {
     expect(r.agreementZh).toBe(NOT_MEASURED); // 空集不产 0（ECE=0 是完美校准，空集给 0 = 谎报最优）
     expect(r.eceZh).toBe(NOT_MEASURED);
     expect(r.note).toContain('如实标注');
+  });
+
+  it('test_readingFromReport_中英分列各以自身样本量为分母（en 不再按全量加权）', () => {
+    // 复核第 1 轮错位手算 case：a=(zh .9, en .5, count各10)、b=(zh .6, en .8, count各10)
+    // 修前 en 分母误用全量 zhTotal（20）——en 读数是「en 准确率按全量加权」；
+    // 修后 en 分母 = ΣcountEn（en 侧样本量），agreementEn = (0.5*10+0.8*10)/20 = 0.65
+    const report: BaselineReport = {
+      perCriterion: [
+        {
+          criterionId: 'a',
+          accuracy: 0.7,
+          count: 20,
+          countZh: 10,
+          countEn: 10,
+          accuracyByLang: { zh: 0.9, en: 0.5 },
+        },
+        {
+          criterionId: 'b',
+          accuracy: 0.7,
+          count: 20,
+          countZh: 10,
+          countEn: 10,
+          accuracyByLang: { zh: 0.6, en: 0.8 },
+        },
+      ],
+      failuresByLang: { zh: [], en: [] },
+      calibration: {
+        eceByLang: { zh: 0.08, en: 0.09 },
+      } as unknown as BaselineReport['calibration'],
+      inDistributionAccuracy: 0.7,
+      outOfDistributionAccuracy: 0.7,
+      generalizationGap: 0,
+      candidateSetUtilization: { candidateSetSize: 40, usedCount: 40, utilizationRatio: 1 },
+      zhEnGap: 0,
+      zhUsable: true,
+      runtime: { elapsedMs: 1 },
+      caveat: 'test',
+    };
+    const r = readingFromReport('trained', report);
+    // zh：(0.9*10 + 0.6*10) / 20 = 0.75（zh 自身分母）
+    expect(r.agreementZh).toBeCloseTo(0.75, 10);
+    // en：(0.5*10 + 0.8*10) / 20 = 0.65（en 自身分母——分母是 en 侧样本量而非全量）
+    expect(r.agreementEn).toBeCloseTo(0.65, 10);
+  });
+
+  it('test_readingFromReport_en侧样本偏斜时读数只随en分母变（zhEn不对称不串扰）', () => {
+    // en 样本只占全量 1/4：若分母错用全量 40，en 读数会被稀释为 0.25；
+    // 正确 en 分母 = 10 → 读数 1.0（en 全命中）
+    const report: BaselineReport = {
+      perCriterion: [
+        {
+          criterionId: 'a',
+          accuracy: 0.75,
+          count: 40,
+          countZh: 30,
+          countEn: 10,
+          accuracyByLang: { zh: 2 / 3, en: 1.0 },
+        },
+      ],
+      failuresByLang: { zh: [], en: [] },
+      calibration: { eceByLang: { zh: 0.08, en: 0.09 } } as unknown as BaselineReport['calibration'],
+      inDistributionAccuracy: 0.75,
+      outOfDistributionAccuracy: 0.75,
+      generalizationGap: 0,
+      candidateSetUtilization: { candidateSetSize: 40, usedCount: 40, utilizationRatio: 1 },
+      zhEnGap: 0,
+      zhUsable: true,
+      runtime: { elapsedMs: 1 },
+      caveat: 'test',
+    };
+    const r = readingFromReport('trained', report);
+    expect(r.agreementEn).toBeCloseTo(1.0, 10); // en 全命中——分母错位时会读到 0.25
+    expect(r.agreementZh).toBeCloseTo(2 / 3, 10);
   });
 });
