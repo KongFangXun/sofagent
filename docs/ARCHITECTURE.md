@@ -219,7 +219,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，28 条规则（17 默认 + 11 扩展，[完整清单见 SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1581 测试） |
+| audit | 提交时审计，28 条规则（17 默认 + 11 扩展，[完整清单见 SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1594 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（662 测试） |
 | inject | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
@@ -1018,7 +1018,7 @@ System One 行业印证节已归档（判据句保留在 §三 判定化边界�
 | 校准漂移监测 | `recordDrift` + `checkDrift`——超阈**只提示不阻断**（`enforcement:'hint-only'`，与验证器老化检测同族：提示是观测不是执法） | `engine/core/src/calibration-registry.ts` |
 | 校准制品随行 | `serializeCalibration` / `loadCalibration`——纯 JSON 独立制品（与权重解耦，无权重亦可加载）；缺校准信息 fail-closed 拒载 | `engine/train/src/rlcd/calibration.ts` |
 
-既有置信度普查（登记不改造，多数 uncalibrated——收敛归 v1.9.0）：11 条登记册落 [`docs/VALIDATION.md` §校准判据纪律](./VALIDATION.md#校准判据纪律v1700--既有置信度普查登记册)，新消费点未登记由门禁 C1 拦截。ECE 硬线 0.10（分原语×分语言逐档）于动工前冻结（`engine/train/src/rlcd/THRESHOLDS.md`），事后只许收紧。
+既有置信度普查（登记不改造，多数 uncalibrated——收敛归 v1.9.0）：11 条登记册落 [`docs/VALIDATION.md` §校准判据纪律](./VALIDATION.md#校准判据纪律v170-三--既有置信度普查登记册)，新消费点未登记由门禁 C1 拦截。ECE 硬线 0.10（分原语×分语言逐档）于动工前冻结（`engine/train/src/rlcd/THRESHOLDS.md`），事后只许收紧。
 
 ### 判据集与规则集的关系
 
