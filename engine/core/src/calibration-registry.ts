@@ -276,7 +276,7 @@ export function registerLegacyConfidenceClaims(
     },
     {
       id: 'intent-triage/l1-min-confidence',
-      path: 'engine/orchestrator/src/router/intent-triage.ts:89',
+      path: 'engine/orchestrator/src/router/intent-triage.ts:95',
       statistic: 'max-prob',
       calibStatus: 'uncalibrated',
       inDecisionPath: true,

@@ -75,26 +75,59 @@ fi
 # registry 侧登记面（registerLegacyConfidenceClaims 中的 path 值）
 REG_PATHS=$(grep -oE "path: 'engine/[^']+'" "$REGISTRY_SRC" | sed "s/path: '//;s/'//" | sort -u)
 REG_PATH_COUNT=$(printf '%s\n' "$REG_PATHS" | grep -c . || true)
+# 行号锚登记的文件集（file:line 形态——这些文件走行号级分拣）
+REG_LINE_FILES=$(printf '%s\n' "$REG_PATHS" | grep -E ':[0-9]+$' | cut -d: -f1 | sort -u)
 
-# 对账：常量定义行（定义处 = 赋值形态）的文件路径须被登记面覆盖或为
-# 既有豁免（v1.7.0 普查册已登记 10 条——见 docs/VALIDATION.md 汇总表）
+# 对账（行号级分拣）：定义行须落在同文件某条登记行号的 ±2 行邻域内。
+# 文件名级 grep 会漏「已登记文件内新增常量」（复核第 1 轮漏报面），
+# 且固定名 grep 的 [^a-zA-Z]*[:=] 尾界漏掉 _V2 类后缀变体——故对
+# 登记文件另做泛化名深扫。文件无行号锚（常量名锚）→ 回退文件级判定；
+# 文件完全未登记 → 红。「已登记行自身变更」仍靠 C2 统计量对账，
+# 本处只抓「新常量未登记」。
 missing=0
+declare_lines() {
+  # $1=file $2=lineno：行号级 → 文件级回退；违规打红返回 1
+  local file="$1" lineno="$2" reg_lines rl d near
+  reg_lines=$(printf '%s\n' "$REG_PATHS" | awk -F: -v f="$file" '$1==f && $2 ~ /^[0-9]+$/ {print $2}')
+  if [ -n "$reg_lines" ]; then
+    near=0
+    for rl in $reg_lines; do
+      d=$((lineno > rl ? lineno - rl : rl - lineno))
+      [ "$d" -le 2 ] && { near=1; break; }
+    done
+    [ "$near" -eq 1 ] && return 0
+    echo "${RED}  ✗ 未登记阈值常量：${file}:${lineno}（定义行不在 calibration-registry 任何登记条目 ±2 行邻域——新常量须先 registerConfidenceClaim 登记，uncalibrated 亦可，裸数字不可）${NC}"
+    return 1
+  fi
+  printf '%s\n' "$REG_PATHS" | grep -qF "$file" && return 0
+  echo "${RED}  ✗ 未登记阈值常量：${file}:${lineno}（定义文件不在 calibration-registry 登记册）${NC}"
+  return 1
+}
+
+# ① 固定名扫描（既有口径）：非行号登记文件的已知常量名 + 三属性形态
 while IFS= read -r line; do
   [ -z "$line" ] && continue
-  file=$(printf '%s' "$line" | cut -d: -f1)
-  # 只对账「定义行」（含 = 赋值或 : 类型注解后带数值的常量声明），
-  # 引用行（import/解构/读取）不算新消费点
-  if printf '%s' "$line" | grep -qE '(export )?const [A-Z_]+|^\s*(allowMinConfidence|askMinConfidence|l1MinConfidence): [0-9]'; then
-    if ! printf '%s\n' "$REG_PATHS" | grep -q "^${file}$"; then
-      # 定义文件未被登记面覆盖 → 检查该具体行是否在登记 path 的行号邻域
-      # （registry 登记到行号精度——同一文件的未登记新常量须靠行号分拣）
-      if ! grep -q "$(printf '%s' "$file" | sed 's/\//\\\//g')" <<<"$REG_PATHS"; then
-        echo "${RED}  ✗ 未登记阈值常量：${line%%:*}（定义面不在 calibration-registry 登记册）${NC}"
-        missing=$((missing + 1))
-      fi
-    fi
+  file=${line%%:*}
+  printf '%s\n' "$REG_LINE_FILES" | grep -qF "$file" && continue
+  lineno=$(printf '%s' "$line" | cut -d: -f2)
+  # 只对账「定义行」（const/let 赋值或数值属性——引用行不算新消费点）
+  if printf '%s' "$line" | grep -qE "(const|let) [A-Z_]+ *[=:]|(allowMinConfidence|askMinConfidence|l1MinConfidence): [0-9]"; then
+    declare_lines "$file" "$lineno" || missing=$((missing + 1))
   fi
 done < /tmp/cc-claims-constants.$$
+
+# ② 登记文件泛化名深扫（行号级防漏）：THRESHOLD/CONFIDENCE 形态常量
+#    声明（含 _V2 等后缀变体）。MULTIPLIER 系为打分乘子非阈值，排除。
+for rfile in $REG_LINE_FILES; do
+  [ -f "$rfile" ] || continue
+  while IFS= read -r hline; do
+    [ -z "$hline" ] && continue
+    printf '%s' "$hline" | grep -qE '^[0-9]+: *[/*]' && continue
+    printf '%s' "$hline" | grep -q 'MULTIPLIER' && continue
+    declare_lines "$rfile" "${hline%%:*}" || missing=$((missing + 1))
+  done < <(grep -nE "(const|let) [A-Za-z_][A-Za-z0-9_]*(THRESHOLD|Threshold|CONFIDENCE|Confidence)[A-Za-z0-9_]* *[=:]|^[[:space:]]*(allowMinConfidence|askMinConfidence|l1MinConfidence): [0-9]" "$rfile" 2>/dev/null || true)
+done
+rm -f /tmp/cc-claims-constants.$$
 rm -f /tmp/cc-claims-constants.$$
 
 if [ "$missing" -gt 0 ]; then
