@@ -256,9 +256,13 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 > 8 层全在 prompt 构造轴上；更靠前的一根是**分词器**。故不占 8 层编号（改编号会连累 `ARCHITECTURE` / `HANDBOOK` / 本文件 ASI 表既有引用）。
 
 - **风险**：外部文本含 `<|im_start|>` / `<|endoftext|>` / `</think>` 时，若与正文同走一词表，**数据面文本即获得控制面语义**（提前结束思考段、伪造角色轮次与工具边界）。此步在 8 层与 A9 之后，管不到。
-- **现状**（`git grep` 口径，2026-10-20）：`rule-a9-no-injection.ts:61` 仅 `/<\|im_start\|>/i` 一条，`rule-e6-prompt-injection-guard.ts:18` 自述「A9 只有这一个形态」⇒ **事后正则、单形态、无 token 级处理**。层 1 的闭合标签转义是**文本层**手段，不等于编码层分离。
+- **现状（2026-10-20 已落两件）**：
+    - **检测面**：A9 由 `im_start` 单形态扩为**模型控制 token 族**（ChatML / Llama-3 / DeepSeek / think / DSML；全角竖线经 `normalizeLine` 的 NFKC 归一后同样命中）。
+    - **阻断面**：`neutralizeControlTokens()` 在 `wrapUntrusted()` 内把这些形态的 `<` `>` `|` 实体化——原文仍可读、不删内容，但数据面字符不再构成控制 token 的词表命中。
+    - 二者合起来即 StruQ 式「安全前端」的最小实现，与既有层 1 的标签转义同一约定。
+- **仍缺两面（勿读成「已解决」）**：① 只覆盖 **untrusted 路径**（web / user / federation），official / internal 直投 prompt 不经该函数；② 本层保证「不进词表」，**不覆盖服务端 chat template 自行拼装的片段**。
 - **上游形态**：`deepseek-recipe`（MIT）构建 prompt 时记录特殊 token 位置并直接映射 token ID，普通文本走基础词表 ⇒ `<｜User｜>` 被编成普通 token 序列；输出侧按 token ID 识别 `</think>`。一句话判据：**SQL 参数化查询 vs 拼接后转义**——让数据面字符在物理上没有资格变成控制指令。
-- **何时做**：当前经 OpenAI 兼容 API，分词在服务端、本侧无处置权；**本地推理（v1.8.0 一体机）**时才可处置 ⇒ 按**设计期已知缺口**登记（同 G12 三条下发面处置口径）。
+- **剩余面何时做**：自建推理（v1.8.0 一体机）时补**分词器侧白名单**——上面两件只是「送进分词器之前」的减压，词表级分离仍属该版交付。
 
 ### Sub Agent 工具集零重叠
 
