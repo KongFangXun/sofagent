@@ -128,7 +128,6 @@ for rfile in $REG_LINE_FILES; do
   done < <(grep -nE "(const|let) [A-Za-z_][A-Za-z0-9_]*(THRESHOLD|Threshold|CONFIDENCE|Confidence)[A-Za-z0-9_]* *[=:]|^[[:space:]]*(allowMinConfidence|askMinConfidence|l1MinConfidence): [0-9]" "$rfile" 2>/dev/null || true)
 done
 rm -f /tmp/cc-claims-constants.$$
-rm -f /tmp/cc-claims-constants.$$
 
 if [ "$missing" -gt 0 ]; then
   echo "${RED}  ✗ C1 未登记阈值：${missing} 处（处置：registerConfidenceClaim 登记——uncalibrated 亦可，裸数字不可）${NC}"
