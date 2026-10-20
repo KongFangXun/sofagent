@@ -45,6 +45,12 @@ import {
   type DecisionQuestion,
   type DecisionState,
 } from './decision-channel';
+// §三 校准判据纪律（v1.7.0）：决策路径置信度校准状态查询——registry 单例
+// 读面（@sofagent/core 公共导出；orchestrator 已依赖 core）
+import {
+  calibrationClaimRegistry,
+  registerLegacyConfidenceClaims,
+} from '@sofagent/core';
 import type { SlotManager } from './slot-manager';
 
 /** 判定层标识 */
@@ -117,6 +123,29 @@ export interface CalibrationGate {
   registry: CalibrationRegistry;
   /** 校准策略覆盖（缺省 DEFAULT_CALIBRATION_POLICY） */
   policy?: CalibrationPolicy;
+}
+
+/**
+ * §三 校准判据纪律查询（v1.7.0 生产接线）：读 calibration-registry 的
+ * 决策路径校准状态——门禁只查不拦截（运行期提示面；硬拦截归
+ * assertNoUncalibratedInDecisionPath 门禁脚本/装配期断言）。返回
+ * uncalibrated 消费点清单供 routeReason 留痕（「这一跳用的阈值有没有
+ * 校准依据」在判定留痕里可查）。
+ */
+export function uncalibratedDecisionPathClaims(): string[] {
+  registerLegacyConfidenceClaimsOnce();
+  return calibrationClaimRegistry
+    .claimsInDecisionPath()
+    .filter((c) => c.calibStatus === 'uncalibrated')
+    .map((c) => c.id);
+}
+
+/** 普查登记幂等守卫（进程内一次——静态声明面） */
+let legacyRegistered = false;
+function registerLegacyConfidenceClaimsOnce(): void {
+  if (legacyRegistered) return;
+  registerLegacyConfidenceClaims(calibrationClaimRegistry);
+  legacyRegistered = true;
 }
 
 /** 编排依赖（均可注入——测试零真实网络） */

@@ -628,3 +628,23 @@
   AggregationResult,
   ArtifactGateFn,
 } from './export/sample-aggregator';
+
+/* @public */
+// v1.7.0 §三 校准判据纪律（置信度登记表 + 门禁 + 漂移监测 + 四件套锚点）
+export {
+  CalibrationClaimRegistry,
+  calibrationClaimRegistry,
+  registerLegacyConfidenceClaims,
+  judgmentAnchor,
+  anchorComparability,
+} from './calibration-registry';
+/* @public */ export type {
+  ConfidenceClaim,
+  CalibStatus,
+  CalibrationEvidence,
+  DriftSample,
+  DriftHint,
+  JudgmentAnchor,
+  AnchorComparability,
+} from './calibration-registry';
+/* @internal */ export { CalibrationRegistryError } from './calibration-registry';
