@@ -226,6 +226,13 @@ export interface DisjointCheckResult {
  * 训练集与校准集的家族键交集非空 → 返回违规清单（调用方据此拒载/标注
  * ECE 不算数）。注意：本函数**返回违规不抛错**——「ECE 达阈不算数」是
  * 判定语义不是程序错误，抛错形态由调用方（门禁脚本/测试断言）选择。
+ *
+ * 粒度一致性（复核第 1 轮漏报面）：训练侧键=criterionId（最粗粒度）、
+ * 校准侧键=familyKey（可含 `:` 细分层级）——两侧同判据不同字串
+ * （如校准 'crit-a:sub-1' vs 训练 'crit-a'）会被字串精确比对放过，
+ * 隔离形同虚设。故本断言在字串等值之外增加粒度比对：任一侧键为
+ * 另一侧键的 `:` 前缀细分（startsWith(key + ':')）即判同判据跨侧，
+ * 列入 violations（reason 注明粒度错配——同判据样本不可同进两侧）。
  */
 export function assertDisjoint(
   trainSet: readonly CalibrationFitItem[],
@@ -234,7 +241,21 @@ export function assertDisjoint(
   const trainFamilies = [...new Set(trainSet.map((s) => s.familyKey))];
   const calibFamilies = [...new Set(calibSet.map((s) => s.familyKey))];
   const trainSetKeys = new Set(trainFamilies);
-  const violations = calibFamilies.filter((f) => trainSetKeys.has(f));
+  const violations = calibFamilies.flatMap((f) => {
+    if (trainSetKeys.has(f)) return [f];
+    // 粒度错配 ①：校准键是训练判据的细分（familyKey 'crit-a:sub-1' vs
+    // criterionId 'crit-a'）——同判据样本分进两侧，隔离失效
+    const coarse = trainFamilies.find((t) => f.startsWith(`${t}:`));
+    if (coarse) {
+      return [`${f}（粒度错配：校准键是训练判据 ${coarse} 的细分——同判据样本不可同进两侧）`];
+    }
+    // 粒度错配 ②（对称面）：训练键是校准判据的细分——同族跨侧
+    const fine = trainFamilies.find((t) => t.startsWith(`${f}:`));
+    if (fine) {
+      return [`${f}（粒度错配：训练键 ${fine} 是校准判据的细分——同判据样本不可同进两侧）`];
+    }
+    return [];
+  });
   return {
     disjoint: violations.length === 0,
     violations,

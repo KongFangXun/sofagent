@@ -203,6 +203,66 @@ describe('§二 校准集隔离断言', () => {
     expect(r.isolationRefused).toBe(true);
     expect(r.isolation.disjoint).toBe(false);
   });
+
+  it('test_assertDisjoint_粒度错配_校准键为训练判据细分时拒绝', () => {
+    // 复核第 1 轮漏报 case：训练侧键=criterionId 'crit-a'、校准侧键=
+    // familyKey 'crit-a:sub-1'——同判据不同字串，字串精确比对会放过
+    const train = noulItems(5, 0.6, 1.2, 'ignored');
+    for (const it of train) it.familyKey = 'crit-a';
+    const calib = noulItems(5, 0.6, 1.2, 'ignored');
+    for (const it of calib) it.familyKey = 'crit-a:sub-1';
+    const r = assertDisjoint(train, calib);
+    expect(r.disjoint).toBe(false);
+    expect(r.violations).toHaveLength(1);
+    expect(r.violations[0]).toContain('crit-a:sub-1');
+    expect(r.violations[0]).toContain('粒度错配');
+    expect(r.violations[0]).toContain('crit-a');
+  });
+
+  it('test_assertDisjoint_粒度错配_对称面_训练键为校准判据细分时拒绝', () => {
+    // 对称漏报面：训练侧细分键 vs 校准侧粗键
+    const train = noulItems(5, 0.6, 1.2, 'ignored');
+    for (const it of train) it.familyKey = 'crit-b:tenant-1';
+    const calib = noulItems(5, 0.6, 1.2, 'ignored');
+    for (const it of calib) it.familyKey = 'crit-b';
+    const r = assertDisjoint(train, calib);
+    expect(r.disjoint).toBe(false);
+    expect(r.violations[0]).toContain('粒度错配');
+  });
+
+  it('test_assertDisjoint_异判据不误伤_前缀相似但非冒号层级', () => {
+    // 'crit-a' 与 'crit-ab' 前缀相似但非 `:` 层级细分 → 仍隔离通过；
+    // 不同判据的正常细分并存亦通过
+    const train = noulItems(3, 0.6, 1.2, 'ignored');
+    for (const it of train) it.familyKey = 'crit-a';
+    const calib = noulItems(3, 0.6, 1.2, 'ignored');
+    for (const it of calib) it.familyKey = 'crit-ab:sub';
+    const r = assertDisjoint(train, calib);
+    expect(r.disjoint).toBe(true);
+    expect(r.violations).toHaveLength(0);
+  });
+
+  it('test_calibrateAfterTraining_粒度错配隔离拒绝_原漏报case转红', () => {
+    // 复核第 1 轮原漏报 case 的生产面入口：trainSamples criterionId
+    // 'crit-a' + 校准 familyKey 'crit-a:sub-1' → isolationRefused=true
+    const trainSamples: RlcdTrainSample[] = [
+      {
+        key: { criterionId: 'crit-a', language: 'zh' },
+        labelSource: 'deterministic',
+        probabilityTarget: { noulReported: 0.7, noulOutcome: true },
+        realizedOutcome: { noulReported: 0.7, noulOutcome: true },
+      },
+    ];
+    const calibItems = noulItems(20, 0.6, 1.3, 'x');
+    for (const it of calibItems) it.familyKey = 'crit-a:sub-1';
+    const r = calibrateAfterTraining({
+      primitiveBuckets: { noul: calibItems },
+      trainSamples,
+    });
+    expect(r.isolationRefused).toBe(true);
+    expect(r.isolation.disjoint).toBe(false);
+    expect(r.isolation.violations[0]).toContain('粒度错配');
+  });
 });
 
 describe('§二 ECE 与 not-measured 哨兵', () => {
