@@ -15,6 +15,7 @@
 import { getDecisionLogPath, getEnvFingerprint, getHmacKey, assertTestEnvNotWritingRealData } from '@sofagent/core';
 import { appendChained, type ChainFields } from './chain-kernel';
 import { sanitizeWhy, type DecisionKind, type DecisionCategory, type CausalType, type DecisionLogEntry, type DecisionWhy, type InvalidationReason, type LoopPhase } from './decision-schema';
+import { validateRulerChange, type RulerChangeEvent } from './ruler-change-schema';
 
 // Re-export schema 类型——public-api 从 decision-log 统一导出（与 appendHistory 模式一致）
 export type { DecisionLogEntry, DecisionWhy, RouteReason, CausalType, InvalidationReason } from './decision-schema';
@@ -105,6 +106,12 @@ const VALID_KINDS: readonly string[] = [
   // 结论与产物生成/修订动作留痕，E5 勾稽/溯源/口径规则的决策面）。与
   // decision-schema.ts 的 DecisionKind union 双落点同步——只改其一则运行时判非法 kind。
   'DATA_PRODUCT',
+  // RULER_CHANGE：v1.7.0 §七——尺子变更事件（判据/问句/阈值/代价/域/证据六载体
+  // 之一被人工变更的留痕——「人否机器 → 判据修订 → 再训练」飞轮的修订环节）。
+  // 结构化事件体经 ruler-change-schema.validateRulerChange 校验，经
+  // appendRulerChange 落链（与既有条目同链同 HMAC 纪律）。并列扩容零改既有 kind。
+  // 与 decision-schema.ts 的 DecisionKind union 双落点同步——只改其一则运行时抛错。
+  'RULER_CHANGE',
 ];
 
 /** 合法 LoopPhase 集合 */
@@ -242,4 +249,71 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     onWriteError: (message, cause) => new DecisionWriteError(message, cause),
     logLabel: '[decision-log]',
   });
+}
+
+// ════════════════════════════════════════
+// v1.7.0 §七 · 尺子变更事件写入（第二类事件——同链、同 HMAC 纪律）
+// ════════════════════════════════════════
+
+/** 尺子变更事件写入入参（业务字段——经 ruler-change-schema 校验；ts 缺省由本函数生成） */
+export type EmitRulerChangeInput = Omit<RulerChangeEvent, 'ts'> & { ts?: string };
+
+/**
+ * 追加一条尺子变更事件到 decision-log.jsonl（kind=RULER_CHANGE 受控写入口）。
+ *
+ * 与 emitDecision 同链同协议（appendChained 五步：prevHash 相接 + 先校验
+ * 后签名 + HMAC + 原子追加 + 0o600）——尺子变更与机器决策共用一条 HMAC 链，
+ * 「谁在什么时候换了尺子、为什么换、换前换后长什么样」可举证可验签。
+ *
+ * 事件体经 validateRulerChange fail-closed 校验（六 aspect / delta 缺
+ * before-after 拒载 / trigger=override ⇒ refs 必填——非法即抛
+ * RulerChangeSchemaError，不写文件）。effect 回填由 effect-backfill 侧
+ * 计算后传入（构造期可缺）。
+ *
+ * @throws RulerChangeSchemaError 事件体 schema 校验失败（含缺失项清单）
+ * @throws DecisionWriteError 写入失败（向上传播，绝不静默丢弃）
+ */
+export function appendRulerChange(input: EmitRulerChangeInput, dataDir?: string): DecisionLogEntry & { rulerChange: RulerChangeEvent } {
+  // fail-closed 业务校验（ruler-change-schema 侧——ts 缺省补写时刻）
+  const event = validateRulerChange({ ts: input.ts ?? new Date().toISOString(), ...stripUndefinedTs(input) });
+
+  const filePath = getDecisionLogPath(dataDir);
+  assertTestEnvNotWritingRealData(filePath, 'appendRulerChange');
+  const fingerprint = getEnvFingerprint(dataDir);
+  const hmacKey = getHmacKey();
+
+  // 业务字段（不含链字段）：kind=RULER_CHANGE + 结构化事件体挂 rulerChange 字段
+  // （why.text 为人读摘要——从结构化字段派生，机器消费面读 rulerChange 本体）。
+  const baseSanitized = {
+    ts: event.ts,
+    agentId: event.agentId,
+    sessionId: event.sessionId,
+    kind: 'RULER_CHANGE' as const,
+    moment: 'ATTRIBUTION' as const, // 尺子变更属归因面（换尺子是对既有判定的治理动作）
+    why: sanitizeWhy({
+      text: `尺子变更[${event.aspect}] ${event.targetId} ${event.delta.op}（trigger=${event.rationale.trigger}，actor=${event.actor.id}/${event.actor.role}）`,
+    }),
+    rulerChange: event,
+    engine: 'sofagent audit',
+  };
+
+  return appendChained(baseSanitized, {
+    filePath,
+    validKinds: VALID_KINDS,
+    key: hmacKey,
+    fingerprint,
+    onInvalidKind: (kind) =>
+      new DecisionSchemaError(`非法 kind "${String(kind)}"——必须在 DecisionKind 枚举内`),
+    onWriteError: (message, cause) => new DecisionWriteError(message, cause),
+    logLabel: '[decision-log]',
+  });
+}
+
+/** ts 缺省时剔除 undefined 键（zod .strict() 拒绝显式 undefined 覆盖可选字段缺省语义） */
+function stripUndefinedTs(input: EmitRulerChangeInput): EmitRulerChangeInput {
+  if (input.ts === undefined) {
+    const { ts: _ts, ...rest } = input;
+    return rest as EmitRulerChangeInput;
+  }
+  return input;
 }

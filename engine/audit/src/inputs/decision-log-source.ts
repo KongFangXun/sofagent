@@ -148,4 +148,5 @@ export const DECISION_KIND_CONSUMPTION: Readonly<Record<DecisionKind, { consumed
   CREDENTIAL_RECONCILE: { consumedBy: [], reason: '不消费——授权对账结论自带三态判定（mandate-credential-reconcile.ts），再判即套娃' },
   LEGACY_CLEANUP: { consumedBy: [], reason: '不消费——清理动作留痕属观测/过程记录（非判决类），无判定命题' },
   DATA_PRODUCT: { consumedBy: [], reason: '不消费（暂）——E5 数据产物审计从 git diff 判勾稽/溯源/口径（结果通道直判）；DATA_PRODUCT kind 的决策留痕消费面待判定底座 v1.6.0+ 判据化后评估' },
+  RULER_CHANGE: { consumedBy: [], reason: '不消费（暂）——尺子变更事件的结构化消费面是品味样本构造（engine/train/src/taste-sample.ts——偏离提取→(偏离模式,尺子变更)对），非 diff 级判定命题；审计规则不判判据治理动作本身' },
 };

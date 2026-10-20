@@ -76,6 +76,7 @@
     "@sofagent/ontology": "1.6.0",
     "@sofagent/core": "1.6.0",
     "@sofagent/rules": "1.6.0",
-    "archiver": "^8.0.0"
+    "archiver": "^8.0.0",
+    "zod": "^4.6.5"
   }
 }

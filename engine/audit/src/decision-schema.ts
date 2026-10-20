@@ -69,6 +69,13 @@ import { REDACTION_PATTERNS } from '@sofagent/core';
  *     工具门禁——单列 kind 方能按需聚合与举证）。
  *   ⚠️ 属 `@public` 契约——新增成员须同批同步 `tools/check/public-api-baseline.json`
  *     与 `decision-log.ts` 的 VALID_KINDS 白名单（双落点）。
+ *
+ * v1.7.0 §七新增 RULER_CHANGE（尺子变更事件 · 判据变更留痕）：
+ *   - RULER_CHANGE：判据/问句/阈值/代价/域/证据六载体之一被人工变更的留痕
+ *     （「人否机器 → 判据修订 → 再训练」飞轮的修订环节）。结构化事件体
+ *     （aspect/delta/actor/rationale）经 ruler-change-schema.ts 校验后由
+ *     decision-log.appendRulerChange 落链——与既有条目同链同 HMAC 纪律。
+ *     并列扩容：既有 kind 语义零改（对 decision-log 只加不减）。
  */
 export type DecisionKind =
   | 'SPEC_CHANGE'       // 改变需求/规格（范围变更）
@@ -88,7 +95,8 @@ export type DecisionKind =
   | 'INVALIDATION'      // 结论失效标记（v1.5.2 章四 · append-only 追加的「失效是标记不是抹除」条目）
   | 'CREDENTIAL_RECONCILE' // 授权面 × 凭证面对账结论（v1.5.4 章七 · 台账级三类错位判定入链）
   | 'LEGACY_CLEANUP'    // 遗留备份接管清理（v1.5.6 章二 · audit 目录 30 天上限清理动作留痕）
-  | 'DATA_PRODUCT';     // SMB 数据产物决策（v1.5.7 章一 · AI 生成数据产物的审计/生成决策留痕——E5 勾稽/溯源/口径判定结论走本 kind）
+  | 'DATA_PRODUCT'     // SMB 数据产物决策（v1.5.7 章一 · AI 生成数据产物的审计/生成决策留痕——E5 勾稽/溯源/口径判定结论走本 kind）
+  | 'RULER_CHANGE';    // 尺子变更事件（v1.7.0 §七 · 判据六载体人工变更留痕——ruler-change-schema 校验 + appendRulerChange 落链，并列扩容零改既有 kind）
 
 /**
  * 判断时刻分类（v1.3.6 交付⑮ · decisions.jsonl 完整版 · OpenFDE 启发）。

@@ -25,14 +25,16 @@ import {
 import { scanE7, E7_DEGRADE_WARN_THRESHOLD } from '../rules/rule-e7-decision-quality-signal';
 import type { DecisionLogEntry, DecisionKind } from '../decision-schema';
 
-// ── DecisionKind 18 值全集（与 decision-schema.ts union 双源对账用——独立抄写以互证） ──
-const ALL_18_KINDS: readonly DecisionKind[] = [
+// ── DecisionKind 19 值全集（与 decision-schema.ts union 双源对账用——独立抄写以互证） ──
+const ALL_19_KINDS: readonly DecisionKind[] = [
   'SPEC_CHANGE', 'ARTIFACT_EDIT', 'TOOL_GATE', 'RULE_TOGGLE',
   'ESCALATE_REPORT', 'FALLBACK_DEGRADE', 'CONFIG_CHANGE',
   'KNOWLEDGE_DISTILL', 'ORCHESTRATION',
   'EVOLUTION', 'TEAM', 'COMMONS',
   'COST', 'COVERAGE', 'INVALIDATION', 'CREDENTIAL_RECONCILE',
   'LEGACY_CLEANUP', 'DATA_PRODUCT',
+  // RULER_CHANGE：v1.7.0 §七——尺子变更事件（判据六载体人工变更留痕）
+  'RULER_CHANGE',
 ];
 
 /** 造一条最小合法 decision-log 行（写侧形态的字段子集——只读侧不要求链字段） */
@@ -49,11 +51,11 @@ function makeEntry(kind: DecisionKind, overrides: Partial<DecisionLogEntry> = {}
 }
 
 describe('decision-log-source · 类型映射完备（验收锚 ①）', () => {
-  it('DECISION_KIND_CONSUMPTION 键集 ≡ DecisionKind 18 值全集（新增 kind 未登记即红）', () => {
+  it('DECISION_KIND_CONSUMPTION 键集 ≡ DecisionKind 19 值全集（新增 kind 未登记即红）', () => {
     const tableKeys = Object.keys(DECISION_KIND_CONSUMPTION).sort();
-    const kindSet = [...ALL_18_KINDS].sort();
+    const kindSet = [...ALL_19_KINDS].sort();
     expect(tableKeys).toEqual(kindSet);
-    expect(tableKeys.length).toBe(18);
+    expect(tableKeys.length).toBe(19);
   });
 
   it('每条声明带非空理由（消费 / 不消费都必须说为什么——无静默挂空）', () => {

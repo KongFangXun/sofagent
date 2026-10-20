@@ -99,6 +99,17 @@
 /* @public */ export { sanitizeWhy } from './decision-schema';
 /* @public */ export type { DecisionKind, DecisionCategory, LoopPhase, DecisionWhy, RouteReason, CausalType } from './decision-schema';
 
+// ── 尺子变更事件（v1.7.0 §七 · 判据变更留痕——RULER_CHANGE 同链写入面）──
+// 生产接线：dsh 插件 / CLI 的尺子变更记录入口经本导出调 appendRulerChange
+// （helpers.call('@sofagent/audit', 'appendRulerChange', ...)——与 emitDecision
+// 同通道同链）；品味样本构造（@sofagent/train taste-sample）消费
+// RulerChangeEvent 的结构化投影。
+/* @public */ export { appendRulerChange } from './decision-log';
+/* @public */ export type { EmitRulerChangeInput } from './decision-log';
+/* @public */ export { validateRulerChange, assertVersionContinuable, RulerChangeSchemaError } from './ruler-change-schema';
+/* @public */ export { RulerChangeEventSchema, RulerDeltaSchema, RulerActorSchema, RulerRationaleSchema, RulerTargetVersionSchema } from './ruler-change-schema';
+/* @public */ export type { RulerChangeEvent, RulerAspect, RulerDeltaOp, RulerTrigger, RulerActorRole } from './ruler-change-schema';
+
 // ── HMAC 审计链协议内核（v1.4.8 第〇批收口——复刻收口为单一事实源）──
 // @internal：跨包内部接缝（orchestrator/train-audit 消费）——不承诺 semver 稳定性，
 // 按 tools/check/public-api.mjs 的 @internal 语义不计入 public API 基线。

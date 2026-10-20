@@ -218,6 +218,7 @@ const NON_VERDICT_KINDS = [
   { kind: 'COVERAGE', reason: 'trace 三源对账结果入 log（说的和干的差在哪）——度量记录非判决。', trigger: '若覆盖率出现通过/未通过闸 → 立新判决 kind。' },
   { kind: 'FALLBACK_DEGRADE', reason: '降级执行（LLM 不可用等）过程记录，无裁决两侧。', trigger: '若降级引入「允许降级/拒绝降级」判决 → 立新判决 kind。' },
   { kind: 'LEGACY_CLEANUP', reason: 'audit 目录维护动作（30 天上限清理 *.bak-*/*.broken-* 遗留备份）过程记录，无裁决两侧。', trigger: '若清理引入「批准/拒绝删除」审批闸 → 立新判决 kind。' },
+  { kind: 'RULER_CHANGE', reason: '尺子变更事件（v1.7.0 §七）——判据六载体人工变更的结构化留痕（治理动作记录，delta 带 before/after 快照），无通过/拒绝裁决两侧。', trigger: '若判据变更引入审批闸（变更须被批准/驳回才生效）→ 立新判决 kind 并声明配对侧。' },
 ];
 const NON_VERDICT_KIND_SET = new Set(NON_VERDICT_KINDS.map((e) => e.kind));
 
