@@ -388,6 +388,11 @@ export interface SmokeLoopResult {
 export function runSmokeLoop(input: SmokeLoopInput): SmokeLoopResult {
   if (input.samples.length === 0) throw new TrainRlcdError('冒烟回路样本为空（fail-closed 拒载）');
   for (const s of input.samples) assertProbabilityTarget(s);
+  // k≥2 断言：k=1（单样本）时策略 softmax 恒 [1.0]、KL 对单点分布退化——
+  // 「收敛」读数是退化不是训练成效（复核第 1 轮：k=1 曾静默跑完全绿）
+  if (input.samples.length < 2) {
+    throw new TrainRlcdError(`冒烟回路须 ≥2 样本（k=${input.samples.length}：单点策略 softmax 恒 [1.0]，收敛读数失义——fail-closed 拒载）`);
+  }
   const rand = mulberry32(input.config.seed);
   const k = Math.min(input.samples.length, 8);
   let logits = Array.from({ length: k }, (_, i) => Math.log(1 / k) + (rand() - 0.5) * 0.01);

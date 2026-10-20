@@ -249,9 +249,10 @@ describe('§一 冒烟回路收敛（固定种子损失序列 + 末段斜率 < 0
     // 损失序列落盘件非空且有限
     expect(r1.lossSeries.length).toBe(300);
     for (const s of r1.lossSeries) expect(Number.isFinite(s.loss)).toBe(true);
-    // 末段期望损失斜率 < 0（收敛方向——KL 锚平台下总斜率含微小上漂，
-    // 收敛断言面在期望主项 tailScoreSlope 上，容差 0：严格为负）
-    expect(r1.tailScoreSlope).toBeLessThan(0);
+    // 末段期望损失斜率 < −1e-9（收敛方向——KL 锚平台下总斜率含微小上漂，
+    // 收敛断言面在期望主项 tailScoreSlope 上；负向容差 −1e-9：收敛平台期的
+    // 浮点噪声（|斜率|≤1e-9）不算收敛证据也不假红——见复核第 1 轮浮点噪声面）
+    expect(r1.tailScoreSlope).toBeLessThan(-1e-9);
     // 策略确实向高奖励样本集中（toy 策略的可读收敛面：argmax(policy) = argmax(rewards)）
     const rewards = samples.map((s) => Math.log(s.probabilityTarget.noulReported as number));
     const maxIdx = r1.finalPolicy.indexOf(Math.max(...r1.finalPolicy));
@@ -266,6 +267,18 @@ describe('§一 冒烟回路收敛（固定种子损失序列 + 末段斜率 < 0
     const r1 = runSmokeLoop({ config: buildRlcdConfig({ seed: 1, learningRate: 0.05 }), samples, steps: 50 });
     const r2 = runSmokeLoop({ config: buildRlcdConfig({ seed: 2, learningRate: 0.05 }), samples, steps: 50 });
     expect(r1.lossSeries).not.toEqual(r2.lossSeries);
+  });
+
+  it('test_runSmokeLoop_单样本k1拒载_单点策略收敛读数失义', () => {
+    // 复核第 1 轮退化面：k=1 时 softmax 恒 [1.0]、KL 单点退化——
+    // 「收敛」是数据退化不是训练成效，fail-closed 拒载
+    expect(() =>
+      runSmokeLoop({
+        config: buildRlcdConfig({ seed: 1, learningRate: 0.05 }),
+        samples: [makeNoulSample('c:a', 'zh', 0.9)],
+        steps: 10,
+      }),
+    ).toThrow(/k=1/);
   });
 });
 
@@ -559,7 +572,8 @@ describe('§一 保留能力双键结构', () => {
   it('test_retentionReport_两非空键分列_跌幅5pp内converged', () => {
     const r = runRlcdTraining({
       config,
-      samples: [makeNoulSample('c', 'zh')],
+      // 冒烟样本 ≥2（k=1 单点策略拒载——复核第 1 轮后新增断言面）
+      samples: [makeNoulSample('c', 'zh'), makeNoulSample('c', 'en')],
       steps: 3,
       shortcutFeaturesBefore: [{ correctAnswerLength: 10, wrongAnswerAvgLength: 10, correctOptionIndex: 0, optionCount: 3, correct: true }],
       targetCapabilities: [{ name: 'judge-agreement', before: 0.66, after: 0.72 }],
@@ -579,7 +593,8 @@ describe('§一 保留能力双键结构', () => {
   it('test_retentionReport_跌幅超5pp_recipe_not_converged', () => {
     const r = runRlcdTraining({
       config,
-      samples: [makeNoulSample('c', 'zh')],
+      // 冒烟样本 ≥2（k=1 单点策略拒载——复核第 1 轮后新增断言面）
+      samples: [makeNoulSample('c', 'zh'), makeNoulSample('c', 'en')],
       steps: 3,
       shortcutFeaturesBefore: [{ correctAnswerLength: 10, wrongAnswerAvgLength: 10, correctOptionIndex: 0, optionCount: 3, correct: true }],
       targetCapabilities: [{ name: 'judge-agreement', before: 0.66, after: 0.9 }],
