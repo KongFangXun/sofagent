@@ -41,7 +41,7 @@ function collectDomains() {
   try {
     const src = readFileSync(UMBRELLA, 'utf-8');
     for (const m of src.matchAll(/^\s{2}'([a-z][a-z0-9-]*)':\s*\{/gm)) domains.add(m[1]);
-  } catch { /* 静态源缺失时以 help 实跑为准 */ }
+  } catch { /* 为何可静默：静态源缺失时以 help 实跑为准（双源容错，help 是权威面） */ }
   return domains;
 }
 
@@ -56,7 +56,7 @@ function collectActions(domain) {
   let out = '';
   try {
     out = execFileSync('node', [UMBRELLA, domain, '--help'], { encoding: 'utf-8', cwd: REPO, stdio: ['ignore', 'pipe', 'ignore'] });
-  } catch { /* 无 --help 的域：动作面空（只校验域存在） */ }
+  } catch { /* 为何可静默：无 --help 的域动作面为空是合法形态（只校验域存在），非错误 */ }
   for (const m of out.matchAll(new RegExp(`sofagent\\s+${domain}\\s+([a-z][a-z0-9-]*)`, 'g'))) actions.add(m[1]);
   for (const m of out.matchAll(/^\s{2,}([a-z][a-z0-9-]*)(?:\s+([a-z][a-z0-9-]*))?/gm)) {
     const first = m[1];

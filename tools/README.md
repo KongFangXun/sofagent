@@ -101,6 +101,8 @@
 | `check/check-retirement-due.sh` | 声明体系到期消费者门禁（读 `capabilities.json` 的 `shims[].trigger` + `*-exempt.json` 到期条件 + ROADMAP，报「已届满未退役」；当前 12 个 shim 属 v2.0.0 裁定的**已登记欠账** ⇒ **非阻断巡检位**） | pre-push 第 1e 步（非阻断）/ 改 shim 台账或版本号后 |
 | `check/check-loadchain-config.mjs` | 加载链四层字段 SSOT ⇄ 实现双向对账（未路由 key ⇒ 红；`--selftest` 12 探针） | pre-push 2g / 改配置面后 |
 | `check/check-unwired-security.sh` | 未通电安全防线门禁（v1.6.1 BUG-23：零生产调用 × SECURITY.md「未接线/待接线」披露核对——未披露即红、已通电未摘除即红、锚点陈旧即红；登记表内嵌脚本） | pre-push 第 2h 步 / 改 SECURITY 防线声称或接线安全能力后 |
+| `check/check-doc-commands.mjs` | 文档命令↔CLI 对账门禁（v1.7.0 BUG-39：抽取文档反引号 `sofagent <域> <动作>` 串与 umbrella help 实跑命令树对账——文档教的命令必须真实存在；豁免台账 `check/doc-commands-exempt.json`） | pre-push 第 2i 步 / 改文档命令示例或 CLI 命令树后 |
+| `check/doc-commands-exempt.json` | 上行的行级豁免台账（file+anchor+理由；只对非命令教学形态开放） | 登记豁免时 |
 | `check/check-sdk-waiver-progress.mjs` | SDK-face 白名单清偿进度（到期数 / 已摘除数；`--require-zero`） | CI（pr-check） / 摘除符号后 |
 | `check/red-team-runner.mjs` | 红队用例执行器（两态判定：被拦 / 未拦有检出证据 / 穿透即红） | pre-push 5c / 改用例后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
