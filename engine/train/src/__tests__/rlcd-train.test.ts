@@ -524,6 +524,33 @@ describe('§一 捷径自检单双列', () => {
   it('test_shortcutAudit_空样本拒载_不产假读数', () => {
     expect(() => buildShortcutAuditReport([])).toThrow(ShortcutAuditError);
   });
+
+  it('test_shortcutAudit_全单候选拒载_optionCount_1无选择面失义', () => {
+    // 复核第 1 轮退化失效面：10×{optionCount:1} 曾静默产全 0 读数
+    //（answerLetter 基线退化 1/1、Pearson 零方差恒 0）——单候选无选择面，
+    // 「无捷径」是数据退化不是清洗成效，error 面拒载
+    const singleOption: ShortcutFeatureSample[] = Array.from({ length: 10 }, () => ({
+      correctAnswerLength: 10,
+      wrongAnswerAvgLength: 10,
+      correctOptionIndex: 0,
+      optionCount: 1,
+      correct: Math.random() > 0.5,
+    }));
+    expect(() => buildShortcutAuditReport(singleOption)).toThrow(/optionCount=1/);
+    expect(() => buildShortcutAuditReport(singleOption)).toThrow(ShortcutAuditError);
+  });
+
+  it('test_shortcutAudit_混含多候选时单候选样本不触发拒载', () => {
+    // 只要有实质选择面（≥1 样本 optionCount≥2）即正常出读数
+    const mixed: ShortcutFeatureSample[] = [
+      { correctAnswerLength: 10, wrongAnswerAvgLength: 10, correctOptionIndex: 0, optionCount: 1, correct: true },
+      { correctAnswerLength: 12, wrongAnswerAvgLength: 8, correctOptionIndex: 1, optionCount: 3, correct: false },
+      { correctAnswerLength: 14, wrongAnswerAvgLength: 6, correctOptionIndex: 2, optionCount: 3, correct: true },
+    ];
+    const r = buildShortcutAuditReport(mixed);
+    expect(r.before.answerLetter.kind).toBe('answer-letter');
+    expect(r.before.optionCount.leakage).toBeGreaterThanOrEqual(0);
+  });
 });
 
 describe('§一 保留能力双键结构', () => {

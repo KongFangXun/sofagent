@@ -95,6 +95,16 @@ export function auditShortcutColumn(samples: readonly ShortcutFeatureSample[]): 
   if (samples.length === 0) {
     throw new ShortcutAuditError('样本为空（无可自检读数——fail-closed 拒载，不产 0 假读数）');
   }
+  // 单候选退化拒载：optionCount=1（全部或实质全为单候选）时三类指标全失义——
+  // answerLetter 均匀基线退化为 1/1（任何分布都「零超额」）、option-count/
+  // answer-length 的 Pearson 无方差面可算——「无捷径可学」读数是数据退化
+  // 不是清洗成效，error 面拒载而非静默产 0（复核第 1 轮：单候选曾静默全绿）
+  const multiOption = samples.filter((s) => s.optionCount >= 2).length;
+  if (multiOption === 0) {
+    throw new ShortcutAuditError(
+      `全列 optionCount=1（${samples.length} 样本无一多候选）——单候选无选择面，捷径自检读数失义，fail-closed 拒载`,
+    );
+  }
   const ys = samples.map((s) => (s.correct ? 1 : 0));
 
   // answer-length：长度差与判对的 |Pearson|
