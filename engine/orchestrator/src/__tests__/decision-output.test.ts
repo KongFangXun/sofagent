@@ -242,20 +242,8 @@ describe('§五 建议动作不执法（行为锁）', () => {
     const enforcing = moduleExports.filter((k) => /apply|enforce|execute|dispatchAction/i.test(k));
     expect(enforcing).toEqual([]); // 无执法函数
   });
-
-  it('test_suggest_构造函数不触碰执行状态', () => {
-    // 运行时锁：构造输出对执行状态对象零引用零写入
-    const executionState = { blocked: false, approved: false };
-    const before = JSON.parse(JSON.stringify(executionState));
-    makeNoulFullOutput({
-      questionId: 'q',
-      probability: 0.99,
-      segmentBoundaries: BOUNDARIES,
-      calibrationStatus: 'uncalibrated',
-      suggestedAction: '阻断', // 建议「阻断」——但执行状态不动
-    });
-    expect(executionState).toEqual(before); // 建议不执法——执行状态原样
-  });
+  // 复核第 1 轮删除项：test_suggest_构造函数不触碰执行状态——构造本地
+  // executionState 从未传入构造函数，deepEqual 自身恒真，非行为锁。
 });
 
 describe('§五 证据面不扩大（行为锁）', () => {
@@ -272,24 +260,9 @@ describe('§五 证据面不扩大（行为锁）', () => {
     });
     expect(distribution).toEqual(snapshot); // 输入不变（构造函数零写入）
   });
-
-  it('test_evidence_state_传入不被读取新面_输出仅消费已有字段', () => {
-    // state 只含已获证据——构造函数不新增采集：以 Proxy 侦测任何新属性访问
-    const state = { evidence: 'already-collected' };
-    const accessed = new Set<string>();
-    const guardedState = new Proxy(state, {
-      get(target, prop) {
-        accessed.add(String(prop));
-        return (target as Record<string, unknown>)[String(prop)];
-      },
-    });
-    // 判定输入消费（evidence 字段是已有字段——读取它合法）
-    const v = (guardedState as { evidence: string }).evidence;
-    expect(v).toBe('already-collected');
-    expect(accessed.has('evidence')).toBe(true);
-    // 无任何「新数据源访问」形态（本测试模块无 fetch/fs/spy 面——
-    // 证据面不扩大的机制保证：makeXxxFullOutput 根本不接收 state 参数）
-  });
+  // 复核第 1 轮删除项：test_evidence_state_传入不被读取新面——Proxy 拦截的
+  // 是测试自身的读取（guardedState.evidence 由测试读、由测试断言命中），
+  // 恒真非行为锁；「不新增采集」的机制保证见上：构造函数不接收 state。
 });
 
 describe('§五 直落 decision-log', () => {
