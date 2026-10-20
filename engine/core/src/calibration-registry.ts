@@ -299,6 +299,14 @@ export function registerLegacyConfidenceClaims(
       note: 'instinct 导出置信门 0.7（DEFAULT_CONFIDENCE_THRESHOLD）——非分流决策路径（导出过滤面），登记不改造',
     },
     {
+      id: 'instinct-scorer/confidence-threshold',
+      path: 'engine/orchestrator/src/instinct/scorer.ts:21',
+      statistic: 'max-prob',
+      calibStatus: 'uncalibrated',
+      inDecisionPath: false,
+      note: 'instinct 打分置信门 0.7（DEFAULT_CONFIDENCE_THRESHOLD 定义处——exporter.ts 消费的常量本体），打分头输出非概率口径，登记不改造',
+    },
+    {
       id: 'route-request/match-threshold',
       path: 'engine/orchestrator/src/route/route-request.ts:163',
       statistic: 'similarity-score',

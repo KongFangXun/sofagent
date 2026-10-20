@@ -98,6 +98,7 @@
 | `check-cross-worktree-drift.mjs` | 跨 worktree 漂移检测（并发施工面） |
 | `check-env-wiring.mjs` | env 读写闭环守卫（只写不读判红——v1.6.0 BUG-56 族） |
 | `check-devlog-unique.mjs` | devlog 数字唯一 + 能力表三档枚举守卫 |
+| `check-calibration-claims.sh` | 校准判据纪律门禁（§三断言面集中地：登记对账/统计量一致性/隔离断言调用点/概率有效位数/四件套锚点/谱系三件套——v1.7.0） |
 | `check-standards.mjs` | 家族标准层一致性（standards/ 唯一源 vs 各仓落点，逐字节比对） |
 | `check-doc-debt.mjs` | 家族文档债务八类判据（C1 断链 / C2 术语 / C3 计数 / C4 版本态 / C5 棘轮 / C6 退役节 / C7 双语 / C8 白名单） |
 | `install-hooks.sh` | 门禁钩子安装器（幂等 · 跨形态 clone/worktree/submodule） |
@@ -108,4 +109,4 @@
 
 `archaeology-exempt.json` · `claims-sdk-ledger.json` · `cross-package-relative-exempt.json` · `dependency-direction.yml` · `doc-char-ratchet.json` · `doc-ratchet.json` · `doc-score-baseline.json` · `knowledge-legacy-path-exempt.json` · `literals.json` · `npm-claims-exempt.json` · `prompt-fork-baseline.json` · `public-api-baseline.json` · `silent-catch-baseline.json` · `silent-catch-io-ledger.json` · `silent-catch-prefilter-exempt.json` · `sop-integrity-baseline.json` · `source-block-exempt.txt` · `table-shape-baseline.json` · `vitest-setup.mjs`（测试共享设置）· `lib/`（共享 bash/node 库）
 
-> ⚠️ 计数口径：66 = 门禁脚本 64 + 共享工具 2（`resolve-section.sh` / `sync-test-count.sh` 归入表内登记）。新增门禁时同步本表与 `check-gate-inventory.sh` 台账。
+> ⚠️ 计数口径：67 = 门禁脚本 65 + 共享工具 2（`resolve-section.sh` / `sync-test-count.sh` 归入表内登记）。新增门禁时同步本表与 `check-gate-inventory.sh` 台账。

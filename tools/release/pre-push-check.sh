@@ -711,6 +711,21 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 3d2c. 校准判据纪律门禁（check-calibration-claims.sh · v1.7.0 §三接入 pre-push）
+# 六断言面：决策路径阈值登记对账 / 统计量一致性 / 隔离断言调用点 /
+# 概率有效位数（HITL 与 API 两通道）/ 四件套锚点 / 数据集谱系三件套。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3d2c. 校准判据纪律检查 ──${NC}"
+  if bash tools/check/check-calibration-claims.sh >/dev/null 2>&1; then
+    check_pass "check-calibration-claims.sh 通过（校准判据纪律六断言面全过）"
+  else
+    check_fail "check-calibration-claims.sh 发现校准判据纪律违规"
+    bash tools/check/check-calibration-claims.sh 2>&1 | grep -E "✗|❌" | head -8
+  fi
+fi
+
+# ════════════════════════════════════════
 # 3d3. 声称↔实测三组（check-claims.mjs · v1.5.4 #36 接入）
 #   A 整文件零生产消费者（信息位不阻断）· B SECURITY 测绘数字（图标 / uses 口径）· C hook 信任根
 # ════════════════════════════════════════
