@@ -44,6 +44,16 @@ import {
 import type { TrainChannel, ChannelJobSpec, ChannelSubmitResult } from '../train-channel';
 import { buildShortcutAuditReport, type ShortcutFeatureSample, type ShortcutAuditReport } from './shortcut-audit';
 import { buildRetentionReport, type RetentionReport, type CapabilityReading } from './retention-report';
+import { calibrateAfterTraining as calibrateAfterTrainingImpl, type PostTrainCalibrationReadout, type CalibrationFitItem, type CalibrationConfig } from './calibration';
+// §二 校准件（v1.7.0）：训练后校准步骤——calibrateAfterTraining 在本文件
+// runRlcdTraining 末段消费（训练 → 校准 → 三态对照的流水位）；类型与
+// 纯函数本体均在 ./calibration，此处只 re-export 消费面（单点导入）。
+export {
+  calibrateAfterTraining,
+  ECE_HARD_LINE,
+  type PostTrainCalibrationReadout,
+  type CalibrationFitItem,
+} from './calibration';
 
 /** RLCD 训练入口错误（fail-closed 载体） */
 export class TrainRlcdError extends Error {
@@ -609,15 +619,22 @@ function uniformMix(domains: readonly string[]): Record<string, number> {
 // 训练后读数装配（捷径自检 + 保留能力对照）
 // ════════════════════════════════════════
 
-/** 训练后总读数（冒烟 + 自检单 + 保留对照——一次落数） */
+/** 训练后总读数（冒烟 + 自检单 + 保留对照 + §二校准——一次落数） */
 export interface RlcdTrainResult {
   smoke: SmokeLoopResult;
   shortcutAudit: ShortcutAuditReport;
   retention: RetentionReport;
   budgetCheck: BudgetCheckReadout;
+  /** §二 训练后校准步骤（隔离断言 + 三原语分桶温度拟合） */
+  calibration: PostTrainCalibrationReadout;
 }
 
-/** 训练后装配（冒烟回路 + 捷径自检单 + 保留能力对照 + 预算检查） */
+/**
+ * 训练后装配（冒烟回路 + 捷径自检单 + 保留能力对照 + 预算检查 + §二校准）。
+ * 校准入参 calibrationBuckets / calibrationTrainFamilies 可选——缺省以
+ * 空校准集跑（三原语全 not-fit + 隔离恒过），有校准集时经
+ * calibrateAfterTraining 出拟合读数（隔离优先于拟合——先防污染再算数）。
+ */
 export function runRlcdTraining(input: {
   config: RlcdPolicyGradientConfig;
   samples: readonly RlcdTrainSample[];
@@ -628,6 +645,8 @@ export function runRlcdTraining(input: {
   retainedCapabilities: CapabilityReading[];
   retentionDropThresholdPP?: number;
   budgetUsage?: { wallClockMinutes?: number; peakRssGB?: number };
+  calibrationBuckets?: readonly CalibrationFitItem[];
+  calibrationConfig?: Partial<CalibrationConfig>;
 }): RlcdTrainResult {
   const smoke = runSmokeLoop({ config: input.config, samples: input.samples, steps: input.steps });
   const shortcutAudit = buildShortcutAuditReport(input.shortcutFeaturesBefore, input.shortcutFeaturesAfter);
@@ -636,11 +655,26 @@ export function runRlcdTraining(input: {
     retainedCapabilities: input.retainedCapabilities,
     dropThresholdPP: input.retentionDropThresholdPP,
   });
+  // §二 校准步骤：按原语分组校准样本（calibrationBuckets 按 primitive 分桶）
+  const buckets: { choice: CalibrationFitItem[]; score: CalibrationFitItem[]; noul: CalibrationFitItem[] } = {
+    choice: [],
+    score: [],
+    noul: [],
+  };
+  for (const item of input.calibrationBuckets ?? []) {
+    buckets[item.primitive].push(item);
+  }
+  const calibration = calibrateAfterTrainingImpl({
+    primitiveBuckets: buckets,
+    trainSamples: input.samples,
+    config: input.calibrationConfig,
+  });
   return {
     smoke,
     shortcutAudit,
     retention,
     budgetCheck: checkRlcdBudget(input.budgetUsage ?? {}),
+    calibration,
   };
 }
 
