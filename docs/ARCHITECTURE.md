@@ -220,7 +220,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | 包 | 职责 | 状态 |
 |---|---|---|
 | audit | 提交时审计，28 条规则（17 默认 + 11 扩展，[完整清单见 SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1581 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（645 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（662 测试） |
 | inject | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
@@ -988,6 +988,23 @@ System One 行业印证节已归档（判据句保留在 §三 判定化边界�
 标注来源三档随样本走（deterministic / model-judge / human-only——训练侧按档加权），与 TrainChannel 数据面在血缘锚点（轨迹/PR/HITL 反向追溯）与租户隔离（enterpriseId 分区）上衔接。加载 fail-closed 六断言：删句样本不入训练（缺失≠为假）/ 对比样本 no-probability-target 不进校准 / 家族级切分 / benchmark 构建期拒绝 / 租户必填 / 血缘必填——写成字段与加载断言而非流程纪律（流程纪律会腐烂，字段约束不会）。
 
 公开对照集（XNLI / MASSIVE / STS-B + Kev 三套 6,436 条 + SearchDecision-Bench 68.3 万软标签）只作对照不进训练集；判据跨域映射按认知负载等价类（二分/多选/序数）类内同 state 同金标同评测器、类间不比，仅 result 一维参与对照。
+
+### 校准判据纪律（已落地机制 · v1.7.0 §三）
+
+> 本节原为「设计承诺」档（v1.6.0 起规划：置信度带校准依据 / 未校准不入决策路径 / 统计量一致 / 概率有效位数不截断）——v1.7.0 §三施工后升级为**已落地机制**，逐件有实现位与门禁位：
+
+| 纪律 | 落地机制 | 实现位 / 门禁位 |
+|---|---|---|
+| 校准依据声明制 | `registerConfidenceClaim`——决策路径消费的置信度/阈值须登记校准状态；`calibrated` 须带证据三件（校准集版本/ECE/拟合时间），少一件拒载 | `engine/core/src/calibration-registry.ts` |
+| 决策路径门禁 | `assertNoUncalibratedInDecisionPath()`——路径上 uncalibrated 即 throw（fail-closed，纪律变机制不靠自觉）；运行期查询点 `intent-triage.uncalibratedDecisionPathClaims()`（只查不拦截，硬拦截归门禁脚本与装配期） | 同上 + `engine/orchestrator/src/router/intent-triage.ts` |
+| 统计量一致性 | registry 登记的 `statistic` 与 ECE 拟合统计量（`STATISTIC_NAME='max-prob'`）对账——不一致即红（消费从未被校准过的量） | `tools/check/check-calibration-claims.sh` C2 |
+| 概率有效位数 | 概率序列化路径 `.toFixed(` 须带 `precision-note` 显式标注——静默截断即缺陷；HITL 与 API/MCP 两通道分别断言 | 同上 C4 |
+| 校准集隔离 | `assertDisjoint`（家族级键分组——与数据集三元组切分同构）——训练∩校准非空返回违规清单，交集非空则 ECE 达阈不算数 | `engine/train/src/rlcd/calibration.ts` + 门禁 C3（调用点存在性） |
+| 四件套联合锚点 | `judgmentAnchor({weightsV, questionsV, criteriaV, thresholdV})`——单次判定记录落四版本号，任一变更 `comparable:false`（跨版本 ECE 对照不退化成跨口径比数） | `engine/core/src/calibration-registry.ts` + 门禁 C5 |
+| 校准漂移监测 | `recordDrift` + `checkDrift`——超阈**只提示不阻断**（`enforcement:'hint-only'`，与验证器老化检测同族：提示是观测不是执法） | `engine/core/src/calibration-registry.ts` |
+| 校准制品随行 | `serializeCalibration` / `loadCalibration`——纯 JSON 独立制品（与权重解耦，无权重亦可加载）；缺校准信息 fail-closed 拒载 | `engine/train/src/rlcd/calibration.ts` |
+
+既有置信度普查（登记不改造，多数 uncalibrated——收敛归 v1.9.0）：11 条登记册落 [`docs/VALIDATION.md` §校准判据纪律](./VALIDATION.md#校准判据纪律v1700--既有置信度普查登记册)，新消费点未登记由门禁 C1 拦截。ECE 硬线 0.10（分原语×分语言逐档）于动工前冻结（`engine/train/src/rlcd/THRESHOLDS.md`），事后只许收紧。
 
 ### 判据集与规则集的关系
 

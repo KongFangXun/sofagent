@@ -70,6 +70,37 @@
 
 > 冒烟回路是 toy 策略的**回路收敛证明**，不是基座训练效果——效果数字属 §二（校准）与 §六（对照基线）验收面（SSOT §一风险段「本版不承诺准确率数字」）。
 
+## 校准判据纪律（v1.7.0 §三 · 既有置信度普查登记册）
+
+> 口径：**登记不改造**——引擎内全部既有置信度数字逐条登记校准状态（多数 `uncalibrated`），实际收敛归 v1.9.0；登记面 SSOT = `engine/core/src/calibration-registry.ts`（`registerLegacyConfidenceClaims`），门禁 = `tools/check/check-calibration-claims.sh`（C1 对账：新消费点未登记即红）。运行时查询点：`intent-triage.uncalibratedDecisionPathClaims()`。
+
+| # | 消费点 | 阈值/统计量 | 校准状态 | 决策路径 | 备注 |
+|---|---|---|---|---|---|
+| 1 | `decision-channel.ts:152`（DEFAULT_GRADE_THRESHOLDS.allowMinConfidence） | 0.8 / max-prob | **uncalibrated** | ✅ 是 | 三段门控高自动段边界——未在独立校准集拟合 |
+| 2 | `decision-channel.ts:153`（DEFAULT_GRADE_THRESHOLDS.askMinConfidence） | 0.5 / max-prob | **uncalibrated** | ✅ 是 | 三段门控中复核段边界——未实测重标 |
+| 3 | `intent-triage.ts:89`（DEFAULT_TRIAGE_CONFIG.l1MinConfidence） | 0.75 / max-prob | **uncalibrated** | ✅ 是 | L1 语义分类置信阈——embedding 置信度未校准 |
+| 4 | `decision-channel.ts:288`（DEFAULT_CALIBRATION_POLICY.maxEce） | 0.05 / max-prob | **uncalibrated** | ✅ 是 | 分桶门控 ECE 线——门控参数自身无校准集读数（v1.8.0 拟合面前占位） |
+| 5 | `instinct/exporter.ts:79`（DEFAULT_CONFIDENCE_THRESHOLD 消费） | 0.7 / max-prob | **uncalibrated** | 否 | instinct 导出置信门——非分流路径（导出过滤面） |
+| 6 | `instinct/scorer.ts:21`（DEFAULT_CONFIDENCE_THRESHOLD 定义） | 0.7 / max-prob | **uncalibrated** | 否 | 打分头输出非概率口径 |
+| 7 | `route-request.ts:163`（MATCH_THRESHOLD） | 0.2 / similarity-score | **uncalibrated** | ✅ 是 | workflow 节点匹配阈——相似度得分非概率口径，路由决策路径消费 |
+| 8 | `decision-schema.ts:130`（confidence 三档） | 序数档 / ordinal-tier | **uncalibrated** | 否 | 'high'\|'med'\|'low' 留痕面非门控面 |
+| 9 | `calibration-report.ts:86`（claimLevel） | — / max-prob | **uncalibrated** | 否 | v1.6.0 零样本报告 design-goal 档（未宣称 verified） |
+| 10 | `calibration.ts:ECE_HARD_LINE` | 0.10 / max-prob | calibrated | 否 | 验收线本身——THRESHOLDS.md 动工前冻结值 |
+| 11 | `calibration.ts:STATISTIC_NAME` | — / max-prob | calibrated | 否 | 统计量一致性对账锚（evidence.ece=0 = 声明面非实测面） |
+
+**合计：11 条登记——uncalibrated 9 条（决策路径上 4 条）· calibrated 2 条（均为对账锚非消费阈值）。** 决策路径 4 条 uncalibrated 即 `assertNoUncalibratedInDecisionPath()` 当前为红态（如实暴露——补齐校准依据后才可过，收敛归 v1.9.0）。
+
+### 校准实现读数（v1.7.0 §二 · 冒烟级）
+
+| 项 | 读数 | 产物 |
+|---|---|---|
+| 拟合正确性 | 过度自信样本（真值 0.7 报 0.86）分桶温度拟合后 ECE 下降（单测断言） | `engine/train/src/__tests__/calibration.test.ts` |
+| score 保序 | 校准前后 argmax 档一致 + 相邻档序不变（单测断言） | 同上 |
+| 三原语 ECE 达阈判定 | **not-measured**（本版无基座权重与校准集实跑——`eceVerdict` 各档哨兵态，不虚构读数） | 同上（结构面） |
+| 已知题集 TVD | 构造题集（袋中球/骰子/三选路/负载分档）完全重合 TVD=0 可复算 | 同上 |
+
+> §二 ECE 硬线（0.10 · 分原语×分语言逐档）的**实测读数 not-measured**——与 §一 RLCD 环境限制同源（无基座权重与独立校准集）。回路结构（拟合/保序/隔离/达阈判定）单测全过，实测落数移交后续版本（云侧/实机）。
+
 ## 目录
 
 - [一、方法论印证](#一方法论印证行业研究怎么验证-sofagent-直觉)
