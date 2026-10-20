@@ -1,0 +1,44 @@
+{
+  "name": "sofagent-typed-decisions-minimal",
+  "version": "1.0.0",
+  "frozen": true,
+  "freezeNote": "冻结即单调：本集冻结后不得追加；追加须新建集并在两集文档显式声明新旧不可横比。",
+  "frozenAt": "2026-10-20",
+  "schema": "sofagent-typed-decisions-minimal/v1",
+  "questionFields": ["id", "criterionId", "language", "primitiveType", "question", "expectedAnswer", "privateHash"],
+  "lineCount": 370,
+  "lineReconciliationFile": "line-reconciliation.json",
+  "provenance": {
+    "sourceComposition": [
+      {
+        "part": "判据集派生",
+        "origin": "engine/audit/src/rules/criteria/audit-criteria.ts（36 判据）模板化实例",
+        "count": 360,
+        "share": "97.3%"
+      },
+      {
+        "part": "语义失灵面专项（五类：算术/计数/日期比较/间接问句/干扰上下文 × zh/en）",
+        "origin": "v1.6.0 零样本基线登记的「契约编码器无语义表征」失灵面（VALIDATION §零样本基线）——阶段二采样扩展项落位",
+        "count": 10,
+        "share": "2.7%"
+      }
+    ],
+    "rowReconciliation": {
+      "claim": "各判据题数之和 == 总行数（可脚本复算：line-reconciliation.json + 本 manifest 的 lineCount）",
+      "perCriterionSum": 370,
+      "total": 370
+    },
+    "contaminationStatement": {
+      "publicBenchmarks": "与公开基准 / 厂商评测集（Decision Index v0.2.1 / Typed Decisions 2000 / FDE-Bench / zh-decision-bench）交集行数 = 0——本集全部题目由仓内判据集模板化派生，privateHash 以私有盐锚定（盐不入任何公开集）；交集断言脚本见 engine/orchestrator/src/__tests__/minimal-dataset.test.ts",
+      "independence": "判据派生部分与语义失灵专项部分相互独立（后者不源于判据问句模板）；同判据内各题由不同模板参数派生、彼此不重复。"
+    }
+  },
+  "labelCaliber": {
+    "source": "deterministic",
+    "recomputable": "expectedAnswer 由生成器模板参数复算（build-minimal-dataset.mjs 的 computeExpected）——标签可由代码复算，非人工标注"
+  },
+  "languageSplit": { "zh": 185, "en": 185 },
+  "perCriterionQuestionRange": "每判据 10 题（zh/en 各 5）；语义失灵专项 10 题（五类 × zh/en 各 1）",
+  "role": "评测集（evaluation set）——用「模型预测概率 × deterministic 结果」算 ECE / 一致率；与校准集正交（校准集门四管「什么能进」，本集管「在哪测」）",
+  "positioning": "内部校准对照底盘（不公开、不作对外验收线）——与 FDE-Bench（公开案例源 / 对外差异化标尺 / 禁入内部数据，v1.9.0 §五）定位不同，防混淆"
+}
