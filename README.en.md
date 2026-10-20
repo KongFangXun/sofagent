@@ -280,7 +280,6 @@ Real terminal output of an A2 hit (a hard-coded AWS `AKIA` access key in `app.py
 
 ```text
 $ npx -y -p sofagent sofagent audit
-[sofagent] ℹ️ 首提交无父基线——对比空树审计全部新增内容。
 🔍 审计首个 commit（4573bb8）——首提交无父基线，对比空树审计全部新增内容。
 
 ❌ [sofagent] A2 不泄密钥 [底线]: 检测到疑似密钥/令牌泄漏: app.py: 检测到 AWS Access Key; app.py: 检测到 密钥赋值形态。密钥不应硬编码到源码中。

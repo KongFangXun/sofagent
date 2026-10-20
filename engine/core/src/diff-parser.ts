@@ -308,11 +308,15 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
         if (process.env.SOFAGENT_DEBUG === '1') {
           console.error('[diff-parser] 验证 git ref 失败:', err instanceof Error ? err.message : String(err));
         }
-        // v1.6.0 BUG-08：改 stderr+⚠️ 为 stdout+ℹ️ 并统一措辞——此前这条与
-        //   cli-quick:731 的「审计首个 commit——对比空树审计全部新增内容」双消息并存，
-        //   且「无 diff 基线/不审计」与「正在审计」互相矛盾；它是状态说明而非错误，
-        //   信息级走 stdout 与产品化输出同流，措辞与 cli-quick 逐字对齐。
-        console.log('[sofagent] ℹ️ 首提交无父基线——对比空树审计全部新增内容。');
+        // v1.7.0 BUG-08 二修：本函数是**共享解析器**（audit-quick / mcp-server / think /
+        // openclaw 插件同源消费），不得向 stdout 打印任何非协议文本——
+        // ① MCP 走 stdio JSON-RPC，任何 console.log 都会插进协议流（实测：初次修复把
+        //    console.error 改成 console.log 后，mcp run_audit 在根 commit 下 stdout 多出
+        //    纯文本行，违反「每行一条 JSON」）；② 人类提示归调用方（cli-quick 已打
+        //    「🔍 审计首个 commit（sha）——首提交无父基线，对比空树审计全部新增内容」，
+        //    此处再打一次即同屏重复两条同义消息）。
+        // 结论：解析器静默返回空 diff；提示由各入口自行负责（单条）。
+        // SOFAGENT_DEBUG=1 时保留内部技术细节到 stderr（见上方 debug 分支）。
         return files;
       }
     }

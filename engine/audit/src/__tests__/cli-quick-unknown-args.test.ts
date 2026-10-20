@@ -215,9 +215,11 @@ describe('cli-quick 首提交双消息矛盾（v1.6.0 BUG-08）', () => {
       { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] }
     );
     const r = runBare([], dir);
-    // 唯一标题：首个 commit + 统一措辞（与 diff-parser.ts 的 ℹ️ 行同款表述）
+    // 唯一标题：首个 commit + 统一措辞
     expect(r.output).toContain('审计首个 commit（');
     expect(r.output).toContain('首提交无父基线，对比空树审计全部新增内容');
+    // v1.7.0 二修：同义消息必须恰好一条（此前解析器与入口各打一条 → 同屏重复）
+    expect((r.output.match(/首提交无父基线/g) ?? []).length).toBe(1);
     // 矛盾面消除：通用标题与旧告警形态不得再现
     expect(r.output).not.toContain('审计最近一次 commit');
     expect(r.output).not.toContain('无 diff 基线');
