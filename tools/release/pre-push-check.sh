@@ -530,6 +530,24 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 2j. dev-prompt 引用通道自检（check-dev-prompt.sh --selftest · v1.7 审查 r5 接入）
+#   四条通道（反引号 .md / markdown 链接 / 语境分类 / 真实路径）必须各有正负探针；
+#   任一通道失明即红——否则「引用一致」的绿可能只覆盖了部分语法形态。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 2j. dev-prompt 引用通道自检 ──${NC}"
+  _cdp_output=$(bash tools/check/check-dev-prompt.sh --selftest 2>&1)
+  _cdp_rc=$?
+  if [ "$_cdp_rc" -eq 0 ]; then
+    check_pass "check-dev-prompt.sh --selftest（4 通道探针全过）"
+  else
+    check_fail "check-dev-prompt.sh --selftest 有通道失明（rc=${_cdp_rc}）"
+    printf '%s\n' "$_cdp_output" | grep -E '✗' | head -5 | sed 's/^/    /'
+  fi
+  unset _cdp_output _cdp_rc
+fi
+
+# ════════════════════════════════════════
 # 3. 文档检查（check-docs.sh）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then

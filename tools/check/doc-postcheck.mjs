@@ -163,9 +163,18 @@ const fix = args.includes('--fix');
 const files = args.filter((a) => !a.startsWith('--'));
 let targets = [];
 if (args.includes('--changed')) {
-  const out = execFileSync('git', ['diff', '--name-only', 'HEAD', '--', '*.md'], { cwd: ROOT, encoding: 'utf8' });
-  const staged = execFileSync('git', ['diff', '--name-only', '--cached', '--', '*.md'], { cwd: ROOT, encoding: 'utf8' });
-  targets = [...new Set([...out.trim().split('\n'), ...staged.trim().split('\n')])].filter(Boolean).map((f) => path.join(ROOT, f)).filter((f) => fs.existsSync(f));
+  const git = (a) => {
+    try { return execFileSync('git', a, { cwd: ROOT, encoding: 'utf8' }).trim().split('\n').filter(Boolean); }
+    catch { return []; }
+  };
+  let names = [...new Set([...git(['diff', '--name-only', 'HEAD', '--', '*.md']), ...git(['diff', '--name-only', '--cached', '--', '*.md'])])];
+  if (!names.length) {
+    // 提交后复跑兜底（v1.7 审查 r5 实证）：工作区与索引皆空时，原实现输出「无待检文件」= 空绿，
+    // 而本批已提交的 .md 从未过形态面。改为回看最近一次提交的 .md 变更；无 HEAD~1（首提交）则仍空。
+    names = git(['diff', '--name-only', 'HEAD~1', 'HEAD', '--', '*.md']);
+    if (names.length) console.log(`ℹ️ 工作区无变更——按最近一次提交（HEAD~1..HEAD）检查 ${names.length} 个 .md`);
+  }
+  targets = names.map((f) => path.join(ROOT, f)).filter((f) => fs.existsSync(f));
 } else if (files.length) {
   targets = files.map((f) => path.resolve(f));
 } else {

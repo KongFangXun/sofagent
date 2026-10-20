@@ -838,6 +838,9 @@ function score() {
 // 增量模式（--changed）：变更文档形态机械面 · 对照 HEAD · 存量不拦
 // ============================================================
 /** 变更文档集：工作区 diff + 已 stage + 未跟踪新文档（git diff 看不见未跟踪，而新文档恰恰最该检）。 */
+// 对照基线：默认 HEAD（工作区/索引对比 HEAD）；提交后复跑兜底时切 HEAD~1
+// （否则「本批已提交」会得到空变更集 ⇒ 空绿，v1.7 审查 r5 实证该盲区）。
+let BASE_REF = 'HEAD';
 function changedMd() {
   const g = (a) => {
     const r = run('git', a);
@@ -848,11 +851,24 @@ function changedMd() {
     ...g(['diff', '--name-only', '--cached', '--', '*.md']),
     ...g(['ls-files', '--others', '--exclude-standard', '--', '*.md']),
   ]);
-  return [...set].filter((f) => !isFrozen(f) && fs.existsSync(path.join(ROOT, f))).sort();
+  let note = '';
+  if (set.size === 0) {
+    const last = g(['diff', '--name-only', 'HEAD~1', 'HEAD', '--', '*.md']);
+    if (last.length) {
+      BASE_REF = 'HEAD~1';
+      last.forEach((f) => set.add(f));
+      note = `ℹ️ 工作区无变更——回看最近一次提交（HEAD~1..HEAD）的 ${last.length} 个 .md`;
+    }
+  }
+  const list = [...set].filter((f) => !isFrozen(f) && fs.existsSync(path.join(ROOT, f))).sort();
+  // 提示放在过滤之后：回看到的若全在冻结区（changelog/archive），本面本就不适用，
+  // 此时若先打印「检查 N 个」再输出「0 份」会自相矛盾（v1.7 审查 r5 观测到的口径歧义）。
+  if (note) console.log(list.length ? note : `${note}——全部落在冻结区，本面不适用`);
+  return list;
 }
-/** HEAD 版本内容（新文件在 HEAD 不存在 → 空串，其全部命中按新增计）。 */
+/** 基线版本内容（基线里不存在 → 空串，其全部命中按新增计）。 */
 function headContent(f) {
-  const r = run('git', ['show', `HEAD:${f}`]);
+  const r = run('git', ['show', `${BASE_REF}:${f}`]);
   return r.rc === 0 ? r.out : '';
 }
 /** 命中串归属到文件（命中形如 `f:12` / `f：…` / `f（…）`）。 */
@@ -945,7 +961,7 @@ function selfTest() {
 
 function incrementalMain() {
   const files = changedMd();
-  console.log('=== doc-score --changed · 文档形态机械面（增量 · 对照 HEAD）===');
+  console.log(`=== doc-score --changed · 文档形态机械面（增量 · 对照 ${BASE_REF}）===`);
   console.log('  变更集口径：git diff --name-only HEAD -- "*.md" ∪ git diff --cached ∪ git ls-files --others（排除冻结区）');
   if (files.length === 0) {
     // 自证：把实测命令与结果条数打出来，避免「零命中」被误读为「扫过了没问题」或「空转」

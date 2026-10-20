@@ -111,6 +111,7 @@ cd "$(dirname "$0")/../.." || exit 1
 # 参数：<file.md> [--strict]。允许标志位与路径任意顺序。
 # --strict：历史档案也按严格口径判定（默认历史档案归「🕘 历史漂移」、不构成失败）。
 STRICT=0
+SELFTEST=0
 SECTION_RECONCILE=0
 SR_MODE=""
 FILE=""
@@ -120,9 +121,34 @@ for _a in "$@"; do
     --strict) STRICT=1 ;;
     --section-reconcile) SECTION_RECONCILE=1 ;;
     --partial) SR_MODE="partial" ;;
+    --selftest) SELFTEST=1 ;;
     *) if [ -z "$FILE" ]; then FILE="$_a"; elif [ -z "$PROMPT_FILE" ]; then PROMPT_FILE="$_a"; fi ;;
   esac
 done
+
+# ─── 提取通道自检（--selftest）：用合成任务书验证四条引用通道的真实有牙 ───
+# 为什么必须有：v1.7 审查 r2/r5 实证，.md 路径与 markdown 链接两条通道曾整片不在检查面内，
+# 且「提交后复跑空绿」无法靠人工发现。本自检每次造 4 份合成文档跑真流程（临时目录，零副作用）。
+if [ "$SELFTEST" = "1" ]; then
+  _st=$(mktemp -d /tmp/cdp-selftest.XXXXXX) || exit 1
+  _self="$0"
+  _rc=0
+  # ① 反引号 .md 假路径 → 必须红
+  printf '# t\n\n见 `docs/NOT_EXIST_A1.md`\n' > "$_st/a.md"
+  if bash "$_self" "$_st/a.md" >/dev/null 2>&1; then echo "  ✗ ① 反引号 .md 假路径未判红"; _rc=1; else echo "  ✓ ① 反引号 .md 假路径 → 红"; fi
+  # ② markdown 链接假路径 → 必须红（v1.7 前的盲区）
+  printf '# t\n\n见 [V](docs/NOT_EXIST_B2.md)\n' > "$_st/b.md"
+  if bash "$_self" "$_st/b.md" >/dev/null 2>&1; then echo "  ✗ ② markdown 链接假路径未判红（链接通道失明）"; _rc=1; else echo "  ✓ ② markdown 链接假路径 → 红"; fi
+  # ③ 真实 .md 路径（反引号 + 链接各一）→ 必须绿
+  printf '# t\n\n见 `docs/WIKI.md` 与 [W](docs/WIKI.md#toc)\n' > "$_st/c.md"
+  if bash "$_self" "$_st/c.md" >/dev/null 2>&1; then echo "  ✓ ③ 真实 .md（两形态）→ 绿"; else echo "  ✗ ③ 真实 .md 被误判红（假阳）"; _rc=1; fi
+  # ④ 新建语境（待新建）不存在路径 → 不得判红（语境分类）
+  printf '# t\n\n| 文件 | 改动 |\n|---|---|\n| `docs/PLAN_D4.md` | 待新建 |\n' > "$_st/d.md"
+  if bash "$_self" "$_st/d.md" >/dev/null 2>&1; then echo "  ✓ ④ 待新建语境不判红"; else echo "  ✗ ④ 待新建语境被误判红（语境分类失效）"; _rc=1; fi
+  rm -rf "$_st"
+  [ "$_rc" = "0" ] && echo "自检全过（4/4）"
+  exit "$_rc"
+fi
 
 if [ -z "$FILE" ]; then
   echo "用法: ./tools/check-dev-prompt.sh <file.md> [--strict]"
@@ -330,6 +356,10 @@ var F_RE = /`([^`]*\.(?:ts|sh|mjs|json|yml))`/g; // 文件路径
 //   造成「§级指针」盲区（doc review r2 P1-7 实证：连续两轮 P1 从该口子穿过）。
 //   只收含 `/` 的形态：裸 `a.md` 是章节名/文件名泛称，不是可解析路径。
 var MD_RE = /`([^`]*\/[^`]*\.md)(?:#[^`]*)?`/g;
+// v1.7 审查 r5 补：markdown 链接形态 `[label](path.md#anchor)`——此前只认反引号，
+//   任务书里唯一的跨章链接因此从未进入任何通道（「✅ 引用一致」对它是空话）。
+//   同样只收含 `/` 的形态（`](a.md)` 是相对文件名泛称，不是可解析路径）。
+var MDL_RE = /\]\(\s*([^)\s]*\/[^)\s]*\.md)(?:#[^)]*)?\s*\)/g;
 var N_RE = /`([a-zA-Z_][a-zA-Z0-9_]*)\(\)`/g;    // 函数名
 var D_RE = /`([^`]*\/)`/g;                       // 目录
 var L_RE = /`([^`]+)`\s*[（(]\s*(\d+)\s*行/g;    // 快照标记（路径 + 声明行数）
@@ -350,6 +380,7 @@ if (probeHit(D_RE, "`engine/x/`")) P_POS |= 4;
 if (probeHit(L_RE, "`a.md`（12 行）")) P_POS |= 8;
 if (probeHit(A_RE, "`engine/x/a.ts` 的 `foo`")) P_POS |= 16;
 if (probeHit(MD_RE, "`docs/x.md`")) P_POS |= 32;
+if (probeHit(MDL_RE, "[x](docs/y.md)")) P_POS |= 64;
 
 if (!probeHit(F_RE, "`a.md`")) P_NEG |= 1;            // 扩展名白名单被放宽
 if (!probeHit(D_RE, "`engine/x/a.ts`")) P_NEG |= 2;   // 目录必须以 / 收尾
@@ -357,9 +388,10 @@ if (!probeHit(N_RE, "`foo`")) P_NEG |= 4;             // 函数名必须带 ()
 if (!probeHit(L_RE, "`a.md`")) P_NEG |= 8;            // 快照必须带「N 行」
 if (!probeHit(A_RE, "`foo()`")) P_NEG |= 16;          // 归属必须「`file` 的 `sym`」双反引号形态
 if (!probeHit(MD_RE, "`a.md`")) P_NEG |= 32;          // .md 必须含 `/`（裸文件名不是路径）
+if (!probeHit(MDL_RE, "[x](a.md)")) P_NEG |= 64;      // 链接形态同样要求含 `/`
 
-if (P_POS !== 63 || P_NEG !== 63) {
-  process.stderr.write("提取器自检失败：正向=" + P_POS + "/63 负向=" + P_NEG + "/63\n");
+if (P_POS !== 127 || P_NEG !== 127) {
+  process.stderr.write("提取器自检失败：正向=" + P_POS + "/127 负向=" + P_NEG + "/127\n");
   process.exit(3);
 }
 
@@ -584,6 +616,26 @@ lines.forEach(function(line) {
     if (!seen[k]) {
       seen[k] = 1;
       // 与 F_RE 通道同款分类：新建/退场/勘误语境不得误判为「文件不存在」
+      var planned = isPendingRef(p, line, m.index);
+      var ctx = planned ? "planned"
+        : (isRetiredRef(line, m.index, p) ? "retired"
+        : (isErratumRef(line, m.index, p) ? "erratum" : c));
+      console.log("P|" + p + "|" + ctx);
+    }
+  });
+});
+
+// 文档路径（markdown 链接形态）——与 MD_RE 同通道同判定
+seen = {};
+lines.forEach(function(line) {
+  var c = lineCtx(line);
+  [...line.matchAll(MDL_RE)].forEach(function(m) {
+    var p = m[1];
+    if (!p.includes("/") || p.includes("$") || p.includes("{") ||
+        p.includes("*") || p.includes("(") || p.startsWith("~") || p.match(/vX\.Y/)) return;
+    var k = "P|" + p;
+    if (!seen[k]) {
+      seen[k] = 1;
       var planned = isPendingRef(p, line, m.index);
       var ctx = planned ? "planned"
         : (isRetiredRef(line, m.index, p) ? "retired"
@@ -1152,7 +1204,7 @@ echo ""
 # ─── 8. 验收条目纯度（判据只写「什么算过」· 依据归章体）───
 # 实测形态：单条 1549 字符，把品类印证 / 外部形态登记 / arXiv 引用与判据混装在同一
 #   checkbox 里 ⇒ 执行方无法据此判「过没过」。标记面（日期 / arXiv / 「登记）」）在现有
-#   任务书里零命中，故命中即真信号；长度面取 600 字符作提示阈值（现有最长 520）。
+#   任务书里零命中，故命中即真信号；长度面取 600 码点作提示阈值（非字节；避免中文误报）。
 echo "--- 8. 验收条目纯度（依据不得混装进判据）---"
 ACC_DIRTY=$(grep -nE '^- \[ \].*(20[0-9]{2}-[0-9]{2}-[0-9]{2}|arXiv|登记）)' "$FILE" 2>/dev/null || true)
 if [ -n "$ACC_DIRTY" ]; then
@@ -1163,7 +1215,14 @@ else
   echo "  ✅ 无依据标记混装（日期 / arXiv / 登记 三面零命中）"
   OKS=$((OKS + 1))
 fi
-ACC_LONG=$(grep '^- \[ \] ' "$FILE" 2>/dev/null | awk 'length>600{c++}END{print c+0}')
+# 长度按 Unicode 码点计（与 doc-char-ratchet 同口径）——此前用 awk 的 length()，在 macOS
+# 上是**字节**数，中文条目 ~200 字即报警（v1.7 审查 r5 实测：327 字符被报成 618「字符」）。
+ACC_LONG=$(grep '^- \[ \] ' "$FILE" 2>/dev/null | "$NODE" -e '
+let n = 0;
+for (const l of require("fs").readFileSync(0, "utf8").split("\n")) if ([...l].length > 600) n++;
+console.log(n);
+' 2>/dev/null || echo 0)
+ACC_LONG=${ACC_LONG:-0}
 if [ "$ACC_LONG" -gt 0 ]; then
   printf '  ⚠️  %s 条验收超过 600 字符——复核是否叙事混装（超长条目通常判不了）\n' "$ACC_LONG"
   WARNINGS=$((WARNINGS + ACC_LONG))
