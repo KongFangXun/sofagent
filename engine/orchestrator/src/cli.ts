@@ -706,10 +706,126 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
     }
     case 'train': {
       // v1.4.1 块七：train 子命令族（doctor 本波实装；cleanup/reproduce/verify 骨架待接线）
+      // v1.7.0 §一：rlcd 子命令（RLCD 训练入口——严格适当评分规则/冒烟回路/可复现清单）
       const trainAction = args[1];
       if (!trainAction) {
-        console.error('❌ train 需要子动作: doctor | cleanup | reproduce | verify | analyze | compare | templates');
+        console.error('❌ train 需要子动作: doctor | cleanup | reproduce | verify | analyze | compare | templates | rlcd');
         process.exit(1);
+      }
+      if (trainAction === 'rlcd' || trainAction === '--help') {
+        // sofagent train rlcd --help / --dryrun / --config——RLCD 训练前检查 + 冒烟回路
+        const flag = (name: string): string | undefined => {
+          const i = args.indexOf(`--${name}`);
+          return i !== -1 && args[i + 1] ? args[i + 1] : undefined;
+        };
+        const datasetPath = flag('data');
+        const seedArg = flag('seed');
+        const lrArg = flag('lr');
+        const stepsArg = flag('steps');
+        const rlcdMod = await import(`${TRAIN_PKG}/rlcd/train-rlcd`);
+        const preTrainCheck = rlcdMod.preTrainCheck;
+        const runRlcdTraining = rlcdMod.runRlcdTraining;
+        type RlcdTrainSample = ReturnType<typeof rlcdMod.preTrainCheck> extends never ? never : import('@sofagent/train/rlcd/train-rlcd').RlcdTrainSample;
+        const { buildRlcdConfig } = await import(`${TRAIN_PKG}/rlcd/policy-gradient`);
+
+        if (args.includes('--help') || !datasetPath) {
+          console.log('sofagent train rlcd — RLCD 训练入口（v1.7.0 §一 · 严格适当评分规则）');
+          console.log('');
+          console.log('用法: sofagent train rlcd --data <概率目标数据集 JSON> [options]');
+          console.log('');
+          console.log('Options:');
+          console.log('  --data <file>    概率目标数据集（JSON 数组——RlcdTrainSample[] 形态）');
+          console.log('  --seed <n>       随机种子（缺省 42——可复现清单成员）');
+          console.log('  --lr <f>         学习率（缺省 5e-5）');
+          console.log('  --steps <n>      冒烟回路步数（缺省 300）');
+          console.log('  --dryrun         只跑训练前检查（数据断言/覆盖矩阵/配置三件），不跑冒烟');
+          console.log('');
+          console.log('训练前检查面：概率目标消费断言（硬标签拒载 no-probability-target）/ 36 判据×中英');
+          console.log('覆盖矩阵（空档标 not-measured）/ label.source 三档加权 / 任务配比落数 /');
+          console.log('可复现清单（数据版本/评测器版本/种子/超参快照——文档值+实际生效值双列）/');
+          console.log('预算检查（THRESHOLDS.md 冻结：墙钟 120min · 峰值 RSS 16GB，超限标 inconclusive）');
+          if (!datasetPath) process.exit(args.includes('--help') ? 0 : 1);
+          break;
+        }
+
+        // 读数据集（JSON 数组——RlcdTrainSample[]）
+        const { readFileSync } = await import('fs');
+        let samples: RlcdTrainSample[] = [];
+        try {
+          const raw = readFileSync(datasetPath, 'utf-8');
+          const parsed = JSON.parse(raw) as unknown;
+          if (!Array.isArray(parsed)) {
+            console.error(`❌ 数据集须为 JSON 数组（RlcdTrainSample[]）：${datasetPath}`);
+            process.exit(1);
+          }
+          samples = parsed as RlcdTrainSample[];
+        } catch (err) {
+          console.error(`❌ 无法读取数据集 ${datasetPath}: ${(err as Error).message}`);
+          process.exit(1);
+        }
+        const seed = seedArg ? Number(seedArg) : 42;
+        const learningRate = lrArg ? Number(lrArg) : 5e-5;
+        const steps = stepsArg ? Number(stepsArg) : 300;
+
+        // 训练前检查（数据断言 + 覆盖 + 加权 + 配置三件 + 可复现清单）
+        let readout;
+        try {
+          readout = preTrainCheck({
+            criterionIds: [...new Set(samples.map((s) => s.key.criterionId))],
+            samples,
+            evaluatorVersion: 'judge-eval@v1.7.0',
+            seed,
+            learningRate,
+            learningRateDocumented: String(lrArg ?? '5e-5（默认配方）'),
+          });
+        } catch (err) {
+          console.error(`❌ 训练前检查失败：${(err as Error).message}`);
+          process.exit(1);
+        }
+        console.log(`📋 RLCD 训练前检查（${datasetPath}）`);
+        console.log(`   概率目标断言：通过 ${readout.probabilityTargetPassed} / 拒载 ${readout.rejectedHardLabelCount}（硬标签 no-probability-target）`);
+        console.log(`   覆盖矩阵：${readout.coverage.cells.length} 格 · not-measured ${readout.coverage.notMeasuredCount} 档`);
+        console.log(`   配置三件：baseline=${readout.config.baselineMethod} · klAnchor=${readout.config.klAnchor.enabled}(coeff=${readout.config.klAnchor.coefficient}) · mode=${readout.config.mode}`);
+        console.log(`   加权：human=${readout.labelSourceWeights.human} / deterministic=${readout.labelSourceWeights.deterministic} / model-judge=${readout.labelSourceWeights['model-judge']}`);
+        console.log(`   任务配比：${JSON.stringify(readout.taskMixWeights)}`);
+        console.log(`   可复现清单：数据版本 ${readout.reproducibility.datasetVersion} · 评测器 ${readout.reproducibility.evaluatorVersion} · 种子 ${readout.reproducibility.seed}`);
+        for (const h of readout.reproducibility.hyperparams) {
+          console.log(`     超参 ${h.name}: 文档值=${String(h.documentedValue)} · 实际生效值=${String(h.effectiveValue)}`);
+        }
+        console.log(`   预算上限（THRESHOLDS 冻结）：墙钟 ${readout.budget.maxWallClockMinutes}min · ${readout.budget.memoryTier} · 峰值 RSS ≤ ${readout.budget.maxPeakRssGB}GB`);
+
+        if (args.includes('--dryrun')) {
+          console.log('ℹ️ --dryrun：跳过冒烟回路');
+          break;
+        }
+
+        // 冒烟回路（固定种子损失序列 + 末段斜率）
+        const config = buildRlcdConfig({ seed, learningRate });
+        const usableSamples = samples.filter((s) => {
+          try {
+            return s.probabilityTarget !== undefined && Object.keys(s.probabilityTarget).length > 0;
+          } catch {
+            return false;
+          }
+        });
+        try {
+          const result = runRlcdTraining({
+            config,
+            samples: usableSamples,
+            steps,
+            // CLI 冒烟不喂数据面捷径特征——自检单属数据管道装配面（SDK 喂
+            // ShortcutFeatureSample[]），此处仅证明训练回路可收敛（结构在位）
+            shortcutFeaturesBefore: [{ correctAnswerLength: 1, wrongAnswerAvgLength: 1, correctOptionIndex: 0, optionCount: 1, correct: true }],
+            targetCapabilities: [{ name: 'judge-agreement', before: 0.5, after: 0.5 }],
+            retainedCapabilities: [{ name: 'zero-shot-readout', before: 0.5, after: 0.5 }],
+          });
+          console.log(`🧪 冒烟回路：${result.smoke.lossSeries.length} 步 · 末段期望斜率 ${result.smoke.tailScoreSlope.toExponential(3)}（<0 = 收敛方向）`);
+          console.log(`   最终策略（top）：${result.smoke.finalPolicy.map((p: number) => p.toFixed(3)).join(' / ')}`);
+        } catch (err) {
+          console.error(`❌ 冒烟回路失败：${(err as Error).message}`);
+          process.exit(1);
+        }
+        break;
       }
       if (trainAction === 'doctor') {
         const wantGpu = args.includes('--gpu');
