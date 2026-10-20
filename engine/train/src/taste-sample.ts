@@ -88,7 +88,7 @@ export class TasteSampleError extends Error {
  *   同口径）；③ effect.verdict 已回填（有对错判定）。
  * 缺任一 → 抛 TasteSampleError 并显式列出缺失项（不静默丢弃）。
  */
-export function assertThreeElements(pattern: DivergencePatternInput, change: RulerChangeInput): void {
+export function assertThreeElements(change: RulerChangeInput): void {
   const missing: string[] = [];
   if (change.rationale.refs.length === 0) missing.push('refs（事发情境——人否机器的条目不许缺席）');
   if (change.delta.before === undefined && change.delta.after === undefined) {
@@ -124,7 +124,7 @@ export function buildTasteSamples(
   const rejected: TasteSampleResult['rejected'] = [];
   for (const { pattern, change } of pairs) {
     try {
-      assertThreeElements(pattern, change);
+      assertThreeElements(change);
     } catch (err) {
       if (err instanceof TasteSampleError) {
         // 显式拒绝并列出缺失项（只入档不入训——不静默丢弃）

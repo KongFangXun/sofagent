@@ -42,18 +42,18 @@ function unachievedEceGate() {
 describe('品味样本构造 · 三要素校验', () => {
   it('test_taste_缺refs显式拒绝并列出缺失项', () => {
     const c = change({ rationale: { trigger: 'override', refs: [], note: 'x' } });
-    expect(() => assertThreeElements(pattern(), c)).toThrow(/refs/);
+    expect(() => assertThreeElements(c)).toThrow(/refs/);
   });
 
   it('test_taste_缺delta显式拒绝（before_after全缺）', () => {
     const c = change({ delta: { op: 'modify' } });
-    expect(() => assertThreeElements(pattern(), c)).toThrow(/delta/);
+    expect(() => assertThreeElements(c)).toThrow(/delta/);
   });
 
   it('test_taste_缺effect显式拒绝并列出缺失项', () => {
     const c = change();
     delete (c as Partial<RulerChangeInput>).effect;
-    expect(() => assertThreeElements(pattern(), c)).toThrow(/effect/);
+    expect(() => assertThreeElements(c)).toThrow(/effect/);
   });
 
   it('test_taste_构造器对三缺失类样本逐条拒绝_不静默丢弃', () => {
