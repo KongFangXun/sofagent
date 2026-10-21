@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen)](./LICENSE)
 [![Version](https://img.shields.io/badge/Version-v1.6.0-16B8F3)](./CHANGELOG.md)
 ![npm](https://img.shields.io/npm/v/sofagent)
-![npm downloads](https://img.shields.io/npm/dw/%40sofagent%2Faudit)
+![npm downloads](https://img.shields.io/npm/dw/sofagent)
 [![Stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
 
 </div>
@@ -211,11 +211,11 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 | Capability | One-liner | Reachable |
 |---|---|---|
-| **Three primitives** | Choice (selected + full distribution) / Score (value + interval) / Noul (truth probability) typed answers; question-set binding and candidate fallback are fail-closed | SDK-face (type contracts) |
-| **Audit criteria restatement** | 28 rules restated as **36 criteria** (criterion + evidence, zero-gap reconciliation) with a four-hard-rule fail-closed lint | SDK-face (criteria + validator) |
-| **Dataset triple format** | (state / questions / answers) isomorphic to the primitives; four-step contrastive construction · family-level split · replay-leak guard | SDK-face (format validator) |
-| **Collection & gates** | Three-source collectors (history/HITL/PR) + nine hard-sample points + four quality gates + active sampling | SDK-face |
-| **Judge-head contract** | `EncoderLike` interface (swap backbones without touching heads) + three primitive judge heads (reference impl; real backbone in v1.8.0) | SDK-face |
+| **Three primitives** | Choice (selected + full distribution) / Score (value + interval) / Noul (truth probability) typed answers; question-set binding and candidate fallback are fail-closed | SDK surface (type contracts) |
+| **Audit criteria restatement** | 28 rules restated as **36 criteria** (criterion + evidence, zero-gap reconciliation) with a four-hard-rule fail-closed lint | SDK surface (criteria + validator) |
+| **Dataset triple format** | (state / questions / answers) isomorphic to the primitives; four-step contrastive construction · family-level split · replay-leak guard | SDK surface (format validator) |
+| **Collection & gates** | Three-source collectors (history/HITL/PR) + nine hard-sample points + four quality gates + active sampling | SDK surface |
+| **Judge-head contract** | `EncoderLike` interface (swap backbones without touching heads) + three primitive judge heads (reference impl; real backbone in v1.8.0) | SDK surface |
 | **Zero-shot baseline** | Self-produced baseline **recorded as-is** (mock encoder, zh/en split, unembellished) — the denominator for "how much training adds" in stage 2 | SDK surface · reproducible from the source tree (`npm run build`, then `node datasets/baseline-zero-shot-run.js`) |
 | **Loop workflow semantics** | `loop:` declaration + fail-closed `exit_when` decidability + budget suspension + `daemon pause/resume` | CLI reachable |
 

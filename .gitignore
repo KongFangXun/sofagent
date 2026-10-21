@@ -74,16 +74,16 @@ pnpm-workspace.yaml
 # fresh-eyes worker 测试 fixture（run-07 教训：红队 worker 会创建这些文件测规则拦截）
 # ⚠️ 已锚定仓根，子目录同名文件不受影响（原裸名规则会吞掉未来同名真实文件）
 /config.js
-config.local
+/config.local
 /f.txt
 
 # 测试残留物防护（2026-08-16 根目录垃圾事件 + FORGE 教训；首现于 pnpm 防护段，此处为带事故出处的主声明）
 # ⚠️ 同上：已锚定仓根，子目录同名文件不受影响
-sofagent-npm-test/
-npm-p4-test/
-p4npx/
+/sofagent-npm-test/
+/npm-p4-test/
+/p4npx/
 /t/
-stranger-test/
+/stranger-test/
 /b.ts
 /c.txt
 
