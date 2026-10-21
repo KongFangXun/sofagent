@@ -725,7 +725,12 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
         const rlcdMod = await import(`${TRAIN_PKG}/rlcd/train-rlcd`);
         const preTrainCheck = rlcdMod.preTrainCheck;
         const runRlcdTraining = rlcdMod.runRlcdTraining;
-        type RlcdTrainSample = ReturnType<typeof rlcdMod.preTrainCheck> extends never ? never : import('@sofagent/train/rlcd/train-rlcd').RlcdTrainSample;
+        // 样本类型断言（非静态类型导入）：train 的 src 静态导入本包类型（v1.6.0 既有
+        // 39 处），若此处再用静态 import('@sofagent/train/...') 类型引用会形成包间编译
+        // 顺序双向依赖（CI 冷装 TS2307——本地 dist 增量曾遮蔽）。模板串动态 import 的
+        // 模块类型是 any，故样本形态靠运行时断言（JSON 读入面本就 unknown→断言收敛，
+        // preTrainCheck 内的概率目标断言是真正的结构防线——fail-closed 拒载兜底）。
+        type RlcdTrainSample = { key: { criterionId: string; language: string }; probabilityTarget: Record<string, unknown> } & Record<string, unknown>;
         const { buildRlcdConfig } = await import(`${TRAIN_PKG}/rlcd/policy-gradient`);
 
         if (args.includes('--help') || !datasetPath) {
