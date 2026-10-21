@@ -1,0 +1,66 @@
+{
+ "file": "/tmp/v17-eval/eval-s20261013.out.jsonl",
+ "n_rows": 3357,
+ "cells": {
+  "TOTAL/all": {
+   "ece": 0.0232,
+   "agreement": 0.5538,
+   "n": 3357
+  },
+  "TOTAL/en": {
+   "ece": 0.0209,
+   "agreement": 0.6587,
+   "n": 2001
+  },
+  "TOTAL/zh": {
+   "ece": 0.0388,
+   "agreement": 0.399,
+   "n": 1356
+  },
+  "choice/all": {
+   "ece": 0.039,
+   "agreement": 0.486,
+   "n": 1852
+  },
+  "choice/en": {
+   "ece": 0.0282,
+   "agreement": 0.5796,
+   "n": 1168
+  },
+  "choice/zh": {
+   "ece": 0.0682,
+   "agreement": 0.326,
+   "n": 684
+  },
+  "noul/all": {
+   "ece": 0.033,
+   "agreement": 0.8035,
+   "n": 962
+  },
+  "noul/en": {
+   "ece": 0.0348,
+   "agreement": 0.8031,
+   "n": 777
+  },
+  "noul/zh": {
+   "ece": 0.0658,
+   "agreement": 0.8054,
+   "n": 185
+  },
+  "score/all": {
+   "ece": 0.0584,
+   "agreement": 0.3425,
+   "n": 543
+  },
+  "score/en": {
+   "ece": 0.0782,
+   "agreement": 0.3036,
+   "n": 56
+  },
+  "score/zh": {
+   "ece": 0.0632,
+   "agreement": 0.347,
+   "n": 487
+  }
+ }
+}
