@@ -434,8 +434,18 @@ else
   # 不分开的后果：只改一行索引也被判「失明」而挡住落盘——噪音型守卫等于失明（同日实测：
   # 改两行 tools/README 表格即触发，属误报）。
   MARK_N=$(printf '%s\n' "$NEW_LINES" | grep -cE '《[^》]+》|\*\*[^*]+\*\*' || true)
-  if [ "$KW_N" -eq 0 ] && [ "$MARK_N" -eq 0 ]; then
-    echo "  ℹ️ 本次新增 ${NL_N} 行无任何来源语汇（无《》与加粗短语）——本面无召回对象，跳过"
+  # 索引行特征分判（v1.7.0 发版批实测误报）：新增行的加粗标记**全部**是版本号/纯数字
+  # 形态（如 **v1.7.0**/**6512**）⇒ 是版本索引行的机械改动，不是来源语汇——本面无召回对象。
+  # 判据：抽出的关键词为 0 且标记经 keep 过滤全灭 + 全部标记匹配 ^v?[0-9.]+$ 或 ^[0-9,+ ]+$。
+  IDX_ONLY=0
+  if [ "$KW_N" -eq 0 ] && [ "$MARK_N" -gt 0 ]; then
+    _all_marks=$(printf '%s\n' "$NEW_LINES" | grep -oE '\*\*[^*]+\*\*' | sed 's/\*\*//g' || true)
+    _mark_n=$(printf '%s\n' "$_all_marks" | grep -c . || true)
+    _idx_n=$(printf '%s\n' "$_all_marks" | grep -cE '^v?[0-9][0-9.,+ ]*$' || true)
+    [ "$_mark_n" -gt 0 ] && [ "$_mark_n" -eq "$_idx_n" ] && IDX_ONLY=1
+  fi
+  if [ "$KW_N" -eq 0 ] && { [ "$MARK_N" -eq 0 ] || [ "$IDX_ONLY" -eq 1 ]; }; then
+    echo "  ℹ️ 本次新增 ${NL_N} 行无任何来源语汇（无《》与加粗短语，或标记全为版本号/数字索引形态）——本面无召回对象，跳过"
   elif [ "$KW_N" -eq 0 ]; then
     echo "  ❌ 失明防护：新增有 ${MARK_N} 行含《》/加粗标记却抽出 0 个关键词——抽取器失效，拒绝假绿"
     HITS=$((HITS + 1))
