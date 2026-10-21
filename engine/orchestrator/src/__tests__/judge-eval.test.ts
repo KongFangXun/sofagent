@@ -333,3 +333,99 @@ describe('三态对照与达阈判定（§六收口面）', () => {
     expect(r.agreementZh).toBeCloseTo(2 / 3, 10);
   });
 });
+
+// ============================================================
+// CR3 补测（第三只眼发现的三处 🟠 修复面）
+// ============================================================
+describe('CR3 补测——单语言空侧/choice 真值归一/隔离拒产读数', () => {
+  function zhOnlyReport(): BaselineReport {
+    // 全 zh 无 en：enTotal=0（此前 agreementEn=0 / eceEn=0 且 ECE 线误判「达线」）
+    return {
+      perCriterion: [
+        {
+          criterionId: 'c1',
+          accuracy: 0.8,
+          count: 10,
+          countZh: 10,
+          countEn: 0,
+          accuracyByLang: { zh: 0.8, en: 0 },
+        },
+      ],
+      failuresByLang: { zh: [], en: [] },
+      calibration: {
+        eceByLang: { zh: 0.05, en: 0 },
+      } as unknown as BaselineReport['calibration'],
+      inDistributionAccuracy: 0.8,
+      outOfDistributionAccuracy: 0.8,
+      generalizationGap: 0,
+      candidateSetUtilization: { candidateSetSize: 10, usedCount: 10, utilizationRatio: 1 },
+      zhEnGap: 0,
+      zhUsable: true,
+      runtime: { elapsedMs: 1 },
+      caveat: 'test',
+    };
+  }
+
+  it('test_readingFromReport_单语言空侧产哨兵不产零（en 无样本 ⇒ en 四读数 not-measured）', () => {
+    const r = readingFromReport('trained', zhOnlyReport());
+    expect(r.agreementZh).toBe(0.8); // zh 有样本照常产数
+    expect(r.agreementEn).toBe(NOT_MEASURED); // 修前：0
+    expect(r.eceEn).toBe(NOT_MEASURED); // 修前：0（且 ≤0.10 会误判达线）
+    expect(r.eceZh).toBe(0.05);
+  });
+
+  it('test_达阈判定_单语言空侧不得白赚ECE达线（en 空集 ⇒ ecePass=false）', () => {
+    const r = readingFromReport('trained', zhOnlyReport());
+    const v = judgeThresholdVerdict([r]);
+    expect(v.ecePass).toBe(false); // 修前：eceEn=0 ≤ 0.10 误判达线
+    expect(v.reasons.join(' ')).toContain('未测不得记达标');
+  });
+
+  it('test_choice真值_数字下标与opt_id等价归一（题集 selected=0 ⇒ opt-0 命中）', () => {
+    const q = {
+      kind: 'choice' as const,
+      id: 'q-choice',
+      question: '选哪个？',
+      options: ['完全覆盖', '部分覆盖', '未覆盖'],
+    };
+    const mk = (selected: number | string): DecisionSample => ({
+      state: `cs-${String(selected)}`,
+      questions: [q],
+      answers: [{ kind: 'choice', questionId: 'q-choice', selected }],
+      label: { source: 'deterministic' },
+      provenance: { traceId: 't-c' },
+      enterpriseId: 'e',
+      lang: 'zh',
+    });
+    const rt = new JudgeRuntime(mockEncoder());
+    // 数字下标（题集生成器形态）：不再全量判错
+    const r1 = evaluateZeroShot(rt, [mk(0)]);
+    expect(r1.perCriterion[0]!.accuracy).toBe(1); // 修前恒 0（'opt-0' !== 0）
+    // 标签文本形态：同样归一
+    const r2 = evaluateZeroShot(rt, [mk('完全覆盖')]);
+    expect(r2.perCriterion[0]!.accuracy).toBe(1);
+    // opt-id 形态：兼容不变
+    const r3 = evaluateZeroShot(rt, [mk('opt-0')]);
+    expect(r3.perCriterion[0]!.accuracy).toBe(1);
+  });
+
+  it('test_choice真值_无法归一_fail_closed抛错不产静默假读数', () => {
+    const q = {
+      kind: 'choice' as const,
+      id: 'q-choice2',
+      question: '选哪个？',
+      options: ['甲', '乙'],
+    };
+    const bad: DecisionSample = {
+      state: 'cs-bad',
+      questions: [q],
+      answers: [{ kind: 'choice', questionId: 'q-choice2', selected: 99 }],
+      label: { source: 'deterministic' },
+      provenance: { traceId: 't-bad' },
+      enterpriseId: 'e',
+      lang: 'zh',
+    };
+    const rt = new JudgeRuntime(mockEncoder());
+    expect(() => evaluateZeroShot(rt, [bad])).toThrow(/无法归一到候选 id 空间/);
+  });
+});

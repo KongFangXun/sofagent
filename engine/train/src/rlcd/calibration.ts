@@ -975,7 +975,17 @@ export function calibrateAfterTraining(input: {
   const isolation = assertDisjoint(trainSide, calibItems);
   const isolationRefused = !isolation.disjoint;
 
+  // CR3 🟠-3：隔离违规 ⇒ 三原语全部 not-fit（fail-closed 落地）——此前只置
+  // isolationRefused 标志但拟合照常产出完整 fits（含桶温），「拒出读数」的
+  // 注释承诺没有实现面（牌子立了门没装）：调用方若只读 fits 不检查标志，
+  // 污染读数即外流。违规态一律不产 fit。
   const fits: PostTrainCalibrationReadout['fits'] = [];
+  if (isolationRefused) {
+    for (const p of ['choice', 'score', 'noul'] as const) {
+      fits.push({ primitive: p, status: 'not-fit' });
+    }
+    return { fits, isolation, isolationRefused };
+  }
   for (const p of ['choice', 'score', 'noul'] as const) {
     const items = input.primitiveBuckets[p];
     if (!items || items.length === 0) {

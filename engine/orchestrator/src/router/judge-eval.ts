@@ -132,8 +132,29 @@ export function evaluateZeroShot(
         entry.truths.push(truthVal);
         calibRecords.push({ predicted: prob, actual: truthVal as 0 | 1, lang: s.lang });
       } else if (ans.kind === 'choice' && truth.kind === 'choice') {
-        hit = ans.selected === truth.selected;
-        prob = ans.distribution?.[truth.selected ?? ''] ?? 0.5;
+        // CR3 🟠-2：truth.selected 语义归一——数据集真值形态有三种在野写法
+        //（数字下标 0/1/…、标签文本、'opt-N' id），判定头输出恒 'opt-N'。
+        // 此前直接字串比对：真值为数字/标签时命中率恒 0、概率 fallback 恒 0.5，
+        // 且无任何报错（接线即全量判错）。归一失败（既非下标也非标签也非 id）
+        // ⇒ fail-closed 抛错拒载，不产静默假读数。
+        const candIds = (q as { options?: string[] }).options?.map((_, i) => `opt-${i}`) ?? [];
+        const truthRaw = truth.selected;
+        let truthId: string | undefined;
+        if (typeof truthRaw === 'string' && candIds.includes(truthRaw)) {
+          truthId = truthRaw;
+        } else if (typeof truthRaw === 'number' && Number.isInteger(truthRaw) && truthRaw >= 0 && truthRaw < candIds.length) {
+          truthId = candIds[truthRaw];
+        } else if (typeof truthRaw === 'string') {
+          const idx = (q as { options?: string[] }).options?.indexOf(truthRaw);
+          if (idx !== undefined && idx >= 0) truthId = candIds[idx];
+        }
+        if (!truthId) {
+          throw new Error(
+            `judge-eval choice 真值无法归一到候选 id 空间（criterion=${cid} · selected=${JSON.stringify(truthRaw)} · candidates=${JSON.stringify((q as { options?: string[] }).options ?? [])}）——fail-closed 拒载，不产静默假读数`,
+          );
+        }
+        hit = ans.selected === truthId;
+        prob = ans.distribution?.[truthId] ?? 0.5;
         calibRecords.push({ predicted: prob, actual: hit ? 1 : 0, lang: s.lang });
       } else if (ans.kind === 'score' && truth.kind === 'score') {
         hit = Math.abs((ans.value ?? 0) - (truth.value ?? 0)) <= (truth.interval?.upper ?? 1) - (truth.interval?.lower ?? 0) + 0.5;
@@ -314,10 +335,13 @@ export function readingFromReport(
   const eceEn = report.calibration.eceByLang.en;
   return {
     state,
-    agreementZh: notMeasured ? NOT_MEASURED : zhTotal === 0 ? 0 : zhWeighted / zhTotal,
-    agreementEn: notMeasured ? NOT_MEASURED : enTotal === 0 ? 0 : enWeighted / enTotal,
-    eceZh: notMeasured ? NOT_MEASURED : eceZh,
-    eceEn: notMeasured ? NOT_MEASURED : eceEn,
+    // 单语言空侧同产 not-measured 哨兵（CR3 🟠-1）：「空集给 0 = 未测谎报为最优/最差」
+    // 双向都不成立——en 无样本时 agreementEn=0 恰好方向安全（0<0.70 未达），但 eceEn=0
+    // 会撞 ≤0.10 达线（方向反了）。分语言各自按自身 total 判空。
+    agreementZh: notMeasured || zhTotal === 0 ? NOT_MEASURED : zhWeighted / zhTotal,
+    agreementEn: notMeasured || enTotal === 0 ? NOT_MEASURED : enWeighted / enTotal,
+    eceZh: notMeasured || zhTotal === 0 ? NOT_MEASURED : eceZh,
+    eceEn: notMeasured || enTotal === 0 ? NOT_MEASURED : eceEn,
     sampleCount: n,
     note: opts?.note,
   };

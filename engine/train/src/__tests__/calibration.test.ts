@@ -202,6 +202,13 @@ describe('§二 校准集隔离断言', () => {
     });
     expect(r.isolationRefused).toBe(true);
     expect(r.isolation.disjoint).toBe(false);
+    // CR3 🟠-3：违规 ⇒ 拒出读数（fail-closed 落地）——fits 全部 not-fit，
+    // 不产出任何可被消费的桶温拟合（此前只置标志、拟合照常产出完整产物）
+    expect(r.fits).toHaveLength(3);
+    for (const f of r.fits) {
+      expect(f.status).toBe('not-fit');
+      expect('fit' in f && f.fit !== undefined).toBe(false);
+    }
   });
 
   it('test_assertDisjoint_粒度错配_校准键为训练判据细分时拒绝', () => {

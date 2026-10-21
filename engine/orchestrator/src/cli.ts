@@ -770,6 +770,15 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
         const seed = seedArg ? Number(seedArg) : 42;
         const learningRate = lrArg ? Number(lrArg) : 5e-5;
         const steps = stepsArg ? Number(stepsArg) : 300;
+        // CR3 🟡-3：数值参数 NaN 校验——此前 `--steps abc` 直转 NaN，for 循环
+        // 恒 false 产 0 步空序列照常出参「冒烟 0 步·斜率 0」（静默假读数）。
+        // 三参数统一 fail-fast，坏值即拒。
+        for (const [name, v] of [['--seed', seed], ['--lr', learningRate], ['--steps', steps]] as const) {
+          if (!Number.isFinite(v)) {
+            console.error(`❌ ${name} 不是有效数字：${name}=${JSON.stringify(name === '--seed' ? seedArg : name === '--lr' ? lrArg : stepsArg)}`);
+            process.exit(1);
+          }
+        }
 
         // 训练前检查（数据断言 + 覆盖 + 加权 + 配置三件 + 可复现清单）
         let readout;
@@ -818,8 +827,12 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
             samples: usableSamples,
             steps,
             // CLI 冒烟不喂数据面捷径特征——自检单属数据管道装配面（SDK 喂
-            // ShortcutFeatureSample[]），此处仅证明训练回路可收敛（结构在位）
-            shortcutFeaturesBefore: [{ correctAnswerLength: 1, wrongAnswerAvgLength: 1, correctOptionIndex: 0, optionCount: 1, correct: true }],
+            // ShortcutFeatureSample[]），此处仅证明训练回路可收敛（结构在位）。
+            // CR3 修正：占位样本 optionCount 须 ≥2——此前恒 1 会触发 shortcut-audit
+            // 的单候选 fail-closed 拒载，冒烟回路在合法数据集上永远跑不到收敛读数
+            //（实测 370 样本合法集 rc=1）。占位特征本身无捷径信号（长度差 0、
+            // 恒选 index 0 的泄漏由均匀基线吸收）。
+            shortcutFeaturesBefore: [{ correctAnswerLength: 1, wrongAnswerAvgLength: 1, correctOptionIndex: 0, optionCount: 3, correct: true }],
             targetCapabilities: [{ name: 'judge-agreement', before: 0.5, after: 0.5 }],
             retainedCapabilities: [{ name: 'zero-shot-readout', before: 0.5, after: 0.5 }],
           });
