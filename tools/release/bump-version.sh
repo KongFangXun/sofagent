@@ -367,10 +367,18 @@ while IFS= read -r ts; do
   # 曾漏列致其被逐版抬号（功能出身版被误改写成当前版）；与「条目」同理永不抬号。
   # BUG-27 位置假设防御：头部注释区承载版本锚点；若锚点被新增注释挤出 head -10
   # 切片窗口，继续执行会**静默漏 bump**（该文件版本号不抬），故此处显式拒绝。
+  # 「同款/先于此立」是跨版纪律引用（「v1.6.0 判据质量 lint 的同款」= 引另一版先例），
+  # 非当前版本锚——2026-10-21 v1.7.0 gate R1 实锤：rule-loader.ts 头部锚是 v1.5.3，
+  # 第 12 行引用 v1.6.0 触发 BUG-27 误拒（tail 注释 grep 只认注释形态分不清引用/锚）。
+  # 与「条目/第N章」同族：引用语义永不抬号，也不构成「滑出窗口」的证据。
   # 判据与 check-version [12/14] 对齐——只看 `//` 注释行内的 `vX.Y.Z` 锚点，
   # 避免把正文裸数字（如 1.5）误当锚点而假红；仅「锚点确已滑出窗口」才拒绝。
   _head_hit=$(head -10 "$ts" | grep -E "$OLD_3SEG|$OLD_2SEG" || true)
-  _tail_anchor=$(tail -n +11 "$ts" 2>/dev/null | grep -E '^[[:space:]]*//' | grep -oE "v($OLD_3SEG|$OLD_2SEG)([^0-9.]|$)" | head -1 || true)
+  # 引用语义行不构成锚点滑出证据（与「条目/第N章」同族，永不抬号）：
+  #   同款/先于此立（跨版纪律引用）· changelog 描述一致（对账行）· BUG-xx（bugfix 引用）·
+  #   口径/语义/留档/读数/归因/枚举/改判/勘误（行为出处叙述）——2026-10-21 v1.7.0 gate R1 实锤：
+  #   8+ 文件头部锚是更早版本、正文引用 v1.6.0 被 BUG-27 误拒。真锚=文件头 vX.Y.Z 声明。
+  _tail_anchor=$(tail -n +11 "$ts" 2>/dev/null | grep -E '^[[:space:]]*//' | grep -vE '同款|先于此立|changelog 描述一致|BUG-[0-9]+|口径|语义|留档|读数|归因|枚举|改判|勘误|章' | grep -oE "v($OLD_3SEG|$OLD_2SEG)([^0-9.]|$)" | head -1 || true)
   if [ -z "$_head_hit" ] && [ -n "$_tail_anchor" ]; then
     echo "❌ [bump-version] 版本锚点不在 $ts 头部 10 行内——head -10 切片失效，拒绝静默漏 bump" >&2
     exit 1

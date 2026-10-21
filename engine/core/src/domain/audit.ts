@@ -67,3 +67,24 @@
 
 // ── v1.5.9 章一·decision-log 实写（域＝审计域）──────────────────────────
 /* @internal */ export { emitAuditDecision } from '../audit-decision-writer';
+
+// ── v1.7.0 §三·校准判据纪律（域＝审计与验证域：判据纪律是审计判定面的延伸）──
+// 分拣自根 barrel 同名段落（2026-10-21 gate R1：§三 新增 6 导出未分拣致 S476
+// barrel 等价破 root=339/uni=333——新符号先进根 barrel 再同步分拣的纪律执行）。
+/* @public */ export {
+  CalibrationClaimRegistry,
+  calibrationClaimRegistry,
+  registerLegacyConfidenceClaims,
+  judgmentAnchor,
+  anchorComparability,
+} from '../calibration-registry';
+/* @public */ export type {
+  ConfidenceClaim,
+  CalibStatus,
+  CalibrationEvidence,
+  DriftSample,
+  DriftHint,
+  JudgmentAnchor,
+  AnchorComparability,
+} from '../calibration-registry';
+/* @internal */ export { CalibrationRegistryError } from '../calibration-registry';
