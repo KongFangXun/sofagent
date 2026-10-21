@@ -149,7 +149,7 @@
     },
     {
       "file": "playbook/regression-checklist.md",
-      "anchor": "**上限重估（v1.6.0 阶段四步骤二分发批）**",
+      "anchor": "**上限重估（v1.7.0 阶段四步骤二分发批）**",
       "reason": "行数警戒线历史账（前值/演进台账叙事）——regression-checklist 文件头本就是增量账本体，历史读数属合法台账面（同款先例：「后 release-gate 20260929-03 verdict 闭环批 S463/S464」锚）"
     },
     {

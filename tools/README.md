@@ -58,6 +58,7 @@
 | `check/check-readme-parity.sh` | 双语 README 结构 parity 门禁（中英 README 章节/条目对齐，防单语漂移） | CI / 改 README 后 |
 | `check/check-dashboard.sh` | dashboard.html 结构性缺陷门禁（七项静默失效面：双 class 属性/未定义 CSS 变量/重复类定义不一致/未定义 keyframes/onclick 未定义函数/div 配平/U+FFFD 乱码——注入实测七项全报红） | CI / 改 dashboard.html 后 / 发版 SOP 阶段五 |
 | `check/check-guards.sh` | 守卫的守卫（meta-guard：门禁脚本自身四类腐烂模式静态扫 + `--inject` 注入实测——红不了的门禁是装饰品） | 发版 SOP / CI |
+| `check/check-calibration-claims.sh` | 校准声明门禁（决策路径消费的置信度/概率阈值须带校准依据或显式标 uncalibrated——未标注不得上决策路径；6 断言面，v1.7.0 §三） | pre-push / 发版 SOP |
 | `check/check-anchors.mjs` | 跨文档 Markdown 锚点引用活性校验（见 check-docs.sh 第 11 段）；外链可达性为**可选面**（`SOFAGENT_CHECK_LINKS=1`，未开启打 SKIP）（详→注-19） | 发版 SOP / CI / 改文档外链后 |
 | `check/check-forms.mjs` | 「形态归属」标注一致性守卫（changelog 章标注 ↔ ROADMAP 声明计数**双向对账**：每章须挂 `> **形态归属**：` 行 · 形态词封闭枚举 · 计数逐版 pin；退出码 0/1/2） | pre-push 第 3h 步 / 发版 SOP / 新增或改 changelog 章后 |
 | `check/check-cjk-var.sh` | shell 变量定界守卫（`$VAR` + CJK 全角标点误吞检测） | 改 shell 脚本后 / CI |

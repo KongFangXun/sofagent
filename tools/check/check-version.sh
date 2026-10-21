@@ -2569,6 +2569,23 @@ else
 fi
 echo ""
 
+# ── 23. v1.7.0 判定底座阶段二值锚（阶段四 A 类分发——值锚面；结构性锚在 checklist #150，行为锁在 acceptance S488-S493）
+if grep -q "AGREEMENT_HARD_LINE = 0.70" engine/orchestrator/src/router/judge-eval.ts && grep -q "ECE_HARD_LINE_JUDGE = 0.10" engine/orchestrator/src/router/judge-eval.ts; then
+  echo -e "  ${GREEN}✓${NC} 双达阈冻结线在位（0.70/0.10——只许收紧，改阈须作废重跑）"
+  CHECKS=$((CHECKS + 1))
+else
+  echo -e "  ${RED}✗${NC} 双达阈冻结线漂移（AGREEMENT_HARD_LINE/ECE_HARD_LINE_JUDGE 值或位置变动）"
+  ERRORS=$((ERRORS + 1))
+fi
+if grep -q "check-calibration-claims" tools/release/pre-push-check.sh; then
+  echo -e "  ${GREEN}✓${NC} 校准声明门禁在发布链（uncalibrated 上决策路径防线）"
+  CHECKS=$((CHECKS + 1))
+else
+  echo -e "  ${RED}✗${NC} 校准声明门禁脱钩 pre-push（决策路径阈值可无声明上线路）"
+  ERRORS=$((ERRORS + 1))
+fi
+echo ""
+
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then
   TOTAL=$((CHECKS + ERRORS))
