@@ -136,7 +136,7 @@
 |---|---|---|---|
 | 零样本（第一态 = 训练基座本版实测接口） | not-measured | not-measured | **not-measured**（mmBERT 裸基座（未挂判定头）的零样本读出接口未建——裸基座无判定头不可直出三原语概率，第一态须以「同头随机初始化」或 v1.6.0 语义编码器口径补测；不用 v1.6.0 mock 读数充第一态） |
 | 训练后 | **zh 0.410–0.425 / en 0.653–0.659**（三 seed：13→0.399/0.659 · 14→0.420/0.658 · 15→0.425/0.653） | zh 0.037–0.062 / en 0.021–0.034 | **实测**（main01v5 eval 片 3,357 行 × 三 seed · 出厂温度出概率） |
-| 校准后 | zh 0.410 / en 0.665（三 seed ensemble 概率平均） | zh 0.075 / en 0.034（**ensemble 各档**：score/zh 0.131 超线 · noul/zh 0.109 超线） | **实测**（ensemble 合并口径——单 seed 各档见 §二矩阵） |
+| 校准后 | zh 0.410 / en 0.665（三 seed ensemble 概率平均） | zh 0.075 / en 0.034（**ensemble 各档**：score/all 0.131 · score/zh 0.139 超线 · noul/zh 0.109 超线） | **实测**（ensemble 合并口径——单 seed 各档见 §二矩阵） |
 | best-of-N 选优（N=4，选择器 = 判定头 max-prob） | not-measured（N=3 seed 全用则无「选优」语义；N=4 需第 4 seed） | — | N 与选择器口径落数；读数待第 4 seed |
 
 > v1.6.0 mock 读数（一致率 zh 0.667 / en 0.333）并列留档于 `datasets/baseline-zero-shot-result.json`——mock 契约编码器非真基座，跨口径不可比，**不进对照列**。
