@@ -470,3 +470,10 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 <!-- 20261015-03 终态更正（主 session 零信任复验后收编）：首次 driver 解析 ERROR（verdict 步产物截断 27 行、latency 12.9s）→ 按 SOP「ERROR 双查」定向重跑该步（--step verdict）产出完整 128 行 → verdict=PASS（P0=0/P1=2/P2=12）。acceptance 真跑两次 493/493（凭据两次被防线④拒——并发 session 长跑期间提交 5 次，material 有效性成立：v1.6.0 devlog/acceptance-test/engine 均未被触碰）。P1×2（章一/章八 EXEMPT 承载面）属判读漂移类，主流裁决 SKIP（豁免清单已登记 reason/trigger）。复验三件套：判定行含 PASS ✓ / stepErrors=[] ✓ / 未进 F 链 ✓。 -->
 
 2026-10-16     | 20261015-03    | release-gate-发布收编 | v1.6.0 发布链（阶段九）与分发（阶段十）执行完成。阶段九：支 128 commit → CI 7 workflow 全绿（verify 首轮红 = 供应链 fail-closed 时序固有，publish 后 rerun 转绿）→ tag v1.6.0 → gh release（--notes-file 桌面 body）→ npm 23 包（release.yml 首轮 E404 由本地重发清偿；registry HTTP 直查 23/23 = 1.6.0）。阶段十分发：ClawHub SKILL + SkillHub SKILL + SkillHub DSH 七款 + ClawHub OpenClaw 四款（逐款 API 复核 latestVersion = 1.6.0）。收编期修复：action.yml 裸名钉值未随版（1.5.9→1.6.0）+ check-version §19 裸名形态空转盲区（补覆盖 + 空转守门，负向探针三态实测）+ openclawVersion 钉值随 registry 当前版（2026.9.9→2026.10.4）+ ROADMAP/check-forms 双清单移出 + LIMITATIONS 陈旧跨版承诺改持续复现口径 + 共享 index 竞态与动态计数行两条 SOP 吸收。tag 按「tag 内不自洽」重打为 annotated 并指向含钉值修复的提交。 | 主 session | PASS | v1.6.0 | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-15/run-03（发布与分发实测记录见 .workbuddy/memory/；已发布 2026-10-16）
+
+2026-10-21     | 20261021-01    | release-gate | 11   | PASS       | FAIL       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-21/run-01
+
+2026-10-21     | 20261021-02    | release-gate | 4    | PASS       | PASS       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-10-21/run-02
+
+<!-- 20261021-02 终态收编（主 session 零信任复验后）：三件套全过——①loop-end 实物核（progress.jsonl 终事件 verdict=PASS/stepErrors=[]/stopReason=completed）②acceptance SUMMARY 499/499 · EXIT: 0（acceptance-raw.log 与 acceptance.md 双载体一致）③基线 HEAD 终核 ce260c8c1（R1 fcd1cdfcf + R2 ce260c8c1 两批修复按协议产生，审计钩子全过；任务书基线 135650ec9 为轮前读数）。附义务移交：bootstrap.sh 7 处钉值（主钉 install.sh + lib×6，其中 post-install.sh 本版有注释改动致钉≠HEAD）属阶段九 tag 前置——verdict 判读 P0-1 降 P1 与「待发版中间态」同口径（钉值语义=钉 tag 内容物，bump 批回填），tag 前未回填则升 P0 阻断发布（阶段九 SOP 09-tag 已列）。 -->
+
