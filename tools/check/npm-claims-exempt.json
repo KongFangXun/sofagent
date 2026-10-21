@@ -8,7 +8,18 @@
     "🔴 反例纪律：禁止为了转绿把能改的声称加进来。加一条豁免 = 宣称该声称暂不改为真值，须能在理由栏里说清「为何现在不能改」。",
     "窗口态豁免已移除（v1.5.7 publish 完成后）：README 双语版本说明行的声称值已与 registry latest 相等（1.5.7），回到在线对账管辖——豁免是「待清债」不是常态，债清了即移出（同 v1.5.5 轮 F5 先例）。"
   ],
-  "exemptAnchors": [],
+  "exemptAnchors": [
+    {
+      "file": "README.md",
+      "anchor": "npm 可安装最新版 `@sofagent/audit@1.7.0`",
+      "reason": "bump→publish 时序窗口豁免（v1.7.0 bump 批）：registry latest 1.6.0 属发布链中间态，npm publish 后本条转真值即可移除豁免"
+    },
+    {
+      "file": "README.en.md",
+      "anchor": "the latest installable npm version is `@sofagent/audit@1.7.0`",
+      "reason": "同上（双语同源行）"
+    }
+  ],
   "exemptAnchors_spec": {
     "形态": "{ file, anchor, reason } 三条——**不是**「文件+行号」",
     "为何不用行号": "行号随任何编辑漂移，漂移即静默失效或静默误放行（失明且失声）。锚串漂移可被检出，故锚定到「行内锚串」。",

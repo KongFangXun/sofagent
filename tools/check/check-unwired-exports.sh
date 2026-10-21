@@ -162,7 +162,7 @@ compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 #   statefulMetricsFileSink）已于 v1.6.0 bump 批**清偿摘除**（均已具备生产调用点）。
 # v1.7.0 阶段二 SDK 面先行登记（判定底座：校准纪律/判据变更留痕 SDK 面交付，消费方排 v1.8.0 接线版——
 # 与 listNodeKinds 同族形态；每条格式=符号:reason:v目标版）：
-SDK_FACE_WAIVER="listNodeKinds:SDK 面枚举器（与 getSchema 同文件同消费面）——schema 注册表对外自描述 API:v1.7.0
+SDK_FACE_WAIVER="listNodeKinds:SDK 面枚举器（与 getSchema 同文件同消费面）——schema 注册表对外自描述 API；判定器实测间接接线（via 委托链），SDK 面先行轨道续期至接线版:v1.8.0
 CalibrationClaimRegistry:校准声明注册表——check-calibration-claims 门禁与 CLI 消费面已接线，SDK 注册表类待 v1.8 接线版开放:v1.8.0
 calibrationClaimRegistry:同上（默认实例）:v1.8.0
 registerLegacyConfidenceClaims:既有置信度普查登记入口（SSOT 清单消费）——CLI 面排接线版:v1.8.0
