@@ -12,7 +12,7 @@
     "cell": 0
   },
   "docs/VALIDATION.md": {
-    "wall": 2,
+    "wall": 6,
     "cell": 0
   },
   "SECURITY.md": {
@@ -56,7 +56,7 @@
     "cell": 1
   },
   "docs/ROADMAP.md": {
-    "wall": 1,
+    "wall": 2,
     "cell": 4
   },
   "_meta": {
@@ -64,7 +64,7 @@
     "counter": "node tools/check/lib/readability-count.mjs（单一口径：wall=围栏外>300字符行；cell=围栏外表格内>200字符格）",
     "rule": "实测值 ≤ 基线 = 绿；任何文件 wall/cell 高于基线 = 红；文件清零后从本表移除；新增核心文档须先测基线再登记",
     "scope": "核心文档面（用户必经路径）；changelog/archive/evidence 为冻结区不适用",
-    "note": "2026-09-28 文档治理批：全量折行 + THANKS 判据级压缩后首次收紧——总墙式行 261→17（-244），墙式格 34→34（下一批：表格单元格内容压缩）；README.en cell 2→3（v1.5.8 能力段含 6 行三档/四门槛长描述，1 格外墙式单元格；与字数基线同批登记） | 2026-10-15 并行批 wall 基线随动：LEDGER 28→29（f7b239701）/ regression-checklist 3→4（42418fa1e） | 2026-10-15 并行批 wall 基线随动：FORGE/LEDGER.md 29→30（release-gate 台账行追加，已提交内容） | 2026-10-20 v1.7.0 bugfix 批（任务书授权净增）:LIMITATIONS wall 2→3（A2 长度门槛段）/SECURITY wall 2→6（联网例外+函数锚+归档披露三段）/README.en wall 3→7（A2 实拍+档位补译+badge 分组）/README.md 新登记 wall 1（--no-verify 披露行）",
+    "note": "2026-09-28 文档治理批：全量折行 + THANKS 判据级压缩后首次收紧——总墙式行 261→17（-244），墙式格 34→34（下一批：表格单元格内容压缩）；README.en cell 2→3（v1.5.8 能力段含 6 行三档/四门槛长描述，1 格外墙式单元格；与字数基线同批登记） | 2026-10-15 并行批 wall 基线随动：LEDGER 28→29（f7b239701）/ regression-checklist 3→4（42418fa1e） | 2026-10-15 并行批 wall 基线随动：FORGE/LEDGER.md 29→30（release-gate 台账行追加，已提交内容） | 2026-10-20 v1.7.0 bugfix 批（任务书授权净增）:LIMITATIONS wall 2→3（A2 长度门槛段）/SECURITY wall 2→6（联网例外+函数锚+归档披露三段）/README.en wall 3→7（A2 实拍+档位补译+badge 分组）/README.md 新登记 wall 1（--no-verify 披露行） ｜ 2026-10-21 v1.7.0 实测读数回填批：VALIDATION wall 2→6 / ROADMAP wall 1→2——实测矩阵表（ECE 6 档×3 seed 列）与三态对照表的表格长行，落数为验收指定项。",
     "updated": "2026-10-08",
     "note2": "FORGE/LEDGER 为运行台账（append-only 数据面）：表格结构不可折，锁现状防恶化；tools/README、evidence 双语已清零可从台账移除",
     "note3": "2026-09-28 内容压缩批：VALIDATION 台账化（6+3 节归档）/ ARCHITECTURE §七 10 节归位 / ROADMAP 表格拆注 / evidence 双语清零 / 新增 11 文件入册",
