@@ -11,10 +11,10 @@
   "docs/HANDBOOK.md": 33463,
   "docs/LIMITATIONS.md": 44545,
   "docs/PHILOSOPHY.md": 35106,
-  "docs/ROADMAP.md": 19231,
+  "docs/ROADMAP.md": 19242,
   "docs/THANKS.md": 18231,
   "docs/VALIDATION.md": 35393,
-  "docs/WIKI.md": 24372,
+  "docs/WIKI.md": 24386,
   "FDE/GUIDE.md": 43906,
   "FDE/README.md": 5164,
   "SKILL/SKILL.md": 7299,
@@ -28,6 +28,6 @@
     "opening_rule": "抬头块 = H1 到首个 `## ` 之间的正文；字数只计文本字符，剔除装饰行（HTML 标签行 / 纯图片 / 纯徽章 / HTML 注释 / `---`）与 YAML front matter。超限处置三选一：下沉正文 / 精简 / 淘汰。",
     "origin": "文档瘦身批（2026-09-29）：口径由「物理行数」换成「字符数」（用户裁定：行数是坏指标，控字数不控行数）。基线 = 换算时点实测值。",
     "consumed_by": "doc-discipline.sh Face 6（字数棘轮）+ Face 7（抬头块闸）",
-    "note": "① 基线为字符数棘轮：实测值 ≤ 基线 = 绿，只许降不许升（净增首选同文档移出等量字）。\\n② 调整须过三道闸（口径无误 / 无陈旧可清 / 正当新增）并在提交说明留证（文件名 + 增量 + 三闸理由）。\\n③ 历史流水见 git log --follow 本文件。 | 2026-10-20 v1.7.0 bugfix 批（任务书授权净增，四路审查修复落文档面）:11 文档基线随实测上调（README+935/README.en+2082/SECURITY+795/CONTRIBUTING+316/ARCHITECTURE+296/HANDBOOK+464/LIMITATIONS+317/PHILOSOPHY+528/ROADMAP+179/VALIDATION+9/WIKI+849）——净增内容为 A2 实拍/跨仓索引/身份自检/来源回源/排版重排等任务书指定项 涉及文件：README.md README.en.md SECURITY.md CONTRIBUTING.md docs/ARCHITECTURE.md docs/HANDBOOK.md docs/LIMITATIONS.md docs/PHILOSOPHY.md docs/ROADMAP.md docs/VALIDATION.md docs/WIKI.md ｜ 2026-10-20：SECURITY.md 51760→51785（+25）——5 条正文行折至 ≤300 字符墙式标准的排版动作，零内容增删（折行本身按 _meta 口径只增字符数）；同批未动其它文档基线。｜ 2026-10-20 v1.7.0 §二§三批：ARCHITECTURE 93386→95029（+1643）、VALIDATION 23600→27776（+4176）——净增为任务书指定项（§三校准判据纪律段「设计承诺→已落地机制」八件机制表 + §三置信度普查登记册 11 条逐条表 + §二校准读数表）。三闸：口径无误（棘轮字符数口径复算一致）/ 无陈旧可清（新增段为验收指定产物非重复——登记册 SSOT 在 calibration-registry.ts，文档为普查汇总面）/ 正当新增（v1.7.0 §三验收「产物：登记表落 docs/VALIDATION.md，逐条列状态并以合计数量结尾」+ §三涉及文件表明确列 docs/ARCHITECTURE.md 修改）。 ｜ 2026-10-21：v1.7.0 执行批+CR3 收口——ARCHITECTURE +1761（§概率面/门槛纪律/行为锁三段）、LIMITATIONS +564（§三判定失灵面四条更新）、ROADMAP +180（阶段二收口状态行）、VALIDATION +5396（三态对照/环境限制登记/最小子集骨架），均为验收要求的新增登记面；同步可读性基线 wall/cell（ARCH 1→4 · VAL 1→2 · RM cell 3→4）。 ｜ 2026-10-21 v1.7.0 实测读数回填批：VALIDATION 33172→35361（+2189）——ECE 矩阵/三态对照实测/lr 两档表/中英倒挂单列回填（§二§六验收「实测落数」项，数字附产物路径）；ROADMAP 19136→19222（+86）——阶段二收口状态行更新为实测复判结论。三闸：口径无误（实测读数落数为验收指定产物）/无陈旧可清（not-measured 占位被实测替换非叠加）/正当新增（任务书 §二§六验收项）。涉及文件：docs/VALIDATION.md docs/ROADMAP.md ｜ 2026-10-21（二）：17/18 档→格口径修正批——ROADMAP +9 / VALIDATION +14（格/档两口径并列表述）。 ｜ 2026-10-21（三）：校准后行补列 score/all 档正位 +18（三态复核誊写修正）。"
+    "note": "① 基线为字符数棘轮：实测值 ≤ 基线 = 绿，只许降不许升（净增首选同文档移出等量字）。\\n② 调整须过三道闸（口径无误 / 无陈旧可清 / 正当新增）并在提交说明留证（文件名 + 增量 + 三闸理由）。\\n③ 历史流水见 git log --follow 本文件。 | 2026-10-20 v1.7.0 bugfix 批（任务书授权净增，四路审查修复落文档面）:11 文档基线随实测上调（README+935/README.en+2082/SECURITY+795/CONTRIBUTING+316/ARCHITECTURE+296/HANDBOOK+464/LIMITATIONS+317/PHILOSOPHY+528/ROADMAP+179/VALIDATION+9/WIKI+849）——净增内容为 A2 实拍/跨仓索引/身份自检/来源回源/排版重排等任务书指定项 涉及文件：README.md README.en.md SECURITY.md CONTRIBUTING.md docs/ARCHITECTURE.md docs/HANDBOOK.md docs/LIMITATIONS.md docs/PHILOSOPHY.md docs/ROADMAP.md docs/VALIDATION.md docs/WIKI.md ｜ 2026-10-20：SECURITY.md 51760→51785（+25）——5 条正文行折至 ≤300 字符墙式标准的排版动作，零内容增删（折行本身按 _meta 口径只增字符数）；同批未动其它文档基线。｜ 2026-10-20 v1.7.0 §二§三批：ARCHITECTURE 93386→95029（+1643）、VALIDATION 23600→27776（+4176）——净增为任务书指定项（§三校准判据纪律段「设计承诺→已落地机制」八件机制表 + §三置信度普查登记册 11 条逐条表 + §二校准读数表）。三闸：口径无误（棘轮字符数口径复算一致）/ 无陈旧可清（新增段为验收指定产物非重复——登记册 SSOT 在 calibration-registry.ts，文档为普查汇总面）/ 正当新增（v1.7.0 §三验收「产物：登记表落 docs/VALIDATION.md，逐条列状态并以合计数量结尾」+ §三涉及文件表明确列 docs/ARCHITECTURE.md 修改）。 ｜ 2026-10-21：v1.7.0 执行批+CR3 收口——ARCHITECTURE +1761（§概率面/门槛纪律/行为锁三段）、LIMITATIONS +564（§三判定失灵面四条更新）、ROADMAP +180（阶段二收口状态行）、VALIDATION +5396（三态对照/环境限制登记/最小子集骨架），均为验收要求的新增登记面；同步可读性基线 wall/cell（ARCH 1→4 · VAL 1→2 · RM cell 3→4）。 ｜ 2026-10-21 v1.7.0 实测读数回填批：VALIDATION 33172→35361（+2189）——ECE 矩阵/三态对照实测/lr 两档表/中英倒挂单列回填（§二§六验收「实测落数」项，数字附产物路径）；ROADMAP 19136→19222（+86）——阶段二收口状态行更新为实测复判结论。三闸：口径无误（实测读数落数为验收指定产物）/无陈旧可清（not-measured 占位被实测替换非叠加）/正当新增（任务书 §二§六验收项）。涉及文件：docs/VALIDATION.md docs/ROADMAP.md ｜ 2026-10-21（二）：17/18 档→格口径修正批——ROADMAP +9 / VALIDATION +14（格/档两口径并列表述）。 ｜ 2026-10-21（三）：校准后行补列 score/all 档正位 +18（三态复核誊写修正）。 ｜ 2026-10-21（四）：阶段六定稿批——WIKI +14 / ROADMAP +11（状态表与「现在在哪」待发版态行）；checklist wall 4→5（#150 维度证据节注释行）。"
   }
 }

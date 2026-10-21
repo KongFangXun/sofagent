@@ -20,11 +20,11 @@
     "cell": 3
   },
   "README.en.md": {
-    "wall": 7,
-    "cell": 3
+    "wall": 10,
+    "cell": 5
   },
   "FORGE/LEDGER.md": {
-    "wall": 31,
+    "wall": 32,
     "cell": 0
   },
   "CHANGELOG.md": {
@@ -40,7 +40,7 @@
     "cell": 0
   },
   "playbook/regression-checklist.md": {
-    "wall": 4,
+    "wall": 5,
     "cell": 0
   },
   "standards/changelog/_TEMPLATE.md": {

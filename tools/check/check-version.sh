@@ -1988,6 +1988,7 @@ if $F6_RELEASED; then
   #   排除口径 = §27 F-14：行内出现**下一版**（F6_NEXT_PATCH，即窗口对象版本）号即视为合法
   #   窗口标注。F6_NEXT_PATCH 为空（无下一版 devlog）时不适用本排除 ⇒ §26 照常全判。
   #   F-31 收紧保留：不含下一版号的「SSOT 版本 + 待发版」行仍照判（残留检测能力不减）。
+  _F6_WINDOW="${F6_WINDOW}"
   _I2_NEXT_EXCL=""
   [ -n "${F6_NEXT_PATCH}" ] && _I2_NEXT_EXCL="${F6_NEXT_PATCH//./\\.}"
   _I2_HITS=""
@@ -2020,6 +2021,12 @@ if $F6_RELEASED; then
     fi
     # ⑤（v1.5.3 阶段六 · F-14 同族）：行内提及**下一版**（窗口对象）⇒ 合法窗口标注，
     #    不计残留。与 §27 的行级排除同口径——两守卫对同一内容不得两套判据。
+    # ⑤b TOC 锚形态盲区（v1.7.0 阶段六实测）：目录锚串由标题 slug 生成（点号被去——
+    #    v1.7.0 → v170），版本 token 提取不到点号形态 ⇒ ⑤永不命中。TOC 行非状态标注
+    #    本体（指向状态标题的导航），窗口态下「下一版」字样即合法指向。
+    if printf '%s' "${_body}" | grep -q '下一版' && ${_F6_WINDOW:-false}; then
+      continue
+    fi
     if [ -n "${_I2_NEXT_EXCL}" ] && printf '%s' "${_body}" | grep -qE "${_I2_NEXT_EXCL}"; then
       continue
     fi

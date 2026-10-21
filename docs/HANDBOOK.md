@@ -484,8 +484,8 @@ jobs:
 
 | 能力 | 版本 | 一句话 | 明细 |
 |---|---|---|---|
+| 判定底座·阶段二（模型与校准） | v1.7.0 | 概率变得有意义：RLCD 严格适当评分训练 · 分桶温度校准（独立校准集+隔离断言）· uncalibrated 声明纪律（无依据概率不上决策路径）· 弃权第四态 · 三态对照双达阈判定（`sofagent audit --criteria` 判据 CLI 可达；实测 ECE 达线/一致率未达 ⇒ 阶段三暂缓） | [v1.7.0 日志](./changelog/v1.7/v1.7.0.md) |
 | 判定底座·阶段一 | v1.6.0 | 判定从「匹配逻辑」变为可训练/可校验/可举证的判据数据：三原语定稿 · **36 条判据**重述 · 数据集三元组 · 三源采集+九类困难样本 · 四道质量门 · 判定头契约 · 零样本基线如实落数 · `loop:` 循环语义。**SDK 面先行** | [日志](./changelog/v1.6/v1.6.0.md) |
-| 进化模块·写面审计与元验证 | v1.5.9 | 写面留痕（HMAC · fail-closed；查询 `sofagent evolve writesurface list`）· 能力基线（`sofagent evolve baseline list/show/restore`）· 配置面契约 · 验证器老化（SDK 面）· 红队自测（`sofagent evolve redteam --run`）· RSI 升格 · 旧 shim 退役（破坏性） | [日志](./changelog/v1.5/v1.5.9.md) |
 
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）

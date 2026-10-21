@@ -27,7 +27,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.6.0: Decision Substrate · Stage 1 (Criteria & Data Foundation)](#v160-decision-substrate--stage-1-criteria--data-foundation)
+- [v1.7.0: Decision Substrate · Stage 2 (Model & Calibration)](#v170-decision-substrate--stage-2-model--calibration)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -205,23 +205,18 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.6.0: Decision Substrate · Stage 1 (Criteria & Data Foundation)
+## v1.7.0: Decision Substrate · Stage 2 (Model & Calibration)
 
-🧭 **Turning "judgment" from hard-coded matching logic into trainable, verifiable, evidence-backed criteria data** — first of four substrate stages (v1.6–v1.9). Trains nothing, wires nothing: the deliverable is a finalized criteria schema plus the data foundation.
+🧪 **Making probabilities mean something** — stage two of the four-stage substrate: training uses strictly proper scoring rules (truthful probabilities score better than skewed ones), calibration makes output probabilities readable against reality, and discipline gates keep unjustified confidence off the decision path.
 
 | Capability | One-liner | Reachable |
 |---|---|---|
-| **Three primitives** | Choice (selected + full distribution) / Score (value + interval) / Noul (truth probability) typed answers; question-set binding and candidate fallback are fail-closed | SDK surface (type contracts) |
-| **Audit criteria restatement** | 28 rules restated as **36 criteria** (criterion + evidence, zero-gap reconciliation) with a four-hard-rule fail-closed lint | SDK surface (criteria + validator) |
-| **Dataset triple format** | (state / questions / answers) isomorphic to the primitives; four-step contrastive construction · family-level split · replay-leak guard | SDK surface (format validator) |
-| **Collection & gates** | Three-source collectors (history/HITL/PR) + nine hard-sample points + four quality gates + active sampling | SDK surface |
-| **Judge-head contract** | `EncoderLike` interface (swap backbones without touching heads) + three primitive judge heads (reference impl; real backbone in v1.8.0) | SDK surface |
-| **Zero-shot baseline** | Self-produced baseline **recorded as-is** (mock encoder, zh/en split, unembellished) — the denominator for "how much training adds" in stage 2 | SDK surface · reproducible from the source tree (`npm run build`, then `node datasets/baseline-zero-shot-run.js`) |
-| **Loop workflow semantics** | `loop:` declaration + fail-closed `exit_when` decidability + budget suspension + `daemon pause/resume` | CLI reachable |
+| **RLCD strictly-proper training** | Per-primitive losses (noul log-score / choice log+spherical / score RPS) + asymmetric penalty on extreme claims + RLOO / KL anchor / downweight defense lines; probability-target assertion (hard labels rejected) + three-tier weighting + reproducibility manifest | CLI: `sofagent train rlcd --data <dataset> [--dryrun]` |
+| **Bucketed temperature calibration** | Per-primitive fitting · score isotonicity · disjoint calibration set assertion (same criterion across sides refused; violations refuse to emit readouts) · calibration artifact is plain JSON, weight-free | SDK surface |
+| **Calibration discipline gate** | Confidence/probability thresholds consumed on decision paths must carry calibration evidence or an explicit `uncalibrated` marker — unmarked ones cannot ship (check-calibration-claims wired into the release chain) | Gate · SDK surface |
+| **Abstention as a fourth state** | Abstain stands beside pass/warn/fail (three-source evidence: low confidence / OOD / missing criteria) · per-primitive thresholds · cannot be disabled when ECE misses the line | SDK surface |
+| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently; not-measured never counts as pass. Measured: ECE 17/18 cells pass, agreement misses ⇒ stage three deferred (honest verdict) | SDK surface · `sofagent audit --criteria` lists criteria via CLI |
 
-> 📌 **SDK-surface first**: user-facing entries (CLI/MCP) are scheduled for v1.8.0. Full evidence in the [v1.6.0 devlog](./docs/changelog/v1.6/v1.6.0.md); older sections in [CHANGELOG](./CHANGELOG.md).
->
-> Addendum: the "Audit criteria restatement" row above is CLI-reachable as of v1.7.0 (`sofagent audit --criteria`) — a read-only listing of the 36 criteria with their threshold version anchors; the historical row above is unchanged.
 ## The Two FDE Harness Phases
 
 **How the two phases divide the work** is covered in [What is the FDE Harness](#what-is-the-fde-harness) above—what this section adds is the **organizational reading**:

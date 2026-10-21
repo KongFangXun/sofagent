@@ -164,7 +164,7 @@
     },
     {
       "file": "playbook/regression-checklist.md",
-      "anchor": "B-快照端点对账——v1.6.0 devlog 快照 commit 数",
+      "anchor": "B-快照端点对账——v1.6.0 devlog 施工区间与 git 实测一致",
       "reason": "断言的对照对象指针——v1.6.0 devlog 是该对账断言的对照物本体（grep 目标 docs/changelog/v1.6/v1.6.0.md），版本号在此是待核字面量非出身叙事（同款先例：「dist 规则数非 17/28」锚的版本口径款）"
     },
     {

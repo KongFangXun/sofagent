@@ -1190,8 +1190,10 @@ ACC_SSOT=$(grep -oE 'docs/changelog/v[0-9.]+/v[0-9.]+\.md' "$FILE" 2>/dev/null |
 if [ -z "$ACC_SSOT" ] || [ ! -f "$ACC_SSOT" ]; then
   echo "  （prompt 未声明可读的 SSOT 开发日志路径，跳过逐字对账）"
 else
-  if diff <(awk '/^### 验收标准/{f=1;next} /^## /{f=0} f&&/^- \[ \] /' "$ACC_SSOT") \
-          <(grep '^- \[ \] ' "$FILE") > /dev/null 2>&1; then
+  # SSOT 侧 checkbox 归一化：开发完成翻勾（[ ]→[x]）是定稿态合法变迁——判据本体
+  # 逐字不变，仅勾选态演进；任务书侧是开工快照（恒 [ ]）。归一 = 去勾选标记后比对。
+  if diff <(awk '/^### 验收标准/{f=1;next} /^## /{f=0} f&&/^- \[[ x]\] /' "$ACC_SSOT" | sed -E 's/^- \[[ x]\] /- /') \
+          <(grep '^- \[ \] ' "$FILE" | sed -E 's/^- \[ \] /- /') > /dev/null 2>&1; then
     printf '  ✅ 与 %s 逐字零差（%s 条）\n' "$ACC_SSOT" "$(grep -c '^- \[ \] ' "$FILE")"
     OKS=$((OKS + 1))
   else
