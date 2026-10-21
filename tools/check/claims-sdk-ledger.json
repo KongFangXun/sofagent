@@ -14,6 +14,10 @@
     "engine/audit/src/rules/criteria/criteria-quality-lint.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役",
     "engine/orchestrator/src/router/collectors/active-sampling.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役",
     "engine/orchestrator/src/router/collectors/hard-sample-collector.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役",
-    "engine/orchestrator/src/router/judge-eval.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役"
+    "engine/orchestrator/src/router/judge-eval.ts": "v1.6.0 判定底座阶段一 SDK 面——判据数据/lint/主动选样/困难样本/评测器为本版十章交付物本体，生产消费方按 devlog 排期 v1.7.0 训练面与 v1.8.0 接线面（阶段二/三）；当前测试消费在案（criteria-schema 26/collector-quality 16/judge-eval 10 单测），SDK 台账登记非退役",
+    "engine/orchestrator/src/router/divergence-extractor.ts": "判定底座阶段二 SDK 面（§七偏离提取器——品味样本构造面；消费方排 v1.8.0 接线版；acceptance S490 族行为锁已覆盖其隔离语义）",
+    "engine/train/src/effect-backfill.ts": "判定底座阶段二 SDK 面（训练回补数据面；与 TrainChannel 接线版同批 v1.8.0）",
+    "engine/train/src/rlcd/split-config.ts": "判定底座阶段二 SDK 面（§二五分割配置——校准集隔离断言的数据面；calibration.ts 内部已 import 同目录能力，公开面排接线版）",
+    "engine/train/src/taste-sample.ts": "判定底座阶段二 SDK 面（品味样本构造——阶段三暂缓裁定下 archive-only 不进训练集，消费面排 v1.8.0）"
   }
 }

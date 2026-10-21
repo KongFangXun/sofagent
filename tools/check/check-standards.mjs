@@ -171,8 +171,12 @@ const quiet = argv.includes('--quiet');
 const ri = argv.indexOf('--root');
 const si = argv.indexOf('--sofagent');
 // --sofagent <主仓路径>：从主仓路径反推家族根（上一级），供在任意 cwd 自助接线
+// familyRoot 三级解析：CLI --family > CLI --sofagent/.. > env SOFAGENT_FAMILY_ROOT > MAIN/..
+// env 级为 worktree 场景设（MAIN/.. 在 worktree 下指向 Worktrees 目录、家族仓不在彼）；
+// 主仓根运行时 MAIN/.. 保持缺省正确。缺省不可得时脚本自身 exit 2 fail-loud（不假绿）。
 const familyRoot = ri >= 0 && argv[ri + 1] ? resolve(argv[ri + 1])
   : si >= 0 && argv[si + 1] ? resolve(argv[si + 1], '..')
+  : process.env.SOFAGENT_FAMILY_ROOT ? resolve(process.env.SOFAGENT_FAMILY_ROOT)
   : resolve(MAIN, '..');
 
 const BLIND_USAGE = '用法：check-standards.mjs --sofagent <家族主仓路径>（或于主仓根运行）';
