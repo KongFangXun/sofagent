@@ -72,6 +72,8 @@ export interface BaselineReport {
 }
 
 const RANDOM_BASELINE = 0.5; // noul 二值随机基线
+/** score 命中判定的区间外松弛（半档——亚档抖动容差，见 score hit 行注释） */
+const SCORE_HIT_SLACK = 0.5;
 
 export function evaluateZeroShot(
   runtime: JudgeRuntime,
@@ -157,7 +159,10 @@ export function evaluateZeroShot(
         prob = ans.distribution?.[truthId] ?? 0.5;
         calibRecords.push({ predicted: prob, actual: hit ? 1 : 0, lang: s.lang });
       } else if (ans.kind === 'score' && truth.kind === 'score') {
-        hit = Math.abs((ans.value ?? 0) - (truth.value ?? 0)) <= (truth.interval?.upper ?? 1) - (truth.interval?.lower ?? 0) + 0.5;
+        // score 就近容差：真值区间宽度 + SCORE_HIT_SLACK（登记常量，出处：
+        // 区间内视为命中是 v1.6.0 判据集语义；0.5 为区间外松弛半档——防
+        // 连续值读数的亚档抖动误判 miss，非拍脑袋数字）
+        hit = Math.abs((ans.value ?? 0) - (truth.value ?? 0)) <= (truth.interval?.upper ?? 1) - (truth.interval?.lower ?? 0) + SCORE_HIT_SLACK;
       }
       entry.total += 1;
       if (hit) entry.hit += 1;

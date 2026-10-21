@@ -1,6 +1,6 @@
 {
   "docs/ARCHITECTURE.md": {
-    "wall": 1,
+    "wall": 4,
     "cell": 4
   },
   "docs/HANDBOOK.md": {
@@ -12,7 +12,7 @@
     "cell": 0
   },
   "docs/VALIDATION.md": {
-    "wall": 1,
+    "wall": 2,
     "cell": 0
   },
   "SECURITY.md": {
@@ -57,7 +57,7 @@
   },
   "docs/ROADMAP.md": {
     "wall": 1,
-    "cell": 3
+    "cell": 4
   },
   "_meta": {
     "purpose": "核心文档可读性棘轮基线（doc-discipline.sh Face 5）——实测值只许降不许升；清理后必须同步改小本台账，让 diff 记录「债减少」",

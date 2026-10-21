@@ -129,8 +129,25 @@ export function auditShortcutColumn(samples: readonly ShortcutFeatureSample[]): 
       maxK = k;
     }
   }
-  const uniform = 1 / Math.max(maxOptionCount, 1);
-  const letterLeakage = Math.max(0, maxCount / samples.length - uniform);
+  // CR3 🟡-4：混合位宽口径——基线此前取全列 max(optionCount)，2 候选子列里
+  // 「恒选同位」的泄漏被 4 候选基线放大（分子分母不同口径）。改为**按位宽分组
+  // 各自算超额、再加权汇总**（组权重 = 该位宽样本占比）：每位宽子列的基线 =
+  // 1/该组位宽，泄漏只与同位宽基线比。全列同位宽时与旧公式等价（1/k 单基线）。
+  const byWidth = new Map<number, { count: number; hitAtMaxK: number }>();
+  for (const s of samples) {
+    const g = byWidth.get(s.optionCount) ?? { count: 0, hitAtMaxK: 0 };
+    g.count += 1;
+    if (s.correctOptionIndex === maxK) g.hitAtMaxK += 1;
+    byWidth.set(s.optionCount, g);
+  }
+  let letterLeakage = 0;
+  for (const [width, g] of byWidth) {
+    const groupShare = g.count / samples.length;
+    const groupUniform = 1 / Math.max(width, 1);
+    const groupRate = g.hitAtMaxK / g.count;
+    letterLeakage += groupShare * Math.max(0, groupRate - groupUniform);
+  }
+  const uniform = 1 / Math.max(maxOptionCount, 1); // 保留：读数面仍报全列基线（对照用）
 
   // option-count：候选数与判对的 |Pearson|
   const counts = samples.map((s) => s.optionCount);

@@ -733,6 +733,14 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
           console.log('');
           console.log('用法: sofagent train rlcd --data <概率目标数据集 JSON> [options]');
           console.log('');
+          console.log('train 域动作清单（sofagent train <动作>）：');
+          console.log('  rlcd       RLCD 训练（本入口——评分规则 + 冒烟回路）');
+          console.log('  doctor     训练任务体检（运行中任务 / 假活 / GPU 显存核对 --gpu）');
+          console.log('  cleanup    训练产物清理');
+          console.log('  reproduce  训练复算（按可复现清单重跑）');
+          console.log('  verify     训练产物校验');
+          console.log('  analyze    训练读数分析');
+          console.log('');
           console.log('Options:');
           console.log('  --data <file>    概率目标数据集（JSON 数组——RlcdTrainSample[] 形态）');
           console.log('  --seed <n>       随机种子（缺省 42——可复现清单成员）');
@@ -837,6 +845,9 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
             retainedCapabilities: [{ name: 'zero-shot-readout', before: 0.5, after: 0.5 }],
           });
           console.log(`🧪 冒烟回路：${result.smoke.lossSeries.length} 步 · 末段期望斜率 ${result.smoke.tailScoreSlope.toExponential(3)}（<0 = 收敛方向）`);
+          if (result.smoke.truncatedSampleCount > 0) {
+            console.log(`   ⚠️ 冒烟仅用前 ${result.smoke.usedSampleCount}/${result.smoke.usedSampleCount + result.smoke.truncatedSampleCount} 样本（k 上限 8，其余 ${result.smoke.truncatedSampleCount} 条不参与——读数只代表参与子集）`);
+          }
           console.log(`   最终策略（top）：${result.smoke.finalPolicy.map((p: number) => p.toFixed(3)).join(' / ')}`);
         } catch (err) {
           console.error(`❌ 冒烟回路失败：${(err as Error).message}`);

@@ -254,6 +254,16 @@ export function assertDisjoint(
     if (fine) {
       return [`${f}（粒度错配：训练键 ${fine} 是校准判据的细分——同判据样本不可同进两侧）`];
     }
+    // 粒度错配 ③（CR3 🟡-1 平行细分）：两侧同为某判据的细分（'crit-a:sub-1' vs
+    // 'crit-a:sub-2'）——前缀两支都不命中但同判据样本确实分进了两侧。家族级键
+    // 的语义是「来源家族整体留同侧」（split-config 口径），首冒号前段即家族根。
+    const root = f.split(':')[0]!;
+    const sameRoot =
+      root !== f &&
+      trainFamilies.some((t) => t === root || (t.startsWith(`${root}:`) && t !== f));
+    if (sameRoot) {
+      return [`${f}（粒度错配：与训练键同属判据 ${root} 的家族（平行细分形态）——同判据样本不可同进两侧）`];
+    }
     return [];
   });
   return {

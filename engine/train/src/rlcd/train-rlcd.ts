@@ -372,6 +372,10 @@ export interface SmokeLoopResult {
   tailScoreSlope: number;
   /** 训练后策略分布（toy 策略最终 softmax） */
   finalPolicy: number[];
+  /** CR3 🟡-2：参与冒烟的样本数（超上限截断显式化——n>8 时只有前 8 条参与，读数方须知） */
+  usedSampleCount: number;
+  /** CR3 🟡-2：被截断的样本数（0 = 无截断；>0 时读数只代表前 usedSampleCount 条） */
+  truncatedSampleCount: number;
 }
 
 /**
@@ -464,7 +468,16 @@ export function runSmokeLoop(input: SmokeLoopInput): SmokeLoopResult {
   const tailScoreSlope = tailSlopeOf(
     expectedScoreSeries.map((y, i) => ({ x: i, y })),
   );
-  return { lossSeries, expectedScoreSeries, tailSlope, tailScoreSlope, finalPolicy: softmax(logits) };
+  return {
+    lossSeries,
+    expectedScoreSeries,
+    tailSlope,
+    tailScoreSlope,
+    finalPolicy: softmax(logits),
+    // CR3 🟡-2：截断显式化——此前 k=min(n,8) 静默截断，第 9+ 样本不参与且读数方不可知
+    usedSampleCount: k,
+    truncatedSampleCount: input.samples.length - k,
+  };
 }
 
 /** 最小二乘斜率（末段收敛方向断言的共用计算） */

@@ -494,3 +494,23 @@ describe('§二 训练后校准步骤（train-rlcd 消费面）', () => {
     expect(r.fits.find((f) => f.primitive === 'score')?.status).toBe('not-fit');
   });
 });
+
+// CR3 🟡-1：平行细分象限——两侧同判据不同 sub 也不可放行
+it('test_assertDisjoint_平行细分_同判据不同sub_两侧跨侧即拒', () => {
+  const train = noulItems(5, 0.6, 1.2, 'ignored');
+  for (const it of train) it.familyKey = 'crit-a:sub-1';
+  const calib = noulItems(5, 0.6, 1.3, 'ignored');
+  for (const it of calib) it.familyKey = 'crit-a:sub-2';
+  const r = assertDisjoint(train, calib);
+  expect(r.disjoint).toBe(false); // 修前：字串与前缀均不等 ⇒ 误放行
+  expect(r.violations[0]).toContain('平行细分');
+});
+
+it('test_assertDisjoint_不同判据细分_合法放行不受新支影响', () => {
+  const train = noulItems(5, 0.6, 1.2, 'ignored');
+  for (const it of train) it.familyKey = 'crit-a:sub-1';
+  const calib = noulItems(5, 0.6, 1.3, 'ignored');
+  for (const it of calib) it.familyKey = 'crit-b:sub-9';
+  const r = assertDisjoint(train, calib);
+  expect(r.disjoint).toBe(true); // 判据根不同（a vs b）——合法
+});
