@@ -1,4 +1,4 @@
-// instinct/examiner.ts · 出题考核器（v1.6.0 章四）
+// instinct/examiner.ts · 出题考核器（v1.7.0 章四）
 //
 // Meta-RSI Data-RSI 的「归因→出题→考核」三步：instinct 链有提取与被动统计
 // （passRate），缺主动验证。本文件：

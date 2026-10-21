@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent-evolve
 slug: cordis-plugin-sofagent-evolve
-version: 1.6.0
+version: 1.7.0
 displayName: cordis-plugin-sofagent-evolve
 description: >
   进化面 RSI 独立模块（准入门 / 晋级 / 经验池 / 考核 / 写面审计 / 能力基线 / 透明仓）——经验沉淀（think.md 反思）+ 写面权限窄化（模型只写 memory / skill，控制面写入即拒）（seam: session/event + fs/write-intent）——桥接 @sofagent/think generateThinkEntry——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。

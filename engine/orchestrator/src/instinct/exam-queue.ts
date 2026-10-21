@@ -1,4 +1,4 @@
-// exam-queue.ts · 考核队列落盘（v1.6.0 章四补强——「落考核队列」的持久化半件）
+// exam-queue.ts · 考核队列落盘（v1.7.0 章四补强——「落考核队列」的持久化半件）
 //
 // examiner 产出题目/结果/拒收/待补四类动作——本件给它们 append-only 的
 // 落盘载体（{SOFAGENT_DATA}/instinct/exam-queue.jsonl），人审门消费面。

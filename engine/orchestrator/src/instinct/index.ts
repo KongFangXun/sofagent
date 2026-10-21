@@ -1,4 +1,4 @@
-// instinct/index.ts · instinct 域 barrel（v1.6.0 章三/四对外消费面）
+// instinct/index.ts · instinct 域 barrel（v1.7.0 章三/四对外消费面）
 //
 // 子路径导出 ./instinct 的入口——既有 extractor/scorer 两域 + 本版新增
 // store/exporter/examiner/exam-queue 从本 barrel 出；evolver/failure-log 不经

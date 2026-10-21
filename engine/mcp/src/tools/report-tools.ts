@@ -1,9 +1,9 @@
 // ============================================================
 // report-tools.ts · MCP tool: list_capabilities
-// v1.6.0: 从 mcp-server.ts 提取
+// v1.7.0: 从 mcp-server.ts 提取
 // v1.5.7 章五: 从「工具清单」升级为「可拔能力地图」——接 engine/capabilities.json
 //   （主干能力清单 SSOT），返回档位名 + 默认值 + 依赖级联 + 关档失效面。
-//   读取方式：v1.6.0 BUG-25 起 build 链把 capabilities.json 拷进 dist/（copy-assets），
+//   读取方式：v1.7.0 BUG-25 起 build 链把 capabilities.json 拷进 dist/（copy-assets），
 //   安装态同层可达；另保留仓内相对解析回退（源码态/仓根运行态）。文件缺席时
 //   **响亮降级**（标注 legacy 形态 = 安装态已知边界，不静默）。
 // ============================================================

@@ -1,4 +1,4 @@
-// training-policy.ts · 训练期策略集加载（opt-in）+ 命中判定（v1.6.0 章五）
+// training-policy.ts · 训练期策略集加载（opt-in）+ 命中判定（v1.7.0 章五）
 //
 // 边界：本仓做治理与信号、不做训练引擎——训练循环由模型层跑、经 TrainChannel
 // 提交；本模块产出「训练期策略合规判定 + 惩罚信号」，以数据集/reward 判据

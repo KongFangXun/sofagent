@@ -1,6 +1,6 @@
 // ============================================================
-// audit/cli/agent-shield.ts · AgentShield 五类配置面扫描 CLI（v1.6.0）
-// v1.6.0 BUG-59：本文件是 CLI wrapper（of ../agent-shield.ts 实现本体）——同名同长致首读误判复制漂移，故更名消歧
+// audit/cli/agent-shield.ts · AgentShield 五类配置面扫描 CLI（v1.7.0）
+// v1.7.0 BUG-59：本文件是 CLI wrapper（of ../agent-shield.ts 实现本体）——同名同长致首读误判复制漂移，故更名消歧
 // ============================================================
 //
 // 用法：

@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/rules",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "engines": {
     "node": ">=18"
   },
@@ -43,7 +43,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@sofagent/core": "1.6.0"
+    "@sofagent/core": "1.7.0"
   },
   "peerDependencies": {
     "typescript": ">=5.0.0"

@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.6.0 · 2026-10-15（GMT+8）· ✅ 已发版 · 孔放勋
+> v1.7.0 · 2026-10-22（GMT+8）· ✅ 已发版 · 孔放勋
 
 > sofagent 是开源（MIT）的 **FDE Harness 层**——不造 Agent，给宿主 Agent（DSH / OpenClaw / WorkBuddy）加一层治理。本文档是项目全局索引入口。
 > 人类与 AI Agent 均可读；**Agent 查实现路径直接跳 [§五 文件地图](#五文件地图)**；English: [README.en.md](../README.en.md)。阅读路径见 [§八](#八导航按你的意图选路)；文档分工见 [§九](#九文档分工与体量纪律)。
@@ -254,8 +254,8 @@ graph TB
 
 | 项 | 值 |
 |---|---|
-| 当前版本 | **v1.6.0**（2026-10-15，✅ 已发版 · 判定底座 · 阶段一（判据与数据地基）） |
-| 下一版 | **v1.7.0**（✅ 已开发待发版——判定底座 · 阶段二（模型与校准）· 实测裁决阶段三暂缓；以 [ROADMAP](./ROADMAP.md) 为准） |
+| 当前版本 | **v1.7.0**（2026-10-22，✅ 已发版 · 判定底座 · 阶段二（模型与校准）——实测裁决阶段三暂缓） |
+| 下一版 | **v1.8.0**（📋 规划中——判定底座 · 阶段三（接线分发，含 v1.7.0 SDK 面先行符号清偿）；以 [ROADMAP](./ROADMAP.md) 为准） |
 | 测试覆盖 | 6512 测试 / 13 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
 | 审计规则 | 28 条（17 默认 + 11 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)） |
 | FORGE | release-gate-loop 运行中 · fresh-eyes-loop 按需人工触发 |
@@ -310,7 +310,7 @@ graph TB
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构 + 三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·沉淀·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射 + 行业坐标（Sovereign AI 四层主权落点）。
 - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
-- **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.6.0。
+- **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.7.0。
 
 **30 分钟深度路径**（承接 3 分钟全景）：① [ARCHITECTURE](./ARCHITECTURE.md) §一~§二 + [PHILOSOPHY](./PHILOSOPHY.md) §一（双层架构与"不替代 Agent"论证，~15 min）
 → ② [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 min）→ ③ 按角色进 [guides/](./guides/)（企业 IT→enterprise-deploy · 开发者→harness-sdk · 审查体系→review-system）。
@@ -391,9 +391,9 @@ graph TB
 
 | 权威源 | 管什么 | 为什么不在本仓 |
 |---|---|---|
-| `factory/VERSIONS.md`（factory 仓 · 判定底座与训练工程的姊妹仓） | 判定底座（v1.6.0–v1.9.0 施工期）与后续训练工程的版本台账/排期 SSOT——分层模型架构等跨仓立项的版本账以此为准 | 训练工程版本节奏与本仓发版节奏独立演进，混入会互相锁死排期；本仓 ROADMAP 只做引用（见「分层模型架构」注） |
+| `factory/VERSIONS.md`（factory 仓 · 判定底座与训练工程的姊妹仓） | 判定底座四阶段施工期（当前 v1.7.0 已发）与后续训练工程的版本台账/排期 SSOT——分层模型架构等跨仓立项的版本账以此为准 | 训练工程版本节奏与本仓发版节奏独立演进，混入会互相锁死排期；本仓 ROADMAP 只做引用（见「分层模型架构」注） |
 | `factory/rsi/docs`（factory 仓） | 工厂侧运行手册与台账（原 s1m-factory 目录已冻结迁入 factory/rsi/） | 工厂操作面文档随工厂仓演进，镜像副本会漂移失效 |
 
 > ⚠️ factory 为**内部仓**——开源面以本仓 README/WIKI 为准；仓外源对开源读者不可达属预期，非链接失效。
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.6.0 · 孔放勋 · 2026-10-15。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.7.0 · 孔放勋 · 2026-10-22。

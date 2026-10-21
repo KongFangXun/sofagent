@@ -3,7 +3,7 @@
 // 定位：RLCD 训练的总装配——把 scoring-rules（严格适当评分）、policy-gradient
 // （三防线）、shortcut-audit（三捷径自检）、retention-report（保留能力对照）
 // 接成一个可提交训练任务：
-//   1. 数据侧断言：只消费 v1.6.0 概率目标（分布/真值概率），硬标签样本被
+//   1. 数据侧断言：只消费 v1.7.0 概率目标（分布/真值概率），硬标签样本被
 //      拒载（标 no-probability-target——fail-closed，不静默降级为监督样本）；
 //   2. label.source 三档加权（human > deterministic > model-judge）权重入配置；
 //   3. 多判据域混训任务配比（混合任务损失权重显式落数——承接 NanoJev 蒸馏②）；
