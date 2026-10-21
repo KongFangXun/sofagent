@@ -160,7 +160,20 @@ compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 #   下面白名单仅余 1 条（listNodeKinds · v1.7.0 到期 · 判定底座 SDK 面先行、消费方排期接线版）。
 #   v1.6.0 到期的 4 条（initialNodeState / executionStep / setExecutionAuditSink /
 #   statefulMetricsFileSink）已于 v1.6.0 bump 批**清偿摘除**（均已具备生产调用点）。
-SDK_FACE_WAIVER="listNodeKinds:SDK 面枚举器（与 getSchema 同文件同消费面）——schema 注册表对外自描述 API，判定底座阶段一 SDK 面先行、消费方排期接线版:v1.7.0"
+# v1.7.0 阶段二 SDK 面先行登记（判定底座：校准纪律/判据变更留痕 SDK 面交付，消费方排 v1.8.0 接线版——
+# 与 listNodeKinds 同族形态；每条格式=符号:reason:v目标版）：
+SDK_FACE_WAIVER="listNodeKinds:SDK 面枚举器（与 getSchema 同文件同消费面）——schema 注册表对外自描述 API:v1.7.0
+CalibrationClaimRegistry:校准声明注册表——check-calibration-claims 门禁与 CLI 消费面已接线，SDK 注册表类待 v1.8 接线版开放:v1.8.0
+calibrationClaimRegistry:同上（默认实例）:v1.8.0
+registerLegacyConfidenceClaims:既有置信度普查登记入口（SSOT 清单消费）——CLI 面排接线版:v1.8.0
+RulerChangeEventSchema:判据变更事件 schema（RULER_CHANGE 消费面 SDK 先行）:v1.8.0
+RulerChangeSchemaError:判据变更校验错误类型（fail-closed 抛错契约）:v1.8.0
+RulerTargetVersionSchema:判据目标版本 schema（版本链可接续断言的数据面）:v1.8.0
+appendRulerChange:判据变更落链（HMAC）——decision-log 内部已用同逻辑，公开入口排接线版:v1.8.0
+assertVersionContinuable:判据版本链可接续断言（SDK 面先行）:v1.8.0
+anchorComparability:判据可比性锚定（品味样本构造面）:v1.8.0
+validateRulerChange:判据变更结构校验——decision-log appendRulerChange 链内已消费（一跳断链系白名单内闭环引用，RULER_CHANGE 落链真实在用）:v1.8.0
+judgmentAnchor:判定锚类型（三原语输出面配套类型）:v1.8.0"
 
 # ── --since <prev-tag>：版本 diff 驱动模式 ──
 # 用 git diff <prev-tag>..HEAD 提取 engine/**/src/*.ts 新增的 @public 导出
