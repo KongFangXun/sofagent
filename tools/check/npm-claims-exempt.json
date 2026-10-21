@@ -17,7 +17,7 @@
     {
       "file": "README.en.md",
       "anchor": "the latest installable npm version is `@sofagent/audit@1.7.0`",
-      "reason": "同上（双语同源行）"
+      "reason": "bump→publish 时序窗口豁免（v1.7.0 bump 批，README.en 双语同源行）：registry latest 1.6.0 属发布链中间态，npm publish 完成后本条转真值即可移除豁免"
     }
   ],
   "exemptAnchors_spec": {
