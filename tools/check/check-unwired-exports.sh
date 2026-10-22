@@ -157,7 +157,8 @@ compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 #        judgeAdmission 此前被 auto-trigger.ts 包内 import 判一跳断链，本版经
 #        daemon 生产链路形成跨包出口后摘除）。
 #   清偿进度读数：`node tools/check/check-sdk-waiver-progress.mjs`（对 HEAD = 0 / 47）。
-#   下面白名单仅余 1 条（listNodeKinds · v1.7.0 到期 · 判定底座 SDK 面先行、消费方排期接线版）。
+#   下面白名单共 12 条（v1.8.0 到期 · 判定底座 SDK 面先行、消费方排接线版）——listNodeKinds 与
+#   校准/RULER_CHANGE 两族同轨；到期未接线即转红（到期判定见文件末「SDK-face 白名单自审」段）。
 #   v1.6.0 到期的 4 条（initialNodeState / executionStep / setExecutionAuditSink /
 #   statefulMetricsFileSink）已于 v1.6.0 bump 批**清偿摘除**（均已具备生产调用点）。
 # v1.7.0 阶段二 SDK 面先行登记（判定底座：校准纪律/判据变更留痕 SDK 面交付，消费方排 v1.8.0 接线版——
