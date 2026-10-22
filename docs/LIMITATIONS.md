@@ -157,9 +157,9 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 
 平台对 `openclaw.plugin.json` 顶层字段（`seam` / `uiHints` 等）给出「非受支持字段」告警——**安装与使用不受影响**，仅平台校验提示。处置方向是把这些字段移入平台受支持的承载位；至 v1.6.0 重发仍复现（四款逐款回报）。
 
-### 📦 v1.5.3：GitHub Release 工作流的自动发布密钥失效（手动发布兜底）
+### 📦 v1.7.0：ClawHub 上 evolve / inject 仍为 1.6.0
 
-`release.yml` 里用于 npm 自动发布的仓库 secret 已失效，导致该工作流的「自动 publish」步骤不可用。**本版已按手动发布补齐全部 23 包**，用户侧的 npm 安装不受影响；修复方向是更新该 secret（维护者操作），未修复前每次发版的 npm 发布走手动通道。
+**audit / rollback 已发 1.7.0；evolve / inject 因平台侧发布状态机死锁未转正**（版本预留 / latest / artifact 空 互斥），已提 moderator；OpenClaw 装这两款得 1.6.0；**npm 渠道同两名包已 1.7.0**。
 
 ### 🐚 B1 数据初始化依赖 bash
 

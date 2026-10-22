@@ -175,7 +175,6 @@ const ROOT = path.resolve(import.meta.dirname, '..', '..');
 //    已发版版本的形态标注属历史档案，回填/对账均无意义（v1.5.0 发版后按此口径移出）。
 const VERSION_SOURCES = [
   { version: 'v1.5.9', file: 'docs/changelog/v1.5/v1.5.9.md' },
-  { version: 'v1.7.0', file: 'docs/changelog/v1.7/v1.7.0.md' },
   { version: 'v1.8.0', file: 'docs/changelog/v1.8/v1.8.0.md' },
   { version: 'v1.9.0', file: 'docs/changelog/v1.9/v1.9.0.md' },
   { version: 'v2.0.0', file: 'docs/changelog/v2.0/v2.0.0.md' },
@@ -188,8 +187,8 @@ const OPT_OUT_NOTE = 'docs/changelog/v1.4/ 及更早（已发版历史档案，�
 // 数值口径（实测）：扫描面随「发版即移出」逐版收缩——现行 5 文件 / 38 需标注章。**两个下界均取零余量**——
 // 任一文件路径断裂 / 任一需标注章消失即当场红（余量非零时「掉几个还算过」正是假绿温床）。
 // 维护纪律：发版时把该版移出 VERSION_SOURCES，**同批下调这两个下界**（与 EXPECTED_COUNTS 同款）。
-const MIN_FILES = 5;
-const MIN_CHAPTERS = 38;
+const MIN_FILES = 4;
+const MIN_CHAPTERS = 31;
 
 // A2 排除面（无交付面 ⇒ 不要求标注）：固定标题两个；**指针存根章由 isPointerStub
 // （章体判据）另行豁免**——这里刻意不按标题形态豁免，理由见 isPointerStub 处注释。
@@ -367,7 +366,6 @@ const EXPECTED_LABELS = {
   'v1.5.0': ['主干', '插件', '非功能', '通道成分'],
   'v1.5.4': ['主干', '通道成分', '非功能'], // 章级通道退役（并干）；章三内通道成分标注 1 处归成分模式
   'v1.5.9': ['主干', '非功能', '插件'],
-  'v1.7.0': ['主干'],
   'v1.8.0': ['主干'],
   'v1.9.0': ['主干', '非功能'],
   'v2.0.0': ['主干', '非功能'],
