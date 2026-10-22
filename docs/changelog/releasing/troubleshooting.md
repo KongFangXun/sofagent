@@ -164,3 +164,28 @@ gh api repos/O/R/git/refs/heads/main -X PATCH -f sha=<新commit>
 | **verify/install CI 红「registry 无本版」** | 发布时序固有（publish 在 CI 之后） | 不视为 CI 阻塞——publish 完成后 `gh run rerun <id> --failed`，转绿才算收口（时序固有 vs 真回归的唯一分界动作） |
 
 🔴 三条铁律：① 判定一律 `--prefer-online`（裸查询吃本地缓存，发版 session 内误报上版号）；② rerun 幂等豁免分支存在，重复 rerun 不会重复发布；③ 本地重发成功后，CI 同 run 的 rerun 若仍红，先查 registry 传播再判定。
+
+---
+
+## ClawHub package release 状态机死锁（publish 报 exists + download 报 not found）
+
+> 处方唯一源（v1.7.0 实测收口）。**判据先于动作：download 才是发布与否的唯一证据，CLI 的 "Update submitted" 与 "already exists" 都不算。**
+
+| 形态 | 判定 | 处置 |
+|---|---|---|
+| `publish` 报 `Version X.Y.Z already exists` **且** `download --version X.Y.Z` 报 `Version not found` | **状态机死锁**——版本预留表已占（拒重发）、artifact 表为空（下不到）、`delete --version` 报 `Publish a replacement release before deleting the current latest release`（release 表已标其为 latest）、`undelete --version` 报 `not withdrawn by this owner`（既非正常亦非撤回态）。四方状态互斥 | **本地无杠杆可解**，走 `clawhub package report <name> --version X.Y.Z --reason <四方证据 + attemptId>` 上报 mod 队列；同批正常包继续走，本包登记 LIMITATIONS |
+| `publish` 报 `Version already exists` **但** `download` 能拿到该版本 | 该版本**已发布成功**——重发撞车，不是失败 | 不处置（SOP「Version already exists = 已发布证据」的完整形态是本行） |
+| `pending security scans` 且 `download` 拿不到、`latestVersion` 未更新 | 真 pending（平台扫描队列） | 等；但 **>1h 仍未转正 ⇒ 按死锁态处理**，勿空等 |
+
+**八类本地杠杆（v1.7.0 全部实测用尽，均无效）**：目录发布 8 轮 / `github:repo@ref:path` 显式 ref（CLI 只接受本地路径，报 `Path must be a folder or package tarball`）/ 把 source 引用的分支推上远端使其可达 / 改包内容（files 排除 `*.test.js`，被版本预留拦住未生效）/ `--manual-override-reason` / `package delete --version` / `package undelete --version` / 5–25 分钟多轮长窗等待（累计 12h+）。
+
+**诊断三件套（先跑再判，别猜）**：
+```bash
+clawhub package moderation-status <name>   # package scan / release scan / blocked
+clawhub package readiness <name>           # 各项 PASS/FAIL；community 包必然 FAIL official（非本包问题）
+clawhub package download <name> --version <ver>   # 🔴 唯一发布证据：能下到 = 已发布
+```
+
+**worktree 陷阱**：在 git worktree 内执行 `publish` 时，CLI 用**本地当前分支名**拼 source（`github:owner/repo@workbuddy/xxx:path`）——该分支若不在远端，平台拉不到源。对策：在 main 分支的工作副本内发布，或先把该分支推到远端再发。**source 可从 `publish --json` 的 `source` 字段读出**，发布后核一眼。
+
+**影响面判据**：ClawHub 是**发现层补充**，npm 渠道同包已在册 ⇒ 该包死锁不阻塞主线发布；按「开放项」登记而非回滚已发布版本。

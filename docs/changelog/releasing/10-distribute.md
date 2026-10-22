@@ -125,6 +125,8 @@ for pdir in $OPENCLAW_PLUGIN_DIRS; do
 done
 ```
 
+> 🔴 **本次发布环境自检（v1.7.0 实测）**：① `publish --json` 回执的 `source` 字段**必须核一眼**——在 worktree 内发布时 CLI 用本地分支名拼 source，分支不在远端则平台拉不到源；② **发布成功的唯一证据是 `clawhub package download <name> --version <ver>` 能下到**，CLI 的 `Update submitted` 与 `already exists` 都不是证据；③ `already exists` + `download not found` = 状态机死锁，本地无杠杆，处置见 [troubleshooting · ClawHub release 状态机死锁](./troubleshooting.md#clawhub-package-release-状态机死锁publish-报-exists--download-报-not-found)。
+>
 > **OpenClaw plugin 分发铁律**：
 > - 发布源 = `engine/openclaw-plugins/sofagent-*` 包目录（与 DSH plugin 家族分开，别混；前缀是 sofagent-，不是 openclaw-plugin-）
 > - 发布通道 = **ClawHub plugins**（`clawhub package publish --family code-plugin`）——注意 ClawHub 的 `skill publish` 与 `package publish` 是两条独立命令
