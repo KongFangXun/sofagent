@@ -58,7 +58,19 @@ const HIGH_CONFIDENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
   { pattern: /(you are now|你现在是|你的新角色是) (DAN|jailbreak)/i, name: 'DAN/jailbreak 角色切换' },
   { pattern: /do not follow (the |your )?(rules|guidelines|instructions)/i, name: 'do not follow rules/guidelines/instructions' },
   { pattern: /(ignore|forget) (everything|all) (above|before)/i, name: 'ignore/forget everything/all above/before' },
-  { pattern: /<\|im_start\|>/i, name: 'im_start 标记注入' },
+  // v1.8.0：模型控制 token 族（编码层注入面）——外部文本里的控制 token 字面量若与正文
+  // 同走一词表，数据面文本即获得控制面语义（提前结束思考段 / 伪造角色轮次 / 伪造工具
+  // 调用边界）。此前只覆盖 im_start 单形态，而主流 chat template 的控制 token 远多于此：
+  // ChatML 的 im_end/im_sep、Llama-3 的 begin_of_text/eot_id/start_header_id、
+  // DeepSeek 的 endoftext/User/Assistant 等。全角竖线形态由 normalizeLine 的 NFKC 归一后
+  // 同样命中（故不另立全角模式）。
+  // 定位边界：本模式只判「控制 token 字面量出现在变更内容里」这一事实，不判它是否被
+  // 下游用作数据——那取决于取用方的编码方式，属规则外的事（见 SECURITY.md 编码层小节）。
+  { pattern: /<\|[A-Za-z_][A-Za-z_0-9]{0,30}\|>/, name: '模型控制 token 字面量（控制面注入）' },
+  // 推理段边界：模型用控制 token 收尾思考段；数据面自带同形串时会话会被提前截断
+  { pattern: /<\/?think>/i, name: '推理段边界标记（think）' },
+  // 工具调用分隔：DSML 标记载荷可伪造工具调用边界（参数注入的入口形态）
+  { pattern: /\|\s*DSML\s*\|/i, name: '工具调用分隔标记（DSML）' },
   // v1.1.0: 中文注入检测
   { pattern: /忽略(以上|之前|先前|所有|上面).{0,6}(指令|约束|限制|规则|设定|系统提示)/i, name: '中文：忽略+指令/约束/限制' },
   { pattern: /无视(以上|之前|先前|所有|上面).{0,6}(规则|约束|限制|要求|指令)/i, name: '中文：无视+规则/约束/限制' },

@@ -6,16 +6,36 @@
       "id": "cordis-plugin-sofagent-audit",
       "seam": "tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping",
       "seamSemantics": "工具结果留证 + 工具执行前拦截 + 文件写入意图拦截（放行） + Turn 停止验收判定（v1.4.9 P2 吸收原 -gate 验收门禁；判定源 = checkDangerousCommand/check_acceptance，不另造）",
-      "seamHandlers": ["tools/result", "tools/pre-execute", "fs/write-intent", "agent/turn-stopping"],
+      "seamHandlers": [
+        "tools/result",
+        "tools/pre-execute",
+        "fs/write-intent",
+        "agent/turn-stopping"
+      ],
       "capability": "审计与验收（git diff 硬证据 + 28 规则 + 机器可判定验收）",
       "bridgePkg": "@sofagent/audit",
       "bridgeApi": "runRules",
       "bridges": [
-        { "pkg": "@sofagent/audit", "api": "runRules" },
-        { "pkg": "@sofagent/audit", "api": "emitDecision" },
-        { "pkg": "@sofagent/orchestrator", "api": "checkDangerousCommand" },
-        { "pkg": "@sofagent/orchestrator", "api": "checkAcceptance" },
-        { "pkg": "@sofagent/core", "api": "getDataDir" }
+        {
+          "pkg": "@sofagent/audit",
+          "api": "runRules"
+        },
+        {
+          "pkg": "@sofagent/audit",
+          "api": "emitDecision"
+        },
+        {
+          "pkg": "@sofagent/orchestrator",
+          "api": "checkDangerousCommand"
+        },
+        {
+          "pkg": "@sofagent/orchestrator",
+          "api": "checkAcceptance"
+        },
+        {
+          "pkg": "@sofagent/core",
+          "api": "getDataDir"
+        }
       ],
       "description": "变更机器审阅 + 验收硬门禁——28 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）"
     },
@@ -32,15 +52,30 @@
       "id": "cordis-plugin-sofagent-evolve",
       "seam": "session/event + fs/write-intent",
       "seamSemantics": "会话事件流中的 Turn 结束（turn/end）→ 经验沉淀（think.md 反思） + 文件写入意图拦截（写面窄化：模型只写 memory / skill，控制面写入即拒）",
-      "seamHandlers": ["session/event", "fs/write-intent"],
+      "seamHandlers": [
+        "session/event",
+        "fs/write-intent"
+      ],
       "capability": "进化能力（RSI 独立模块：准入门/晋级/经验池/考核/写面审计/能力基线/透明仓）",
       "bridgePkg": "@sofagent/think",
       "bridgeApi": "generateThinkEntry",
       "bridges": [
-        { "pkg": "@sofagent/think", "api": "generateThinkEntry" },
-        { "pkg": "@sofagent/core", "api": "parseDiff" },
-        { "pkg": "@sofagent/audit", "api": "runRules" },
-        { "pkg": "@sofagent/core", "api": "getDataDir" }
+        {
+          "pkg": "@sofagent/think",
+          "api": "generateThinkEntry"
+        },
+        {
+          "pkg": "@sofagent/core",
+          "api": "parseDiff"
+        },
+        {
+          "pkg": "@sofagent/audit",
+          "api": "runRules"
+        },
+        {
+          "pkg": "@sofagent/core",
+          "api": "getDataDir"
+        }
       ],
       "description": "进化面 RSI 独立模块——准入门/晋级/经验池/考核/写面审计/能力基线/透明仓；运行载体 = RSI 插件，沉淀留主干、审计链不受插件存废影响"
     },
@@ -52,24 +87,54 @@
       "bridgePkg": "@sofagent/orchestrator",
       "bridgeApi": "publishCapability",
       "bridges": [
-        { "pkg": "@sofagent/orchestrator", "api": "publishCapability" },
-        { "pkg": "@sofagent/ontology", "api": "generateOntologyView" },
-        { "pkg": "@sofagent/core", "api": "restoreSnapshot" }
+        {
+          "pkg": "@sofagent/orchestrator",
+          "api": "publishCapability"
+        },
+        {
+          "pkg": "@sofagent/ontology",
+          "api": "generateOntologyView"
+        },
+        {
+          "pkg": "@sofagent/core",
+          "api": "restoreSnapshot"
+        }
       ],
-      "toolsRoles": ["fde", "commons"],
+      "toolsRoles": [
+        "fde",
+        "commons"
+      ],
       "featureGates": {
         "ontology": [
-          "read_entity", "read_concept", "list_entities", "list_concepts",
-          "create_entity", "create_concept", "update_entity", "delete_entity",
-          "delete_concept", "validate_ontology", "ontology_import", "search_knowledge"
+          "read_entity",
+          "read_concept",
+          "list_entities",
+          "list_concepts",
+          "create_entity",
+          "create_concept",
+          "update_entity",
+          "delete_entity",
+          "delete_concept",
+          "validate_ontology",
+          "ontology_import",
+          "search_knowledge"
         ],
         "fde": [
-          "fde_compose", "fde_interview", "fde_classify", "fde_quantify",
-          "fde_derive", "fde_distill", "fde_deploy"
+          "fde_compose",
+          "fde_interview",
+          "fde_classify",
+          "fde_quantify",
+          "fde_derive",
+          "fde_distill",
+          "fde_deploy"
         ],
         "commons": [
-          "commons_publish", "commons_search", "commons_invoke",
-          "commons_rate", "commons_retire", "commons_harvest_rule"
+          "commons_publish",
+          "commons_search",
+          "commons_invoke",
+          "commons_rate",
+          "commons_retire",
+          "commons_harvest_rule"
         ]
       },
       "description": "FDE 进场与能力流通——把企业业务梳理成 AI 能力，并让这些能力在企业内被发布、发现、调用、评价、退役"
@@ -87,14 +152,17 @@
         "cordis-plugin-sofagent-evolve",
         "cordis-plugin-sofagent-rollback",
         "cordis-plugin-sofagent-daemon",
-        "cordis-plugin-sofagent-fde"
+        "cordis-plugin-sofagent-fde",
+        "cordis-plugin-sofagent-rsi-corpus"
       ]
     },
     {
       "id": "cordis-plugin-sofagent-inject",
       "seam": "agent/pre-step",
       "seamSemantics": "模型看到输入前注入四层加载链约束（Turn 首步一条消息，判定源 = buildConstrainedSystemPrompt）",
-      "seamHandlers": ["agent/pre-step"],
+      "seamHandlers": [
+        "agent/pre-step"
+      ],
       "capability": "约束注入链（SKILL→fde→think→knowledge）",
       "bridgePkg": "@sofagent/inject",
       "bridgeApi": "buildConstrainedSystemPrompt",
@@ -104,15 +172,32 @@
       "id": "cordis-plugin-sofagent-rollback",
       "seam": "agent/error",
       "seamSemantics": "Agent 出错 → git snapshot 逆序撤销（默认关档，需显式开 rollbackOnError）",
-      "seamHandlers": ["agent/error"],
+      "seamHandlers": [
+        "agent/error"
+      ],
       "capability": "快照回溯（出事一键回滚）",
       "bridgePkg": "@sofagent/core",
       "bridgeApi": "restoreSnapshot",
       "bridges": [
-        { "pkg": "@sofagent/core", "api": "restoreSnapshot" },
-        { "pkg": "@sofagent/core", "api": "listSnapshots" }
+        {
+          "pkg": "@sofagent/core",
+          "api": "restoreSnapshot"
+        },
+        {
+          "pkg": "@sofagent/core",
+          "api": "listSnapshots"
+        }
       ],
       "description": "给宿主加上快照回溯——Agent 出错时按 git 快照逆序撤销本次改动"
+    },
+    {
+      "id": "cordis-plugin-sofagent-rsi-corpus",
+      "seam": "non-seam:tool-set",
+      "seamSemantics": "非宿主事件接入（tool 集）——语料管道（脱敏 L0/L1 → 三分拣 SENSITIVE/JUDGEMENT/ABSTAIN）按需调用（B2，自 F1 移入）",
+      "capability": "语料管道（脱敏 + 三分拣；行为等价基准 = factory 仓 rsi/corpus/pipeline.mjs，golden 见插件 GOLDEN.json）",
+      "bridgePkg": "@sofagent/rsi-corpus",
+      "bridgeApi": "runPipeline",
+      "description": "语料管道 tool 集——脱敏 L0/L1 + 三分拣（sensitive/judgement/abstain），行为与 rsi/corpus/pipeline.mjs 逐字节等价"
     }
   ]
 }

@@ -162,7 +162,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 | 档位 | 平台 | 约束注入 | 挂载方式 |
 |---|---|---|---|
-| **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 6 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合可选）——`tools/pre-execute` 等 7 个生命周期事件（词汇表见 `engine/dsh-plugins/SEAMS.md`） |
+| **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 7 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合可选）——`tools/pre-execute` 等 7 个生命周期事件（词汇表见 `engine/dsh-plugins/SEAMS.md`） |
 | **完整挂载** | OpenClaw | ✅ **每会话注入一次** | Hook 注入四层约束 + 断路器 + 4 款 OpenClaw 插件 |
 | **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 28 规则，非调用级拦截） |
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
@@ -332,9 +332,13 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 [![awesome-deepseek-harness (0xsline)](https://img.shields.io/badge/awesome--deepseek--harness%20%280xsline%29-listed-brightgreen)](https://github.com/0xsline/awesome-deepseek-harness)
 [![awesome-deepseek-harness (Dominic)](https://img.shields.io/badge/awesome--deepseek--harness%20%28Dominic%29-listed-brightgreen)](https://github.com/Dominic789654/awesome-deepseek-harness)
 [![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-listed-brightgreen)](https://github.com/punkpeye/awesome-mcp-servers)
+[![awesome-mcp-zh](https://img.shields.io/badge/awesome--mcp--zh-listed-brightgreen)](https://github.com/yzfly/Awesome-MCP-ZH)
+[![awesome-ai-agents-2026](https://img.shields.io/badge/awesome--ai--agents--2026%20%28ARUNAGIRINATHAN--K%29-listed-brightgreen)](https://github.com/ARUNAGIRINATHAN-K/awesome-ai-agents-2026)
+[![awesome-ai-governance](https://img.shields.io/badge/awesome--ai--governance-listed-brightgreen)](https://github.com/agentrust-io/awesome-ai-governance)
+[![awesome-auditable-ai](https://img.shields.io/badge/awesome--auditable--ai-listed-brightgreen)](https://github.com/yzhao062/awesome-auditable-ai)
+[![loop-engineering](https://img.shields.io/badge/loop--engineering-listed-brightgreen)](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/adopters.md)
 
 **收录申请中（PR open）**：
-
 [![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
 [![awesome-ai-agents (e2b)](https://img.shields.io/badge/awesome--ai--agents%20%28e2b%29-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
 
@@ -343,7 +347,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 - `SKILL/`——给 Agent 读的行为约束文件系统（SKILL.md 主入口 / harness/ 约束层 / agents/ Sub Agent），新 Skill 放这里
 - `FORGE/`——自迭代工具链（内部工具，外部用户可忽略），产物落 `~/.sofagent/data/forge-runs/`
 
-**上游与插件入口**：DSH 上游 <https://github.com/deepseek-ai/deepseek-harness> · Cordis 运行时 <https://github.com/cordiverse/cordis> · 7 款 `cordis-plugin-sofagent*` 源码 [engine/dsh-plugins/](./engine/dsh-plugins/)
+**上游与插件入口**：DSH 上游 <https://github.com/deepseek-ai/deepseek-harness> · Cordis 运行时 <https://github.com/cordiverse/cordis> · 8 款 `cordis-plugin-sofagent*` 源码 [engine/dsh-plugins/](./engine/dsh-plugins/)
 
 | 你想了解 | 看哪里 |
 |---|---|
@@ -353,8 +357,8 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：6512 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
-> **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 共 25 个，插件与工具包不计）——非同一集合。
+> 🧪 **工程可信度**（当前口径）：6535 测试 / 13 模块包 + 12 插件（8 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
+> **包数口径**（消歧）：workspace 29 = 13 模块包 + `engine/corpus`（`@sofagent/rsi-corpus` 语料管道，版本线独立）+ load-chain + dsh-plugin-kit + umbrella + 8 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 共 27 个，插件与工具包不计）——非同一集合。
 > 测试数二口径：**发版时点值**（各版本 `4805→4903` 增量账）与**当前实测值**（上方行）；权威值以 `tools/check/check-test-count.sh` 实跑为准；性能数据为单机参考值。
 
 ---

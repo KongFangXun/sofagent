@@ -17,6 +17,7 @@ const SUITE: ReadonlyArray<readonly [string, string]> = [
   ['rollback', 'cordis-plugin-sofagent-rollback'],
   ['daemon', 'cordis-plugin-sofagent-daemon'],
   ['fde', 'cordis-plugin-sofagent-fde'],
+  ['rsi-corpus', 'cordis-plugin-sofagent-rsi-corpus'],
 ];
 
 /** 插件自己的 package.json（版本 SSOT 在插件自身，与其余 6 个插件同形） */

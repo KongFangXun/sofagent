@@ -47,6 +47,8 @@
     "engine/dsh-plugins/cordis-plugin-sofagent",
     "engine/dsh-plugins/cordis-plugin-sofagent-daemon",
     "engine/dsh-plugins/cordis-plugin-sofagent-fde",
+    "engine/corpus",
+    "engine/dsh-plugins/cordis-plugin-sofagent-rsi-corpus",
     "engine/openclaw-plugins/sofagent-audit",
     "engine/openclaw-plugins/sofagent-evolve",
     "engine/openclaw-plugins/sofagent-inject",

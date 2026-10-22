@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "description": "B2 行为等价 golden——输入与三产物的 64 位 sha256 + 字节数 + 记录数。基准实现 = factory 仓 rsi/corpus/pipeline.mjs v0.1.0。重算时间 2026-10-19 18:34（本机 node v22+，两次不同 out-dir 逐字节相同后冻结）。",
+  "generator": {
+    "repo": "factory",
+    "script": "rsi/corpus/pipeline.mjs",
+    "version": "0.1.0",
+    "command": "node rsi/corpus/pipeline.mjs --in rsi/corpus/sample-raw.jsonl --dict rsi/corpus/sample-terms.json --out-dir <dir>"
+  },
+  "inputs": [
+    {
+      "role": "corpus",
+      "path": "rsi/corpus/sample-raw.jsonl",
+      "bytes": 841,
+      "sha256": "08d069b953cfa3650b62caac3c26b188daa4a3d91abe6143e49be0470135b5b1"
+    },
+    {
+      "role": "dict",
+      "path": "rsi/corpus/sample-terms.json",
+      "bytes": 92,
+      "sha256": "ef17e3bea1ca1de94f10408acf2c3d6d1c1b041be0874ce24bc2f08f6ae1006f"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "sensitive",
+      "file": "sensitive.jsonl",
+      "records": 2,
+      "bytes": 254,
+      "sha256": "31b2dd2f9f9f5b4f9af04f640d53299ed60fde9b3a76c0c6e757816ede060829"
+    },
+    {
+      "name": "judgement",
+      "file": "judgement.jsonl",
+      "records": 4,
+      "bytes": 498,
+      "sha256": "78485132fec6e8edaf43ec1e8dde6bdbdc5d45ed90138da343876fb0723aeebb"
+    },
+    {
+      "name": "abstain",
+      "file": "abstain.jsonl",
+      "records": 2,
+      "bytes": 199,
+      "sha256": "21524921d15e0cddd5d5b8f640fa912b52a947cf3a1b56583fcb08920cf3b308"
+    }
+  ],
+  "invariants": {
+    "records_total": 8,
+    "records_split": "2/4/2",
+    "redaction": "命中原值在全部输出中零残留",
+    "exit_code": 0
+  }
+}

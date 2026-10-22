@@ -1,0 +1,8 @@
+# sofagent cordis-plugin-sofagent-rsi-corpus bundle patch v0.1.0——注册为 DSH profile layer
+- insert:
+    - id: sofagent-rsi-corpus
+      name: 'cordis-plugin-sofagent-rsi-corpus'
+      inject: [settings, dynamicCordisRunner]
+      config:
+        seam: "non-seam:tool-set"    # 语义：非宿主事件接入（tool 集）——语料管道（脱敏 L0/L1 → 三分拣 SENSITIVE/JUDGEMENT/ABSTAIN）按需调用（B2，自 F1 移入）
+        description: "语料管道 tool 集——脱敏 L0/L1 + 三分拣（sensitive/judgement/abstain），行为与 rsi/corpus/pipeline.mjs 逐字节等价——桥接 @sofagent/rsi-corpus runPipeline"

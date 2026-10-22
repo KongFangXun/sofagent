@@ -176,7 +176,8 @@ together by the deliverables handed over in between**:
  reliability gains of a governance constraint layer—directional reference only): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in
 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md) (write-surface audit coverage: the weight and skill surfaces have
  shipped; the prompt / memory surfaces shipped in v1.5.9)
-- **Capabilities are portable, never dead-bound to a platform**—the constraint layer is platform-agnostic (what's portable is the constraint assets and the audit fallback; injection strength still varies by host tier: hard interception for DSH/OpenClaw, advisory injection + git-hook audit fallback elsewhere—see the tier table in "Multi-platform Mounting"); the methodology follows the business, not the platform
+- **Capabilities are portable, never dead-bound to a platform**—the constraint layer is platform-agnostic (what's portable is the constraint assets and the audit fallback; injection strength still varies by host tier: hard interception for DSH/OpenClaw, advisory injection + git-hook audit fallback
+  elsewhere—see the tier table in "Multi-platform Mounting"); the methodology follows the business, not the platform
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself—the project is a complete FDE workflow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
@@ -188,7 +189,7 @@ the platform:
 
 | Tier | Platform | Constraint injection | Mounting method |
 |---|---|---|---|
-| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` plugins mounted into the runtime (see Note 1) |
+| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 7 atomic `cordis-plugin-sofagent-*` plugins mounted into the runtime (see Note 1) |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
 | **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 28 rules, not call-level interception) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
@@ -207,15 +208,20 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## v1.7.0: Decision Substrate · Stage 2 (Model & Calibration)
 
-🧪 **Making probabilities mean something** — stage two of the four-stage substrate: training uses strictly proper scoring rules (truthful probabilities score better than skewed ones), calibration makes output probabilities readable against reality, and discipline gates keep unjustified confidence off the decision path.
+🧪 **Making probabilities mean something** — stage two of the four-stage substrate: training uses strictly proper scoring rules (truthful probabilities score better than skewed ones), calibration makes output probabilities readable against reality, and discipline gates keep unjustified confidence
+off the decision path.
 
 | Capability | One-liner | Reachable |
 |---|---|---|
-| **RLCD strictly-proper training** | Per-primitive losses (noul log-score / choice log+spherical / score RPS) + asymmetric penalty on extreme claims + RLOO / KL anchor / downweight defense lines; probability-target assertion (hard labels rejected) + three-tier weighting + reproducibility manifest | CLI: `sofagent train rlcd --data <dataset> [--dryrun]` |
-| **Bucketed temperature calibration** | Per-primitive fitting · score isotonicity · disjoint calibration set assertion (same criterion across sides refused; violations refuse to emit readouts) · calibration artifact is plain JSON, weight-free | SDK surface |
+| **RLCD strictly-proper training** | Per-primitive losses (noul log-score / choice log+spherical / score RPS) + asymmetric penalty on extreme claims + RLOO / KL anchor / downweight defense lines;（详→注-1） | CLI: `sofagent train rlcd --data <dataset> [--dryrun]` |
+| **Bucketed temperature calibration** | Per-primitive fitting · score isotonicity · disjoint calibration set assertion (same criterion across sides refused;（详→注-2） | SDK surface |
 | **Calibration discipline gate** | Confidence/probability thresholds consumed on decision paths must carry calibration evidence or an explicit `uncalibrated` marker — unmarked ones cannot ship (check-calibration-claims wired into the release chain) | Gate · SDK surface |
 | **Abstention as a fourth state** | Abstain stands beside pass/warn/fail (three-source evidence: low confidence / OOD / missing criteria) · per-primitive thresholds · cannot be disabled when ECE misses the line | SDK surface |
-| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently; not-measured never counts as pass. Measured: ECE 17/18 cells pass, agreement misses ⇒ stage three deferred (honest verdict) | SDK surface · `sofagent audit --criteria` lists criteria via CLI |
+| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently;（详→注-3） | SDK surface · `sofagent audit --criteria` lists criteria via CLI |
+
+> 注-1：probability-target assertion (hard labels rejected) + three-tier weighting + reproducibility manifest
+> 注-2：violations refuse to emit readouts) · calibration artifact is plain JSON, weight-free
+> 注-3：not-measured never counts as pass. Measured: ECE 17/18 cells pass, agreement misses ⇒ stage three deferred (honest verdict)
 
 ## The Two FDE Harness Phases
 
@@ -252,7 +258,8 @@ The `alpha` tag remains as a historical release trace and isn't maintained.
 >data/<tenant>/ path foundation—see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 400 .sofagent/config.yml`—an auxiliary layer, ineffective against same-user processes; see [LIMITATIONS §3](./docs/LIMITATIONS.md)); don't put the single-machine
 >default config directly into production.
 >
-> 🔐 **Data sovereignty**: runtime data never leaves your machine (no network access except the npm package fetch at install time); the three opt-in exits (cloud sync / model inference endpoint / cloud VM execution surface) require your explicit configuration (note: opening the dashboard anonymously fetches the public GitHub star count—read-only, no user data sent, silent fallback on failure)—see [SECURITY](./SECURITY.md).
+> 🔐 **Data sovereignty**: runtime data never leaves your machine (no network access except the npm package fetch at install time); the three opt-in exits (cloud sync / model inference endpoint / cloud VM execution surface) require your explicit configuration (note: opening the dashboard anonymously
+>fetches the public GitHub star count—read-only, no user data sent, silent fallback on failure)—see [SECURITY](./SECURITY.md).
 
 **30 seconds and up, zero setup** (first run includes the npx package fetch, ~30 seconds; reruns finish in seconds—the engine itself takes ~1.1s, measured basis above)—run an audit in any git repo:
 
@@ -260,7 +267,8 @@ The `alpha` tag remains as a historical release trace and isn't maintained.
 npx -y -p sofagent sofagent audit
 ```
 
-> 💡 The npm channel ships exactly one form — the umbrella package: `npm i -g sofagent` installs the **full dependency tree** (602-package basis below) — there is no smaller "lightweight" package. For a smaller footprint, use the ephemeral npx form (`npx -y -p sofagent sofagent audit`, nothing stays installed; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
+> 💡 The npm channel ships exactly one form — the umbrella package: `npm i -g sofagent` installs the **full dependency tree** (602-package basis below) — there is no smaller "lightweight" package. For a smaller footprint, use the ephemeral npx form (`npx -y -p sofagent sofagent audit`, nothing stays
+>installed; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
 
 > 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active—quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). `--init` installs the hook (still the same 17 default
 >rules); the full 28 additionally require `extendedRulesEnabled: true` in `.sofagent/config.yml`—see [LIMITATIONS §3](./docs/LIMITATIONS.md).
@@ -269,7 +277,8 @@ npx -y -p sofagent sofagent audit
 
 Here is what it looks like when a known-format secret leak gets blocked (real output). A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#28-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys—other known formats too.
 
-Length thresholds apply: generic sk- keys must be ≥29 characters total (≥27 after the sk- prefix; vendor-prefixed sk-ant-/sk-proj- etc. require ≥40), and Stripe sk_live_/sk_test_ require ≥24. Shorter or non-standard shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90).
+Length thresholds apply: generic sk- keys must be ≥29 characters total (≥27 after the sk- prefix; vendor-prefixed sk-ant-/sk-proj- etc. require ≥40), and Stripe sk_live_/sk_test_ require ≥24. Shorter or non-standard shapes are intentionally out of scope, a conservative design against false
+positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90).
 
 Real terminal output of an A2 hit (a hard-coded AWS `AKIA` access key in `app.py` gets blocked):
 
@@ -282,7 +291,8 @@ $ npx -y -p sofagent sofagent audit
 📊 [sofagent] 1 条违规 · 7 条通过 · ⚠️ 9 条本批未检查（critical 命中后 fail-fast）
 ```
 
-<sub>A2 secret-format detection in action: the engine flags a hard-coded AWS access key and fails fast. Fix: move the key into `.env` (git-ignored) or read it from environment variables / a secrets manager. The Chinese terminal output is preserved verbatim from a real run; the first-screen screenshot above shows the sibling A1 scenario (.env sensitive-file commit blocked, exit 2).</sub>
+<sub>A2 secret-format detection in action: the engine flags a hard-coded AWS access key and fails fast. Fix: move the key into `.env` (git-ignored) or read it from environment variables / a secrets manager. The Chinese terminal output is preserved verbatim from a real run; the first-screen
+screenshot above shows the sibling A1 scenario (.env sensitive-file commit blocked, exit 2).</sub>
 
 **Full install** (Node.js ≥ 18, download and review before running)—**installed on the enterprise devices running the AI nodes**:
 
@@ -396,9 +406,13 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 [![awesome-deepseek-harness (0xsline)](https://img.shields.io/badge/awesome--deepseek--harness%20%280xsline%29-listed-brightgreen)](https://github.com/0xsline/awesome-deepseek-harness)
 [![awesome-deepseek-harness (Dominic)](https://img.shields.io/badge/awesome--deepseek--harness%20%28Dominic%29-listed-brightgreen)](https://github.com/Dominic789654/awesome-deepseek-harness)
 [![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-listed-brightgreen)](https://github.com/punkpeye/awesome-mcp-servers)
+[![awesome-mcp-zh](https://img.shields.io/badge/awesome--mcp--zh-listed-brightgreen)](https://github.com/yzfly/Awesome-MCP-ZH)
+[![awesome-ai-agents-2026](https://img.shields.io/badge/awesome--ai--agents--2026%20%28ARUNAGIRINATHAN--K%29-listed-brightgreen)](https://github.com/ARUNAGIRINATHAN-K/awesome-ai-agents-2026)
+[![awesome-ai-governance](https://img.shields.io/badge/awesome--ai--governance-listed-brightgreen)](https://github.com/agentrust-io/awesome-ai-governance)
+[![awesome-auditable-ai](https://img.shields.io/badge/awesome--auditable--ai-listed-brightgreen)](https://github.com/yzhao062/awesome-auditable-ai)
+[![loop-engineering](https://img.shields.io/badge/loop--engineering-listed-brightgreen)](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/adopters.md)
 
 **Pending submissions (PR open)**:
-
 [![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
 [![awesome-ai-agents (e2b)](https://img.shields.io/badge/awesome--ai--agents%20%28e2b%29-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
 
@@ -406,7 +420,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 
 - DeepSeek Harness (upstream repository): <https://github.com/deepseek-ai/deepseek-harness>
 - Cordis runtime: <https://github.com/cordiverse/cordis>
-- 7 `cordis-plugin-sofagent*` plugin sources (6 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
+- 8 `cordis-plugin-sofagent*` plugin sources (7 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | What you want to know | Where |
 |---|---|
@@ -416,9 +430,10 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 6512 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
-> **Package-count standard** (disambiguation): workspace 27 = 13 module packages + load-chain + dsh-plugin-kit + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 module packages (25 workspaces bear a test script; plugin packages,
->the load-chain utility package and dsh-plugin-kit are outside this counting standard)—they aren't the same set.
+> 🧪 **Engineering credibility** (current): 6535 tests / 13 module packages + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
+> **Package-count standard** (disambiguation): workspace 29 = 13 module packages + `engine/corpus` (`@sofagent/rsi-corpus` corpus pipeline) + load-chain + dsh-plugin-kit + umbrella + 8 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count
+>standard** = 13 module packages (27 workspaces bear a test script; plugin packages,
+>load-chain and dsh-plugin-kit are outside it)—they aren't the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account—see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever
 >`tools/check/check-test-count.sh` reports (`test-count.sh` produces the SSOT count, `check-test-count.sh` verifies doc-claimed figures for consistency)—counting standard in [WIKI package-count definition](./docs/WIKI.md#六当前状态). Review-environment notes in
 >[docs/guides/review-system.md](./docs/guides/review-system.md); performance figures are single-machine reference values.

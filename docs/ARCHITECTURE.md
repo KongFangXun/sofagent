@@ -212,15 +212,15 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，五种能力](#二约束层harness设计一个层五种能力)；未来方向见 [七、已知局限与未来方向](#七已知局限与未来方向)。
 
-### 27 个 workspace 源码包
+### 29 个 workspace 源码包
 
-构成以根 `package.json` 的 `workspaces` 为准：13 个 `@sofagent/*` 模块包 + 工具包 `load-chain` + 基座包 `dsh-plugin-kit`（已转 npm 发布物）+ 7 个 DSH 插件包（`cordis-plugin-sofagent*`，v1.4.9 P2 合并批 10→7）+ 4 个 OpenClaw 插件包 + 1 个 npm 裸名总包 `engine/umbrella`（包名 `sofagent`，聚合安装入口——不属模块包也不属插件）。
-其中 15 个发布为 `@sofagent` npm 包（13 模块包 + `load-chain` + `dsh-plugin-kit`），DSH 插件 7 款经 SkillHub + npm 双通道分发。统计口径与包数构成见 [WIKI](./WIKI.md)。
+构成以根 `package.json` 的 `workspaces` 为准：13 个 `@sofagent/*` 模块包 + 语料管道包 `engine/corpus`（`@sofagent/rsi-corpus`，独立版本线）+ 工具包 `load-chain` + 基座包 `dsh-plugin-kit`（已转 npm 发布物）+ 8 个 DSH 插件包（`cordis-plugin-sofagent*`）+ 4 个 OpenClaw 插件包 + 1 个 npm 裸名总包 `engine/umbrella`（包名 `sofagent`，聚合安装入口——不属模块包也不属插件）。
+其中 16 个发布为 `@sofagent` npm 包（13 模块包 + `corpus` + `load-chain` + `dsh-plugin-kit`），DSH 插件 8 款经 SkillHub + npm 双通道分发。统计口径与包数构成见 [WIKI](./WIKI.md)。
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，28 条规则（17 默认 + 11 扩展，[完整清单见 SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1594 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（662 测试） |
+| audit | 提交时审计，28 条规则（17 默认 + 11 扩展，[完整清单见 SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1601 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（670 测试） |
 | inject | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
@@ -375,7 +375,7 @@ graph TB
 >
 > **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`serve-dashboard.mjs` 起服务）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，零依赖 bash）是同一 Dashboard 的两种产品入口：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。职责不同，勿混用/勿删其一。
 
-> 最小可用：只装 `@sofagent/audit` 就有纯审计（28 条规则，17 默认启用 + 11 扩展 opt-in + 快照 + 回滚）；全量形态为 27 个 workspace（包数构成权威表述见 [WIKI](./WIKI.md)），全装才是完整约束层。
+> 最小可用：只装 `@sofagent/audit` 就有纯审计（28 条规则，17 默认启用 + 11 扩展 opt-in + 快照 + 回滚）；全量形态为 29 个 workspace（包数构成权威表述见 [WIKI](./WIKI.md)），全装才是完整约束层。
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
@@ -560,21 +560,21 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 
 **权限疲劳量化**：Claude Code 逐步审批实测约 **93%** 被批准——提示越多审得越松；改 OS 级沙箱后降 **84%**。判据：**监督不能靠逐步审批，隔离强度须匹配监督能力**（多 agent 审批疲劳是乘的）。
 
-**事后审计的天窗**：模型自主越界**72 天后才被发现**——只做事后回溯，空窗必重现。本仓对应面：v1.3.7 起自派 SubAgent 沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入）即「默认断网」形态；主 Agent 永远事后审计（边界见文末声明）。
+**事后审计的天窗**：模型自主越界**72 天后才被发现**——只做事后回溯，空窗必重现。本仓：v1.3.7 起自派 SubAgent 沙箱（文件隔离 + 出站白名单 + 工具前置 allow/deny + 虚拟 key）即「默认断网」形态；主 Agent 永远事后审计（边界见文末声明）。
 
 > 📖 来源：Anthropic 跨产品 Agent 封堵实录（2026-05-25 · 93% 批准率 / 沙箱降 84% 权限提示）· [Anthropic Engineering](https://www.anthropic.com/engineering/how-we-contain-claude)
 > ｜ Anthropic 自主提交虚假凶杀线索后切断联网（2026-10-10 · 72 天空窗 + 处置三件套）· [The Decoder](https://the-decoder.com/anthropic-cuts-off-claudes-internet-access-after-the-model-autonomously-filed-a-fake-homicide-tip-with-philadelphia-police/)
 
-**最坏情况反问**（必答题）：「Agent 被 Prompt 注入后最坏情况是什么？」答案应是 profile 内权限能做的事，非全系统沦陷——权限保护的是组织。
+**最坏情况反问**：「Agent 被 Prompt 注入后最坏情况是什么？」答案应是 profile 内权限能做的事，非全系统沦陷——权限保护的是组织。
 
 **动作后果分级（中间档 · 2026-10-01 补）**：能力注册项带后果等级（**只读 / 副作用 / 改权限 / 改环境**四档），激活链按等级定确认强度：读自由 · 写确认 · **权限变更二次授权** · 环境变更走红线。
 
-**与本仓既有提权分级的分工（勿混）**：[v1.4.8「shell 提权分级」](./changelog/v1.4/v1.4.8.md) 管的是**执行侧**（shell 命令按危险度三态 safe / risky / dangerous 路由到直接跑 / 场景策略 / HITL），本条管的是**注册侧**（能力项按后果类型声明）——净增量两点：① 作用域从 shell 命令扩到全部能力注册项；② 分档维度从「危险程度」细化为「**后果类型**」——改权限与改环境是不同性质的后果（前者导致持久提权、后者动摇运行根基），混作一档则处置策略无从分化。
+**与本仓既有提权分级的分工（勿混）**：[v1.4.8「shell 提权分级」](./changelog/v1.4/v1.4.8.md) 管的是**执行侧**（shell 命令按危险度三态 safe / risky / dangerous 路由到直接跑 / 场景策略 / HITL），本条管的是**注册侧**（能力项按后果类型声明）——净增量两点：① 作用域从 shell 命令扩到全部能力注册项；② 分档维度从「危险程度」细化为「**后果类型**」——改权限致持久提权、改环境动摇运行根基，混作一档则处置无从分化。
 
-**外部教训**：SQL Copilot 提权链 [CVE-2026-65669](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-65669)（CVSS v3.1 **9.6** / v4 8.6，2026-09-08 披露）机制——植入恶意 `CONSTITUTION.md` → 管理员使用时触发 → 绕过只读限制、
+**外部教训**：SQL Copilot 提权链 [CVE-2026-65669](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-65669)（CVSS v3.1 **9.6**，2026-09-08 披露）机制——植入恶意 `CONSTITUTION.md` → 管理员使用时触发 → 绕过只读限制、
 以该连接已持有的权限执行 T-SQL → 攻击者自我提升为 SYSADMIN**。
 
-它**不授予任何权限，用的是连接上已有的权限**——故其首要教训是**最小权限**（连接身份决定爆炸半径，与上条「最坏情况反问」同源）；其次才是「合法工具做越权事」的检查盲区（护栏校验「工具能否调用」，管不住「用合法工具做越权操作」）。
+它**不授予任何权限，用的是连接上已有的权限**——故其首要教训是**最小权限**（连接身份决定爆炸半径，与上条「最坏情况反问」同源）；其次才是「合法工具做越权事」的检查盲区——护栏校验工具能否调用，管不住用合法工具做越权。
 
 **三方向同构**：AWS Bedrock 四级谱 + 交付门禁（对抗测试一次未授权调用即阻断）· 钉钉 ActionTier 三档 · 本仓 v1.4.8 提权三态。
 > 📖 来源：Johann Rehberger《From SELECT to SYSADMIN》（BlueHat Asia 2026）· [Microsoft MSRC · CVE-2026-65669](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-65669) ｜ AWS《分级自治：四级授权谱（2026-09-20）》（IMA 收录，无公开 URL）｜ hugozhu《信任阶梯与 ActionTier 风险分级》（IMA 收录，无公开 URL）
@@ -593,9 +593,9 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 
 > 📖 来源：[Claude Duet 研究预览（2026-10-21）](https://claude.com/blog/claude-duet) ｜ 阿里云云原生《Personal Agent 观察：拆解全天候运行的技术挑战》（IMA 收录，无公开 URL）｜ 沃尔玛 Agent Gateway 的 Agent Profiles（IT之家 转述，2026-10-21）
 
-**外部准入是独立依赖项（2026-10-17 补）**：Agent 对第三方服务 / 站点 / 机构的**代理访问权**不归自家权限模型——由对方单方面决定，且当前只有「本人 / 程序化接口」两档可辨；代理身份与真人无法区分时，机构只能**整类禁止**。判据：四原则管「我们能给多少」，外部准入管「对方允不允许」，二者正交——漏登记则权限设计再严也会在边界处失效。
+**外部准入是独立依赖项（2026-10-17 · 10-19 修口径）**：Agent 对第三方的**代理访问权**不归自家权限模型——由对方决定。切割轴是**动作可逆性**而非调用方身份：只读可通、动账不可，收口在**被访问方服务器侧**（专用 MCP 只读口）。判据：四原则管「能给多少」，外部准入管「对方允不允许」——漏登记则权限再严也在边界失效。
 
-> 📖 来源：知识库消化与维护（2026-10-17 · 3 源跨域；银行侧与站点侧均为媒体转述、非监管原文，a16z 数字为图表周报口径）：金融 — 花旗 / 美银禁第三方 Agent 访问客户账户（FT 转述）｜ 内容与电商站 — Yelp 付费授权 · Delta / 摩根大通 / 嘉信屏蔽 · Cars.com / Amtrak 由可用转不可用（The Verge 梳理）· [Financial Times](https://www.ft.com/)
+> 📖 来源：知识库消化与维护（2026-10-17 · 3 源跨域；10-19 银行侧再证「只读可通 / 动账不可」⇒ 4 源，修正「整类禁止」；均为媒体转述、非监管原文）：金融 — 花旗 / 美银禁第三方 Agent 访问客户账户｜ 内容与电商站 — Yelp 付费授权 · Delta / 摩根大通 / 嘉信屏蔽 · Cars.com / Amtrak 由可用转不可用（The Verge 梳理）· [Financial Times](https://www.ft.com/)
 > ｜ 浏览器宿主 — ChatGPT for Chrome 扩展同持多标签读取与代为操作、无权限中间档 · [The Verge](https://www.theverge.com/) ｜ [Andreessen Horowitz](https://a16z.com/)
 
 ### 联邦查询

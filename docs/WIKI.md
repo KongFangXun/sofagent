@@ -236,7 +236,7 @@ graph TB
 | `engine/mcp/` | @sofagent/mcp — MCP Server · **104 个 tool**（SSOT = `engine/mcp/src/tool-registry.ts` 的 `TOOLS`；增量见 [API 清单](./API.md) 与 [CHANGELOG](../CHANGELOG.md)；插件家族另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（工具包，非模块包口径） |
 | `engine/scripts/` | 运维脚本集（10 顶层 .sh + lib/ + windows/ .ps1；口径 = `ls engine/scripts/*.sh`）——安装/卸载/验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
-| `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 合并批 10→7）——6 原子（audit · rollback · inject · evolve · daemon · fde）+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
+| `engine/dsh-plugins/` | cordis-plugin-sofagent* 8 款 DSH 插件——7 原子（audit · rollback · inject · evolve · daemon · fde · rsi-corpus）+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
 | 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 [ARCHITECTURE §27 源码包](./ARCHITECTURE.md)（口径见 §六） |
@@ -256,12 +256,14 @@ graph TB
 |---|---|
 | 当前版本 | **v1.7.0**（2026-10-22，✅ 已发版 · 判定底座 · 阶段二（模型与校准）——实测裁决阶段三暂缓） |
 | 下一版 | **v1.8.0**（📋 规划中——判定底座 · 阶段三（接线分发，含 v1.7.0 SDK 面先行符号清偿）；以 [ROADMAP](./ROADMAP.md) 为准） |
-| 测试覆盖 | 6512 测试 / 13 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
+| 测试覆盖 | 6535 测试 / 14 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
 | 审计规则 | 28 条（17 默认 + 11 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)） |
 | FORGE | release-gate-loop 运行中 · fresh-eyes-loop 按需人工触发 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
 
-> 📦 **包数口径**：27 个 workspace = 13 个 `@sofagent/*` 模块包 + load-chain + dsh-plugin-kit + 7 DSH 插件 + 4 OpenClaw 插件 + umbrella 总包；其中 15 个为 `@sofagent` scope（13 模块 + load-chain + dsh-plugin-kit）+ 7 DSH 插件 + 1 umbrella，共 **23 个 npm 发布物**。OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。
+> 📦 **包数口径**：29 个 workspace = 13 个 `@sofagent/*` 模块包 + `engine/corpus`（`@sofagent/rsi-corpus`，独立版本线）+ load-chain + dsh-plugin-kit + 8 DSH 插件 + 4 OpenClaw 插件 + umbrella 总包。
+> 其中 16 个为 `@sofagent` scope（13 模块 + corpus + load-chain + dsh-plugin-kit）+ 8 DSH 插件 + 1 umbrella，共 **25 个 npm 发布物**。
+> OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。
 
 
 ## 七、术语表

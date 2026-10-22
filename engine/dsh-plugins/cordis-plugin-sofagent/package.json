@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "一次挂载 sofagent 全套能力（6 项一次到位：注入 · 审计与验收 · 经验 · 回溯 · 巡检 · FDE 三域）（seam: non-seam:plugin-suite）——一次性挂载 6 个原子插件",
+  "description": "一次挂载 sofagent 全套能力（6 项一次到位：注入 · 审计与验收 · 经验 · 回溯 · 巡检 · FDE 三域）（seam: non-seam:plugin-suite）——一次性挂载 7 个原子插件",
   "license": "MIT",
   "author": "KongFangXun",
   "main": "dist/index.js",
@@ -31,7 +31,8 @@
     "cordis-plugin-sofagent-evolve": "1.7.0",
     "cordis-plugin-sofagent-rollback": "1.7.0",
     "cordis-plugin-sofagent-daemon": "1.7.0",
-    "cordis-plugin-sofagent-fde": "1.7.0"
+    "cordis-plugin-sofagent-fde": "1.7.0",
+    "cordis-plugin-sofagent-rsi-corpus": "1.7.0"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

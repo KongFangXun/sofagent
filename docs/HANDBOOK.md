@@ -177,7 +177,7 @@ cd sofagent && bash install.sh
 | `hermes` | Skill symlink + `SOUL.md` 种子指令 |
 | 不指定 | 只写 `~/.sofagent/`，不修改任何平台目录（平台无关安装） |
 
-> 📌 **DSH 不在此表内**——它不经 `install.sh --platform` 接入，而是由宿主 profile 的 `bundles` 挂载 6 款原子插件（见 [README · 多平台挂载](../README.md) 与 [`engine/dsh-plugins/SEAMS.md`](../engine/dsh-plugins/SEAMS.md)）。本表为 `install.sh` 平台参数分支，非「支持哪些宿主」全集；完整宿主矩阵见[加载链 HOOK](../engine/hooks/sofagent-load-chain/HOOK.md)。
+> 📌 **DSH 不在此表内**——它不经 `install.sh --platform` 接入，而是由宿主 profile 的 `bundles` 挂载 7 款原子插件（见 [README · 多平台挂载](../README.md) 与 [`engine/dsh-plugins/SEAMS.md`](../engine/dsh-plugins/SEAMS.md)）。本表为 `install.sh` 平台参数分支，非「支持哪些宿主」全集；完整宿主矩阵见[加载链 HOOK](../engine/hooks/sofagent-load-chain/HOOK.md)。
 
 #### 装之前：只认官方通道
 
