@@ -465,8 +465,8 @@ sed -i '' 's/| \[x\] |/| [ ] |/g' docs/changelog/releasing/11-post-publish.md
 | 六（ROADMAP 体检） | 本版行移入迭代历程表 + `check-forms.mjs` 三处移出（见步骤十五） | 步骤十五 |
 | 四（SOP 缺口） | **ClawHub packaging 死锁形态入库**：四方互斥判据 + 八类本地杠杆实测清单 + 诊断三件套（`download` 才是唯一发布证据）+ worktree source 陷阱 + 影响面判据（不阻塞主线、登记开放项） | `troubleshooting.md` 新节 |
 | 四 | 10-distribute 步骤二·a 补**发布环境自检三条**（source 字段必核 / download 为唯一证据 / 死锁指针）——处方唯一源不复制 | `10-distribute.md` |
-| 四 | Release Notes 基线行回写 v1.7.0 实际结构（H1 品名式 + 定位句含破坏性预告 + 质量验证表 8 行 + 七 H3），并**如实记录 BugFix 位置偏离**（实际落在 ⚠️ 破坏性变更内，下版按 SOP 归位）——防止下一版照抄偏离形态 | `06-doc-finalize.md` |
-| 四 | **验收条目依据不得混装进判据**：devlog 内「（2026-10-15 外部对位）」类日期标记须移入章体 📎 引注，否则 prompt 侧要么违逐字、要么违纯度（本轮两难实测 + 解法落 v1.8.0 §一） | `docs/changelog/v1.8/v1.8.0.md` |
+| 四 | Release Notes 基线行回写上一版实际结构（H1 品名式 + 定位句含破坏性预告 + 质量验证表 8 行 + 七 H3），并**如实记录 BugFix 位置偏离**（实际落在 ⚠️ 破坏性变更内，下版按 SOP 归位）——防止下一版照抄偏离形态 | `06-doc-finalize.md` |
+| 四 | **验收条目依据不得混装进判据**：devlog 内「（`YYYY-MM-DD` 外部对位）」类日期标记须移入章体 📎 引注，否则 prompt 侧要么违逐字、要么违纯度（本轮两难实测 + 解法已入下一版 §一） | `docs/changelog/v1.8/`（下一版 devlog） |
 | —（工序） | 步骤六 **prompt 章标题须 H2 级**——`check-dev-prompt --section-reconcile` 只识别 `^##\s`，用 H3 章标题会报「任务章仅见于 devlog」批量假红（本轮实测 6 章全红 → 升 H2 即绿） | 本文件步骤七 |
 | 四 | **devlog 头翻转的措辞变体漏翻**（本轮实锤）：步骤一原 sed 只匹配 `⏳ 待发版（tag/npm 发版时同步）` 单一形态，本版 devlog 头实写「✅ **已开发完成。**」⇒ sed 锚不匹配**静默空转**；而 `check-version` §26 扫描面明确排除 `docs/changelog/` ⇒ 无机械兜底，漏翻一路留到下一轮巡检才被人工发现。修法：改**多…| `11-post-publish.md` · `06-doc-finalize.md` |
 

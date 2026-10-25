@@ -214,14 +214,14 @@ off the decision path.
 
 | Capability | One-liner | Reachable |
 |---|---|---|
-| **RLCD strictly-proper training** | Per-primitive losses (noul log-score / choice log+spherical / score RPS) + asymmetric penalty on extreme claims + RLOO / KL anchor / downweight defense lines;（详→注-1） | CLI: `sofagent train rlcd --data <dataset> [--dryrun]` |
-| **Bucketed temperature calibration** | Per-primitive fitting · score isotonicity · disjoint calibration set assertion (same criterion across sides refused;（详→注-2） | SDK surface |
-| **Calibration discipline gate** | Confidence/probability thresholds consumed on decision paths must carry calibration evidence or an explicit `uncalibrated` marker — unmarked ones cannot ship (check-calibration-claims wired into the release chain) | Gate · SDK surface |
-| **Abstention as a fourth state** | Abstain stands beside pass/warn/fail (three-source evidence: low confidence / OOD / missing criteria) · per-primitive thresholds · cannot be disabled when ECE misses the line | SDK surface |
-| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently;（详→注-3） | SDK surface · `sofagent audit --criteria` lists criteria via CLI |
+| **RLCD strictly-proper training** | Per-primitive losses (noul log-score / choice log+spherical / score RPS) + asymmetric penalty on extreme claims + RLOO / KL anchor / downweight defense lines。（详→注-1） | CLI reachable: `sofagent train rlcd --data <dataset> [--dryrun]` |
+| **Bucketed temperature calibration** | Per-primitive fitting · score isotonicity · disjoint calibration set assertion (same criterion across sides)。（详→注-2） | SDK-face |
+| **Calibration discipline gate** | Confidence/probability thresholds consumed on decision paths must carry calibration evidence or an explicit `uncalibrated` marker — unmarked ones cannot ship (check-calibration-claims wired into the release chain) | SDK-face · gate |
+| **Abstention as a fourth state** | Abstain stands beside pass/warn/fail (three-source evidence: low confidence / OOD / missing criteria) · per-primitive thresholds · cannot be disabled when ECE misses the line | SDK-face |
+| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently。（详→注-3） | SDK-face · `sofagent audit --criteria` lists criteria via CLI |
 
 > 注-1：probability-target assertion (hard labels rejected) + three-tier weighting + reproducibility manifest
-> 注-2：violations refuse to emit readouts) · calibration artifact is plain JSON, weight-free
+> 注-2：Refusing to emit readouts is a violation, not a pass · calibration artifact is plain JSON, weight-free
 > 注-3：not-measured never counts as pass. Measured: ECE 17/18 cells pass, agreement misses ⇒ stage three deferred (honest verdict)
 
 ## The Two FDE Harness Phases

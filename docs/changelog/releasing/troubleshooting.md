@@ -169,7 +169,7 @@ gh api repos/O/R/git/refs/heads/main -X PATCH -f sha=<新commit>
 
 ## ClawHub package release 状态机死锁（publish 报 exists + download 报 not found）
 
-> 处方唯一源（v1.7.0 实测收口）。**判据先于动作：download 才是发布与否的唯一证据，CLI 的 "Update submitted" 与 "already exists" 都不算。**
+> 处方唯一源（实测收口）。**判据先于动作：download 才是发布与否的唯一证据，CLI 的 "Update submitted" 与 "already exists" 都不算。**
 
 | 形态 | 判定 | 处置 |
 |---|---|---|
@@ -177,7 +177,7 @@ gh api repos/O/R/git/refs/heads/main -X PATCH -f sha=<新commit>
 | `publish` 报 `Version already exists` **但** `download` 能拿到该版本 | 该版本**已发布成功**——重发撞车，不是失败 | 不处置（SOP「Version already exists = 已发布证据」的完整形态是本行） |
 | `pending security scans` 且 `download` 拿不到、`latestVersion` 未更新 | 真 pending（平台扫描队列） | 等；但 **>1h 仍未转正 ⇒ 按死锁态处理**，勿空等 |
 
-**八类本地杠杆（v1.7.0 全部实测用尽，均无效）**：目录发布 8 轮 / `github:repo@ref:path` 显式 ref（CLI 只接受本地路径，报 `Path must be a folder or package tarball`）/ 把 source 引用的分支推上远端使其可达 / 改包内容（files 排除 `*.test.js`，被版本预留拦住未生效）/ `--manual-override-reason` / `package delete --version` / `package undelete --version` / 5–25 分钟多轮长窗等待（累计 12h+）。
+**八类本地杠杆（全部实测用尽，均无效）**：目录发布 8 轮 / `github:repo@ref:path` 显式 ref（CLI 只接受本地路径，报 `Path must be a folder or package tarball`）/ 把 source 引用的分支推上远端使其可达 / 改包内容（files 排除 `*.test.js`，被版本预留拦住未生效）/ `--manual-override-reason` / `package delete --version` / `package undelete --version` / 5–25 分钟多轮长窗等待（累计 12h+）。
 
 **诊断三件套（先跑再判，别猜）**：
 ```bash

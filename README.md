@@ -182,9 +182,9 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 | 能力 | 一句话 | 触达方式 |
 |---|---|---|
-| **RLCD 严格适当评分训练** | 三原语分派损失（noul 对数分数 / choice 对数+球面 / score RPS 序利用）+ 极端口径非对称惩罚 + RLOO/KL 锚/降权三防线；概率目标断言（硬标签拒载）+ 三档加权 + 可复现清单 | CLI：`sofagent train rlcd --data <数据集> [--dryrun]` |
+| **RLCD 严格适当评分训练** | 三原语分派损失（noul 对数分数 / choice 对数+球面 / score RPS 序利用）+ 极端口径非对称惩罚 + RLOO/KL 锚/降权三防线；概率目标断言（硬标签拒载）+ 三档加权 + 可复现清单 | CLI 可达：`sofagent train rlcd --data <数据集> [--dryrun]` |
 | **分桶温度校准** | choice/score/noul 三原语分别拟合 · score 保序 · 独立校准集隔离断言（同判据跨侧拒载，违规拒出读数）· 校准制品纯 JSON 独立于权重 | SDK 面 |
-| **校准纪律门禁** | 决策路径消费的置信度/概率阈值须带校准依据或显式 `uncalibrated`——未标注不得上线路（check-calibration-claims 接入发布链） | 门禁 · SDK 面 |
+| **校准纪律门禁** | 决策路径消费的置信度/概率阈值须带校准依据或显式 `uncalibrated`——未标注不得上线路（check-calibration-claims 接入发布链） | SDK 面 · 门禁接发布链 |
 | **弃权第四态** | 弃权与 pass/warn/fail 并列（三源留痕：低置信/OOD/判据缺失）· 门槛按原语分档 · ECE 未达阈时弃权不可关 | SDK 面 |
 | **三态对照与双达阈判定** | 零样本/训练后/校准后并列对照 · 一致率 ≥0.70（中英分列）与 ECE ≤0.10（分原语分语言）两线独立判定，not-measured 不得记达标；实测：ECE 17/18 格达线、一致率未达 ⇒ 阶段三暂缓（如实裁决） | SDK 面 · `sofagent audit --criteria` 判据列示 CLI 可达 |
 
