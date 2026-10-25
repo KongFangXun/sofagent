@@ -47,6 +47,6 @@
     "!dist/**/*.test.*"
   ],
   "dependencies": {
-    "@sofagent/dsh-plugin-kit": "1.6.0"
+    "@sofagent/dsh-plugin-kit": "1.7.0"
   }
 }
