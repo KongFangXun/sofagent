@@ -2,10 +2,10 @@
 // memory-backend.test.ts · 外部记忆后端测试（v1.3.0 交付 10 MA1/MA3/MA6）
 // ============================================================
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
 import { rmSync, mkdtempSync, existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { tmpdir, homedir } from 'os';
+import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
 import {
   mapSensitivityToACL,
@@ -29,6 +29,20 @@ function makeBackend(overrides: Partial<MemoryBackend> = {}): MemoryBackend {
     ...overrides,
   };
 }
+
+// Q14/任务九：真实 HOME 隔离——os.homedir() 跟随 HOME 环境变量（Node 文档语义，
+// macOS/Linux 实测一致），将 HOME 指向 mkdtemp 临时目录后，被测实现写入的
+// .workbuddy/memory/ 全部落到临时目录，rmSync 也只删临时目录——测试再无机会
+// 触碰用户真实 ~/.workbuddy/memory。
+const fakeHome = mkdtempSync(join(tmpdir(), 'sofagent-mcp-memtest-'));
+const realHome = process.env.HOME;
+process.env.HOME = fakeHome;
+
+afterAll(() => {
+  if (realHome === undefined) delete process.env.HOME;
+  else process.env.HOME = realHome;
+  try { rmSync(fakeHome, { recursive: true, force: true }); } catch { /* best-effort */ }
+});
 
 describe('memory-backend (MA1/MA3/MA6)', () => {
   beforeEach(() => { clearDynamicTools(); });
@@ -87,8 +101,10 @@ describe('memory-backend (MA1/MA3/MA6)', () => {
     expect(existsSync(r2.data.file)).toBe(true);
     const content = readFileSync(r2.data.file, 'utf-8');
     expect(content).toContain('测试记忆');
-    // 清理
-    try { rmSync(join(homedir(), '.workbuddy', 'memory'), { recursive: true, force: true }); } catch { /* */ }
+    // 清理落在临时 HOME 内的 .workbuddy/memory（afterAll 统一删整个临时目录，
+    // 此处仅验证写入门确实落在临时目录而非真实 ~/.workbuddy）
+    expect(r2.data.file).toContain(fakeHome);
+    expect(existsSync(join(fakeHome, '.workbuddy', 'memory'))).toBe(true);
   });
 
   it('MA6: conversation_search 标注待 v1.3.1（不 crash）', async () => {
