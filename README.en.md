@@ -175,8 +175,7 @@ together by the deliverables handed over in between**:
 - **Completeness comes from the union**—DSH solves "can work"; sofagent solves "keeps working"; only together do they make a complete FDE Harness (next chapter)
 - **"Continuous optimization" only holds with a constraint layer**—backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment (ARC-AGI-3, **capability-harness data**—it lifts task scores and token efficiency, a different dimension from the
  reliability gains of a governance constraint layer—directional reference only): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in
-[VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md) (write-surface audit coverage: the weight and skill surfaces have
- shipped; the prompt / memory surfaces shipped in v1.5.9)
+[VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
 - **Capabilities are portable, never dead-bound to a platform**—the constraint layer is platform-agnostic (what's portable is the constraint assets and the audit fallback; injection strength still varies by host tier: hard interception for DSH/OpenClaw, advisory injection + git-hook audit fallback
   elsewhere—see the tier table in "Multi-platform Mounting"); the methodology follows the business, not the platform
 
@@ -416,6 +415,11 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 **Pending submissions (PR open)**:
 [![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
 [![awesome-ai-agents (e2b)](https://img.shields.io/badge/awesome--ai--agents%20%28e2b%29-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
+
+**Semantic ownership of the two top-level directories**:
+
+- `SKILL/`—the behavior-constraint file system Agents read (SKILL.md main entry / harness/ constraint layer / agents/ sub-agents); new Skills go here
+- `FORGE/`—the self-iteration toolchain (internal tooling, external users can ignore it); artifacts land in `~/.sofagent/data/forge-runs/`
 
 **Upstream & plugin entries**:
 
