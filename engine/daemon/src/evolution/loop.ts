@@ -10,7 +10,7 @@
 //   本文件就是 v1.7.0 的**生产接线落点**：把七组能力按语义接进一条生产可达的
 //   **周度进化循环**，并由真实调度链消费：
 //     daemon cron（@weekly L2）→ inspectors/evolve-trigger.ts → runEvolutionLoop()
-//     daemon CLI（`sofagent-daemon evolve cycle`）→ runEvolutionLoop()
+//     daemon CLI（`sofagent daemon evolve cycle`）→ runEvolutionLoop()
 //     daemon CLI（`... evolve init-registry`，FDE 人工写入面）→ initializeDomainVerifierRegistry()
 //
 // 边界（不做的事）：

@@ -1180,7 +1180,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           repairHint('sofagent daemon start（按需重启守护进程）');
         } else if (dh.status === 'degraded') {
           warn(`daemon 降级运行中（PID ${dh.pid ?? '?'}）`);
-          repairHint('sofagent-daemon doctor（查看降级原因）');
+          repairHint('sofagent daemon doctor（查看降级原因）');
         } else {
           ok(`daemon 运行正常（PID ${dh.pid ?? '?'}，最后心跳 ${dh.lastHeartbeat}）`);
         }

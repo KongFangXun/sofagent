@@ -8,7 +8,7 @@
 //      回调 createBaselineSnapshot（写面变更 → 能力基线版本线节点 id）。
 //      payload 用**事件对象**、不 import 章一实现——章二模块不耦合章一（两侧各自演进）。
 //
-// 引导点为何选 daemon（composition root）：进化循环（`sofagent-daemon evolve`）、
+// 引导点为何选 daemon（composition root）：进化循环（`sofagent daemon evolve`）、
 // @weekly inspector（含 knowledge-health）等写面动作都在 daemon 进程内发生；core 的
 // tracer 是**进程内单例**，引导点必须是这些写动作所在进程的入口。daemon cli.ts 的
 // main() 在 version/help 之后、命令分派之前注入，一处覆盖全部子命令。

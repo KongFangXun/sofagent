@@ -1,5 +1,5 @@
 // ============================================================
-// commands/knowledge-status.ts · `sofagent-daemon knowledge status` 聚合命令
+// commands/knowledge-status.ts · `sofagent daemon knowledge status` 聚合命令
 // v1.3.7 新增
 //
 // 一次性聚合输出「上次 Dream Cycle 时间 + 产出概览 / 知识健康状态 /
@@ -101,7 +101,7 @@ function parseLastHealthReport(reportContent: string): { findings: number; trigg
  */
 export function knowledgeStatus(projectDir: string): KnowledgeStatusReport {
   // v1.4.9 P1-14：原手拼 `.sofagent/knowledge` 是 v1.2.1 数据目录重构漏网——
-  // 生产（CLI `sofagent-daemon knowledge status` 传 process.cwd()）恒读不到知识库，
+  // 生产（CLI `sofagent daemon knowledge status` 传 process.cwd()）恒读不到知识库，
   // 故 lastDreamCycle / health / sensitivity 三源长期全空。改用 SSOT 解析器。
   void projectDir;
   const knowledgeDir = resolveKnowledgeDir();
