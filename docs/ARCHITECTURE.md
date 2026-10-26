@@ -862,6 +862,12 @@ graph LR
 > 📖 [ByteDance Seed · HarnessDev](https://arxiv.org/abs/2609.01437) · [Aspire](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100) · [self-developing-agents](https://self-developing-agents.github.io)
 > 裁决记录条：大淘宝技术〈Ontology 决策结构化实践〉（自述，未复算）· 华力江海〈电网项目管理护照模型〉（微信公众号转述，未复算）· hugozhu.site〈被丢掉的代码〉
 
+**自进化的瓶颈在策略层，不在执行层**。三源跨域同向：面壁 PostTrainBench 复核 1338 条轨迹，模型「几乎不复核初始策略」，改进集中在执行细节；Mirendil 与 Recursive 的实践观察给出分工——人只保留「选方向」与「判结果」，执行环节被模型吃掉；DiscoveryRSI 把假设组织成树，用 Harness 重放从工作流里找出有效策略与反复失败的模式，再把已采纳的改进应用到新研究。
+
+落到进化闭环：dream-cycle 与 think.md 的蒸馏**须能改「做什么」的策略，而不只改「怎么做」的执行**——判据是本轮蒸馏是否产出新的假设分支或路线裁决；只有执行步骤细化，视为策略层空转。
+
+> 来源：面壁智能 PostTrainBench（自述，未复算）· Mirendil / Recursive（转述，未复算）· DiscoveryRSI（预印本）
+
 ### 运行时数据层：引擎间数据流全景
 
 > 🔧 **节点内部状态机（v1.5.5 章一）**：③ EXECUTE 的每个节点内部现运行 SKILL.state 执行协议——P（恒定技能说明）+ Σt（结构化状态）+ ot（最新观察）三输入，ΔΣt 状态补丁由代码确定性合并（schema 校验 fail-closed），推理轨迹合并后即弃、行为经审计摘要可溯；度量落 `data/evolution/stateful-metrics.jsonl`（token 曲线/轮次/质量对比，Dashboard 可见）。

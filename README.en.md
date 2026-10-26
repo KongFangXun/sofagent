@@ -398,7 +398,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 
 > 🌏 Note: the linked docs (LIMITATIONS / ARCHITECTURE / PHILOSOPHY / WIKI / SECURITY …) are Chinese-first—English readers should rely on this README; full doc translation is tracked in issue #8.
 
-**Featured in** (community listings · 7 listed):
+**Featured in** (community listings · 12 listed):
 
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
 [![awesome-dsh-plugin](https://img.shields.io/badge/awesome--dsh--plugin-listed-brightgreen)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
