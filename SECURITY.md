@@ -833,7 +833,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 
 | 项 | 口径 |
 |---|---|
-| 支持区间 | 仅最新 minor 线（当前 `v1.5.x`）获得安全修复；更早版本不承诺安全回填（阿尔法施工期口径——见 [ROADMAP](./docs/ROADMAP.md) 版本阶段说明） |
+| 支持区间 | 仅最新 minor 线（当前 `v1.7.x`——以根 package.json version 为准）获得安全修复；更早版本不承诺安全回填（阿尔法施工期口径——见 [ROADMAP](./docs/ROADMAP.md) 版本阶段说明） |
 | 补丁发布 | 高危问题优先发补丁版本（同 minor 内 patch 位）；修复内容记入 [CHANGELOG](./CHANGELOG.md) 对应版本条目 |
 | 报告响应 | 见上「响应承诺」节（72 小时确认 / 7 天初步评估） |
 | 预披露 | 修复发布后公开 advisory（报告人同意时致谢；默认匿名） |

@@ -15,6 +15,9 @@
 #   ② 标题层级序列一致（把行首 `#+` 抽成序列 diff，位置对位置）
 #   ③ shields.io badge 数一致
 #   ④ 关键数字集合一致（版本号 + 3~4 位整数，逐项取集合后比对）
+#   ⑤ 关键安全限定词中英计数对账（EN 不得少于 CN）
+#   ⑥ 英文门面压缩残形 lint（黑名单 + 类规则双面）
+#   ⑦ Featured in 行内声明数 == 同文件区段内徽章实数（防「行说 12 实贴 11」漂移）
 #
 # ④ 的口径说明（刻意的窄化，用来消灭假红）：
 #   - 只抽「纯数字与版本号集合」，**不比对句子**——中英同一指标词形不同
@@ -256,6 +259,34 @@ if [ -n "$EN_COMPRESSED" ]; then
 else
   echo "  ✓ [⑥英文压缩残形] README.en 零命中"
   ASSERTS=$((ASSERTS + 1))
+fi
+
+# ── ⑦ Featured in 行内声明数 == 区段徽章实数（Q4 残留防回归）──
+# 背景（Q4）：HEAD 237398861 修过一次「Featured 计数 11→12（Glama 补录）」——
+#   行内声明数与区段徽章实数可各自独立漂移（补录徽章忘改行内数 / 改数忘贴徽章），
+#   ①–⑥ 全部无感（声明数在两版对称地错、徽章数两版对称地少）。本断言对每个文件
+#   独立自洽校验：提取「**Featured in**」行内的整数 N，数同文件该行之后首个连续
+#   徽章块（行首 [![ 且遇首个空行收尾）的条数 M，断言 N == M。
+FEATURED_FAILS=0
+for f in "$CN_README" "$EN_README"; do
+  [ -f "$f" ] || continue
+  # 行内声明数：Featured in 行后的首个整数（CN「12 项已收录」/ EN「12 listed」同构）
+  declared=$(grep -E '^\*\*Featured in\*\*' "$f" | head -1 | grep -oE '[0-9]+' | head -1)
+  # 区段徽章实数：Featured in 行起，行首 [![ 计数、遇空行且已计数>0 收尾
+  actual=$(awk '/^\*\*Featured in\*\*/{f=1; next} f{if ($0 ~ /^\[!\[/) c++; else if ($0 ~ /^$/ && c > 0) exit} END{print c+0}' "$f")
+  ASSERTS=$((ASSERTS + 1))
+  if [ -z "$declared" ]; then
+    echo "  ❌ [⑦Featured 计数] ${f}：Featured in 行未提取到声明数——行被改写或删除，口径失效"
+    FEATURED_FAILS=$((FEATURED_FAILS + 1))
+  elif [ "$declared" != "$actual" ]; then
+    echo "  ❌ [⑦Featured 计数] ${f}：行内声明 ${declared} ≠ 区段徽章实数 ${actual}——补录/删徽章后忘改行内计数（或反之）"
+    FEATURED_FAILS=$((FEATURED_FAILS + 1))
+  else
+    echo "  ✓ [⑦Featured 计数] ${f}：声明 ${declared} = 徽章实数 ${actual}"
+  fi
+done
+if [ "$FEATURED_FAILS" -gt 0 ]; then
+  FAILS=$((FAILS + FEATURED_FAILS))
 fi
 
 echo ""
