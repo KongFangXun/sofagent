@@ -1,10 +1,14 @@
 // ============================================================
-// cordis-plugin-sofagent · 插件单测（v1.4.8 第8批 · 聚合编排层；v1.4.9 P2 合并批：9→6）
+// cordis-plugin-sofagent · 插件单测（v1.4.8 第8批 · 聚合编排层；v1.4.9 P2 合并批）
 // ============================================================
 // 断言面 = 三条硬约束（P2 合并后口径）：
-//   ① 只编排不重实现 —— 注册的服务只有 6 个原子插件 + 本层的 sofagent.suite
-//   ② 逐个降级不整挂失败 —— 缺一个原子插件，其余 5 个照常；failed 精确报出缺的那一个
-//   ③ 不替代细粒度插件 —— 编排清单与 plugins.json 的 suite 段逐条一致（6 个原子插件全在）
+//   ① 只编排不重实现 —— 注册的服务只有原子插件（SUITE_EXPECTED）+ 本层的 sofagent.suite
+//   ② 逐个降级不整挂失败 —— 缺一个原子插件，其余照常；failed 精确报出缺的那一个
+//   ③ 不替代细粒度插件 —— 编排清单与 plugins.json 的 suite 段逐条一致（原子插件全在）
+//
+// Q31/任务二十六：rsi-corpus 并入后 suite 实 7，六处硬编码 6 未随更新致主干红。
+// 改为测试头部读 plugins.json 真源取 suite 数组为 SUITE_EXPECTED，全部数量断言
+// 由真源推导——下次 suite 增删时测试自动跟随，不再漏改。
 // ============================================================
 
 import { describe, it, expect, vi } from 'vitest';
@@ -18,6 +22,14 @@ import plugin, { pluginMeta, capability, suite } from './index';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_DIR = path.resolve(HERE, '..');
 const SIBLINGS_DIR = path.resolve(PLUGIN_DIR, '..');
+
+/** 真源：plugins.json 的 suite 段（聚合条目）——全部数量断言的推导基准 */
+const MANIFEST = require('../../plugins.json') as {
+  plugins: Array<{ id: string; kind?: string; capability: string; suite?: string[] }>;
+};
+const MANIFEST_ENTRY = MANIFEST.plugins.find((p) => p.id === 'cordis-plugin-sofagent')!;
+/** 真源推导的原子插件短名清单（suite 段包名去前缀取短名，与 src/index.ts 的 SUITE 映射同构） */
+const SUITE_EXPECTED = MANIFEST_ENTRY.suite!.map((pkg) => pkg.replace(/^cordis-plugin-sofagent-/, ''));
 
 /** 聚合层 apply 的结果快照（与 src/index.ts 的 SuiteReport 同形） */
 interface SuiteReport {
@@ -117,7 +129,7 @@ describe('cordis-plugin-sofagent', () => {
     expect(pluginMeta.description).toContain(`seam: ${pluginMeta.seam}`); // 描述不滞后于契约
   });
 
-  it('编排清单恰好 6 条（v1.4.9 P2 合并批），且与 plugins.json 的 suite 段逐条一致', () => {
+  it(`编排清单恰好 ${SUITE_EXPECTED.length} 条（真源推导），且与 plugins.json 的 suite 段逐条一致`, () => {
     const manifest = require('../../plugins.json') as {
       plugins: Array<{ id: string; kind?: string; capability: string; suite?: string[] }>;
     };
@@ -125,7 +137,7 @@ describe('cordis-plugin-sofagent', () => {
     expect(entry, 'plugins.json 未登记聚合条目').toBeDefined();
     expect(entry!.kind).toBe('suite'); // 聚合型条目（bridgePkg/bridgeApi 语义不适用）
     expect(capability).toBe(entry!.capability);
-    expect(suite).toHaveLength(6);
+    expect(suite).toHaveLength(SUITE_EXPECTED.length);
     expect(suite.map(([, pkg]) => pkg).sort()).toEqual([...entry!.suite!].sort());
   });
 
@@ -136,12 +148,12 @@ describe('cordis-plugin-sofagent', () => {
     expect(pkgs).not.toContain('cordis-plugin-sofagent-commons');
   });
 
-  it('一次 apply 挂满 6 个能力，且 6 个 sofagent.* 服务逐个可访问', async () => {
+  it(`一次 apply 挂满 ${SUITE_EXPECTED.length} 个能力，且 sofagent.* 服务逐个可访问`, async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const ctx = makeCtx();
     await plugin.apply(ctx);
     const report = reportOf(ctx);
-    expect(report.total).toBe(6);
+    expect(report.total).toBe(SUITE_EXPECTED.length);
     expect(report.failed).toEqual([]);
     expect([...report.loaded].sort()).toEqual(suite.map(([key]) => key).sort());
     // 逐个断言（不只看数组长度）——每个原子插件的能力确实挂上了
@@ -153,18 +165,18 @@ describe('cordis-plugin-sofagent', () => {
     errSpy.mockRestore();
   });
 
-  it('只编排不重实现：注册面 = 6 个原子服务 + sofagent.suite，本层不复制任何子插件逻辑', async () => {
+  it(`只编排不重实现：注册面 = ${SUITE_EXPECTED.length} 个原子服务 + sofagent.suite，本层不复制任何子插件逻辑`, async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const ctx = makeCtx();
     await plugin.apply(ctx);
     const names = [...ctx.services.keys()].sort();
-    expect(names).toHaveLength(7); // 6 原子 + 1 聚合报告
-    expect(names.filter((n) => n !== 'sofagent.suite')).toHaveLength(6);
+    expect(names).toHaveLength(SUITE_EXPECTED.length + 1); // 原子 + 1 聚合报告
+    expect(names.filter((n) => n !== 'sofagent.suite')).toHaveLength(SUITE_EXPECTED.length);
     expect(reportOf(ctx).capability).toBe(capability);
     errSpy.mockRestore();
   });
 
-  it('逐个降级：某原子插件缺 dist/ → 其余 5 个照常加载，failed 精确报出缺的那一个', async () => {
+  it(`逐个降级：某原子插件缺 dist/ → 其余 ${SUITE_EXPECTED.length - 1} 个照常加载，failed 精确报出缺的那一个`, async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     // 🔴 子进程隔离：产品 `await import(pkg)` 的解析/缓存语义在 vitest 模块图内不可复现
     //（vi.resetModules 清不掉 ESM 层缓存，藏 dist 后仍命中旧解析）——该断言在 workspace
@@ -195,7 +207,7 @@ describe('cordis-plugin-sofagent', () => {
       const r = cp.spawnSync(process.execPath, [tmp], { encoding: 'utf8', timeout: 30000 });
       expect(r.status, `探针应成功（stderr=${r.stderr}）`).toBe(0);
       const report = JSON.parse(r.stdout.trim().split(String.fromCharCode(10)).pop()!);
-      expect(report.loaded).toHaveLength(5);
+      expect(report.loaded).toHaveLength(SUITE_EXPECTED.length - 1);
       expect(report.loaded).not.toContain('fde');
       expect(report.failed).toHaveLength(1);
       expect(report.failed[0].name).toBe('fde');
@@ -218,9 +230,9 @@ describe('cordis-plugin-sofagent', () => {
     const ctx = makeCtx();
     await plugin.apply(ctx);
     const report = reportOf(ctx);
-    expect(report.viaHost, '宿主路径挂载数').toHaveLength(6);
+    expect(report.viaHost, '宿主路径挂载数').toHaveLength(SUITE_EXPECTED.length);
     expect(report.viaDirect, '宿主可用时回落路径应为空').toEqual([]);
-    expect(ctx.mounted, '宿主 ctx.plugin 收到的插件数').toHaveLength(6);
+    expect(ctx.mounted, '宿主 ctx.plugin 收到的插件数').toHaveLength(SUITE_EXPECTED.length);
     expect(report.loaded.length + report.failed.length, '守恒：loaded + failed = total').toBe(report.total);
     // 走宿主路径的插件必须自带 inject 声明——否则宿主无从做就绪门控（A2 根因 1）
     for (const p of ctx.mounted as Array<{ inject?: readonly string[] }>) {
@@ -231,13 +243,13 @@ describe('cordis-plugin-sofagent', () => {
     errSpy.mockRestore();
   });
 
-  it('A2·卸载路径：聚合层卸载后本层与 6 个原子服务全部反注册（不留残留）', async () => {
+  it(`A2·卸载路径：聚合层卸载后本层与 ${SUITE_EXPECTED.length} 个原子服务全部反注册（不留残留）`, async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const ctx = makeCtx();
     const dispose = await plugin.apply(ctx);
     expect(ctx.services.get('sofagent.suite'), '装载后本层报告服务在').toBeDefined();
     expect(ctx.services.get('sofagent.audit'), '装载后原子服务在').toBeDefined();
-    expect(ctx.services.size, '装载面 = 6 原子 + 1 聚合报告').toBe(7);
+    expect(ctx.services.size, '装载面 = 原子 + 1 聚合报告').toBe(SUITE_EXPECTED.length + 1);
     // 宿主生命周期钩子已登记（双保险之一）
     expect(ctx.onDispose).toHaveLength(1);
     expect(reportOf(ctx).unloadHook).toBe('ctx.on');
@@ -258,8 +270,8 @@ describe('cordis-plugin-sofagent', () => {
     await plugin.apply(ctx);
     const report = reportOf(ctx);
     expect(report.viaHost, '宿主拒收 → 不应有宿主路径挂载').toEqual([]);
-    expect(report.viaDirect, '全部走回落直呼').toHaveLength(6);
-    expect(report.loaded).toHaveLength(6);
+    expect(report.viaDirect, '全部走回落直呼').toHaveLength(SUITE_EXPECTED.length);
+    expect(report.loaded).toHaveLength(SUITE_EXPECTED.length);
     expect(report.failed).toEqual([]);
     expect(report.loaded.length + report.failed.length).toBe(report.total);
     errSpy.mockRestore();
@@ -276,8 +288,8 @@ describe('cordis-plugin-sofagent', () => {
       const report = reportOf(ctx);
       expect(report.loaded, '无 apply 者不得计入 loaded').not.toContain('evolve');
       expect(report.failed.map((f) => f.name)).toContain('evolve');
-      expect(report.loaded).toHaveLength(5);
-      expect(report.loaded.length + report.failed.length, '守恒：6 = loaded + failed').toBe(6);
+      expect(report.loaded).toHaveLength(SUITE_EXPECTED.length - 1);
+      expect(report.loaded.length + report.failed.length, '守恒：total = loaded + failed').toBe(SUITE_EXPECTED.length);
       expect(ctx.services.get('sofagent.evolve'), '缺 apply 者不得注册服务').toBeUndefined();
       expect(report.unloadHook, '裸 ctx 无 ctx.on → 仅靠 apply 返回值').toBe('apply-return');
     } finally {
