@@ -1386,7 +1386,20 @@ if [[ -f "${WIKI_FILE}" ]]; then
         ERRORS=$((ERRORS + 1))
       fi
     fi
-  done < <(grep -nE 'v[0-9]+\.[0-9]+' "${WIKI_FILE}" 2>/dev/null | grep -v 'changelog' || true)
+  # v1.8.0 Q22/任务十七：`grep -v 'changelog'` 整行排除改词级——根因：混排行
+  #   （同一行既有 changelog/ 目录引用又有「当前版本 vX.Y.Z」声明）被整行放过，
+  #   旧版本号以「搭便车」形态逃逸（实案：WIKI.md「当前版本 v1.6.0 见 `v1.6/`」
+  #   与行首 `docs/changelog/` 引用同现，v1.6.0 漂移整行漏检）。
+  #   词级口径（剥离后受检）：
+  #   ① `changelog/v1.0/`、`docs/changelog/` 等反引号包裹的 changelog 目录引用；
+  #   ② 目录列举后继项 `v1.1/`（紧跟 changelog 引用的历史快照目录，`、` 分隔）；
+  #   ③ `v1.7/` 这类 vN.N/ 目录引用（「当前版本 v1.7.0 见 `v1.7/`」中的 v1.7/
+  #      是目录名非版本声明——声明的 v1.7.0 不带尾斜杠，不受剥离影响）；
+  #   ④ 行内裸 changelog 词与 markdown 链接形态。
+  #   剥离后仍存活的 vX.Y.Z（不带尾 / 的版本声明）照常受检。
+  done < <(grep -nE 'v[0-9]+\.[0-9]+' "${WIKI_FILE}" 2>/dev/null \
+    | sed -E 's/`[^`]*changelog[^`]*`/ /g; s/(docs\/)?changelog\/[v0-9./]+/ /g; s/changelog/ /g; s/、`v[0-9]+\.[0-9]+\.[0-9]*\/`/ /g; s/`v[0-9]+\.[0-9]+(\.[0-9]+)?\/`/ /g' \
+    | grep -E 'v[0-9]+\.[0-9]+' || true)
   if $WIKI_DRIFT_OK; then
     echo -e "  ${GREEN}✓${NC} WIKI.md 状态表版本号一致"
     CHECKS=$((CHECKS + 1))
