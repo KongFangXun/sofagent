@@ -52,7 +52,7 @@ const FILE_OF = { SENSITIVE: 'sensitive.jsonl', JUDGEMENT: 'judgement.jsonl', AB
 const FROM_OF = { SENSITIVE: '知识库', JUDGEMENT: '训练语料', ABSTAIN: '弃权' };
 
 /**
- * 语料管道主入口（行为等价基准：`node rsi/corpus/pipeline.mjs --in ... --dict ... --out-dir ...`）
+ * 语料管道主入口（行为等价基准：'node rsi/corpus/pipeline.mjs --in ... --dict ... --out-dir ...'，仓外历史脚本的等价快照——该路径已随语料包并入迁出本仓）
  * 逐字节对齐点：行 = {id, text, from}；join('\n')+'\n'；空桶不落文件（与 pipeline.mjs 相同）。
  */
 export function runPipeline({ in: inPath, dict: dictPath, outDir }) {
