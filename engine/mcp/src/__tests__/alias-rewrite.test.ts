@@ -13,6 +13,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 
 // ── Mock fs ──
 vi.mock('fs', () => ({
@@ -47,10 +48,15 @@ vi.mock('@sofagent/think', () => ({
   generateThinkEntry: vi.fn(() => '## 2026-01-01 12:00:00 任务: test\n\n- #教训: test\n\n'),
 }));
 
-// ── Mock child_process（compose 走 execFileSync sofagent-orchestrator）──
+// ── Mock child_process（compose 走 execFileSync(process.execPath, [orchCli, ...])）──
 vi.mock('child_process', () => ({
   execFileSync: vi.fn(() => '# 编排方案：用户注册模块\nagents: []'),
 }));
+
+// ── compose 直调 orchestrator CLI 断链守卫（Q1/任务一）──
+// 修复前按 v1.5.9 已退役的 orchestrator bin 名直调；
+// 修复后照 daemon/cron.ts 范式 createRequire 解析 dist/cli.js + execPath 直跑。
+import { execFileSync } from 'child_process';
 
 // ── Mock readline（拿 line handler 驱动 JSON-RPC）──
 vi.mock('readline', () => ({
@@ -115,6 +121,16 @@ describe('MCP 别名路由 — sofagent_compose → compose（A-4）', () => {
     expect(resp.result).toBeDefined();
     expect(resp.result.content[0].text).toContain('编排方案');
     expect(resp.result.content[0].text).not.toContain('已更名');
+  });
+
+  it('compose 断链守卫：execFileSync 首参=process.execPath、次参指向 orchestrator dist/cli.js', async () => {
+    const resp = await driveCall('compose', { task: '实现用户注册模块' });
+    expect(resp.result).toBeDefined();
+    expect(execFileSync).toHaveBeenCalled();
+    const callArgs = (execFileSync as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(callArgs[0]).toBe(process.execPath);
+    expect(String(callArgs[1][0])).toContain(join('orchestrator', 'dist', 'cli.js'));
+    expect(callArgs[1]).toContain('compose');
   });
 
   it('未知名仍走 Unknown tool 错误路径（别名不放行其他名字）', async () => {

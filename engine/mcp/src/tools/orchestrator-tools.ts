@@ -6,7 +6,16 @@
 // ============================================================
 
 import { execFileSync } from 'child_process';
+import { createRequire } from 'module';
+import { dirname, join } from 'path';
 import type { ToolResult } from './audit-tools';
+
+// compose 命令真身在 @sofagent/orchestrator 的 CLI（dist/cli.js）。
+// 旧实现按 v1.5.9 已退役的 orchestrator bin 名直调——PATH 上无该 bin 时
+// compose 必然断链。改经 createRequire 按包名解析（workspace 提升与
+// npm 安装两种形态都命中），用 process.execPath 直跑，
+// 与 engine/daemon/src/cron.ts 的既有范式一致。
+const nodeRequire = createRequire(__filename);
 // ============================================================
 // Tool: compose（原名 sofagent_compose，别名兼容一版）
 // ============================================================
@@ -28,7 +37,11 @@ export async function compose(args: Record<string, unknown>): Promise<ToolResult
   }
 
   try {
-    const result = execFileSync('sofagent-orchestrator', cmd, { encoding: 'utf-8', timeout: 30000 });
+    const orchCli = join(
+      dirname(nodeRequire.resolve('@sofagent/orchestrator/package.json')),
+      'dist', 'cli.js',
+    );
+    const result = execFileSync(process.execPath, [orchCli, ...cmd], { encoding: 'utf-8', timeout: 30000 });
     return {
       text: `[sofagent] compose 结果:\n${result}`,
       data: { yaml: result },

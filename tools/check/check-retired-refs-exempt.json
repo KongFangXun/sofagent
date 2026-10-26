@@ -492,11 +492,6 @@
       "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
     },
     {
-      "file": "engine/mcp/src/tools/orchestrator-tools.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
-    },
-    {
       "file": "engine/mcp/src/tools/permission-guard.ts",
       "anchor": "sofagent-",
       "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
