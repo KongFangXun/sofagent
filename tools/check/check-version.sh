@@ -1191,6 +1191,38 @@ echo ""
 # 🔴 折行容忍：按**逻辑条目**迭代（版本号与「已发版」日期常分处不同物理行 ⇒ 按物理行迭代会把
 #   折行条目静默 `continue` 掉，实测 14 条只判到 10 条、**顶版被漏**——而顶版正是最易被发版批
 #   误改的 P2-1 复发面）。判定语义与容差不变。
+# date_to_ord：YYYY-MM-DD → 格里历日序数（纯 shell 算术，无外部命令 / 无时区 / 无时分秒语义）。
+#   公式：ord = 365*(Y-1) + floor((Y-1)/4) - floor((Y-1)/100) + floor((Y-1)/400)
+#         + day-of-year(Y, M, D)（当年累计天数，含闰年二月修正）。
+#   校验口径：与 `date -j -f` 秒差换算的日差一致（同日差 0、差一天差 1），但输入只有
+#   日期字段本身——**没有可被运行时钟污染的未指定字段**，跨秒抖动在构造上不可能。
+#   非法日期（格式不符/月份越界）→ 输出空串（调用方走 fail-closed 字符串比较分支）。
+date_to_ord() {
+  local _d="$1" _y _m _dd _doy
+  printf '%s' "$_d" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' || { echo ""; return; }
+  _y=$((10#${_d:0:4})); _m=$((10#${_d:5:2})); _dd=$((10#${_d:8:2}))
+  [ "$_m" -ge 1 ] && [ "$_m" -le 12 ] || { echo ""; return; }
+  [ "$_dd" -ge 1 ] && [ "$_dd" -le 31 ] || { echo ""; return; }
+  case "$_m" in
+    1) _doy=$_dd ;;
+    2) _doy=$(( _dd + 31 )) ;;
+    3) _doy=$(( _dd + 59 )) ;;
+    4) _doy=$(( _dd + 90 )) ;;
+    5) _doy=$(( _dd + 120 )) ;;
+    6) _doy=$(( _dd + 151 )) ;;
+    7) _doy=$(( _dd + 181 )) ;;
+    8) _doy=$(( _dd + 212 )) ;;
+    9) _doy=$(( _dd + 243 )) ;;
+    10) _doy=$(( _dd + 273 )) ;;
+    11) _doy=$(( _dd + 304 )) ;;
+    12) _doy=$(( _dd + 334 )) ;;
+  esac
+  # 闰年：能被 4 整除且（不被 100 整除或被 400 整除）；闰年只影响 3 月及以后的累计天数
+  if [ $(( _y % 4 )) -eq 0 ] && { [ $(( _y % 100 )) -ne 0 ] || [ $(( _y % 400 )) -eq 0 ]; }; then
+    [ "$_m" -ge 3 ] && _doy=$(( _doy + 1 ))
+  fi
+  echo $(( 365 * ( _y - 1 ) + ( _y - 1 ) / 4 - ( _y - 1 ) / 100 + ( _y - 1 ) / 400 + _doy ))
+}
 TAG_DATE_OK=true
 TAG_DATE_CHECKED=0
 while IFS=$'\t' read -r _cl_ver _cl_entry; do
@@ -1227,13 +1259,23 @@ while IFS=$'\t' read -r _cl_ver _cl_entry; do
   #   🔴 fail-closed 纪律：任一侧日期无法转 unix 时**不得回退成 0 参与比较**
   #   （那会让 gap 恒 0 = 容差吞掉一切漂移，正是负向探针抓出的 fail-open）——
   #   转换失败即回退**字符串全等比较**（严于容差，保全检测力）。
-  _cl_ts=$(date -j -f "%Y-%m-%d" "$_cl_date" "+%s" 2>/dev/null || date -d "$_cl_date" "+%s" 2>/dev/null || echo "")
-  _tag_ts2=$(date -j -f "%Y-%m-%d" "$_tag_date" "+%s" 2>/dev/null || date -d "$_tag_date" "+%s" 2>/dev/null || echo "")
+  # 🔴 fail-closed 纪律：任一侧日期无法转序数时**不得回退成 0 参与比较**
+  #   （那会让 gap 恒 0 = 容差吞掉一切漂移，正是负向探针抓出的 fail-open）——
+  #   转换失败即回退**字符串全等比较**（严于容差，保全检测力）。
+  # 🔴 v1.8.0 QA 批 flaky 修复：原实现两次调用 `date -j -f "%Y-%m-%d"` 取 unix 秒，
+  #   BSD/GNU 均会把**当时钟的时分秒**填进未指定字段——同一逻辑条目内两次调用跨秒边界
+  #   （如 23:59:59.9 → 00:00:00.1）时，恰差整 1 天的边界条目（实案 v1.5.2 / v1.5.3，
+  #   CHANGELOG 写发版前夜、tag 落在次日凌晨）gap 在 86400/86401 间抖动，`-gt 86400`
+  #   随机翻车（27 跑 2 红实测）。改为**纯算术日序数**（格里历日数，无外部命令、
+  #   无时分秒语义）后差值只可能是整数天：同日=0 / 差一天=1——判定面不变，
+  #   时钟噪声在构造上归零。
+  _cl_ord=$(date_to_ord "$_cl_date")
+  _tag_ord=$(date_to_ord "$_tag_date")
   _date_mismatch=false
-  if [ -n "$_cl_ts" ] && [ -n "$_tag_ts2" ]; then
-    _cl_day_gap=$(( _cl_ts - _tag_ts2 ))
+  if [ -n "${_cl_ord}" ] && [ -n "${_tag_ord}" ]; then
+    _cl_day_gap=$(( _cl_ord - _tag_ord ))
     [ "$_cl_day_gap" -lt 0 ] && _cl_day_gap=$(( 0 - _cl_day_gap ))
-    [ "$_cl_day_gap" -gt 86400 ] && _date_mismatch=true
+    [ "$_cl_day_gap" -gt 1 ] && _date_mismatch=true
   else
     # 转换不可用 → 字符串严格比较（不放宽）
     [ "$_cl_date" != "$_tag_date" ] && _date_mismatch=true
