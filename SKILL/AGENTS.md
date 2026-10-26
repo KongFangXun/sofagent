@@ -36,7 +36,7 @@
 | MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 104 tools |
 
 
-## DSH 插件家族（7 款 cordis-plugin）
+## DSH 插件家族（8 款 cordis-plugin）
 
 > sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 104 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
@@ -48,7 +48,8 @@
 | `cordis-plugin-sofagent-evolve` | 经验沉淀（think.md 反思 + Dream Cycle）——桥接 `@sofagent/think generateThinkEntry` | 任务结束 hook |
 | `cordis-plugin-sofagent-daemon` | 7×24 巡检 + 健康监测 + webhook 推送——桥接 `@sofagent/daemon startCron` | 独立调度进程 |
 | `cordis-plugin-sofagent-fde` | FDE 进场与能力流通——本体 / FDE / 公地三域工具面（合并原 ontology / commons 两款，settings 三档分域可关）——桥接 `@sofagent/orchestrator publishCapability / @sofagent/ontology generateOntologyView / @sofagent/core restoreSnapshot` | ontology_* / fde_* / commons_* tools |
-| `cordis-plugin-sofagent` | **整装入口**——一次挂载以上 6 款原子插件（聚合编排层，只编排不重实现；缺哪款只降级哪款，不整挂失败） | non-seam:plugin-suite |
+| `cordis-plugin-sofagent-rsi-corpus` | 语料管道 tool 集——脱敏 L0/L1 + 三分拣（sensitive/judgement/abstain）——桥接 `@sofagent/rsi-corpus runPipeline` | non-seam:tool-set |
+| `cordis-plugin-sofagent` | **整装入口**——一次挂载以上 7 款原子插件（聚合编排层，只编排不重实现；缺哪款只降级哪款，不整挂失败） | non-seam:plugin-suite |
 
 
 ## 合规审计员的价值
