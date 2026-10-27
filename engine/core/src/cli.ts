@@ -64,9 +64,9 @@ async function main() {
       }
       const { buildToolStats, renderToolStats } = await import('./tool-stats');
       const report = buildToolStats();
-      // registryAvailable 语义：neverCalled 非空 = 注册表可达（能列出未调用工具）；
-      // 不可达时 buildToolStats 内部将其置空 ⇒ 此处恒真（>= 0）已修——不可达必须能走到降级提示。
-      const registryAvailable = report.neverCalled.length > 0;
+      // R2（F5 修正）：消费 buildToolStats 的显式 registryAvailable——
+      // registry 可达且全部工具已调用时 neverCalled 为空但可达，空集推断会误报。
+      const registryAvailable = report.registryAvailable;
       console.log(renderToolStats(report, registryAvailable));
       process.exit(0);
     }

@@ -68,6 +68,8 @@ export interface ToolStatsReport {
   distribution: Array<{ tool: string; count: number; bar: string }>;
   /** 记录总数 */
   totalRecords: number;
+  /** registry 可达性（R2 F5：显式信号——neverCalled 空集不再承载二义语义） */
+  registryAvailable: boolean;
 }
 
 /**
@@ -106,6 +108,9 @@ export function buildToolStats(registryToolNames?: string[]): ToolStatsReport {
     }
   }
   const neverCalled = all ? all.filter((n) => !agg.has(n)).sort() : [];
+  // R2（F5 修正）：显式返回 registry 可达性——registry 可达且全部工具已调用时
+  // neverCalled 为空但注册表是可达的，用空集推断会误报「不可达」。
+  const registryAvailable = all !== undefined;
 
   const maxCount = called[0]?.count ?? 0;
   const distribution = called.map((c) => ({
@@ -114,7 +119,7 @@ export function buildToolStats(registryToolNames?: string[]): ToolStatsReport {
     bar: maxCount > 0 ? '█'.repeat(Math.max(1, Math.round((c.count / maxCount) * 30))) : '',
   }));
 
-  return { called, neverCalled, distribution, totalRecords: records.length };
+  return { called, neverCalled, distribution, totalRecords: records.length, registryAvailable };
 }
 
 /** 三视图渲染为终端文本（CLI 消费） */

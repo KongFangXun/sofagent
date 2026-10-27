@@ -77,9 +77,34 @@ export function searchKnowledge(args: Record<string, unknown>): ToolResult | { e
       }).join('\n')
     : `[sofagent] 未找到匹配 "${query}" 的知识页`;
 
+  // R2（F7 修正）：联邦缓存消费方——mergeFederationAsync 落盘的缓存行在此合并
+  // 展示（否则缓存零消费方 = 换块磁盘扔掉）。语义：缓存里 query 命中的条目以
+  // [federation] 标注追加到本地结果之后（标注来源，不与本地混淆）；缓存读取
+  // 失败降级为纯本地结果（联邦是增强）。
+  let fedCount = 0;
+  try {
+    const fedCachePath = join(getKnowledgeDir(), 'federation-cache.jsonl');
+    if (existsSync(fedCachePath)) {
+      const lines = readFileSync(fedCachePath, 'utf-8').split('\n').filter(Boolean);
+      // 只取最近 50 条缓存行（防缓存文件无限增长拖垮查询）
+      for (const line of lines.slice(-50)) {
+        try {
+          const cached = JSON.parse(line) as { query: string; entries: Array<{ id: string; title: string; trust?: string }> };
+          if (cached.query && cached.query.toLowerCase().includes(query)) {
+            fedCount += cached.entries.length;
+          }
+        } catch { /* 坏行跳过 */ }
+      }
+    }
+  } catch { /* 缓存读失败——纯本地结果 */ }
+
+  const textWithFed = fedCount > 0
+    ? text + `\n- [federation] 另有 ${fedCount} 条跨设备缓存结果（来源 federation-cache，详情见 read 工具）`
+    : text;
+
   return {
-    text,
-    data: { query, count: matches.length, matches },
+    text: textWithFed,
+    data: { query, count: matches.length, matches, ...(fedCount > 0 ? { federationCached: fedCount } : {}) },
   };
 }
 

@@ -98,17 +98,22 @@ export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
     }
   }
 
-  // 1. 记录失败到 failure-ledger
-  const record: FailureRecord = {
-    timestamp: new Date().toISOString(),
-    skillId: input.skillId,
-    failureMode: input.failureMode,
-    reason: input.failureMode,
-    correctApproach: input.correctApproach,
-    source: input.source ?? 'auto-trigger',
-    ruleTriggered: input.ruleTriggered,
-  };
-  recordFailure(record);
+  // 1. 记录失败到 failure-ledger（每次调用记账——getRepeatedFailures 的聚类
+  //    驱动语义依赖累计；回落由 markResolved 承担：进化成功即清零重数）。
+  //    R2（F6 后半修正）：成本门阻断**不记账**——预算决策不是失败，记账会使
+  //    「预算耗尽的仓库」聚类计数单调涨（永远不会触发真实进化的自我放大）。
+  if (!quotaVerdict || quotaVerdict.action !== 'hard') {
+    const record: FailureRecord = {
+      timestamp: new Date().toISOString(),
+      skillId: input.skillId,
+      failureMode: input.failureMode,
+      reason: input.failureMode,
+      correctApproach: input.correctApproach,
+      source: input.source ?? 'auto-trigger',
+      ruleTriggered: input.ruleTriggered,
+    };
+    recordFailure(record);
+  }
 
   // 1.5 进化准入门（v1.5.8 章一：域档位三档分流——human-only 零自动晋升、
   //     model-judge 需采样人审、未登记 fail-closed；只有 deterministic → auto 才进主流程。

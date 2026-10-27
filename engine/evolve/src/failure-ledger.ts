@@ -20,7 +20,7 @@
 //   - count ≥3 时 auto-trigger 判定为"连续同类失败"
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, appendFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, appendFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { createHash } from 'crypto';
 import { loadEnvConfig } from '@sofagent/core';
@@ -144,45 +144,32 @@ export function recordFailure(record: FailureRecord): void {
 /**
  * 标记一个失败聚类已解决（进化成功后的回落机制）。
  *
- * 背景（v1.8.0 独立 code review F6）：auto-trigger 每周对 getRepeatedFailures()
- * 的聚类无条件 recordFailure（执行源不查重，聚类语义依赖累计）——若进化成功后
- * count 不回落，同类失败计数单调增长 ⇒ 永远 ≥ 阈值 ⇒ 无限重触发 + JSONL 无限增长。
+ * 背景（v1.8.0 独立 code review F6 + R2 修正）：auto-trigger 每周对
+ * getRepeatedFailures() 的聚类无条件 recordFailure（执行源不查重，聚类语义
+ * 依赖累计）——若进化成功后 count 不回落，同类失败计数单调增长 ⇒ 永远 ≥ 阈值
+ * ⇒ 无限重触发 + JSONL 无限增长。
  *
- * 语义：物理删除该聚类的全部历史记录（与「已解决」语义一致——保留会继续参与
- * 聚类计数），并写一条 resolution 留痕行（type:'resolved'，getFailurePatterns
- * 读取时跳过——留痕不计数）。下次真实失败重新累计，触发链完整重建。
+ * R2 修正（append-only 契约）：首版实现 readFileSync→writeFileSync 全量重写
+ * 与 recordFailure（orchestrator 进程 append）跨进程竞态丢数据，且破坏 ledger
+ * append-only 语义。改为**纯追加 resolved 行**：getFailurePatterns 聚类时遇到
+ * resolved 行即把该聚类的累计清零重数（失败记录仍在文件中——留痕不删，计数
+ * 语义由「最近一次 resolved 之后」重新起算）。append-only 契约保持，跨进程
+ * 安全（追加是原子行的）。
  */
 export function markResolved(skillId: string, failureMode: string): void {
   const ledgerPath = resolveFailureLedgerPath();
-  if (!existsSync(ledgerPath)) return;
+  const dir = dirname(ledgerPath);
   try {
-    const lines = readFileSync(ledgerPath, 'utf-8').split('\n');
-    const kept: string[] = [];
-    let removed = 0;
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      try {
-        const record = JSON.parse(line) as FailureRecord;
-        if (record.skillId === skillId && record.failureMode === failureMode) {
-          removed++;
-          continue; // 该聚类的失败记录移出
-        }
-        kept.push(line);
-      } catch {
-        kept.push(line); // 坏行原样保留（不动非目标数据）
-      }
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
     }
-    if (removed > 0) {
-      kept.push(JSON.stringify({
-        type: 'resolved',
-        skillId,
-        failureMode,
-        timestamp: new Date().toISOString(),
-        removedCount: removed,
-      }));
-      writeFileSync(ledgerPath, kept.join('\n') + '\n', 'utf-8');
-      clearFailureCache();
-    }
+    appendFileSync(ledgerPath, JSON.stringify({
+      type: 'resolved',
+      skillId,
+      failureMode,
+      timestamp: new Date().toISOString(),
+    }) + '\n', 'utf-8');
+    clearFailureCache();
   } catch {
     // 回落失败不阻断进化主流程——下次成功再回落
   }
@@ -208,13 +195,18 @@ export function getFailurePatterns(): FailurePattern[] {
   }
 
   const patterns = new Map<string, FailurePattern>();
+  // R2（F6 修正）：resolved 行把该聚类的累计清零重数——计数语义 =
+  // 「最近一次 resolved 之后的失败次数」（进化成功回落，重触发链重建）。
 
   for (const line of content.split('\n')) {
     if (!line.trim()) continue;
     try {
       const record = JSON.parse(line) as FailureRecord;
-      // resolved 留痕行不参与聚类计数（markResolved 的「已解决」语义）
-      if ((record as unknown as { type?: string }).type === 'resolved') continue;
+      // resolved 留痕行：清对应聚类的累计（append-only 契约下的回落机制）
+      if ((record as unknown as { type?: string }).type === 'resolved') {
+        patterns.delete(clusterKey(record.skillId, record.failureMode));
+        continue;
+      }
       const key = clusterKey(record.skillId, record.failureMode);
       const existing = patterns.get(key);
       if (existing) {
