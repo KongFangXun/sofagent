@@ -204,7 +204,7 @@ into—full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/H
 post-commit only leaves a trace without blocking; bypassed commits do leave traces—see [LIMITATIONS
  §3](./docs/LIMITATIONS.md)).
 
-One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
+One command selects your mounting tier: `, install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
 ## v1.7.0: Decision Substrate · Stage 2 (Model & Calibration)
 
@@ -261,17 +261,16 @@ The `alpha` tag remains as a historical release trace and isn't maintained.
 > 🔐 **Data sovereignty**: runtime data never leaves your machine (no network access except the npm package fetch at install time); the three opt-in exits (cloud sync / model inference endpoint / cloud VM execution surface) require your explicit configuration (note: opening the dashboard anonymously
 >fetches the public GitHub star count—read-only, no user data sent, silent fallback on failure)—see [SECURITY](./SECURITY.md).
 
-**30 seconds and up, zero setup** (first run includes the npx package fetch, ~30 seconds; reruns finish in seconds—the engine itself takes ~1.1s, measured basis above)—run an audit in any git repo:
+**30s and up, zero setup** (first run fetches via npx ~30s; reruns in seconds—engine ~1.1s, CLI end-to-end 4-5s)—audit any git repo:
 
-```bash
+```,
 npx -y -p sofagent sofagent audit
 ```
 
-> 💡 The npm channel ships exactly one form — the umbrella package: `npm i -g sofagent` installs the **full dependency tree** (602-package basis below) — there is no smaller "lightweight" package. For a smaller footprint, use the ephemeral npx form (`npx -y -p sofagent sofagent audit`, nothing stays
+> 💡 The npm channel ships one form only — the umbrella: `npm i -g sofagent` installs the **full dependency tree** (602-package basis below; no smaller package exists). For a smaller footprint, use the ephemeral npx form (`npx -y -p sofagent sofagent audit`, nothing stays
 >installed; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
 
-> 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active—quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). `--init` installs the hook (still the same 17 default
->rules); the full 28 additionally require `extendedRulesEnabled: true` in `.sofagent/config.yml`—see [LIMITATIONS §3](./docs/LIMITATIONS.md).
+> 💡 quick runs the **17 default rules** (A3/A9 active—quick auto-reads the last commit message; without one, A9 skipped). `--init` installs the hook (same 17 defaults); the full 28 require `extendedRulesEnabled: true`—see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
 > ⚠️ This step is a **one-off audit** (inside a single process)—it doesn't install a git hook, so later commits won't be auto-blocked. For continuous protection run `sofagent audit --init` (see Full install below).
 
@@ -296,15 +295,15 @@ screenshot above shows the sibling A1 scenario (.env sensitive-file commit block
 
 **Full install** (Node.js ≥ 18, download and review before running)—**installed on the enterprise devices running the AI nodes**:
 
-```bash
+```,
 curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.7.0/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh     # review the script first, confirm it's safe
-bash bootstrap.sh && rm bootstrap.sh
+, bootstrap.sh && rm bootstrap.sh
 ```
 
 > 🔒 Supply-chain trust: tag pinning + sha256 verification + fail-closed + self-anchored hash re-verification (see [SECURITY.md](SECURITY.md), remote-install section); ⚠️ audit logs are plaintext on disk by default—enterprise deployments should enable encryption-at-rest.
 
-```bash
+```,
 sofagent audit --init   # install the git hook—every commit's audited from now on
 sofagent audit --doctor  # verify the environment (optional)
 ```
@@ -320,9 +319,9 @@ sofagent audit --doctor  # verify the environment (optional)
 > 📌 **install.sh is the enterprise device installer**—install it on the enterprise devices running the AI nodes (constraint-layer engine + daemon inspection + single-machine dashboard); FDEs don't need to run it on their own machines—the FDE's tools are the [FDE
 >Skill](https://clawhub.ai/kongfangxun/skills/sofagent) (methodology). See [deployment architecture](./docs/ARCHITECTURE.md#%E5%AE%89%E8%A3%85%E5%8C%85%E8%BE%B9%E7%95%8C%E4%B8%8E%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84v132-%E5%AE%9A%E4%BD%8D%E6%A0%A1%E5%87%86).
 >
-> 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh—`curl bootstrap.sh | bash` equals "download install.sh + run install.sh". Both install exactly the same thing; bootstrap just saves the manual clone/download step.
+> 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh—`curl bootstrap.sh | ,` equals "download install.sh + run install.sh". Both install exactly the same thing; bootstrap just saves the manual clone/download step.
 
-**To uninstall**: `bash ~/.sofagent/scripts/uninstall.sh` (installed layout) or `bash engine/scripts/uninstall.sh` (clone layout)—removes the Skill/constitution files, hook registrations
+**To uninstall**: `, ~/.sofagent/scripts/uninstall.sh` (installed layout) or `, engine/scripts/uninstall.sh` (clone layout)—removes the Skill/constitution files, hook registrations
 and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data.
 
 Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the single entry from the install-state layout apart (npm bare-name umbrella = sub-package forwarder, see the package-name warning in Usage; the install.sh state
@@ -371,14 +370,14 @@ the installed UI is the source of truth.)</sub></p>
 > | Full install (daemon / dashboard) | `bootstrap.sh` / `install.sh` (above) |
 >
 > - **Legacy commands retired**: the 12 old bins (`sofagent-audit` etc.) passed their compatibility window and **have been removed**; the former 13 bins are now served by the single entry.
-> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train capability packages; transitive deps measured 602 packages (`npm ls --all --parseable`, measured at `npm i sofagent@1.5.8` time;
-> basis: installed `npm i sofagent@1.5.8` · npm 11.19.0 / Node v24.21.0 / Darwin arm64 / 2026-10-10), 5 carry native modules and install scripts—new npm versions don't run unreviewed install scripts, so those native builds are **silently skipped**).
+> - ⚠️ **`npm i -g sofagent` pulls the full dependency tree** (orchestrator/mcp/train; transitive deps 602 packages (`npm ls --all --parseable` @ 1.5.8, 2026-10-10; ~672 incl. nested at ^1.7.0;
+> basis: `npm i sofagent@1.5.8` · 2026-10-10), 5 carry native modules—npm skips their build).
 >**For the audit CLI only** (accepting the full dependency tree): `npm i -g sofagent`, then `sofagent audit`; to avoid a resident dependency tree, use the ephemeral `npx -y -p sofagent sofagent audit` form.
 > - **Retired legacy proxy package**: the bare-name `sofagent-audit` (no scope) on npm is the old proxy package—**unpublished on 2026-09-26**; don't install it.
 
 **Rule marketplace**—community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):
 
-```bash
+```,
 npx -y -p sofagent sofagent audit --list-rulesets   # see available rulesets
 npx -y -p sofagent sofagent audit --ruleset security  # load the security ruleset
 ```

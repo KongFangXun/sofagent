@@ -233,7 +233,7 @@ graph TB
 | `engine/train/` | @sofagent/train — 后训模块（数据管道/训练编排/云端执行/eval 闭环） |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/inject/` | @sofagent/inject — SKILL 加载链（上下文注入） |
-| `engine/mcp/` | @sofagent/mcp — MCP Server · **104 个 tool**（SSOT = `engine/mcp/src/tool-registry.ts` 的 `TOOLS`；增量见 [API 清单](./API.md) 与 [CHANGELOG](../CHANGELOG.md)；插件家族另计） |
+| `engine/mcp/` | @sofagent/mcp — MCP Server · **104 个 tool**（SSOT = tool-registry 的 TOOLS；增量见 [API 清单](./API.md)；插件家族另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（工具包，非模块包口径） |
 | `engine/scripts/` | 运维脚本集（10 顶层 .sh + lib/ + windows/ .ps1；口径 = `ls engine/scripts/*.sh`）——安装/卸载/验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 8 款 DSH 插件——7 原子（audit · rollback · inject · evolve · daemon · fde · rsi-corpus）+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
@@ -262,7 +262,7 @@ graph TB
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
 
 > 📦 **包数口径**：29 个 workspace = 13 个 `@sofagent/*` 模块包 + `engine/corpus`（`@sofagent/rsi-corpus`，独立版本线）+ load-chain + dsh-plugin-kit + 8 DSH 插件 + 4 OpenClaw 插件 + umbrella 总包。
-> 其中 16 个为 `@sofagent` scope（13 模块 + corpus + load-chain + dsh-plugin-kit）+ 8 DSH 插件 + 1 umbrella，共 **25 个 npm 发布物**。
+> 其中 16 个为 `@sofagent` scope（13 模块 + corpus + load-chain + dsh-plugin-kit）+ 8 DSH 插件 + 1 umbrella，共 25 个 npm 发布物（已发 23，rsi-corpus 双包待发 v1.8.0）。
 > OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。
 
 

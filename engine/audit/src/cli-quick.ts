@@ -528,7 +528,7 @@ export function runCliQuick(argv: string[]): number {
     console.log('退出码（quick 模式口径）：');
     console.log('  0 = 全通过');
     console.log('  1 = 有警告');
-    console.log('  2 = 有违规（另一来源：承载安全语义的参数拼错 = 用法错误，与审计发现共用 2）');
+    console.log('  2 = 有违规（另一来源：承载安全语义的参数拼错 = 用法错误，与审计发现共用 2——CI 判违规前先看输出含无 [sofagent] 规则行：有 = 审计违规，无 = 用法错误）');
     console.log('  3 = 非 git 仓库 / diff 范围无法解析（含未知命令回退 audit 后的失败）');
     console.log('  4 = 引擎崩溃（uncaughtException / unhandledRejection 兜底）\n');
     console.log('完整安装：npm install -g sofagent');

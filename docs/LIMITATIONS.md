@@ -553,7 +553,7 @@ sofagent audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 |---|---|---|
 | install.sh | 无独立测试 | 跨平台行为变化无法自动捕获 |
 | daemon 脚本 | 测试覆盖不足 | launchd/systemd 注册失败无早期预警；计划 v1.x 补充核心功能测试。**行为边界**：daemon 监控 think.md/fde.md 文件 hash 变化 → 写 daemon-health.json，不直接审计 git commit。commit 审计由 commit-msg hook（`sofagent audit --install-hook` 安装）负责 |
-| MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |
+| MCP Server | 自动测试在位（`engine/mcp/src/__tests__/` 54 文件，含 mcp-server 协议边界）| 剩余风险：daemon→MCP→webhook→编排四组件串联行为仍靠发版前手动验收（见下文四组件串联段——该口径不变） |
 | sofagent core verify | 部分覆盖 | 约 44-48 项（动态，因环境条件变化）的逻辑分支未穷举 |
 
 缓解：install.sh 和 sofagent core verify 有约 44-48 项动态检查作为 smoke test，审计模块核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
