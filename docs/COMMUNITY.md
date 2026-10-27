@@ -15,7 +15,7 @@
 
 > 这个项目的迭代速度本身就是产品主张的证据——AI Loop 模式下，10 天 17 版本是正常节奏，不是不稳定信号。
 
-**[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent/stargazers)**
+**[![GitHub stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=flat)](https://github.com/KongFangXun/sofagent)**
 
 ## 🪜 贡献者阶梯
 
@@ -47,7 +47,7 @@ sofagent 的约束效果的增量数据需要独立验证，不能只靠作者�
 **复现指南**：[docs/evidence/benchmark/reproduction-guide.md](./evidence/benchmark/reproduction-guide.md)
 
 **最小复现路径**（30 分钟）：
-1. 克隆 [sofagent-test-suite](https://github.com/cedric123123/sofagent-test-suite)（baseline `56160e1`；⚠️ 该仓库尚在公开流程中——若暂时 404，可先跳过本步，用你自己的仓库构造同款任务）
+1. 克隆 sofagent-test-suite（`https://github.com/cedric123123/sofagent-test-suite` · baseline `56160e1`；⚠️ 该第三方仓库已不可达——用你自己的仓库构造同款任务即可）
 2. 跑 Task 1（camelCase → snake_case）——A 裸 Agent vs B sofagent 约束
 3. 手动评分：变量名误伤率（改了几个不该改的变量名 / 总变量数）
 4. 把结果发到 [GitHub Discussions](https://github.com/KongFangXun/sofagent/discussions)

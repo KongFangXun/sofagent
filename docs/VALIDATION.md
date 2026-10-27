@@ -248,7 +248,7 @@ Cloudflare CEO 把工作角色分三类（Builder/Seller/Measurer），**Measure
 | **OpenAI Agents API**（2026-09-10 公测） | Harness 托管商品化、零平台费——编排层护城河在消失，壁垒收窄到治理工程（28 规则/HMAC 链/本体/审批流）；压缩不是审计记录 ⇒ 审计证据链必须独立落盘 | [Introducing the Agents API](https://openai.com/index/introducing-the-agents-api/) |
 | **Anthropic 产品真相** | 运行的生产代码是产品最可靠的事实来源——审计「不看 Agent 说什么，看 git diff 留下什么」同源 | Anthropic Joel 访谈（第三方框架转述） |
 | **Codex Guardian 模块** | 审查结论的失效语义（`IncompatibleCompaction` 等）——「压缩不是审计记录」的工程化背书 | [codex guardian/](https://github.com/openai/codex/tree/main/codex-rs/core/src/guardian) |
-| **Omnigent**（Databricks 系） | meta-harness 把策略强制在基础设施层而非 prompt；密钥不进 Agent 进程——「约束进代码层」的工程化版本 | [Databricks blog](https://www.databricks.com/blog/introducing-omnigent) |
+| **Omnigent**（Databricks 系） | meta-harness 把策略强制在基础设施层而非 prompt；密钥不进 Agent 进程——「约束进代码层」的工程化版本 | [GitHub](https://github.com/omnigent-ai/omnigent) |
 | **DataFlow**（北大 DCAI） | 顶尖高校独立用「Harness」命名（同月第三家）——品类共识非孤证 | [OpenDCAI/DataFlow](https://github.com/OpenDCAI/DataFlow) + arXiv:2607.16617 |
 | **OpenFDE** | 以 Forward Deployed Engineer 命名售前工作流——FDE 术语同源佐证；spec-first 硬禁令与 decisions.jsonl 是可借鉴方向 | [OpenFDEAI/ChatDemo](https://github.com/OpenFDEAI/ChatDemo) |
 
