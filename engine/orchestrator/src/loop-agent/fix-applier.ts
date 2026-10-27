@@ -445,7 +445,7 @@ async function rollbackFiles(files: string[], rootDir: string, fileOpsDeps?: Fil
   }
 }
 
-/** 审计卡关（调 @sofagent/audit runRules 跑 28 条规则） */
+/** 审计卡关（调 @sofagent/audit runRules 跑 28 条规则——含 extended，经 loadConfig） */
 async function runAuditGate(
   files: string[],
   rootDir: string,
@@ -487,10 +487,26 @@ async function runAuditGate(
       return { passed: true, violations: [] };
     }
 
-    // 调 runRules（复用 audit 包的 parseDiff + 28 条规则）
-    const { parseDiff } = await import('@sofagent/core');
-    const diffFiles = parseDiff(diffOutput);
-    const result = runRules(diffFiles, [], 'onboard-l4-fix', false, true);
+    // v1.8.0 修复（审计门恒放行断链）：此前把 diff 文本喂给 parseDiff 的 refspec 形参
+    // （diff 文本必含空格/换行，core 侧白名单必拒 ⇒ 返回空数组 ⇒ runRules 空输入零 FAIL
+    // ⇒ passed 恒 true——「修复后审计」这道门从未真正拦过任何东西）。
+    // 修复形态：这里审计的是工作区未提交变更（git diff 无范围），对应 core 的 staged 形态
+    // 解析器 parseStagedDiff——以 diff 真实来源定合法形态，不再把文本喂 refspec 形参。
+    const core = await import('@sofagent/core');
+    const diffFiles = core.parseStagedDiff();
+    if (diffFiles.length === 0) {
+      // staged 面为空但工作区 diff 非空：变更未进 index——按同一证据源对齐（先 add -N 意图
+      // 不可在此隐式做），fail-closed 判不通过，由 applyFix 既有回滚路径收拾现场。
+      return {
+        passed: false,
+        violations: [
+          'audit-gate: [sofagent] 审计未执行：工作区变更未进入 staged 面（parseStagedDiff 空）——按不通过处置',
+        ],
+      };
+    }
+    // v1.8.0：补 config 实参使 28 条规则（含 extended 面）全量生效——此前只传 5 参，
+    // config 恒 undefined ⇒ 只跑 17 条默认规则，与本函数注释自称的「28 条规则」不符。
+    const result = runRules(diffFiles, [], 'onboard-l4-fix', false, true, undefined, core.loadConfig());
     const violations = result.rules
       .filter((r) => r.status === 'FAIL')
       .map((r) => `${r.name}: ${r.details.join('; ')}`);

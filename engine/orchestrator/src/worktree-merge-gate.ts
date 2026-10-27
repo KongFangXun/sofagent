@@ -263,7 +263,8 @@ async function auditWorktreeDiff(
   if (diffFiles.length === 0) {
     return { verdict: 'WARN', report: '审计提示：分支 diff 为空——可能只有合并提交' };
   }
-  const result = audit.runRules(diffFiles, [], task, false, true);
+  // v1.8.0：补 config 实参使 28 条规则（含 extended 面）全量生效（同款修复见 fix-applier）
+  const result = audit.runRules(diffFiles, [], task, false, true, undefined, audit.loadConfig());
   const verdict: AuditOutcome['verdict'] =
     result.exitCode === 0 ? 'PASS' : result.exitCode === 1 ? 'WARN' : 'FAIL';
   const lines = result.rules

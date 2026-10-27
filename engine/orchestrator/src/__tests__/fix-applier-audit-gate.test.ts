@@ -50,6 +50,29 @@ vi.mock('@sofagent/audit', async (importOriginal) => {
   return { ...actual, runRules: mockRunRules };
 });
 
+// @sofagent/core mock——v1.8.0 修复后审计门经 parseStagedDiff 取证据源
+// （旧实现把 diff 文本喂 parseDiff 的 refspec 形参 ⇒ 白名单必拒 ⇒ 空数组
+// ⇒ runRules 空输入零 FAIL ⇒ passed 恒 true——本 mock 让该断链形态必红：
+// mockRunRules 断言「diffFiles 非空才可能 FAIL」，空输入直接抛错暴露回归）
+vi.mock('@sofagent/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@sofagent/core')>();
+  const mockParseStagedDiff = vi.fn((): Array<{
+    path: string;
+    additions: string[];
+    deletions: string[];
+    status: string;
+  }> => [
+    {
+      path: 'think.md',
+      status: 'modified',
+      additions: ['new content'],
+      deletions: ['old'],
+    },
+  ]);
+  const mockLoadConfig = vi.fn(() => ({}));
+  return { ...actual, parseStagedDiff: mockParseStagedDiff, loadConfig: mockLoadConfig };
+});
+
 let tmpRoot: string;
 
 beforeEach(() => {
@@ -207,5 +230,55 @@ describe('runAuditGate · git 正常路径（默认实现）', () => {
     expect(res.applied).toBe(false);
     expect(res.proposal.auditResult?.passed).toBe(false);
     expect(res.violations).toContain('A9: 注入载荷');
+  });
+
+  it('test_runAuditGate_含密钥泄漏diff_passed为false_旧断链形态必红', async () => {
+    // v1.8.0 断链修复行为锁：含违规（密钥泄漏）的工作区变更必须 passed=false。
+    // 旧实现（diff 文本喂 refspec 形参）下 parseDiff 返回空数组 ⇒ runRules([])
+    // 零 FAIL ⇒ 本用例必红——本用例就是那条断链的回归防线。
+    vi.mocked(execSync).mockReturnValue(
+      'diff --git a/leak.js b/leak.js\n' +
+      'index 111..222 100644\n' +
+      '--- a/leak.js\n' +
+      '+++ b/leak.js\n' +
+      '@@ -0,0 +1 @@\n' +
+      '+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMIK7MDENGbPxRfiCYzQ4mT9vLb2Ns\n',
+    );
+
+    const res = await applyFix(mockLocalization, mockDiffReport,
+      { callLlm: legitLlm },
+      undefined,
+      { rootDir: tmpRoot },
+    );
+
+    expect(res.applied).toBe(false);
+    expect(res.proposal.auditResult?.passed).toBe(false);
+    expect(res.violations).toContain('A9: 注入载荷');
+  });
+
+  it('test_runAuditGate_staged面为空_工作区diff非空_fail_closed', async () => {
+    // v1.8.0：工作区 diff 非空但 parseStagedDiff 空（变更未进 index）——
+    // 证据源对齐失败按不通过处置，不静默放行
+    const { parseStagedDiff } = await import('@sofagent/core');
+    vi.mocked(parseStagedDiff).mockReturnValueOnce([]);
+
+    vi.mocked(execSync).mockReturnValue(
+      'diff --git a/think.md b/think.md\n' +
+      'index 111..222 100644\n' +
+      '@@ -1 +1 @@\n' +
+      '-old\n' +
+      '+new\n',
+    );
+
+    const res = await applyFix(mockLocalization, mockDiffReport,
+      { callLlm: legitLlm },
+      undefined,
+      { rootDir: tmpRoot },
+    );
+
+    expect(res.applied).toBe(false);
+    expect(res.proposal.auditResult?.passed).toBe(false);
+    expect(res.violations[0]).toContain('staged 面');
+    expect(res.violations[0]).toContain('按不通过处置');
   });
 });
