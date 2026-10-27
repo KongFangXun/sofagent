@@ -37,6 +37,7 @@
 | `check/check-review-system.sh` | 审查体系一致性（维度数/警戒线/S 编号闭环对账） | 发版 SOP 阶段四 |
 | `check/check-tool-health.sh` | 工具脚本健康（路径活性/孤儿配置/set -u 守卫/README 收录对账——递归扫 tools/ 全部 .sh 含子目录；**README 未收录自 v1.4.8 起阻断**） | CI / 发版 SOP 阶段九 |
 | `check/check-mcp-registry-wiring.mjs` | MCP 注册表接线门禁（tool-registry 每工具名 ↔ handler 导入与注册点双向对账；探针改错 handler 名 / 删注册行即红） | CI / 改 tool-registry 后 |
+| `check/lib/mcp-tool-count.mjs` | MCP 工具数单一 extractor（TOOLS 数组顶层 name 去重计数 / `--names` 全名单；四门禁六处独立正则的公共收敛件——check-version §12 · dashboard ⑧ · storefront · docs §12/§15/§17） | 上述门禁内部调用 / 改 tool-registry 后 |
 | `check/check-release-closeout.sh` | 发版收口门禁（五断言：bootstrap 三件套同源 / README 版本行 vs registry / 图注 vs 章节态 / main 三 workflow / 发布幂等；gh 不可用 FAIL、HEAD 未推送降级） | pre-push / 发版 SOP 阶段八~九 |
 | `check/check-unwired-exports.sh` | @public 导出接线深扫（S2 四断言：深扫接线/白名单/类型标注/eval 隔离） | 发版 SOP 阶段三/六 |
 | `check/check-wiring-guard.mjs` | 接线守卫（注册表级：注册漂移——分发面孤儿/旁挂清单越界引用；死路径——注册项无分发落点。**首版非阻断**，只提示不阻断；`--selftest` 合成回归验证必命中） | CI（非阻断）/ 发版 SOP / 定期（观察期） |

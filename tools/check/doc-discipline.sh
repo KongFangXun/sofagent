@@ -443,6 +443,13 @@ else
     _mark_n=$(printf '%s\n' "$_all_marks" | grep -c . || true)
     _idx_n=$(printf '%s\n' "$_all_marks" | grep -cE '^v?[0-9][0-9.,+ ]*$' || true)
     [ "$_mark_n" -gt 0 ] && [ "$_mark_n" -eq "$_idx_n" ] && IDX_ONLY=1
+    # 徽章/链接形态分判（v1.8.0 收尾批实测误报）：加粗内容是 [![badge](url)](url)
+    #   形态——标记存在但语义是图片/链接，非来源语汇。判据：标记内以 [![ 开头或
+    #   含 ]( 且剥掉 markdown 链接后无剩余汉字/单词 ⇒ 本面无召回对象（同 IDX_ONLY 口径）。
+    if [ "$IDX_ONLY" -eq 0 ]; then
+      _badge_n=$(printf '%s\n' "$_all_marks" | grep -cE '^\[!\[|\]\(https?://' || true)
+      [ "$_mark_n" -gt 0 ] && [ "$_mark_n" -eq "$_badge_n" ] && IDX_ONLY=1
+    fi
   fi
   if [ "$KW_N" -eq 0 ] && { [ "$MARK_N" -eq 0 ] || [ "$IDX_ONLY" -eq 1 ]; }; then
     echo "  ℹ️ 本次新增 ${NL_N} 行无任何来源语汇（无《》与加粗短语，或标记全为版本号/数字索引形态）——本面无召回对象，跳过"
