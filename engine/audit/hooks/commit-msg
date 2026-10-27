@@ -338,10 +338,17 @@ AUDIT_DIFF_ARG="--cached"
 # 短路已升级为「message 类规则照常执行」（A5 空 message / A9 注入 / A19 质量
 # 只消费 commit message、不依赖 diff 内容），空提交不再是无审计盲区。
 AUDIT_STDERR="$(mktemp /tmp/sofagent-hook-stderr-XXXXXX)"
+# SOFAGENT_AUDIT_TASK 环境变量（v1.8.0 Q41 配套）：显式任务上下文注入通道——
+# demo（注入真实任务描述使 A3 演示命中）与 CI（pipeline 注入任务标题）使用；
+# 未设时走引擎「无 task → 跳过任务关联检查」降级分支（首日噪音修复语义保持）。
+TASK_ARGS=()
+if [ -n "${SOFAGENT_AUDIT_TASK:-}" ]; then
+  TASK_ARGS=(--task "$SOFAGENT_AUDIT_TASK")
+fi
 if [ -n "$COMMIT_FULL_MSG" ]; then
-  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci --commit-msg "$COMMIT_FULL_MSG" 2>"$AUDIT_STDERR"
+  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci "${TASK_ARGS[@]+"${TASK_ARGS[@]}"}" --commit-msg "$COMMIT_FULL_MSG" 2>"$AUDIT_STDERR"
 else
-  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci 2>"$AUDIT_STDERR"
+  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci "${TASK_ARGS[@]+"${TASK_ARGS[@]}"}" 2>"$AUDIT_STDERR"
 fi
 EXIT_CODE=$?
 

@@ -239,7 +239,7 @@ graph TB
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 8 款 DSH 插件——7 原子（audit · rollback · inject · evolve · daemon · fde · rsi-corpus）+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 [ARCHITECTURE §27 源码包](./ARCHITECTURE.md)（口径见 §六） |
+| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 [ARCHITECTURE 能力总览](./ARCHITECTURE.md)（口径见 §六） |
 
 ### 关键数据路径（`data/`）
 
@@ -256,7 +256,7 @@ graph TB
 |---|---|
 | 当前版本 | **v1.7.0**（2026-10-22，✅ 已发版 · 判定底座 · 阶段二（模型与校准）——实测裁决阶段三暂缓） |
 | 下一版 | **v1.8.0**（📋 规划中——判定底座 · 阶段三（接线分发，含 v1.7.0 SDK 面先行符号清偿）；以 [ROADMAP](./ROADMAP.md) 为准） |
-| 测试覆盖 | 6535 测试 / 14 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
+| 测试覆盖 | 6552 测试 / 14 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
 | 审计规则 | 28 条（17 默认 + 11 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)） |
 | FORGE | release-gate-loop 运行中 · fresh-eyes-loop 按需人工触发 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
@@ -283,7 +283,7 @@ graph TB
 | 五域（消歧） | 两义：① **MCP 工具五域**——104 tools 按业务职能分的五个编制域（[ARCHITECTURE](./ARCHITECTURE.md)）；② **五域→三域映射**——v1.5.3 的口径迁移表（[v1.5.3 · 五](./changelog/v1.5/v1.5.3.md)）。遇「五域」先辨指向 | 本条（消歧索引） |
 | 五（消歧） | 「五」字四义固定表述：**五种能力** = 约束层的注入·审计·回溯·沉淀·进化（[ARCHITECTURE §二](./ARCHITECTURE.md)）；**五模块** = 约束层内部的功能域编制（治理/执行/审计/编排/后训，模块不是产品线，[ARCHITECTURE 定位声明](./ARCHITECTURE.md)）；（详→注-3） | 本条（消歧索引） |
 | FDEing（= Forward Deployed Engineering） | FDE 的动词化：把 FDE 从人力工作变成可自动执行的能力（人走能力不走）；万物皆可 FDEing——「梳理→判定→交付→养护」；名词位（岗位）/动词位（能力）禁混用。**首创**：动词化与「万物皆可 FDEing」为本仓首创（行业验证的是「岗位→能力」，见 [VALIDATION](./VALIDATION.md)（详→注-4）） | [README](../README.md#什么是-fde-harness) |
-| 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。（详→注-5） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
+| 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。（详→注-5） | [ARCHITECTURE 能力总览](./ARCHITECTURE.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | 约束层的英文 SSOT 称法（对外中文「约束层」、英文「Harness」同指一物）——"缰绳"，非"马" | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE 导读层 · 双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |
@@ -296,7 +296,7 @@ graph TB
 | FORGE | 自迭代工具链（内部工具，外部用户可忽略）——Agent 审查/修复/验证自己的代码 | [FORGE/README.md](../FORGE/README.md) |
 | fresh-eyes-loop | FORGE 的质量审查闭环（a-check→b-check→a-consolidate→b-fix→a-verify） | [FORGE/SKILL/fresh-eyes-loop/SKILL.md](../FORGE/SKILL/fresh-eyes-loop/SKILL.md) |
 | release-gate-loop | FORGE 的发版闸门闭环（acceptance-test + regression + 审查报告） | [FORGE/SKILL/release-gate-loop/SKILL.md](../FORGE/SKILL/release-gate-loop/SKILL.md) |
-| ToolGate | Agent 工具调用的前置门禁（A2 密钥/A9 注入/A14 越权等规则） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
+| ToolGate | Agent 工具调用的前置门禁（A2 密钥/A9 注入/A14 越权等规则） | [ARCHITECTURE 能力总览](./ARCHITECTURE.md) |
 | data/ | v1.2.1 SSOT 运行时数据目录（安装后实际位于 ~/.sofagent/data/），替换旧 .sofagent/ | [DEVELOPMENT §数据文件架构](./DEVELOPMENT.md) |
 
 > 注-3：**五岗位** = FDE 职能的企业常设化（设计师/知识负责人/自建者/治理者/运营，[FDE/ROLES.md](../FDE/ROLES.md)）；**五要素** = 梳理深挖维度（[FDE/GUIDE §二](../FDE/GUIDE.md#二五要素深挖)）——四者不同物，行文须带全称

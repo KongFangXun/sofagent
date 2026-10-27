@@ -166,7 +166,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 |---|---|---|---|
 | **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 7 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合可选）——`tools/pre-execute` 等 7 个生命周期事件（词汇表见 `engine/dsh-plugins/SEAMS.md`） |
 | **完整挂载** | OpenClaw | ✅ **每会话注入一次** | Hook 注入四层约束 + 断路器 + 4 款 OpenClaw 插件 |
-| **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 28 规则，非调用级拦截） |
+| **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（Claude Code 档 PreToolUse 覆盖 Bash/Write/Edit 调用级；Cursor 提交级） |
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
 
 - **别假设能力对齐——档位差的是注入强度，不是「有没有」**：DSH 逐工具调用可拦，OpenClaw 每会话注入一遍，其余宿主靠 Agent 自觉读 Skill 文本。「支持某平台」= 约束资产在该平台可用，**≠ 强度与他平台相同**；跨宿主迁移前先看目标宿主落在哪档，矩阵见 [加载链 HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
@@ -183,11 +183,11 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 | 能力 | 一句话 | 触达方式 |
 |---|---|---|
-| **RLCD 严格适当评分训练** | 三原语分派损失（noul 对数分数 / choice 对数+球面 / score RPS 序利用）+ 极端口径非对称惩罚 + RLOO/KL 锚/降权三防线；概率目标断言（硬标签拒载）+ 三档加权 + 可复现清单 | CLI 可达：`sofagent train rlcd --data <数据集> [--dryrun]` |
-| **分桶温度校准** | choice/score/noul 三原语分别拟合 · score 保序 · 独立校准集隔离断言（同判据跨侧拒载，违规拒出读数）· 校准制品纯 JSON 独立于权重 | SDK 面 |
-| **校准纪律门禁** | 决策路径消费的置信度/概率阈值须带校准依据或显式 `uncalibrated`——未标注不得上线路（check-calibration-claims 接入发布链） | SDK 面 · 门禁接发布链 |
-| **弃权第四态** | 弃权与 pass/warn/fail 并列（三源留痕：低置信/OOD/判据缺失）· 门槛按原语分档 · ECE 未达阈时弃权不可关 | SDK 面 |
-| **三态对照与双达阈判定** | 零样本/训练后/校准后并列对照 · 一致率 ≥0.70（中英分列）与 ECE ≤0.10（分原语分语言）两线独立判定，not-measured 不得记达标；实测：ECE 17/18 格达线、一致率未达 ⇒ 阶段三暂缓（如实裁决） | SDK 面 · `sofagent audit --criteria` 判据列示 CLI 可达 |
+| **RLCD 严格适当评分训练** | 三原语分派损失 + 非对称惩罚 + RLOO/KL/降权三防线；概率目标断言 + 三档加权 + 可复现清单 | CLI：`sofagent train rlcd --data <数据集> [--dryrun]` |
+| **分桶温度校准** | 三原语分立拟合 · score 保序 · 校准集隔离断言 · 制品纯 JSON 无权重 | SDK 面 |
+| **校准纪律门禁** | 决策路径的置信度阈值须带校准依据或显式 `uncalibrated` | SDK 面 · 发布链 |
+| **弃权第四态** | 与 pass/warn/fail 并列（三源留痕）· 门槛按原语分档 · ECE 未达阈不可关 | SDK 面 |
+| **三态对照与双达阈判定** | 零样本/训练后/校准后对照 · 一致率 ≥0.70（中英分列）与 ECE ≤0.10 两线独立判定；实测：ECE 17/18 达线、一致率未达 ⇒ 阶段三暂缓 | SDK 面 · `sofagent audit --criteria` 判据列示 CLI 可达 |
 
 ## FDE Harness 两阶段
 
@@ -359,9 +359,11 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 | 架构设计与 28 条规则 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
+| 社区参与 · 行为准则 | [COMMUNITY](./docs/COMMUNITY.md) |
+| 外部验证与行业对照 | [VALIDATION](./docs/VALIDATION.md) |
 
-> 🧪 **工程可信度**（当前口径）：6535 测试 / 13 模块包 + 12 插件（8 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
-> **包数口径**（消歧）：workspace 29 = 13 模块包 + `engine/corpus`（`@sofagent/rsi-corpus` 语料管道，版本线独立）+ load-chain + dsh-plugin-kit + umbrella + 8 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 共 27 个，插件与工具包不计）——非同一集合。
+> 🧪 **工程可信度**（当前口径）：6552 测试 / 13 模块包 + 12 插件（8 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
+> **包数口径**（消歧）：workspace 29 = 13 模块包 + `engine/corpus`（`@sofagent/rsi-corpus` 语料管道，版本线独立）+ load-chain + dsh-plugin-kit + umbrella + 8 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 实测 27 个——活读数：grep -l test engine/*/package.json，插件与工具包不计）——非同一集合。
 > 测试数二口径：**发版时点值**（各版本 `4805→4903` 增量账）与**当前实测值**（上方行）；权威值以 `tools/check/check-test-count.sh` 实跑为准；性能数据为单机参考值。
 
 ---

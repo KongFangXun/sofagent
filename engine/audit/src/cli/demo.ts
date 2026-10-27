@@ -417,14 +417,20 @@ export function parseHitRules(engineOutput: string): string[] {
  */
 function attemptCommit(
   sb: Sandbox,
-  spec: { ruleId: string; title: string; file: string; content: string; subject: string },
+  spec: { ruleId: string; title: string; file: string; content: string; subject: string; task?: string },
   p: DemoPrinter,
 ): ViolationVerdict {
   const { dir, env } = sb;
   writeFileSync(join(dir, spec.file), spec.content, 'utf-8');
   git(['add', '-A'], dir, env);
 
-  const r = git(['commit', '-m', spec.subject], dir, env);
+  // v1.8.0（Q41 配套）：A3 戏幕经 SOFAGENT_AUDIT_TASK 注入真实任务上下文——
+  // hook 自 v1.8.0 起不再把 subject 伪装成 --task（首日噪音修复），demo 要演示
+  // A3 的真实命中语义（任务范围外文件 → WARN）须显式提供任务描述。
+  const commitEnv = spec.task !== undefined
+    ? { ...env, SOFAGENT_AUDIT_TASK: spec.task }
+    : env;
+  const r = git(['commit', '-m', spec.subject], dir, commitEnv);
   const hitRules = parseHitRules(r.combined);
   const rejected = r.status !== 0;
 
@@ -484,7 +490,7 @@ function act3Intercept(sb: Sandbox, p: DemoPrinter): ViolationVerdict[] {
   verdicts.push(
     attemptCommit(
       sb,
-      { ruleId: 'A3', title: '越界编辑（任务范围外的客户数据）', file: VIOLATION_SCOPE_FILE, content: violationScopeContent(), subject: DEMO_TASK_SUBJECT },
+      { ruleId: 'A3', title: '越界编辑（任务范围外的客户数据）', file: VIOLATION_SCOPE_FILE, content: violationScopeContent(), subject: DEMO_TASK_SUBJECT, task: DEMO_TASK_SUBJECT },
       p,
     ),
   );
