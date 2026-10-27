@@ -20,6 +20,7 @@ import {
   recordFailure,
   getRepeatedFailures,
   getFailurePatternsBySkill,
+  markResolved,
   type FailureRecord,
   type FailurePattern,
 } from './failure-ledger';
@@ -185,6 +186,12 @@ export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
       canReplace: true,
       reason: 'Evolve 就地演化完成，候选已写入',
     };
+  }
+
+  // 6.5 成功回落（v1.8.0 F6）：进化成功即清该失败聚类——不回落则执行源累计计数
+  //     单调增长，永远 ≥ 阈值 ⇒ 无限重触发 + ledger 无限增长（独立 review 实锤形态）。
+  if (skillOptResult.success) {
+    markResolved(input.skillId, input.failureMode);
   }
 
   return {

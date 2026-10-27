@@ -3,7 +3,7 @@
 // v1.7.0: 从 mcp-server.ts 提取
 // ============================================================
 
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
 import {sortByTrust, prepareForPrompt, getDataDir } from '@sofagent/core'
@@ -165,6 +165,23 @@ export async function mergeFederationAsync(query: string): Promise<void> {
       process.stderr.write(`[sofagent-mcp] 联邦查询合并 ${remote.length} 条跨设备结果（已按本地 trust 白名单排序 + 脱敏 + <untrusted> 包裹）\n`);
       if (protectedRemote.length > 0) {
         process.stderr.write(`[sofagent-mcp] 联邦结果示例: ${protectedRemote[0]!.id} (trust=${protectedRemote[0]!.trust})\n`);
+      }
+      // v1.8.0（F7 独立 code review）：联邦结果落盘缓存——此前仅 stderr 打印即弃，
+      // MCP stdio 协议下 stderr 不进客户端输出面，用户对联邦能力零感知；且不落盘
+      // 意味着每次查询重新全量拉取。落盘语义：data/knowledge/federation-cache.jsonl
+      // （追加式留痕，含 trust/sensitivity 元数据），read_entity 可经 fallback 读到，
+      // 下次 search_knowledge 合并展示。写入失败仅降级（联邦是增强，不阻断本地）。
+      try {
+        const fedCacheDir = join(getDataDir(), 'knowledge');
+        mkdirSync(fedCacheDir, { recursive: true });
+        const cacheLine = JSON.stringify({
+          cachedAt: new Date().toISOString(),
+          query,
+          entries: protectedRemote,
+        }) + '\n';
+        writeFileSync(join(fedCacheDir, 'federation-cache.jsonl'), cacheLine, { flag: 'a' });
+      } catch {
+        // 缓存写入失败——联邦增强降级，本地结果不受影响
       }
     }
   } catch {

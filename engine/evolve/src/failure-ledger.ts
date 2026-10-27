@@ -20,7 +20,7 @@
 //   - count ≥3 时 auto-trigger 判定为"连续同类失败"
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, appendFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, appendFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { createHash } from 'crypto';
 import { loadEnvConfig } from '@sofagent/core';
@@ -142,6 +142,53 @@ export function recordFailure(record: FailureRecord): void {
 }
 
 /**
+ * 标记一个失败聚类已解决（进化成功后的回落机制）。
+ *
+ * 背景（v1.8.0 独立 code review F6）：auto-trigger 每周对 getRepeatedFailures()
+ * 的聚类无条件 recordFailure（执行源不查重，聚类语义依赖累计）——若进化成功后
+ * count 不回落，同类失败计数单调增长 ⇒ 永远 ≥ 阈值 ⇒ 无限重触发 + JSONL 无限增长。
+ *
+ * 语义：物理删除该聚类的全部历史记录（与「已解决」语义一致——保留会继续参与
+ * 聚类计数），并写一条 resolution 留痕行（type:'resolved'，getFailurePatterns
+ * 读取时跳过——留痕不计数）。下次真实失败重新累计，触发链完整重建。
+ */
+export function markResolved(skillId: string, failureMode: string): void {
+  const ledgerPath = resolveFailureLedgerPath();
+  if (!existsSync(ledgerPath)) return;
+  try {
+    const lines = readFileSync(ledgerPath, 'utf-8').split('\n');
+    const kept: string[] = [];
+    let removed = 0;
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const record = JSON.parse(line) as FailureRecord;
+        if (record.skillId === skillId && record.failureMode === failureMode) {
+          removed++;
+          continue; // 该聚类的失败记录移出
+        }
+        kept.push(line);
+      } catch {
+        kept.push(line); // 坏行原样保留（不动非目标数据）
+      }
+    }
+    if (removed > 0) {
+      kept.push(JSON.stringify({
+        type: 'resolved',
+        skillId,
+        failureMode,
+        timestamp: new Date().toISOString(),
+        removedCount: removed,
+      }));
+      writeFileSync(ledgerPath, kept.join('\n') + '\n', 'utf-8');
+      clearFailureCache();
+    }
+  } catch {
+    // 回落失败不阻断进化主流程——下次成功再回落
+  }
+}
+
+/**
  * 查询所有失败聚类（从 JSONL 全量读取）
  *
  * @returns 所有聚类，按 count 降序排列
@@ -166,6 +213,8 @@ export function getFailurePatterns(): FailurePattern[] {
     if (!line.trim()) continue;
     try {
       const record = JSON.parse(line) as FailureRecord;
+      // resolved 留痕行不参与聚类计数（markResolved 的「已解决」语义）
+      if ((record as unknown as { type?: string }).type === 'resolved') continue;
       const key = clusterKey(record.skillId, record.failureMode);
       const existing = patterns.get(key);
       if (existing) {
