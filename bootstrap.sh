@@ -34,7 +34,7 @@ LIB_FILES="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh 
 # 沿用上一版起值（v1.5.4 周期 lib 零改动——git diff v1.5.3..HEAD --stat -- engine/scripts/lib/ 为空）；
 # 下版 lib 有改动时按头部 for 循环命令重算回填）
 LIB_SHA256S="e0b1c5b9f291d558f6f0450f41bc185d68ed50d0aae02005852186a997b9f2c0
-85287e2999a8150e5f388f0a2cd66dbf07645a82201a1c53f789e32130dc5b0a
+1a3a0c0e01f774a25ec6b481e3fbfe9b69291b6e1d4c602477358082f3b571d5
 ac0e900fc904cec0b5530baf0ee64934591b7ff3b710b46a9f6f5d317b113461
 541c18f66c924832daed7e30d6a4064ceadb6a71bdb15edcf94176001d788f33
 bec93fd676d2524b11abfb44e1ffa4cb6dd536d13e3a05421aebee5c6bcf6fc2

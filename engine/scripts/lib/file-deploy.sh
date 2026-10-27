@@ -241,10 +241,20 @@ deploy_scripts() {
     # v1.6.0 BUG-55：daily-health.sh 额外软链一份到 $SOFAGENT_HOME/scripts/——
     # 读侧（daemon daily-health.ts:31）只查该路径，平台安装态巡检此前恒跳过。
     # 单文件例外（其余脚本读侧均查 ${TARGET}/scripts/），在此注明理由。
+    # v1.8.0（Q19）：同目录守卫——平台无关模式 TARGET==SOFAGENT_HOME 时 dst 与
+    # 链接目标同路径，ln -sf X X 生成自指链（本机实锤：daily-health.sh -> 自己，
+    # head 读取报 Too many levels、existsSync=false ⇒ daemon 巡检恒跳过 + 二次
+    # 安装 Step 5b 中断）。部署目标本就是读侧路径时文件已在位，软链是冗余动作。
     if [ "$script" = "daily-health.sh" ] && [ -f "$dst" ]; then
       local DH_HOME_DIR="${SOFAGENT_HOME:-$HOME/.sofagent}/scripts"
       mkdir -p "$DH_HOME_DIR" 2>/dev/null || true
-      ln -sf "$dst" "${DH_HOME_DIR}/daily-health.sh" 2>/dev/null || true
+      if [ "$(cd "$DH_HOME_DIR" 2>/dev/null && pwd)" = "$(cd "$(dirname "$dst")" 2>/dev/null && pwd)" ]; then
+        # 同目录：先清除可能残留的历史自指链（否则 -f 判定被链本身满足），文件已在位
+        [ -L "${DH_HOME_DIR}/daily-health.sh" ] && rm -f "${DH_HOME_DIR}/daily-health.sh"
+        ok "  daily-health.sh 已在目标位（${DH_HOME_DIR}），跳过软链"
+      else
+        ln -sf "$dst" "${DH_HOME_DIR}/daily-health.sh" 2>/dev/null || true
+      fi
     fi
   done
   src="${SCRIPT_DIR}/engine/scripts/lib/config.sh"; dst="${SCRIPTS_DST}/lib/config.sh"  # 部署共享配置加载器
