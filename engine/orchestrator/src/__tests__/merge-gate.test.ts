@@ -213,3 +213,43 @@ describe('isMergeGatePass · 单结果通过判定', () => {
     expect(isMergeGatePass(gateResult('error'))).toBe(false);
   });
 });
+
+// ============================================================
+// v1.8.0 · incumbent-wins 不计已合并（假成功修复行为锁）
+// 旧实现：isMergeGatePass 对任何 conflict-resolved 都算通过——
+// incumbent 赢时 incoming 产出被丢弃（abort+cleanup+notifyRetry）却计入已合并
+// ============================================================
+describe('isMergeGatePass · resolution 判定矩阵（v1.8.0）', () => {
+  it('incumbent-wins → 不通过（incoming 被丢弃 = 未合并），波次 allMerged=false', async () => {
+    const single = isMergeGatePass(
+      gateResult('conflict-resolved', {
+        conflict: { resolution: 'incumbent-wins', reason: 'scope', status: 'resolved', files: ['a.ts'] } as never,
+      }),
+    );
+    expect(single).toBe(false); // 旧实现此处为 true
+
+    const wave = await runWaveMergeGate(
+      'wave-inc1',
+      [{ taskId: 't1', handle: makeHandle('engineer-1') }],
+      {
+        repoRoot: '/tmp/repo',
+        mergeFn: async () =>
+          gateResult('conflict-resolved', {
+            conflict: { resolution: 'incumbent-wins', reason: 'scope', status: 'resolved', files: ['a.ts'] } as never,
+          }),
+      },
+    );
+    expect(wave.allMerged).toBe(false); // 报告注入场景复测改判
+    expect(wave.summary).toContain('FAIL');
+  });
+
+  it('incoming-wins / merged / noop → 通过（不回归）', () => {
+    expect(isMergeGatePass(
+      gateResult('conflict-resolved', {
+        conflict: { resolution: 'incoming-wins', reason: '', status: 'resolved', files: [] } as never,
+      }),
+    )).toBe(true);
+    expect(isMergeGatePass(gateResult('merged'))).toBe(true);
+    expect(isMergeGatePass(gateResult('noop'))).toBe(true);
+  });
+});

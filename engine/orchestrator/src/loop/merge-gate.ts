@@ -61,11 +61,16 @@ export interface WaveGateOptions {
   totalTasks?: number;
 }
 
-/** 判定单个卡关结果是否算「通过」 */
+/** 判定单个卡关结果是否算「通过」
+ *  v1.8.0：conflict-resolved 区分 resolution——incumbent-wins 的语义是
+ *  「incoming 让步丢弃、通知重试」，对 incoming 而言是未合并（产出被丢弃
+ *  却计入已合并 = 假成功）；incoming-wins/merged/noop 维持通过语义 */
 export function isMergeGatePass(result: MergeGateResult): boolean {
+  if (result.status === 'conflict-resolved') {
+    return result.conflict?.resolution !== 'incumbent-wins';
+  }
   return (
     result.status === 'merged' ||
-    result.status === 'conflict-resolved' ||
     result.status === 'noop'
   );
 }
