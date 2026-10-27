@@ -1644,7 +1644,10 @@ function renderLiveAuditLog(records){
     else if(r.exitCode&&r.exitCode>1){verdict='FAIL';verdictClass='badge-fail'}
     if(r.ruleResults){
       var failed=r.ruleResults.find(function(rr){return rr.status==='FAIL'||rr.status==='WARN'});
-      if(failed)rule='A'+failed.number;
+      // 规则码统一走 ruleCode（复刻引擎 assemble.ts 语义：number>=500→R+、>=200→E+、
+      // >0→A+、缺省用 name）——E 系列 number=200+序号（E5→205），裸 'A'+number 会
+      // 渲染出不存在的 A205（v1.8.0 Q25 修复）。
+      if(failed)rule=failed.number>=500?('R'+(failed.number-500)):failed.number>=200?('E'+(failed.number-200)):(failed.number>0?('A'+failed.number):(failed.name||''));
     }
     // rule 列：FAIL/WARN 显示触发规则码（红/橙），PASS 显示绿色 ✓
     var ruleCell=rule
