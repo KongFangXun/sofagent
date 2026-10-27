@@ -479,3 +479,5 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 
 
 2026-10-22     | 20261022-01    | release-gate-发布收编 | v1.7.0 阶段九+十完成：bump 521 → CI 8 workflow 绿 → tag@84eec2a73 → release → npm 23 包全 1.7.0；分发五渠道全绿，开放项 1 = ClawHub evolve/inject 平台死锁（已报 moderator，详见 troubleshooting）；修复 6 处。
+
+| 2026-10-27 | run-01 | fresh-eyes（视角10 文档一致性 + 视角11 代码审读者 · 全仓循环） | 4 轮 | no-p0-p1-2rounds | 发现 3（P1×2 · P2×1）全闭环：F1 本仓 hook 未同步批14 模板（重装+沙箱实测 A3 零出现）· F2 markdown-collector 未入 silent-catch 豁免台账（官方入口收编 3a0fbf9b4）· F3 A 层预算滞后并发交付物（上调 cd71bba70）；门禁六项终态全绿 | runs/2026/10/27/run-01 |
