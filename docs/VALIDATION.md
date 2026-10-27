@@ -207,6 +207,8 @@ v1.6.0 实测**一致率** zh 0.667 / en 0.333（勿与上行 ECE 行中 0.333 /
   来源：Anthropic《Demystifying Evals》（IMA 收录）｜ DeepSeek Safety 官方技术报告（IMA 收录）｜ OpenRouter · https://openrouter.ai/blog/tutorials/ai-agent-regression-testing-after-a-prompt-or-model-change/
 - **硅基员工论（Org Graph / Ontology Runtime）**——「长期存活、固定领域、进组织编制」的 Agent 称为 Org Graph 节点，与常驻 Agent 定位字面对应；Ontology Runtime 是企业底座而非 API 网关。
 - **数字员工操作性定义**——四跨越（组织身份/岗位职责/事件驱动/结果负责）+ 结果负责三要素（可观测/可归因/可回滚），与审计/回溯能力对齐。
+- **Agentic Coworker 五项基础（麦肯锡）**——定义句「owns a role and an outcome」与硅基员工哲学同向；五项基础中三项（自主权分级/身份与责任/统一网关 Protect-Prove-Price）为存量同构印证，两项为增量框架：三种记忆（Episodic/Procedural/Semantic ↔ think.md+审计历史/SKILL+workflow.yml/knowledge 本体）与「每个 Agent 须有生命周期人类责任人（不能统一归 AI CoE）」——后者为候选增强（SubAgentDefinition 现无此字段，区别于 workflow owner 与验收 approver）。银行案例数据（未具名转述）不收录。成篇对照见 [归档 · agentic-coworker](./archive/validation-deep/agentic-coworker.md)。
+  来源：McKinsey（2026-10-26）· https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/the-rise-of-the-agentic-coworker-a-banking-cios-guide-to-the-next-wave-of-ai
 
 > 📌 **本节出处形态说明**：条内已含机构名/论文名的（如 Gartner / MIT NANDA / Anthropic《Demystifying Evals》）为一手来源就地标注；未带链接的条目出处统一在 [归档 · concept-layer](./archive/validation-deep/concept-layer.md)（成篇论证）——本节为一句话判据层，不逐条重复挂链。
 

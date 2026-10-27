@@ -982,6 +982,12 @@ DeepSeek Engram 查算分离与本仓「外部记忆层与模型参数化能力�
 
 > 📚 全文：[归档](./archive/validation-digest/README.md)
 
+### 三种记忆 × 沉淀资产对照（麦肯锡 Agentic Coworker）
+
+McKinsey 把企业上下文分三种记忆：Episodic（发生了什么）/ Procedural（怎么做事）/ Semantic（业务概念与关系）——本仓沉淀资产对号入座：think.md 反思+审计历史+decision-log（Episodic）、SKILL/ 与 workflow.yml 交付物（Procedural）、knowledge/ 本体（Semantic），三种记忆各有既定承载物；配套判据「编排能力可外购、专有业务上下文须自持」与「判据 schema 唯一 SSOT」同向。五项基础全文对照（含 Agent 生命周期责任人缺口查证）见归档。
+
+> 📚 全文：[归档 · agentic-coworker](./archive/validation-deep/agentic-coworker.md)
+
 ### Harness 中层自进化信号（RSI 数据飞轮印证 · 消化重写）
 
 RSI 数据飞轮六类对位 + 空房间错误分流器（客观错误归 Harness 修复、主观偏好归记忆后训）+ 进程活着≠大脑活着（产出级探测 providerStatus）三条判据已归档。

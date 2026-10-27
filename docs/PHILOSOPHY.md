@@ -141,6 +141,9 @@ sofagent 的生存位不在「写更聪明的约束文字」，而在**细分业
 
 **组织含义：AI 不是效率工具，是硅基员工。** 把 AI 当「更快的打字机」产出的是更快的旧流程；当「可被治理的同事」才逼你回答真问题——坐哪个岗位、输入输出是什么、出错谁拍板、绩效怎么算。前者只换工具，后者换组织：能力不再存进**岗位**（人走、岗空、能力散），而是存进**交付物**（workflow.yml / ontology / skills）——人离场，判断作为能力继续运转。这条组织含义的终点即「万物皆可 FDEing」：能力载体一旦是交付物而非岗位，可被 FDEing 的边界便不再限于软件。
 
+> **外部印证——麦肯锡 Agentic Coworker（2026-10-26）**：定义句「owns a role and an outcome」（承担一个角色及其对应结果）与本节硅基员工哲学同向——麦肯锡同样以「是否对结果负责」划出普通 Agent 与 Agentic Coworker 的分界；其「Design for agent error, not against it」（按会犯错设计而非否认犯错）与审计兜底层的设计前提一致。
+>五项基础逐条对照与两种记忆框架吸收见 [VALIDATION §一](./VALIDATION.md) / [归档 · agentic-coworker](./archive/validation-deep/agentic-coworker.md)。
+
 **三因子归位（与 [FDE/README](../FDE/README.md) 强调段同口径，无第二口径）**：FDEing 不是孤立方法论——它是把另外两个因子接上来的**能力底座**。三因子各司其职、不互替：
 
 | 因子 | 归位 | 一句话 |

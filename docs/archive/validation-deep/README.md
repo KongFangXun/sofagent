@@ -18,4 +18,5 @@
 | 研报边界提示（数据汇总 / 自动闭环警示 / 确定性骨架 / LGA / 生态速览 / DSec / 评测环境三源） | [boundary-research.md](./boundary-research.md) | §五 |
 | 判定件生态（Jev / Laya / kev / nimble / 复刻族 / decider / CLM / JevK5 / OpenThai / AutoJev / RSI-Jev / AgentJev / TensorFlow.js / Verdict / jevbench / 治理基准 / NIST / 主体两分 / Jev-Mem / jev-harness-lab / JevAdvBench / LAVOIR） | [judgment-ecosystem.md](./judgment-ecosystem.md) | §一 System One + 相关节（正文已台账化） |
 | WeKnora 知识平台深读 | [weknora.md](./weknora.md) | §一 WeKnora 节 |
+| 麦肯锡 Agentic Coworker 五项基础（定义句 / 自主权分级 / 身份与责任 / 三种记忆 / Protect-Prove-Price） | [agentic-coworker.md](./agentic-coworker.md) | §一 · 方法论印证（2026-10-27 增） |
 | THANKS 分析段（读数/风险/边界/价值小论文，按原分组保结构） | [thanks-extended.md](./thanks-extended.md) | THANKS 全文分析段 |
