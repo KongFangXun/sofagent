@@ -86,7 +86,7 @@ function collect(at = '2026-10-01T00:00:00.000Z') {
 
 // ════════════════════════════════════════════════════════════
 describe('章二 · 快照完整性（四层打包 + 可寻址 id + 篡改检出）', () => {
-  it('四层齐备：prompt / skill / memory / weights 全部采集，版本带域前缀', () => {
+  it('四层齐备：prompt / skill / memory / weights 全部采集，版本带域前缀', async () => {
     seedFact('用户偏好.前端框架', 'React');
     seedFact('项目约定.包管理', 'pnpm');
     const state = collect();
@@ -94,29 +94,29 @@ describe('章二 · 快照完整性（四层打包 + 可寻址 id + 篡改检出
     expect(state.prompt.fieldCount).toBeGreaterThan(0);
     expect(state.prompt.layers.length).toBeGreaterThan(0);
     expect(state.skill.version.startsWith('sk-')).toBe(true);
-    expect(state.memoryAnchors.map((a) => a.key).sort()).toEqual(['用户偏好.前端框架', '项目约定.包管理']);
+    expect(state.memoryAnchors.count).toBe(2); // v1.8.0 Q29 聚合态：count+anchorsHash（明细不再逐条复制）
     // 锚点只存指针 + 摘要，不存事实原文
-    expect(state.memoryAnchors[0]!.hash).toHaveLength(16);
+    expect(state.memoryAnchors.anchorsHash).toHaveLength(64); // sha256 全长聚合哈希
     expect(state.weights.ref).toBe('wm-v3-sha256:abc123');
     expect(state.collectedAt).toBe('2026-10-01T00:00:00.000Z');
   });
 
-  it('权重 manifest 未接线 ⇒ 如实记 null + 原因（不假装有值）', () => {
+  it('权重 manifest 未接线 ⇒ 如实记 null + 原因（不假装有值）', async () => {
     const state = collectFourLayerState({ dataDir, skillRoot, weightsManifestRef: undefined, now: () => '2026-10-01T00:00:00.000Z' });
     expect(state.weights.ref).toBeNull();
     expect(String(state.weights.reason)).toContain('软依赖');
   });
 
-  it('能力变更自动生成快照：可寻址 id + stateHash 自证一致', () => {
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: { skillDir: '.sofagent' }, weightsManifestRef: 'wm-1' });
+  it('能力变更自动生成快照：可寻址 id + stateHash 自证一致', async () => {
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: { skillDir: '.sofagent' }, weightsManifestRef: 'wm-1' });
     expect(snap.id).toMatch(/^bs-[0-9a-f]{16}$/);
     expect(snap.prevId).toBeNull();
     expect(snap.stateHash).toBe(computeStateHash(snap.state));
     expect(verifySnapshotIntegrity(snap).ok).toBe(true);
   });
 
-  it('四层状态被篡改 ⇒ 完整性自证失败（stateHash 不匹配）', () => {
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+  it('四层状态被篡改 ⇒ 完整性自证失败（stateHash 不匹配）', async () => {
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
     const tampered: BaselineSnapshot = {
       ...snap,
       state: { ...snap.state, memoryAnchors: [{ key: '伪造', factId: 'x', updatedAt: 'x', hash: 'x' }] },
@@ -129,17 +129,17 @@ describe('章二 · 快照完整性（四层打包 + 可寻址 id + 篡改检出
 
 // ════════════════════════════════════════════════════════════
 describe('章二 · 版本链前驱指针（成链 / 寻址 / 回溯任一时点）', () => {
-  it('快照按时间成链：链首 prevId=null，其后逐条指向直接前驱', () => {
-    const s1 = createBaselineSnapshot(ev({ at: '2026-10-01T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
-    const s2 = createBaselineSnapshot(ev({ kind: 'write-surface', at: '2026-10-02T00:00:00.000Z', surface: 'prompt', target: 'SKILL.md' }), {
+  it('快照按时间成链：链首 prevId=null，其后逐条指向直接前驱', async () => {
+    const s1 = await createBaselineSnapshot(ev({ at: '2026-10-01T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    const s2 = await createBaselineSnapshot(ev({ kind: 'write-surface', at: '2026-10-02T00:00:00.000Z', surface: 'prompt', target: 'SKILL.md' }), {
       dataDir,
       skillRoot,
       configValues: {},
       weightsManifestRef: 'wm-1',
     });
-    const s3 = createBaselineSnapshot(ev({ kind: 'demote', at: '2026-10-03T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    const s3 = await createBaselineSnapshot(ev({ kind: 'demote', at: '2026-10-03T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
 
-    const chain = loadBaselineChain(dataDir);
+    const chain = await loadBaselineChain(dataDir);
     expect(chain.map((s) => s.id)).toEqual([s1.id, s2.id, s3.id]);
     expect(chain[0]!.prevId).toBeNull();
     expect(chain[1]!.prevId).toBe(s1.id);
@@ -149,27 +149,27 @@ describe('章二 · 版本链前驱指针（成链 / 寻址 / 回溯任一时点
     expect(existsSync(resolveBaselineChainPath(dataDir))).toBe(true);
   });
 
-  it('按 id 寻址：全 id 与短前缀均可命中；未命中 ⇒ 具名报错', () => {
-    const s1 = createBaselineSnapshot(ev({ at: '2026-10-01T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
-    const chain = loadBaselineChain(dataDir);
+  it('按 id 寻址：全 id 与短前缀均可命中；未命中 ⇒ 具名报错', async () => {
+    const s1 = await createBaselineSnapshot(ev({ at: '2026-10-01T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    const chain = await loadBaselineChain(dataDir);
     expect(getBaselineById(chain, s1.id).id).toBe(s1.id);
     expect(getBaselineById(chain, s1.id.slice(0, 8)).id).toBe(s1.id);
     expect(() => getBaselineById(chain, 'bs-deadbeefdeadbeef')).toThrow(BaselineNotFoundError);
   });
 
-  it('回溯任一时点：取 createdAt ≤ 目标时刻的最后一条快照', () => {
-    const s1 = createBaselineSnapshot(ev({ at: '2026-10-01T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
-    const s2 = createBaselineSnapshot(ev({ at: '2026-10-02T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
-    const chain = loadBaselineChain(dataDir);
+  it('回溯任一时点：取 createdAt ≤ 目标时刻的最后一条快照', async () => {
+    const s1 = await createBaselineSnapshot(ev({ at: '2026-10-01T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    const s2 = await createBaselineSnapshot(ev({ at: '2026-10-02T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    const chain = await loadBaselineChain(dataDir);
     expect(resolveBaselineAt(chain, '2026-09-30T00:00:00.000Z')).toBeNull();
     expect(resolveBaselineAt(chain, '2026-10-01T12:00:00.000Z')!.id).toBe(s1.id);
     expect(resolveBaselineAt(chain, '2026-10-05T00:00:00.000Z')!.id).toBe(s2.id);
   });
 
-  it('前驱指针断裂 ⇒ 链完整性判定失败并具名定位', () => {
-    createBaselineSnapshot(ev({ at: '2026-10-01T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
-    createBaselineSnapshot(ev({ at: '2026-10-02T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
-    const chain = loadBaselineChain(dataDir);
+  it('前驱指针断裂 ⇒ 链完整性判定失败并具名定位', async () => {
+    await createBaselineSnapshot(ev({ at: '2026-10-01T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    await createBaselineSnapshot(ev({ at: '2026-10-02T00:00:00.000Z' }), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    const chain = await loadBaselineChain(dataDir);
     const broken = [{ ...chain[0]! }, { ...chain[1]!, prevId: 'bs-0000000000000000' }];
     const integ = verifyBaselineChain(broken);
     expect(integ.ok).toBe(false);
@@ -179,8 +179,8 @@ describe('章二 · 版本链前驱指针（成链 / 寻址 / 回溯任一时点
 
 // ════════════════════════════════════════════════════════════
 describe('章二 · 回滚可举证（四层计划 + decision-log 留痕 + 引证）', () => {
-  it('四层恢复计划齐备且各绑定既有机制', () => {
-    const snap = createBaselineSnapshot(ev(), {
+  it('四层恢复计划齐备且各绑定既有机制', async () => {
+    const snap = await createBaselineSnapshot(ev(), {
       dataDir,
       skillRoot,
       configValues: {},
@@ -196,10 +196,10 @@ describe('章二 · 回滚可举证（四层计划 + decision-log 留痕 + 引�
     expect(plan.directives.find((d) => d.layer === 'weights')!.mechanism).toBe('manifest-ref');
   });
 
-  it('按快照 id 回滚四层 + 回滚动作落 decision-log（引用快照 id 留痕）', () => {
+  it('按快照 id 回滚四层 + 回滚动作落 decision-log（引用快照 id 留痕）', async () => {
     seedFact('事故锚点.上下文', 'before');
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
-    const chain = loadBaselineChain(dataDir);
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    const chain = await loadBaselineChain(dataDir);
 
     let observedPlan: BaselineRestorePlan | null = null;
     const spyRestorer = (plan: BaselineRestorePlan) => {
@@ -212,7 +212,7 @@ describe('章二 · 回滚可举证（四层计划 + decision-log 留痕 + 引�
       return { ts: '2026-10-10T00:00:00.000Z' };
     };
 
-    const record = rollbackToBaseline(snap.id, { chain, restorer: spyRestorer, writer: spyWriter, now: () => '2026-10-10T00:00:00.000Z', actor: 'fde-1' });
+    const record = await rollbackToBaseline(snap.id, { chain, restorer: spyRestorer, writer: spyWriter, now: () => '2026-10-10T00:00:00.000Z', actor: 'fde-1' });
 
     expect(observedPlan!.snapshotId).toBe(snap.id);
     expect(observedPlan!.directives).toHaveLength(4);
@@ -227,10 +227,10 @@ describe('章二 · 回滚可举证（四层计划 + decision-log 留痕 + 引�
     expect(record.decisionLogTs).toBe('2026-10-10T00:00:00.000Z');
   });
 
-  it('判定模式恢复器不出副作用，而默认 writer 经软依赖真实落 decision-log', () => {
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+  it('判定模式恢复器不出副作用，而默认 writer 经软依赖真实落 decision-log', async () => {
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
     expect(advisoryBaselineRestorer(buildRestorePlan(snap)).restored).toEqual([]);
-    const record = rollbackToBaseline(snap.id, { chain: loadBaselineChain(dataDir), now: () => '2026-10-10T00:00:00.000Z' });
+    const record = await rollbackToBaseline(snap.id, { chain: await loadBaselineChain(dataDir), now: () => '2026-10-10T00:00:00.000Z' });
     // 判定模式：恢复动作零副作用（只出计划，不改四层状态）
     expect(record.outcome.restored).toEqual([]);
     expect(record.outcome.skipped).toEqual([...BASELINE_LAYERS]);
@@ -240,21 +240,21 @@ describe('章二 · 回滚可举证（四层计划 + decision-log 留痕 + 引�
     expect(Number.isNaN(Date.parse(record.decisionLogTs as string))).toBe(false);
   });
 
-  it('拒绝回滚被篡改的快照（fail-closed）', () => {
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+  it('拒绝回滚被篡改的快照（fail-closed）', async () => {
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
     const tampered: BaselineSnapshot = { ...snap, state: { ...snap.state, collectedAt: '改过了' } };
-    expect(() => rollbackToBaseline(tampered, { chain: [tampered] })).toThrow(BaselineIntegrityError);
+    await expect(rollbackToBaseline(tampered, { chain: [tampered] })).rejects.toThrow(BaselineIntegrityError);
   });
 
-  it('举证记录可引用快照 id（「事故发生在基线 X 下」）', () => {
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
-    const chain = loadBaselineChain(dataDir);
+  it('举证记录可引用快照 id（「事故发生在基线 X 下」）', async () => {
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    const chain = await loadBaselineChain(dataDir);
     const citation = citeBaseline(chain, snap.id, '事故发生在基线 X 下', () => '2026-10-11T00:00:00.000Z');
     expect(citation.snapshotId).toBe(snap.id);
     expect(citation.reason).toBe('事故发生在基线 X 下');
     expect(citation.stateSummary.promptVersion).toBe(snap.state.prompt.version);
     expect(citation.stateSummary.skillVersion).toBe(snap.state.skill.version);
-    expect(citation.stateSummary.memoryAnchorCount).toBe(snap.state.memoryAnchors.length);
+    expect(citation.stateSummary.memoryAnchorCount).toBe(snap.state.memoryAnchors.count); // v1.8.0 Q29 聚合态
   });
 });
 
@@ -267,9 +267,9 @@ describe('BUG-52 · fileManifest 双判（防删除绕过收口）', () => {
     writeFileSync(join(skillRoot, 'skills', 'demo', 'SKILL.md'), '# demo skill\n');
   }
 
-  it('新快照自带 fileManifest：根锚定 + 相对路径 + 内容哈希、按 path 排序', () => {
+  it('新快照自带 fileManifest：根锚定 + 相对路径 + 内容哈希、按 path 排序', async () => {
     seedSkillFiles();
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
     expect(snap.fileManifest).toBeDefined();
     expect(snap.fileManifest!.skillRoot).toBe(skillRoot);
     const paths = snap.fileManifest!.files.map((e) => e.path);
@@ -282,9 +282,9 @@ describe('BUG-52 · fileManifest 双判（防删除绕过收口）', () => {
     expect(verifySnapshotIntegrity(snap).ok).toBe(true);
   });
 
-  it('态一（改文件 → 红）：磁盘文件改动后 stateHash 仍一致，但第二判失配', () => {
+  it('态一（改文件 → 红）：磁盘文件改动后 stateHash 仍一致，但第二判失配', async () => {
     seedSkillFiles();
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
     writeFileSync(join(skillRoot, 'skills', 'demo', 'SKILL.md'), '# demo skill (被改动)\n');
     const integ = verifySnapshotIntegrity(snap);
     expect(integ.ok).toBe(false);
@@ -292,9 +292,9 @@ describe('BUG-52 · fileManifest 双判（防删除绕过收口）', () => {
     expect(String(integ.reason)).toContain('skills/demo/SKILL.md');
   });
 
-  it('态二（删文件 → 红·主断言）：清单内文件被删除，第二判报不存在', () => {
+  it('态二（删文件 → 红·主断言）：清单内文件被删除，第二判报不存在', async () => {
     seedSkillFiles();
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
     rmSync(join(skillRoot, 'skills', 'demo', 'SKILL.md'));
     const integ = verifySnapshotIntegrity(snap);
     expect(integ.ok).toBe(false);
@@ -305,9 +305,9 @@ describe('BUG-52 · fileManifest 双判（防删除绕过收口）', () => {
     expect(verifySnapshotIntegrity(snap).ok).toBe(true);
   });
 
-  it('态三（legacy 无 manifest → 过 + 提示）：跳过第二判不判红', () => {
+  it('态三（legacy 无 manifest → 过 + 提示）：跳过第二判不判红', async () => {
     seedSkillFiles();
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
     const legacy: BaselineSnapshot = (({ fileManifest: _omit, ...rest }) => rest)(snap) as BaselineSnapshot;
     expect(legacy.fileManifest).toBeUndefined();
     rmSync(join(skillRoot, 'skills', 'demo', 'SKILL.md')); // 即便文件已删——legacy 路径不判红
@@ -316,19 +316,19 @@ describe('BUG-52 · fileManifest 双判（防删除绕过收口）', () => {
     expect(String(integ.notice)).toContain('legacy 快照无文件清单');
   });
 
-  it('空清单（skill 根无文件）→ ok + 提示（与 skill 层采集宽容语义对齐）', () => {
-    const snap = createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
+  it('空清单（skill 根无文件）→ ok + 提示（与 skill 层采集宽容语义对齐）', async () => {
+    const snap = await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1', persist: false });
     expect(snap.fileManifest!.files).toEqual([]);
     const integ = verifySnapshotIntegrity(snap);
     expect(integ.ok).toBe(true);
     expect(String(integ.notice ?? '')).toContain('清单为空');
   });
 
-  it('链完整性判定沿用双判结果（删除文件后 verifyBaselineChain 失败）', () => {
+  it('链完整性判定沿用双判结果（删除文件后 verifyBaselineChain 失败）', async () => {
     seedSkillFiles();
-    createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
+    await createBaselineSnapshot(ev(), { dataDir, skillRoot, configValues: {}, weightsManifestRef: 'wm-1' });
     rmSync(join(skillRoot, 'skills', 'demo', 'SKILL.md'));
-    const chain = loadBaselineChain(dataDir);
+    const chain = await loadBaselineChain(dataDir);
     const result = verifyBaselineChain(chain);
     expect(result.ok).toBe(false);
     expect(result.failures.some((f) => f.includes('文件被删除或改动'))).toBe(true);

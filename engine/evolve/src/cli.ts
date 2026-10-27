@@ -241,7 +241,7 @@ async function main() {
       const dataDir = flag('data');
 
       if (action === 'list') {
-        const chain = baseline.loadBaselineChain(dataDir);
+        const chain = await baseline.loadBaselineChain(dataDir);
         if (chain.length === 0) {
           console.log('（基线链为空——首次写面变更后由 daemon 引导自动落快照）');
           process.exit(0);
@@ -259,7 +259,7 @@ async function main() {
           console.error('❌ baseline show 需要 <snapshot-id> 参数（先 baseline list 查 id）');
           process.exit(1);
         }
-        const chain = baseline.loadBaselineChain(dataDir);
+        const chain = await baseline.loadBaselineChain(dataDir);
         const snap = chain.find((x) => x.id === id || x.id.startsWith(id));
         if (!snap) {
           console.error(`❌ 未找到快照 ${id}（链内 ${chain.length} 个）`);
@@ -276,7 +276,7 @@ async function main() {
           console.error('   用法: sofagent evolve baseline restore <id> --yes [--data <dir>]');
           process.exit(1);
         }
-        const record = baseline.rollbackToBaseline(id, dataDir ? { dataDir } : {});
+        const record = await baseline.rollbackToBaseline(id, dataDir ? { dataDir } : {});
         console.log(`✅ 已回滚到基线 ${id}`);
         console.log(`   实际恢复: ${record.outcome.restored.join(', ') || '无'}`);
         console.log(`   只引用未动: ${record.outcome.skipped.join(', ') || '无'}`);

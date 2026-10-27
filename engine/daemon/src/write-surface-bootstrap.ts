@@ -73,6 +73,11 @@ function projectTraceToEvent(trace: WriteSurfaceTrace): CapabilityChangeEventInp
  */
 export function installWriteSurfaceTracing(opts: WriteSurfaceTracingOptions = {}): void {
   const recordChain = createWriteSurfaceTracer(opts.dataDir);
+  // v1.8.0（Q29 日志止血）：同一错误消息 1 小时内不重复打印——分钟级 daemon 周期
+  // 反复撞同一失败时只记一次（本机实锤 13 万行重复 warn / 30MB 日志）。
+  let lastErrMsg = '';
+  let lastErrAt = 0;
+  const THROTTLE_MS = 60 * 60 * 1000;
   setWriteSurfaceTracer((trace) => {
     // ① 章一：写面链落盘（fail-closed——抛错由 guardWriteSurface 回退 + 告警）
     recordChain(trace);
@@ -81,12 +86,25 @@ export function installWriteSurfaceTracing(opts: WriteSurfaceTracingOptions = {}
       createBaselineSnapshot(projectTraceToEvent(trace), {
         dataDir: opts.dataDir,
         ...(opts.skillRoot !== undefined ? { skillRoot: opts.skillRoot } : {}),
+      }).catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg !== lastErrMsg || Date.now() - lastErrAt > THROTTLE_MS) {
+          lastErrMsg = msg;
+          lastErrAt = Date.now();
+          console.error(
+            `[write-surface-bootstrap] ⚠️ 基线快照生成失败（写面链已落盘，跳过章二投影）：${msg}`,
+          );
+        }
       });
     } catch (err) {
-      console.error(
-        `[write-surface-bootstrap] ⚠️ 基线快照生成失败（写面链已落盘，跳过章二投影）：` +
-          `${err instanceof Error ? err.message : String(err)}`,
-      );
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg !== lastErrMsg || Date.now() - lastErrAt > THROTTLE_MS) {
+        lastErrMsg = msg;
+        lastErrAt = Date.now();
+        console.error(
+          `[write-surface-bootstrap] ⚠️ 基线快照生成失败（写面链已落盘，跳过章二投影）：${msg}`,
+        );
+      }
     }
   });
 }

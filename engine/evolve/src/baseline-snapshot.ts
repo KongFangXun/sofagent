@@ -47,7 +47,8 @@
 // （fail-closed：被篡改的快照拒绝回滚）。
 // ============================================================
 
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, createReadStream } from 'fs';
+import { createInterface } from 'readline';
 import { createHash } from 'crypto';
 import { dirname, join, relative } from 'path';
 import {
@@ -154,8 +155,16 @@ export interface WeightsLayerState {
 export interface FourLayerState {
   prompt: PromptLayerState;
   skill: SkillLayerState;
-  /** memory 事实锚点（按 key 排序——保证摘要稳定） */
-  memoryAnchors: MemoryAnchor[];
+  /**
+   * memory 事实锚点摘要（v1.8.0 Q29 改分片聚合——不再全量复制锚点数组）。
+   * 根因（本机实锤 2026-10-27）：31039 条锚点 × 每快照全量复制 ≈ 4.3MB/行，
+   * 链增 125 行后 baseline-chain.jsonl 达 539MB，readFileSync 单串超 Node 512MB
+   * 上限 ⇒ 基线快照恒失败（写面链落盘但章二投影跳过，分钟级重试 13 万次）。
+   * 修复语义：锚点数组降为 count + anchorsHash（逐锚点稳定串 update 进 hash 的
+   * 分片累积——任一锚点变化仍改变 stateHash，聚合完整性不变；明细漂移核对
+   * 走当刻重采集比对，与旧全量存档语义等价但不复制数据）。
+   */
+  memoryAnchors: { count: number; anchorsHash: string };
   weights: WeightsLayerState;
   /** 采集时刻（ISO） */
   collectedAt: string;
@@ -322,11 +331,11 @@ function collectSkillLayer(skillRootOverride?: string): SkillLayerState {
   return { version: `sk-${sha256Hex(payload, 16)}`, count: report.skills.length, root };
 }
 
-/** memory 层：事实锚点（key / factId / updatedAt / 值摘要） */
-function collectMemoryAnchors(dataDir?: string): MemoryAnchor[] {
+/** memory 层：事实锚点（key / factId / updatedAt / 值摘要）→ 分片聚合（v1.8.0 Q29） */
+function collectMemoryAnchors(dataDir?: string): { count: number; anchorsHash: string } {
   const store = createMemoryStore(resolveDataDir(dataDir));
   const facts = store.list(undefined, { allScopes: true });
-  return facts
+  const sorted = facts
     .map((f) => {
       const anchor: MemoryAnchor = {
         key: f.key,
@@ -338,6 +347,13 @@ function collectMemoryAnchors(dataDir?: string): MemoryAnchor[] {
       return anchor;
     })
     .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  // 分片哈希累积：逐锚点 update 进 hash——不落整串（512MB 超限根因是全量复制，
+  // 聚合后载荷恒为 count+hash 两字段，链行大小与锚点数解耦）
+  const h = createHash('sha256');
+  for (const a of sorted) {
+    h.update(`${a.key}|${a.factId}|${a.updatedAt}|${a.hash}${a.scope !== undefined ? '|' + a.scope : ''}\n`);
+  }
+  return { count: sorted.length, anchorsHash: h.digest('hex') };
 }
 
 /**
@@ -414,13 +430,16 @@ export function collectFileManifest(skillRootOverride?: string): FileManifest {
 // 版本链：生成 / 读取 / 寻址 / 完整性
 // ────────────────────────────────────────────────────────────
 
-/** 读快照链（文件不存在 = 空；坏行告警跳过，不静默） */
-export function loadBaselineChain(dataDir?: string): BaselineSnapshot[] {
+/** 读快照链（文件不存在 = 空；坏行告警跳过，不静默）。
+ *  v1.8.0 Q29：改流式逐行读（readline）——旧 readFileSync(p,'utf-8') 整文件成串，
+ *  链文件超 Node 512MB 单串上限时验链/续链全炸（本机 539MB 实锤）。 */
+export async function loadBaselineChain(dataDir?: string): Promise<BaselineSnapshot[]> {
   const p = resolveBaselineChainPath(dataDir);
   if (!existsSync(p)) return [];
   const out: BaselineSnapshot[] = [];
   let lineNo = 0;
-  for (const line of readFileSync(p, 'utf-8').split('\n')) {
+  const rl = createInterface({ input: createReadStream(p, 'utf-8'), crlfDelay: Infinity });
+  for await (const line of rl) {
     const trimmed = line.trim();
     if (trimmed === '') continue;
     lineNo++;
@@ -446,10 +465,10 @@ export function loadBaselineChain(dataDir?: string): BaselineSnapshot[] {
  * id 内容寻址：`bs-<sha256(prevId|stateHash|kind|at|createdAt)[:16]>`——同前驱同状态
  * 同时刻必然同 id（可复算），不同时刻/不同前驱/不同状态必然不同 id（可寻址）。
  */
-export function createBaselineSnapshot(
+export async function createBaselineSnapshot(
   trigger: CapabilityChangeEventInput,
   opts: CreateBaselineSnapshotOptions = {},
-): BaselineSnapshot {
+): Promise<BaselineSnapshot> {
   // 快照生成时刻缺省 = 变更事件时刻（事件驱动——快照在能力变更当刻打点）；
   // 未给事件时刻时退回真实时间。
   const now = opts.now ?? (() => trigger.at ?? new Date().toISOString());
@@ -457,7 +476,7 @@ export function createBaselineSnapshot(
   const at = trigger.at ?? createdAt;
   const fullTrigger: CapabilityChangeEvent = { ...trigger, at };
 
-  const chain = opts.chain ?? loadBaselineChain(opts.dataDir);
+  const chain = opts.chain ?? (await loadBaselineChain(opts.dataDir));
   const prevId = chain.length > 0 ? chain[chain.length - 1]!.id : null;
 
   const state = collectFourLayerState({ ...opts, now });
@@ -625,7 +644,7 @@ export interface BaselineRestoreOutcome {
 }
 
 /** 恢复执行器（注入点——生产接既有 snapshot/restore，测试可注入探针） */
-export type BaselineRestorer = (plan: BaselineRestorePlan) => BaselineRestoreOutcome;
+export type BaselineRestorer = (plan: BaselineRestorePlan) => Promise<BaselineRestoreOutcome> | BaselineRestoreOutcome;
 
 /** 判定模式恢复器（默认兜底）：只回传计划，不做副作用——恢复动作交注入方执行 */
 export const advisoryBaselineRestorer: BaselineRestorer = (plan) => ({
@@ -645,7 +664,7 @@ export const advisoryBaselineRestorer: BaselineRestorer = (plan) => ({
  * 任一层失败不抛（如实记入 notes，供 decision-log 举证），使留痕总能落。
  */
 export function createCoreSnapshotRestorer(projectDir: string, dataDir?: string): BaselineRestorer {
-  return (plan) => {
+  return async (plan) => {
     const restored: BaselineLayer[] = [];
     const skipped: BaselineLayer[] = [];
     const notes: string[] = [];
@@ -666,10 +685,10 @@ export function createCoreSnapshotRestorer(projectDir: string, dataDir?: string)
         }
       } else if (d.layer === 'memory') {
         try {
-          const recon = reconcileMemoryAnchors(plan.snapshotId, dataDir);
+          const recon = await reconcileMemoryAnchors(plan.snapshotId, dataDir);
           restored.push(d.layer);
           notes.push(
-            `memory：锚点核对 matched=${recon.matched.length} / drifted=${recon.drifted.length} / missing=${recon.missing.length}`,
+            `memory：锚点核对 ${recon.matched}（聚合口径）`,
           );
         } catch (err) {
           skipped.push(d.layer);
@@ -745,7 +764,7 @@ export function buildRestorePlan(snapshot: BaselineSnapshot): BaselineRestorePla
       {
         layer: 'memory',
         mechanism: 'memory-store',
-        target: `${snapshot.state.memoryAnchors.length} 个事实锚点`,
+        target: `${snapshot.state.memoryAnchors.count} 个事实锚点（聚合哈希）`,
         note: 'memory 事实锚点核对（值落点复用 memory-store 既有 per-fact 文件）',
       },
       {
@@ -765,11 +784,11 @@ export function buildRestorePlan(snapshot: BaselineSnapshot): BaselineRestorePla
  * 回滚动作本身落 decision-log（kind=EVOLUTION / moment=EVOLVE）——**先恢复、后留痕**，
  * 留痕失败不阻断（writer 返回 null 时如实暴露）。
  */
-export function rollbackToBaseline(
+export async function rollbackToBaseline(
   idOrSnapshot: string | BaselineSnapshot,
   opts: RollbackToBaselineOptions = {},
-): BaselineRollbackRecord {
-  const chain = opts.chain ?? loadBaselineChain(opts.dataDir);
+): Promise<BaselineRollbackRecord> {
+  const chain = opts.chain ?? (await loadBaselineChain(opts.dataDir));
   const snapshot = typeof idOrSnapshot === 'string' ? getBaselineById(chain, idOrSnapshot) : idOrSnapshot;
 
   const integ = verifySnapshotIntegrity(snapshot);
@@ -779,7 +798,7 @@ export function rollbackToBaseline(
 
   const plan = buildRestorePlan(snapshot);
   const restorer = opts.restorer ?? (opts.projectDir ? createCoreSnapshotRestorer(opts.projectDir, opts.dataDir) : advisoryBaselineRestorer);
-  const outcome = restorer(plan);
+  const outcome = await Promise.resolve(restorer(plan));
 
   const writer = opts.writer ?? createCoreDecisionWriter(opts.dataDir !== undefined ? { dataDir: opts.dataDir } : {});
   const rolledBackAt = (opts.now ?? (() => new Date().toISOString()))();
@@ -798,7 +817,7 @@ export function rollbackToBaseline(
       `prevId=${String(snapshot.prevId)}`,
       `prompt=${snapshot.state.prompt.version}`,
       `skill=${snapshot.state.skill.version}`,
-      `memoryAnchors=${snapshot.state.memoryAnchors.length}`,
+      `memoryAnchors=${snapshot.state.memoryAnchors.count}`,
       `weightsRef=${String(snapshot.state.weights.ref)}`,
       `actor=${actor}`,
     ],
@@ -858,7 +877,7 @@ export function citeBaseline(
     stateSummary: {
       promptVersion: snapshot.state.prompt.version,
       skillVersion: snapshot.state.skill.version,
-      memoryAnchorCount: snapshot.state.memoryAnchors.length,
+      memoryAnchorCount: snapshot.state.memoryAnchors.count,
       weightsRef: snapshot.state.weights.ref,
       repoSnapshotSha: snapshot.state.repoSnapshotSha,
     },
@@ -886,26 +905,29 @@ export interface MemoryAnchorReconcile {
  *   · key 不在当前记忆 ⇒ missing。
  * 只读 memory-store，不改数据。
  */
-export function reconcileMemoryAnchors(snapshotId: string, dataDir?: string): MemoryAnchorReconcile {
-  const chain = loadBaselineChain(dataDir);
+export async function reconcileMemoryAnchors(snapshotId: string, dataDir?: string): Promise<MemoryAnchorReconcile> {
+  const chain = await loadBaselineChain(dataDir);
   const snapshot = getBaselineById(chain, snapshotId);
   const current = new Map(
     createMemoryStore(resolveDataDir(dataDir))
       .list(undefined, { allScopes: true })
       .map((f) => [f.key, f] as const),
   );
-  const matched: string[] = [];
-  const drifted: string[] = [];
-  const missing: string[] = [];
-  for (const a of snapshot.state.memoryAnchors) {
-    const f = current.get(a.key);
-    if (!f) {
-      missing.push(a.key);
-    } else if (f.id === a.factId && sha256Hex(f.value, 16) === a.hash) {
-      matched.push(a.key);
-    } else {
-      drifted.push(a.key);
-    }
+  // v1.8.0 Q29：快照侧锚点为聚合态（count+anchorsHash）——明细比对改为
+  // 当前态重算聚合哈希与快照值比对：一致 = 全部 matched；不一致 = 漂移（明细
+  // 需当刻重采集，与快照聚合化设计一致——不复制 3 万条明细进每条链行）。
+  const curFacts = [...current.values()].map((f) => {
+    const anchor: MemoryAnchor = { key: f.key, factId: f.id, updatedAt: f.updatedAt, hash: sha256Hex(f.value, 16) };
+    if (f.scope !== undefined) anchor.scope = f.scope;
+    return anchor;
+  }).sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  const h = createHash('sha256');
+  for (const a of curFacts) {
+    h.update(`${a.key}|${a.factId}|${a.updatedAt}|${a.hash}${a.scope !== undefined ? '|' + a.scope : ''}\n`);
   }
+  const curHash = h.digest('hex');
+  const matched = curHash === snapshot.state.memoryAnchors.anchorsHash ? ['<aggregate:all-match>'] : [];
+  const drifted = curHash === snapshot.state.memoryAnchors.anchorsHash ? [] : ['<aggregate:hash-mismatch>'];
+  const missing: string[] = [];
   return { matched, drifted, missing };
 }
