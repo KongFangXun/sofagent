@@ -102,7 +102,10 @@ export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
   //    驱动语义依赖累计；回落由 markResolved 承担：进化成功即清零重数）。
   //    R2（F6 后半修正）：成本门阻断**不记账**——预算决策不是失败，记账会使
   //    「预算耗尽的仓库」聚类计数单调涨（永远不会触发真实进化的自我放大）。
-  if (!quotaVerdict || quotaVerdict.action !== 'hard') {
+  // R3 终审修正：成本门 block 时已在上方 gate.allowed=false 提前 return——
+  // 到达此处 = 未被成本门阻断（或无 quota 输入），直接记账。原条件
+  // 'action !== hard'（枚举无 hard 值）恒真，是死条件已删。
+  {
     const record: FailureRecord = {
       timestamp: new Date().toISOString(),
       skillId: input.skillId,

@@ -194,17 +194,30 @@ export async function mergeFederationAsync(query: string): Promise<void> {
       // v1.8.0（F7 独立 code review）：联邦结果落盘缓存——此前仅 stderr 打印即弃，
       // MCP stdio 协议下 stderr 不进客户端输出面，用户对联邦能力零感知；且不落盘
       // 意味着每次查询重新全量拉取。落盘语义：data/knowledge/federation-cache.jsonl
-      // （追加式留痕，含 trust/sensitivity 元数据），read_entity 可经 fallback 读到，
-      // 下次 search_knowledge 合并展示。写入失败仅降级（联邦是增强，不阻断本地）。
+      // （追加式留痕，含 trust/sensitivity 元数据）；消费方 = searchKnowledge
+      // 读取缓存行合并展示（[federation] 标注，见其尾部 R2 段）。写入失败仅降级。
       try {
         const fedCacheDir = join(getDataDir(), 'knowledge');
         mkdirSync(fedCacheDir, { recursive: true });
+        const fedCachePath = join(fedCacheDir, 'federation-cache.jsonl');
         const cacheLine = JSON.stringify({
           cachedAt: new Date().toISOString(),
           query,
           entries: protectedRemote,
         }) + '\n';
-        writeFileSync(join(fedCacheDir, 'federation-cache.jsonl'), cacheLine, { flag: 'a' });
+        // R3 终审（P2-3）：写侧上限——读侧消费窗口只有最近 50 行，无界追加
+        // 会使文件单调涨（R1→R2 只修了读侧）。超过 500 行（读窗口 10 倍）时
+        // 滚动截断保留最近 250 行——追加式语义大头保留，体积有界。
+        try {
+          const existing = readFileSync(fedCachePath, 'utf-8');
+          const lineCount = existing.split('\n').filter(Boolean).length;
+          if (lineCount >= 500) {
+            const kept = existing.split('\n').filter(Boolean).slice(-250).join('\n');
+            writeFileSync(fedCachePath, kept + '\n' + cacheLine, 'utf-8');
+            return; // 截断写已含本行，跳过下方追加
+          }
+        } catch { /* 首次写入或读失败——正常追加 */ }
+        writeFileSync(fedCachePath, cacheLine, { flag: 'a' });
       } catch {
         // 缓存写入失败——联邦增强降级，本地结果不受影响
       }
