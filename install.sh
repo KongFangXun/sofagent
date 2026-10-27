@@ -736,11 +736,20 @@ export INSTALL_HOOK_STATUS
 # 门槛改确定性路径判定（不依赖 PATH 时序——Step 6.5 跑在 Step 8.5 symlink 之前，
 # command -v sofagent 首装时仍为假，不得用）：
 #   ① install.sh 自己产出的确定性 router 路径；
-#   ② 本地 audit dist 直跑（node .../dist/index.js --install-hook，不经 PATH）。
-if { [ -f "$SOFAGENT_HOME/bin/sofagent-router" ] || [ -f "$LOCAL_AUDIT_DIST" ] || [ -n "$(npm root -g 2>/dev/null)" ]; } && git rev-parse --git-dir >/dev/null 2>&1; then
+#   ② 本地 audit dist 直跑（node .../dist/index.js --install-hook，不经 PATH）；
+#   ③ npm 全局 @sofagent/audit dist 直探（v1.8.0 Q23：fresh clone 首装场景 ①②
+#      全不命中——router 在 Step 8.5 才建、源码态无本地 dist、npm root -g 在
+#      未装包机器输出空 ⇒ hook 分支整段跳过，commit 自动审计首装即失效。
+#      Step 3 全局安装的产物位置可确定性推导，补此直探分支不动分支体语义）。
+NPM_AUDIT_DIST="$(npm root -g 2>/dev/null)/@sofagent/audit/dist/index.js"
+if { [ -f "$SOFAGENT_HOME/bin/sofagent-router" ] || [ -f "$LOCAL_AUDIT_DIST" ] || [ -f "$NPM_AUDIT_DIST" ] || [ -n "$(npm root -g 2>/dev/null)" ]; } && git rev-parse --git-dir >/dev/null 2>&1; then
   info "Step 6.5 · 安装 git commit-msg + post-commit hook..."
   if [ -f "$SOFAGENT_HOME/bin/sofagent-router" ] && node "$SOFAGENT_HOME/bin/sofagent-router" audit --install-hook 2>/dev/null; then
     ok "  git commit-msg + post-commit hook 已安装"
+    INSTALL_HOOK_STATUS="ok"; export INSTALL_HOOK_STATUS
+  elif [ -f "$NPM_AUDIT_DIST" ] && node "$NPM_AUDIT_DIST" --install-hook 2>/dev/null; then
+    # npm 全局 dist 直跑（v1.8.0 Q23：fresh clone 首装主路径——Step 3 装好的包在此接上 hook）
+    ok "  git commit-msg + post-commit hook 已安装（npm 全局 dist 直装）"
     INSTALL_HOOK_STATUS="ok"; export INSTALL_HOOK_STATUS
   elif [ -f "$LOCAL_AUDIT_DIST" ] && node "$LOCAL_AUDIT_DIST" --install-hook 2>/dev/null; then
     # 本地 dist 直跑（不经 PATH）：registry 未发布本版时仍可装 hook
