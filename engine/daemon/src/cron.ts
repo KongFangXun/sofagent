@@ -352,10 +352,11 @@ export function ensureDefaultInspectorsConfig(projectDir: string): boolean {
 
 /** 从 watch.yml 读取 cron 配置 */
 export function loadCronConfig(projectDir: string): CronJob[] {
-  // R2 独立 review（cron F47 同款断链）：cron: 段此前只读项目级 watch.yml——
-  // install.sh 首装把缺省 cron 任务写进全局 $SOFAGENT_HOME/watch.yml，项目目录
-  // 无 watch.yml 时静默不调度。补共享 fallback（项目级 → 全局，复用
-  // resolveWatchYmlPaths SSOT——与 inspectors/dream-cycle/train-archive 三段同源）。
+  // R2/R4 review：cron: 段此前只读项目级 watch.yml。注意（R4 核实）：install.sh
+  // **不写** cron 段——全局 fallback 的动机不是首装模板（F47 场景不适用于此），
+  // 而是与 inspectors/dream-cycle/train-archive 三段的读取口径对齐：用户手工把
+  // cron 任务维护在全局 watch.yml 时，项目级无 watch.yml 的场景此前静默不调度。
+  // fallback 语义保留（resolveWatchYmlPaths SSOT 三段同源），动机宣称修正。
   const [projectYml, globalYml] = resolveWatchYmlPaths(projectDir);
   let raw: WatchConfig | null = null;
   for (const ymlPath of [projectYml, globalYml]) {

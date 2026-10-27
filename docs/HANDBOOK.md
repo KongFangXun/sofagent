@@ -64,7 +64,7 @@
 **进场——把判断写成文件：**
 
 - **梳理工作流、算清价值**：FDE 五要素深挖 + 三问判定，把每个岗位环节摸清，识别可自动化环节、算清每个 AI 节点值多少钱。
-- **🧩 FDE 六引擎工作台**（v1.4.2）：fde_interview（访谈结构化）/ fde_classify（三问判定）/ fde_quantify（量化+ROI）/ fde_derive（本体推导）/ fde_distill（三层沉淀）/ fde_deploy（组装部署）——FDE 方法论从文档变成可执行模块（MCP tool），产物落 `data/fde/` 带独立审计留痕；IM 桥远程指挥（dsh-im）让 FDE 在无头设备上也能干活。
+- **🧩 FDE 六引擎工作台**（v1.4.2）：fde_interview（访谈结构化）/ fde_classify（三问判定）/ fde_quantify（量化+ROI）/ fde_derive（本体推导）/ fde_distill（三层沉淀）/ fde_deploy（组装部署）+ fde_compose——FDE 方法论从文档变成可执行模块（MCP tool），产物落 `data/fde/` 带独立审计留痕；IM 桥远程指挥（dsh-im）让 FDE 在无头设备上也能干活。
 - **部署 AI 节点、冻结判断**：三层交付物（文档层 + Skill 层 + 运行层），每个节点带「做好标准（merge_criteria）· 谁拍板（approver）」，装进你已有的 AI 工具，从"你干活"变"你派活"。
 
 **离场——按文件执行与审计：**
@@ -494,9 +494,12 @@ jobs:
 
 | 产品线 | 是什么 | 从哪进 | 前置要求 |
 |---|---|---|---|
-| **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor` → `fde_interview`（五要素）→ `train_submit`；CLI：`sofagent orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`；（详→注-1） | GPU 环境（CUDA/显存/框架）——`bash tools/train/train-env-init.sh` 一键装；基座模型手动放置或推理服务拉取；反作弊双防线随 install 默认落盘 |
-| **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行模块：访谈→三问→量化 ROI→本体推导→三层沉淀→组装部署 | MCP：`fde_interview`（先跑——五要素采集，`prompts_only: true` 拿访谈话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`；产物落 `data/fde/<企业>/` | 无环境硬依赖（纯规则引擎——LLM 可选辅助）；企业标识必填（`enterprise_id`） |
+| **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor` → `fde_interview`（五要素）→ `train_submit`；CLI：`sofagent orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`；（详→注-1） | GPU 环境（CUDA/显存/框架）——`bash tools/train/train-env-init.sh` 一键装；基座模型手动放置或推理服务拉取；（详→注-1） |
+| **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行模块：访谈→三问→量化 ROI→本体推导→三层沉淀→组装部署 | MCP：`fde_interview`（先跑，`prompts_only: true` 拿话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`（+ `fde_compose` workflow 装配辅助）；（详→注-2） | 纯规则引擎（LLM 可选）；`enterprise_id` 必填 |
 | **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent daemon start`） |
+
+> 注-1：反作弊双防线随 install 默认落盘
+> 注-2：产物落 `data/fde/<企业>/`
 
 > 注-1：监控：`train_status` / `train_list` / 失败走 `train_diagnose`
 
