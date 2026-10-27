@@ -11,7 +11,7 @@
 // ============================================================
 
 import { existsSync, readFileSync, rmSync } from 'fs';
-import { parseFrontmatter, appendDataChangeLog, checkPageNameSafety } from './knowledge-page';
+import {parseFrontmatter, appendDataChangeLog, checkPageNameSafety, getKnowledgeDir} from './knowledge-page';
 import { join } from 'path';
 import { diffDataChange,
   runDataRules,
@@ -49,10 +49,6 @@ export interface DeleteEntityResult {
 // ============================================================
 
 /** 获取知识库根目录 */
-function getKnowledgeDir(): string {
-  return join(getDataDir(), 'knowledge');
-}
-
 /** 获取数据根目录 */
 
 

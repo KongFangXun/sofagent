@@ -7,7 +7,7 @@
 // ============================================================
 
 import { existsSync, readdirSync } from 'fs';
-import { getDataDir } from '@sofagent/core';
+import { getKnowledgeDir } from './knowledge-page';
 import { join } from 'path';
 
 // ============================================================
@@ -25,17 +25,6 @@ export interface ListConceptsResult {
 }
 
 // ============================================================
-// 辅助函数
-// ============================================================
-
-/**
- * 获取 {SOFAGENT_DATA} 目录——走 core getDataDir SSOT（v1.4.2 收编）
- */
-/** knowledge 库根目录（data/knowledge） */
-function getKnowledgeDir(): string {
-  return join(getDataDir(), 'knowledge');
-}
-
 // ============================================================
 // 主函数
 // ============================================================

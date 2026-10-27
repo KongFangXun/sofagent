@@ -60,7 +60,6 @@ export interface FailurePattern {
 }
 
 /** 进程内缓存 */
-const patternCache = new Map<string, FailurePattern>();
 
 /** 获取 failure-ledger 文件路径 */
 export function resolveFailureLedgerPath(): string {
@@ -109,10 +108,8 @@ export function recordFailure(record: FailureRecord): void {
           continue;
         }
         if (prev && dupKey(prev) === incoming) {
-          // 同聚类同因——去重命中：只更新缓存不落盘
-          const key = clusterKey(record.skillId, record.failureMode);
-          const cached = patternCache.get(key);
-          if (cached) cached.lastSeen = record.timestamp;
+          // 同聚类同因——去重命中：不重复落盘（R3：原「只更新缓存」是死代码——
+          // getFailurePatterns 全量读盘从不读 patternCache，已删）
           return;
         }
       }
@@ -120,25 +117,9 @@ export function recordFailure(record: FailureRecord): void {
   } catch {
     // 查重读失败——保守照常录入（宁可重复不丢证据）
   }
-  // 1. 持久化到 JSONL
+  // 1. 持久化到 JSONL（R3：patternCache 增量维护已删——写-only 死缓存；
+  //    getFailurePatterns 每次全量读盘，markResolved 后 clearFailureCache 亦无实际作用）
   appendFileSync(ledgerPath, JSON.stringify(record) + '\n', 'utf-8');
-
-  // 2. 更新进程内缓存
-  const key = clusterKey(record.skillId, record.failureMode);
-  const existing = patternCache.get(key);
-  if (existing) {
-    existing.count++;
-    existing.lastSeen = record.timestamp;
-  } else {
-    patternCache.set(key, {
-      key,
-      skillId: record.skillId,
-      failureMode: record.failureMode,
-      count: 1,
-      lastSeen: record.timestamp,
-      sample: record,
-    });
-  }
 }
 
 /**
@@ -250,8 +231,10 @@ export function getRepeatedFailures(threshold = 3): FailurePattern[] {
 }
 
 /**
- * 清空进程内缓存（测试用）
+ * 清空进程内缓存（测试用）。
+ * R3：patternCache 已删（写-only 死缓存）——本函数保留导出签名（测试兼容），
+ * 现为 no-op；markResolved 调用点语义不变（聚类计数由文件重读得出）。
  */
 export function clearFailureCache(): void {
-  patternCache.clear();
+  /* no-op：缓存已删，读侧每次全量读盘 */
 }

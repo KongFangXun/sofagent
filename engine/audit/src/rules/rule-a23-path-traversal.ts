@@ -34,16 +34,8 @@ const SYMLINK_PATTERNS: { pattern: RegExp; name: string }[] = [
 ];
 
 /** 安全路径模式（不告警） */
-const SAFE_PATH_PATTERNS: RegExp[] = [
-  // 正常相对路径 ./src/xxx
-  /^\.\//,
-  // 正常绝对路径
-  /^\/usr\/local\/bin\//,
-  /^\/tmp\//,
-  /^\/var\/log\//,
-  /^\/opt\//,
-  /^\/home\//,
-];
+// R2 独立 review：SAFE_PATH_PATTERNS 僵尸代码已删——定义后零引用，且其
+// 「安全路径白名单」豁免语义从未实现（名实不符，误导后来者）。
 
 export function scanA23(ctx: AuditContext): RuleScan {
   let status: RuleStatus = 'PASS';

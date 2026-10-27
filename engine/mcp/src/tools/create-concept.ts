@@ -7,7 +7,7 @@
 // ============================================================
 
 import { existsSync, readFileSync, mkdirSync } from 'fs';
-import { parseFrontmatter, appendDataChangeLog, checkPageNameSafety } from './knowledge-page';
+import {parseFrontmatter, appendDataChangeLog, checkPageNameSafety, getKnowledgeDir} from './knowledge-page';
 import { join } from 'path';
 import { diffDataChange,
   runDataRules,
@@ -40,10 +40,6 @@ export interface CreateConceptResult {
 // ============================================================
 // 辅助函数
 // ============================================================
-
-function getKnowledgeDir(): string {
-  return join(getDataDir(), 'knowledge');
-}
 
 function readBeforeObject(filePath: string): Record<string, unknown> | undefined {
   if (!existsSync(filePath)) return undefined;

@@ -13,12 +13,12 @@
 //   data/scheduler/history/<id>/<ts>.json  运行历史
 // ============================================================
 
-import {
-  existsSync,
+import {existsSync,
   readFileSync,
   writeFileSync,
   mkdirSync,
   readdirSync,
+  copyFileSync,
 } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
@@ -112,7 +112,14 @@ export function loadTasks(dataBase?: string): ScheduledTask[] {
   if (!existsSync(path)) return [];
   try {
     return JSON.parse(readFileSync(path, 'utf-8')) as ScheduledTask[];
-  } catch {
+  } catch (err) {
+    // R2 独立 review：坏文件若直接返回 []，后续 create/update 触发 saveTasks
+    // 会用少量新任务**覆盖全量索引**——存量任务定义全灭。坏文件先原子备份
+    // （.corrupt-<ts>）再返回空，留恢复通道。
+    try {
+      copyFileSync(path, path + '.corrupt-' + Date.now());
+      console.error('[scheduler] tasks.json 损坏——已备份为 ' + path + '.corrupt-*，原文件将在下次 saveTasks 被替换（恢复通道见备份）');
+    } catch { /* 备份失败不阻断——但至少留痕 */ console.error('[scheduler] tasks.json 损坏且备份失败：' + (err instanceof Error ? err.message : String(err))); }
     return [];
   }
 }

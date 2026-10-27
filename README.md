@@ -11,7 +11,6 @@
 [![Version](https://img.shields.io/badge/Version-v1.7.0-16B8F3)](./CHANGELOG.md)
 ![npm](https://img.shields.io/npm/v/sofagent)
 ![npm downloads](https://img.shields.io/npm/dw/%40sofagent%2Faudit)
-[![Featured in Awesome AI Agents](https://img.shields.io/badge/Featured_in-Awesome_AI_Agents-2ea44f)](https://github.com/NipunaRanasinghe/awesome-ai-agents)
 [![Stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
 
 </div>
@@ -326,8 +325,9 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 
 ## 生态与文档索引
 
-**Featured in**（社区收录 · 12 项已收录）：
+**Featured in**（社区收录 · 13 项已收录）：
 
+[![Awesome AI Agents](https://img.shields.io/badge/Awesome_AI_Agents-featured-2ea44f)](https://github.com/NipunaRanasinghe/awesome-ai-agents)
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
 [![awesome-dsh-plugin](https://img.shields.io/badge/awesome--dsh--plugin-listed-brightgreen)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
 [![awesome-ai-agents (Jenqyang)](https://img.shields.io/badge/awesome--ai--agents-listed-brightgreen)](https://github.com/Jenqyang/Awesome-AI-Agents)

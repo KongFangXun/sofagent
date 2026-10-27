@@ -13,7 +13,6 @@
 [![Version](https://img.shields.io/badge/Version-v1.7.0-16B8F3)](./CHANGELOG.md)
 ![npm](https://img.shields.io/npm/v/sofagent)
 ![npm downloads](https://img.shields.io/npm/dw/%40sofagent%2Faudit)
-[![Featured in Awesome AI Agents](https://img.shields.io/badge/Featured_in-Awesome_AI_Agents-2ea44f)](https://github.com/NipunaRanasinghe/awesome-ai-agents)
 [![Stars](https://img.shields.io/github/stars/KongFangXun/sofagent?style=social)](https://star-history.com/#KongFangXun/sofagent&Date)
 
 </div>
@@ -141,7 +140,7 @@ What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🏠 **Stay resident after departure**—the FDE capability remains for inspection, audit, and optimization (daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs),
  7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
-- 🔍 **Zero-setup audit**—`npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
+- 🔍 **Zero-setup audit**—`npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (engine ~1.1s / CLI end-to-end 4-5s incl. routing; 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
 - 🧱 **28 audit rules + 104 MCP tools**—secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 22/28 run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs), 1 filesystem scan, 1 decision-log channel;
  log-based rules such as A7/A8 (see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist; violations are blocked on the spot (a critical-layer hit skips the rest—fail-fast);
 evidence is based on local diffs; **not fail-closed by default**—config can be tampered with and hooks skipped via `--no-verify` (bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)); quick runs 17 by default, full 28 = 17 + 11.
@@ -396,8 +395,8 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 
 > 🌏 Note: the linked docs (LIMITATIONS / ARCHITECTURE / PHILOSOPHY / WIKI / SECURITY …) are Chinese-first—English readers should rely on this README; full doc translation is tracked in issue #8.
 
-**Featured in** (community listings · 12 listed):
-
+**Featured in**（13 listings）:
+[![Awesome AI Agents](https://img.shields.io/badge/Awesome_AI_Agents-featured-2ea44f)](https://github.com/NipunaRanasinghe/awesome-ai-agents)
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
 [![awesome-dsh-plugin](https://img.shields.io/badge/awesome--dsh--plugin-listed-brightgreen)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
 [![awesome-ai-agents (Jenqyang)](https://img.shields.io/badge/awesome--ai--agents-listed-brightgreen)](https://github.com/Jenqyang/Awesome-AI-Agents)

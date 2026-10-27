@@ -9,14 +9,11 @@ import { load as yamlLoad } from 'js-yaml';
 import {sortByTrust, prepareForPrompt, getDataDir } from '@sofagent/core'
 import type { Trust, Sensitivity } from '@sofagent/core';
 import type { ToolResult } from './audit-tools';
+import { getKnowledgeDir, checkPageNameSafety } from './knowledge-page';
 
 // ============================================================
 // 辅助
 // ============================================================
-
-function getKnowledgeDir(): string {
-  return join(getDataDir(), 'knowledge');
-}
 
 // ============================================================
 // Tool: search_knowledge
@@ -236,7 +233,8 @@ export function readEntity(args: Record<string, unknown>): ToolResult | { error:
   if (!name) {
     return { error: 'Missing required argument: name' };
   }
-  if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+  const unsafe = checkPageNameSafety(name);
+  if (unsafe) {
     return { error: 'Invalid name: must not contain path separators' };
   }
   const file = join(getKnowledgeDir(), 'entities', `${name}.md`);
@@ -262,7 +260,8 @@ export function readConcept(args: Record<string, unknown>): ToolResult | { error
   if (!name) {
     return { error: 'Missing required argument: name' };
   }
-  if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+  const unsafe = checkPageNameSafety(name);
+  if (unsafe) {
     return { error: 'Invalid name: must not contain path separators' };
   }
   const file = join(getKnowledgeDir(), 'concepts', `${name}.md`);

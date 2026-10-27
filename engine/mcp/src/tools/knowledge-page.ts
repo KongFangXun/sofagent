@@ -17,6 +17,14 @@ import { getDataDir } from '@sofagent/core';
 import type { DataChange, DataAuditResult } from '@sofagent/core';
 
 /**
+ * 共享：知识库根目录解析（R2 收口——原 7 个工具文件各复制一份同定义，
+ * 改数据目录约定要改 7 处；统一导出后单点维护）。
+ */
+export function getKnowledgeDir(): string {
+  return join(getDataDir(), 'knowledge');
+}
+
+/**
  * 从 Markdown 内容中解析 frontmatter。
  * （逐字迁移自 create-entity.ts——BOM 剥离 + CRLF 归一 + yaml 解析失败返 null）
  */

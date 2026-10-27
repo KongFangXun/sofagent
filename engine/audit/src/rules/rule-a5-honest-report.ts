@@ -15,8 +15,8 @@ const PLACEHOLDER_PATTERNS = [
   /^(fix|update|wip|test|chore|doc|refactor)$/i,
   /^(fix|update|wip|test|chore|doc|refactor)\s*[:：]\s*$/i,
   /^\.$/,
-  /^temp/i,
-  /^tmp/i,
+  /^temp\b/i,
+  /^tmp\b/i,
 ];
 
 export function scanA5(ctx: AuditContext): RuleScan {

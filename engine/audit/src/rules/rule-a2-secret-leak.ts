@@ -425,8 +425,12 @@ export function scanA2(ctx: AuditContext): RuleScan {
   // 完整已知格式密钥」的窄面提示）。正负样例进规则自测 schema（fail-closed 纪律）。
   const joinDetections: string[] = [];
   for (const file of diffFiles) {
-    const addedLines: string[] = [];
+    // R2 独立 review（跨 hunk 误拼）：原实现把全文件新增行压扁成数组、按下标
+    // 相邻拼接——i 与 i+1 在 diff 里可能隔数百行/跨 hunk。压扁时遇 hunk 头（@@）
+    // 插入哨兵 null，拼接循环遇哨兵即断——只拼「同一 hunk 内真正相邻」的行。
+    const addedLines: Array<string | null> = [];
     for (const line of file.lines) {
+      if (line.startsWith('@@')) { addedLines.push(null); continue; }
       if (line.startsWith('+') && !isDiffFileHeader(line)) {
         addedLines.push(line.substring(1).replace(/[\u200B\u200C\u200D\uFEFF]/g, ''));
       }
@@ -434,6 +438,7 @@ export function scanA2(ctx: AuditContext): RuleScan {
     for (let i = 0; i + 1 < addedLines.length; i++) {
       const cur = addedLines[i]!;
       const next = addedLines[i + 1]!;
+      if (cur === null || next === null) continue; // hunk 边界哨兵——不相邻不拼
       const joined = cur + next;
       for (const { pattern, label, contextKeyword } of SECRET_PATTERNS) {
         // 只看带明确格式锚的模式（AKIA 等），跳过裸 40 位 base64 类高误报面

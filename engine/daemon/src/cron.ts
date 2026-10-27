@@ -352,11 +352,22 @@ export function ensureDefaultInspectorsConfig(projectDir: string): boolean {
 
 /** 从 watch.yml 读取 cron 配置 */
 export function loadCronConfig(projectDir: string): CronJob[] {
-  const watchYml = join(projectDir, '.sofagent', 'watch.yml');
-  if (!existsSync(watchYml)) return [];
+  // R2 独立 review（cron F47 同款断链）：cron: 段此前只读项目级 watch.yml——
+  // install.sh 首装把缺省 cron 任务写进全局 $SOFAGENT_HOME/watch.yml，项目目录
+  // 无 watch.yml 时静默不调度。补共享 fallback（项目级 → 全局，复用
+  // resolveWatchYmlPaths SSOT——与 inspectors/dream-cycle/train-archive 三段同源）。
+  const [projectYml, globalYml] = resolveWatchYmlPaths(projectDir);
+  let raw: WatchConfig | null = null;
+  for (const ymlPath of [projectYml, globalYml]) {
+    if (!existsSync(ymlPath)) continue;
+    try {
+      raw = yamlLoad(readFileSync(ymlPath, 'utf-8')) as WatchConfig | null;
+      if (raw) break;
+    } catch { /* 不可读试下一层 */ }
+  }
+  if (!raw) return [];
   try {
-    const raw = yamlLoad(readFileSync(watchYml, 'utf-8')) as WatchConfig | null;
-    const cron = raw?.cron;
+    const cron = raw.cron;
     if (!Array.isArray(cron)) return [];
     // 运行时校验：确保每条 cron 条目至少包含 schedule 和 task 字段
     return cron.filter((entry): entry is CronJob => {
