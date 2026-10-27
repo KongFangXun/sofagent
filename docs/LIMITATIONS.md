@@ -582,7 +582,7 @@ sofagent audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/tas
 | 文件 | 实测体量 | 维护风险 | 拆分去向 |
 |---|---|---|---|
 | `playbook/acceptance-test.sh` | 520,140 字符 / 4,646 行 | 单文件承载 417 场景——新增场景持续增厚；bash 无模块化，场景间复用靠函数 | 按域拆多文件 + driver 汇编——**须与发版 SOP 容量约束协同**（发版门禁引用单文件路径），排期评估 |
-| `tools/dashboard/dashboard.html` | 297,721 字符 / 2,997 行 | 单文件 HTML（check-dashboard MAX_LINES 3000 顶格附近，余量 3 行）；内联 style 194/210 逼近上限（check-dashboard 实测）——新增能力无空间 | 拆分评估已登记 [ROADMAP · 探索方向](./ROADMAP.md)（单文件形态是安装态分发前提，拆分须与分发方式协同；内联 style 类化改造同条登记，待拆分评估一并处置） |
+| `tools/dashboard/dashboard.html` | 行数以 `wc -l` 当轮实测 | 单文件 HTML（行数上限以 `tools/check/check-dashboard.sh` 的 MAX_LINES 棘轮为准、内联 style 同口径——不在此落死数；拆分评估已登记 [ROADMAP · 探索方向](./ROADMAP.md)，单文件形态是安装态分发前提，拆分须与分发方式协同） |
 | `engine/audit/src/index.ts` | 103,980 字符 / 2,062 行 | CLI 入口 + 审计主流程单文件——改动面集中，review 噪声大 | 按子命令拆模块（`src/cli/` 目录化）——低风险机械拆分，排期评估 |
 | `install.sh` | 1,791 行（v1.5.8 登记） | 安装器单文件——哈希钉定/rescue/bootstrap/平台分发多职责合一 | 本版不拆分；与上述同族登记，拆分去向排期评估 |
 
