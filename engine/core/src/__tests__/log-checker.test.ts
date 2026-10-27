@@ -30,6 +30,32 @@ describe('checkLogs + extractOperation（通过公共 API 测试）', () => {
     expect(readEntries.length).toBeGreaterThan(0);
   });
 
+  // v1.8.0（Q18）：月目录形态——生产者 task-record.sh 写 task/logs/{MONTH}/{DAY}.md，
+  // 旧扁平 readdirSync 把月目录滤掉 ⇒ A7/A8 日志证据源恒空（修复前取证：读不到）。
+  it('月目录日志 {dir}/2026-09/01.md 可被读到（A7/A8 证据源接通）', () => {
+    const monthDir = join(tempDir, '2026-09');
+    mkdirSync(monthDir, { recursive: true });
+    writeFileSync(join(monthDir, '01.md'), '## 任务日志\n\n读取文件 src/config.ts\n内容确认无误。', 'utf-8');
+    const entries = checkLogs(tempDir);
+    // 修复前：扁平 readdirSync 只见目录名 2026-09（不以 .md 结尾）⇒ entries 为空
+    expect(entries.length).toBeGreaterThan(0);
+    const readEntries = entries.filter((e) => e.operation === 'read');
+    expect(readEntries.length).toBeGreaterThan(0);
+  });
+
+  it('月目录与扁平日志并存时 mtime 排序照常（最近优先）', () => {
+    const monthDir = join(tempDir, '2026-10');
+    mkdirSync(monthDir, { recursive: true });
+    const now = Date.now();
+    writeFileSync(join(monthDir, '27.md'), '## 任务日志\n\n读取文件 src/new.ts', 'utf-8');
+    const old = new Date(now - 86400000);
+    const fs = require('fs');
+    fs.utimesSync(join(monthDir, '27.md'), old, old);
+    writeLog('## 任务日志\n\n读取文件 src/old.ts');
+    const entries = checkLogs(tempDir);
+    expect(entries.length).toBeGreaterThanOrEqual(2);
+  });
+
   it('日志含"读取"中文关键词 → 识别为 read 操作', () => {
     writeLog('## 任务日志\n\n读取了 src/index.ts 文件');
     const entries = checkLogs(tempDir);

@@ -3,10 +3,11 @@
 // v0.94：使用 pickLogReader 支持 Markdown 和 JSONL 两种格式
 // ============================================================
 
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
+import { existsSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { pickLogReader } from './log-reader';
 import { TASK_LOGS_DIR } from './data-paths';
+import { collectFilesRecursive } from './markdown-collector';
 
 export interface LogEntry {
   timestamp: Date;
@@ -39,20 +40,22 @@ export function checkLogs(logDir?: string): LogEntry[] {
     if (!dir || !existsSync(dir)) continue;
 
     try {
-      // 支持 .md 和 .jsonl 两种格式
-      const files = readdirSync(dir).filter((f) => f.endsWith('.md') || f.endsWith('.jsonl'));
+      // v1.8.0（Q18）：改递归收集——生产者 task-record.sh 写月目录
+      // task/logs/{MONTH}/{DAY}.md，旧扁平 readdirSync 把月目录名滤掉 ⇒
+      // A7/A8 的日志证据源恒空。helper 与 cost-baseline.ts 共用（消灭重复实现）。
+      const files = collectFilesRecursive(dir, ['.md', '.jsonl']);
       // 按修改时间排序，取最近的
       const sorted = files
-        .map((f) => ({ name: f, mtime: statSync(join(dir, f)).mtime }))
+        .map((f) => ({ ...f, mtime: statSync(f.fullPath).mtime }))
         .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
 
-      for (const { name } of sorted.slice(0, 10)) {
+      for (const { fullPath, name } of sorted.slice(0, 10)) {
         try {
-          const content = readFileSync(join(dir, name), 'utf-8');
+          const content = readFileSync(fullPath, 'utf-8');
           // 根据文件扩展名选择 reader
           const reader = pickLogReader(name);
           const op = reader.extractOperation(content);
-          const mtime = statSync(join(dir, name)).mtime;
+          const mtime = statSync(fullPath).mtime;
           const entry: LogEntry = { timestamp: mtime, operation: op, raw: content };
           baseWithReaders.push({ entry, fileName: name });
         } catch {

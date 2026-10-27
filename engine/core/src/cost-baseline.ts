@@ -3,8 +3,9 @@
 // v1.3.7 新增：从 task/logs 读历史 token 消耗，计算基线 + 检测异常
 // ============================================================
 
-import { existsSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { collectFilesRecursive } from './markdown-collector';
 
 export interface Baseline {
   mean: number;
@@ -33,22 +34,16 @@ function loadTaskLogs(dataDir: string): TaskLogEntry[] {
   const entries: TaskLogEntry[] = [];
 
   try {
-    const items = readdirSync(logsDir, { withFileTypes: true });
-    for (const item of items) {
-      if (item.isDirectory()) {
-        // 子目录中可能有 .md 文件
-        const subDir = join(logsDir, item.name);
-        const subItems = readdirSync(subDir, { withFileTypes: true });
-        for (const sub of subItems) {
-          if (sub.isFile() && sub.name.endsWith('.md')) {
-            const entry = parseLogFile(join(subDir, sub.name), item.name);
-            if (entry) entries.push(entry);
-          }
-        }
-      } else if (item.isFile() && item.name.endsWith('.md')) {
-        const entry = parseLogFile(join(logsDir, item.name), 'default');
-        if (entry) entries.push(entry);
-      }
+    // v1.8.0（Q18）：改公共递归 helper（与 log-checker.ts 共用 collectFilesRecursive）
+    // ——原自写两层递归属重复实现；月目录语义不变（YYYY-MM 子目录内 .md 照收）。
+    const files = collectFilesRecursive(logsDir, ['.md']);
+    for (const f of files) {
+      // 月目录形态 f.fullPath 含子目录段：目录名（taskType）从相对结构取
+      const rel = f.fullPath.slice(logsDir.length + 1);
+      const segs = rel.split('/');
+      const taskType = segs.length > 1 ? (segs[0] ?? 'default') : 'default';
+      const entry = parseLogFile(f.fullPath, taskType);
+      if (entry) entries.push(entry);
     }
   } catch {
     // 读取失败返回空

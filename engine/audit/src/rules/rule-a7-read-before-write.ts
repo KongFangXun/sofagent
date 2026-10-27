@@ -7,7 +7,7 @@
 // v1.5.0 章八：证据面升级——trace 有无对应读取工具调用优先（harness 独立
 //   事件流），logs 读取记录保留兜底（无 trace 时回落旧路径）
 // ============================================================
-import { getReadAccessMap, loadDshSessionsCached, collectTraceReadSet } from '@sofagent/core';
+import { getReadAccessMap, loadDshSessionsCached, collectTraceReadSet, resolveDataDir } from '@sofagent/core';
 import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 export function scanA7(ctx: AuditContext): RuleScan {
@@ -64,10 +64,14 @@ export function scanA7(ctx: AuditContext): RuleScan {
   // 任何 trace 命中即采信；全部未命中再走 logs 兜底（trace 缺席不降级判定）。
   // SOFAGENT_TRACE_EVIDENCE=off 显式关闭（测试隔离——真实 ~/.dsh 有
   // 936 session，A7 同步路径靠 mtime 缓存控成本，测试默认关）。
+  // v1.8.0（Q24）：缓存生效条件 = 显式 dataDir（trace-cache.ts 的缓存键依赖
+  // options.dataDir 派生 cachePath，缺省时每次全量重扫 936 session ≈ 206 秒）。
+  // 此前注释自称「靠 mtime 缓存控成本」但调用未传 dataDir——缓存整条关闭，
+  // 注释与实况相反。现传 resolveDataDir() 激活缓存（首扫后 mtime/size 命中即免解压）。
   let traceReadSet: Set<string> = new Set();
   if (process.env.SOFAGENT_TRACE_EVIDENCE !== 'off') {
     try {
-      const traces = loadDshSessionsCached({ cwdFilter: process.cwd(), limit: 20 });
+      const traces = loadDshSessionsCached({ dataDir: resolveDataDir(), cwdFilter: process.cwd(), limit: 20 });
       traceReadSet = new Set(collectTraceReadSet(traces));
       if (traceReadSet.size > 0) {
         details.push(`A7 trace 证据面：${traces.length} 个 DSH session 命中 cwd，${traceReadSet.size} 个读取路径入证。`);
