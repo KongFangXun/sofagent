@@ -121,7 +121,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 - 🤖 **部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），装进你已有的 AI 工具，从"你干活"变"你派活"
 - 📦 **判断冻结成交付物**——每个节点带「做好标准（merge_criteria）· 谁拍板（approver）」，机器可判定、跨阶段共享
 
-**判定层 · S1M**（System One Model——判断与生成分离的决策模型；**排期 v1.6.0–v1.9.0 施工、v2.0.0 宣告，尚未交付**——本版只声明身份与路线，不声称能力实装；口径锚定 [S1M-DECISION-POINTS](./FDE/S1M-DECISION-POINTS.md) 与 [v2.0.0 §一](./docs/changelog/v2.0/v2.0.0.md)。已交付落点是既有判定与举证面）：
+**判定层 · S1M**（判断与生成分离的决策模型；**v1.6.0–v1.9.0 施工·v2.0.0 宣告——阶段一/二已交付，阶段三因一致率未达阈暂缓（见 [CHANGELOG](./CHANGELOG.md)·修补位见 [ROADMAP](./docs/ROADMAP.md)）**——本版只声明路线；锚定 [S1M-DECISION-POINTS](./FDE/S1M-DECISION-POINTS.md)，已交付落点是既有判定与举证面）：
 
 - 🔎 **判定留痕**——decision-log 因果链记录每个可问责决策（谁拍板、依据什么、为何这么做），供 auto-PR 解释块与 daemon 周报消费
 - 🔗 **判定可举证**——审计历史落 HMAC 链，`--verify-chain` 可离线复算链完整性，结论能被第三方复核
@@ -129,7 +129,8 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 **治理层 · harness**（离场 · 驻留判断——「harness 治理」，按交付物 7×24 执行，进化时写回）：
 
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化（daemon 巡检需安装时显式确认，默认不装；QUICK_MODE / 非交互安装自动跳过），commit 时触发审计，人离场治理不离开
-- 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
+- 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（quick 1.1s、5 万行 diff 6.1s，见 [HANDBOOK](./docs/HANDBOOK.md)）
+
 - 🧱 **规则与安全面：28 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截；fail-fast（critical 命中后其余跳过）、默认非 fail-closed（配置可被篡改、hook 可经 `--no-verify` 跳过——绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 - 🔧 **工具与能力面：104 个 MCP tool + 证据分档**——28 条规则中 22 条基于 git diff（本地生效、零 token）、4 条 hybrid（diff + Agent 日志）、1 条 filesystem 扫描、1 条走 decision-log（清单见 [SECURITY](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）。其中 commons_invoke 为 dry-run 预检语义（返回能力元数据与调用计划，真实执行由 Agent runtime 注入 executor；见 LIMITATIONS）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
@@ -224,7 +225,8 @@ npx -y -p sofagent sofagent audit
 
 > ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent audit --init`（见下方完整安装）。
 
-拦截特定格式密钥泄漏时是这样的（真实输出；A2（编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式——sk- 形态需 ≥29 字符（主体 ≥27，厂商专属 sk-ant/sk-proj 等 ≥40），Stripe 下划线前缀 ≥24；更短/非标形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）：
+拦截特定格式密钥泄漏时是这样的（真实输出；A2（编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式——sk- 形态需 ≥29 字符（主体 ≥27，厂商专属 sk-ant/sk-proj 等 ≥40），Stripe 下划线前缀 ≥24；
+更短/非标形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）：
 
 ```text
 $ npx -y -p sofagent sofagent audit
