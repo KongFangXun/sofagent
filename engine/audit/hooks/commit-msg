@@ -327,15 +327,19 @@ fi
 AUDIT_DIFF_ARG="--cached"
 
 # 4. 正常运行审计
-# --task 传 subject（A3 越界检查用）
-# --commit-msg 传完整 message（A9 注入检查用）——两个参数都传
+# v1.8.0（Q41 首日噪音修复）：不再把 subject 伪装成 --task——subject 是「变更说明」
+# 不是「任务描述」，A3 拿它做关键词匹配对普通单文件提交必然误报 WARN（实测
+# `chore: 改动一行` + app.js → 1/1 文件"越界"）。A3 的正确输入是真实任务描述
+# （--task 显式传入或 CI 环境注入）；缺任务上下文时 A3 自身降级跳过（引擎内
+# 「未提供 --task → 跳过任务关联检查」既有分支），语义诚实且无首日噪音。
+# --commit-msg 传完整 message（A9 注入检查用）——保留
 # AUDIT_CMD 用 bash 数组——仓库路径含空格时（如 /Users/foo/my repo/）不炸
 # 空提交（--allow-empty，NO_STAGED_FILES=1）同样发起引擎调用：引擎的空 diff
 # 短路已升级为「message 类规则照常执行」（A5 空 message / A9 注入 / A19 质量
 # 只消费 commit message、不依赖 diff 内容），空提交不再是无审计盲区。
 AUDIT_STDERR="$(mktemp /tmp/sofagent-hook-stderr-XXXXXX)"
-if [ -n "$COMMIT_SUBJECT" ]; then
-  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT" --commit-msg "$COMMIT_FULL_MSG" 2>"$AUDIT_STDERR"
+if [ -n "$COMMIT_FULL_MSG" ]; then
+  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci --commit-msg "$COMMIT_FULL_MSG" 2>"$AUDIT_STDERR"
 else
   "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci 2>"$AUDIT_STDERR"
 fi

@@ -221,7 +221,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 npx -y -p sofagent sofagent audit
 ```
 
-> 💡 quick 跑 17 条默认（A1–A11 + A18–A23；其中 A3 任务范围 / A9 commit-msg 注入检测——读最近一次 commit 消息，无消息时按无输入跳过）；`--init` 的 hook 默认同样 17 条，完整 28 条需在 `.sofagent/config.yml` 开 `extendedRulesEnabled: true`——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
+> 💡 quick 跑 17 条默认（A1–A11 + A18–A23；其中 A9 commit-msg 注入检测——读最近一次 commit 消息，无消息时按无输入跳过（A3 无task跳过））；`--init` 的 hook 默认同样 17 条，完整 28 条需在 `.sofagent/config.yml` 开 `extendedRulesEnabled: true`——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
 > ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent audit --init`（见下方完整安装）。
 
