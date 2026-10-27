@@ -56,6 +56,9 @@ export interface WaveGateOptions {
   mergeFn?: (handle: WorktreeHandle, opts?: MergeGateOptions) => Promise<MergeGateResult>;
   /** 日志输出 */
   log?: (msg: string) => void;
+  /** v1.8.0：该波次原始任务总数（含执行失败未进卡关者）——allMerged 分母。
+   *  未传时回退 handles.length（兼容直接调用方；波次路径必须传 results.length） */
+  totalTasks?: number;
 }
 
 /** 判定单个卡关结果是否算「通过」 */
@@ -71,9 +74,16 @@ export function isMergeGatePass(result: MergeGateResult): boolean {
  * 跑一个并行波次的审计卡关——并发对每个 worktree 执行 runMergeGate，
  * 汇总全 PASS 合并 / 任一 FAIL 丢弃的波次决策。
  *
+ * v1.8.0 修复（波次假 PASS）：新增 totalTasks 形参——分母改用原始任务数而非
+ * 「进入卡关的任务数」。旧实现 allMerged = merged.length === handles.length，
+ * 而 handles 是调度侧已排除失败任务后的子集（parallel-scheduler 只收成功任务），
+ * 于是「一败一成」报「全 PASS：1/1」、「全败」报「全 PASS：0/0」（空数组 0===0
+ * 也满足）——失败被汇总层包装成成功。空波次（totalTasks===0）不再进卡关语义，
+ * 短路返回显式 NO-OP。
+ *
  * @param waveId 波次标识
  * @param handles 波次内全部待卡关 worktree
- * @param opts 选项（mergeFn 可注入 mock）
+ * @param opts 选项（mergeFn 可注入 mock）；totalTasks = 该波次原始任务总数
  * @returns WaveGateDecision
  */
 export async function runWaveMergeGate(
@@ -83,6 +93,20 @@ export async function runWaveMergeGate(
 ): Promise<WaveGateDecision> {
   const log = opts.log ?? (() => {});
   const mergeFn = opts.mergeFn ?? runMergeGate;
+  // v1.8.0：分母取原始任务数——未显式传入时回退 handles.length（兼容既有
+  // 直接调用方；波次路径必须传 results.length，见 parallel-scheduler 调用点）
+  const totalTasks = opts.totalTasks ?? handles.length;
+
+  // 空波次显式 NO-OP：无任务即无卡关对象，不进入「0===0 全 PASS」语义
+  if (totalTasks === 0) {
+    return {
+      waveId,
+      allMerged: false,
+      merged: [],
+      rejected: [],
+      summary: `波次 ${waveId} 空任务——无卡关对象（NO-OP）`,
+    };
+  }
 
   // 并发对每个 worktree 跑审计卡关（guard edge——并行波次统一过审计节点）
   const results = await Promise.all(
@@ -111,11 +135,13 @@ export async function runWaveMergeGate(
 
   const merged = results.filter((r) => isMergeGatePass(r.result)).map((r) => r.result);
   const rejected = results.filter((r) => !isMergeGatePass(r.result)).map((r) => r.result);
-  const allMerged = merged.length === handles.length;
+  // v1.8.0：分母 = 原始任务数（totalTasks）且必须 > 0——handles 只含进入卡关的
+  // 任务（调度侧已排除失败者），拿 handles.length 当分母会把「失败被排除」洗成全过
+  const allMerged = merged.length === totalTasks && totalTasks > 0;
 
   const summary = allMerged
-    ? `波次 ${waveId} 卡关全 PASS：${merged.length}/${handles.length} 个 worktree 已合并`
-    : `波次 ${waveId} 卡关有 FAIL：${rejected.length}/${handles.length} 个 worktree 被拒绝（已丢弃）`;
+    ? `波次 ${waveId} 卡关全 PASS：${merged.length}/${totalTasks} 个 worktree 已合并`
+    : `波次 ${waveId} 卡关有 FAIL：${rejected.length}/${totalTasks} 个被拒绝（已丢弃）${handles.length < totalTasks ? `，另有 ${totalTasks - handles.length} 个任务未进卡关（执行失败/无 worktree——计入分母）` : ''}`;
 
   return { waveId, allMerged, merged, rejected, summary };
 }

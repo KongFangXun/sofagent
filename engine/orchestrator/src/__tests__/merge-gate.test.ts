@@ -137,11 +137,66 @@ describe('runWaveMergeGate · 波次审计卡关（v1.3.1 交付 3）', () => {
     expect(wave.rejected[0]?.rejectionReason).toContain('boom');
   });
 
-  it('空波次（无 worktree）→ allMerged=true（无事可做视为通过）', async () => {
+  it('空波次（无 worktree）→ 显式 NO-OP（allMerged=false——v1.8.0 改判：0===0 不再算全过）', async () => {
     const wave = await runWaveMergeGate('wave-6', [], { repoRoot: '/tmp/repo' });
-    expect(wave.allMerged).toBe(true);
+    expect(wave.allMerged).toBe(false);
     expect(wave.merged).toHaveLength(0);
     expect(wave.rejected).toHaveLength(0);
+    expect(wave.summary).toContain('NO-OP');
+  });
+});
+
+// ============================================================
+// v1.8.0 · 波次假 PASS 修复行为锁（totalTasks 分母）
+// 旧实现：handles 是调度侧排除失败任务后的子集，allMerged=merged.length===handles.length
+// ⇒「一败一成」报「全 PASS：1/1」、「全败」报「全 PASS：0/0」——失败被包装成成功
+// ============================================================
+describe('runWaveMergeGate · totalTasks 分母（v1.8.0 波次假 PASS 修复）', () => {
+  it('一败一成（失败未进卡关）→ allMerged=false 且 summary 含 FAIL 与未进卡关数', async () => {
+    // 复现报告场景：2 任务，1 个执行失败未进卡关（handles 只剩 1 个），该个 merged
+    const wave = await runWaveMergeGate(
+      'wave-p1',
+      [{ taskId: 't2', handle: makeHandle('engineer-2') }],
+      {
+        repoRoot: '/tmp/repo',
+        totalTasks: 2, // parallel-scheduler 传 results.length
+        mergeFn: async () => gateResult('merged', { mergeCommitSha: 'sha-x', auditVerdict: 'PASS' }),
+      },
+    );
+    expect(wave.allMerged).toBe(false); // 旧实现此处为 true（1===1）
+    expect(wave.summary).toContain('FAIL');
+    expect(wave.summary).toContain('0/2'); // rejected 0 个 / 原始 2 任务（卡关内全过但分母含失败者）
+    expect(wave.summary).toContain('未进卡关');
+    expect(wave.merged).toHaveLength(1); // 成功那 1 个仍在 merged 清单（供诊断）
+  });
+
+  it('全败（0 个进卡关）→ allMerged=false（旧实现 0===0 报全 PASS）', async () => {
+    const wave = await runWaveMergeGate('wave-p2', [], {
+      repoRoot: '/tmp/repo',
+      totalTasks: 2,
+      mergeFn: async () => gateResult('merged'),
+    });
+    expect(wave.allMerged).toBe(false); // 旧实现此处为 true（0===0）
+    expect(wave.summary).toContain('FAIL');
+    expect(wave.summary).toContain('0/2');
+  });
+
+  it('全成（totalTasks=handles 数）→ allMerged=true 不回归', async () => {
+    const wave = await runWaveMergeGate(
+      'wave-p3',
+      [
+        { taskId: 't1', handle: makeHandle('engineer-1') },
+        { taskId: 't2', handle: makeHandle('engineer-2') },
+      ],
+      {
+        repoRoot: '/tmp/repo',
+        totalTasks: 2,
+        mergeFn: async (handle) => gateResult('merged', { mergeCommitSha: `sha-${handle.agentId}`, auditVerdict: 'PASS' }),
+      },
+    );
+    expect(wave.allMerged).toBe(true);
+    expect(wave.summary).toContain('全 PASS');
+    expect(wave.summary).toContain('2/2');
   });
 });
 

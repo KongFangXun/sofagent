@@ -203,11 +203,15 @@ export class ParallelScheduler {
       }
     }
     const waveId = `wave-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+    // v1.8.0（波次假 PASS 修复）：totalTasks 传原始任务数 results.length——
+    // 旧实现只把成功任务送进卡关，merge-gate 拿排除后的 handles 当分母，
+    // 「一败一成」报「全 PASS：1/1」、「全败」报「全 PASS：0/0」
     const decision = await runWaveMergeGate(waveId, waveWorktrees, {
       ...this.gateOptions,
       repoRoot: this.repoRoot,
       task: this.task || undefined,
       log: this.log,
+      totalTasks: results.length,
     });
     this.log(`🏁 parallel-scheduler: ${decision.summary}`);
 
