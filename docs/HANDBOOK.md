@@ -498,10 +498,8 @@ jobs:
 | **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行模块：访谈→三问→量化 ROI→本体推导→三层沉淀→组装部署 | MCP：`fde_interview`（先跑，`prompts_only: true` 拿话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`（+ `fde_compose` workflow 装配辅助）；（详→注-2） | 纯规则引擎（LLM 可选）；`enterprise_id` 必填 |
 | **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent daemon start`） |
 
-> 注-1：反作弊双防线随 install 默认落盘
-> 注-2：产物落 `data/fde/<企业>/`
-
-> 注-1：监控：`train_status` / `train_list` / 失败走 `train_diagnose`
+> 注-1（后训）：反作弊双防线随 install 默认落盘 · 监控 `train_status` / `train_list` / 失败走 `train_diagnose`
+> 注-2（FDE）：产物落 `data/fde/<企业>/`
 
 ### 知识怎么长出来
 
