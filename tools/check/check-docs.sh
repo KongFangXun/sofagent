@@ -838,13 +838,14 @@ echo "=== 12. AGENTS.md MCP 全量工具表与 tool-registry 一致性 ==="
 # 实现注：node 内嵌正则用 [\x60]（反引号）字符类，避开 bash 双引号内 backtick 转义地狱。
 TOOL_TABLE_CHECK=$(node -e "
 const fs = require('fs');
+const { execFileSync } = require('child_process');
 const agents = fs.readFileSync('SKILL/AGENTS.md', 'utf8');
 const section = (agents.split('## MCP 全量工具表')[1] || '').split('\n## ')[0];
 const bt = String.fromCharCode(96);
 const re = new RegExp(bt + '([a-z_]+)' + bt, 'g');
 const tableTools = new Set([...section.matchAll(re)].map(m => m[1]));
-const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
-const regTools = new Set([...regSrc.matchAll(/name:\\s*'([a-z_]+)',/g)].map(m => m[1]));
+// v1.8.0（Q26 收敛批）：registry 名单提取改调单一 extractor——六门禁独立正则收敛
+const regTools = new Set(execFileSync(process.execPath, ['tools/check/lib/mcp-tool-count.mjs', '--names'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean));
 const missInTable = [...regTools].filter(t => !tableTools.has(t)).sort();
 const extraInTable = [...tableTools].filter(t => !regTools.has(t)).sort();
 if (missInTable.length === 0 && extraInTable.length === 0) {
@@ -944,12 +945,8 @@ echo "=== 14. 平台挂载文件 MCP 工具数对账（v1.4.3 F-16 同源盲区�
 # 门禁目的：GEMINI.md / .cursor/rules/sofagent.mdc 属平台挂载文件，游离在既有数字门禁外
 # （AGENTS.md 有第 12 节对账，这两个文件此前无人查——2026-08-29 实测 61 vs 实际 76 漂移两个版本）。
 # 规则：文件中「N 个 tool」声称值必须与 tool-registry.ts 注册数一致；未找到声称 → fail（守卫不空转）。
-MCP_REG_COUNT=$(node -e "
-const fs = require('fs');
-const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
-const regTools = new Set([...regSrc.matchAll(/name:\s*'([a-z_]+)',/g)].map(m => m[1]));
-console.log(regTools.size);
-" 2>/dev/null || true)
+# v1.8.0（Q26 收敛批）：计数改调单一 extractor——六门禁独立正则收敛
+MCP_REG_COUNT=$(node tools/check/lib/mcp-tool-count.mjs 2>/dev/null || true)
 PM_CLAIMED=${PM_CLAIMED:-0}
 PLATFORM_MOUNT_FILES="GEMINI.md .cursor/rules/sofagent.mdc"
 for pmf in $PLATFORM_MOUNT_FILES; do
@@ -995,8 +992,9 @@ const path = require('path');
 //   docs/ 整体迁入 archive/ 后（定稿 §十五）路径字面量即失配、豁免静默失效，
 //   历史档案会重新进入扫描面（大批假红）。与 doc-discipline Face 4 / compact-tables 同口径。
 const EXCLUDE = [/node_modules/, /\.git/, /\.workbuddy/, /\.sofagent/, /(^|\/)changelog\//, /(^|\/)archive\//, /(^|\/)evidence\//, /^engine\//, /^FORGE\/runs\//, /commercial/];
-const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
-const regCount = new Set([...regSrc.matchAll(/name:\s*'([a-z_]+)',/g)].map(m => m[1])).size;
+// v1.8.0（Q26 收敛批）：计数改调单一 extractor——六门禁独立正则收敛
+const { execFileSync } = require('child_process');
+const regCount = Number(execFileSync(process.execPath, ['tools/check/lib/mcp-tool-count.mjs'], { encoding: 'utf8' }).trim());
 const results = [];
 function walk(dir) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -208,21 +208,27 @@ echo "════════════════════════�
 # 差集双向：清单漏工具（registry 有清单无）与清单多工具（registry 已退役/
 # 改名清单未跟）都报——单向只防漏不防多。node 失败（非空输出但含标记）判脚本错误。
 ASSERTS=$((ASSERTS + 1))
+# v1.8.0（Q26 收敛批）：registry 名单提取改调单一 extractor（--names 输出）
+# ——原内嵌 matchAll 正则与另 5 门禁各自为政，代码形态变化可同时假绿。
 MCP_DRIFT=$(node -e '
 const fs = require("fs");
+const { execFileSync } = require("child_process");
 const html = fs.readFileSync(process.argv[1], "utf8");
-const reg = fs.readFileSync(process.argv[2], "utf8");
 const m = html.match(/var MCP_TOOLS=\[([\s\S]*?)\];/);
 if (!m) { console.log("__EXTRACT_FAIL__ MCP_TOOLS 数组未找到（形态变更？）"); process.exit(0); }
 const dash = [...m[1].matchAll(/\[\x27([a-z_]+)\x27,/g)].map(x => x[1]);
-const registry = [...reg.matchAll(/name:\s*\x27([a-z_]+)\x27/g)].map(x => x[1]);
+let registry;
+try {
+  registry = execFileSync(process.execPath, [process.argv[2], "--names"], { encoding: "utf8" })
+    .trim().split("\n").filter(Boolean);
+} catch { console.log("__EXTRACT_FAIL__ extractor 调用失败"); process.exit(0); }
 const miss = registry.filter(r => !dash.includes(r));
 const extra = dash.filter(d => !registry.includes(d));
 const parts = [];
 if (miss.length) parts.push("清单缺 " + miss.length + " 个: " + miss.join(", "));
 if (extra.length) parts.push("清单多 " + extra.length + " 个: " + extra.join(", "));
 if (parts.length) console.log(parts.join(" | "));
-' "$HTML" "${REPO_ROOT}/engine/mcp/src/tool-registry.ts" 2>/dev/null)
+' "$HTML" "${REPO_ROOT}/tools/check/lib/mcp-tool-count.mjs" 2>/dev/null)
 if [[ "$MCP_DRIFT" == *"__EXTRACT_FAIL__"* ]]; then
   echo "  ❌ [⑧MCP清单对账] MCP_TOOLS 提取失败——dashboard 数组形态变更或脚本错误"
   FAILS=$((FAILS + 1))

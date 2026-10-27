@@ -1478,8 +1478,9 @@ if [[ -d "${MCP_SRC_DIR}" ]] && [[ -f "${SKILL_FILE}" ]]; then
   # v1.3.2 P0-R4 修正：tools/list 实际返回 [...TOOLS, ...getDynamicTools()]（动态工具默认空），
   #   权威计数 = tool-registry.ts 的 TOOLS 数组顶层 name（不含 resources.ts——资源不是工具，
   #   旧实现把 4 个 resource 也算进去导致 39 虚高；旧 grep 只扫 tools/*.ts 又低估为 29）。
-  # 只数 tool-registry.ts 顶层 name:（4 空格缩进开头，避免嵌套 schema 字段误计）
-  REGISTERED_COUNT=$(grep -oE "^    name: '[^']+'" "${MCP_SRC_DIR}/tool-registry.ts" 2>/dev/null | sed "s/.*name: '//;s/'//" | sort -u | wc -l | tr -d ' ')
+  # v1.8.0（Q26 收敛批）：自数正则改调单一 extractor（tools/check/lib/mcp-tool-count.mjs）
+  # ——全仓 6 门禁曾各自持独立正则数同一对象，代码形态变化可致 5 门禁同时假绿。
+  REGISTERED_COUNT=$(node "${PROJECT_ROOT}/tools/check/lib/mcp-tool-count.mjs" 2>/dev/null || echo "")
   # 从 SKILL.md 提取标题中声称的工具数
   SKILL_CLAIMED=$(grep -oE '[0-9]+ tools' "${SKILL_FILE}" | grep -oE '^[0-9]+' | head -1)
   if [[ -n "$SKILL_CLAIMED" ]] && [[ "$SKILL_CLAIMED" != "$REGISTERED_COUNT" ]]; then

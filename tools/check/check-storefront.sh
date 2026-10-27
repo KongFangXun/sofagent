@@ -48,12 +48,8 @@ echo "🔍 仓外门面对账（GitHub 元数据 × 仓库实数）"
 echo "════════════════════════════════════════════════════════════"
 
 # ── 仓内实数提取（与 check-docs §15 同源口径）──
-TOOL_COUNT=$(node -e "
-const fs = require('fs');
-const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
-const regCount = new Set([...regSrc.matchAll(/name:\s*'([a-z_]+)',/g)].map(m => m[1])).size;
-console.log(regCount);
-" 2>/dev/null || echo "")
+# v1.8.0（Q26 收敛批）：自数正则改调单一 extractor（tools/check/lib/mcp-tool-count.mjs）
+TOOL_COUNT=$(node tools/check/lib/mcp-tool-count.mjs 2>/dev/null || echo "")
 
 DSH_COUNT=0
 for d in engine/dsh-plugins/cordis-plugin-sofagent*; do

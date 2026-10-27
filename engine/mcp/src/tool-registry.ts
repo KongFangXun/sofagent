@@ -2203,3 +2203,15 @@ export const TOOLS: ToolDef[] = [
     handler: async (args) => { const re = await rulesetExport({ ...(typeof args.rulesetName === 'string' && args.rulesetName ? { rulesetName: args.rulesetName } : {}), ...(typeof args.rulesetVersion === 'string' && args.rulesetVersion ? { rulesetVersion: args.rulesetVersion } : {}), ...(typeof args.description === 'string' && args.description ? { description: args.description } : {}), ...(typeof args.dataDir === 'string' && args.dataDir ? { dataDir: args.dataDir } : {}), ...(typeof args.outDir === 'string' && args.outDir ? { outDir: args.outDir } : {}), ...(typeof args.dryRun === 'boolean' ? { dryRun: args.dryRun } : {}) }); return { ...re, isError: re.data.isError === true }; },
   },
 ];
+// ── 重名 fail-loud（v1.8.0 Q26）────────────────────────────────────────────
+// mcp-server 的 TOOLS.find(t => t.name === toolName) 恒取第一条——注册表若存在
+// 重名条目，第二条静默不可达（幽灵条目：dashboard 侧 includes 集合语义还会抹平
+// 长度差，门禁看不出）。重名是注册表数据错误：模块加载即抛（启动炸出重名清单），
+// 杜绝「第一条永远遮蔽第二条」的静默功能丧失。
+{
+  const __names = TOOLS.map((t) => t.name);
+  const __dup = __names.filter((n, i) => __names.indexOf(n) !== i);
+  if (__dup.length > 0) {
+    throw new Error(`MCP 工具注册表重名: ${[...new Set(__dup)].join(', ')}（fail-loud——重名条目后者不可达，须改名或合并）`);
+  }
+}
