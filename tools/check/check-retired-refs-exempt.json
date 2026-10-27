@@ -43,8 +43,23 @@
     },
     {
       "file": "tools/check/check-version.sh",
-      "anchor": "sofagent-",
-      "reason": "门禁自身检测锚与历史断言（版本号提取口径——含 1.5.8 前历史形态）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "v1.4.1 补漏：sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L592 · token sofagent-audit）"
+    },
+    {
+      "file": "tools/check/check-version.sh",
+      "anchor": "：探测目标从退役名 sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L877 · token sofagent-audit）"
+    },
+    {
+      "file": "tools/check/check-version.sh",
+      "anchor": "W}⏭️${NC} sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L893 · token sofagent-audit）"
+    },
+    {
+      "file": "tools/check/check-version.sh",
+      "anchor": "}未找到全局安装的 sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L894 · token sofagent-audit）"
     },
     {
       "file": "engine/core/src/cli.ts",
@@ -238,13 +253,18 @@
     },
     {
       "file": "engine/core/src/config-loader.ts",
-      "anchor": "sofagent-",
-      "reason": "config 校验/模板的历史锚（模板 config-template.ts 同批）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）（BUG-03 收窄：sign-config 六处与 --init 告警均已改单入口，anchor 仅保留给 sofagent-core doctor 历史告警文案与 ~/.sofagent-key 路径形态）"
+      "anchor": "使用默认配置。运行 sofagent-core",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L320 · token sofagent-core）"
+    },
+    {
+      "file": "engine/core/src/config-loader.ts",
+      "anchor": "回退默认配置。运行 sofagent-core",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L339 · token sofagent-core）"
     },
     {
       "file": "engine/mcp/src/tools/knowledge-tools.ts",
-      "anchor": "sofagent-",
-      "reason": "MCP 工具描述串历史锚（描述对象为引擎非 CLI 指引）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "r.write(`[sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L167 · token sofagent-mcp）"
     },
     {
       "file": "engine/audit/src/commands/init.ts",
@@ -263,8 +283,18 @@
     },
     {
       "file": "engine/dsh-plugins/cordis-plugin-sofagent/src/index.ts",
-      "anchor": "sofagent-",
-      "reason": "DSH 插件包标识（包名非 CLI——ClawHub/DSH 分发面）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "is-plugin-sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L15 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/dsh-plugins/cordis-plugin-sofagent/src/index.ts",
+      "anchor": "is-plugin-sofagent-evolve",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L16 · token sofagent-evolve）"
+    },
+    {
+      "file": "engine/dsh-plugins/cordis-plugin-sofagent/src/index.ts",
+      "anchor": "is-plugin-sofagent-daemon",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L18 · token sofagent-daemon）"
     },
     {
       "file": "engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.ts",
@@ -343,18 +373,98 @@
     },
     {
       "file": "engine/core/src/doctor.ts",
-      "anchor": "sofagent-",
-      "reason": "doctor 检测锚与形态描述（第三轮收尾）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "includes('sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L601 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/core/src/doctor.ts",
+      "anchor": "ush('行为锚点（sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L552 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/core/src/doctor.ts",
+      "anchor": "并逻辑未重跑（运行 sofagent-ontology",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L1116 · token sofagent-ontology）"
+    },
+    {
+      "file": "engine/core/src/doctor.ts",
+      "anchor": "pairHint('sofagent-ontology",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L1121 · token sofagent-ontology）"
     },
     {
       "file": "engine/audit/src/commands/init.ts",
-      "anchor": "sofagent-",
-      "reason": "init 实现注释与检测锚（第三轮收尾——横幅/解析链/检测锚三族）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "-daemon → sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L191 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "* 解析链：全局 sofagent-daemon",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L191 · token sofagent-daemon）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "n / which sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L200 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "旧候选 which sofagent-daemon",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L200 · token sofagent-daemon）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "// `sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L380 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "// （`sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L381 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "际包含审计调用逻辑（sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L607 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "// 但不调用 sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L614 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "includes(\"sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L615 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "includes('sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L660 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/audit/src/commands/init.ts",
+      "anchor": "。改前是「重新运行 sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L808 · token sofagent-audit）"
     },
     {
       "file": "engine/audit/src/index.ts",
-      "anchor": "sofagent-",
-      "reason": "引擎自检锚（第三轮收尾）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": ".log('请使用 sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L948 · token sofagent-mcp）"
+    },
+    {
+      "file": "engine/audit/src/index.ts",
+      "anchor": "('启动: npx sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L951 · token sofagent-mcp）"
+    },
+    {
+      "file": "engine/audit/src/index.ts",
+      "anchor": "\"args\": [\"sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L958 · token sofagent-mcp）"
+    },
+    {
+      "file": "engine/audit/src/index.ts",
+      "anchor": "agentId: 'sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L1567 · token sofagent-audit）"
     },
     {
       "file": "engine/think/src/think-generator.ts",
@@ -368,18 +478,23 @@
     },
     {
       "file": "engine/mcp/src/tools/acceptance.ts",
-      "anchor": "sofagent-",
-      "reason": "MCP 工具描述串（描述引擎非 CLI）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "agentId: 'sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L158 · token sofagent-mcp）"
     },
     {
       "file": "engine/hooks/sofagent-load-chain/src/handler.ts",
-      "anchor": "sofagent-",
-      "reason": "load-chain hook 的注入文本锚（历史安装态机器的 hook 内容兼容）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "name: \"sofagent-core",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L115 · token sofagent-core）"
+    },
+    {
+      "file": "engine/hooks/sofagent-load-chain/src/handler.ts",
+      "anchor": "name: \"sofagent-think",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L169 · token sofagent-think）"
     },
     {
       "file": "engine/dsh-plugins/plugin-kit/src/index.ts",
-      "anchor": "sofagent-",
-      "reason": "DSH 插件 kit 包标识（包名非 CLI）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "is-plugin-sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L349 · token sofagent-audit）"
     },
     {
       "file": "install.sh",
@@ -388,183 +503,168 @@
     },
     {
       "file": "engine/audit/src/public-api.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "is-plugin-sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L121 · token sofagent-audit）"
     },
     {
       "file": "engine/core/src/audit-dir-maintenance.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "agentId: 'sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L186 · token sofagent-audit）"
     },
     {
       "file": "engine/core/src/verify.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
-    },
-    {
-      "file": "engine/daemon/src/commands/knowledge-status.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "3. 运行 sofagent-orchestrator",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L196 · token sofagent-orchestrator）"
     },
     {
       "file": "engine/daemon/src/dream-cycle/continuous-sampler.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
-    },
-    {
-      "file": "engine/daemon/src/evolution/loop.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "engine: 'sofagent-daemon",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L553 · token sofagent-daemon）"
     },
     {
       "file": "engine/daemon/src/federation/offline-fallback.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "r.write(`[sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L34 · token sofagent-audit）"
     },
     {
       "file": "engine/daemon/src/inspectors/doctor-checker.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "egated to sofagent-core",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L18 · token sofagent-core）"
     },
     {
       "file": "engine/daemon/src/notify.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "refix = `[sofagent-daemon",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L36 · token sofagent-daemon）"
     },
     {
       "file": "engine/daemon/src/webhook/index.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
-    },
-    {
-      "file": "engine/daemon/src/write-surface-bootstrap.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "le.warn(`[sofagent-daemon",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L361 · token sofagent-daemon）"
     },
     {
       "file": "engine/dsh-plugins/cordis-plugin-sofagent-daemon/src/index.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "is-plugin-sofagent-daemon",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L10 · token sofagent-daemon）"
     },
     {
       "file": "engine/dsh-plugins/cordis-plugin-sofagent-evolve/src/index.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "is-plugin-sofagent-evolve",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L131 · token sofagent-evolve）"
     },
     {
       "file": "engine/evolve/src/evolve-integration.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "mpdir(), 'sofagent-evolve",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L104 · token sofagent-evolve）"
     },
     {
       "file": "engine/mcp/src/tools/audit-file.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "tEngine: `sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L112 · token sofagent-audit）"
     },
     {
       "file": "engine/mcp/src/tools/audit-tools.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "r.write('[sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L72 · token sofagent-mcp）"
     },
     {
       "file": "engine/mcp/src/tools/corpus-export.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "面（CLI 面 = sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L4 · token sofagent-audit）"
     },
     {
       "file": "engine/mcp/src/tools/evaluate-output.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "eval 完成 · sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L145 · token sofagent-audit）"
     },
     {
       "file": "engine/mcp/src/tools/model-register.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "agentId: 'sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L124 · token sofagent-mcp）"
     },
     {
       "file": "engine/mcp/src/tools/model-switch.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "agentId: 'sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L213 · token sofagent-mcp）"
     },
     {
       "file": "engine/mcp/src/tools/model-unregister.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "agentId: 'sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L82 · token sofagent-mcp）"
     },
     {
       "file": "engine/mcp/src/tools/permission-guard.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "r.write('[sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L103 · token sofagent-mcp）"
     },
     {
       "file": "engine/mcp/src/tools/promote-ab.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "agentId: 'sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L234 · token sofagent-mcp）"
     },
     {
       "file": "engine/mcp/src/tools/report-tools.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
-    },
-    {
-      "file": "engine/mcp/src/tools/snapshot-list.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "tEngine: `sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L117 · token sofagent-audit）"
     },
     {
       "file": "engine/mcp/src/tools/snapshot-restore.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "agentId: 'sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L162 · token sofagent-mcp）"
     },
     {
       "file": "engine/mcp/src/tools/train-budget.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "agentId: 'sofagent-mcp",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L137 · token sofagent-mcp）"
     },
     {
       "file": "engine/ontology/src/ontology-view.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "//   sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L6 · token sofagent-audit）"
     },
     {
       "file": "engine/orchestrator/src/audit-sub-agent.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "审计历史数据。运行 sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L101 · token sofagent-audit）"
     },
     {
       "file": "engine/orchestrator/src/exec/skill-snapshot.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "engine: 'sofagent-orchestrator",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L141 · token sofagent-orchestrator）"
     },
     {
       "file": "engine/orchestrator/src/hitl-handler.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "认审计回调——调用 sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L119 · token sofagent-audit）"
     },
     {
       "file": "engine/orchestrator/src/loop/graph.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "轮询 / CLI: sofagent-orchestrator",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L675 · token sofagent-orchestrator）"
     },
     {
       "file": "engine/orchestrator/src/loop/nodes.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "`   CLI: sofagent-orchestrator",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L307 · token sofagent-orchestrator）"
     },
     {
       "file": "engine/orchestrator/src/meta-harness/orchestrator.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "{ name: 'sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L83 · token sofagent-audit）"
     },
     {
       "file": "engine/orchestrator/src/ontology/import-pipeline.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "entId ?? 'sofagent-ontology",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L481 · token sofagent-ontology）"
     },
     {
       "file": "engine/think/src/think-generator.ts",
-      "anchor": "sofagent-",
-      "reason": "长尾注释/署名/包标识/描述串（v1.6.0 门禁首立批量收编——逐条属『非用户指引』形态；下批按文件逐个消化为精确豁免）（v1.6.0 零遗留复审：anchor 从通配 sofagent 收敛为 sofagent- 前缀——新单入口命令「sofagent audit」不再被误豁免）"
+      "anchor": "`- #审计结果(sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L192 · token sofagent-audit）"
+    },
+    {
+      "file": "engine/think/src/think-generator.ts",
+      "anchor": "${date} · sofagent-audit",
+      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L571 · token sofagent-audit）"
     }
   ]
 }
