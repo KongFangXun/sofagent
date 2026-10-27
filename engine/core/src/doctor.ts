@@ -139,12 +139,13 @@ export function formatVersionRepairHint(
     return `运行引擎（${version}）旧于安装标记——升级引擎：npm i -g sofagent@latest（升级后本提示消失；VERSION 文件勿手改）`;
   }
   if (shape === 'npm') {
-    // npm 形态无 install.sh：修法是升级 npm 包（或直接改该文件）。
-    // 括号里保留「无 install.sh」这句解释是刻意的——用户若看过旧提示会疑惑脚本去哪了；
-    // 但**不得出现 `bash install.sh` 这个可执行修法**（npm 机器上没有该脚本）。
+    // v1.8.0（Q9 收敛批）：npm+missing 不再教用户「手动创建 VERSION 文件」——
+    // 该文件唯一写入点是 install.sh:403，npm tarball 无 install.sh ⇒ npm 形态下
+    // 恒缺失是**设计态**而非异常；教用户造文件等于人为制造「下次 doctor 检查时
+    // VERSION ≠ 引擎版本或残留旧值」的新漂移源（本机实态即此病）。改为如实告知。
     return situation === 'mismatch'
       ? `npm 全局安装形态无 install.sh——升级到匹配版本：npm i -g sofagent@${version}（或手动更新 ${homeVersionFile}）`
-      : `npm 全局安装形态无 install.sh——该文件由安装器生成，npm 安装不产生它；手动创建 ${homeVersionFile} 并写入当前引擎版本：echo ${version} > ${homeVersionFile}`;
+      : `npm 全局安装形态无 VERSION 标记——属正常（该文件由 install.sh 生成，npm 安装不产生它）；无需处理`;
   }
   return situation === 'mismatch'
     ? `重新安装以同步版本：bash install.sh（或手动更新 ${homeVersionFile}）`
@@ -236,8 +237,24 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——本机运行的引擎落后于安装标记`);
           repairHint(formatVersionRepairHint(installShape, 'engine-outdated', homeVersionFile, VERSION));
         } else {
-          warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——可能发版后未同步`);
-          repairHint(formatVersionRepairHint(installShape, 'mismatch', homeVersionFile, VERSION));
+          // v1.8.0（Q10 自愈通道）：npm 形态 + 文件旧于引擎 → 自动重写 VERSION 为当前
+          // 引擎版本。理由：npm 形态下该文件只可能来自历史混合安装的残留（设计态恒缺失
+          // ——唯一写入点 install.sh 不在 npm tarball），引擎新于残留值时残留即过期事实，
+          // 覆写即收敛（消除永久警告且不留手改教学）；engineOlder（文件新于引擎）保留
+          // 警告不动——那是「引擎真旧」的真实信号，覆写会掩盖引擎陈旧。
+          if (installShape === 'npm') {
+            try {
+              writeFileSync(homeVersionFile, VERSION + '\n', 'utf-8');
+              warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——npm 形态残留旧值，已自动同步`);
+              info(`已自动同步 VERSION 标记 → v${VERSION}（npm 形态残留收敛，无需手动处理）`);
+            } catch (syncErr) {
+              warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——可能发版后未同步（自动同步失败：${syncErr instanceof Error ? syncErr.message : String(syncErr)}）`);
+              repairHint(formatVersionRepairHint(installShape, 'mismatch', homeVersionFile, VERSION));
+            }
+          } else {
+            warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——可能发版后未同步`);
+            repairHint(formatVersionRepairHint(installShape, 'mismatch', homeVersionFile, VERSION));
+          }
           // v1.3.9 补充升级安全性：消除企业 IT 对「升级覆盖数据」的顾虑——
           // 升级保留用户数据与已装 hooks（不覆盖 ~/.sofagent/data/ 与已装 hooks），
           // 破坏性变更见 CHANGELOG 对应版本条目。
@@ -1179,7 +1196,15 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           warn(`daemon 已停止运行（最后心跳 ${dh.lastHeartbeat ?? '无'}${dh.lastExitCode !== undefined ? `，exit ${dh.lastExitCode}` : ''}）`);
           repairHint('sofagent daemon start（按需重启守护进程）');
         } else if (dh.status === 'degraded') {
-          warn(`daemon 降级运行中（PID ${dh.pid ?? '?'}）`);
+          // v1.8.0（Q35）：degraded 不再只报一行标题——lastError/lastPush/uptime 一并
+          // 显式输出。理由：五种能力之一的「沉淀/进化」空转（如 Dream Cycle 零产出）
+          // 此前只埋在 JSON 里一行 lastError，doctor 用户零感知（误以为「它在积累」）。
+          const degradedHealth = dh as { lastError?: string; lastPush?: string | null; startTime?: string };
+          const uptimeDays = dh.startTime
+            ? Math.floor((Date.now() - new Date(dh.startTime).getTime()) / 86400000)
+            : null;
+          warn(`daemon 降级运行中（PID ${dh.pid ?? '?'}）：${degradedHealth.lastError ?? '原因未登记'}`);
+          warn(`uptime ${uptimeDays !== null ? uptimeDays + ' 天' : '?'} · lastPush ${degradedHealth.lastPush ?? '从未'}——沉淀/进化通道可能空转（degraded ≠ 运行正常）`);
           repairHint('sofagent daemon doctor（查看降级原因）');
         } else {
           ok(`daemon 运行正常（PID ${dh.pid ?? '?'}，最后心跳 ${dh.lastHeartbeat}）`);

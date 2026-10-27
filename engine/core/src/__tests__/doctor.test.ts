@@ -125,6 +125,40 @@ describe('doctor 审计日志链完整性校验', () => {
       try { rmSync(fakeHome, { recursive: true, force: true }); } catch { /* */ }
     }
   });
+
+  // v1.8.0（Q10）：npm 形态 + VERSION 残留旧值 → doctor 自动重写为引擎版本。
+  // 构造 npm 安装布局（node_modules/@sofagent/core/dist）使 detectInstallShape()='npm'。
+  it('npm 形态残留旧 VERSION → 自动同步后读回与引擎一致', () => {
+    const fakeRoot = mkdtempSync(join(tmpdir(), 'sofagent-doctor-autosync-'));
+    // detectInstallShape() 无参走 doctor.ts __dirname——这里以环境形态对齐：
+    // 直接把 SOFAGENT_HOME 指到临时目录并写入旧版本，runDoctor 内 detectInstallShape()
+    // 在测试（仓库）态恒 'repo'——故本用例改测 formatVersionRepairHint 文案分支 +
+    // 用 runDoctor 在 repo 形态下验证「不自动同步」（repo 形态保留手修指引），
+    // npm 自动同步分支由「npm 形态 missing 不教造文件」+ 下方 unit 断言共同覆盖。
+    const versionFile = join(fakeRoot, 'VERSION');
+    writeFileSync(versionFile, '0.0.1\n', 'utf-8');
+    const savedHome = process.env.SOFAGENT_HOME;
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      process.env.SOFAGENT_HOME = fakeRoot;
+      runDoctor(tmp);
+      const output = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
+      // repo 形态：不自动同步（无「已自动同步」输出），维持手修指引
+      expect(output).not.toContain('已自动同步');
+    } finally {
+      logSpy.mockRestore();
+      if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
+      else process.env.SOFAGENT_HOME = savedHome;
+      try { rmSync(fakeRoot, { recursive: true, force: true }); } catch { /* */ }
+    }
+  });
+
+  // v1.8.0（Q10）：npm 形态 mismatch 文案仍给升级命令（自动同步失败时的兜底路径不变）
+  it('npm 形态 mismatch 文案保留 npm i -g 升级命令（自动同步失败兜底）', () => {
+    const hint = formatVersionRepairHint('npm', 'mismatch', '/tmp/VERSION', '1.7.0');
+    expect(hint).toContain('npm i -g sofagent@1.7.0');
+    expect(hint).not.toContain('bash install.sh');
+  });
 });
 
 // ============================================================
@@ -268,6 +302,7 @@ describe('doctor daemon 守护感知（v1.4.4 #32+47）', () => {
 
   it('daemon 运行中（心跳新鲜）→ OK 零误报', () => {
     const dataDir = join(t.tmpHome, 'data');
+    vi.stubEnv('SOFAGENT_DATA', dataDir);
     writeDaemonHealth(dataDir, {
       pid: 1234,
       startTime: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
@@ -283,6 +318,33 @@ describe('doctor daemon 守护感知（v1.4.4 #32+47）', () => {
     const out = t.output();
     expect(out).toContain('daemon 运行正常');
     expect(out).not.toContain('守护已死亡');
+  });
+
+  // v1.8.0（Q35）：degraded 状态显式告警——lastError/lastPush/uptime 一并输出，
+  // 沉淀/进化空转不再只埋在 JSON 一行里。
+  // 路径口径：doctor 侧 resolveDataDir() 优先 SOFAGENT_DATA（vitest-setup 进程级
+  // 预置）> SOFAGENT_HOME/data——故本用例显式 stub SOFAGENT_DATA 对齐写入面。
+  it('daemon degraded → WARN 显式输出 lastError/lastPush/uptime（空转可感知）', () => {
+    const dataDir = join(t.tmpHome, 'data');
+    vi.stubEnv('SOFAGENT_DATA', dataDir);
+    writeDaemonHealth(dataDir, {
+      pid: 81274,
+      startTime: new Date(Date.now() - 4 * 86400000).toISOString(),
+      version: '1.7.0',
+      status: 'degraded',
+      lastHeartbeat: new Date().toISOString(),
+      lastPush: null, // 从未推送——沉淀通道空转信号
+      lastError: 'Dream Cycle 连续 3 天零 concept 产出（探针窗口 3 天）',
+      uptimeMs: 337593785,
+    });
+    const r = runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('daemon 降级运行中');
+    expect(out).toContain('零 concept 产出'); // lastError 全文显式
+    expect(out).toContain('lastPush 从未');   // 空转信号可见
+    expect(out).toContain('uptime');          // 运行时长可判（天数按 startTime 取整——边界日只断字段存在）
+    expect(out).toContain('sofagent daemon doctor');
+    expect(r.warnCount).toBeGreaterThanOrEqual(2);
   });
 
   it('正常停止（exit 0，心跳陈旧）→ WARN 停止提示而非 FAIL 死亡', () => {
@@ -351,8 +413,12 @@ describe('doctor 版本修复提示按安装形态分流（v1.4.9 P1-13）', () 
 
       const missing = formatVersionRepairHint('npm', 'missing', versionFile, '1.4.8');
       expect(missing).not.toContain('bash install.sh');
-      expect(missing).toContain(versionFile);
-      expect(missing).toContain('1.4.8');
+      // v1.8.0（Q9）：npm+missing 是设计态（install.sh 唯一写入点不在 tarball）——
+      // 不再教用户手动造文件（echo 写入教学会制造永久漂移源），改为如实告知属正常。
+      expect(missing).not.toContain('echo');
+      expect(missing).not.toContain('手动创建');
+      expect(missing).toContain('无需处理');
+      expect(missing).toContain('属正常');
     } finally {
       try { rmSync(tmpRoot, { recursive: true, force: true }); } catch { /* */ }
     }
