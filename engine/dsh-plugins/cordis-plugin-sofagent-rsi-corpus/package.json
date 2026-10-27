@@ -11,7 +11,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "vitest run src/index.test.ts"
+    "test": "vitest run src/index.test.ts",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "sofagent",

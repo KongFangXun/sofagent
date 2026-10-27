@@ -289,6 +289,17 @@ rm -f "$DSH_PUBLISH_FAIL"
 
 # ── 验证全部版本一致 ──────────────────────────────────────
 
+# v1.8.0（Q21 收口批）：独立版本线例外表——rsi-corpus 双包（cordis-plugin-sofagent-rsi-corpus
+# 与其依赖 @sofagent/rsi-corpus）版本线刻意与主版本解耦（0.1.x 起步，rsi 语料管道独立演进），
+# 对它们断言 ver==主版本必然红。例外口径：非 404 即过（首版发布后 registry 有值即成功）。
+INDEPENDENT_VERSION_PKGS="cordis-plugin-sofagent-rsi-corpus @sofagent/rsi-corpus"
+is_independent_version_pkg() {
+  case " $INDEPENDENT_VERSION_PKGS " in
+    *" $1 "*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 echo ""
 echo "=== 版本验证 ==="
 
@@ -297,6 +308,8 @@ echo "$LAYERS" | while IFS=: read -r _ num pkgs_str; do
     ver=$(npm view "$pkg" version 2>/dev/null || echo "NOT_FOUND")
     if [ "$ver" = "$VERSION" ]; then
       echo "  ✓ $pkg@$ver"
+    elif is_independent_version_pkg "$pkg" && [ "$ver" != "NOT_FOUND" ]; then
+      echo "  ✓ $pkg@$ver（独立版本线）"
     else
       echo "  ❌ ${pkg}@${ver}（期望 ${VERSION}）"
       echo "1" > "$VERSION_FAIL"
@@ -313,6 +326,8 @@ echo "$DSH_ORDER" | while read -r pkg; do
   ver=$(npm view "$pkg" version 2>/dev/null || echo "NOT_FOUND")
   if [ "$ver" = "$VERSION" ]; then
     echo "  ✓ $pkg@$ver"
+  elif is_independent_version_pkg "$pkg" && [ "$ver" != "NOT_FOUND" ]; then
+    echo "  ✓ $pkg@$ver（独立版本线）"
   else
     echo "  ❌ ${pkg}@${ver}（期望 ${VERSION}）"
     echo "1" > "$VERSION_FAIL"
