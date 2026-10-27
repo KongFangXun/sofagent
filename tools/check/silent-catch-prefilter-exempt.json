@@ -11,6 +11,7 @@
   "engine/core/src/env-check.ts",
   "engine/core/src/export/redactor.ts",
   "engine/core/src/export/sensitivity-classifier.ts",
+  "engine/core/src/markdown-collector.ts",
   "engine/core/src/model-client.ts",
   "engine/core/src/run-envs.ts",
   "engine/core/src/scope-names.ts",
