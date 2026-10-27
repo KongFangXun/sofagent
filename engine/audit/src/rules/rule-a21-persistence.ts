@@ -42,11 +42,20 @@ export function scanA21(ctx: AuditContext): RuleScan {
 
   interface Hit { file: string; line: string; pattern: string }
   const hits: Hit[] = [];
+  const testFileSkips: string[] = [];
 
   for (const file of diffFiles) {
     // 跳过文档和测试文件
     if (file.path.startsWith('docs/')) continue;
-    if (file.path.includes('.test.') || file.path.includes('__tests__/')) continue;
+    // v1.8.0（对齐 A20 finding-11 范式）：测试文件不再静默跳过——文件命名完全在
+    // 被审计 Agent 控制下，静默 continue 等于给「.test. 后门」开零告警通道
+    // （实测 .test. 文件塞 LaunchAgent RunAtLoad 可全绿通过）。改为跳过深检但
+    // 拆出降级 WARN 人工确认（跳过 ≠ 通过）。
+    const isTestFile = file.path.includes('.test.') || file.path.includes('__tests__/');
+    if (isTestFile) {
+      testFileSkips.push(file.path);
+      continue;
+    }
     // 跳过 changelog 和设计文档
     if (file.path.includes('changelog') || file.path.includes('CHANGELOG')) continue;
     // v1.3.6 B15 补漏：审查清单文档（顶层 playbook/）教人 grep 检查 LaunchAgents plist——
@@ -96,6 +105,16 @@ export function scanA21(ctx: AuditContext): RuleScan {
     details.push(
       `检测到 ${hits.length} 处持久化后门模式: ` +
       hits.map(h => `${h.file}: "${h.line}" (${h.pattern})`).join('; ')
+    );
+  }
+
+  // v1.8.0：测试文件降级 WARN 留痕（跳过 ≠ 通过）——对齐 A20 finding-11 范式
+  if (testFileSkips.length > 0) {
+    if (status === 'PASS') status = 'WARN';
+    details.push(
+      `测试文件跳过深检（跳过 ≠ 通过）: ${testFileSkips.slice(0, 5).join('; ')}` +
+      (testFileSkips.length > 5 ? ` 等 ${testFileSkips.length} 个` : '') +
+      `。A21 对 .test./__tests__/ 文件降级——文件命名在被审计 Agent 控制下，请人工确认无持久化后门夹带。`
     );
   }
 

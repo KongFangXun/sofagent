@@ -143,3 +143,31 @@ describe('A21 不植后门', () => {
     const result = scanA21(ctx);
     expect(result.status).toBe('FAIL');
   });
+// ============================================================
+// v1.8.0 · 测试文件降级 WARN（跳过 ≠ 通过）——对齐 A20 finding-11 范式
+// 修复前：.test. 文件静默 continue 整文件跳过判 PASS（后门零告警）
+// ============================================================
+describe('A21 测试文件降级 WARN', () => {
+  it('.test. 文件含 LaunchAgent RunAtLoad 后门 → WARN 留痕（非静默 PASS）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('src/backdoor.setup.test.ts', [
+        '+<key>RunAtLoad</key>',
+      ]),
+    ]);
+    const result = scanA21(ctx);
+    expect(result.status).toBe('WARN');
+    expect(result.details.some(d => d.includes('测试文件跳过深检') && d.includes('backdoor.setup.test.ts'))).toBe(true);
+    expect(result.details.some(d => d.includes('跳过 ≠ 通过'))).toBe(true);
+  });
+
+  it('__tests__/ 文件含 crontab 持久化 → WARN 留痕', () => {
+    const ctx = makeCtx([
+      makeDiffFile('src/__tests__/persistence.test.ts', [
+        '+echo "@reboot /usr/local/bin/evil" | crontab -',
+      ]),
+    ]);
+    const result = scanA21(ctx);
+    expect(result.status).toBe('WARN');
+    expect(result.details.some(d => d.includes('__tests__/persistence.test.ts'))).toBe(true);
+  });
+});

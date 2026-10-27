@@ -44,11 +44,19 @@ export function scanA22(ctx: AuditContext): RuleScan {
 
   interface Hit { file: string; line: string; pattern: string }
   const hits: Hit[] = [];
+  const testFileSkips: string[] = [];
 
   for (const file of diffFiles) {
     // 跳过文档和测试文件
     if (file.path.startsWith('docs/')) continue;
-    if (file.path.includes('.test.') || file.path.includes('__tests__/')) continue;
+    // v1.8.0（对齐 A20 finding-11 范式）：测试文件不再静默跳过——静默 continue 等于
+    // 给「.test. 提权」开零告警通道（实测 .test. 文件塞 sudo 全权限写 sudoers 可全绿通过）。
+    // 改为跳过深检但降级 WARN 留痕（跳过 ≠ 通过）。
+    const isTestFile = file.path.includes('.test.') || file.path.includes('__tests__/');
+    if (isTestFile) {
+      testFileSkips.push(file.path);
+      continue;
+    }
 
     const addedLines = getAddedLines(file);
     for (const line of addedLines) {
@@ -82,6 +90,16 @@ export function scanA22(ctx: AuditContext): RuleScan {
     details.push(
       `检测到 ${hits.length} 处权限提升操作: ` +
       hits.map(h => `${h.file}: "${h.line}" (${h.pattern})`).join('; ')
+    );
+  }
+
+  // v1.8.0：测试文件降级 WARN 留痕（跳过 ≠ 通过）——对齐 A20 finding-11 范式
+  if (testFileSkips.length > 0) {
+    if (status === 'PASS') status = 'WARN';
+    details.push(
+      `测试文件跳过深检（跳过 ≠ 通过）: ${testFileSkips.slice(0, 5).join('; ')}` +
+      (testFileSkips.length > 5 ? ` 等 ${testFileSkips.length} 个` : '') +
+      `。A22 对 .test./__tests__/ 文件降级——文件命名在被审计 Agent 控制下，请人工确认无提权操作夹带。`
     );
   }
 
