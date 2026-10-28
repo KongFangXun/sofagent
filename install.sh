@@ -1171,6 +1171,30 @@ ROUTERPKG_EOF
         router_src="${router_home_lib}/bin/sofagent.js"
         router_install_ok=1
         ok "  域路由已整体安装到用户态（自包含，clone 删除/无全局包均可用）：${router_home_lib}"
+        # ── 版本对账断言（P0-17 · fail-closed）──
+        # npm install 退出 0 ≠ 版本正确：registry 滞后 / 残留 lockfile 钉旧版时，
+        # 实装包可以整体解析到旧版本号。此处逐包读 node_modules 内 package.json
+        # 实测 version，与本次安装目标 $VERSION 严格比对——不等即中止安装（且
+        # 早于 VERSION 文件写入点，杜绝「VERSION 写 1.7.0 / 实装全 1.5.9」的
+        # 两张皮账本；缺陷活体实测形态即此，装完无任何告警）。
+        # 位置纪律：只在 npm install 成功分支内（失败/超时回退软链分支不适用——
+        # 该分支不产生新的实装面，旧实装面的漂移由 doctor 异源对账项兜底）。
+        local _vc_failed=0
+        local _vc_pkg_dir _vc_name _vc_actual
+        for _vc_pkg_dir in "${router_home_lib}/node_modules/@sofagent/"*/; do
+          [ -d "$_vc_pkg_dir" ] || continue  # glob 零命中的字面量兜底（绿态不触发）
+          _vc_name="$(basename "$_vc_pkg_dir")"
+          _vc_actual="$(node -e "console.log(require('${_vc_pkg_dir}package.json').version)" 2>/dev/null || echo "missing")"
+          if [ "$_vc_actual" != "${VERSION}" ]; then
+            err "  版本对账失败: @sofagent/${_vc_name} 期望 ${VERSION} / 实装 ${_vc_actual}"
+            _vc_failed=1
+          fi
+        done
+        if [ "$_vc_failed" -ne 0 ]; then
+          err "  安装中止：实装包与目标版本 ${VERSION} 不一致（可能 registry 滞后或 lockfile 钉旧版）——请检查网络后重试，或重跑 bootstrap.sh"
+          exit 1
+        fi
+        ok "  版本对账通过：router 依赖实装版本 == ${VERSION}"
       else
         if [ "$_rp_killed" -eq 1 ]; then
           warn "  域路由依赖安装超时（${_rp_wd_timeout}s）——最后输出：$(tail -2 "$_router_log" 2>/dev/null | tr '\n' ' ' | cut -c1-120)"
@@ -1967,6 +1991,22 @@ else
   echo -e "    或直接重启终端。"
   echo ""
 fi
+
+# ── PATH 多入口告警（P0-17）──
+# 收尾自检：PATH 上存在多个同名 sofagent 入口时，shell 实际执行的是「PATH 靠前
+# 的那一个」——可能是 npm 全局旧版而非本次安装入口。实测本机形态：PATH 命中
+# 3 处（node bin / ~/.sofagent/bin / ~/.local/bin）。只告警不自动删除（其余
+# 入口可能属用户自己的 npm -g 安装，删除是破坏性动作——留给用户决策）。
+{
+  _path_hits=""
+  _path_hits="$(which -a sofagent 2>/dev/null | awk '!seen[$0]++' || true)"
+  if [ "$(printf '%s\n' "$_path_hits" | grep -c .)" -gt 1 ]; then
+    warn "PATH 上检测到多个同名 sofagent 入口（shell 将执行 PATH 靠前者）："
+    printf '%s\n' "$_path_hits" | sed 's/^/    · /'
+    warn "  本次安装入口：${SOFAGENT_HOME}/bin/sofagent——若上方执行的不是它，请自行清理多余入口或调整 PATH 顺序"
+  fi
+  unset _path_hits
+}
 
 # ── BUG-62 收尾：拷贝类失败以非零退出码显形 ──
 if [ "${_SOFAGENT_INSTALL_FAILED}" -ne 0 ]; then
