@@ -32,7 +32,7 @@
     "cordis-plugin-sofagent-rollback": "1.7.0",
     "cordis-plugin-sofagent-daemon": "1.7.0",
     "cordis-plugin-sofagent-fde": "1.7.0",
-    "cordis-plugin-sofagent-rsi-corpus": "0.1.0"
+    "cordis-plugin-sofagent-rsi-corpus": "1.7.0"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

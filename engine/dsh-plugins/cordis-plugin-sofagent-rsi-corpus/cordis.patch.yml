@@ -1,4 +1,4 @@
-# sofagent cordis-plugin-sofagent-rsi-corpus bundle patch v0.1.0——注册为 DSH profile layer
+# sofagent cordis-plugin-sofagent-rsi-corpus bundle patch v1.7.0——注册为 DSH profile layer
 - insert:
     - id: sofagent-rsi-corpus
       name: 'cordis-plugin-sofagent-rsi-corpus'
