@@ -677,26 +677,26 @@ STUB_EOF
     # 并 fail-closed 退出，不静默挂死）③ 输出不再 tail -1 吞掉（保留尾部 5 行现场）。
     info "  执行: npm install -g @sofagent/audit@${VERSION}（慢网络可能需要数分钟；超过 ${SOFAGENT_INSTALL_TIMEOUT_S:-600}s 将自动中止）"
     npm install -g "@sofagent/audit@${VERSION}" > "${TMP_DIR:-/tmp}/sofagent-npm-install.log" 2>&1 &
-    local _npm_pid=$!
-    local _elapsed=0
-    local _timeout="${SOFAGENT_INSTALL_TIMEOUT_S:-600}"
-    while kill -0 "$_npm_pid" 2>/dev/null; do
+    _wd_npm_pid=$!
+    _wd_elapsed=0
+    _wd_timeout="${SOFAGENT_INSTALL_TIMEOUT_S:-600}"
+    while kill -0 "$_wd_npm_pid" 2>/dev/null; do
       sleep 10
-      _elapsed=$((_elapsed + 10))
-      if [ "$_elapsed" -ge "$_timeout" ]; then
-        kill -9 "$_npm_pid" 2>/dev/null
-        echo "  ❌ npm install 超时（${_timeout}s）——网络不通或 registry 不可达。最后输出：" >&2
+      _wd_elapsed=$((_wd_elapsed + 10))
+      if [ "$_wd_elapsed" -ge "$_wd_timeout" ]; then
+        kill -9 "$_wd_npm_pid" 2>/dev/null
+        echo "  ❌ npm install 超时（${_wd_timeout}s）——网络不通或 registry 不可达。最后输出：" >&2
         tail -5 "${TMP_DIR:-/tmp}/sofagent-npm-install.log" >&2 2>/dev/null || true
         echo "     可设 SOFAGENT_INSTALL_TIMEOUT_S=<秒> 调整超时后重试。安装中止（fail-closed，不静默降级）。" >&2
         exit 1
       fi
       # 每 60s 一行心跳，消灭静默等待
-      if [ $((_elapsed % 60)) -eq 0 ]; then
-        info "  …仍在安装（${_elapsed}s / 上限 ${_timeout}s）"
+      if [ $((_wd_elapsed % 60)) -eq 0 ]; then
+        info "  …仍在安装（${_wd_elapsed}s / 上限 ${_wd_timeout}s）"
       fi
     done
     # set -e 陷阱：裸 wait 非零会直接杀脚本（ERR trap 都来不及）——if 形态捕获
-    if wait "$_npm_pid"; then
+    if wait "$_wd_npm_pid"; then
       ok "  @sofagent/audit 已全局安装（v${VERSION}）"
     else
       # v1.5.2 修复：目标版本安装失败不再自动降级 @latest（原 fail-open 分支会把未审版本静默装进全局）
@@ -1139,19 +1139,19 @@ ROUTERPKG_EOF
       info "  安装域路由依赖到用户态（慢网络可能需要数分钟；上限 ${SOFAGENT_INSTALL_TIMEOUT_S:-600}s）"
       npm install --omit=dev --prefix "${router_home_lib}" > "$_router_log" 2>&1 &
       local _rp_pid=$!
-      local _rp_elapsed=0
-      local _rp_timeout="${SOFAGENT_INSTALL_TIMEOUT_S:-600}"
+      local _rp_wd_elapsed=0
+      local _rp_wd_timeout="${SOFAGENT_INSTALL_TIMEOUT_S:-600}"
       local _rp_killed=0
       while kill -0 "$_rp_pid" 2>/dev/null; do
         sleep 10
-        _rp_elapsed=$((_rp_elapsed + 10))
-        if [ "$_rp_elapsed" -ge "$_rp_timeout" ]; then
+        _rp_wd_elapsed=$((_rp_wd_elapsed + 10))
+        if [ "$_rp_wd_elapsed" -ge "$_rp_wd_timeout" ]; then
           kill -9 "$_rp_pid" 2>/dev/null
           _rp_killed=1
           break
         fi
-        if [ $((_rp_elapsed % 60)) -eq 0 ]; then
-          info "  …仍在安装路由依赖（${_rp_elapsed}s / 上限 ${_rp_timeout}s）"
+        if [ $((_rp_wd_elapsed % 60)) -eq 0 ]; then
+          info "  …仍在安装路由依赖（${_rp_wd_elapsed}s / 上限 ${_rp_wd_timeout}s）"
         fi
       done
       if wait "$_rp_pid" 2>/dev/null; then _rc=0; else _rc=$?; fi
@@ -1161,7 +1161,7 @@ ROUTERPKG_EOF
         ok "  域路由已整体安装到用户态（自包含，clone 删除/无全局包均可用）：${router_home_lib}"
       else
         if [ "$_rp_killed" -eq 1 ]; then
-          warn "  域路由依赖安装超时（${_rp_timeout}s）——最后输出：$(tail -2 "$_router_log" 2>/dev/null | tr '\n' ' ' | cut -c1-120)"
+          warn "  域路由依赖安装超时（${_rp_wd_timeout}s）——最后输出：$(tail -2 "$_router_log" 2>/dev/null | tr '\n' ' ' | cut -c1-120)"
         else
           warn "  域路由依赖安装失败（npm install --prefix ${router_home_lib}）——$(tail -2 "$_router_log" 2>/dev/null | tr '\n' ' ' | cut -c1-120)"
         fi
