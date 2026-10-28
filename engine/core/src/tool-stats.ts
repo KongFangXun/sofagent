@@ -1,10 +1,17 @@
 // ============================================================
 // tool-stats.ts · tool 使用率盘点（v1.7.0 章四）
 //
-// 读 {dataDir}/tool-usage.jsonl（usage-tracker 落盘），产出三视图：
-//   ① 被调用清单（去重 tool 名 + 次数 + 最近调用）
+// 读 {dataDir}/tool-usage.jsonl（usage-tracker 落盘），产出四视图：
+//   ① 被调用清单（去重 tool 名 + 次数 + 最近调用——registry 过滤后）
 //   ② 零调用清单（registry 全集 − 已调用 = 冷工具面）
-//   ③ 频次分布表（按次数降序的全量直方）
+//   ③ 频次分布表（按次数降序的全量直方——与 called 同源同过滤）
+//   ④ 外部工具清单（registry 外的遥测工具名 + 次数，升序）
+//
+// N13 修复：usage-tracker 无差别记录宿主侧工具（如 WorkBuddy 的
+// conversation_search）与历史残留名——called 视图曾直接按遥测聚合，
+// registry 外名字混入「被调用清单」致计数面污染（实测 11+94=105≠104）。
+// 现当 registry 全集可得时 called 仅保留 registry 内工具名；registry 外
+// 记录不丢弃不静默，独立呈现在 external 视图（不计入本仓盘点）。
 //
 // 消费：sofagent stats --tools（core cli）——为工具退役与加码
 // 提供数据依据（与 skill-health 使用频率同源消费）。
@@ -58,30 +65,38 @@ export interface ToolUsageStat {
   lastUsedAt: string | null;
 }
 
-/** 三视图聚合结果 */
+/** 四视图聚合结果 */
 export interface ToolStatsReport {
-  /** ① 被调用清单（按次数降序） */
+  /** ① 被调用清单（按次数降序；registry 可得时仅含 registry 内工具名） */
   called: ToolUsageStat[];
   /** ② 零调用清单（registry 全集 − 已调用；registry 不可达时为空并标注） */
   neverCalled: string[];
-  /** ③ 频次分布（全量降序——与 called 同源，独立呈现直方形态） */
+  /** ③ 频次分布（与 called 同源同过滤，降序直方形态） */
   distribution: Array<{ tool: string; count: number; bar: string }>;
-  /** 记录总数 */
+  /**
+   * ④ 外部工具清单（registry 外的遥测工具名 + 次数，按名字升序）——
+   * 宿主侧工具/历史残留/手写错名；不丢弃不静默，不计入本仓盘点。
+   * registry 不可达（软降级态）时为空（无全集可滤，原样聚合进 called）。
+   */
+  external: Array<{ tool: string; count: number }>;
+  /** 记录总数（全量——含 external 工具的记录，与 called/external 分面无关） */
   totalRecords: number;
   /** registry 可达性（R2 F5：显式信号——neverCalled 空集不再承载二义语义） */
   registryAvailable: boolean;
 }
 
 /**
- * 聚合三视图。
+ * 聚合四视图。
  * @param registryToolNames 已知 tool 全集（零调用清单 = 全集 − 已调用）；
  *                          缺省尝试动态 require tool-registry（软依赖——
- *                          core 包不静态依赖 mcp，registry 不可达时 neverCalled 置空）
+ *                          core 包不静态依赖 mcp，registry 不可达时 neverCalled
+ *                          置空、called 不过滤原样聚合、external 为空）
  */
 export function buildToolStats(registryToolNames?: string[]): ToolStatsReport {
   const records = readToolUsage();
 
-  // 聚合（tool → count + lastUsedAt）
+  // 聚合（tool → count + lastUsedAt）——全量聚合，过滤在视图层做（坏账
+  // 不丢账：external 视图需要 registry 外记录的完整次数面）
   const agg = new Map<string, ToolUsageStat>();
   for (const r of records) {
     const cur = agg.get(r.tool) ?? { tool: r.tool, count: 0, lastUsedAt: null };
@@ -90,9 +105,7 @@ export function buildToolStats(registryToolNames?: string[]): ToolStatsReport {
     agg.set(r.tool, cur);
   }
 
-  const called = [...agg.values()].sort((a, b) => b.count - a.count || a.tool.localeCompare(b.tool));
-
-  // 零调用清单：registry 全集 − 已调用
+  // registry 全集解析（显式入参 > 动态 require > 软降级 undefined）
   let all: string[] | undefined = registryToolNames;
   if (all === undefined) {
     try {
@@ -107,6 +120,30 @@ export function buildToolStats(registryToolNames?: string[]): ToolStatsReport {
       all = undefined;
     }
   }
+
+  // N13：registry 全集可得时按全集分面——called 仅保留 registry 内工具名，
+  // registry 外记录独立入 external（不丢弃不静默）；registry 不可达时
+  // （软降级态）无全集可滤，行为不变（原样聚合进 called，external 为空）。
+  let calledEntries = [...agg.values()];
+  const external: Array<{ tool: string; count: number }> = [];
+  if (all !== undefined) {
+    const registrySet = new Set(all);
+    const inRegistry: ToolUsageStat[] = [];
+    for (const e of calledEntries) {
+      if (registrySet.has(e.tool)) {
+        inRegistry.push(e);
+      } else {
+        external.push({ tool: e.tool, count: e.count });
+      }
+    }
+    calledEntries = inRegistry;
+  }
+  external.sort((a, b) => a.tool.localeCompare(b.tool));
+
+  const called = calledEntries.sort((a, b) => b.count - a.count || a.tool.localeCompare(b.tool));
+
+  // 零调用清单：registry 全集 − 已调用（agg 含外部名，但外部名不在全集内，
+  // 对 neverCalled 无影响；用 agg 判存在性与用过滤后 called 等价）
   const neverCalled = all ? all.filter((n) => !agg.has(n)).sort() : [];
   // R2（F5 修正）：显式返回 registry 可达性——registry 可达且全部工具已调用时
   // neverCalled 为空但注册表是可达的，用空集推断会误报「不可达」。
@@ -119,10 +156,10 @@ export function buildToolStats(registryToolNames?: string[]): ToolStatsReport {
     bar: maxCount > 0 ? '█'.repeat(Math.max(1, Math.round((c.count / maxCount) * 30))) : '',
   }));
 
-  return { called, neverCalled, distribution, totalRecords: records.length, registryAvailable };
+  return { called, neverCalled, distribution, external, totalRecords: records.length, registryAvailable };
 }
 
-/** 三视图渲染为终端文本（CLI 消费） */
+/** 四视图渲染为终端文本（CLI 消费） */
 export function renderToolStats(report: ToolStatsReport, registryAvailable: boolean): string {
   const lines: string[] = [];
   lines.push(`tool 使用率盘点（遥测记录 ${report.totalRecords} 条 · 源 ${resolveToolUsagePath()}）`);
@@ -160,6 +197,14 @@ export function renderToolStats(report: ToolStatsReport, registryAvailable: bool
     for (const d of report.distribution) {
       lines.push(`  ${d.tool.padEnd(32)} ${String(d.count).padStart(6)}  ${d.bar}`);
     }
+  }
+
+  // ④ 外部工具（N13）：registry 外记录不丢弃不静默——末尾一行显式呈现，
+  // 让「called + neverCalled 合计 = registry 全集」的口径自洽可核。
+  if (report.external.length > 0) {
+    const items = report.external.map((e) => `${e.tool} ×${e.count}`).join(', ');
+    lines.push('');
+    lines.push(`ⓘ registry 外工具 ${report.external.length} 个（宿主侧/历史残留——不计入本仓盘点）：${items}`);
   }
   return lines.join('\n');
 }
