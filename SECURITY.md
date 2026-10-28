@@ -95,7 +95,7 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ✅ 静态加密已接线（daemon start 路径）：`initDataEncryption()` 已接入 daemon 启动路径（交互环境引导生成密钥 + 指纹确认 + 备份确认；非交互 WARN 不 FAIL 明文兼容；无头批量部署用 `SOFAGENT_CONFIRM_BACKUP=1` env 显式确认，SOP 见 [企业部署指南 §批量部署](./docs/guides/enterprise-deploy.md)）。
   密钥就绪后审计历史主链以 `SOFAGENT-AGE-V1` 密文落盘（AES-256-GCM，密钥 `~/.sofagent/keys/` 0600 + 指纹强制备份）；既有明文历史读侧 auto-detect 可读不回填。**降级可见性**：密钥删除/损坏后新记录回明文——写入侧首条告警 + history 落 ENCRYPTION_DEGRADED 事件留痕 + --doctor 一致性检查红（初始化标记在而 data.key 缺失）。
-  附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文（见 LIMITATIONS 权威清单）。激活：交互首启确认；无头部署走 env 批量激活（[enterprise-deploy](./docs/guides/enterprise-deploy.md)）。验证：`head -1 ~/.sofagent/data/audit/history.jsonl` 见 `SOFAGENT-AGE-V1` 前缀
+  附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文（清单同上）。激活：交互首启确认；无头部署走 env 批量激活（[enterprise-deploy](./docs/guides/enterprise-deploy.md)）。验证：`head -1 ~/.sofagent/data/audit/history.jsonl` 见 `SOFAGENT-AGE-V1` 前缀
 - ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（静态加密已覆盖审计历史主链，附链目录仍为明文，见 LIMITATIONS 权威清单）；**强合规场景建议配合外部加密卷（gpg / disk encryption）覆盖附链目录**。
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
@@ -130,7 +130,7 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 
 > 🔴 **OpenClaw channel 审计结论（v1.1.8 开发前置核实）**：OpenClaw 本地回环 ws:// 明文传输、无 TLS——**第 3 层 sofagent 应用加密是唯一保密防线**。因此 federation channel 只搬运密文帧（iv‖tag‖ciphertext），绝不触碰明文 payload；即使 channel 被中间人劫持，内容仍不可读（纵深防御原则，不依赖 channel 自身安全性）。
 
-> ⚠️ **peer 注册面未接线（v1.7.0 审查校准）**：`engine/daemon/src/federation/peers.ts` 的 `registerPeer` 无生产调用方（零生产调用点），联邦查询当前恒退化为纯本地且无日志——peers 注册表在生产链路上无人写入，`withOfflineFallback` 恒走「无 peer ⇒ 纯本地」分支。
+> ⚠️ **peer 注册面未接线（v1.7.0 审查校准）**：`engine/daemon/src/federation/peers.ts` 的 `registerPeer` 无生产调用方（零生产调用点），联邦查询当前恒退化为纯本地且无日志——peers 注册表在生产链路上无人写入，`withOfflineFallback` 恒走「无 peer ⇒ 纯本地」分支。收口条目见 ROADMAP 探索方向表。
 
 ### 配对与密钥管理
 
@@ -143,7 +143,7 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 | **密钥轮换** | 24h 过渡窗口内旧 key 只解不加，过窗口销毁强制重新协商（⚠️ 能力已实现待接线：`rotateKey` / `shouldRotate` / `getDecryptionKeys` 均无生产调用方，轮换当前不会自动发生） |
 
 > ⚠️ **配对入口接线状态（v1.4.5 审查校准）**：`engine/core/src/crypto/pairing.ts` 的三条配对路径 API（`pairByCode` / `pairByToken` / `pairByFederationFile`，经 `@sofagent/core` 导出）已完整实现，但**交互式配对 CLI 入口尚未接线**（零生产调用点）。
->当前实际可用的联邦配对是 **USB 路径**——`daemon/src/usb-detect.ts`（federation.json + HMAC `.sig` sidecar 验签）与 `usb-runtime.ts`（从 U 盘 federation.json 读 AES/HMAC key），其验签逻辑为独立实现、不经过 pairing.ts。三条配对路径的交互式 CLI 接线尚未交付。
+>当前实际可用的联邦配对是 **USB 路径**——`daemon/src/usb-detect.ts`（federation.json + HMAC `.sig` sidecar 验签）与 `usb-runtime.ts`（从 U 盘 federation.json 读 AES/HMAC key），其验签逻辑为独立实现、不经过 pairing.ts。三条配对路径的交互式 CLI 接线尚未交付。收口条目见 ROADMAP 探索方向表。
 
 ### ✅ 已修复（v1.2.3）：SOFAGENT_FEDERATION_TOKEN 进程可见
 
@@ -584,20 +584,20 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 > ⚠️ 以上绕过路径均依赖 Agent 的「自觉」——这是 sofagent 架构级别的信任模型选择：审计模块是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 
-> ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）——缓解措施（CI 侧独立校验 config 完整性 / 文件权限锁及其局限）见下方「详细缓解步骤」。
-> ⚠️ **企业高安全默认**：基线规则（A1/A2/A9/A10/A11/A20-A23）强制保护不可禁用，但**非基线（A3-A8、A14-A19）可经 `rules:{x:false}` 关闭**。高安全建议显式锁定：`extendedRulesEnabled: true` + 对全部非基线规则显式置 true（禁依赖默认值）+ `chmod 400 .sofagent/config.yml`（**对同用户进程无效**，仅纵深防御辅助，
+> ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）——缓解措施见下方「详细缓解步骤」。
+> ⚠️ **企业高安全默认**：基线规则（A1/A2/A9/A10/A11/A20-A23）强制保护不可禁用，但**非基线（A3-A8、A14-A19）可经 `rules:{x:false}` 关闭**。高安全建议显式锁定：`extendedRulesEnabled: true` + 对全部非基线规则显式置 true（禁依赖默认值）+ `chmod 400 .sofagent/config.yml`（**对同用户进程无效**，纵深防御辅助，
 >见 [LIMITATIONS §三](./docs/LIMITATIONS.md)）。
 
 > ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。
 >**CI 侧 `sofagent audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。
->**例外（v1.5.5 补披露）**：上述「基线缺失即显性报错」在**三层防线中的 commit-msg 阶段为告警 + 放行本次**（首装后未建基线属正常态，不阻断提交；pre-commit 阶段为 `exit 1` 阻断）——信任锚仍只由显式命令建立，两个阶段的差异是「阻断 vs 告警」而非「校验 vs 不校验」。
+>**例外（v1.5.5 补披露）**：上述「基线缺失即显性报错」在**三层防线中的 commit-msg 阶段为告警 + 放行本次**（首装后未建基线属正常态，不阻断提交；pre-commit 阶段为 `exit 1` 阻断）——信任锚仍只由显式命令建立，两阶段差异是「阻断 vs 告警」，校验口径相同。
 
 > ⚠️ **超大 diff 的 spill 落盘面（v1.3.9 能力 · 补齐计划见 ROADMAP · 如实披露）**：单文件 diff 超 5MB 时引擎溢出到磁盘再分块读回（`engine/core/src/diff-parser.ts`）。落盘位置经 `getDataDir()` SSOT 解析链（显式 `SOFAGENT_DATA` > 环境变量 > `~/.sofagent/data/`），**恒在引擎数据目录而非被审仓库内**——v1.4.3 已修复旧实现「spill 落 CWD 会被对方仓库 commit 卷入」的跨仓泄漏面；
->目录权限 0700（spill 可能含密钥类 diff 内容）。读回上限 64MB：以内全量扫描（oversized 不置位，无审计盲区），超限截断置位并注入 WARN，落盘件保留供按需取回。**残余面**：spill 文件含明文 diff 内容（sanitize 管道不覆盖 spill 原文），强合规场景建议将 `~/.sofagent/data/spill/` 纳入加密卷覆盖范围并定期清理。
+>目录权限 0700（spill 可能含密钥类 diff 内容）。读回上限 64MB：以内全量扫描（oversized 不置位、无盲区），超限截断置位并注入 WARN，落盘件保留按需取回。**残余面**：spill 文件含明文 diff 内容（sanitize 管道不覆盖 spill 原文），强合规场景建议将 `~/.sofagent/data/spill/` 纳入加密卷覆盖范围并定期清理。
 
 > ⚠️ **Webhook SSRF——DNS 复验与残余 TOCTOU（v1.4.5 披露）**：URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped 全段拒绝）外，新增 **DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，解析到的 A/AAAA 任一落私网段仍拒绝——堵「域名公共、解析内网」的 DNS rebinding 式 SSRF。
 >**豁免面披露（v1.5.7 F38）**：`SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1` 显式设置时跳过上述 SSRF 检查（本地联调用）——豁免生效的每次推送均有 stderr 告警与通道健康留痕（audit 侧 `webhook.ts` / daemon 侧 `webhook/index.ts` 同口径），不静默放行。
->DNS 查询失败按拒绝处理（fail-closed：无法证明安全即不推送）。**残余窗口（如实声明）**：复验与实际 fetch 是两次独立解析，存在微小 TOCTOU 窗口——本防线拦「配置时刻就指向内网」的静态攻击面，动态 rebind 收敛至两次解析窗口内，属纵深防御增量而非绝对边界。
+>DNS 查询失败按拒绝处理（fail-closed：无法证明安全即不推送）。**残余窗口（如实声明）**：复验与实际 fetch 是两次独立解析，存在微小 TOCTOU 窗口——本防线拦「配置时刻就指向内网」的静态攻击面，动态 rebind 收敛至两次解析窗口内（纵深防御增量，非绝对边界）。
 
 > ⚠️ **history.jsonl 的 beforeAfter 字段脱敏（端到端验证）**：审计条目的 `actionGovernance.beforeAfter`（变更前/后值摘要，从 diff 提取、截断至 200 字符）是新增落盘面——密钥可能混入。
 >脱敏链路：`buildBeforeAfterSummary` 提取时脱敏 + `appendHistory` 落盘前经 sanitize 管道复扫（`baseSanitized` 之外的专项补面），端到端回归见 `engine/audit/src/before-after-redaction.test.ts`（构造含密钥的 beforeAfter 断言落盘无明文）。边界：脱敏是掩码非加密，密钥模式库未覆盖的自定义格式仍可能以明文入 history——与既有 sanitize 边界一致，强合规场景配合外部加密卷。
