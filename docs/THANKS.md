@@ -119,13 +119,13 @@
 - **[AutoJev-27B](https://github.com/denis-pplx/autojev)** · denis-pplx —「自主 agent 全程建成」活体样本；披露 ECE 三列
 - **[RSI-Jev](https://github.com/Shanghua-Gao/RSI-Jev)** · Shanghua Gao — RSI 循环直接造判定件；v4.0-VL 读图（自报）
 - **[AgentJev](https://github.com/malevrigns/agent-jev)** · malevrigns —「去 LM head」形态正例（置换等变判定头）
-- **[Intern-Decision](https://github.com/InternLM/Intern-Decision)**（权重集合页 `internlm/intern-decision`）· 上海 AI Lab（InternLM）— 多模态判定件：冻结视觉塔与投影层、只微调语言主干，0.8B／2B／4B，Apache-2.0；**保留 next-token head ⇒ 路线参考**（非「encoder + 判定头」同构；准入鉴别见 [v1.9.0 §五](./changelog/v1.9/v1.9.0.md)）；读数全系厂商自报、本仓未复算
+- **[Intern-Decision](https://github.com/InternLM/Intern-Decision)**（权重集合页 `internlm/intern-decision`）· 上海 AI Lab — 多模态判定件 0.8B/2B/4B；**保留 next-token head ⇒ 路线参考**（准入鉴别见 [v1.9.0 §五](./changelog/v1.9/v1.9.0.md)）
 - **[FRIDA-Decisions](https://github.com/ai-forever/FRIDA-Decisions)** · SberAI — 一次编码打包全问，序构造性无关（转述）
 - **[Permutation-Robust Decision Modeling](https://arxiv.org/abs/2610.01601)** — 候选分数不该依赖序列化顺序（架构级）
 - **[AnyJev](https://github.com/nokia-applied-research/AnyJev)** · Nokia — 读出校准免训练两件套：先验除法+旋转平均（自报）
 - **[TensorFlow.js](https://github.com/tensorflow/tfjs)** + [tfjs-models](https://github.com/tensorflow/tfjs-models) · Google — 一套 API 四后端+模型即 npm 包的十年先例
 - **[Verdict / rlcd-modernbert-151m](https://huggingface.co/heman10x/rlcd-modernbert-151m)** · Heman10x-NGU —「编码器+判定头」最早可复算建仓时点（2026-09-17）
-- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；@2026-10-13 数据端点面 **v1.6.1**（协议仍 `jevbench::v1.6` · `n_ranked` 92→**135** · `roster_count` **173** · `source_sha256` 换值；v1.6.0 端点仍在但冻结返旧值），release 面仍 v1.4.2 ⇒ 六面不同步（读数据端点，不采渲染页）
+- **[jevbench](https://github.com/fstandhartinger/jevbench)** · fstandhartinger — 判定件独立第三方榜；读数细节与六面不同步沿革见归档
 - **[AgentGovBench](https://github.com/agentic-control-plane/agentgovbench)** + **[ST-WebAgentBench](https://github.com/segev-shlomov/ST-WebAgentBench)** — 治理对照基准两件套（CuP 双轴指标）；其「Harness honesty」修订公开固化：制造证据不计分、**空审计日志不算通过**、报错场景留在分母
 - **[NIST 官方标准面](https://www.nist.gov/artificial-intelligence/ai-agent-standards-initiative)**（CAISSI 三支柱 + RFI + NCCoE 四功能域 + AI 800 系列）— agent = 非人类身份 principal；双身份令牌
 - **[Jev-Mem](https://arxiv.org/abs/2609.23986)** — System One 控制面管 agentic memory
@@ -151,7 +151,7 @@
 - **[Drex](https://github.com/nace-ai/drex-decision-models)** · Nace.AI — 开源判定件族：v1.5 9B / DLM 8B 扩散 LM，均带独立 pointer head、复用 Kev 代码；代码 Apache-2.0、**权重非通行开源**（Open RAIL-M / CC BY-NC 4.0，商用须另授权）；自报 Decision Index 0.3.1 公开面 58.08（**厂商自测、本仓未复算**）。
 - **[Sieve](https://huggingface.co/sthanika-ai/Sieve-31B)** · sthanika-ai — 判定件族 0.8B–31B、**全 Apache-2.0**：**读出＝末层隐状态 × 选项标签行 + 定温 softmax**、不生成文本，与「编码器 + 判定头」同路线；0.8B 与本仓 0.5B 同量级。自报 Decision Index 0.3 公开面：4B 50.06 / 9B-v2 53.35 / 27B 60.04 / 31B 62.52（**厂商自测、未上榜单**）。
 - **[Can Language Models Learn When to Abstain?](https://arxiv.org/abs/2610.13821)** — 弃权能力的两条实现路对照：训练模型自身 vs 另训一个答案检查组件；以「答对加分 / 答错扣分 / 允许弃权」的评分在 Qwen3-14B 上跨三训练种子与两个留出置信阈值比较 ⇒ 弃权该内建还是外挂，有可复算的实验口径（第三方论文、本仓未复算）
-- **[Open Jev](https://github.com/intikhab49/open-jev-typed-decision-engine)** · intikhab49 — 150M 编码器 + 单次前向 + 类型化问题（`noul`/`choice`/`score`）；400 例自测 ensemble 0.6965 / ECE 0.0565 对 Jev 0.7270 / 0.1440 ⇒ **校准优于 Jev 2.5×**（Jev 零样本、本件同分布 1,016 例训练），T4 半小时可训；Apache-2.0，与「编码器+判定头」同路线（**厂商自测、本仓未复算**）
+- **[Open Jev](https://github.com/intikhab49/open-jev-typed-decision-engine)** · intikhab49 — 150M 编码器+单次前向+类型化问题的同路线小件；对照读数见归档
 - **[LLM2Jev](https://github.com/Yinsongxu/LLM2Jev)** · Yinsongxu — prefill-only 读出（不逐 token 解码）把任意本地 LLM 变结构化判定件 ⇒ 非自回归路线的外部同款；Apache-2.0（自报）
 - **[vLLM-Jev](https://github.com/mode-io/vllm-jev)** · mode-io — 判定件的原生 vLLM 服务化（部署面参照）；Apache-2.0
 
@@ -159,6 +159,7 @@
 
 - **[A Field Guide to Fable](https://x.com/trq212/article/2073100352921215386)** · Thariq Shihipar — 四类未知框架；瓶颈从「能不能做」变「你能不能说清楚」
 - **[When AI builds itself](https://www.anthropic.com/institute/recursive-self-improvement)** · Anthropic — 代码生成不再是瓶颈，人工审查成新堵点
+- **[Solving Code Review at Anthropic](https://claude.dev/blog/solving-code-review-at-anthropic/)** · Anthropic — AI 写九成代码后的审查形态：多层 AI 筛选 + 人工分级 + 回滚安全网；「三轮不过换思路、只看新改动」与快照回溯/审查循环同构
 - **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化参考（现由自研 gate 验证器替代）
 - **[Satya Nadella at Microsoft Build](https://pod.wave.co/podcast/latent-space-the-ai-engineer-podcast/satya-nadella-no-priors-x-latent-space-crossover-special-at-microsoft-build)** · Satya Nadella —「Every company will have its own private eval」
 - **[Verification and Self-Improvement in Agentic AI](https://arxiv.org/abs/2610.10611)** — 一个性能分数分不清「搜得更久 / 得到更多支持 / 改了怎么提议与验证」三种改进机制；用有界验证把它拆开（第三方论文、本仓未复算）

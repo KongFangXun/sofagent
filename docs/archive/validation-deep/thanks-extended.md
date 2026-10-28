@@ -190,3 +190,9 @@
 - **[When AI builds itself](https://www.anthropic.com/institute/recursive-self-improvement)** · Anthropic — 代码生成不再是瓶颈，人工审查成为新堵点；sofagent 把审查外置到 git diff
 - **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化模块，为 v1.0.3 闭环提供参考（v1.4.8 起由自研 gate 验证器 `@sofagent/evolve` 替代，依赖已摘除）
 - **[Satya Nadella at Microsoft Build](https://pod.wave.co/podcast/latent-space-the-ai-engineer-podcast/satya-nadella-no-priors-x-latent-space-crossover-special-at-microsoft-build)** · Satya Nadella —「Every company will have its own private eval」与 FDE 交付物对应
+
+## 判定件读数细节下沉（2026-10-28 · THANKS 等量移出批）
+
+- **jevbench**：@2026-10-13 数据端点面 **v1.6.1**（协议仍 `jevbench::v1.6` · `n_ranked` 92→**135** · `roster_count` **173** · `source_sha256` 换值；v1.6.0 端点仍在但冻结返旧值），release 面仍 v1.4.2 ⇒ 六面不同步（读数据端点，不采渲染页）
+- **Open Jev**（intikhab49）：150M 编码器 + 单次前向 + 类型化问题（`noul`/`choice`/`score`）；400 例自测 ensemble 0.6965 / ECE 0.0565 对 Jev 0.7270 / 0.1440 ⇒ 校准优于 Jev 2.5×（Jev 零样本、本件同分布 1,016 例训练），T4 半小时可训；Apache-2.0，与「编码器+判定头」同路线（厂商自测、本仓未复算）
+- **Intern-Decision**：多模态判定件——冻结视觉塔与投影层、只微调语言主干，0.8B／2B／4B，Apache-2.0；读数全系厂商自报、本仓未复算
