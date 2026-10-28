@@ -100,6 +100,8 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
 
+> 💡 **`hardenedMode` 配置项尚未实现**（代码中不存在此字段）——一键全规则基线化的便捷配置排入 ROADMAP 评估，当前需手动按上述方式逐条锁定。
+
 在静态加密（已接线，密钥就绪后主链密文落盘；附链目录仍明文，见上方说明）之外，仍建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 约束层内部状态同样 700）
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
@@ -585,8 +587,6 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）——缓解措施（CI 侧独立校验 config 完整性 / 文件权限锁及其局限）见下方「详细缓解步骤」。
 > ⚠️ **企业高安全默认**：基线规则（A1/A2/A9/A10/A11/A20-A23）强制保护不可禁用，但**非基线（A3-A8、A14-A19）可经 `rules:{x:false}` 关闭**。高安全建议显式锁定：`extendedRulesEnabled: true` + 对全部非基线规则显式置 true（禁依赖默认值）+ `chmod 400 .sofagent/config.yml`（**对同用户进程无效**，仅纵深防御辅助，
 >见 [LIMITATIONS §三](./docs/LIMITATIONS.md)）。
->
-> 💡 **`hardenedMode` 配置项尚未实现**（代码中不存在此字段）——一键全规则基线化的便捷配置排入 ROADMAP 评估，当前需手动按上述方式逐条锁定。
 
 > ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。
 >**CI 侧 `sofagent audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。
