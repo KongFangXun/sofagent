@@ -433,7 +433,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 6552 tests / 14 packages (`tools/check/test-count.sh` measured standard) + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
+> 🧪 **Engineering credibility** (current): 6593 tests / 14 packages (`tools/check/test-count.sh` measured standard) + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
 > **Package-count standard** (disambiguation): the **primary-reading standard** = 14 packages (test-count.sh measured; the two calibers below are set definitions)—workspace 29 = 13 module packages + `engine/corpus` (`@sofagent/rsi-corpus` corpus pipeline) + load-chain + dsh-plugin-kit + umbrella
 > + 8 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count
 > standard** = 13 module packages (27 workspaces bear a test script; plugin packages,
