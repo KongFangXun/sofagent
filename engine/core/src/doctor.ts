@@ -923,10 +923,11 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       warn(`审计日志 hash chain 不可复验（黄色提示，非篡改）：${result.detail ?? ''}。这是由于密钥轮换，或运行环境变化（如更换设备/用户/仓库路径）导致的预期断裂，非安全事件。如确为本人密钥变更，可忽略此警告。如非本人操作，请核查 ~/.sofagent-key 与运行环境`);
     }
   } catch (chainErr) {
-    // 链校验异常（极少）：不影响其余检查，但记录以便排查，
-    // 不再静默吞掉（P1-B-iv：空 catch 会掩盖内部错误并误报「通过」）
-    warn(`审计日志 hash chain 校验异常，已跳过（不影响其余检查）: ${chainErr instanceof Error ? chainErr.message : String(chainErr)}`);
-    auditLogOk = true;
+    // 链校验异常（极少）：不影响其余检查项的执行，但**本检查项本身已判不通过**——
+    // 异常意味着无法证明链完整（不能证明 ≠ 证明完整），置 true 会把「检查器死了」
+    // 误报成「检查通过」（P1-B-iv 原修只去了静默、没去误报——BUG-21 收口）。
+    warn(`审计日志 hash chain 校验异常，已判不通过（不影响其余检查项）: ${chainErr instanceof Error ? chainErr.message : String(chainErr)}`);
+    auditLogOk = false;
   }
 
   // 7b. 未审计 commit 扫描（v1.4.8 F-18——SECURITY.md「二级防御」声称落地）

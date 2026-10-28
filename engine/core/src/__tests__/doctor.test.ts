@@ -94,15 +94,17 @@ describe('doctor 审计日志链完整性校验', () => {
     logSpy.mockRestore();
   });
 
-  it('审计包调用抛错时降级不误报（catch 分支）', () => {
+  it('审计包调用抛错 → 本检查项判不通过（auditLog=false，BUG-21 修复回归保护）', () => {
     vi
       .spyOn(auditHistory, 'checkHistoryChainDetailed')
       .mockImplementation(() => {
         throw new Error('no audit');
       });
     const r = runDoctor(tmp);
-    // 保持默认 true，不误报篡改
-    expect(r.auditLog).toBe(true);
+    // BUG-21：异常 = 无法证明链完整 ⇒ auditLog=false（原实现置 true，把
+    // 「检查器死了」误报成「检查通过」——紧邻注释自称不误报，代码恰在误报）
+    expect(r.auditLog).toBe(false);
+    expect(r.allOk).toBe(false);
   });
 
   // v1.3.9 五：VERSION 滞后提示补升级安全性一句——沙箱 HOME 模拟（不碰真实 ~/.sofagent）
