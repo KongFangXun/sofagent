@@ -658,7 +658,7 @@ if command -v npm &>/dev/null; then
 # 报错形态（node: Cannot find module）让用户无法自救。加存在性自检 + 自愈指引。
 _dist="$LOCAL_AUDIT_DIST"
 if [ ! -f "\$_dist" ]; then
-  echo "❌ sofagent: 本地引擎缺失（\$_dist）" >&2
+  echo "❌ sofagent: 本地引擎缺失（\${_dist}）" >&2
   echo "   安装源仓库可能已被移动或删除。修复选项：" >&2
   echo "   ① 回到仓库目录重跑: bash install.sh --base-only（重建 wrapper）" >&2
   echo "   ② 改用 npm 全局安装: npm install -g sofagent（不依赖仓库路径）" >&2

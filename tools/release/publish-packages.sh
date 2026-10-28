@@ -309,7 +309,7 @@ echo "$LAYERS" | while IFS=: read -r _ num pkgs_str; do
     if [ "$ver" = "$VERSION" ]; then
       echo "  ✓ $pkg@$ver"
     elif is_independent_version_pkg "$pkg" && [ "$ver" != "NOT_FOUND" ]; then
-      echo "  ✓ $pkg@$ver（独立版本线）"
+      echo "  ✓ $pkg@${ver}（独立版本线）"
     else
       echo "  ❌ ${pkg}@${ver}（期望 ${VERSION}）"
       echo "1" > "$VERSION_FAIL"
@@ -327,7 +327,7 @@ echo "$DSH_ORDER" | while read -r pkg; do
   if [ "$ver" = "$VERSION" ]; then
     echo "  ✓ $pkg@$ver"
   elif is_independent_version_pkg "$pkg" && [ "$ver" != "NOT_FOUND" ]; then
-    echo "  ✓ $pkg@$ver（独立版本线）"
+    echo "  ✓ $pkg@${ver}（独立版本线）"
   else
     echo "  ❌ ${pkg}@${ver}（期望 ${VERSION}）"
     echo "1" > "$VERSION_FAIL"
