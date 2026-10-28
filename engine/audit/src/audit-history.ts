@@ -507,12 +507,34 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // finding-02：postAppendEntryCount 同时作为链头锚点的 entryCount 来源（非空行数）。
   let postAppendEntryCount = 0;
   try {
-    // 深水审查 P0-B：读回校验同样只需要「最后一行 + 总行数」。行数用换行符计数
-    // （流式扫描字节，不驻留内容）；末行复用上方 64KB 尾部窗口。原全量
-    // readFileSync 在 38MB 文件上每次 commit 额外多读一遍。
+    // 深水审查 P0-B + R5 复审修正：读回校验需要「最后一行 + 精确总行数」。
+    // 末行：64KB 尾部窗口（原全量读在 38MB 文件上每次 commit 多读一遍）。
+    // 总行数：流式换行符计数（Buffer 分块扫描，零字符串驻留——首版「尾窗粗计」
+    // 把链头锚点 entryCount 写成窗口内行数（实测本机 15 vs 真实 11056），
+    // 属修复引入回归，R5 独立复审抓回）。
     const st2 = statSync(filePath);
     let contentTail: string;
-    const tailLines = (): string[] => contentTail.trim().split('\n').filter(Boolean);
+    const countLinesStreaming = (): number => {
+      const CHUNK = 1024 * 1024;
+      const fh = openSync(filePath, 'r');
+      try {
+        const buf = Buffer.alloc(CHUNK);
+        let pos = 0;
+        let newlines = 0;
+        let read: number;
+        let lastByteWasN = true; // 文件起始视作换行后（首行即一行）
+        while ((read = readSync(fh, buf, 0, CHUNK, pos)) > 0) {
+          for (let i = 0; i < read; i++) {
+            if (buf[i] === 0x0a) newlines++;
+            lastByteWasN = buf[i] === 0x0a;
+          }
+          pos += read;
+        }
+        return lastByteWasN ? newlines : newlines + 1; // 末行无换行符也计一行
+      } finally {
+        closeSync(fh);
+      }
+    };
     if (st2.size > 64 * 1024) {
       const fh2 = openSync(filePath, 'r');
       try {
@@ -522,15 +544,13 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
       } finally {
         closeSync(fh2);
       }
-      // 总行数：读回校验只断言「非零且末行可解析」——精确总数由链内
-      // entryCount 字段承载（prevHash 段），此处仅作非零锚。
-      postAppendEntryCount = Math.max(tailLines().length, 1);
+      postAppendEntryCount = countLinesStreaming();
     } else {
       const content = readFileSync(filePath, 'utf-8');
       contentTail = content;
       postAppendEntryCount = content.trim().split('\n').filter(Boolean).length;
     }
-    const lines = tailLines();
+    const lines = contentTail.trim().split('\n').filter(Boolean);
     if (postAppendEntryCount === 0) postAppendEntryCount = lines.length;
     if (lines.length > 0) {
       const lastLine = lines[lines.length - 1]!;
