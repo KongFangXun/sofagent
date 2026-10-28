@@ -944,17 +944,23 @@ else
   ((FAIL++)) || true
 fi
 
-# README.md — "NNN 测试 / NN 模块包 + NN 插件（N DSH + N OpenClaw）" 格式
+# README.md — 双格式：「NNN 测试 / NN 模块包 + NN 插件（N DSH + N OpenClaw）」旧格式 与
+# 「NNN 测试 / NN 包（test-count.sh 实测口径）+ NN 插件（N DSH + N OpenClaw）」新格式（DOC-3 批起主读数 = 14 包实测口径）
 # （P0-13: grep 未命中 → FAIL；B13: 包数拆双口径——引擎数对 WORKSPACE_COUNT、插件数对 PLUGIN_TOTAL；
 #  任务八方案A 2026-08-29：旧格式「N 测试 / N 包（N 个含测试）」升级为引擎+插件双口径，
-#  完整呈现交付物面——模块包 workspace 13 / 发布实体 26 两个数字可区分，消除「交付物只有 13 包」误读）
-# 锚定机制说明（TASK-5 排查结论）：下方正则只匹配「N 测试 / N 模块包 + N 插件」三段式格式，
-#   全 README 实测仅「工程可信度」段（当前权威值）满足；沿革段（「测试 4429 → 4805」箭头形态）
-#   不匹配。head -1 因此恰好锁定当前值——但该锁定依赖工程可信度段独有格式，格式改动后
-#   会静默换锚。多值扫描断言（README_MULTIVALUE_*）兜底：文件内测试数声称 ≥2 个不同值
-#   且无口径标记词时 FAIL，标记词与 check-readme-parity.sh ④b 同源
+#  完整呈现交付物面——模块包 workspace 13 / 发布实体 26 两个数字可区分，消除「交付物只有 13 包」误读；
+#  2026-10-28 DOC-3：主读数行改「14 包（test-count.sh 实测口径）」——对账锚从 WORKSPACE_COUNT（13 模块包集合定义）
+#  换到 PKG_COUNT（test-count.sh 逐包遍历实测 14 = 13 模块 + engine/corpus），与 WIKI「6552 测试 / 14 包」同源；
+#  旧「N 模块包」正则保留兼容（历史格式仍可命中），两格式都未命中才 FAIL）
+# 锚定机制说明（TASK-5 排查结论）：下方正则匹配工程可信度段（当前权威值）的三段式格式；
+#   全 README 实测仅该段满足；沿革段（「测试 4429 → 4805」箭头形态）不匹配。head -1 因此恰好锁定当前值——
+#   但该锁定依赖工程可信度段独有格式，格式改动后会静默换锚。多值扫描断言（README_MULTIVALUE_*）兜底：
+#   文件内测试数声称 ≥2 个不同值且无口径标记词时 FAIL，标记词与 check-readme-parity.sh ④b 同源
 #   （发版时点|当前|as of|current）——一处措辞两处引用，改动须同步两脚本。
-README_PKG_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 模块包 \+ [0-9]+ 插件' README.md 2>/dev/null | head -1)
+README_PKG_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 包（[^）]*）[^\n]*\+ [0-9]+ 插件' README.md 2>/dev/null | head -1)
+if [ -z "$README_PKG_LINE" ]; then
+  README_PKG_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 模块包 \+ [0-9]+ 插件' README.md 2>/dev/null | head -1)
+fi
 if [ -n "$README_PKG_LINE" ]; then
   # v1.4.9 G-13：五个提取点全部补 `head -1`。
   #   原实现无 head -1——同一行出现第二个「N 测试」/「N 模块包」/「N 插件」/「N DSH」/
@@ -963,7 +969,16 @@ if [ -n "$README_PKG_LINE" ]; then
   #   比对必失败且报错难读）。本文件 :443 的兄弟点早已修好并写了坑位注释（同一失败形态、
   #   一处修了一处没修）——此处补齐为同一形态。取首个匹配 = 该行开头的当前声称值。
   README_CLAIMED=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 测试' | head -1 | grep -oE '[0-9]+')
-  README_PKGS=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 模块包' | head -1 | grep -oE '[0-9]+')
+  # DOC-3（2026-10-28）：包数提取双格式——新格式「N 包（…实测口径）」对 PKG_COUNT（test-count.sh
+  #   逐包遍历实测，现值 14 = 13 模块 + corpus）；旧格式「N 模块包」对 WORKSPACE_COUNT（workspaces
+  #   清单 13 名集合定义）。两格式互斥（主读数行只出现其一），提取为空仍走下方 FAIL 分支不静默。
+  README_PKGS=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 包（' | head -1 | grep -oE '[0-9]+')
+  if [ -n "$README_PKGS" ]; then
+    README_PKGS_TARGET=$PKG_COUNT
+  else
+    README_PKGS=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 模块包' | head -1 | grep -oE '[0-9]+')
+    README_PKGS_TARGET=$WORKSPACE_COUNT
+  fi
   README_PLUGIN_TOTAL=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 插件' | head -1 | grep -oE '[0-9]+')
   README_PLUGIN_DSH=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ DSH' | head -1 | grep -oE '[0-9]+')
   README_PLUGIN_OC=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ OpenClaw' | head -1 | grep -oE '[0-9]+')
@@ -984,10 +999,14 @@ if [ -n "$README_PKG_LINE" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：模块包数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
     record_manual "README.md" "$README_LINENO" "模块包数提取为空（正则失配/声称被改写）"
     local_fail=1
-  elif [ "$README_PKGS" != "$WORKSPACE_COUNT" ]; then
-    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS} 模块包（workspace 模块总数），实际 ${WORKSPACE_COUNT} 包${NC}"
-    # 锚与上方 `[0-9]+ 模块包` 提取同源（数字为捕获组 1）
-    record_fix "README.md" "$README_LINENO" "$README_PKGS" "$WORKSPACE_COUNT" '([0-9]+) 模块包'
+  elif [ "$README_PKGS" != "$README_PKGS_TARGET" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS} 包（test-count.sh 实测口径目标 ${README_PKGS_TARGET}），实际 ${README_PKGS_TARGET} 包${NC}"
+    # 锚与上方包数提取同源（数字为捕获组 1；双格式——新「N 包（」/旧「N 模块包」）
+    if grep -qE '[0-9]+ 包（' <<< "$README_PKG_LINE"; then
+      record_fix "README.md" "$README_LINENO" "$README_PKGS" "$README_PKGS_TARGET" '([0-9]+) 包（'
+    else
+      record_fix "README.md" "$README_LINENO" "$README_PKGS" "$README_PKGS_TARGET" '([0-9]+) 模块包'
+    fi
     local_fail=1
   fi
   if [ -z "$README_PLUGIN_TOTAL" ]; then
@@ -1034,14 +1053,26 @@ else
   ((FAIL++)) || true
 fi
 
-# README.en.md — "NNN tests / NN module packages + NN plugins (N DSH + N OpenClaw)" 格式
+# README.en.md — 双格式："NNN tests / NN module packages + NN plugins (N DSH + N OpenClaw)" 旧格式 与
+# "NNN tests / NN packages (test-count.sh measured standard) + NN plugins (N DSH + N OpenClaw)" 新格式（DOC-3 批同步）
 # （P1 B2b: 英文版曾二次漂移 2283，根因是门禁只校验中文 README。补齐英文校验，grep 未命中 → FAIL，
-#  与中文版 P0-13 语义一致；任务八方案A 2026-08-29：随中文版同步升级为引擎+插件双口径）
-README_EN_LINE=$(grep -nE '[0-9]+ tests? / [0-9]+ module packages \+ [0-9]+ plugins' README.en.md 2>/dev/null | head -1)
+#  与中文版 P0-13 语义一致；任务八方案A 2026-08-29：随中文版同步升级为引擎+插件双口径；
+#  2026-10-28 DOC-3：随中文版换锚 PKG_COUNT（14 包实测口径），旧格式保留兼容）
+README_EN_LINE=$(grep -nE '[0-9]+ tests? / [0-9]+ packages \([^)]*\)[^\n]*\+ [0-9]+ plugins' README.en.md 2>/dev/null | head -1)
+if [ -z "$README_EN_LINE" ]; then
+  README_EN_LINE=$(grep -nE '[0-9]+ tests? / [0-9]+ module packages \+ [0-9]+ plugins' README.en.md 2>/dev/null | head -1)
+fi
 if [ -n "$README_EN_LINE" ]; then
   # v1.4.9 G-13：同 README 中文版——五个提取点补 `head -1`（多命中拼接 ⇒ "14\n14" 式假红）
   README_EN_CLAIMED=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ tests?' | head -1 | grep -oE '[0-9]+')
-  README_EN_PKGS=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ module packages' | head -1 | grep -oE '[0-9]+')
+  # DOC-3（2026-10-28）：同中文版双格式换锚——新「N packages (」对 PKG_COUNT、旧「N module packages」对 WORKSPACE_COUNT
+  README_EN_PKGS=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ packages \(' | head -1 | grep -oE '[0-9]+')
+  if [ -n "$README_EN_PKGS" ]; then
+    README_EN_PKGS_TARGET=$PKG_COUNT
+  else
+    README_EN_PKGS=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ module packages' | head -1 | grep -oE '[0-9]+')
+    README_EN_PKGS_TARGET=$WORKSPACE_COUNT
+  fi
   README_EN_PLUGIN_TOTAL=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ plugins' | head -1 | grep -oE '[0-9]+')
   README_EN_PLUGIN_DSH=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ DSH' | head -1 | grep -oE '[0-9]+')
   README_EN_PLUGIN_OC=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ OpenClaw' | head -1 | grep -oE '[0-9]+')
@@ -1060,10 +1091,14 @@ if [ -n "$README_EN_LINE" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：module packages 提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
     record_manual "README.en.md" "$README_EN_LINENO" "module packages 提取为空（正则失配/声称被改写）"
     local_fail=1
-  elif [ "$README_EN_PKGS" != "$WORKSPACE_COUNT" ]; then
-    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PKGS} module packages（workspace 模块总数），实际 ${WORKSPACE_COUNT} 包${NC}"
-    # 锚与上方 `[0-9]+ module packages` 提取同源（数字为捕获组 1）
-    record_fix "README.en.md" "$README_EN_LINENO" "$README_EN_PKGS" "$WORKSPACE_COUNT" '([0-9]+) module packages'
+  elif [ "$README_EN_PKGS" != "$README_EN_PKGS_TARGET" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PKGS} packages（test-count.sh measured target ${README_EN_PKGS_TARGET}），实际 ${README_EN_PKGS_TARGET} 包${NC}"
+    # 锚与上方包数提取同源（数字为捕获组 1；双格式——新「N packages (」/旧「N module packages」）
+    if grep -qE '[0-9]+ packages \(' <<< "$README_EN_LINE"; then
+      record_fix "README.en.md" "$README_EN_LINENO" "$README_EN_PKGS" "$README_EN_PKGS_TARGET" '([0-9]+) packages \('
+    else
+      record_fix "README.en.md" "$README_EN_LINENO" "$README_EN_PKGS" "$README_EN_PKGS_TARGET" '([0-9]+) module packages'
+    fi
     local_fail=1
   fi
   if [ -z "$README_EN_PLUGIN_TOTAL" ]; then

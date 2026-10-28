@@ -224,6 +224,8 @@ npx -y -p sofagent sofagent audit
 
 > ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent audit --init`（见下方完整安装）。
 
+> 📌 版本徽章 = 裸名总包 `sofagent`（npm 安装入口）；下载徽章 = 实体包 `@sofagent/audit`（下载量主体）——`npm i -g sofagent` 装的是总包（含完整依赖树），两徽章是同一分发面的两个观测位。
+
 拦截特定格式密钥泄漏时是这样的（真实输出；A2（编号对照见 [SECURITY 规则清单](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式——sk- 形态需 ≥29 字符（主体 ≥27，厂商专属 sk-ant/sk-proj 等 ≥40），Stripe 下划线前缀 ≥24；
 更短/非标形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）：
 
@@ -362,8 +364,8 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 | 社区参与 · 行为准则 | [COMMUNITY](./docs/COMMUNITY.md) |
 | 外部验证与行业对照 | [VALIDATION](./docs/VALIDATION.md) |
 
-> 🧪 **工程可信度**（当前口径）：6552 测试 / 13 模块包 + 12 插件（8 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
-> **包数口径**（消歧）：workspace 29 = 13 模块包 + `engine/corpus`（`@sofagent/rsi-corpus` 语料管道，版本线独立）+ load-chain + dsh-plugin-kit + umbrella + 8 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 全量实测 27 个——活读数见 `tools/check/test-count.sh` 头注的口径说明，插件与工具包不计）——非同一集合。
+> 🧪 **工程可信度**（当前口径）：6552 测试 / 14 包（`tools/check/test-count.sh` 实测口径）+ 12 插件（8 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
+> **包数口径**（消歧）：主读数口径 = 14 包（test-count.sh 实测；下述两口径为集合定义）——workspace 29 = 13 模块包 + `engine/corpus`（`@sofagent/rsi-corpus` 语料管道，版本线独立）+ load-chain + dsh-plugin-kit + umbrella + 8 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 全量实测 27 个——活读数见 `tools/check/test-count.sh` 头注的口径说明，插件与工具包不计）——非同一集合。
 > 测试数二口径：**发版时点值**（各版本 `4805→4903` 增量账）与**当前实测值**（上方行）；权威值以 `tools/check/check-test-count.sh` 实跑为准；性能数据为单机参考值。
 
 ---

@@ -271,6 +271,8 @@ npx -y -p sofagent sofagent audit
 
 > ⚠️ This step is a **one-off audit** (inside a single process)—it doesn't install a git hook, so later commits won't be auto-blocked. For continuous protection run `sofagent audit --init` (see Full install below).
 
+> 📌 The version badge = the bare-name umbrella package `sofagent` (the npm install entry); the downloads badge = the entity package `@sofagent/audit` (where the download volume accrues)—`npm i -g sofagent` installs the umbrella (with the full dependency tree); the two badges are two observation points of the same distribution surface.
+
 Here is what it looks like when a known-format secret leak gets blocked (real output). A2 (rule numbers: see the [SECURITY rule list](./SECURITY.md#28-条审计规则完整清单文档级-ssot)) detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, and PEM private keys—other known formats too.
 
 Length thresholds apply: generic sk- keys must be ≥29 characters total (≥27 after the sk- prefix; vendor-prefixed sk-ant-/sk-proj- etc. require ≥40), and Stripe sk_live_/sk_test_ require ≥24. Shorter or non-standard shapes are intentionally out of scope, a conservative design against false
@@ -431,8 +433,9 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 6552 tests / 13 module packages + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
-> **Package-count standard** (disambiguation): workspace 29 = 13 module packages + `engine/corpus` (`@sofagent/rsi-corpus` corpus pipeline) + load-chain + dsh-plugin-kit + umbrella + 8 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count
+> 🧪 **Engineering credibility** (current): 6552 tests / 14 packages (`tools/check/test-count.sh` measured standard) + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
+> **Package-count standard** (disambiguation): the **primary-reading standard** = 14 packages (test-count.sh measured; the two calibers below are set definitions)—workspace 29 = 13 module packages + `engine/corpus` (`@sofagent/rsi-corpus` corpus pipeline) + load-chain + dsh-plugin-kit + umbrella
+> + 8 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count
 > standard** = 13 module packages (27 workspaces bear a test script; plugin packages,
 > load-chain and dsh-plugin-kit are outside it)—they aren't the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account—see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever
