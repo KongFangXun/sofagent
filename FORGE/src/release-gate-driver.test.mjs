@@ -795,10 +795,11 @@ describe('execRegressionDim · exit 语义归一化（run-08/09 教训）', () =
     const REPO_ROOT = '/tmp/fake-root';
     const dimScript = 'test -f "$PROJECT_ROOT/engine/audit/package.json" && echo FOUND';
     const injected = `export PROJECT_ROOT="${REPO_ROOT}"\n${dimScript}`;
-    const { execSync } = await import('child_process');
+    const { execFileSync } = await import('child_process');
     // 真实注入后路径可解析（用真实仓库根验证一次）
+    // execFileSync 数组形态零 shell 参与——常量串亦不拼模板（SEC-9 同族风格统一）
     const real = `export PROJECT_ROOT="${process.cwd()}"\necho "$PROJECT_ROOT" | grep -q sofagent && echo OK`;
-    const out = execSync(`bash -c '${real}'`).toString().trim();
+    const out = execFileSync('bash', ['-c', real]).toString().trim();
     expect(out).toBe('OK');
     // 注入串包含 export 前缀（防注入逻辑被误删）
     expect(injected.startsWith('export PROJECT_ROOT=')).toBe(true);
