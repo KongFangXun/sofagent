@@ -2,7 +2,7 @@
 // ① 接入形态合法 ② 生成物一致 ③ 注册面对账 ④ 可编排调用 ⑤ 行为等价逐字节
 // golden = ../GOLDEN.json（重算记录见其 description；改实现必须先重算并同步登记）
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -11,9 +11,19 @@ import plugin, { pluginMeta, capability, invoke } from './index.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GOLDEN = JSON.parse(readFileSync(path.join(HERE, '..', 'GOLDEN.json'), 'utf8'));
-// golden 输入在 factory 仓（行为等价的基准侧）；测试用相对路径解析
-const FACTORY = process.env.FACTORY_ROOT
-  ?? '/Users/kongfangxun/Library/Mobile Documents/com~apple~CloudDocs/WorkBuddy/factory';
+// golden 输入在 factory 仓（行为等价的基准侧，非本仓内容、不进公开依赖面）。
+// 路径只从环境变量取：本机跑注入类用例时设 FACTORY_ROOT；CI/外部贡献者无该仓
+// 时下面两条用例显式 skip（跳过原因打印，不做静默通过）。
+const FACTORY = process.env.FACTORY_ROOT ?? '';
+const HAS_FACTORY =
+  FACTORY !== '' && existsSync(path.join(FACTORY, 'rsi/corpus/sample-raw.jsonl'));
+const itFactory = HAS_FACTORY ? it : it.skip;
+if (!HAS_FACTORY) {
+  // 显式披露：不是「通过」，是「本环境无 factory 基准仓，注入类用例未执行」
+  console.warn(
+    '[b2-test] 跳过 ④⑤ 注入类用例——未设 FACTORY_ROOT 或该路径下无 rsi/corpus/sample-raw.jsonl（跳过 ≠ 通过）',
+  );
+}
 
 describe('B2 五判据', () => {
   it('① 接入形态合法：seam=non-seam:tool-set + kit 契约', () => {
@@ -39,20 +49,19 @@ describe('B2 五判据', () => {
     expect(entry.seam).toBe(pluginMeta.seam);
   });
 
-  it('④ 可编排调用：invoke 桥接到 runPipeline（真实调用 + 缺依赖降级不抛）', async () => {
+  itFactory('④ 可编排调用：invoke 桥接到 runPipeline（真实调用 + 缺依赖降级不抛）', async () => {
     // 真实编排调用：走 kit.invoke 的桥接路径（与 DSH 宿主同一条链）
-    const FACTORY2 = FACTORY;
     const outDir = path.join(HERE, '..', 'node_modules', '.b2-tmp-invoke');
     const r = await invoke({
-      in: path.join(FACTORY2, 'rsi/corpus/sample-raw.jsonl'),
-      dict: path.join(FACTORY2, 'rsi/corpus/sample-terms.json'),
+      in: path.join(FACTORY, 'rsi/corpus/sample-raw.jsonl'),
+      dict: path.join(FACTORY, 'rsi/corpus/sample-terms.json'),
       outDir,
     });
     expect(r.total).toBe(8);
     expect([r.buckets.sensitive, r.buckets.judgement, r.buckets.abstain]).toEqual([2, 4, 2]);
   });
 
-  it('⑤ 行为等价逐字节：三产物 sha/bytes/records 与 golden 全等', async () => {
+  itFactory('⑤ 行为等价逐字节：三产物 sha/bytes/records 与 golden 全等', async () => {
     const m = await import('@sofagent/rsi-corpus');
     const outDir = path.join(HERE, '..', 'node_modules', '.b2-tmp');
     const r = m.runPipeline({
@@ -75,7 +84,9 @@ describe('B2 五判据', () => {
 // 输入侧冻结复核（golden 的 inputs 段不得漂移）
 describe('golden 输入冻结', () => {
   for (const inp of GOLDEN.inputs) {
-    it(`输入 ${inp.role} sha 不变`, () => {
+    // 与 ④⑤ 同一依赖根：golden 输入文件在 factory 仓（非本仓内容）——
+    // 无该仓环境（CI / 外部贡献者）显式 skip 而非伪装通过
+    itFactory(`输入 ${inp.role} sha 不变`, () => {
       const buf = readFileSync(path.join(FACTORY, inp.path));
       expect(createHash('sha256').update(buf).digest('hex')).toBe(inp.sha256);
       expect(buf.byteLength).toBe(inp.bytes);
