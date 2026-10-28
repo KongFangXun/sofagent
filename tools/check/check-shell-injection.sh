@@ -1,5 +1,5 @@
 #!/bin/bash
-# check-shell-injection.sh — 命令注入静态扫（engine 源码面）
+# check-shell-injection.sh — 命令注入静态扫（engine + tools + FORGE 源码面）
 # ============================================================
 # 职责：拦住「外部输入流进 shell 命令行」的写法复活。
 #
@@ -40,8 +40,8 @@ cd "$(dirname "$0")/../.." || exit 2
 for _arg in "$@"; do
   case "$_arg" in
     --help|-h)
-      echo "check-shell-injection.sh — 命令注入静态扫（engine 源码面）"
-      echo "  (无参数)   扫 engine/*/src 下的 execSync/exec/spawn/execFileSync 注入形态"
+      echo "check-shell-injection.sh — 命令注入静态扫（engine + tools + FORGE 源码面）"
+      echo "  (无参数)   扫 engine/*/src 的 .ts + tools/FORGE 的 .mjs 下的 execSync/exec/spawn 注入形态"
       echo "             ERROR 阻断（单行模板插值 / 字符串拼接）"
             echo "             WARN  观察（模板字符串，可能跨行——需人工确认）"
       exit 0 ;;
@@ -54,17 +54,32 @@ WARNS=0
 
 echo "=== check-shell-injection · 命令注入静态扫 ==="
 
-# ── 扫描范围：engine 各包 src 下的 TS 源码 ──
+# ── 扫描范围 ──
 # 排除：node_modules / dist / __tests__ / .d.ts（测试与产物不受此约束）
-SCAN_DIRS="${SCAN_DIRS:-engine}"
+# v1.7.x 批：FORGE 并入扫描面——SEC-9 教训，内部工具链同样吃外部输入。
+#   SEC-9 实案：FORGE/src/disk-backend.mjs 的 grep 拼模板字符串注入存活数月，
+#   原因就是本门禁只扫 engine——洞在 FORGE，门禁对它恒绿。
+# 文件口径（find 谓词三选一，各目录按自身布局命中）：
+#   - engine：*/src/* 下的 .ts（engine/*/src 布局，与原口径一致）
+#   - FORGE：*/src/* 下的 .mjs（FORGE/src 全 .mjs——find *.ts 一发命中为零）
+#   - tools：顶层 .mjs（tools/ 无 src/ 子目录布局，check-*.mjs/gen-*.mjs 平铺）
+# 可用环境变量覆盖：SCAN_DIRS（空格分隔，如 "engine tools FORGE"）。
+SCAN_DIRS="${SCAN_DIRS:-engine tools FORGE}"
 # shellcheck disable=SC2086  # 刻意不加引号：SCAN_DIRS 是空格分隔的多目录（如
-# "engine tools"），加引号会被 find 当成单个路径名；与 check-guards.sh 同款约定
-SRC_FILES=$(find ${SCAN_DIRS} -path "*/src/*" -name "*.ts" -type f \
+# "engine tools FORGE"），加引号会被 find 当成单个路径名；与 check-guards.sh 同款约定
+SRC_FILES=$(find ${SCAN_DIRS} -type f \
+  \( \( -path "*/src/*" -name "*.ts" \) -o \( -path "*/src/*" -name "*.mjs" \) -o -name "*.mjs" \) \
   ! -name "*.d.ts" ! -path "*/node_modules/*" ! -path "*/dist/*" \
-  ! -path "*/__tests__/*" ! -name "*.test.ts" 2>/dev/null | sort)
+  ! -path "*/__tests__/*" ! -name "*.test.ts" ! -name "*.test.mjs" 2>/dev/null | sort)
 
 FILE_COUNT=$(echo "${SRC_FILES}" | grep -c . || true)
-echo "  扫描源码文件：${FILE_COUNT} 个（engine/*/src，已排除测试与产物）"
+echo "  扫描源码文件：${FILE_COUNT} 个（${SCAN_DIRS}——engine/*/src .ts + FORGE/tools 全部 .mjs，已排除测试与产物）"
+# 🔴 守卫不得空转：目录布局漂移（如 FORGE 改用 .ts）会让 find 命中归零而门禁
+# 恒绿（SEC-13 反向教训——扫描面对新增代码形态失明比发现违规更坏）。
+if [ "${FILE_COUNT}" -eq 0 ]; then
+  echo "  ✗ 扫描面为空——find 文件口径与 ${SCAN_DIRS} 目录布局不再匹配，请更新本脚本"
+  exit 2
+fi
 
 # ── ERROR ①：单行模板字符串插值 ──
 # 形态：execSync(`...${var}...` / exec(`...${var}...` / spawn(`...${var}...`

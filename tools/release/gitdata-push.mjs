@@ -24,7 +24,7 @@
  *    本地等价点 = git log --all --format="%h %T" | grep " <tree-sha>"）
  */
 
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -155,7 +155,10 @@ for (const e of entries) {
       const m = lsLine.match(/blob ([0-9a-f]{40})/);
       if (m) {
         // 🔴 cat-file 输出禁止走 sh()（trim 剥掉末尾换行 → blob sha 与本地 tree 分叉，v1.4.2 阶段十二实测 13 文件差 1 字节）
-        const canonical = execSync(`git cat-file blob ${m[1]}`, { cwd: REPO_ROOT }); // Buffer 原始字节，零转码零 trim
+        // 🔴 SEC-9 同族修复：execFileSync 数组形态零 shell 参与——m[1] 来自
+        // 上文 /blob ([0-9a-f]{40})/ 正则捕获（40 位十六进制 SHA，字面安全），
+        // 但数组化让「安全性不依赖上游正则不腐化」。Buffer 原始字节，零转码零 trim。
+        const canonical = execFileSync('git', ['cat-file', 'blob', m[1]], { cwd: REPO_ROOT });
         b64 = canonical.toString('base64');
       }
     }
