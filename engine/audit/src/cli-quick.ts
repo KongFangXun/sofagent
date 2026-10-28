@@ -437,30 +437,13 @@ export function runCliQuick(argv: string[]): number {
     if (FULL_ONLY_FLAGS.includes(arg) || FULL_ONLY_SUBCOMMANDS.includes(arg)) {
       // 路由到完整引擎（dist/index.js）
       const indexPath = join(__dirname, 'index.js');
-      // BUG-1（v1.7.0 修复批）：单 commit 仓自动路由崩溃兜底——完整引擎默认
-      // HEAD~1..HEAD 在无父提交仓库必然「diff range 无效」exit 2。用户 argv 未
-      // 显式传 --diff（空格或 P0-16 支持的等号形态都算）时注入空树基准，
-      // 与 quick 侧首提交对比空树同语义（git magic 常量 + 复用 hasParentCommit()）。
-      // 用户已传 --diff 则原样转发，不覆盖用户显式意图。
-      const forwards = argv.slice(2);
-      const hasExplicitDiff = forwards.some((a) => a === '--diff' || a.startsWith('--diff='));
-      if (!hasParentCommit() && !hasExplicitDiff) {
-        // git 空树 SHA 常量（git hash-object -t tree /dev/null 的稳定值，与
-        // 本文件下方根 commit 补审分支、index.ts 首提交兜底同源同值）
-        const EMPTY_TREE_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
-        forwards.push('--diff', `${EMPTY_TREE_SHA}..HEAD`);
-      }
-      // BUG-2（v1.7.0 修复批）：help 宣称 quick「不写 history.jsonl 无留痕」，但
-      // FULL_ONLY 自动路由后完整引擎按自身行为写 ~/.sofagent/data/audit/
-      // （history.jsonl + session report）——承诺被静默打破。路由前显式告知。
-      console.log('ⓘ [sofagent] 该 flag 已自动路由完整引擎——本次审计将写入 ~/.sofagent/data/audit/（history.jsonl 与 session report）');
       // v1.5.7 F6：自动路由属于「单入口内部转发」，不是用户直敲旧命令——
       // 置 SOFAGENT_SINGLE_ENTRY=1（与 umbrella 路由同键同义——v1.6.0 BUG-56：该键当前无读者，保留作单入口标记），quick 侧本条
       // 弃用提示已在上方打印、full 侧 (index.ts) 同键静默，避免一次调用叠两条提示。
       // 直敲旧命令路径（不经本分支）零改动——提示行为不变。
       process.env.SOFAGENT_SINGLE_ENTRY = '1';
       try {
-        const result = spawnSync(process.execPath, [indexPath, ...forwards], {
+        const result = spawnSync(process.execPath, [indexPath, ...argv.slice(2)], {
           stdio: 'inherit',
           cwd: process.cwd(),
         });
@@ -503,8 +486,8 @@ export function runCliQuick(argv: string[]): number {
     console.log(`sofagent audit v${VERSION}`);
     console.log('sofagent audit — AI Agent 行为审计\n');
     console.log('用法（quick 只读审计，零安装）：');
-    console.log('  npx -y -p sofagent sofagent audit                     审计最近一次 commit（官方入口，始终最新；quick 模式不写 history.jsonl——--ruleset 等完整引擎 flag 自动路由后按完整引擎行为写入审计历史）');
-    console.log('  npx -y -p sofagent sofagent audit --diff HEAD~3..HEAD  审计指定范围（quick 模式直接跑，规则覆盖面同 quick；不写 history.jsonl——完整引擎 flag 自动路由后按完整引擎行为写入）');
+    console.log('  npx -y -p sofagent sofagent audit                     审计最近一次 commit（官方入口，始终最新；不写 history.jsonl 无留痕，适合临时检查）');
+    console.log('  npx -y -p sofagent sofagent audit --diff HEAD~3..HEAD  审计指定范围（quick 模式直接跑，规则覆盖面同 quick；不写 history.jsonl）');
     console.log('  npx -y -p sofagent sofagent audit -v, --version      显示版本号');
     console.log('  npx -y -p sofagent sofagent audit -h, --help         显示此帮助\n');
     console.log('  npx -y -p sofagent sofagent audit --stats             审计聚合报告（近 30 天治理 KPI——v1.4.3）');
@@ -629,12 +612,7 @@ export function runCliQuick(argv: string[]): number {
     '--criteria',
   ]);
   // 承载安全语义的参数前缀——拼错即用法错误（exit 2），不静默放行
-  // v1.7.0 P0-16：收录 '--diff' / '--strict' / '--ci'——`--diff=HEAD~2..HEAD` 等号
-  // 形态此前不在 FULL_ONLY_FLAGS 精确匹配面内（只匹配空格形态裸 `--diff`），落入
-  // 纯噪声 warn 路径静默放行（CI 假绿）；收录后等号/拼错形态 quick 侧 fail-loud
-  // exit 2（正规 `--diff <range>` 空格形态已在上方 FULL_ONLY 精确匹配分支路由，
-  // 不进本分级——空格形态零回归）。
-  const SEMANTIC_FLAG_PREFIXES = ['--ruleset', '--config', '--task', '--au', '--exclud', '--includ', '--diff', '--strict', '--ci'];
+  const SEMANTIC_FLAG_PREFIXES = ['--ruleset', '--config', '--task', '--au', '--exclud', '--includ'];
   const warnedFlags = new Set<string>();
   for (const arg of argv.slice(2)) {
     if (arg.startsWith('-') && !FULL_ONLY_FLAGS.includes(arg) && !QUICK_KNOWN_FLAGS.has(arg)) {

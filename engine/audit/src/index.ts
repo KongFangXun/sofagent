@@ -307,12 +307,6 @@ interface Args {
   warnAsError: boolean;
   /** v1.7.0 #15: --warn-as-info 让 WARN 返回 exit 0（CI 不阻断，仅信息性） */
   warnAsInfo: boolean;
-  /**
-   * BUG-20: --ci-binary=warn|fail——二进制盲区处置的独立传参开关（缺省 undefined = 本地 warn）。
-   * 只拆本地 hook 场景语义；--ci 场景恒 FAIL 判据不变（本 flag 不构成 CI 降级通道）。
-   * commit-msg hook 读 .sofagent/config.yml 的 A2.ciBinaryBlindSpot 决定是否追加 fail。
-   */
-  ciBinaryBlindSpot?: 'warn' | 'fail';
 }
 
 
@@ -323,65 +317,8 @@ interface Args {
 // v1.4.9 深模块条目 8：子命令单源（cli/flag-table.ts）
 const SUBCOMMANDS: readonly string[] = AUDIT_SUBCOMMANDS;
 
-/**
- * v1.7.0 P0-16：带值长 flag 清单——`--x=value` 等号形态归一为空格形态的白名单。
- * 仅收录 parseArgs 循环内「消费下一个 argv 值」的 flag（与循环分支一一对应，新增
- * 带值 flag 时两处同步）；无值 flag（--strict/--ci/--silent 等）的等号形态**故意
- * 不在册**——原样保留落进既有「不支持的参数」报错路径（fail-loud，不吞）。
- */
-const LONG_VALUE_FLAGS: ReadonlySet<string> = new Set([
-  '--diff', '--task', '--commit-msg', '--verify-commit', '--regression',
-  '--webhook', '--webhook-url', '--format', '--ruleset', '--ruleset-path',
-  '--revert', '--timeline', '--verify-evidence',
-]);
-
-/**
- * v1.7.0 P0-16：argv 预处理归一层——带值长 flag 的 `--x=v` 等号形态改写为 `--x v`。
- *
- * 缺陷背景：参数解析循环用严格相等 `argv[i] === '--diff'`，`--diff=HEAD~3..HEAD`
- * 等号形态永不命中——quick 入口（cli-quick）只 warn 后静默审最近一次 commit
- * （CI 假绿）；本引擎侧则落「不支持的参数」exit 1（非静默但等号形态永不可用）。
- *
- * 归一规则：
- *   · 仅改写 LONG_VALUE_FLAGS 在册 name（含 `--diff=`），与空格形态同语义；
- *   · 其余 `--x=v` 原样保留 → 既有「不支持的参数」报错（不吞、不静默降级）；
- *   · 空值形态 `--x=` 归一为裸 `--x`（等价「flag 在场、值缺席」，与空格形态
- *     `--x` 收尾走同一默认值/报错分支）。
- *
- * 纯函数（无副作用）；调用方整体重拼 argv（[0]/[1] 保留 node+脚本路径），
- * 循环 i 从 2 起的索引一致性由重拼保证。
- */
-function normalizeEqualsFlags(args: string[]): string[] {
-  const out: string[] = [];
-  for (const arg of args) {
-    if (arg.startsWith('--') && arg.includes('=')) {
-      const eq = arg.indexOf('=');
-      const name = arg.slice(0, eq);
-      const value = arg.slice(eq + 1);
-      if (LONG_VALUE_FLAGS.has(name)) {
-        if (value !== '') {
-          out.push(name, value);
-        } else {
-          out.push(name);
-        }
-        continue;
-      }
-    }
-    out.push(arg);
-  }
-  return out;
-}
-
-function parseArgs(rawArgv: string[]): Args {
+function parseArgs(argv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, revokeKey: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, agentShieldCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false, gb48000: false };
-  // v1.7.0 P0-16：等号形态归一层（预处理）——`--diff=X` 等带值 flag 先改写为
-  // `--diff X`，下方既有空格形态分支零改动即同语义消费；未知 `--x=v` 原样
-  // 穿透（见 normalizeEqualsFlags 注释）。[0]/[1] 占位保留，i 从 2 起索引不变。
-  const argv: string[] = [
-    rawArgv[0] ?? process.execPath,
-    rawArgv[1] ?? 'index.js',
-    ...normalizeEqualsFlags(rawArgv.slice(2)),
-  ];
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
@@ -422,22 +359,6 @@ function parseArgs(rawArgv: string[]): Args {
     } else if (argv[i] === '--ci') {
       args.ci = true;
       args.silent = true;   // --ci 隐含 --silent（CI 友好输出），不隐含 --strict
-    } else if (argv[i] === '--ci-binary' || (argv[i] ?? '').startsWith('--ci-binary=')) {
-      // BUG-20: --ci-binary=warn|fail（支持等号与空格两形态）——二进制盲区处置独立开关。
-      // 值校验 fail-closed：非法值按用法错误 exit 1（静默吞掉会让 hook 配置漂移不可见）。
-      let ciBinVal: string | undefined;
-      if ((argv[i] ?? '').startsWith('--ci-binary=')) {
-        ciBinVal = (argv[i] as string).split('=')[1];
-      } else if (argv[i + 1] && !argv[i + 1]!.startsWith('-')) {
-        i++;
-        ciBinVal = argv[i] as string;
-      }
-      if (ciBinVal === 'warn' || ciBinVal === 'fail') {
-        args.ciBinaryBlindSpot = ciBinVal;
-      } else {
-        console.error(`❌ sofagent 提示：--ci-binary 的值非法（${ciBinVal ?? '缺失'}，可用: warn / fail）`);
-        exit(1);
-      }
     } else if (argv[i] === '--install-hook') {
       args.installHook = true;
     } else if (argv[i] === '--json') {
@@ -580,7 +501,6 @@ function parseArgs(rawArgv: string[]): Args {
       console.log('  --silent    跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等）exit 0/1/2');
       console.log('  --strict    任何警告都 exit 2            exit 0/2');
       console.log('  --ci        = --silent（CI 友好输出，无交互提示）     exit 0/1/2');
-      console.log('  --ci-binary=warn|fail  二进制盲区处置（本地 hook 语义；缺省 warn；--ci 场景恒 fail 不受此开关降级）');
       console.log('');
       console.log('双入口对照:');
       console.log('  sofagent audit      quick 只读审计（17 条默认规则，秒级）');
@@ -592,7 +512,6 @@ function parseArgs(rawArgv: string[]): Args {
         console.log('  --strict           严格模式');
         console.log('  --silent           跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等，无日志环境用）');
         console.log('  --ci               CI 模式（= --silent，CI 友好输出，无交互提示）');
-        console.log('  --ci-binary=<v>    二进制盲区处置 warn|fail（缺省 warn——本地 hook 默认 WARN 放行，可经 config A2.ciBinaryBlindSpot: fail 升拦截；--ci 场景恒 FAIL）');
         console.log('  --json             JSON 输出');
         console.log('  --install-hook     安装 pre-commit + commit-msg + post-commit hook');
         console.log('  --root-cause       根因分析');
@@ -1495,8 +1414,7 @@ async function main(): Promise<void> {
   //   （消除本文件此前**重复的** git 作者解析链——第二处 actor 取数口）。
   const auditScope = createAuditScope({ diffRange: args.diffRange, commitMsg: commitMsg || undefined, task: args.task });
   // v1.7.0 A-8：args.ci 传入规则上下文——二进制夹带类「请人工确认」发现在 CI 场景升 FAIL
-  // BUG-20：args.ciBinaryBlindSpot（--ci-binary=warn|fail）同链传入——本地 hook 语义拆分通道
-  const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000, undefined, args.ci, args.diffRange, auditScope, args.ciBinaryBlindSpot);
+  const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000, undefined, args.ci, args.diffRange, auditScope);
 
   // v1.2.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
   if (args.ruleset || args.rulesetPath) {
