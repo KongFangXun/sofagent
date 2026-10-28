@@ -433,7 +433,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >
 > **改名 + 编码/短 key 可组合绕过 A1+A2 双拦截**（如 `.env` → `app.config.js` + base64）。建议 CI 侧补 gitleaks / detect-secrets 做全量历史扫描。
 
-> **二进制文件盲区（红队实测）**——git 对二进制只输出 `Binary files ... differ`，无内容可扫：约 5KB 随机字节夹带密钥的 blob 可完全绕过 A2（明文或嵌入二进制段皆然）。缓解：A2 对**新增**二进制扩展（.bin/.exe/.dll 等）及 `Binary files differ` 标记的新增文件输出 WARN（不拦截提交）——最终防线是人工复核 + CI 二进制感知扫描。
+> **二进制文件盲区（红队实测）**——git 对二进制只输出 `Binary files ... differ`，无内容可扫：约 5KB 随机字节夹带密钥的 blob 可完全绕过 A2（明文或嵌入二进制段皆然）。缓解：A2 对**新增**二进制扩展（.bin/.exe/.dll 等）及 `Binary files differ` 标记的新增文件输出 WARN（不拦截提交）——最终防线是人工复核 + CI 二进制感知扫描。本地 hook 默认 WARN 的升拦截配置与 CI 恒 FAIL 语义见 [SECURITY.md 绕过矩阵](../SECURITY.md)（`A2.ciBinaryBlindSpot: fail`）。
 
 > **v1.3.1 披露：>5MB diff 残余缝隙**——diff-parser 对单文件 diff 超 5MB（maxBuffer）置 `oversized` 标记，A2 无法扫内容。audit/index.ts 已注入 WARN（安全敏感文件名升级为 FAIL），但内容本身仍跳过——攻击者可故意构造超大 diff 藏密钥。A2 归一化已补 NFKC Unicode 处理（v1.3.1 #46；
 >NFKC 折叠全角/连字，**v1.4.8 起附加 Cyrillic 同形折叠表防跨字母系统同形绕过**——NFKC 本身不折叠 Cyrillic→拉丁同形字），sk-* 正则已扩展连字符/下划线支持。**v1.3.9 评估覆盖**——AST 规则引擎走流式解析（不 maxBuffer），超大 diff 不再跳过内容。

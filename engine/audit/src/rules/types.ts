@@ -225,6 +225,17 @@ export interface AuditContext {
    * quick 本地交互模式缺省 false，行为零变化。
    */
   ciMode?: boolean;
+  /**
+   * BUG-20：`--ci-binary=warn|fail` 的解析值（缺省 undefined = 本地 warn 语义）。
+   *
+   * 三方口径统一的传参开关——只拆「本地 hook」场景的二进制盲区处置：
+   *   - `--ci`（{@link ciMode}）场景恒 FAIL，判据不变（本字段不构成 CI 降级通道）；
+   *   - 本地缺省 WARN（与 SECURITY.md / LIMITATIONS.md「WARN 不拦截」承诺一致）；
+   *   - `fail` 时本地模式二进制盲区同样升 FAIL（与 config.A2.blindSpotAction=fail
+   *     同向叠加，消费点见 rule-a2-secret-leak 二进制分支）。
+   * 由 commit-msg hook 读 `.sofagent/config.yml` 的 `A2.ciBinaryBlindSpot` 决定是否追加。
+   */
+  ciBinaryBlindSpot?: 'warn' | 'fail';
 }
 
 /**

@@ -290,6 +290,47 @@ describe('A2 不泄密钥', () => {
     });
   });
 
+  // BUG-20：三方口径矛盾收口——文档承诺本地 WARN、hook 恒传 --ci 实际 FAIL。
+  // 修复后本地 hook 传 --silent（无 --ci）+ 可选 --ci-binary=fail；引擎侧
+  // ctx.ciBinaryBlindSpot 只拆本地语义，--ci（ciMode）恒 FAIL 判据不变。
+  describe('二进制盲区 --ci-binary 传参开关（BUG-20）', () => {
+    const makeBinCtx = (overrides?: Record<string, unknown>) =>
+      makeCtx(
+        [makeDiffFile('assets/blob.bin', ['diff --git a/assets/blob.bin b/assets/blob.bin', 'Binary files /dev/null and b/assets/blob.bin differ'], 'added')],
+        overrides,
+      );
+
+    it('ciBinaryBlindSpot=fail 本地模式 → FAIL（hook config A2.ciBinaryBlindSpot 升拦截）', () => {
+      const result = scanA2(makeBinCtx({ ciBinaryBlindSpot: 'fail' }));
+      expect(result.status).toBe('FAIL');
+      expect(result.details.join(' ')).toContain('ciBinaryBlindSpot=fail 已将二进制盲区升为拦截');
+    });
+
+    it('ciBinaryBlindSpot=warn 显式传参 → 仍 WARN（显式与缺省同义，hook 默认不追加即此态）', () => {
+      expect(scanA2(makeBinCtx({ ciBinaryBlindSpot: 'warn' })).status).toBe('WARN');
+    });
+
+    it('ciBinaryBlindSpot 缺省 → 本地 WARN（hook 默认路径——文档承诺态）', () => {
+      expect(scanA2(makeBinCtx()).status).toBe('WARN');
+    });
+
+    it('ciMode=true 时 ciBinaryBlindSpot=warn 不降级 → 仍 FAIL（--ci 判据不受本开关影响）', () => {
+      const result = scanA2(makeBinCtx({ ciMode: true, ciBinaryBlindSpot: 'warn' }));
+      expect(result.status).toBe('FAIL');
+      expect(result.details.join(' ')).toContain('CI 场景二进制入库默认拦截');
+    });
+
+    it('ciBinaryBlindSpot=fail 与 blindSpotAction=fail 同向叠加 → FAIL（文案优先报 ciBinaryBlindSpot）', () => {
+      const result = scanA2(makeBinCtx({ ciBinaryBlindSpot: 'fail', config: { A2: { blindSpotAction: 'fail' } } as any }));
+      expect(result.status).toBe('FAIL');
+    });
+
+    it('ciBinaryBlindSpot=fail 无盲区文件 → 不误伤（PASS）', () => {
+      const ctx = makeCtx([makeDiffFile('src/plain.ts', ['+export const x = 1;'], 'added')], { ciBinaryBlindSpot: 'fail' });
+      expect(scanA2(ctx).status).toBe('PASS');
+    });
+  });
+
   // v1.3.8 P1-A2 回归：.gitattributes -diff 两步隐身——原仅 WARN 放行：
   // 第一步提交 .gitattributes 标记 secrets.js -diff（WARN 不拦截），
   // 第二步提交密钥文件，git diff 无内容行 → A2 静默全绿。升级为 FAIL。

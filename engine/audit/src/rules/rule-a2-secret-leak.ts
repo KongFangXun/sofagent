@@ -12,6 +12,8 @@
 //   默认 warn 的理由：含 NUL 字节的二进制文件（图片/资源产物）极常见，默认 FAIL
 //   会误报爆炸——升级交由用户显式决策。-diff 形态属「结构性隐藏证据」，
 //   恒 FAIL，不受本配置降级。
+//   BUG-20 补 --ci-binary=warn|fail 传参通道（A2.ciBinaryBlindSpot 同族 config 键）：
+//   本地 commit-msg hook 不再恒传 --ci（CI 语义），缺省 WARN 与本注释及文档承诺一致。
 //   另：命中任一盲区形态时向 stderr 输出显著边界声明（非普通 WARN 行，见 scanA2 尾部）。
 // evidenceMode: git-diff
 // ============================================================
@@ -506,13 +508,20 @@ export function scanA2(ctx: AuditContext): RuleScan {
   // --ci 场景升 FAIL（exit 2）：CI 没有「人工」在场，WARN 给谁看？同一规则两种
   // 证据形态（文本密钥 vs 二进制夹带）拦截强度一致。
   // finding-13：config.A2.blindSpotAction=fail 时本地模式同样升 FAIL（显式 opt-in）。
+  // BUG-20：补 --ci-binary=fail 传参通道（ctx.ciBinaryBlindSpot）——commit-msg hook
+  // 恒传 --ci 曾把「本地 WARN」直接升为 CI 语义 FAIL（文档承诺 WARN、hook 实际拦截、
+  // 用户被拦后 --no-verify 绕全部 28 条）。现拆分：--ci（ctx.ciMode）场景判据不变恒
+  // FAIL；本地场景默认 WARN（与文档一致），hook 经 config A2.ciBinaryBlindSpot=fail
+  // 或用户经 A2.blindSpotAction=fail 显式升拦截。
   const binaryFiles = detectNewBinaryFiles(ctx);
   if (binaryFiles.length > 0) {
-    if (ctx.ciMode || blindSpotAction === 'fail') {
+    if (ctx.ciMode || ctx.ciBinaryBlindSpot === 'fail' || blindSpotAction === 'fail') {
       status = 'FAIL';
       const via = ctx.ciMode
         ? 'CI 场景二进制入库默认拦截'
-        : 'blindSpotAction=fail 已将二进制盲区升为拦截';
+        : ctx.ciBinaryBlindSpot === 'fail'
+          ? 'ciBinaryBlindSpot=fail 已将二进制盲区升为拦截'
+          : 'blindSpotAction=fail 已将二进制盲区升为拦截';
       details.push(
         `检测到 ${binaryFiles.length} 个新增二进制文件（${binaryFiles.slice(0, 5).join(', ')}${binaryFiles.length > 5 ? ' 等' : ''}）：二进制文件不扫内容，请人工确认无密钥夹带。${via}——确认无风险请拆出文本清单人工核。`
       );

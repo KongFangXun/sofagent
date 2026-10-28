@@ -71,6 +71,15 @@ export interface AuditConfig {
   /** v1.5.2 fresh-eyes（finding-13）: A2 内容扫描盲区处置——默认 "warn" 保持兼容（含 NUL 二进制极常见，默认 FAIL 会误报爆炸），"fail" 时盲区形态按 FAIL 阻断 */
   A2?: {
     blindSpotAction?: 'warn' | 'fail';
+    /**
+     * BUG-20：本地 commit-msg hook 的二进制盲区处置（缺省 "warn"）。
+     * "fail" 时安装出的 hook 会向引擎追加 --ci-binary=fail，本地提交新增二进制
+     * 文件由 WARN 升 FAIL 拦截；CI 场景（--ci）恒 FAIL 不受本键影响。
+     * 与 blindSpotAction 同族：blindSpotAction=fail 由引擎直接消费（所有本地
+     * 调用面），本键只驱动 hook 传参（读取点在 hook 模板，引擎消费
+     * --ci-binary 解析值）——两键同向叠加。
+     */
+    ciBinaryBlindSpot?: 'warn' | 'fail';
   };
   /** v1.1.5: FORGE 编排配置 */
   loop?: {

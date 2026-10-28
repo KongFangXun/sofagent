@@ -26,4 +26,9 @@ export const FULL_ONLY_FLAGS: readonly string[] = [
   // 查了时间线/做了回滚，实际审计的是错对象且拿到假绿。收纳进本表后 quick 命中即转完整引擎。
   '--timeline', '--revert',
   '--strict',
+  // BUG-20：--ci-binary=warn|fail 只在完整引擎实现（二进制盲区处置传参开关）。
+  // 本表精确匹配只覆盖空格形态（--ci-binary fail → 路由完整引擎）；等号形态
+  // （--ci-binary=fail）由 cli-quick.ts SEMANTIC_FLAG_PREFIXES 既有的 '--ci' 前缀
+  // （v1.7.0 P0-16 收录）兜住——quick 误用即 fail-loud exit 2，不假绿。
+  '--ci-binary',
 ] as const;

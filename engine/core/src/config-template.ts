@@ -59,6 +59,12 @@ audit:
   #   a3: false  # 禁用「不改越界」检查
   #   e1: true   # 显式启用 E1（需同时设 extendedRulesEnabled: true）
 
+  # BUG-20：A2 二进制盲区处置（缺省不配置 = 本地 WARN，CI 恒 FAIL）。
+  # 提交新增二进制文件（.bin/.exe 等）时 A2 不扫内容——本地默认 WARN 放行（人工确认），
+  # 需要本地也拦截时取消注释（hook 会向引擎追加 --ci-binary=fail）：
+  # A2:
+  #   ciBinaryBlindSpot: fail   # 可选 warn|fail；另见同族 blindSpotAction（引擎直读）
+
 # v1.0.9: A16 非授权文件变更
 A16:
   enabled: true

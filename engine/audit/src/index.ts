@@ -307,6 +307,12 @@ interface Args {
   warnAsError: boolean;
   /** v1.7.0 #15: --warn-as-info 让 WARN 返回 exit 0（CI 不阻断，仅信息性） */
   warnAsInfo: boolean;
+  /**
+   * BUG-20: --ci-binary=warn|fail——二进制盲区处置的独立传参开关（缺省 undefined = 本地 warn）。
+   * 只拆本地 hook 场景语义；--ci 场景恒 FAIL 判据不变（本 flag 不构成 CI 降级通道）。
+   * commit-msg hook 读 .sofagent/config.yml 的 A2.ciBinaryBlindSpot 决定是否追加 fail。
+   */
+  ciBinaryBlindSpot?: 'warn' | 'fail';
 }
 
 
@@ -416,6 +422,22 @@ function parseArgs(rawArgv: string[]): Args {
     } else if (argv[i] === '--ci') {
       args.ci = true;
       args.silent = true;   // --ci 隐含 --silent（CI 友好输出），不隐含 --strict
+    } else if (argv[i] === '--ci-binary' || (argv[i] ?? '').startsWith('--ci-binary=')) {
+      // BUG-20: --ci-binary=warn|fail（支持等号与空格两形态）——二进制盲区处置独立开关。
+      // 值校验 fail-closed：非法值按用法错误 exit 1（静默吞掉会让 hook 配置漂移不可见）。
+      let ciBinVal: string | undefined;
+      if ((argv[i] ?? '').startsWith('--ci-binary=')) {
+        ciBinVal = (argv[i] as string).split('=')[1];
+      } else if (argv[i + 1] && !argv[i + 1]!.startsWith('-')) {
+        i++;
+        ciBinVal = argv[i] as string;
+      }
+      if (ciBinVal === 'warn' || ciBinVal === 'fail') {
+        args.ciBinaryBlindSpot = ciBinVal;
+      } else {
+        console.error(`❌ sofagent 提示：--ci-binary 的值非法（${ciBinVal ?? '缺失'}，可用: warn / fail）`);
+        exit(1);
+      }
     } else if (argv[i] === '--install-hook') {
       args.installHook = true;
     } else if (argv[i] === '--json') {
@@ -558,6 +580,7 @@ function parseArgs(rawArgv: string[]): Args {
       console.log('  --silent    跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等）exit 0/1/2');
       console.log('  --strict    任何警告都 exit 2            exit 0/2');
       console.log('  --ci        = --silent（CI 友好输出，无交互提示）     exit 0/1/2');
+      console.log('  --ci-binary=warn|fail  二进制盲区处置（本地 hook 语义；缺省 warn；--ci 场景恒 fail 不受此开关降级）');
       console.log('');
       console.log('双入口对照:');
       console.log('  sofagent audit      quick 只读审计（17 条默认规则，秒级）');
@@ -569,6 +592,7 @@ function parseArgs(rawArgv: string[]): Args {
         console.log('  --strict           严格模式');
         console.log('  --silent           跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等，无日志环境用）');
         console.log('  --ci               CI 模式（= --silent，CI 友好输出，无交互提示）');
+        console.log('  --ci-binary=<v>    二进制盲区处置 warn|fail（缺省 warn——本地 hook 默认 WARN 放行，可经 config A2.ciBinaryBlindSpot: fail 升拦截；--ci 场景恒 FAIL）');
         console.log('  --json             JSON 输出');
         console.log('  --install-hook     安装 pre-commit + commit-msg + post-commit hook');
         console.log('  --root-cause       根因分析');
@@ -1471,7 +1495,8 @@ async function main(): Promise<void> {
   //   （消除本文件此前**重复的** git 作者解析链——第二处 actor 取数口）。
   const auditScope = createAuditScope({ diffRange: args.diffRange, commitMsg: commitMsg || undefined, task: args.task });
   // v1.7.0 A-8：args.ci 传入规则上下文——二进制夹带类「请人工确认」发现在 CI 场景升 FAIL
-  const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000, undefined, args.ci, args.diffRange, auditScope);
+  // BUG-20：args.ciBinaryBlindSpot（--ci-binary=warn|fail）同链传入——本地 hook 语义拆分通道
+  const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000, undefined, args.ci, args.diffRange, auditScope, args.ciBinaryBlindSpot);
 
   // v1.2.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
   if (args.ruleset || args.rulesetPath) {

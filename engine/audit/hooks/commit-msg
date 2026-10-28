@@ -345,10 +345,23 @@ TASK_ARGS=()
 if [ -n "${SOFAGENT_AUDIT_TASK:-}" ]; then
   TASK_ARGS=(--task "$SOFAGENT_AUDIT_TASK")
 fi
+# BUG-20：二进制盲区处置——本地 hook 不再恒传 --ci（CI 语义位会把 A2 对新增二进制
+#   的「本地 WARN」直接升 FAIL：文档承诺 WARN、实际每次 commit 拦 .bin，被拦用户
+#   顺手 --no-verify 绕全部 28 条规则）。改传 --silent（--ci 原本就隐含它，输出面
+#   零变化），并读 .sofagent/config.yml 的 A2.ciBinaryBlindSpot：显式 fail 才追加
+#   --ci-binary=fail 升拦截；缺省（无配置/读不到/其他值）走本地 warn，与
+#   SECURITY.md「输出 WARN 不拦截提交」承诺一致。CI 场景语义不受影响——CI 直跑
+#   引擎 `--diff <range> --ci` 恒 FAIL（判据 2），本开关只拆本地 hook 语义。
+#   config 读取零依赖（grep，node 缺失也能判定）且只认精确键值——解析失败/文件
+#   缺失一律按缺省 warn 处理（不因配置面故障阻断 commit）。
+CIBIN_ARGS=()
+if [ -f ".sofagent/config.yml" ] && grep -q 'ciBinaryBlindSpot:[[:space:]]*fail' .sofagent/config.yml 2>/dev/null; then
+  CIBIN_ARGS=(--ci-binary=fail)
+fi
 if [ -n "$COMMIT_FULL_MSG" ]; then
-  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci "${TASK_ARGS[@]+"${TASK_ARGS[@]}"}" --commit-msg "$COMMIT_FULL_MSG" 2>"$AUDIT_STDERR"
+  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent "${CIBIN_ARGS[@]+"${CIBIN_ARGS[@]}"}" "${TASK_ARGS[@]+"${TASK_ARGS[@]}"}" --commit-msg "$COMMIT_FULL_MSG" 2>"$AUDIT_STDERR"
 else
-  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci "${TASK_ARGS[@]+"${TASK_ARGS[@]}"}" 2>"$AUDIT_STDERR"
+  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent "${CIBIN_ARGS[@]+"${CIBIN_ARGS[@]}"}" "${TASK_ARGS[@]+"${TASK_ARGS[@]}"}" 2>"$AUDIT_STDERR"
 fi
 EXIT_CODE=$?
 
