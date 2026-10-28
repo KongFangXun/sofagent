@@ -214,6 +214,60 @@ describe('SEC-14 · 恢复关口完整性验证 + 路径边界（revertToSnapsho
     expect(fs.readFileSync(path.join(tmpRoot, 'app.md'), 'utf-8')).toBe('正常内容');
   });
 
+  it('test_revertToSnapshot_v2剥签名伪标legacy_完整SHA定位后拒绝恢复（v3 攻击形态）', () => {
+    fs.writeFileSync(path.join(tmpRoot, 'app.md'), '正常内容');
+    const sha = commitSnapshot(tmpRoot);
+
+    // 🔴 v3 攻击形态（team-lead 黑盒攻防打回）：v2 store 内保留 fileIndex/
+    // version 不动，仅删 hmacSig + 伪标 hmacLegacy:true——旧实现走 legacy
+    // warn 分支原样恢复，完全绕过。伪标字段不具证明力（磁盘明文可任写）。
+    const storePath = snapshotsJsonOf(tmpRoot);
+    const store = JSON.parse(fs.readFileSync(storePath, 'utf-8'));
+    delete store.snapshots[0].hmacSig;
+    (store.snapshots[0] as Record<string, unknown>).hmacLegacy = true;
+    fs.writeFileSync(storePath, JSON.stringify(store, null, 2));
+
+    let threw: Error | null = null;
+    try {
+      revertToSnapshot(tmpRoot, sha);
+    } catch (err) {
+      threw = err as Error;
+    }
+    // 必须抛「签名被剥离」——v2 写入侧（密钥可用时）恒带签名，无签名 = 剥签
+    expect(threw).not.toBeNull();
+    expect(threw!.message).toContain('疑似签名被剥离');
+    expect(threw!.message).toContain('拒绝');
+    // 🔴 工作区零改动（拒绝发生在任何 staging 写入之前）
+    expect(fs.readFileSync(path.join(tmpRoot, 'app.md'), 'utf-8')).toBe('正常内容');
+  });
+
+  it('test_revertToSnapshot_v2无签名但密钥不在场_降级窗口legacy放行不误杀', () => {
+    fs.writeFileSync(path.join(tmpRoot, 'app.md'), '降级窗口内容');
+    const sha = commitSnapshot(tmpRoot);
+
+    // 合法降级窗口模拟：写入时密钥在场（带签名），随后密钥文件消失——
+    // saveSnapshots 的既有降级契约（密钥不可得 → 条目不带签名 → 读取按
+    // legacy 放行）。构造：剥掉签名 + 删密钥文件，复现「降级窗口写入的
+    // v2 store + 密钥至今未恢复」形态——须放行（否则降级模式快照功能瘫痪）。
+    const storePath = snapshotsJsonOf(tmpRoot);
+    const store = JSON.parse(fs.readFileSync(storePath, 'utf-8'));
+    for (const s of store.snapshots) delete s.hmacSig;
+    fs.writeFileSync(storePath, JSON.stringify(store, null, 2));
+    fs.rmSync(process.env.SOFAGENT_KEY_PATH!);
+
+    const warnSpy: MockInstance = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      fs.writeFileSync(path.join(tmpRoot, 'app.md'), '改过了');
+      const restored = revertToSnapshot(tmpRoot, sha);
+      expect(restored).toContain('app.md');
+      expect(fs.readFileSync(path.join(tmpRoot, 'app.md'), 'utf-8')).toBe('降级窗口内容');
+      const warned = warnSpy.mock.calls.some((c) => String(c[0]).includes('legacy'));
+      expect(warned).toBe(true);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
   it('test_revertToSnapshot_正常round-trip多快照幂等_不回归', () => {
     // v1 内容 + 嵌套子目录
     fs.mkdirSync(path.join(tmpRoot, 'sub'), { recursive: true });
@@ -250,13 +304,19 @@ describe('SEC-14 · 恢复关口完整性验证 + 路径边界（revertToSnapsho
     fs.writeFileSync(path.join(tmpRoot, 'legacy.md'), 'legacy 内容');
     const sha = commitSnapshot(tmpRoot);
 
-    // 手工剥掉签名——模拟 F52 之前写入的存量快照（无 hmacSig）
+    // 真 legacy 形态：整份 store 重写为 v1（无 version 字段、files 直存、
+    // 无签名）——F52 之前写入的历史存量。注：「v2 store + 剥签名」构造在
+    // SEC-14 补丁后按签名剥离攻击拒绝（见 v3 用例）——合法 legacy 只能是
+    // 真 v1 store（或密钥不在场降级窗口的 v2，见上一用例）。
     const storePath = snapshotsJsonOf(tmpRoot);
-    const store = JSON.parse(fs.readFileSync(storePath, 'utf-8'));
-    for (const s of store.snapshots) delete s.hmacSig;
-    fs.writeFileSync(storePath, JSON.stringify(store, null, 2));
+    const v1Store = {
+      snapshots: [
+        { sha, timestamp: new Date().toISOString(), files: { 'legacy.md': 'legacy 内容' } },
+      ],
+    };
+    fs.writeFileSync(storePath, JSON.stringify(v1Store, null, 2));
 
-    // 条目被标记 legacy（读侧既有行为）
+    // 条目被标记 legacy（读侧既有行为——v1 分支恒标）
     expect(listSnapshots(tmpRoot)[0]!.hmacLegacy).toBe(true);
 
     // warn + 原样恢复（既有契约——legacy 无签名可验，不拦截）

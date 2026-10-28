@@ -207,8 +207,16 @@ function verifyRestoreIntegrity(shadowDir: string, fullSha: string): void {
     }
     // 条目签名通过后校验 blob 池（签名索引域 vs 池内实际内容）
     if (store.blobs) verifySnapshotBlobPool(raw, store.blobs);
+  } else if (store.version === 2 && getHmacKey()) {
+    // ── SEC-14 补丁：v2 store + 无签名 + 密钥在场 → 签名剥离攻击，fail-closed ──
+    // 与 loadSnapshots verify() 同口径（防双入口不一致）。伪标 hmacLegacy 字段
+    // 不具有证明力（磁盘明文可任写）——legacy 判定只看「真 v1 store 或密钥
+    // 不在场的降级写入」，不看条目自带标记。
+    throw new Error(
+      `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${fullSha.slice(0, 8)} 无 HMAC 签名但 store 为 v2（非合法 legacy——v2 写入侧在密钥可用时恒带签名），疑似签名被剥离，拒绝恢复`,
+    );
   }
-  // legacy（无 hmacSig）：无签名可验——既有契约（warn + 原样恢复），不在此拦。
+  // legacy（无 hmacSig 且非 v2 剥签场景）：无签名可验——既有契约（warn + 原样恢复），不在此拦。
 
   // ── 2. 条目 sha 内容复算（锁死内容域——签名剥离 / 无签名篡改的兜底）──
   // 🔴 哈希域对齐（成败关键）：commitSnapshot 的 sha 输入是
@@ -351,7 +359,23 @@ function loadSnapshots(shadowDir: string): SnapshotEntry[] {
     // = legacy，放行并标记 hmacLegacy（恢复路径显式提示）。
     const hmacKey = getHmacKey();
     const verify = (raw: NonNullable<ShadowStore['snapshots']>[number]): void => {
-      if (typeof raw.hmacSig !== 'string' || raw.hmacSig.length === 0) return; // legacy
+      if (typeof raw.hmacSig !== 'string' || raw.hmacSig.length === 0) {
+        // ── SEC-14 补丁：v2 store 内无签名条目 + 密钥在场 → 签名剥离攻击 ──
+        // 实证（saveSnapshots 写入侧）：密钥可得时对**全部**条目恒签名、无
+        // 「v1 无签名条目迁入 v2」路径——密钥在场却出现无签名 v2 条目，只可能
+        // 是事后剥签/伪标 hmacLegacy（真 v1 存量随下次 commit 重写进 v2 时
+        // 必被重签）。合法的无签名 v2 条目只产生于密钥**不在场**的降级写入
+        // 窗口（saveSnapshots 的 console.warn 契约）——那走下方 legacy 放行，
+        // 且密钥不在场时剥签攻击无增益（带签名条目已 fail-closed 全拒）。
+        // 注：不可无条件 throw——降级窗口写入的 store 会被下一次 commitSnapshot
+        // 自身的 loadSnapshots 读回（否则降级模式快照功能整体瘫痪）。
+        if (data.version === 2 && hmacKey) {
+          throw new Error(
+            `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${raw.sha.slice(0, 8)} 无 HMAC 签名但 store 为 v2（非合法 legacy——v2 写入侧在密钥可用时恒带签名），疑似签名被剥离，拒绝加载`,
+          );
+        }
+        return; // legacy：真 v1 store，或密钥不在场窗口期的 v2 降级写入
+      }
       if (!hmacKey) {
         throw new Error(
           `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${raw.sha.slice(0, 8)} 带签名但 HMAC 密钥不可用（~/.sofagent-key 缺失或不可读）——无法确认快照未被篡改，按 fail-closed 拒绝`,
@@ -369,6 +393,9 @@ function loadSnapshots(shadowDir: string): SnapshotEntry[] {
     for (const raw of data.snapshots) verify(raw);
 
     // v2：内容寻址还原（label 透传——TASK-18 rollback 定位维度）
+    // SEC-14 补丁：v2 内不再产出 hmacLegacy 条目——密钥在场时无签名条目已在
+    // verify() 剥签分支 throw（到不了此标记），密钥不在场降级窗口是唯一残留
+    // 路径（功能可用性优先，warn 已在写入侧显式提示）。
     if (data.version === 2 && data.blobs) {
       return data.snapshots.map((s) => {
         const legacy = !(typeof s.hmacSig === 'string' && s.hmacSig.length > 0);

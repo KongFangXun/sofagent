@@ -110,11 +110,17 @@ describe('F52 · 快照 HMAC 指纹（core 存储层 + mcp 工具层）', () => 
     fs.writeFileSync(path.join(tmpRoot, 'app.md'), 'legacy 内容');
     const sha = commitSnapshot(tmpRoot);
 
-    // 手工剥掉签名——模拟 F52 之前写入的存量快照
+    // 真 legacy 形态：整份 store 重写为 v1（无 version 字段、files 直存、
+    // 无签名）——F52 之前写入的历史存量。注：原构造「v2 + 剥 hmacSig」在
+    // SEC-14 补丁（v2 store 无签名 + 密钥在场 = 签名剥离攻击，拒绝）后按
+    // 攻击处理——合法 legacy 只能是真 v1 store（或密钥不在场的降级窗口 v2）。
     const storePath = snapshotsJsonOf(tmpRoot);
-    const store = JSON.parse(fs.readFileSync(storePath, 'utf-8'));
-    for (const s of store.snapshots) delete s.hmacSig;
-    fs.writeFileSync(storePath, JSON.stringify(store, null, 2));
+    const v1Store = {
+      snapshots: [
+        { sha, timestamp: new Date().toISOString(), files: { 'app.md': 'legacy 内容' } },
+      ],
+    };
+    fs.writeFileSync(storePath, JSON.stringify(v1Store, null, 2));
 
     // 条目被标记为 legacy
     const entries = listSnapshots(tmpRoot);
