@@ -177,3 +177,90 @@ describe('P0-16 · --diff=<range> 等号形态（quick 侧 fail-loud / 引擎侧
   });
 });
 
+// ============================================================
+// 第二组 · BUG-1：单 commit 仓 --ruleset 自动路由崩溃兜底
+// ============================================================
+describe('BUG-1 · 单 commit 仓 FULL_ONLY 自动路由的空树兜底', () => {
+  it('单 commit 仓（含泄漏）--ruleset security → 审计首个 commit，无「diff range 无效」', () => {
+    const dir = makeRepo('single', /* withLeak */ true);
+    const { env, dataDir } = isolatedEnv();
+    const r = runBin(QUICK_BIN, ['--ruleset', 'security'], { cwd: dir, env });
+    // A2/密钥泄漏模式命中 → exit 2（改前：默认 HEAD~1..HEAD 无父提交 → 崩溃/无效报错）
+    expect(r.status).toBe(2);
+    expect(r.output).not.toContain('diff range 无效');
+    expect(r.output).not.toContain('DIFF_PARSE_FAILED');
+    // 空树兜底语义回声（text 模式不打印 range，以留痕面断言）：注入的 range
+    // 以空树 SHA 起点记入 history.jsonl 末条
+    const lines = readFileSync(join(dataDir, 'audit', 'history.jsonl'), 'utf-8')
+      .trim().split('\n').filter(Boolean);
+    const last = JSON.parse(lines[lines.length - 1] ?? '{}') as { diffRange?: string };
+    expect(last.diffRange).toBe('4b825dc642cb6eb9a060e54bf8d69288fbee4904..HEAD');
+    // 泄漏确已审出（A2 / 规则集密钥模式命中——ruleset 结果详情不脱敏含 AKIA，
+    // 内置 A2 输出已脱敏，两锚取其一即可证明泄漏被检出）
+    expect(r.output).toMatch(/AKIA|AWS Access Key/);
+  });
+
+  it('双 commit 仓 --ruleset security → 默认 HEAD~1..HEAD 原样（空树注入不触发）', () => {
+    const dir = makeRepo('double');
+    const { env, dataDir } = isolatedEnv();
+    const r = runBin(QUICK_BIN, ['--ruleset', 'security'], { cwd: dir, env });
+    expect(r.output).not.toContain('diff range 无效');
+    // 留痕面断言：有父提交时不注入空树——末条 diffRange 保持引擎默认 HEAD~1..HEAD
+    const lines = readFileSync(join(dataDir, 'audit', 'history.jsonl'), 'utf-8')
+      .trim().split('\n').filter(Boolean);
+    const last = JSON.parse(lines[lines.length - 1] ?? '{}') as { diffRange?: string };
+    expect(last.diffRange).toBe('HEAD~1..HEAD');
+  });
+
+  it('用户显式 --diff 时空树注入不覆盖用户意图（等号形态同样算显式）', () => {
+    const dir = makeRepo('single', /* withLeak */ true);
+    const spaceEnv = isolatedEnv();
+    // 显式空格形态：用户指定 HEAD~1..HEAD（单 commit 仓不可解析）——按用户意图
+    // 原样转发（引擎侧 fail 报无效 range），不注入空树伪装成功。
+    const explicitSpace = runBin(QUICK_BIN, ['--ruleset', 'security', '--diff', 'HEAD~1..HEAD'], { cwd: dir, env: spaceEnv.env });
+    expect(explicitSpace.status).toBe(2);
+    expect(explicitSpace.output).toContain('diff range 无效');
+    // 显式等号形态（P0-16 归一后同算显式）：注入同样不发生
+    const eqEnv = isolatedEnv();
+    const explicitEq = runBin(QUICK_BIN, ['--ruleset', 'security', '--diff=HEAD~1..HEAD'], { cwd: dir, env: eqEnv.env });
+    expect(explicitEq.status).toBe(2);
+    expect(explicitEq.output).toContain('diff range 无效');
+  });
+});
+
+// ============================================================
+// 第三组 · BUG-2：「不写 history」承诺与自动路由行为对齐
+// ============================================================
+describe('BUG-2 · help 承诺 × 自动路由写盘行为', () => {
+  it('help 全文不再有无条件「不写 history.jsonl 无留痕」表述', () => {
+    const r = runBin(QUICK_BIN, ['--help']);
+    expect(r.output).not.toContain('无留痕');
+    // 条件化新口径在位：quick 本体不写 + 路由后按完整引擎行为
+    expect(r.output).toContain('quick 模式不写 history.jsonl');
+  });
+
+  it('FULL_ONLY 自动路由前打印写盘披露行', () => {
+    const dir = makeRepo('double');
+    const { env } = isolatedEnv();
+    const r = runBin(QUICK_BIN, ['--ruleset', 'security'], { cwd: dir, env });
+    expect(r.output).toContain('已自动路由完整引擎');
+    expect(r.output).toContain('~/.sofagent/data/audit/');
+  });
+
+  it('纯 quick 审计（无完整引擎 flag）不写 history.jsonl——隔离数据目录实测', () => {
+    const dir = makeRepo('double');
+    const { env, dataDir } = isolatedEnv();
+    const r = runBin(QUICK_BIN, [], { cwd: dir, env });
+    expect(r.status).toBe(0);
+    // 隔离数据目录及其 audit/ 子目录都不应出现 history.jsonl
+    const historyPath = join(dataDir, 'audit', 'history.jsonl');
+    expect(existsSync(historyPath)).toBe(false);
+    if (existsSync(dataDir)) {
+      // 目录若被创建，也不得含任何 history.jsonl（递归面确认）
+      const found = readdirSync(dataDir, { recursive: true }).filter(
+        (f) => String(f).endsWith('history.jsonl'),
+      );
+      expect(found).toHaveLength(0);
+    }
+  });
+});
