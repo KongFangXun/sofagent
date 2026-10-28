@@ -29,7 +29,7 @@
 // stopCondition），公共逻辑全部在 base 中实现。
 // ============================================================
 
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, execFileSync } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
@@ -51,16 +51,6 @@ import { createVisibility, EVENTS } from './visibility.mjs';
 import { createProgressMiddleware } from './progress-middleware.mjs';
 // v1.2.8 功能③：统一工具输出截断中间件（替代下方内联实现）
 import { truncateToolOutput as truncateToolOutputUnified, createToolOutputBudget, DEFAULT_BUDGET as TOOL_OUTPUT_DEFAULT } from './tool-output-budget.mjs';
-
-/**
- * 给 shell 命令中的文件路径加单引号转义（防止路径含空格/特殊字符）。
- * v1.3.1 P0-2 修复：git add 显式文件清单时使用。
- * @param {string} p 文件路径
- * @returns {string} 单引号包裹的路径（内部 ' 转义为 '\''）
- */
-function quotePath(p) {
-  return `'${String(p).replace(/'/g, `'\\''`)}'`;
-}
 
 // ─── 工厂函数 ────────────────────────────────────────────────
 
@@ -668,12 +658,15 @@ export function createForgeDriverBase(config = {}) {
       ).toString().split('\n').map((s) => s.trim()).filter(Boolean);
       const filesToAdd = [...changedFiles, ...untrackedFiles];
       if (filesToAdd.length > 0) {
-        execSync(`git add ${filesToAdd.map(quotePath).join(' ')}`, { cwd: gitRoot, encoding: 'utf-8', timeout: 30_000 });
+        // 🔴 SEC-9 同族修复（SEC-13 扫描面并入 FORGE 后清零）：execSync 拼
+        // 模板字符串改 execFileSync 数组形态——零 shell 参与，文件名里的
+        // $ ` ; | 空格都只是普通字符，注入面消除（filesTo Quote 单引号转义随之不需要）。
+        execFileSync('git', ['add', '--', ...filesToAdd], { cwd: gitRoot, encoding: 'utf-8', timeout: 30_000 });
         // 🔴 v1.3.5 修复：裸 `git commit -m` 会提交暂存区里所有已 staged 内容——
         // 会把队友并行编辑时先 `git add` 进暂存区的文件（如 docs/ 规划文档）一起卷进
         // auto-commit（2026-08-16 三次「卷走」事故根因）。改为 `git commit -- <files>`
         // 只提交本轮 filesToAdd 清单内的文件，暂存区里队友的文件保持 staged 原状。
-        execSync(`git commit -m "${commitMsg}" -- ${filesToAdd.map(quotePath).join(' ')}`, { cwd: gitRoot, encoding: 'utf-8', timeout: 30_000 });
+        execFileSync('git', ['commit', '-m', commitMsg, '--', ...filesToAdd], { cwd: gitRoot, encoding: 'utf-8', timeout: 30_000 });
       }
       // 无代码领域改动时：不执行任何 commit——裸 commit 在 filesToAdd 为空时仍会
       // 提交暂存区里队友已 staged 的文件，必须显式跳过。
@@ -692,17 +685,25 @@ export function createForgeDriverBase(config = {}) {
     // v1.3.6 交付⑩：cwd=gitRoot（worktree 隔离时审副本的 auto-commit；审计二进制
     // 仍从主仓绝对路径加载——副本不含 node_modules，但 node_modules 不影响 audit 独立运行）
     try {
-      const { execSync } = await import('child_process');
-      const auditCmd = `node ${join(repoRoot, 'engine', 'audit', 'dist', 'index.js')} --diff HEAD~1..HEAD --silent --task "FORGE audit gate: ${stepName} round-${round}"`;
+      const { execFileSync } = await import('child_process');
+      // 🔴 SEC-9 同族修复（变量间接拼接形态——单行静态扫看不见，复审补刀）：
+      // execFileSync 数组形态零 shell 参与，stepName 里的 $/引号都是普通字符。
+      const auditBin = join(repoRoot, 'engine', 'audit', 'dist', 'index.js');
       let auditOutput = '';
       let exitCode = 0;
       try {
-        auditOutput = execSync(auditCmd, {
-          cwd: gitRoot,
-          encoding: 'utf-8',
-          timeout: 120_000,
-          stdio: ['pipe', 'pipe', 'pipe'],
-        });
+        auditOutput = execFileSync(
+          process.execPath,
+          [
+            auditBin, '--diff', 'HEAD~1..HEAD', '--silent',
+            '--task', `FORGE audit gate: ${stepName} round-${round}`,
+          ],
+          {
+            cwd: gitRoot,
+            encoding: 'utf-8',
+            timeout: 120_000,
+            stdio: ['pipe', 'pipe', 'pipe'],
+          });
       } catch (auditErr) {
         exitCode = auditErr.status ?? 1;
         auditOutput = auditErr.stdout || auditErr.stderr || auditErr.message;
@@ -869,14 +870,14 @@ export function createForgeDriverBase(config = {}) {
       } catch { /* 元数据/目录损坏 → 走清理重建 */ }
     }
 
-    // 清理残留（损坏的旧 worktree / 目录）
-    try { execSync(`git worktree remove --force ${quotePath(worktreeDir)}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 60_000 }); } catch { /* 可能本就不存在 */ }
+    // 清理残留（损坏的旧 worktree / 目录）——execFileSync 数组形态零 shell 参与
+    try { execFileSync('git', ['worktree', 'remove', '--force', worktreeDir], { cwd: repoRoot, encoding: 'utf-8', timeout: 60_000 }); } catch { /* 可能本就不存在 */ }
     try { rmSync(worktreeDir, { recursive: true, force: true }); } catch { /* ignore */ }
 
     // 解析起始 ref 为完整 commit SHA（分支基线记录稳定 SHA，主仓后续 commit 不影响副本）
     let baseSha;
     try {
-      baseSha = execSync(`git rev-parse ${quotePath(ref)}`, {
+      baseSha = execFileSync('git', ['rev-parse', ref], {
         cwd: repoRoot, encoding: 'utf-8', timeout: 30_000,
       }).toString().trim();
     } catch (err) {
@@ -885,11 +886,11 @@ export function createForgeDriverBase(config = {}) {
 
     // -b 新建分支；若分支已存在（异常残留）用 -B 重置到 baseSha 复用
     const branchExists = (() => {
-      try { execSync(`git rev-parse --verify ${quotePath(branch)}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 }); return true; } catch { return false; }
+      try { execFileSync('git', ['rev-parse', '--verify', branch], { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 }); return true; } catch { return false; }
     })();
     const branchFlag = branchExists ? '-B' : '-b';
     try {
-      execSync(`git worktree add ${branchFlag} ${quotePath(branch)} ${quotePath(worktreeDir)} ${quotePath(baseSha)}`, {
+      execFileSync('git', ['worktree', 'add', branchFlag, branch, worktreeDir, baseSha], {
         cwd: repoRoot, encoding: 'utf-8', timeout: 120_000,
       });
     } catch (err) {
@@ -938,10 +939,10 @@ export function createForgeDriverBase(config = {}) {
         const wtHead = execSync('git rev-parse HEAD', { cwd: worktreeDir, encoding: 'utf-8', timeout: 30_000 }).toString().trim();
         let mainRef = '';
         try {
-          mainRef = execSync(`git rev-parse ${quotePath(branch)}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 }).toString().trim();
+          mainRef = execFileSync('git', ['rev-parse', branch], { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 }).toString().trim();
         } catch { /* 分支 ref 不存在（首 run 未回流过）——直接创建 */ }
         if (wtHead && wtHead !== mainRef) {
-          execSync(`git branch -f ${quotePath(branch)} ${wtHead}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+          execFileSync('git', ['branch', '-f', branch, wtHead], { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
         }
       } catch (fixErr) {
         // 固化失败不阻塞清理（commit 仍在对象库，fsck 可找回）——但必须留下线索
@@ -954,9 +955,9 @@ export function createForgeDriverBase(config = {}) {
     }
 
     let detail = '';
-    // 1. 从主仓移除 worktree 注册（--force 容忍工作区内未提交残留）
+    // 1. 从主仓移除 worktree 注册（--force 容忍工作区内未提交残留）——数组形态零 shell
     try {
-      execSync(`git worktree remove --force ${quotePath(worktreeDir)}`, {
+      execFileSync('git', ['worktree', 'remove', '--force', worktreeDir], {
         cwd: repoRoot, encoding: 'utf-8', timeout: 60_000,
       });
       detail += 'worktree remove 成功; ';

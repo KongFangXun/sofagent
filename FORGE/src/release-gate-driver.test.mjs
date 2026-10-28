@@ -810,7 +810,9 @@ describe('execRegressionDim · exit 语义归一化（run-08/09 教训）', () =
 // 修复 = 收敛判定加第三重校验：F 分支自基线零 commit = 修复失败，禁止判收敛。
 describe('F 链零 commit 校验（两轮假 PASS 根治）', () => {
   it('收敛判定源码含 git rev-list --count 零 commit 校验 + 拦截日志', () => {
-    expect(SOURCE_CODE).toContain('git rev-list --count');
+    // SEC-9 同族修复后调用形态改为 execFileSync 数组（零 shell 参与）——
+    // 锚点随实现形态同步：'rev-list', '--count' 数组参数即原 shell 文本。
+    expect(SOURCE_CODE).toContain("'rev-list', '--count'");
     expect(SOURCE_CODE).toContain('零 commit 校验拦截');
     expect(SOURCE_CODE).toContain('fBranchCommitCount === 0');
     // 校验必须在 auditPassed 判定之后、收敛 break 之前

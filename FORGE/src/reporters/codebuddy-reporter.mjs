@@ -13,7 +13,7 @@
 //   if (reporter) reporters.push(reporter);
 // ============================================================
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 /**
  * 尝试创建 CodeBuddy 适配器。
@@ -70,10 +70,11 @@ export async function createCodebuddyReporter() {
 
 /**
  * 检测命令是否存在（同步）。
+ * 🔴 SEC-9 同族修复：execFileSync 数组形态零 shell 参与，cmd 无注入面。
  */
 function commandExists(cmd) {
   try {
-    execSync(`which ${cmd} 2>/dev/null`, { stdio: 'pipe' });
+    execFileSync('which', [cmd], { stdio: 'pipe' });
     return true;
   } catch {
     return false;
@@ -91,8 +92,10 @@ function getSessionId() {
   }
 
   // 2. 从 codebuddy ps 解析（取最近活跃的 session）
+  // 🔴 SEC-9 同族修复：execFileSync 数组形态零 shell 参与（原 `2>/dev/null`
+  // 重定向是 shell 特性，异常路径由 catch 兜底，语义不变）。
   try {
-    const output = execSync('codebuddy ps --json 2>/dev/null', {
+    const output = execFileSync('codebuddy', ['ps', '--json'], {
       stdio: 'pipe',
       timeout: 3000,
     }).toString().trim();
@@ -114,11 +117,14 @@ function getSessionId() {
 /**
  * 推送消息到 CodeBuddy session。
  * 使用 codebuddy -r <sessionId> -p "<message>"
+ * 🔴 SEC-9 同族修复：原模板字符串拼 message 后交 shell——双引号内 $
+ * 与反引号仍会展开/替换。execFileSync 数组形态零 shell 参与，message
+ * 里的引号/$/反引号都是普通字符，原手工转义（\" 替换）随之不需要。
  */
 function pushToSession(sessionId, message) {
   try {
     // -r: resume 到指定 session；-p: 发送消息后不等待
-    execSync(`codebuddy -r ${sessionId} -p "${message.replace(/"/g, '\\"')}"`, {
+    execFileSync('codebuddy', ['-r', sessionId, '-p', message], {
       stdio: 'pipe',
       timeout: 10000,
     });

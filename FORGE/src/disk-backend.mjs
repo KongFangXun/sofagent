@@ -21,7 +21,7 @@ import {
   existsSync, mkdirSync,
 } from 'fs';
 import { join, resolve, relative, dirname, sep, isAbsolute } from 'path';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 
 /**
  * 默认忽略的目录名（ls 和 glob 不列出这些目录的内容）。
@@ -310,14 +310,19 @@ export class DiskBackend {
     }
 
     // 构建 find 排除参数（忽略 node_modules 等）
-    const pruneArgs = [...IGNORE_DIRS].map(d => `-name ${d} -prune`).join(' -o ');
+    // 🔴 SEC-9 同族修复：原 execSync 拼模板字符串——execFileSync 数组形态
+    // 零 shell 参与，searchRoot 里的空格/引号/$ 都是普通字符，注入面消除。
     // find 的 -name 模式支持基本的通配符，但 glob ** 语法需要转换
     // 策略：用 find 列出所有文件，然后在 JS 中用 minimatch 风格匹配
-    const findCmd = `find ${JSON.stringify(searchRoot)} \\( ${pruneArgs} \\) -o -type f -print`;
+    const pruneArgs = [];
+    for (const d of IGNORE_DIRS) {
+      pruneArgs.push('-name', d, '-prune', '-o');
+    }
+    pruneArgs.push('-type', 'f', '-print');
 
     let allFiles;
     try {
-      const output = execSync(findCmd, {
+      const output = execFileSync('find', [searchRoot, ...pruneArgs], {
         encoding: 'utf-8',
         maxBuffer: 50 * 1024 * 1024, // 50MB
         timeout: 30000,
@@ -504,18 +509,21 @@ export class DiskBackend {
 
     // 使用 grep -rn（递归、显示行号、不区分大小写关闭）
     // 注意：pattern 可能含特殊字符，用 -E 扩展正则
+    // 🔴 SEC-9 修复：原实现把 JSON.stringify 转义后的参数用模板字符串拼回
+    // shell 命令行交给 execSync——stringify 不转义 $ 与反引号，pattern 含
+    // 外部输入（agent 的搜索词/文件名）时 `$(touch /tmp/pwn)` 可注入执行。
+    // execFileSync 数组形态——零 shell 参与，注入面消除。
     const args = [
       '-rn', '-E',
       ...excludeDirArgs,
       ...includeArgs,
-      '--', JSON.stringify(pattern),
-      JSON.stringify(searchRoot),
+      '--', pattern,
+      searchRoot,
     ];
 
     let output;
     try {
-      // 用数组传参避免 shell 注入
-      output = execSync(`grep ${args.join(' ')}`, {
+      output = execFileSync('grep', args, {
         encoding: 'utf-8',
         maxBuffer: 50 * 1024 * 1024,
         timeout: 30000,

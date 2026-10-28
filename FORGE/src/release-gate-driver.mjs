@@ -26,7 +26,7 @@
 //   - V 用 REVIEWER_TOOLS（只读），F 用 ENGINEER_TOOLS（可写）
 // ============================================================
 
-import { spawn, execSync, spawnSync } from 'child_process';
+import { spawn, execSync, execFileSync, spawnSync } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync, statSync,
@@ -3903,8 +3903,11 @@ async function main() {
     const fBranchCommitCount = (() => {
       try {
         if (!globalWorktree || !globalWorktree.branch || !globalWorktree.baseSha) return -1; // 无 worktree 信息，无法校验（老路径兼容：不做拦截）
-        const out = execSync(
-          `git rev-list --count ${globalWorktree.baseSha}..${globalWorktree.branch}`,
+        // 🔴 SEC-9 同族修复：多行模板形态（单行静态扫漏检）——execFileSync
+        // 数组形态零 shell 参与，branch/baseSha 里的特殊字符无注入面。
+        const out = execFileSync(
+          'git',
+          ['rev-list', '--count', `${globalWorktree.baseSha}..${globalWorktree.branch}`],
           { cwd: REPO_ROOT, encoding: 'utf-8', timeout: 15_000 },
         ).toString().trim();
         return parseInt(out, 10);
