@@ -82,8 +82,17 @@ elif [ -n "$SOFAGENT_HOME" ]; then
 else
   HISTORY_FILE="$HOME/.sofagent/data/audit/history.jsonl"
 fi
-if [ ! -f "$HISTORY_FILE" ] && [ -n "$SOFAGENT_DATA" ]; then
-  echo "  ⚠️ [sofagent] SOFAGENT_DATA 已设置但 $HISTORY_FILE 不存在——审计对账数据缺失，请检查数据目录配置。"
+if [ ! -f "$HISTORY_FILE" ]; then
+  if [ -n "$SOFAGENT_DATA" ]; then
+    echo "  ⚠️ [sofagent] SOFAGENT_DATA 已设置但 $HISTORY_FILE 不存在——审计对账数据缺失，请检查数据目录配置。"
+  else
+    # BUG-32（冷启动盲窗）：--init 后首笔 commit 走 --no-verify 时 commit-msg 未运行，
+    # history.jsonl 尚未创建——此分支此前静默跳过（零输出），用户误以为审计在跑。
+    # 改为显式告警（不阻断——post-commit 永不阻断铁律不变）：告知对账盲窗 +
+    # 自愈路径（下一笔正常 commit 的 commit-msg 会写首条记录，盲窗即闭）。
+    echo "  ⚠️ [sofagent] 审计历史不存在（${HISTORY_FILE}）——若本笔用了 --no-verify，它正处在安装后对账盲窗（未审计落库）。"
+    echo "      下一笔正常 git commit 会自动建立审计历史，本告警随之消失；补审本笔：sofagent audit --diff HEAD~1..HEAD"
+  fi
 fi
 if [ -f "$HISTORY_FILE" ]; then
   # v1.5.0 TASK-9: 捕获 node 对账退出码——真实损坏（解析异常）时 exit 1 传播

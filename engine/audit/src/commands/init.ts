@@ -666,6 +666,9 @@ export function runInit(): void {
         const hasSubjectDisambig = pcContent.includes('COMMIT_SUBJECT');
         // v1.4.2 H-01: HEAD tree 入库对账兜底标记——缺此逻辑的旧 hook 强制覆盖
         const hasHeadTreeGuard = pcContent.includes('ls-tree');
+        // BUG-32: 冷启动盲窗告警标记——history.jsonl 缺失分支此前静默跳过（零输出），
+        // 缺此告警逻辑的旧 hook 强制覆盖（--init 后首笔 --no-verify 的盲窗须可见）。
+        const hasColdStartWarn = pcContent.includes('审计历史不存在');
         const versionMatch = pcContent.match(/v(\d+)\.(\d+)\.(\d+)/);
         if (versionMatch) {
           const major = parseInt(versionMatch[1]!, 10);
@@ -684,6 +687,8 @@ export function runInit(): void {
             hasPostCommitHook = false;  // 版本达标但无主题消歧逻辑 → 覆盖（防跨 commit 误认领）
           } else if (!hasHeadTreeGuard) {
             hasPostCommitHook = false;  // 版本达标但无 HEAD tree 兜底 → 覆盖（H-01 三层防线）
+          } else if (!hasColdStartWarn) {
+            hasPostCommitHook = false;  // 版本达标但无冷启动盲窗告警 → 覆盖（BUG-32 对账盲窗可见）
           } else {
             hasPostCommitHook = true;   // 当前版本或更新 → 保留
           }
