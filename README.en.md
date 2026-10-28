@@ -40,13 +40,13 @@
 > 💬 **One-sentence version**: on entry, it maps your business and writes it down as files; after it leaves, every time your digital employee touches code or files, the change passes a security check, leaves a record, and saves a snapshot—traceable and roll-backable when things go wrong.
 
 > 🏢 **The organizational lens**: the bottleneck of AI adoption has shifted from "is the model smart enough" to "can the organization dare to onboard it"—does it fit the org chart, does it get an account, how is performance measured, what happens when it errs. sofagent is the onboarding system for
->digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how—the accumulation mechanism iterates with use; current empirical boundaries in
+> digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how—the accumulation mechanism iterates with use; current empirical boundaries in
 >[LIMITATIONS](./docs/LIMITATIONS.md)), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
 
 > 🧩 **The three-factor framing**: sofagent is a **governance layer for FDE deliverables with a built-in Harness**—the engineering layer (FDEing) and the governance layer (harness) are shipped, while the judgment layer (S1M) is scheduled for v1.6.0–v1.9.0—FDEing is the engineering layer (turning
->FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
->from generation; its foundation is under construction across v1.6.0–v1.9.0, with the declaration landing in v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities—today's main landing points). Each layer sits in its own place; see "Core Features".
->The identity formula is settled as **FDEing × S1A (S1A = S1M + Harness)**; canonical wording in [PHILOSOPHY · identity caliber](./docs/PHILOSOPHY.md).
+> FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
+> from generation; stages one and two delivered; stage three deferred; declaration lands with v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities—today's main landing points). Each layer sits in its own place; see "Core Features".
+> The identity formula is settled as **FDEing × S1A (S1A = S1M + Harness)**; canonical wording in [PHILOSOPHY · identity caliber](./docs/PHILOSOPHY.md).
 
 **An open-source FDE Harness layer** (FDE = Forward Deployed Engineer, the engineer who embeds models into real enterprise
 operations; a *harness* is the governance layer that keeps every Agent change audited and reversible—see the
@@ -128,9 +128,7 @@ Three layers, each in its place: the **engineering layer (FDEing)** writes judgm
 - 🤖 **Deploy AI nodes**—three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 📦 **Judgment frozen into deliverables**—each node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
-**Judgment layer · S1M** (System One Model—a decision model that separates judgment from generation; **its foundation is scheduled for construction across v1.6.0–v1.9.0, with the declaration
-for v2.0.0—not yet shipped**. This version states identity and roadmap only, no claim that judgment capabilities are
-delivered yet; the narrative is anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition.
+**Judgment layer · S1M** (System One Model—a decision model that separates judgment from generation; **its foundation is under construction across v1.6.0–v1.9.0—stages one and two delivered (v1.6.0 / v1.7.0); stage three deferred pending agreement-rate threshold; full declaration lands with v2.0.0**; the narrative is anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition.
 What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🔎 **Judgment trail**—decision-log causal chains record each accountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
@@ -161,7 +159,7 @@ together by the deliverables handed over in between**:
  experience distills back. The human leaves, governance doesn't.
 
 > 🔗 **Why they must be one thing**: the deliverables are a living state shared by both stages—written on entry, read during execution, written back during evolution (trial branches promoted to baseline, reflections distilled back). Without FDE, the constraint layer has no criteria to enforce;
->without the constraint layer, FDE judgment evaporates the moment the engineer leaves. That is where the name "FDE Harness" comes from—not a bundle of an FDE feature and a Harness feature, but two stages of one job.
+> without the constraint layer, FDE judgment evaporates the moment the engineer leaves. That is where the name "FDE Harness" comes from—not a bundle of an FDE feature and a Harness feature, but two stages of one job.
 >
 > **From FDE to FDEing—everything can be FDEing**: the combined effect of the two stages—see the opening of "Core Features" above (everything can be FDEing).
 
@@ -190,7 +188,7 @@ the platform:
 |---|---|---|---|
 | **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 7 atomic `cordis-plugin-sofagent-*` plugins mounted into the runtime (see Note 1) |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
-| **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 28 rules, not call-level interception) |
+| **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (Claude Code tier: PreToolUse covering Bash/Write/Edit call-level; Cursor: commit-level) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
 
 > Note 1: 1 optional aggregate plugin also available—see "Upstream & plugin entries" below—7 lifecycle events incl. `tools/pre-execute` (vocabulary table: `engine/dsh-plugins/SEAMS.md`)
@@ -203,7 +201,7 @@ into—full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/H
 post-commit only leaves a trace without blocking; bypassed commits do leave traces—see [LIMITATIONS
  §3](./docs/LIMITATIONS.md)).
 
-One command selects your mounting tier: `, install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
+One command selects your mounting tier: `install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
 ## v1.7.0: Decision Substrate · Stage 2 (Model & Calibration)
 
@@ -216,7 +214,7 @@ off the decision path.
 | **Bucketed temperature calibration** | Per-primitive fitting · score isotonicity · disjoint calibration set assertion (same criterion across sides) (see Note 2) | SDK-face |
 | **Calibration discipline gate** | Confidence/probability thresholds consumed on decision paths must carry calibration evidence or an explicit `uncalibrated` marker — unmarked ones cannot ship (check-calibration-claims wired into the release chain) | SDK-face · gate |
 | **Abstention as a fourth state** | Abstain stands beside pass/warn/fail (three-source evidence: low confidence / OOD / missing criteria) · per-primitive thresholds · cannot be disabled when ECE misses the line | SDK-face |
-| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently (see Note 3) | SDK-face · `sofagent audit --criteria` lists criteria via CLI |
+| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently; measured: ECE 17/18 pass, agreement misses ⇒ stage three deferred (Note 3) | SDK-face · `sofagent audit --criteria` lists criteria via CLI |
 
 > Note 1: probability-target assertion (hard labels rejected) + three-tier weighting + reproducibility manifest
 > Note 2: on isolation violations, emitting readouts for violating samples is rejected (a refusal-to-emit, not a pass) · calibration artifact is plain JSON, weight-free
@@ -254,20 +252,20 @@ carry the stage semantics: v1.x alpha construction period / beta from v2.0.0).
 The `alpha` tag remains as a historical release trace and isn't maintained.
 
 > ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md)—`config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation isn't yet landed (v0 delivered query-side isolation: orgId filtering + the
->data/<tenant>/ path foundation—see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 400 .sofagent/config.yml`—an auxiliary layer, ineffective against same-user processes; see [LIMITATIONS §3](./docs/LIMITATIONS.md)); don't put the single-machine
->default config directly into production.
+> data/<tenant>/ path foundation—see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 400 .sofagent/config.yml`—an auxiliary layer, ineffective against same-user processes; see [LIMITATIONS §3](./docs/LIMITATIONS.md)); don't put the single-machine
+> default config directly into production.
 >
 > 🔐 **Data sovereignty**: runtime data never leaves your machine (no network access except the npm package fetch at install time); the three opt-in exits (cloud sync / model inference endpoint / cloud VM execution surface) require your explicit configuration (note: opening the dashboard anonymously
->fetches the public GitHub star count—read-only, no user data sent, silent fallback on failure)—see [SECURITY](./SECURITY.md).
+> fetches the public GitHub star count—read-only, no user data sent, silent fallback on failure)—see [SECURITY](./SECURITY.md).
 
 **30s and up, zero setup** (first run fetches via npx ~30s; reruns in seconds—engine ~1.1s, CLI end-to-end 4-5s)—audit any git repo:
 
-```,
+```bash
 npx -y -p sofagent sofagent audit
 ```
 
 > 💡 The npm channel ships one form only — the umbrella: `npm i -g sofagent` installs the **full dependency tree** (602-package basis below; no smaller package exists). For a smaller footprint, use the ephemeral npx form (`npx -y -p sofagent sofagent audit`, nothing stays
->installed; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
+> installed; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
 
 > 💡 quick runs the **17 default rules** (A3/A9 active—quick auto-reads the last commit message; without one, A9 skipped). `--init` installs the hook (same 17 defaults); the full 28 require `extendedRulesEnabled: true`—see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
@@ -294,7 +292,7 @@ screenshot above shows the sibling A1 scenario (.env sensitive-file commit block
 
 **Full install** (Node.js ≥ 18, download and review before running)—**installed on the enterprise devices running the AI nodes**:
 
-```,
+```bash
 curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.7.0/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh     # review the script first, confirm it's safe
 , bootstrap.sh && rm bootstrap.sh
@@ -302,7 +300,7 @@ less bootstrap.sh     # review the script first, confirm it's safe
 
 > 🔒 Supply-chain trust: tag pinning + sha256 verification + fail-closed + self-anchored hash re-verification (see [SECURITY.md](SECURITY.md), remote-install section); ⚠️ audit logs are plaintext on disk by default—enterprise deployments should enable encryption-at-rest.
 
-```,
+```bash
 sofagent audit --init   # install the git hook—every commit's audited from now on
 sofagent audit --doctor  # verify the environment (optional)
 ```
@@ -311,12 +309,12 @@ sofagent audit --doctor  # verify the environment (optional)
 
 
 > 💡 Install scripts mainly write to `~/.sofagent/` (data) + `~/.local/bin` (CLI); **they write into a platform's integration directory only when `--platform <name>` is passed explicitly** (a default install probes and modifies no platform config); if npm permissions
->are insufficient, the CLI entry falls back to `/usr/local/bin`. No other system files are touched. `--init` installs the three-layer git hook defense (pre-commit blocks `.sofagent/` from entering the repo + commit-msg rule audit + post-commit reconciliation). `--no-verify` can skip **both
->pre-commit and commit-msg** (the first two layers); **post-commit reconciliation is unaffected** (the git-native switch doesn't apply to post-commit)—it guards honest Agents' carelessness, not malicious bypass; skipped commits are reconciled by the post-commit hook (flagged
+> are insufficient, the CLI entry falls back to `/usr/local/bin`. No other system files are touched. `--init` installs the three-layer git hook defense (pre-commit blocks `.sofagent/` from entering the repo + commit-msg rule audit + post-commit reconciliation). `--no-verify` can skip **both
+> pre-commit and commit-msg** (the first two layers); **post-commit reconciliation is unaffected** (the git-native switch doesn't apply to post-commit)—it guards honest Agents' carelessness, not malicious bypass; skipped commits are reconciled by the post-commit hook (flagged
 >"suspected bypass") but not blocked. Personal fallbacks: CI-side `sofagent audit --diff`, periodic `--doctor`, and reviewing the audit records. See [LIMITATIONS](./docs/LIMITATIONS.md).
 >
 > 📌 **install.sh is the enterprise device installer**—install it on the enterprise devices running the AI nodes (constraint-layer engine + daemon inspection + single-machine dashboard); FDEs don't need to run it on their own machines—the FDE's tools are the [FDE
->Skill](https://clawhub.ai/kongfangxun/skills/sofagent) (methodology). See [deployment architecture](./docs/ARCHITECTURE.md#%E5%AE%89%E8%A3%85%E5%8C%85%E8%BE%B9%E7%95%8C%E4%B8%8E%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84v132-%E5%AE%9A%E4%BD%8D%E6%A0%A1%E5%87%86).
+> Skill](https://clawhub.ai/kongfangxun/skills/sofagent) (methodology). See [deployment architecture](./docs/ARCHITECTURE.md#%E5%AE%89%E8%A3%85%E5%8C%85%E8%BE%B9%E7%95%8C%E4%B8%8E%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84v132-%E5%AE%9A%E4%BD%8D%E6%A0%A1%E5%87%86).
 >
 > 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh—`curl bootstrap.sh | ,` equals "download install.sh + run install.sh". Both install exactly the same thing; bootstrap just saves the manual clone/download step.
 
@@ -344,7 +342,7 @@ the installed UI is the source of truth.)</sub></p>
 > | **macOS double-click** | Double-click `start-dashboard.command` | macOS shortcut to the Web version (macOS double-click entry only) | macOS users |
 >
 > ⚠️ **Dashboard availability boundary**: all three entries ship with the **`install.sh`-installed state**; a package installed via `npm i sofagent` does **not** contain the dashboard static assets (`tools/dashboard/` isn't distributed—the root `files` list keeps only root-level
->essentials). npm-only installs get the CLI + MCP surface; **for the Dashboard use the full install** (bootstrap.sh / install.sh).
+> essentials). npm-only installs get the CLI + MCP surface; **for the Dashboard use the full install** (bootstrap.sh / install.sh).
 
 > 👁️ **Agent's view**: with hooks installed, every commit triggers an audit—PASS prints a short echo then passes (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there's no separate GUI on the Agent side (see [PHILOSOPHY
 >§2](./docs/PHILOSOPHY.md#%E7%B3%BB%E7%BB%9F%E6%9A%B4%E9%9C%B2%E7%9A%84%E8%83%BD%E5%8A%9Bagent-%E8%A7%86%E8%A7%92)).
@@ -376,7 +374,7 @@ the installed UI is the source of truth.)</sub></p>
 
 **Rule marketplace**—community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):
 
-```,
+```bash
 npx -y -p sofagent sofagent audit --list-rulesets   # see available rulesets
 npx -y -p sofagent sofagent audit --ruleset security  # load the security ruleset
 ```
@@ -435,8 +433,8 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 
 > 🧪 **Engineering credibility** (current): 6552 tests / 13 module packages + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
 > **Package-count standard** (disambiguation): workspace 29 = 13 module packages + `engine/corpus` (`@sofagent/rsi-corpus` corpus pipeline) + load-chain + dsh-plugin-kit + umbrella + 8 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count
->standard** = 13 module packages (27 workspaces bear a test script; plugin packages,
->load-chain and dsh-plugin-kit are outside it)—they aren't the same set.
+> standard** = 13 module packages (27 workspaces bear a test script; plugin packages,
+> load-chain and dsh-plugin-kit are outside it)—they aren't the same set.
 > There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account—see each version's section) and the **current measured value** (the value in the engineering-credibility line above, rolling forward with fix batches); the current authoritative value is whatever
 >`tools/check/check-test-count.sh` reports (`test-count.sh` produces the SSOT count, `check-test-count.sh` verifies doc-claimed figures for consistency)—counting standard in [WIKI package-count definition](./docs/WIKI.md#六当前状态). Review-environment notes in
 >[docs/guides/review-system.md](./docs/guides/review-system.md); performance figures are single-machine reference values.

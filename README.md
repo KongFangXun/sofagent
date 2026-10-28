@@ -47,7 +47,7 @@
 <details>
 <summary>🧩 三因子口径（点开，术语见〈<a href="#什么是-fde-harness">什么是 FDE Harness</a>〉）</summary>
 
-> sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M，把判定从生成里分出来的决策模型）排期 v1.6.0–v1.9.0 建设、v2.0.0 宣告。三层各司其职、不互替。
+> sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M，把判定从生成里分出来的决策模型）排期 v1.6.0–v1.9.0 建设、v2.0.0 宣告（阶段一/二已交付）。三层各司其职、不互替。
 > 身份公式定稿 **FDEing × S1A（S1A = S1M + Harness）**，口径 SSOT = [PHILOSOPHY · 身份口径](./docs/PHILOSOPHY.md)。
 
 </details>
