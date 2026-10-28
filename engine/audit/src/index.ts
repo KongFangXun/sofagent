@@ -317,8 +317,65 @@ interface Args {
 // v1.4.9 深模块条目 8：子命令单源（cli/flag-table.ts）
 const SUBCOMMANDS: readonly string[] = AUDIT_SUBCOMMANDS;
 
-function parseArgs(argv: string[]): Args {
+/**
+ * v1.7.0 P0-16：带值长 flag 清单——`--x=value` 等号形态归一为空格形态的白名单。
+ * 仅收录 parseArgs 循环内「消费下一个 argv 值」的 flag（与循环分支一一对应，新增
+ * 带值 flag 时两处同步）；无值 flag（--strict/--ci/--silent 等）的等号形态**故意
+ * 不在册**——原样保留落进既有「不支持的参数」报错路径（fail-loud，不吞）。
+ */
+const LONG_VALUE_FLAGS: ReadonlySet<string> = new Set([
+  '--diff', '--task', '--commit-msg', '--verify-commit', '--regression',
+  '--webhook', '--webhook-url', '--format', '--ruleset', '--ruleset-path',
+  '--revert', '--timeline', '--verify-evidence',
+]);
+
+/**
+ * v1.7.0 P0-16：argv 预处理归一层——带值长 flag 的 `--x=v` 等号形态改写为 `--x v`。
+ *
+ * 缺陷背景：参数解析循环用严格相等 `argv[i] === '--diff'`，`--diff=HEAD~3..HEAD`
+ * 等号形态永不命中——quick 入口（cli-quick）只 warn 后静默审最近一次 commit
+ * （CI 假绿）；本引擎侧则落「不支持的参数」exit 1（非静默但等号形态永不可用）。
+ *
+ * 归一规则：
+ *   · 仅改写 LONG_VALUE_FLAGS 在册 name（含 `--diff=`），与空格形态同语义；
+ *   · 其余 `--x=v` 原样保留 → 既有「不支持的参数」报错（不吞、不静默降级）；
+ *   · 空值形态 `--x=` 归一为裸 `--x`（等价「flag 在场、值缺席」，与空格形态
+ *     `--x` 收尾走同一默认值/报错分支）。
+ *
+ * 纯函数（无副作用）；调用方整体重拼 argv（[0]/[1] 保留 node+脚本路径），
+ * 循环 i 从 2 起的索引一致性由重拼保证。
+ */
+function normalizeEqualsFlags(args: string[]): string[] {
+  const out: string[] = [];
+  for (const arg of args) {
+    if (arg.startsWith('--') && arg.includes('=')) {
+      const eq = arg.indexOf('=');
+      const name = arg.slice(0, eq);
+      const value = arg.slice(eq + 1);
+      if (LONG_VALUE_FLAGS.has(name)) {
+        if (value !== '') {
+          out.push(name, value);
+        } else {
+          out.push(name);
+        }
+        continue;
+      }
+    }
+    out.push(arg);
+  }
+  return out;
+}
+
+function parseArgs(rawArgv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, revokeKey: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, agentShieldCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false, gb48000: false };
+  // v1.7.0 P0-16：等号形态归一层（预处理）——`--diff=X` 等带值 flag 先改写为
+  // `--diff X`，下方既有空格形态分支零改动即同语义消费；未知 `--x=v` 原样
+  // 穿透（见 normalizeEqualsFlags 注释）。[0]/[1] 占位保留，i 从 2 起索引不变。
+  const argv: string[] = [
+    rawArgv[0] ?? process.execPath,
+    rawArgv[1] ?? 'index.js',
+    ...normalizeEqualsFlags(rawArgv.slice(2)),
+  ];
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
