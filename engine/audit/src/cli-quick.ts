@@ -612,7 +612,12 @@ export function runCliQuick(argv: string[]): number {
     '--criteria',
   ]);
   // 承载安全语义的参数前缀——拼错即用法错误（exit 2），不静默放行
-  const SEMANTIC_FLAG_PREFIXES = ['--ruleset', '--config', '--task', '--au', '--exclud', '--includ'];
+  // v1.7.0 P0-16：收录 '--diff' / '--strict' / '--ci'——`--diff=HEAD~2..HEAD` 等号
+  // 形态此前不在 FULL_ONLY_FLAGS 精确匹配面内（只匹配空格形态裸 `--diff`），落入
+  // 纯噪声 warn 路径静默放行（CI 假绿）；收录后等号/拼错形态 quick 侧 fail-loud
+  // exit 2（正规 `--diff <range>` 空格形态已在上方 FULL_ONLY 精确匹配分支路由，
+  // 不进本分级——空格形态零回归）。
+  const SEMANTIC_FLAG_PREFIXES = ['--ruleset', '--config', '--task', '--au', '--exclud', '--includ', '--diff', '--strict', '--ci'];
   const warnedFlags = new Set<string>();
   for (const arg of argv.slice(2)) {
     if (arg.startsWith('-') && !FULL_ONLY_FLAGS.includes(arg) && !QUICK_KNOWN_FLAGS.has(arg)) {
