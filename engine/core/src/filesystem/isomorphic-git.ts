@@ -11,7 +11,7 @@
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, renameSync, rmSync } from 'fs';
-import { join, dirname, relative } from 'path';
+import { join, dirname, relative, isAbsolute } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { REDACTION_PATTERNS } from '../shared/secret-patterns';
 // v1.5.2 A-13：快照链路径单源化——11 处硬写改走 getProjectShadowGitDir（data-paths.ts）
@@ -111,19 +111,141 @@ function computeSnapshotHmac(entry: { sha: string; timestamp: string; label?: st
 /**
  * blob 池完整性校验（F52）：fileIndex 记录的每个 contentHash 与 blobs 池内
  * 实际内容的重算哈希比对——blob 被偷换（内容变、索引不动）在此暴露。
+ *
+ * SEC-14（P1）扩展：v1 形态条目（无 fileIndex、files 直存内容）同样支持——
+ * v2 重写场景（见 verifyRestoreIntegrity）中攻击者可把条目改写为 v1 形态并
+ * 塞入越界路径，须对 files 内容重算哈希并与条目 sha 复算值比对（见
+ * computeEntryShaFromFiles / verifyRestoreIntegrity），本函数是其中的
+ * 内容比对环节。
  */
 function verifySnapshotBlobPool(
   entry: NonNullable<ShadowStore['snapshots']>[number],
   blobs: Record<string, string>,
 ): void {
-  if (!entry.fileIndex) return;
-  for (const [p, expectedHash] of Object.entries(entry.fileIndex)) {
-    const content = blobs[expectedHash];
-    if (content === undefined) continue; // blob 丢失：既有降级语义（还原为空串）
-    const actualHash = computeHash(`blob:${content}`);
-    if (actualHash !== expectedHash) {
+  if (entry.fileIndex) {
+    for (const [p, expectedHash] of Object.entries(entry.fileIndex)) {
+      const content = blobs[expectedHash];
+      if (content === undefined) continue; // blob 丢失：既有降级语义（还原为空串）
+      const actualHash = computeHash(`blob:${content}`);
+      if (actualHash !== expectedHash) {
+        throw new Error(
+          `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${entry.sha.slice(0, 8)} 引用的文件「${p}」内容哈希与索引不符（blob 池被偷换——内容变而索引未动），拒绝加载`,
+        );
+      }
+    }
+    return;
+  }
+  // v1 形态（files 直存）：无索引可对——内容完整性由 verifyRestoreIntegrity
+  // 的条目 sha 复算兜底（此形态本身无 HMAC，hmacLegacy 提示路径）。
+}
+
+/**
+ * 按写入侧同款算法复算条目 sha（SEC-14 恢复关口纵深用）。
+ *
+ * 输入序列化与 commitSnapshot 完全一致：path 按 localeCompare 排序后
+ * `path:hash` 逐行 join('\n')——读写两侧同一口径，复算失配即内容被改。
+ * files 形态（v1 / 无索引条目）先对内容重算 hash（与 commitSnapshot 的
+ * computeHash(c) 同式）。
+ */
+function computeEntryShaFromFiles(files: Record<string, string>): string {
+  const contentForHash = Object.entries(files)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([p, c]) => `${p}:${computeHash(c)}`)
+    .join('\n');
+  return computeHash(contentForHash);
+}
+
+/**
+ * SEC-14（P1·防御加固）· 恢复关口完整性验证（纵深第二道）。
+ *
+ * 背景：loadSnapshots（F52 读侧验签）已拦「篡改条目 / 偷换 blob / 密钥丢失」，
+ * 但恢复面仍有缺口——① 依赖单点防线，一旦被绕过（如 v1 重写：删 version
+ * 字段 + 条目改 files 直存形态 + 塞越界 relativePath——loadSnapshots 对 v1
+ * 形态无签名可验，全放行）恶意内容即可直达工作区；② 签名剥离（剥 hmacSig
+ * 伪装 legacy）在读侧是放行语义（既有契约）。恢复是写盘的最后一道关口，
+ * 此处在「完整 SHA 定位之后、staging 写入之前」对**磁盘原文**独立复算：
+ *
+ *   1. 条目带 hmacSig（非 legacy）→ 用与写入侧 saveSnapshots 完全相同的
+ *      computeSnapshotHmac（同一 stableStringify 序列化、同一密钥、同一
+ *      截断）重算，失配即抛「快照指纹校验失败——可能被篡改，拒绝恢复」；
+ *      密钥不在场时 fail-closed 拒绝（不假绿）。
+ *   2. 条目 sha 本身复算——fileIndex 形态按索引 hash 复算；files 直存形态
+ *      按内容 hash 复算（computeEntryShaFromFiles）。sha 是内容哈希：改
+ *      内容不改 sha、或改 sha 伪造标识，都在此暴露；篡改 path 塞 ../../
+ *      同样改变复算输入 → 失配。
+ *   3. blob 池逐条内容比对（复用 verifySnapshotBlobPool）。
+ *
+ * legacy 条目（无 hmacSig）：无签名可验，保持既有契约（warn + 原样恢复）
+ * 不在 HMAC 一路拦——但第 2 步 sha 内容复算照做：legacy ≠ 免内容校验，
+ * 无签名时代快照的 sha 仍是内容哈希，篡改内容不改 sha 同样在此暴露。
+ *
+ * @param shadowDir shadow repo 目录
+ * @param fullSha 已定位的完整目标 SHA（短前缀解析在调用方 snapshot-helpers，
+ *               此处只收完整 SHA——R5 修订：验签必须在完整 SHA 定位之后）
+ * @throws 完整性失配时抛 SNAPSHOT_HMAC_MISMATCH_PREFIX 前缀错误（fail-closed）
+ */
+function verifyRestoreIntegrity(shadowDir: string, fullSha: string): void {
+  const store = readShadowStore(shadowDir);
+  if (!store || !Array.isArray(store.snapshots)) return; // 无存储/解析失败——「快照未找到」由调用方报，此处不重复
+
+  const raw = store.snapshots.find((s) => s.sha === fullSha);
+  if (!raw) return; // loadSnapshots 视角找不到同款条目——调用方已报未找到
+
+  // ── 1. HMAC 签名复算（非 legacy；签名输入与写入侧完全一致）──
+  if (typeof raw.hmacSig === 'string' && raw.hmacSig.length > 0) {
+    const hmacKey = getHmacKey();
+    if (!hmacKey) {
       throw new Error(
-        `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${entry.sha.slice(0, 8)} 引用的文件「${p}」内容哈希与索引不符（blob 池被偷换——内容变而索引未动），拒绝加载`,
+        `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${fullSha.slice(0, 8)} 带签名但 HMAC 密钥不可用（~/.sofagent-key 缺失或不可读）——无法确认快照未被篡改，按 fail-closed 拒绝恢复`,
+      );
+    }
+    const expected = computeSnapshotHmac(raw, hmacKey);
+    if (expected !== raw.hmacSig) {
+      throw new Error(
+        `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${fullSha.slice(0, 8)} 快照指纹校验失败——HMAC 签名不匹配（可能被篡改），拒绝恢复（恢复关口复算失配）`,
+      );
+    }
+    // 条目签名通过后校验 blob 池（签名索引域 vs 池内实际内容）
+    if (store.blobs) verifySnapshotBlobPool(raw, store.blobs);
+  }
+  // legacy（无 hmacSig）：无签名可验——既有契约（warn + 原样恢复），不在此拦。
+
+  // ── 2. 条目 sha 内容复算（锁死内容域——签名剥离 / 无签名篡改的兜底）──
+  // 🔴 哈希域对齐（成败关键）：commitSnapshot 的 sha 输入是
+  // `path:computeHash(content)`（内容哈希**无前缀**）；saveSnapshots 的
+  // fileIndex 存的是 `computeHash('blob:'+content)`（**带 blob: 前缀**，供
+  // 池寻址）。复算 sha 必须从 blob 实际内容按写入侧同款无前缀式重算——
+  // 直接拿 fileIndex 的 hash 拼接会与条目 sha 恒不等（哈希域不同）。
+  if (raw.fileIndex) {
+    const rows: Array<[string, string]> = [];
+    let blobMissing = false;
+    for (const [p, h] of Object.entries(raw.fileIndex)) {
+      const content = store.blobs?.[h];
+      if (content === undefined) { blobMissing = true; break; } // blob 丢失：既有降级语义，复算无从做起
+      rows.push([p, content]);
+    }
+    if (!blobMissing) {
+      const contentForHash = rows
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([p, c]) => `${p}:${computeHash(c)}`)
+        .join('\n');
+      if (computeHash(contentForHash) !== raw.sha) {
+        throw new Error(
+          `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${fullSha.slice(0, 8)} 快照指纹校验失败——可能被篡改，拒绝恢复（条目 sha 与 fileIndex 复算不符）`,
+        );
+      }
+    }
+    return;
+  }
+  // 2b. v1 files 直存形态——仅当条目出现在 **v2 store** 内才复算：v2 写入侧
+  //     （saveSnapshots）产出的条目恒带 fileIndex，v2 store 里的 files 形态
+  //     条目 = v2 重写攻击（删 version 字段伪装 v1 + 塞越界路径 + 剥签名）。
+  //     真 v1 store（无 version 字段）不复算——历史 v1 条目的 sha 算法
+  //     （长度哈希 + 随机后缀）不可复现，强算必假阳性，破坏 legacy 契约。
+  if (raw.files && store.version === 2) {
+    if (computeEntryShaFromFiles(raw.files) !== raw.sha) {
+      throw new Error(
+        `${SNAPSHOT_HMAC_MISMATCH_PREFIX}快照 ${fullSha.slice(0, 8)} 快照指纹校验失败——可能被篡改，拒绝恢复（条目 sha 与 files 内容复算不符）`,
       );
     }
   }
@@ -194,20 +316,36 @@ export function createShadowRepo(dir: string, label?: string): string {
 }
 
 /**
+ * 读取 shadow store 的原始 JSON（不做验签 / 不做 v2 hydrate）。
+ *
+ * SEC-14（P1 防御加固）新增：恢复前验签（revertToSnapshot）需要对**磁盘原文**
+ * 复算签名——loadSnapshots 返回的是验签+hydrate 后的形态（hmacSig 已剥离），
+ * 不能作为恢复关口的验签输入。解析失败返回 null（调用方按无快照处理）。
+ */
+function readShadowStore(shadowDir: string): ShadowStore | null {
+  const snapshotsPath = join(shadowDir, 'snapshots.json');
+  if (!existsSync(snapshotsPath)) {
+    return null;
+  }
+  try {
+    return JSON.parse(readFileSync(snapshotsPath, 'utf-8')) as ShadowStore;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 读取 shadow repo 的快照索引
  *
  * v2 格式透明还原：fileIndex + blobs → files（path → content），消费方零感知。
  * v1 格式（无 version 字段）直接按旧结构解析。
  */
 function loadSnapshots(shadowDir: string): SnapshotEntry[] {
-  const snapshotsPath = join(shadowDir, 'snapshots.json');
-  if (!existsSync(snapshotsPath)) {
+  const data = readShadowStore(shadowDir);
+  if (!data || !Array.isArray(data.snapshots)) {
     return [];
   }
   try {
-    const data = JSON.parse(readFileSync(snapshotsPath, 'utf-8')) as ShadowStore;
-    if (!Array.isArray(data.snapshots)) return [];
-
     // v1.5.7 F52：验签（fail-closed）。密钥不在场（未生成/丢失）时无法区分
     // 篡改与合法——带签名条目一律拒绝（宁可拒绝恢复不可假绿）；无签名条目
     // = legacy，放行并标记 hmacLegacy（恢复路径显式提示）。
@@ -586,6 +724,15 @@ export function revertToSnapshot(dir: string, sha: string): string[] {
     throw new Error(`Shadow repo 不存在: ${shadowDir}`);
   }
 
+  // ── SEC-14（P1·防御加固）：恢复关口完整性验证 ──
+  // 在「完整 SHA 定位之后、staging 写入之前」（R5 修订——短前缀解析在调用方
+  // snapshot-helpers 已完成，此处收到的已是完整 SHA）对磁盘原文独立复算：
+  // HMAC 签名（非 legacy）+ 条目 sha 内容复算 + blob 池比对。置于
+  // loadSnapshots **之前**——读侧 F52 验签拦「带签名条目被改」，本关口是
+  // 恢复面纵深第二道（防 v1 形态重写 / 签名剥离伪装 legacy 等绕过路径），
+  // 失配抛 SNAPSHOT_HMAC_MISMATCH_PREFIX 前缀错误（fail-closed，恢复中止）。
+  verifyRestoreIntegrity(shadowDir, sha);
+
   const snapshots = loadSnapshots(shadowDir);
   const target = snapshots.find((s) => s.sha === sha);
   if (!target) {
@@ -621,6 +768,24 @@ export function revertToSnapshot(dir: string, sha: string): string[] {
 
   const stagedFiles: Array<{ stagingPath: string; finalPath: string; relativePath: string }> = [];
   for (const [relativePath, content] of Object.entries(target.files)) {
+    // ── SEC-14：路径边界校验（staging 写入前，逐条目）──
+    // 🔴 原实现 join(dir, relativePath) 后无 traversal 检查：快照 JSON 被篡改
+    // 塞入 `../../evil` 类 relativePath 时，finalPath 落到工作区外（stagingPath
+    // 同理——stagingRoot 也在 join 链上，越界同样逃出 staging 根）。写入侧
+    // scanFiles 用 relative() 生成路径天然安全，风险全在恢复侧读入的
+    // relativePath。此处 finalPath 与 stagingPath 双重校验（relative 结果
+    // 不得以 .. 开头、不得为绝对路径），任一越界立即中止恢复——工作目录
+    // 零触碰（此校验发生在任何 writeFileSync 之前）。
+    {
+      const rel = relative(dir, join(dir, relativePath));
+      if (rel.startsWith('..') || isAbsolute(rel)) {
+        throw new Error(`快照条目路径越界（拒绝恢复）: ${relativePath}`);
+      }
+      const stagingRel = relative(stagingRoot, join(stagingRoot, relativePath));
+      if (stagingRel.startsWith('..') || isAbsolute(stagingRel)) {
+        throw new Error(`快照条目路径越界（拒绝恢复）: ${relativePath}`);
+      }
+    }
     const finalPath = join(dir, relativePath);
     const stagingPath = join(stagingRoot, relativePath);
     const stagingParent = dirname(stagingPath);
