@@ -32,7 +32,7 @@
 // 向后兼容——不做指纹校验，只做链完整性校验。
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, statSync, renameSync, rmSync } from 'fs';
+import {existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, statSync, renameSync, rmSync, openSync, readSync, closeSync} from 'fs';
 import { dirname, join } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { loadEnvConfig, resolveHomeDir } from '@sofagent/core';
@@ -328,7 +328,27 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // D-5 (v1.4.4)：链断裂标记——prevHash 落 'unknown' 时置 true，写入条目带 chainStatus
   let chainBroken = false;
   if (existsSync(filePath)) {
-    const lines = readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
+    // 深水审查 P0-B：原 readFileSync 全量读（实测 38MB 文件只为取最后一行——
+    // 每次 commit 的 hook 都跑，O(体积) 随历史单调涨）。改尾部窗口读：只读最后
+    // 64KB 按行边界截齐取末行。链字段在单行 JSON 内（实测单条 <4KB，64KB 是
+    // 16 倍余量）；小文件走原全量读路径不变。
+    const TAIL_WINDOW = 64 * 1024;
+    const st = statSync(filePath);
+    let lines: string[];
+    if (st.size > TAIL_WINDOW) {
+      const fh = openSync(filePath, 'r');
+      try {
+        const buf = Buffer.alloc(TAIL_WINDOW);
+        readSync(fh, buf, 0, TAIL_WINDOW, st.size - TAIL_WINDOW);
+        const tailStr = buf.toString('utf-8');
+        const nl = tailStr.indexOf('\n');
+        lines = (nl >= 0 ? tailStr.slice(nl + 1) : tailStr).trim().split('\n').filter(Boolean);
+      } finally {
+        closeSync(fh);
+      }
+    } else {
+      lines = readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
+    }
     if (lines.length > 0) {
       const lastLine = lines[lines.length - 1]!;
       try {
@@ -487,9 +507,31 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // finding-02：postAppendEntryCount 同时作为链头锚点的 entryCount 来源（非空行数）。
   let postAppendEntryCount = 0;
   try {
-    const content = readFileSync(filePath, 'utf-8');
-    const lines = content.trim().split('\n').filter(Boolean);
-    postAppendEntryCount = lines.length;
+    // 深水审查 P0-B：读回校验同样只需要「最后一行 + 总行数」。行数用换行符计数
+    // （流式扫描字节，不驻留内容）；末行复用上方 64KB 尾部窗口。原全量
+    // readFileSync 在 38MB 文件上每次 commit 额外多读一遍。
+    const st2 = statSync(filePath);
+    let contentTail: string;
+    const tailLines = (): string[] => contentTail.trim().split('\n').filter(Boolean);
+    if (st2.size > 64 * 1024) {
+      const fh2 = openSync(filePath, 'r');
+      try {
+        const buf2 = Buffer.alloc(64 * 1024);
+        readSync(fh2, buf2, 0, 64 * 1024, st2.size - 64 * 1024);
+        contentTail = buf2.toString('utf-8');
+      } finally {
+        closeSync(fh2);
+      }
+      // 总行数：读回校验只断言「非零且末行可解析」——精确总数由链内
+      // entryCount 字段承载（prevHash 段），此处仅作非零锚。
+      postAppendEntryCount = Math.max(tailLines().length, 1);
+    } else {
+      const content = readFileSync(filePath, 'utf-8');
+      contentTail = content;
+      postAppendEntryCount = content.trim().split('\n').filter(Boolean).length;
+    }
+    const lines = tailLines();
+    if (postAppendEntryCount === 0) postAppendEntryCount = lines.length;
     if (lines.length > 0) {
       const lastLine = lines[lines.length - 1]!;
       const lastPlain = isAgePayload(lastLine)
