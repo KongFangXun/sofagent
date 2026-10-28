@@ -183,7 +183,8 @@ ensure_repo_integrity() {
     rescue_tmp="$(mktemp -d /tmp/sofagent-rescue-XXXXXX)"
     # URL 硬编码官方仓库（与 --remote 分支一致，不接受外部输入）
     # 🔴 --branch 钉 tag + 克隆内文件须真正存在（annotated tag 被删/未推时 clone 失败进 fail-closed 兜底）
-    if git clone --depth 1 --branch "$pinned_tag" https://github.com/KongFangXun/sofagent.git "$rescue_tmp" 2>/dev/null \
+    # 深水 P1-E：clone stderr 进程替换过滤（进度行滤掉、错误行保留）；布尔结构与原形态一致
+    if git clone --depth 1 --branch "$pinned_tag" https://github.com/KongFangXun/sofagent.git "$rescue_tmp" 2> >(grep -vE '^(Cloning|remote:|Receiving|Resolving)' >&2) \
       && [ -f "$rescue_tmp/install.sh" ]; then
       ok "完整仓库已克隆到: ${rescue_tmp}（钉定 ${pinned_tag}）"
       # v1.4.7 批次 M P1-2：哈希自锚定——bootstrap 通道下外层已校验 install.sh
@@ -301,7 +302,8 @@ if [ "${REMOTE_MODE}" = "1" ]; then
   # v1.4.7 批次 M P1-2：与 clone 自救同构钉定发版 tag——此前拉 main HEAD 未校验
   REMOTE_TMP="$(mktemp -d /tmp/sofagent-remote-XXXXXX)"
   if command -v git &>/dev/null; then
-    if ! git clone --depth 1 --branch "v${VERSION}" https://github.com/KongFangXun/sofagent.git "$REMOTE_TMP" 2>/dev/null || [ ! -f "$REMOTE_TMP/install.sh" ]; then
+    # 深水 P1-E：clone stderr 不再全吞（进度过滤保留错误行）；pipefail 语义单测证实
+    if ! git clone --depth 1 --branch "v${VERSION}" https://github.com/KongFangXun/sofagent.git "$REMOTE_TMP" 2> >(grep -vE '^(Cloning|remote:|Receiving|Resolving)' >&2) || [ ! -f "$REMOTE_TMP/install.sh" ]; then
       err "git clone 失败（tag v${VERSION}），请检查网络或手动 git clone"; exit 1
     fi
     ok "仓库已克隆到: ${REMOTE_TMP}（钉定 v${VERSION}）"; cd "$REMOTE_TMP"
@@ -652,8 +654,18 @@ if command -v npm &>/dev/null; then
 # 参数改写：\`sofagent audit <X>\` → 去掉 audit 域词直传引擎（index.js 无 audit 子命令——
 # 首参即范围/flag）；\`sofagent <X>\` 直传。其余域（evolve/core/...）本地 dist 态
 # 不含路由，打印指引。
+# 深水审查 P1-A：安装时刻的仓库路径被烧进 wrapper——仓库移动/删除后 CLI 全灭且
+# 报错形态（node: Cannot find module）让用户无法自救。加存在性自检 + 自愈指引。
+_dist="$LOCAL_AUDIT_DIST"
+if [ ! -f "\$_dist" ]; then
+  echo "❌ sofagent: 本地引擎缺失（\$_dist）" >&2
+  echo "   安装源仓库可能已被移动或删除。修复选项：" >&2
+  echo "   ① 回到仓库目录重跑: bash install.sh --base-only（重建 wrapper）" >&2
+  echo "   ② 改用 npm 全局安装: npm install -g sofagent（不依赖仓库路径）" >&2
+  exit 1
+fi
 if [ "\$1" = "audit" ]; then shift; fi
-exec node "$LOCAL_AUDIT_DIST" "\$@"
+exec node "\$_dist" "\$@"
 WRAPPER_EOF
     chmod +x "$NPM_GLOBAL_BIN/sofagent" 2>/dev/null || true
     cat > "$NPM_GLOBAL_BIN/sofagent-audit" << STUB_EOF

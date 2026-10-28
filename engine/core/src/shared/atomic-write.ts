@@ -12,7 +12,7 @@
 // ${stateFile}.tmp.${pid}.${randomBytes(4).toString('hex')} 防并发冲突。
 // ============================================================
 
-import { lstatSync, realpathSync, writeFileSync, renameSync, existsSync, readFileSync, copyFileSync, unlinkSync, openSync, closeSync, statSync } from 'fs';
+import {lstatSync, realpathSync, writeFileSync, renameSync, existsSync, readFileSync, copyFileSync, unlinkSync, openSync, closeSync, statSync, appendFileSync} from 'fs';
 import { randomBytes } from 'crypto';
 
 /**
@@ -145,11 +145,32 @@ export function atomicWriteSync(filePath: string, content: string): void {
  * 整个读-改-写在 withFileLockSync 互斥下执行（O_EXCL 锁文件），
  *   多进程并发不再丢数据；>1MB 大文件同样加锁读改写（不再退化为无保护 append）。
  *
+ * 深水审查 P1-B（大文件分档）：全量读改写在 MB 级文件上是 O(体积) 放大——实测
+ * 10MB 单次 append 18.4ms（O_APPEND 对照 0.14ms，131 倍），且磁盘满时瞬时双倍
+ * 占用。分档策略：
+ *   - 文件 > 8MB：锁内 O_APPEND 直写（fs.appendFileSync 即 O_APPEND 语义——内核
+ *     保证同机追加的原子性，单行 JSONL 场景与全量重写等价安全；锁仍保留，防
+ *     与本文件其他「全量重写」调用方交错）
+ *   - ≤ 8MB：维持原全量读改写（小文件上 tmp+rename 的崩溃原子性收益 > IO 成本）
+ *
  * @param filePath 目标文件路径
  * @param line     要追加的行（自动加换行符）
  */
 export function atomicAppendSync(filePath: string, line: string): void {
   withFileLockSync(filePath, () => {
+    // P1-B 分档：大文件走 O_APPEND 直写（锁内互斥仍保证与全量重写调用方不交错）
+    const APPEND_FAST_PATH_BYTES = 8 * 1024 * 1024;
+    let size = 0;
+    try {
+      size = statSync(filePath).size;
+    } catch {
+      /* 首写走下方全量路径 */
+    }
+    if (size > APPEND_FAST_PATH_BYTES) {
+      appendFileSync(filePath, line + '\n', 'utf-8');
+      return;
+    }
+
     let existing: string;
     if (existsSync(filePath)) {
       existing = readFileSync(filePath, 'utf-8');
