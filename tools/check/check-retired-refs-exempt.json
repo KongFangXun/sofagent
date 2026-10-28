@@ -62,16 +62,6 @@
       "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L894 · token sofagent-audit）"
     },
     {
-      "file": "engine/core/src/cli.ts",
-      "anchor": "sofagent-core — 核心运行时",
-      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
-    },
-    {
-      "file": "engine/core/src/cli.ts",
-      "anchor": "Usage（单入口形态）",
-      "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
-    },
-    {
       "file": "engine/eval/src/cli.ts",
       "anchor": "sofagent-eval — 质量评估模块",
       "reason": "包级直调入口自我标识横幅（非用户指引；Usage 行已改单入口口径）"
@@ -130,11 +120,6 @@
       "file": "engine/daemon/src/workspace-summary.ts",
       "anchor": "sofagent-daemon",
       "reason": "通知模板历史字段（旧安装态机器通知兼容）"
-    },
-    {
-      "file": "engine/core/src/config-loader.ts",
-      "anchor": "sofagent-core doctor",
-      "reason": "历史告警文案锚（与检测断言共用——改文案需同批改断言）"
     },
     {
       "file": "engine/core/src/verify.ts",
@@ -252,16 +237,6 @@
       "reason": "doctor 对安装形态的检测描述（npm 形态描述串——检测锚）"
     },
     {
-      "file": "engine/core/src/config-loader.ts",
-      "anchor": "使用默认配置。运行 sofagent-core",
-      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L320 · token sofagent-core）"
-    },
-    {
-      "file": "engine/core/src/config-loader.ts",
-      "anchor": "回退默认配置。运行 sofagent-core",
-      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L339 · token sofagent-core）"
-    },
-    {
       "file": "engine/mcp/src/tools/knowledge-tools.ts",
       "anchor": "r.write(`[sofagent-mcp",
       "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L167 · token sofagent-mcp）"
@@ -344,11 +319,6 @@
     {
       "file": "engine/mcp/src/mcp-server.ts",
       "anchor": "sofagent-mcp",
-      "reason": "包级直调入口自我标识"
-    },
-    {
-      "file": "engine/core/src/cli.ts",
-      "anchor": "sofagent-core",
       "reason": "包级直调入口自我标识"
     },
     {
@@ -525,11 +495,6 @@
       "file": "engine/daemon/src/federation/offline-fallback.ts",
       "anchor": "r.write(`[sofagent-audit",
       "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L34 · token sofagent-audit）"
-    },
-    {
-      "file": "engine/daemon/src/inspectors/doctor-checker.ts",
-      "anchor": "egated to sofagent-core",
-      "reason": "Q3 通配收敛批 · 原通配 anchor sofagent- 精确化（命中行 L18 · token sofagent-core）"
     },
     {
       "file": "engine/daemon/src/notify.ts",

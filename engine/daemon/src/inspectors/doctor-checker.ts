@@ -15,7 +15,7 @@ export function checkDoctorHealth(_projectDir: string): InspectorResult {
   return {
     name: 'doctor-health',
     triggered: false,
-    message: 'Doctor health check delegated to sofagent-core doctor CLI',
+    message: 'Doctor health check delegated to sofagent core doctor CLI',
     severity: 'info',
   };
 }

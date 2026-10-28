@@ -317,7 +317,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
     const homeExists = existsSync(join(homedir(), '.sofagent', 'config.yml'));
     // v1.3.8 P1-B3：WARN 统一 [sofagent] 前缀（console.warn 走 stderr）
     if (projectExists || homeExists) {
-      console.warn('[sofagent] ⚠️ 配置文件存在但缺少 audit 段，使用默认配置。运行 sofagent-core doctor 诊断。');
+      console.warn('[sofagent] ⚠️ 配置文件存在但缺少 audit 段，使用默认配置。运行 sofagent core doctor 诊断。');
     } else {
       console.warn('[sofagent] ⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent audit --init 生成配置。');
     }
@@ -336,7 +336,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
       // 非 strict 模式：WARN + 回退到安全默认值（降级场景只说回退）
       // v1.3.8 P1-B3：补 [sofagent] 前缀——解析失败必须显式可见，不静默
       console.warn(`[sofagent] ⚠️ ${err.message}`);
-      console.warn('[sofagent] ⚠️ config.yml 格式错误，已回退默认配置。运行 sofagent-core doctor 诊断');
+      console.warn('[sofagent] ⚠️ config.yml 格式错误，已回退默认配置。运行 sofagent core doctor 诊断');
       // v1.6.0 BUG-77：置回退标记——full 引擎汇总段复读状态行（防用户只看尾部横幅误信配置生效）
       process.env.__SOFAGENT_CONFIG_FALLBACK = '1';
       return safeDefaults();

@@ -16,7 +16,7 @@ const args = isFlagRouter ? ['doctor', ...rawArgs] : rawArgs;
 
 async function main() {
   if (!subcommand || subcommand === '--help') {
-    console.log('sofagent-core — 核心运行时 / doctor / 配置解析 / 通用类型');
+    console.log('sofagent core — 核心运行时 / doctor / 配置解析 / 通用类型');
     console.log('Usage（单入口形态）: sofagent core <subcommand> [options]（本直调入口为包级调试面）');
     console.log('');
     console.log('Subcommands:');
@@ -59,7 +59,7 @@ async function main() {
     case 'stats': {
       if (!args.includes('--tools')) {
         console.error('❌ stats 当前支持 --tools 视图（tool 使用率三视图）');
-        console.error('   用法: sofagent-core stats --tools');
+        console.error('   用法: sofagent stats --tools');
         process.exit(1);
       }
       const { buildToolStats, renderToolStats } = await import('./tool-stats');
@@ -135,7 +135,7 @@ async function main() {
     }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-core <doctor|verify|slash>   (flags: --doctor, --refresh)');
+      console.error('Usage: sofagent core <doctor|verify|slash>   (flags: --doctor, --refresh)');
       process.exit(1);
   }
 }

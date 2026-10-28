@@ -932,7 +932,7 @@ if [ "$FAILED" -eq 0 ]; then
         echo "  平台特定（OpenClaw）:"
         echo "     · 注册 before_prompt_build Hook（见 install.sh 输出）"
         echo "     · 启动 OpenClaw，检查 system prompt 是否包含 sofagent 底线规则"
-        echo "     · 运行 sofagent-core doctor 检查基础设施状态"
+        echo "     · 运行 sofagent core doctor 检查基础设施状态"
         ;;
       workbuddy)
         echo "  平台特定（WorkBuddy）:"
