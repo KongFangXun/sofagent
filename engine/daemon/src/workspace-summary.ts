@@ -111,6 +111,12 @@ export function collectWorkspaceChanges(projectDir: string): {
     cwd: projectDir,
     encoding: 'utf-8',
     maxBuffer: 16 * 1024 * 1024,
+    // L1 @daily 巡检链内唯一无超时的 subprocess（cron startCron → runLayer →
+    // workspace-summary → 本调用）：git status 在巨仓/慢盘/gitfs 挂载盘上可能
+    // 分钟级挂起，阻塞整个同步巡检层。10s 对齐 repo-hash 的 3s 先例量级再放宽
+    // （status 需扫全仓工作区，比 rev-parse 重）；超时抛错走调用方既有
+    // 「非 git 环境」catch 分支（记录空清单，不阻断巡检）。
+    timeout: 10_000,
   });
 
   const created = new Set<string>();

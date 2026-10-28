@@ -47,19 +47,35 @@ describe('巡检器金名单（条目 2 第 0 步——防漏挂/防漂移）', 
     expect(getLayerInspectorNames('L2')).toEqual(listInspectors('L2'));
     expect(getLayerInspectorNames('L3')).toEqual(listInspectors('L3'));
   });
-  it('runLayeredInspection 实际执行集合 == 金名单（cron 各层真实跑什么）', () => {
+  // 🔴 环境隔离 + 局部超时（对齐 inspectors.test.ts 先例）：
+  // L1 多数巡检器的数据面走 SOFAGENT_DATA/SOFAGENT_HOME 路径 SSOT（不吃入参
+  // projectDir）。若进程 env 被同 worker 前序测试污染成「已删除的 tmp 路径」，
+  // loadEnvConfig 的 existsSync 门静默回落真实 ~/.sofagent/data（实测写穿：
+  // 悬空 SOFAGENT_DATA 单跑本用例，daily-snapshot/task-stats 产物落真实
+  // dashboard 目录）——金名单用例必须自带隔离，不依赖 tools/check/vitest-setup.mjs
+  // 的全局预置态。120s 局部超时对齐 inspectors.test.ts 的 90s 先例上限再放宽一档
+  //（真执行 15 个巡检器，冷机 fork 风暴下偶发放大；正常态 <1s）。
+  it('runLayeredInspection 实际执行集合 == 金名单（cron 各层真实跑什么）', { timeout: 120_000 }, () => {
     // 用真执行验证：结果条目名集合与金名单一致（skill-staleness 已移出注册表）
     // 在临时目录跑（巡检器对空目录安全——大多返回 not-triggered）
     const os = require('os') as typeof import('os');
     const fs = require('fs') as typeof import('fs');
     const path = require('path') as typeof import('path');
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-golden-'));
+    const prevData = process.env.SOFAGENT_DATA;
+    const prevHome = process.env.SOFAGENT_HOME;
+    process.env.SOFAGENT_DATA = tmp;
+    process.env.SOFAGENT_HOME = tmp;
     try {
       const r1 = runLayeredInspection(tmp, 'L1', 'manual');
       const executedNames = r1.results.map((x) => x.name);
       // 全部 enabled 条目执行
       expect(executedNames.sort()).toEqual(GOLDEN_L1.slice().sort());
     } finally {
+      if (prevData === undefined) delete process.env.SOFAGENT_DATA;
+      else process.env.SOFAGENT_DATA = prevData;
+      if (prevHome === undefined) delete process.env.SOFAGENT_HOME;
+      else process.env.SOFAGENT_HOME = prevHome;
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
