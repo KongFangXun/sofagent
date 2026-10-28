@@ -251,14 +251,14 @@ if [ -z "$GH_DESC" ] && [ -z "$GH_HOME" ] && [ -z "$GH_TOPIC_COUNT" ]; then
 fi
 
 # ── 断言 ⓪：topics 面（v1.6.0 BUG-40——GH_TOPIC_COUNT 此前采集后从不参与断言）──
-GH_TOPIC_LIST=$(gh api repos/KongFangXun/sofagent --jq 'join(",")' 2>/dev/null || echo "")
+GH_TOPIC_LIST=$(gh api repos/KongFangXun/sofagent --jq '.topics | join(",")' 2>/dev/null || echo "")
 if [ -n "$GH_TOPIC_COUNT" ]; then
   ASSERTS=$((ASSERTS + 1))
   if [ "$GH_TOPIC_COUNT" -lt 10 ] || [ "$GH_TOPIC_COUNT" -gt 20 ]; then
     echo "  ❌ [topics] 数量 ${GH_TOPIC_COUNT} 不在 [10,20]——过少放弃站内搜索入口，过多稀释相关性"
     FAILS=$((FAILS + 1))
-  elif [ -n "$GH_TOPIC_LIST" ] && ! grep -qi 'fde' <<< "$GH_TOPIC_LIST"; then
-    echo "  ❌ [topics] 身份词 fde 缺席——差异化身份词（description/glama 均拿它当第一差异化词）不在 topics"
+  elif [ -n "$GH_TOPIC_LIST" ] && ! grep -qi 'ai-engineering' <<< "$GH_TOPIC_LIST"; then
+    echo "  ❌ [topics] 工程位词 ai-engineering 缺席（2026-10-28 OPT-6：自造词 fde 换标准词，description 的 FDE 全称身份词不受影响）"
     echo "      当前：${GH_TOPIC_LIST}"
     FAILS=$((FAILS + 1))
   elif [ -n "$GH_TOPIC_LIST" ] && ! grep -qiE 'mcp|ai-agents|llm' <<< "$GH_TOPIC_LIST"; then
