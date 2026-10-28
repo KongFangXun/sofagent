@@ -494,7 +494,13 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         if (overFiles) reasons.push(`文件数 ${files} > ${FILE_WARN}`);
         if (overSize) reasons.push(`总量 ${mb(bytes)}MB > ${Math.round(SIZE_WARN_BYTES / 1024 / 1024)}MB`);
         warn(`data/${d}/ 接近性能退化区间（${reasons.join(' · ')}）`);
-        repairHint(`归档轮转：memory 走 memory-store 的 archive()（二级分层 + 冷热分层）；audit 侧超 50MB 由 \`doctor --repair\` 调 archiveHistoryHead() 自动归档（归档段带独立锚点）`);
+        // OPT-28：原文案「memory 走 memory-store 的 archive()」是 SDK 函数名非可复制
+        // 命令（实查：think 域无 archive 子命令，memory 归档无 CLI 面——唯一自动触发
+        // 是 daemon L1 @daily 的 maintenance-daily 巡检）。改为如实三路：
+        //   ① 常态修法 = 等 daemon 次日巡检自动归档（真实调度，零操作）；
+        //   ② think 归档有真实可复制命令（compress-memory.js 在 dist/ 可直跑）；
+        //   ③ audit 侧维持 doctor --repair（该路径真实存在，非文案虚指）。
+        repairHint(`memory 归档：常态由 daemon 次日 L1 巡检自动执行（sofagent daemon start 确保守护在跑）；think 归档可立即执行：node "$(npm root -g)/@sofagent/core/dist/compress-memory.js" --dry-run 预览后去 --dry-run 执行；audit 侧超 50MB：sofagent core doctor --repair 自动归档（归档段带独立锚点）`);
       } else {
         ok(`data/${d}/ (${files} 文件 · ${mb(bytes)}MB)`);
       }
