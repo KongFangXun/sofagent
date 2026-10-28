@@ -480,6 +480,8 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 
 2026-10-22     | 20261022-01    | release-gate-发布收编 | v1.7.0 阶段九+十完成：bump 521 → CI 8 workflow 绿 → tag@84eec2a73 → release → npm 23 包全 1.7.0；分发五渠道全绿，开放项 1 = ClawHub evolve/inject 平台死锁（已报 moderator，详见 troubleshooting）；修复 6 处。
 
+| 日期 | run | 循环/主题 | 轮数 | 停止/结论 | 发现与闭环 | → runs 指针 |
+|---|---|---|---|---|---|---|
 | 2026-10-27 | run-01 | fresh-eyes（视角10 文档一致性 + 视角11 代码审读者 · 全仓循环） | 4 轮 | no-p0-p1-2rounds | 发现 3（P1×2 · P2×1）全闭环：F1 本仓 hook 未同步批14 模板（重装+沙箱实测 A3 零出现）· F2 markdown-collector 未入 silent-catch 豁免台账（官方入口收编 3a0fbf9b4）· F3 A 层预算滞后并发交付物（上调 cd71bba70）；门禁六项终态全绿 | runs/2026/10/27/run-01 |
 | 2026-10-27 | run-01 补记 | round-05 重验（用户质疑触发） | +1 轮 | F4 闭环确认 | R4 静态面停止判定过早：daemon 常驻进程（10-22 启动）跑 worktree 旧 dist，批 12 快照修复未落运行态（日志 15005 次失败）→ worktree ff 快进 65 笔+重建+launchctl 重启，重启后零失败；教训=修复落运行态三层（模板→实例→常驻进程） | runs/2026/10/27/run-01/round-05 |
 | 2026-10-27 | run-02 | fresh-eyes 独立双 worker（用户纠正自查形态后重开） | 3 轮 | no-p0-p1-2rounds | 发现 P1×10 全闭环：R1 code×3（恒真条件/ledger 自我放大/联邦假接线）+ doc×2（WIKI 包数矛盾/活读数命令失真）；R2 全是 R1 修复的修法缺陷（append-only 竞态/缓存零消费/空集二义）——「修复的修复」实证；R3 终审 P2×3 诚信类（死条件/假注释/写侧无界）收口。独立性对照：自查 5 轮 4 条 vs 独立 3 轮 14 条 | runs/2026/10/27/run-02 |

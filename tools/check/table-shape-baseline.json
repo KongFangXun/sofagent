@@ -4,42 +4,6 @@
   "note": "签名 = 行内容归一化（trim + 折叠空白）后 sha256 前 16 位（不用行号：行号随编辑漂移、漂移即静默放行）",
   "entries": [
     {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "93d543e426969e3b",
-      "reason": "存量（本批未修）——在役文档待清（见复查报告「表格形态存量清单」）"
-    },
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "07bd339a79ca2b97",
-      "reason": "存量（本批未修）——在役文档待清（见复查报告「表格形态存量清单」）"
-    },
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "5ce1d57ea3b56985",
-      "reason": "存量（本批未修）——在役文档待清（见复查报告「表格形态存量清单」）"
-    },
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "b1e54a0dbdbdf3dd",
-      "reason": "存量（本批未修）——在役文档待清（见复查报告「表格形态存量清单」）"
-    },
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "f1b974aee1b008a1",
-      "reason": "存量（本批未修）——在役文档待清（见复查报告「表格形态存量清单」）"
-    },
-    {
-      "file": "FORGE/LEDGER.md",
-      "kind": "孤儿行",
-      "signature": "cf0e06b79704a8f5",
-      "reason": "存量（本批未修）——在役文档待清（见复查报告「表格形态存量清单」）"
-    },
-    {
       "file": "docs/archive/changelog-experimental/v0.90.md",
       "kind": "超列",
       "signature": "6679ed321e14363e",
