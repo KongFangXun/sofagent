@@ -134,13 +134,35 @@ function handleReserved(cmd, rest) {
       if (existsSync(daemonJson)) {
         try {
           const d = JSON.parse(readFileSync(daemonJson, 'utf8'));
-          console.log(`daemon: ${d.mode || d.status || 'unknown'}`);
+          // DOC-29：mode 是配置档位（full/lite）非运行态——daemon.json 是启动时写入的
+          // 配置快照（last_check 可停在过去，进程可另在别处），须显式消歧。
+          console.log(`daemon: ${d.mode || d.status || 'unknown'} (mode 配置档位——非运行态)`);
         } catch {
           console.log('daemon: unknown（daemon.json 不可解析）');
         }
       } else {
         console.log('daemon: not initialized');
       }
+      // DOC-29：心跳行——读 daemon 健康自检文件（daemon 包 v1.2.5 §8.4 起以 5min 周期
+      // 写 lastHeartbeat，engine/daemon doctor 读同一文件同一字段）。读不到如实打「未检测到」。
+      const heartbeatLine = (() => {
+        const healthJson = join(AGENT_HOME, 'data', 'daemon-health.json');
+        if (!existsSync(healthJson)) return 'daemon 心跳: 未检测到';
+        try {
+          const h = JSON.parse(readFileSync(healthJson, 'utf8'));
+          if (h.lastHeartbeat) {
+            const ts = new Date(h.lastHeartbeat);
+            if (Number.isNaN(ts.getTime())) return `daemon 心跳: ${h.lastHeartbeat}`;
+            const agoMin = Math.floor((Date.now() - ts.getTime()) / 60_000);
+            const rel = agoMin < 1 ? '刚刚' : agoMin < 60 ? `${agoMin} 分钟前` : `${Math.floor(agoMin / 60)} 小时前`;
+            return `daemon 心跳: ${h.lastHeartbeat}（${rel}）`;
+          }
+          return 'daemon 心跳: 未检测到';
+        } catch {
+          return 'daemon 心跳: 未检测到（daemon-health.json 不可解析）';
+        }
+      })();
+      console.log(heartbeatLine);
       console.log(`data: ${join(AGENT_HOME, 'data')}/`);
       console.log('note: 安装态信息；仓库审计用 sofagent audit');
       return 0;
