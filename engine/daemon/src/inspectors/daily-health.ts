@@ -15,22 +15,30 @@
 // ============================================================
 
 import { existsSync } from 'fs';
-import { join, sep } from 'path';
+import { join } from 'path';
 import { execFileSync } from 'child_process';
 import type { InspectorResult } from './types';
 
 /**
- * 仓库根（v1.6.0 BUG-54 修复：原上三级对 src 态差一级——
- * src/inspectors/ 需上四级（src→daemon→engine→仓库根）；dist/inspectors/ 上三级。
- * 用 __dirname 末段判形态：以 'src' 收尾 → 四级；否则（dist 或安装态）→ 三级。
+ * 仓库根（v1.7.1 BUG-24 修复：dist 分支原上三级 = engine/，拼出不存在的
+ * engine/engine/scripts/daily-health.sh，仓库态 dist 永远走 SOFAGENT_HOME 兜底）。
+ * 实测推演（daemon tsconfig rootDir=./src / outDir=./dist）：tsc 会把 src/ 结构
+ * **原样镜像**到 dist/（src/inspectors → dist/inspectors，层级不变），故 src 态与
+ * dist 态的 __dirname 深度相同——统一上四级（inspectors → src|dist → daemon →
+ * engine → 仓库根）。安装态（~/.sofagent/... 或 node_modules 内）上四级同样到不了
+ * 仓库根，但 runDailyHealth 的 existsSync 门会自然落到 $SOFAGENT_HOME/scripts/
+ * 兜底（安装态无 engine/scripts 是预期态，非错误）。
+ * 导出供测试直测两种形态（BUG-24 验收：src/dist 双形态解析到同一仓库根）。
  */
-function repoRoot(): string {
-  const fromSrc = __dirname.split(sep).slice(-2, -1)[0] === 'src';
-  return fromSrc ? join(__dirname, '..', '..', '..', '..') : join(__dirname, '..', '..', '..');
+export function repoRoot(from: string = __dirname): string {
+  return join(from, '..', '..', '..', '..');
 }
 
 export function runDailyHealth(_dataDir?: string): InspectorResult {
   const script = join(repoRoot(), 'engine', 'scripts', 'daily-health.sh');
+  // 解析留痕（BUG-24）：dist 形态曾静默走错兜底——resolved 路径进日志便于巡检对账
+  // （日志形态对齐 inspectors 邻居先例：[evolve-trigger] / [health-reporter] 前缀）
+  console.log(`[daily-health] 脚本解析：${script}`);
   if (!existsSync(script)) {
     // 安装态：脚本已由 deploy_scripts 拷贝到 ~/.sofagent/scripts/（F-44 同批接线）
     const installed = join(process.env.SOFAGENT_HOME ?? join(process.env.HOME ?? '', '.sofagent'), 'scripts', 'daily-health.sh');
