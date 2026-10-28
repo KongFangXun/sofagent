@@ -90,10 +90,12 @@ export function searchKnowledge(args: Record<string, unknown>): ToolResult | { e
           if (cached.query && cached.query.toLowerCase().includes(query)) {
             fedCount += cached.entries.length;
           }
-        } catch { /* 坏行跳过 */ }
+        } catch { /* 坏行跳过——为何可静默：联邦缓存为 append-only JSONL，单行损坏（半写/截断）
+                        只该丢该行，不应整批查询失败；下游按 fedCount 计数，坏行只是少计不误报 */ }
       }
     }
-  } catch { /* 缓存读失败——纯本地结果 */ }
+  } catch { /* 缓存读失败——为何可静默：联邦缓存是纯增强面（本地检索结果不受影响），
+                  读失败时 fedCount 保持 0，输出回落到「纯本地结果」语义，用户侧无错误面 */ }
 
   const textWithFed = fedCount > 0
     ? text + `\n- [federation] 另有 ${fedCount} 条跨设备缓存结果（来源 federation-cache，详情见 read 工具）`
@@ -213,10 +215,12 @@ export async function mergeFederationAsync(query: string): Promise<void> {
             writeFileSync(fedCachePath, kept + '\n' + cacheLine, 'utf-8');
             return; // 截断写已含本行，跳过下方追加
           }
-        } catch { /* 首次写入或读失败——正常追加 */ }
+        } catch { /* 首次写入或读失败——为何可静默：本段只为「超 500 行则截断」的容量治理，
+                        读不到即视为首次写入，随后走下方 append 追加；语义等价于空缓存起步 */ }
         writeFileSync(fedCachePath, cacheLine, { flag: 'a' });
       } catch {
-        // 缓存写入失败——联邦增强降级，本地结果不受影响
+        // 缓存写入失败——为何可静默：联邦缓存是跨设备增强面的本地副本，写失败只影响
+        // 下次联邦查询的命中率，不影响本地检索结果与用户可见输出（纯性能/增强降级）
       }
     }
   } catch {

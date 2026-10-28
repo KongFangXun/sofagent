@@ -152,7 +152,9 @@ export function markResolved(skillId: string, failureMode: string): void {
     }) + '\n', 'utf-8');
     clearFailureCache();
   } catch {
-    // 回落失败不阻断进化主流程——下次成功再回落
+    // 回落失败不阻断进化主流程——为何可静默：本条为「失败模式已收敛」的回写动作，
+    // 写盘失败只影响本轮的统计回落（下次成功会再写），进化主流程与用户可见结果不变；
+    // 且此处位于 evolve 主链的热路径，抛错会把一次统计写入失败升级为进化中断（危害大于收益）
   }
 }
 

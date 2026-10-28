@@ -164,7 +164,8 @@ export function atomicAppendSync(filePath: string, line: string): void {
     try {
       size = statSync(filePath).size;
     } catch {
-      /* 首写走下方全量路径 */
+      /* 首写走下方全量路径——为何可静默：stat 失败仅意味文件尚不存在（首写），
+         控制流随即落入全量写分支，写入语义不受影响；此处无用户可感知降级面 */
     }
     if (size > APPEND_FAST_PATH_BYTES) {
       appendFileSync(filePath, line + '\n', 'utf-8');

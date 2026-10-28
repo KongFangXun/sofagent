@@ -364,7 +364,8 @@ export function loadCronConfig(projectDir: string): CronJob[] {
     try {
       raw = yamlLoad(readFileSync(ymlPath, 'utf-8')) as WatchConfig | null;
       if (raw) break;
-    } catch { /* 不可读试下一层 */ }
+    } catch { /* 不可读试下一层——为何可静默：两级 watch.yml 依次尝试，本层损坏时下一层（全局）仍会读取；
+                  两层皆不可读则由下方 !raw 分支返回空清单（调用方按无 cron 处理，非静默放行巡检） */ }
   }
   if (!raw) return [];
   try {
