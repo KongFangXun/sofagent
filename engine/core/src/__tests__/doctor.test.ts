@@ -636,3 +636,88 @@ describe('doctor commit-msg hook 完整性校验（v1.5.1 E3）', () => {
     expect(out()).not.toContain('❌ post-commit hook 未安装');
   });
 });
+
+// ============================================================
+// v1.7.1（P0-17）· 安装完整性异源对账：router 实装包版本 vs VERSION 文件
+// ------------------------------------------------------------
+// 缺陷（活体实测）：VERSION=1.7.0 / 实装 13 包全 1.5.9，而既有「VERSION vs
+//   引擎自报」检查同源自证报绿。本检查读第三方事实源（实装目录里的
+//   package.json），错账无处藏。
+// 三态：红（不等 → FAIL+修复指引）/ 绿（全等 → ok）/ skip（非安装态无目录）。
+// ============================================================
+describe('doctor 安装完整性异源对账（P0-17）', () => {
+  let t: ReturnType<typeof setupOntologyTest>;
+  let projDir: string;
+
+  beforeEach(() => {
+    t = setupOntologyTest();
+    projDir = mkdtempSync(join(tmpdir(), 'doctor-p017-proj-'));
+  });
+  afterEach(() => {
+    t.cleanup();
+    try { rmSync(projDir, { recursive: true, force: true }); } catch { /* */ }
+  });
+
+  /** 在沙箱 HOME 搭安装态 router 实装目录：每包写 {name}/{pkgVersion} 的 package.json */
+  function writeRouterPkgs(versions: Record<string, string>) {
+    for (const [name, ver] of Object.entries(versions)) {
+      const dir = join(t.tmpHome, 'lib', 'sofagent-router', 'node_modules', '@sofagent', name);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: `@sofagent/${name}`, version: ver }), 'utf-8');
+    }
+  }
+
+  it('红：实装 1.5.9 vs VERSION 1.7.0 → FAIL + 差异明细 + bootstrap 重装指引（缺陷活体形态）', () => {
+    writeFileSync(join(t.tmpHome, 'VERSION'), '1.7.0\n', 'utf-8');
+    writeRouterPkgs({ audit: '1.5.9', core: '1.5.9', daemon: '1.5.9' });
+    const r = runDoctor(projDir);
+    const out = t.output();
+    expect(out).toContain('实装 1.5.9 ≠ VERSION 标记 1.7.0');
+    expect(out).toContain('安装完整性对账失败：3/3 个实装包与 VERSION 1.7.0 不一致');
+    expect(out).toContain('重跑 bootstrap.sh');
+    expect(r.installIntegrity).toBe(false);
+    expect(r.allOk).toBe(false);
+    expect(r.failCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('红（部分漂移）：3 包中 1 包旧版 → FAIL 计数 1/3，其余包不再重复告警', () => {
+    writeFileSync(join(t.tmpHome, 'VERSION'), '1.7.0\n', 'utf-8');
+    writeRouterPkgs({ audit: '1.7.0', core: '1.7.0', daemon: '1.5.9' });
+    const r = runDoctor(projDir);
+    const out = t.output();
+    expect(out).toContain('@sofagent/daemon 实装 1.5.9 ≠ VERSION 标记 1.7.0');
+    expect(out).toContain('1/3 个实装包与 VERSION 1.7.0 不一致');
+    // 一致的两包不出现差异行（audit/core 的实装行只在对账失败明细里排除）
+    expect(out).not.toContain('@sofagent/audit 实装 1.5.9');
+    expect(r.installIntegrity).toBe(false);
+  });
+
+  it('绿：实装与 VERSION 全等 → ok 计数回显，installIntegrity=true', () => {
+    writeFileSync(join(t.tmpHome, 'VERSION'), '1.7.0\n', 'utf-8');
+    writeRouterPkgs({ audit: '1.7.0', core: '1.7.0', mcp: '1.7.0' });
+    const r = runDoctor(projDir);
+    const out = t.output();
+    expect(out).toContain('实装包版本对账一致（3 个 @sofagent/* 包 == VERSION 1.7.0）');
+    expect(out).not.toContain('安装完整性对账失败');
+    expect(r.installIntegrity).toBe(true);
+  });
+
+  it('skip：非安装态（无 router 实装目录）→ info 跳过，不算 FAIL', () => {
+    // 不写 lib/sofagent-router/... ——模拟仓库 clone / npm 全局形态
+    const r = runDoctor(projDir);
+    const out = t.output();
+    expect(out).toContain('仅安装态检查，跳过');
+    expect(out).not.toContain('安装完整性对账失败');
+    expect(r.installIntegrity).toBe(true);
+  });
+
+  it('VERSION 文件缺失 + 实装目录存在 → 退化对引擎版本对账并告警缺失', () => {
+    writeRouterPkgs({ audit: '1.7.0' });
+    const r = runDoctor(projDir);
+    const out = t.output();
+    expect(out).toContain('VERSION 文件缺失——无法对账');
+    // 实装 1.7.0 == 引擎 VERSION → 不出差异明细，但缺失本身已 installIntegrity=false
+    expect(out).not.toContain('≠ VERSION 标记');
+    expect(r.installIntegrity).toBe(false);
+  });
+});

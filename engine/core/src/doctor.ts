@@ -11,6 +11,8 @@
 //   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
 //   8. Ontology 完整性（v1.4.3 十三：knowledge/entities/ frontmatter 三查 + skip-log 对账）
+//   9. 安装完整性异源对账（v1.7.1 P0-17：router 实装包版本 vs VERSION 文件——
+//      仅安装态检查，仓库/npm 态 skip）
 //
 // 注意：post-commit 仅检查存在性——不检查内容是否引用 sofagent
 
@@ -175,6 +177,8 @@ export interface DoctorReport {
   hook: boolean;
   deps: boolean;
   auditLog: boolean;
+  /** v1.7.1（P0-17）：安装完整性异源对账（实装包 vs VERSION）——非安装态恒 true */
+  installIntegrity: boolean;
   allOk: boolean;
   /** v1.3.0 (F-23): warning 条数——调用方据此区分「仅警告（EXIT=0）」与「有错误（EXIT≠0）」 */
   warnCount: number;
@@ -269,6 +273,71 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     }
   } catch {
     warn('版本检查失败（不影响审计功能）');
+  }
+
+  // v1.7.1（P0-17）：安装完整性异源对账——实装包版本 vs VERSION 文件。
+  // 背景（缺陷活体实测）：上方「VERSION vs 引擎自报版本」是**同源自证**——引擎
+  // VERSION 常量与仓库/registry 的包版本由同一发版流水线生成，两侧可一起对、
+  // 也可一起错。本机实态：VERSION 文件 1.7.0 / 引擎自报 1.7.0（对账通过），
+  // 而 lib/sofagent-router/node_modules/@sofagent/* 13 包实装 1.5.9——同一张
+  // 绿脸背后是两张皮账本（install.sh 装完无对账断言，registry 滞后/lockfile
+  // 钉旧版时 npm install 退出 0 但实装旧版）。
+  // 本检查改读**第三方事实源**：router 实装目录里每个 @sofagent/* 的
+  // package.json version 字段 vs VERSION 文件——两侧来源独立，错账无处藏。
+  // 作用域：仅安装态（目录存在才有得对账）；仓库态/npm 态无此目录 → skip。
+  console.log('\n── 安装完整性：实装包版本 vs VERSION 文件 [全局安装，非当前仓库] ──');
+  let installIntegrityOk = true;
+  {
+    const routerScopeDir = join(resolveHomeDir(), 'lib', 'sofagent-router', 'node_modules', '@sofagent');
+    if (!existsSync(routerScopeDir)) {
+      // 非安装态（仓库 clone / npm 全局形态无 lib/sofagent-router）——skip 非 FAIL
+      info('无 router 实装目录（lib/sofagent-router/node_modules/@sofagent/）——仅安装态检查，跳过');
+    } else {
+      let pkgDirs: string[] = [];
+      try {
+        pkgDirs = readdirSync(routerScopeDir).filter((d) => existsSync(join(routerScopeDir, d, 'package.json')));
+      } catch (err) {
+        warn(`router 实装目录不可读: ${err instanceof Error ? err.message : String(err)}`);
+        installIntegrityOk = false;
+      }
+      if (pkgDirs.length === 0) {
+        warn('router 实装目录存在但无任何 @sofagent/* 包——安装可能中途失败');
+        repairHint('重跑 bootstrap.sh（或 bash install.sh）完整重装');
+        installIntegrityOk = false;
+      } else {
+        const versionFile = join(resolveHomeDir(), 'VERSION');
+        let expected = '';
+        if (existsSync(versionFile)) {
+          expected = readFileSync(versionFile, 'utf-8').trim();
+        } else {
+          warn('VERSION 文件缺失——无法对账（安装标记不完整）');
+          repairHint(`重新运行 install.sh 创建 VERSION 文件（${versionFile}）`);
+          expected = VERSION; // 退化为与引擎版本对账，继续报出实装差异
+          installIntegrityOk = false;
+        }
+        let mismatched = 0;
+        for (const name of pkgDirs) {
+          let actual = 'missing';
+          try {
+            const pkgJson = JSON.parse(readFileSync(join(routerScopeDir, name, 'package.json'), 'utf-8')) as { version?: string };
+            actual = pkgJson.version ?? 'missing';
+          } catch {
+            actual = 'unreadable';
+          }
+          if (actual !== expected) {
+            mismatched++;
+            warn(`@sofagent/${name} 实装 ${actual} ≠ VERSION 标记 ${expected}（安装态版本两张皮——安装器对账断言缺失或 registry 滞后时段产物）`);
+          }
+        }
+        if (mismatched > 0) {
+          fail(`安装完整性对账失败：${mismatched}/${pkgDirs.length} 个实装包与 VERSION ${expected} 不一致`);
+          repairHint('重跑 bootstrap.sh 完整重装（安装器已新增装后版本对账断言，本次重装会拦截同类漂移）');
+          installIntegrityOk = false;
+        } else {
+          ok(`实装包版本对账一致（${pkgDirs.length} 个 @sofagent/* 包 == VERSION ${expected}）`);
+        }
+      }
+    }
   }
 
   // 2. 配置检查（v1.1.3: 从「存在」升级为「存在且合法」）
@@ -1222,7 +1291,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   }
 
   // 总结（v1.2.9: — 有 WARN/FAIL 时不再说"全部通过"）
-  const allOk = env.allOk && configOk && dirsOk && hookOk && depsOk && distIntegrityOk && auditLogOk;
+  const allOk = env.allOk && configOk && dirsOk && hookOk && depsOk && distIntegrityOk && auditLogOk && installIntegrityOk;
   console.log('\n── 健康检查结果 ──');
   if (_failCount > 0) {
     console.log(`  ❌ ${_failCount} 项失败，${_warnCount} 项警告（详见上方）\n`);
@@ -1239,6 +1308,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     hook: hookOk,
     deps: depsOk,
     auditLog: auditLogOk,
+    installIntegrity: installIntegrityOk,
     allOk,
     warnCount: _warnCount,
     failCount: _failCount,
