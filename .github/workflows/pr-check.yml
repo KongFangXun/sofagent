@@ -56,6 +56,12 @@ jobs:
       # --inject 注入实测会短暂改仓内文件，只留本地人工执行，不进 CI。
       - name: check-guards.sh
         run: bash tools/check/check-guards.sh
+      # v1.7.x 修补批：daemon 运行态新鲜度守卫（F4 二次复发固化）——CI 里无
+      # launchd/常驻 daemon，脚本自判 SKIP 不误报；本地开发机上是三查防线
+      # （worktree 滞后 / dist 陈旧 / 进程陈旧）。进 CI 的意义：① 防脚本自身
+      # 被改坏（语法/路径引用漂移在 CI 立刻红）② README 收录对账联动。
+      - name: check-daemon-freshness.sh
+        run: bash tools/check/check-daemon-freshness.sh
       # v1.4.3：命令注入静态扫——拦住 execSync/exec/spawn 的模板插值与字符串拼接。
       # 实案：修复前有 6 处 `execSync(\`git checkout -- "${file}"\`)`，双引号拦不住
       # $(...)，其中 fix-applier 的 target 直出 LLM JSON，实测可执行任意命令；

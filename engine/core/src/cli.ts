@@ -112,9 +112,30 @@ async function main() {
 
       process.exit(result.fail > 0 ? 1 : 0);
     }
+    case 'slash': {
+      // v1.7.x（playbook 视角 24 审查）：slash 注册面在 daemon start 挂接后，
+      // 全仓仍零消费方调 registry.resolve——注册是活的、消费是死的。
+      // 本子命令打通 resolve → execute 全链：宿主（IM 桥/CLI/Agent）经
+      // `sofagent core slash "/compact 10"` 触达已注册命令。
+      const input = args.slice(1).join(' ');
+      if (!input.startsWith('/')) {
+        console.error('用法: sofagent core slash "/<命令> [参数]"（如 /compact 10 · /goal set xxx）');
+        process.exit(1);
+      }
+      const { globalSlashRegistry } = await import('./slash-registry');
+      const { registerBuiltinSlashCommands } = await import('./slash-commands');
+      registerBuiltinSlashCommands();
+      const out = await globalSlashRegistry.execute(input, {
+        workspaceRoot: process.cwd(),
+        dataDir: (await import('./data-paths')).getDataDir(),
+        session: {},
+      });
+      console.log(out);
+      process.exit(0);
+    }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-core <doctor|verify>   (flags: --doctor, --refresh)');
+      console.error('Usage: sofagent-core <doctor|verify|slash>   (flags: --doctor, --refresh)');
       process.exit(1);
   }
 }
