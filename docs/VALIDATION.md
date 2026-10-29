@@ -298,6 +298,9 @@ RSI 统一形式化：三个可写面算子（Data-RSI 经验池 / Harness-RSI �
 
 > 📖 [唐杰团队 · Memory for Large Language Models](https://arxiv.org/abs/2604.08915)
 
+- **记忆的可信单位是「带源行哈希的断言」，不是文档级引用（两源）**——断言锚到支撑它的源行并记该行版本哈希，源变则哈希变，**失效判定不调模型**，只把受影响的断言送确认 / 修订 / 撤回；配套「跨 run 引用一致性」是独立指标（≠准确率，但决定结论可否复现）。只在**跨源重复推理**时划算。
+> 📖 来源：[LangChain · 自纠正记忆](https://langchain.com/blog/self-correcting-memory-openwiki)（2026-08-25）· [LangChain · 证据图记忆](https://www.langchain.com/blog/building-agent-memory-openwiki-graphs)（2026-10-28）
+
 **▍其他（2026-09 深读，一句话判据）**
 
 - **WeKnora**（腾讯开源知识平台）——判定件上游的检索现成件，非同类：混合检索归一化 / 降级留痕 / chunk 级修订可引；治理面无 append-only 链差一档。[深读见归档](./archive/validation-deep/weknora.md)
@@ -487,7 +490,7 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 > 📖 来源：[Axiom 形式化有限单群分类定理](https://x.com/rohanpaul_ai/status/2115224910603890778)（2026-10-28）· [OpenAI 请外部专家核查三项证明](https://www.theverge.com/ai-artificial-intelligence/1019921/openai-breakthrough-math-computer-science-physics)（2026-10-28）
 
 - **平均分与全对率必须同表报（三源）**——只看均分会系统性误排名：Odysseys2 均分 84.6、全对仅 47/100；PAE 审计里 27–78% 的「成功」含违规，相乘门控后 Pass^4 无一超 24%；换六个裁判判「新颖性」即改变结论。两条口径：① 均分与 Pass^k 同表报；② 判据维须是可枚举的「不变量」而非评分项。与上文 AND 复合门槛正交：彼管合成，本条管**读数怎么呈现**。
-> 📖 来源：[Odysseys2](https://browser-use.com/posts/odysseys2-long-horizon-web-agent-benchmark)（CMU，10-28）· [Ai2 NoveltyBench](https://allenai.org/blog/novelty-bench)· PAE（`arXiv:2603.03116`）
+> 📖 来源：[Odysseys2](https://browser-use.com/posts/odysseys2-long-horizon-web-agent-benchmark)（CMU，2026-10-28）· [Ai2 NoveltyBench](https://allenai.org/blog/novelty-bench)· PAE（`arXiv:2603.03116`）
 
 - **pass^k 一致性抽验（单次通过 ≠ 稳定通过）**：回归验收抽验边缘场景，要求 **k 次重复稳定通过**而非单次成功——单次通过率掩盖 harness 抖动。
   - ⚠️ 两条口径注记（**细节见归档**）：+54% 系 **pass^1 相对提升**、非 k 次一致性；同页已声明「多数场景推荐改用 extended thinking」⇒ 只按**方法论**采用。
