@@ -182,7 +182,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 | 能力 | 一句话 | 触达方式 |
 |---|---|---|
-| **RLCD 严格适当评分训练** | 三原语分派损失 + 非对称惩罚 + RLOO/KL/降权三防线；概率目标断言 + 三档加权 + 可复现清单 | CLI：`sofagent train rlcd --data <数据集> [--dryrun]` |
+| **RLCD 严格适当评分训练** | 三原语分派损失 + 非对称惩罚 + RLOO/KL/降权三防线；概率目标断言 + 三档加权 + 可复现清单 | CLI 可达：`sofagent train rlcd --data <数据集> [--dryrun]` |
 | **分桶温度校准** | 三原语分立拟合 · score 保序 · 校准集隔离断言 · 制品纯 JSON 无权重 | SDK 面 |
 | **校准纪律门禁** | 决策路径的置信度阈值须带校准依据或显式 `uncalibrated` | SDK 面 · 发布链 |
 | **弃权第四态** | 与 pass/warn/fail 并列（三源留痕）· 门槛按原语分档 · ECE 未达阈不可关 | SDK 面 |
