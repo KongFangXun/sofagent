@@ -486,6 +486,9 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 - **验收分档之后还有三问：可执行、可证明、可受理（三源）**——「样本内不失败」与「性质恒成立」只是**分档**，不等于受理。受理另需三件：① 命题与证明分开评审（形式化只证「证明与命题一致」，不证命题是否该问的那个——Axiom 集群 24 天形式化有限单群分类定理、3800 万行 Lean，同期报出 **34 处已发表错误**）；② 具名外部签字人（缺签字只能停在「宣称」）；③ 材料公开到可复算（否则质疑只能退化为程序诉求）。与上条正交：彼管「多指标怎么合成」，本条管「结论怎么被受理」。
 > 📖 来源：[Axiom 形式化有限单群分类定理](https://x.com/rohanpaul_ai/status/2115224910603890778)（2026-10-28）· [OpenAI 请外部专家核查三项证明](https://www.theverge.com/ai-artificial-intelligence/1019921/openai-breakthrough-math-computer-science-physics)（2026-10-28）
 
+- **平均分与全对率必须同表报（三源）**——只看均分会系统性误排名：Odysseys2 均分 84.6、全对仅 47/100；PAE 审计里 27–78% 的「成功」含违规，相乘门控后 Pass^4 无一超 24%；换六个裁判判「新颖性」即改变结论。两条口径：① 均分与 Pass^k 同表报；② 判据维须是可枚举的「不变量」而非评分项。与上文 AND 复合门槛正交：彼管合成，本条管**读数怎么呈现**。
+> 📖 来源：[Odysseys2](https://browser-use.com/posts/odysseys2-long-horizon-web-agent-benchmark)（CMU，10-28）· [Ai2 NoveltyBench](https://allenai.org/blog/novelty-bench)· PAE（`arXiv:2603.03116`）
+
 - **pass^k 一致性抽验（单次通过 ≠ 稳定通过）**：回归验收抽验边缘场景，要求 **k 次重复稳定通过**而非单次成功——单次通过率掩盖 harness 抖动。
   - ⚠️ 两条口径注记（**细节见归档**）：+54% 系 **pass^1 相对提升**、非 k 次一致性；同页已声明「多数场景推荐改用 extended thinking」⇒ 只按**方法论**采用。
 > 📖 来源：[Anthropic Engineering · The think tool](https://www.anthropic.com/engineering/claude-think-tool)（2025-12-15 更新）· 哥伦比亚大学 COMS W4995 第 5 讲（2026-10-11）
