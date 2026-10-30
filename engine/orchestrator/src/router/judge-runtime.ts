@@ -135,7 +135,7 @@ export class JudgeRuntime {
       if (encoded.length > this.encoder.maxContextTokens) {
         throw new JudgeHeadError(`state ${encoded.length} tokens 超上限 ${this.encoder.maxContextTokens}——fail-closed`);
       }
-      // 🔒 一次编码多头并行（行为锁）：把**已编码表示**传入各判定头——头对同一 state
+      // 🔒 一次编码（多问共享）多头并行（行为锁）：把**已编码表示**传入各判定头——头对同一 state
       // 复用本次编码，不再逐问各自 encode(state)。此前每个 head 内部各自 encode ⇒ N 问
       // 共 N+1 次编码，与模块头 claim 相悖；此处以「同 state 命中已编码缓存」的编码器
       // 视图传入，使实现与 claim 对齐（head 契约不变——换基座仍只换 EncoderLike 实现）。
