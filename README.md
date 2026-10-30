@@ -364,7 +364,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 | 社区参与 · 行为准则 | [COMMUNITY](./docs/COMMUNITY.md) |
 | 外部验证与行业对照 | [VALIDATION](./docs/VALIDATION.md) |
 
-> 🧪 **工程可信度**（当前口径）：6593 测试 / 14 包（`tools/check/test-count.sh` 实测口径）+ 12 插件（8 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
+> 🧪 **工程可信度**（当前口径）：6643 测试 / 14 包（`tools/check/test-count.sh` 实测口径）+ 12 插件（8 DSH + 4 OpenClaw）· 28 条审计规则 · fresh-eyes 独立审查（见 [review-system](./docs/guides/review-system.md)）。
 > **包数口径**（消歧）：主读数口径 = 14 包（test-count.sh 实测；下述两口径为集合定义）——workspace 29 = 13 模块包 + `engine/corpus`（`@sofagent/rsi-corpus` 语料管道，版本线独立）+ load-chain + dsh-plugin-kit + umbrella + 8 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 模块包（含 test script 的 workspace 全量实测 27 个——活读数见 `tools/check/test-count.sh` 头注的口径说明，插件与工具包不计）——非同一集合。
 > 测试数二口径：**发版时点值**（各版本 `4805→4903` 增量账）与**当前实测值**（上方行）；权威值以 `tools/check/check-test-count.sh` 实跑为准；性能数据为单机参考值。
 
