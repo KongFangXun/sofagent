@@ -99,10 +99,15 @@ describe('DeterministicJudge.route · 判别双闸门', () => {
     expect(judge.route('数值序列：5233、9982。', '上述数值的平均值是多少？', { opt0: '5233', opt1: '9982' })).toBeNull();
     // 评审得分但无档界表述 → 落穿（gradelong 同族形态）
     expect(judge.route('评审得分：42 分。评分标准叙述嵌在长文里……', '该得分属于哪一档？', {})).toBeNull();
-    // gradelong：档位标准嵌叙述（0-2 级）——本版刻意不识别
-    expect(
-      judge.route('工单内容：服务不可用。\n评分标准（按紧急程度分 0-2 级）：0 级＝不紧急；1 级＝一般；2 级＝紧急。', '按上述 0-2 级标准，这段工单的紧急程度应评为哪一级？', { opt0: '0 级（不紧急）', opt1: '1 级（一般）', opt2: '2 级（紧急）' }),
-    ).toBeNull();
+    // gradelong：清零批已由 urgency 接管。此处测词表外 fail-closed——
+    // 题型识别成立（route='urgency'：工单+评分标准+问句词面都在），但工单
+    // 内容三表全不中 → solve 层 undefined 落穿（route 识别题型≠判得出）
+    const offVocab = judge.solveQuestion({
+      state: '工单内容：打印机颜色偏暖，建议校准。\n评分标准（按紧急程度分 0-2 级）：0 级＝不紧急；1 级＝一般；2 级＝紧急。',
+      instructions: '按上述 0-2 级标准，这段工单的紧急程度应评为哪一级？',
+      optionsDef: { opt0: '0 级（不紧急）', opt1: '1 级（一般）', opt2: '2 级（紧急）' },
+    });
+    expect(offVocab).toBeUndefined();
   });
 
   it('RULE_FAMILY：数值比较三规则→choice、分档评分三格式→score', () => {

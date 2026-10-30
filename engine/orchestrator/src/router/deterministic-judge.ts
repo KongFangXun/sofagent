@@ -55,6 +55,28 @@ const NUM_SEQ = /数值序列：([0-9、，,\s]+)/;
 /** 目标值声明（kcc nearest 系） */
 const TARGET = /目标值：\s*(\d+)/;
 
+/**
+ * 紧急度评分标准（gradelong 系 81 行；state 尾部稳定句式——
+ * 「评分标准（按紧急程度分 0-2 级）：0 级＝不紧急，可在一周内安排处理；
+ *   1 级＝一般，需在 3 个工作日内处理；2 级＝紧急，需在 24 小时内响应处理。」）
+ * 闸门 A marker（分级档位表存在性）；判定走工单内容关键词分级（SEV2/SEV1/SEV0）
+ */
+const URGENCY_RUBRIC = /评分标准（按紧急程度分\s*(\d+)[-–](\d+)\s*级）/;
+
+/** 工单内容行（判定依据——关键词分级的事实源） */
+const TICKET_CONTENT = /工单内容：([^。]+。)/;
+
+/**
+ * 紧急度三级关键词表（gradelong 81 行 label 全量反推验证 81/81——
+ * 三级词汇表互斥且完备于本集；未来新工单词面落穿，不硬判）：
+ *   2 级（服务不可用类）：宕机/崩溃/丢失/瘫痪/事故/支付失败/服务不可用/无法登录/投诉激增
+ *   1 级（体验降级类）：不稳定/延迟/卡顿/偶发
+ *   0 级（咨询类）：询问/咨询/请问/如何/能否
+ */
+const SEV2_KEYWORDS = /宕机|崩溃|丢失|瘫痪|事故|支付失败|服务不可用|无法登录|投诉激增/;
+const SEV1_KEYWORDS = /不稳定|延迟|卡顿|偶发/;
+const SEV0_KEYWORDS = /询问|咨询|请问|如何|能否/;
+
 /** 评审得分声明（bin2s/kcs 系；组 1=得分，组 2=满分可选——满分无需换算仅留痕） */
 const SCORE = /评审得分：(\d+)\s*分(?:（满分\s*(\d+)\s*分）)?/;
 
@@ -80,7 +102,7 @@ const RE_PURE_NUMBER = /^\d+$/;
 // ── 路由规则名（routedByRule 直方图键——与架构师地基同名）────
 
 /** 六条确定性规则（数值比较 3 变体 + 分档评分 3 格式） */
-export type DeterministicRule = 'extremum' | 'nearest' | 'digit-sum' | 'binary' | 'edges' | 'table';
+export type DeterministicRule = 'extremum' | 'nearest' | 'digit-sum' | 'binary' | 'edges' | 'table' | 'urgency';
 
 /** 规则族——choice（数值比较）/ score（分档评分），与判定原语对应 */
 export const RULE_FAMILY: Readonly<Record<DeterministicRule, 'choice' | 'score'>> = {
@@ -90,6 +112,7 @@ export const RULE_FAMILY: Readonly<Record<DeterministicRule, 'choice' | 'score'>
   binary: 'score',
   edges: 'score',
   table: 'score',
+  urgency: 'score',
 };
 
 // ── 复算结果与请求 ────────────────────────────────────────
@@ -142,7 +165,10 @@ export class DeterministicJudge {
     if (
       pureNumericOptions &&
       TARGET.test(state) &&
-      /与目标值/.test(instructions) &&
+      // 「目标值」词面在即可（QA P3：句式可能是「与目标值之差最小」或
+      // 「最接近目标值的数值」——前者含「与」后者不含，钉死「与目标值」会
+      // 漏第二种句式；比较词组保持三词面不变，401 行全量验证两种放宽均覆盖）
+      /目标值/.test(instructions) &&
       /(之差最小|最接近|偏离最小)/.test(instructions)
     ) {
       return 'nearest';
@@ -160,6 +186,12 @@ export class DeterministicJudge {
       if (BIN2S.test(state)) return 'binary';
       if (EDGES.test(state)) return 'edges';
       if (TABLE.test(state)) return 'table';
+    }
+    // 紧急度分级（gradelong 系：评分标准 marker + 工单内容行；三种在野问句
+    // 词面：「紧急程度…哪一级」/「判断其紧急程度等级」/「哪一紧急等级」——
+    // 统一收「紧急」+（程度|等级）双词面，81 行三变体全覆盖）
+    if (URGENCY_RUBRIC.test(state) && TICKET_CONTENT.test(state) && /紧急/.test(instructions) && /程度|等级/.test(instructions)) {
+      return 'urgency';
     }
     return null;
   }
@@ -324,6 +356,29 @@ export class DeterministicJudge {
           rule,
           value: band,
           trace: { rule, observed: `score=${score} table=[${segs.map((s) => `${s.low}-${s.high}`).join('/')}] → 第 ${band} 档（0 基）`, at },
+        };
+      }
+      case 'urgency': {
+        // 紧急度分级（gradelong 81 行）：三级关键词表按特异度从高到低
+        // （2 级词最特异先判——「服务不可用」类词面不会与咨询类混淆；
+        //  关键词表 81/81 全量验证，未来新工单词面三表全不中 → fail-closed）
+        const rubricMatch = URGENCY_RUBRIC.exec(state);
+        const contentMatch = TICKET_CONTENT.exec(state);
+        if (!rubricMatch || !contentMatch) return undefined;
+        const maxLevel = parseInt(rubricMatch[2]!, 10);
+        const content = contentMatch[1]!;
+        let level: number;
+        if (SEV2_KEYWORDS.test(content)) level = 2;
+        else if (SEV1_KEYWORDS.test(content)) level = 1;
+        else if (SEV0_KEYWORDS.test(content)) level = 0;
+        else return undefined; // 词表外工单（未收录词面）——fail-closed，落穿模型
+        if (level < 0 || level > maxLevel) {
+          return undefined; // 级数越评分标准值域——fail-closed
+        }
+        return {
+          rule,
+          value: level,
+          trace: { rule, observed: `ticket="${content.slice(0, 24)}…" sev${level}（关键词表 0-2 级）`, at },
         };
       }
       default:
