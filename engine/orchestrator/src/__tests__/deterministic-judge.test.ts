@@ -306,13 +306,13 @@ describe('留痕 schema · makeChoiceAnswer 确定性来源校验', () => {
     expect(() => makeChoiceAnswer(cq, 'opt-1', dist, undefined, { source: 'deterministic' })).toThrow(/trace\.rule 缺/);
   });
 
-  it("source='deterministic' 而 observed 空 → 抛错", () => {
+  it("source='deterministic' 而 observed 空 → 抛错（Error 信息含 rule 名便于定位——QA 复验断言）", () => {
     expect(() =>
       makeChoiceAnswer(cq, 'opt-1', dist, undefined, {
         source: 'deterministic',
         deterministicTrace: { rule: 'extremum', observed: '', at: '2026-10-30T00:00:00Z' },
       }),
-    ).toThrow(/trace\.observed 为空/);
+    ).toThrow(/rule=extremum.*observed 为空|observed 为空.*rule=extremum/);
   });
 
   it('带 trace 但 source 缺 → 抛错（trace 只属确定性来源）', () => {
@@ -380,6 +380,43 @@ describe('JudgeRuntime · 确定性前置路由集成', () => {
     expect((ans as { selected: string }).selected).toBe('opt-2'); // 4109 最小
     expect((ans as { source?: string }).source).toBe('deterministic');
     expect((ans as { deterministicTrace?: { rule: string } }).deterministicTrace?.rule).toBe('extremum');
+  });
+
+  it('全命中（choice）：Answer 侧三字段在位（source/rule/observed/at——QA 复验断言）', () => {
+    const { encoder } = makeSpyEncoder();
+    const runtime = new JudgeRuntime(encoder);
+    const result = runtime.judge({
+      state: '数值序列：5233、9982、6194、4109、5418。',
+      questions: [numericChoiceQuestion()],
+    });
+    const ans = result.answers[0] as {
+      source?: string;
+      deterministicTrace?: { rule: string; observed: string; at: string };
+    };
+    // ① source 在位
+    expect(ans.source).toBe('deterministic');
+    // ② trace 三字段在位：rule=规则名 / observed=复算事实摘要（序列/极值）/ at=ISO 时间戳
+    expect(ans.deterministicTrace?.rule).toBe('extremum');
+    expect(ans.deterministicTrace?.observed).toContain('4109'); // 判定器观察到的事实（极值）
+    expect(ans.deterministicTrace?.at).toMatch(/^\d{4}-\d{2}-\d{2}T/); // ISO 8601
+  });
+
+  it('全命中（score）：Answer 侧三字段在位（observed 含得分与档界）', () => {
+    const { encoder } = makeSpyEncoder();
+    const runtime = new JudgeRuntime(encoder);
+    const result = runtime.judge({
+      state: '评审得分：51 分（满分 80 分）。\n档界：20/40/60/80。',
+      questions: [{ kind: 'score', id: 'q-band', question: '按上述档位划分，该得分属于第几档？', min: 0, max: 3 }],
+    });
+    const ans = result.answers[0] as {
+      source?: string;
+      deterministicTrace?: { rule: string; observed: string; at: string };
+    };
+    expect(ans.source).toBe('deterministic');
+    expect(ans.deterministicTrace?.rule).toBe('edges');
+    expect(ans.deterministicTrace?.observed).toContain('51'); // 得分
+    expect(ans.deterministicTrace?.observed).toContain('20'); // 档界
+    expect(ans.deterministicTrace?.at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   it('全命中（score 族）：分档评分问句零编码 + 档位留痕', () => {

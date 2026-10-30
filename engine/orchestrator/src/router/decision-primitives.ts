@@ -205,7 +205,7 @@ export interface DeterministicTraceFields {
   at: string;
 }
 
-/** 确定性留痕校验（make*Answer 构造器共用——source='deterministic' 而 trace 缺/observed 空 → 抛错） */
+/** 确定性留痕校验（make*Answer 构造器共用——source='deterministic' 而 trace 缺/observed 空 → 抛错；报错含 rule 名便于定位） */
 function validateDeterministicTrace(
   source: AnswerSource | undefined,
   trace: DeterministicTraceFields | undefined,
@@ -216,15 +216,19 @@ function validateDeterministicTrace(
       throw new DecisionPrimitiveError(`问句 ${questionId} source='deterministic' 但 trace.rule 缺（留痕不留空的记录等于没留）`);
     }
     if (!trace.observed || !trace.observed.trim()) {
-      throw new DecisionPrimitiveError(`问句 ${questionId} source='deterministic' 但 trace.observed 为空（复算依据须可对账）`);
+      throw new DecisionPrimitiveError(
+        `问句 ${questionId} source='deterministic'（rule=${trace.rule}）但 trace.observed 为空（复算依据须可对账）`,
+      );
     }
     if (!trace.at || !trace.at.trim()) {
-      throw new DecisionPrimitiveError(`问句 ${questionId} source='deterministic' 但 trace.at 缺（时间锚）`);
+      throw new DecisionPrimitiveError(
+        `问句 ${questionId} source='deterministic'（rule=${trace.rule}）但 trace.at 缺（时间锚）`,
+      );
     }
   }
   if (trace && source !== 'deterministic') {
     throw new DecisionPrimitiveError(
-      `问句 ${questionId} 带 deterministicTrace 但 source 非 'deterministic'（trace 只属确定性来源——错配即拒载）`,
+      `问句 ${questionId} 带 deterministicTrace（rule=${trace.rule ?? '?'}）但 source 非 'deterministic'（trace 只属确定性来源——错配即拒载）`,
     );
   }
 }
