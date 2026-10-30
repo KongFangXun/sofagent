@@ -10,8 +10,9 @@
 // ============================================================
 import type { EncoderLike } from './judge-heads';
 import { choiceHead, scoreHead, noulHead, JudgeHeadError } from './judge-heads';
-import type { DecisionRequest, DecisionResult, DecisionAnswer } from './decision-primitives';
+import type { DecisionRequest, DecisionResult, DecisionAnswer, ChoiceQuestion } from './decision-primitives';
 import { makeChoiceAnswer, makeScoreAnswer, makeNoulAnswer, validateDecisionPairing } from './decision-primitives';
+import { deterministicJudge } from './deterministic-judge';
 import {
   makeChoiceFullOutput,
   makeScoreFullOutput,
@@ -38,41 +39,104 @@ export class JudgeRuntime {
   /**
    * 多问并行：同 state 一次编码、多头并行出全部答案（问题间不串扰、无静默缺问）。
    * 权重溯源：结果附 modelRevision（随判定可落 decision-log）。
+   *
+   * 确定性前置路由（v1.7.x 判定质量修补线）：问句携带 verificationPath=
+   * 'deterministic-judge' 标记（数值合成面）时先走 deterministicJudge——
+   * 命中问句直接出确定性答案（零编码、零模型推理），null 则 fail-open
+   * 落回下方 encoder 模型路径（识别不了的不硬判）。语义面问句零前置开销
+   * （判别器纯正则，纯数字 options 闸门先拦）。
    */
   judge(request: DecisionRequest): DecisionResult & { modelRevision: string } {
-    // 一次编码（多问共享——非逐问重复）
-    const encoded = this.encoder.encode(request.state);
-    if (encoded.length > this.encoder.maxContextTokens) {
-      throw new JudgeHeadError(`state ${encoded.length} tokens 超上限 ${this.encoder.maxContextTokens}——fail-closed`);
+    // 🔒 确定性前置：数值合成面（数值比较/分档评分）从模型判定面剥离——
+    // 复算可得的答案不过模型（模型读数是这条面的历史缺口：zh 0.425 主因）。
+    const detAnswered = new Set<string>();
+    const detAnswers: DecisionAnswer[] = [];
+    for (const q of request.questions) {
+      const verificationPath = (q as { verificationPath?: string }).verificationPath;
+      if (verificationPath !== 'deterministic-judge') {
+        continue;
+      }
+      if (q.kind === 'choice') {
+        const det = deterministicJudge({
+          state: request.state,
+          instructions: q.question,
+          optionsDef: Object.fromEntries(q.options.map((o) => [o.id, o.label])),
+        });
+        if (det === null || det.selectedIndex === undefined) {
+          continue; // fail-open：该问句落回模型路径
+        }
+        const selectedId = q.options[det.selectedIndex]?.id;
+        if (!selectedId) {
+          continue; // 下标越界（判别器与候选集不一致）→ fail-open，不硬判
+        }
+        const dist: Record<string, number> = {};
+        const w = 1 / q.options.length; // 确定性答案的退化分布：非选中项均摊残概率
+        for (const o of q.options) {
+          dist[o.id] = o.id === selectedId ? 1 - w * (q.options.length - 1) : w;
+        }
+        detAnswers.push(makeChoiceAnswer(q as ChoiceQuestion, selectedId, dist));
+        detAnswered.add(q.id);
+        continue;
+      }
+      if (q.kind === 'score') {
+        // 分档评分面：档位复算值落在问句值域内才出确定性答案（区间零宽、
+        // 不确定度 0——复算结果无亚档抖动），否则 fail-open 落模型。
+        const det = deterministicJudge({
+          state: request.state,
+          instructions: q.question,
+          optionsDef: {},
+        });
+        if (det === null || det.band === undefined) {
+          continue;
+        }
+        if (det.band < q.min || det.band > q.max) {
+          continue; // 档位索引不在问句值域（量表不匹配）→ fail-open
+        }
+        detAnswers.push(makeScoreAnswer(q, det.band, { lower: det.band, upper: det.band }, 0));
+        detAnswered.add(q.id);
+      }
     }
-    // 🔒 一次编码多头并行（行为锁）：把**已编码表示**传入各判定头——头对同一 state
-    // 复用本次编码，不再逐问各自 encode(state)。此前每个 head 内部各自 encode ⇒ N 问
-    // 共 N+1 次编码，与模块头 claim 相悖；此处以「同 state 命中已编码缓存」的编码器
-    // 视图传入，使实现与 claim 对齐（head 契约不变——换基座仍只换 EncoderLike 实现）。
-    const sharedEncoder: EncoderLike = {
-      modelRevision: this.encoder.modelRevision,
-      maxContextTokens: this.encoder.maxContextTokens,
-      encode: (state: string): number[][] => (state === request.state ? encoded : this.encoder.encode(state)),
-      isSingleToken: (text: string): boolean => this.encoder.isSingleToken(text),
-      decodeToken: (token: number): string => this.encoder.decodeToken(token),
-    };
-    const answers: DecisionAnswer[] = request.questions.map((q) => {
-      switch (q.kind) {
-        case 'choice': {
-          const out = choiceHead(sharedEncoder, request.state, q.options.map((o) => o.label), q.options.map((o) => o.id));
-          const top = Object.entries(out.scores).sort((a, b) => b[1] - a[1])[0]!;
-          return makeChoiceAnswer(q, top[0], out.scores);
-        }
-        case 'score': {
-          const out = scoreHead(sharedEncoder, request.state, { min: q.min, max: q.max });
-          return makeScoreAnswer(q, out.value, out.interval, (out.interval.upper - out.interval.lower) / 2);
-        }
-        case 'noul': {
-          const out = noulHead(sharedEncoder, request.state);
-          return makeNoulAnswer(q, out.probability);
+    // 未被确定性层吃掉的问句走模型路径
+    const modelQuestions = request.questions.filter((q) => !detAnswered.has(q.id));
+    // 一次编码（多问共享——非逐问重复；全问被确定性层命中则零编码）
+    const answers: DecisionAnswer[] = [...detAnswers];
+    if (modelQuestions.length > 0) {
+      const encoded = this.encoder.encode(request.state);
+      if (encoded.length > this.encoder.maxContextTokens) {
+        throw new JudgeHeadError(`state ${encoded.length} tokens 超上限 ${this.encoder.maxContextTokens}——fail-closed`);
+      }
+      // 🔒 一次编码多头并行（行为锁）：把**已编码表示**传入各判定头——头对同一 state
+      // 复用本次编码，不再逐问各自 encode(state)。此前每个 head 内部各自 encode ⇒ N 问
+      // 共 N+1 次编码，与模块头 claim 相悖；此处以「同 state 命中已编码缓存」的编码器
+      // 视图传入，使实现与 claim 对齐（head 契约不变——换基座仍只换 EncoderLike 实现）。
+      const sharedEncoder: EncoderLike = {
+        modelRevision: this.encoder.modelRevision,
+        maxContextTokens: this.encoder.maxContextTokens,
+        encode: (state: string): number[][] => (state === request.state ? encoded : this.encoder.encode(state)),
+        isSingleToken: (text: string): boolean => this.encoder.isSingleToken(text),
+        decodeToken: (token: number): string => this.encoder.decodeToken(token),
+      };
+      for (const q of modelQuestions) {
+        switch (q.kind) {
+          case 'choice': {
+            const out = choiceHead(sharedEncoder, request.state, q.options.map((o) => o.label), q.options.map((o) => o.id));
+            const top = Object.entries(out.scores).sort((a, b) => b[1] - a[1])[0]!;
+            answers.push(makeChoiceAnswer(q, top[0], out.scores));
+            break;
+          }
+          case 'score': {
+            const out = scoreHead(sharedEncoder, request.state, { min: q.min, max: q.max });
+            answers.push(makeScoreAnswer(q, out.value, out.interval, (out.interval.upper - out.interval.lower) / 2));
+            break;
+          }
+          case 'noul': {
+            const out = noulHead(sharedEncoder, request.state);
+            answers.push(makeNoulAnswer(q, out.probability));
+            break;
+          }
         }
       }
-    });
+    }
     const result: DecisionResult & { modelRevision: string } = {
       answers,
       modelRevision: this.encoder.modelRevision, // 权重溯源——随判定落链
