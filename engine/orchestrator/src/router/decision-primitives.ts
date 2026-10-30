@@ -117,6 +117,13 @@ export interface ChoiceAnswer {
    */
   fallbackSelected: boolean;
   abstained: boolean;
+  /**
+   * 答案来源（v1.7.x 修补线，可选向后兼容）：'deterministic' = 确定性
+   * 复算出（deterministic-judge 路由命中）；缺省 = 模型推理出。
+   */
+  source?: AnswerSource;
+  /** 确定性复算留痕（source='deterministic' 时必带——构造器校验） */
+  deterministicTrace?: DeterministicTraceFields;
 }
 
 /** Score 答案：分值 + 区间/不确定度 */
@@ -140,6 +147,13 @@ export interface ScoreAnswer {
   ordinal?: number;
   /** 档位总数（序/总数并列——序不可独读） */
   ordinalTotal?: number;
+  /**
+   * 答案来源（v1.7.x 修补线，可选向后兼容）：'deterministic' = 确定性
+   * 复算出（deterministic-judge 路由命中）；缺省 = 模型推理出。
+   */
+  source?: AnswerSource;
+  /** 确定性复算留痕（source='deterministic' 时必带——构造器校验） */
+  deterministicTrace?: DeterministicTraceFields;
 }
 
 /** Noul 答案：真值概率 */
@@ -155,9 +169,65 @@ export interface NoulAnswer {
    * decision-output.ts fourStateMapping / makeNoulFullOutput）。
    */
   fourState?: '成立' | '倾向成立' | '倾向不成立' | '不成立';
+  /**
+   * 答案来源（v1.7.x 修补线，可选向后兼容）：'deterministic' = 确定性
+   * 复算出（deterministic-judge 路由命中）；缺省 = 模型推理出。
+   *（当前确定性路由只覆盖 choice/score 两族——noul 留位为类型面完整，
+   *  语义与另两原语同构。）
+   */
+  source?: AnswerSource;
+  /** 确定性复算留痕（source='deterministic' 时必带——构造器校验） */
+  deterministicTrace?: DeterministicTraceFields;
 }
 
 export type DecisionAnswer = ChoiceAnswer | ScoreAnswer | NoulAnswer;
+
+// ── 确定性留痕（v1.7.x 修补线——答案由确定性复算出的留痕位）────
+
+/**
+ * 答案来源标记：'deterministic' = 该答案由确定性复算出（非模型推理）。
+ * 留在 Answer 层而非 Result 层——一次判定里逐问来源可不同
+ *（部分问句确定性命中、部分落模型，A/B 对照读数按问粒度对账）。
+ */
+export type AnswerSource = 'deterministic';
+
+/**
+ * 确定性复算留痕（与 deterministic-judge.DeterministicTrace 同构——
+ * rule 类型用 string 而非 DeterministicRule 枚举：decision-primitives 是
+ * 根契约层，不反向依赖判定实现层（防循环 import；合法值由生产侧保证）。
+ */
+export interface DeterministicTraceFields {
+  /** 命中规则名（如 'extremum'/'edges'——deterministic-judge 的 DeterministicRule） */
+  rule: string;
+  /** 人类可读复算依据（审计面对账用） */
+  observed: string;
+  /** 触发时刻（ISO 8601） */
+  at: string;
+}
+
+/** 确定性留痕校验（make*Answer 构造器共用——source='deterministic' 而 trace 缺/observed 空 → 抛错） */
+function validateDeterministicTrace(
+  source: AnswerSource | undefined,
+  trace: DeterministicTraceFields | undefined,
+  questionId: string,
+): void {
+  if (source === 'deterministic') {
+    if (!trace || !trace.rule || !trace.rule.trim()) {
+      throw new DecisionPrimitiveError(`问句 ${questionId} source='deterministic' 但 trace.rule 缺（留痕不留空的记录等于没留）`);
+    }
+    if (!trace.observed || !trace.observed.trim()) {
+      throw new DecisionPrimitiveError(`问句 ${questionId} source='deterministic' 但 trace.observed 为空（复算依据须可对账）`);
+    }
+    if (!trace.at || !trace.at.trim()) {
+      throw new DecisionPrimitiveError(`问句 ${questionId} source='deterministic' 但 trace.at 缺（时间锚）`);
+    }
+  }
+  if (trace && source !== 'deterministic') {
+    throw new DecisionPrimitiveError(
+      `问句 ${questionId} 带 deterministicTrace 但 source 非 'deterministic'（trace 只属确定性来源——错配即拒载）`,
+    );
+  }
+}
 
 // ── 弃权归因（ABSTAIN 三源）────────────────────────────
 
@@ -234,12 +304,13 @@ export function validateChoiceQuestion(q: ChoiceQuestion): void {
   }
 }
 
-/** Choice 答案构造器：分布合法性 + 兜底/弃权互斥留痕 */
+/** Choice 答案构造器：分布合法性 + 兜底/弃权互斥留痕 + 确定性来源留痕 */
 export function makeChoiceAnswer(
   q: ChoiceQuestion,
   selected: string,
   distribution: Record<string, number>,
   flags?: { abstained?: boolean },
+  detOpts?: DeterministicAnswerOpts,
 ): ChoiceAnswer {
   validateChoiceQuestion(q);
   // 分布键须与候选集完全一致
@@ -276,15 +347,36 @@ export function makeChoiceAnswer(
       `问句 ${q.id} 弃权时 selected 须指向兜底项「${fallbackId}」（保持分布完整）`,
     );
   }
-  return { kind: 'choice', questionId: q.id, selected, distribution, fallbackSelected, abstained };
+  validateDeterministicTrace(detOpts?.source, detOpts?.deterministicTrace, q.id);
+  return {
+    kind: 'choice',
+    questionId: q.id,
+    selected,
+    distribution,
+    fallbackSelected,
+    abstained,
+    ...(detOpts?.source ? { source: detOpts.source } : {}),
+    ...(detOpts?.deterministicTrace ? { deterministicTrace: detOpts.deterministicTrace } : {}),
+  };
 }
 
-/** Score 答案构造器：值域 + 区间自洽 */
+// makeChoiceAnswer 重载面（确定性留痕 opts——见下方 DeterministicAnswerOpts）
+
+/** 确定性答案构造 opts（make*Answer 共用——source + trace 成对校验） */
+export interface DeterministicAnswerOpts {
+  /** 答案来源：'deterministic' = 确定性复算出（须带 trace——校验器强制） */
+  source?: AnswerSource;
+  /** 复算留痕（source='deterministic' 时必带；非确定性来源不得带） */
+  deterministicTrace?: DeterministicTraceFields;
+}
+
+/** Score 答案构造器：值域 + 区间自洽 + 确定性来源留痕 */
 export function makeScoreAnswer(
   q: ScoreQuestion,
   value: number,
   interval: { lower: number; upper: number },
   uncertainty: number,
+  detOpts?: DeterministicAnswerOpts,
 ): ScoreAnswer {
   if (value < q.min || value > q.max) {
     throw new DecisionPrimitiveError(`问句 ${q.id} 分值 ${value} 越界 [${q.min},${q.max}]`);
@@ -300,15 +392,31 @@ export function makeScoreAnswer(
   if (uncertainty < 0) {
     throw new DecisionPrimitiveError(`问句 ${q.id} 不确定度须 ≥0`);
   }
-  return { kind: 'score', questionId: q.id, value, ...interval, uncertainty };
+  validateDeterministicTrace(detOpts?.source, detOpts?.deterministicTrace, q.id);
+  return {
+    kind: 'score',
+    questionId: q.id,
+    value,
+    ...interval,
+    uncertainty,
+    ...(detOpts?.source ? { source: detOpts.source } : {}),
+    ...(detOpts?.deterministicTrace ? { deterministicTrace: detOpts.deterministicTrace } : {}),
+  };
 }
 
-/** Noul 答案构造器：概率 ∈ [0,1] */
-export function makeNoulAnswer(q: NoulQuestion, probability: number): NoulAnswer {
+/** Noul 答案构造器：概率 ∈ [0,1] + 确定性来源留痕（类型面完整留位） */
+export function makeNoulAnswer(q: NoulQuestion, probability: number, detOpts?: DeterministicAnswerOpts): NoulAnswer {
   if (probability < 0 || probability > 1) {
     throw new DecisionPrimitiveError(`问句 ${q.id} 真值概率 ${probability} 越界 [0,1]`);
   }
-  return { kind: 'noul', questionId: q.id, probability };
+  validateDeterministicTrace(detOpts?.source, detOpts?.deterministicTrace, q.id);
+  return {
+    kind: 'noul',
+    questionId: q.id,
+    probability,
+    ...(detOpts?.source ? { source: detOpts.source } : {}),
+    ...(detOpts?.deterministicTrace ? { deterministicTrace: detOpts.deterministicTrace } : {}),
+  };
 }
 
 // ── 问句集限定（类型不符拒绝）──────────────────────────

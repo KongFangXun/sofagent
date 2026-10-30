@@ -1,5 +1,6 @@
 // judge-eval.ts · 零样本评测器（逐判据统计 + 失败模式分类 + 中英分列 + 分布内外分列）
 // + v1.7.0 §六 三态对照 / 双指标分离 / best-of-N / 达阈判定（阶段二收口面）
+// + v1.7.x 修补线 · 判定面分列（semantic/numeric faces）+ 确定性路由留痕
 // ============================================================
 // 在第五–七章数据集上跑零样本推理（基座不微调）；逐判据命中率/一致率；
 // 失败模式分类（哪类判据零样本最弱——阶段二训练重点输入）；中英分列
@@ -16,12 +17,22 @@
 //     综合分（合并会掩盖「判得准但概率不可信」的危险组合）；
 //   - best-of-N 选优列（N 与选择器口径随表落数）；
 //   - 阶段三裁决：双达阈 → stage-three:proceed；任一未达 → stage-three:deferred。
+//
+// v1.7.x 修补线增量（架构师设计 §judge-eval 分列）：
+//   - BaselineReport.faces：{semantic, numeric} 两面各自 zh/en 一致率与
+//     样本量 + ECE 分列（numeric 面 ECE 恒 NOT_MEASURED——确定性答案的
+//     退化分布不构成校准读数，one-hot 进 ECE 会污染校准面——主理人裁决②）；
+//   - BaselineReport.routing：{enabled, routedCount, routedByRule,
+//     failOpenCount}——确定性路由的直方图留痕（架构师地基对账面）；
+//   - evaluateZeroShot opts.deterministic 可传 null 关路由（A/B 对照口径
+//     ——主理人裁决⑤）；确定性行不进 calibRecords；
+//   - gradelong 族单列读数（主理人裁决③——本版不覆盖，读数单独可见）。
 // ============================================================
 import type { DecisionSample } from './decision-dataset-schema';
 import type { DecisionQuestion } from './decision-primitives';
 import type { JudgeRuntime } from './judge-runtime';
 import { computeCalibration, type CalibrationRecord, type CalibrationReport } from './calibration-report';
-import { detectNumericComparison, detectBandScoring, deterministicJudge } from './deterministic-judge';
+import { DeterministicJudge, RULE_FAMILY, type DeterministicRule } from './deterministic-judge';
 
 /** 逐判据统计 */
 export interface CriterionStat {
@@ -37,13 +48,13 @@ export interface CriterionStat {
   /** 按语言分列 */
   accuracyByLang: { zh: number; en: number };
   /**
-   * 判定面分列（v1.7.x 修补线）：按语言分列之外，语义面/数值合成面
-   * 各自报一致率——数值面命中来源（deterministic/模型）同列留痕。
+   * 判定面分列（v1.7.x 修补线）：语义面/数值合成面各自一致率——
+   * 归属由 DeterministicJudge.route 动态识别（单一事实源，非 origin 硬编码）。
    */
-  accuracyByFacet: { semantic: number; numericSynthetic: number };
-  /** 数值合成面样本数（accuracyByFacet.numericSynthetic 的分母） */
-  countNumericSynthetic: number;
-  /** 确定性层命中数（source='deterministic' 留痕——零则该判据全走模型） */
+  accuracyByFacet: { semantic: number; numeric: number };
+  /** 数值合成面样本数（accuracyByFacet.numeric 的分母） */
+  countNumeric: number;
+  /** 确定性命中数（source='deterministic' 留痕——零则该判据全走模型） */
   deterministicHits: number;
 }
 
@@ -59,12 +70,56 @@ export interface FailureClassification {
   evidence: string;
 }
 
+/** 单判定面读数（zh/en 分列一致率 + ECE——两列都报不藏数） */
+export interface FaceReading {
+  /** 中文侧一致率（按 zh 侧样本量加权） */
+  agreementZh: number | typeof NOT_MEASURED;
+  /** 英文侧一致率（按 en 侧样本量加权） */
+  agreementEn: number | typeof NOT_MEASURED;
+  /** 中文侧样本量 */
+  countZh: number;
+  /** 英文侧样本量 */
+  countEn: number;
+  /**
+   * 中文侧 ECE——numeric 面恒 NOT_MEASURED：确定性答案的退化分布
+   * 不构成校准读数（one-hot 进 ECE = 用映射常数冒充校准，§二门四同族防线）
+   */
+  eceZh: number | typeof NOT_MEASURED;
+  /** 英文侧 ECE（numeric 面恒 NOT_MEASURED——同上） */
+  eceEn: number | typeof NOT_MEASURED;
+}
+
+/** 判定面分列报告（semantic=模型判定面真实水平 / numeric=确定性路由效果读数） */
+export interface FacesBreakdown {
+  /** 语义判定面（boolq/csqa/snli/millet 等自然语言理解族——纯模型路径） */
+  semantic: FaceReading;
+  /** 数值合成面（proc-e 数值比较/分档评分族——确定性路由覆盖） */
+  numeric: FaceReading;
+  /**
+   * gradelong 族单列（主理人裁决③：本版不覆盖继续落模型——读数单独
+   * 可见，不混入 semantic 也不混入 numeric）
+   */
+  gradelong: FaceReading;
+}
+
+/** 确定性路由留痕（直方图对账面——架构师地基断言目标） */
+export interface RoutingTrace {
+  /** 路由开关（opts.deterministic=null → false） */
+  enabled: boolean;
+  /** 确定性出答案的问句总数 */
+  routedCount: number;
+  /** 按规则分布（extremum/nearest/digit-sum/binary/edges/table） */
+  routedByRule: Record<string, number>;
+  /** 识别但歧义落穿（答案面 fail-closed）+ 未识别落穿的问句数合计 */
+  failOpenCount: number;
+}
+
 export interface BaselineReport {
   /** 逐判据统计 */
   perCriterion: CriterionStat[];
   /** 失败模式分类（按语言分开报） */
   failuresByLang: { zh: FailureClassification[]; en: FailureClassification[] };
-  /** 校准现状（分桶+ECE——中英分列） */
+  /** 校准现状（分桶+ECE——中英分列；确定性行不进校准面） */
   calibration: CalibrationReport;
   /** 分布内外分列（泛化落差显式声明） */
   inDistributionAccuracy: number;
@@ -76,11 +131,13 @@ export interface BaselineReport {
   zhEnGap: number;
   zhUsable: boolean;
   /**
-   * 判定面分列（v1.7.x 修补线）：语义判定面 / 数值合成面各自一致率。
-   * 两列都报不藏数——数值面读数是确定性路由的效果读数，语义面读数是
-   * 模型判定面的真实水平（两者混报会互相掩盖）。
+   * 判定面分列（v1.7.x 修补线）：semantic / numeric / gradelong 三列
+   * 各自 zh/en 一致率与 ECE——数值面读数是确定性路由的效果读数，语义面
+   * 读数是模型判定面的真实水平（两者混报会互相掩盖）。
    */
-  byFacet: FacetBreakdown;
+  faces: FacesBreakdown;
+  /** 确定性路由留痕（enabled/routedCount/routedByRule 直方图/failOpenCount） */
+  routing: RoutingTrace;
   /** 耗时与成本（单次评测——预算分配分母） */
   runtime: { elapsedMs: number };
   /** 口径声明（零样本·单次运行·自产基线） */
@@ -91,108 +148,64 @@ const RANDOM_BASELINE = 0.5; // noul 二值随机基线
 /** score 命中判定的区间外松弛（半档——亚档抖动容差，见 score hit 行注释） */
 const SCORE_HIT_SLACK = 0.5;
 
-// ── 判定面分列（语义面 vs 数值合成面——单一事实源=detect* 判别器）────
+// ── 判定面归属（detect 面单一事实源 = DeterministicJudge.route）────
+
+/** 判定面归属（架构师设计：semantic / numeric 两面 + gradelong 单列） */
+export type JudgeFacet = 'semantic' | 'numeric';
 
 /**
- * 判定面归属（v1.7.x 判定质量修补线）：
- *   numeric-synthetic——数值合成面（数值比较/分档评分——确定性可复算族）
- *   semantic——语义判定面（boolq/csqa/snli/millet 等自然语言理解族）
- *
- * 归属由 detectNumericComparison / detectBandScoring 动态识别（非 origin
- * 前缀硬编码——评测器侧与路由层共用同一判别器，单一事实源：判别器改动
- * 两面自动同步，不会出现「路由已剥离、评测仍按旧口径分列」的漂移）。
+ * 样本问句的路由规则（评测器侧对账用）：DatasetQuestion.options 按下标
+ * 重建 options_def（与 frozen options_def {opt0:…} 同构），调
+ * DeterministicJudge.route 判定——与 JudgeRuntime 路由层同一判别器实例
+ * （单一事实源：判别器改动，路由与评测分列自动同步）。
  */
-export type JudgeFacet = 'semantic' | 'numeric-synthetic';
-
-/**
- * 样本所属判定面：state + instructions + options_def 三元判别。
- * options_def 由 DatasetQuestion.options（候选文本数组）按下标重建——
- * 与 frozen eval.jsonl 的 options_def {opt0:…, opt1:…} 同构。
- */
-function facetOfSample(s: DecisionSample): JudgeFacet {
-  const q = s.questions[0];
-  if (!q) {
-    return 'semantic';
-  }
-  const optionsDef: Record<string, string> = {};
-  (q.options ?? []).forEach((label, i) => {
-    optionsDef[`opt${i}`] = label;
+function routeOfSample(
+  det: DeterministicJudge,
+  s: DecisionSample,
+): Array<{ rule: DeterministicRule | null }> {
+  return s.questions.map((q) => {
+    const optionsDef: Record<string, string> = {};
+    (q.options ?? []).forEach((label, i) => {
+      optionsDef[`opt${i}`] = label;
+    });
+    return { rule: det.route(s.state, q.question, optionsDef) };
   });
-  if (detectNumericComparison(s.state, q.question, optionsDef)) {
-    return 'numeric-synthetic';
-  }
-  if (detectBandScoring(s.state, q.question)) {
-    return 'numeric-synthetic';
-  }
-  return 'semantic';
-}
-
-/** 判定面分列读数（两列各自报 agreement——都报不藏数） */
-export interface FacetBreakdown {
-  /** 语义判定面（自然语言理解族）一致率 */
-  semantic: { count: number; hit: number; agreement: number };
-  /** 数值合成面（确定性可复算族）一致率 */
-  numericSynthetic: { count: number; hit: number; agreement: number };
-  /** 口径注记（判别器动态识别，非 origin 硬编码） */
-  caveat: string;
-}
-
-/**
- * 判定面分列聚合：按 detect* 判别器逐样本归属后各自报一致率。
- * 与既有 zh/en 分列正交——两列都报，不合并单一综合分（合并会掩盖
- * 「数值面拉高整体读数」或反之的结构性信息）。
- */
-export function facetBreakdown(dataset: DecisionSample[], hits: boolean[]): FacetBreakdown {
-  if (dataset.length !== hits.length) {
-    throw new Error(`facetBreakdown 入参错位（dataset=${dataset.length} vs hits=${hits.length}）`);
-  }
-  let semTotal = 0;
-  let semHit = 0;
-  let numTotal = 0;
-  let numHit = 0;
-  dataset.forEach((s, i) => {
-    if (facetOfSample(s) === 'numeric-synthetic') {
-      numTotal += 1;
-      if (hits[i]) numHit += 1;
-    } else {
-      semTotal += 1;
-      if (hits[i]) semHit += 1;
-    }
-  });
-  return {
-    semantic: { count: semTotal, hit: semHit, agreement: semTotal === 0 ? 0 : semHit / semTotal },
-    numericSynthetic: { count: numTotal, hit: numHit, agreement: numTotal === 0 ? 0 : numHit / numTotal },
-    caveat: '判定面归属由 deterministic-judge detect* 动态识别（单一事实源，非 origin 前缀硬编码）——两列各自报一致率不合并',
-  };
-}
-
-/**
- * 确定性复算对账（detIndexOf）：对数值面样本调 deterministicJudge 复算，
- * 返回复算下标（null = fail-open/非数值面）。逐判据统计用它标
- * deterministicHits——「该判据的命中中有几行是确定性层出的」。
- */
-function detIndexOf(s: DecisionSample, q: DecisionSample['questions'][number], _i: number): number | null {
-  const optionsDef: Record<string, string> = {};
-  (q.options ?? []).forEach((label, j) => {
-    optionsDef[`opt${j}`] = label;
-  });
-  if (!detectNumericComparison(s.state, q.question, optionsDef) && !detectBandScoring(s.state, q.question)) {
-    return null;
-  }
-  const det = deterministicJudge({ state: s.state, instructions: q.question, optionsDef });
-  if (det === null) return null;
-  return det.selectedIndex ?? det.band ?? null;
 }
 
 export function evaluateZeroShot(
   runtime: JudgeRuntime,
   dataset: DecisionSample[],
-  opts?: { oodCriterionIds?: Set<string> },
+  opts?: {
+    oodCriterionIds?: Set<string>;
+    /**
+     * 确定性路由开关（v1.7.x 修补线）：缺省 = 与 runtime 构造器一致；
+     * 显式传 null = 强制关路由（A/B 对照口径——judge-eval 侧独立于
+     * runtime 构造器可单独做开/关对照）。
+     */
+    deterministic?: DeterministicJudge | null;
+  },
 ): BaselineReport {
   const startedAt = Date.now();
-  const perCriterion = new Map<string, { hit: number; total: number; hitZh: number; totalZh: number; hitEn: number; totalEn: number; probs: number[]; truths: number[]; hitNumFacet: number; totalNumFacet: number; detHits: number }>();
+  const perCriterion = new Map<string, { hit: number; total: number; hitZh: number; totalZh: number; hitEn: number; totalEn: number; probs: number[]; truths: number[]; hitNumeric: number; totalNumeric: number; detHits: number; hitGrade: number; totalGrade: number }>();
   const calibRecords: CalibrationRecord[] = [];
-  const sampleHits: boolean[] = []; // 判定面分列聚合输入（逐样本命中序列）
+
+  // 判别器实例（评测器侧路由对账与分列归属共用）；路由开关读 opts 优先
+  const det =
+    opts?.deterministic !== undefined
+      ? opts.deterministic
+      : new DeterministicJudge();
+  const routingEnabled = det !== null;
+  const routedByRule: Record<string, number> = {};
+  let routedCount = 0;
+  let failOpenCount = 0;
+  // gradelong 识别（主理人裁决③单列）：state 含「评分标准（按紧急程度分」
+  // 且无确定性规则命中——本版刻意不覆盖的族
+  const isGradelong = (s: DecisionSample): boolean =>
+    s.state.includes('评分标准（按紧急程度分') || /紧急程度分\s*0-\d+\s*级/.test(s.state);
+
+  // 分面聚合器（zh/en × semantic/numeric/gradelong）
+  const face = () => ({ hitZh: 0, totalZh: 0, hitEn: 0, totalEn: 0, calib: [] as CalibrationRecord[] });
+  const facesAgg = { semantic: face(), numeric: face(), gradelong: face() };
 
   for (const s of dataset) {
     // DatasetQuestion → DecisionQuestion 适配（零格式分叉——结构同构，
@@ -228,27 +241,35 @@ export function evaluateZeroShot(
       };
     });
     const result = runtime.judge({ state: s.state, questions });
-    // 判定面归属（detect* 动态识别——与路由层同一判别器）：数值合成面样本
-    // 的命中计入分列读数；确定性命中行在此标记（路由层 source 留痕的对齐面）
-    const facet = facetOfSample(s);
-    let sampleHit = false;
-    let sampleHitCount = 0;
-    let sampleTotalCount = 0;
+    // 分面归属（route 动态识别）+ gradelong 单列
+    const routes = routingEnabled ? routeOfSample(det, s) : s.questions.map(() => ({ rule: null as DeterministicRule | null }));
+    const gradelongSample = isGradelong(s);
     s.questions.forEach((q, i) => {
       const ans = result.answers[i]!;
       const truth = s.answers[i]!;
       const cid = q.id;
-      const entry = perCriterion.get(cid) ?? { hit: 0, total: 0, hitZh: 0, totalZh: 0, hitEn: 0, totalEn: 0, probs: [], truths: [], hitNumFacet: 0, totalNumFacet: 0, detHits: 0 };
+      const entry = perCriterion.get(cid) ?? { hit: 0, total: 0, hitZh: 0, totalZh: 0, hitEn: 0, totalEn: 0, probs: [], truths: [], hitNumeric: 0, totalNumeric: 0, detHits: 0, hitGrade: 0, totalGrade: 0 };
+      // 路由留痕（routedByRule 直方图——确定性命中 = 答案带 deterministic source）
+      const isDetAnswer = ans.kind !== 'noul' && (ans as { source?: string }).source === 'deterministic';
+      const rule = routes[i]?.rule ?? null;
+      if (routingEnabled) {
+        if (isDetAnswer && rule) {
+          routedCount += 1;
+          routedByRule[rule] = (routedByRule[rule] ?? 0) + 1;
+        } else {
+          failOpenCount += 1; // 未识别落穿 + 识别但歧义落穿（答案面 fail-closed）
+        }
+      }
       // 命中判定：noul 概率阈值 0.5 二值对照；choice 选中一致；score 就近
       let hit = false;
       let prob = 0.5;
+      let isCalibRow = true; // 确定性行不进 calibRecords（主理人裁决②）
       if (ans.kind === 'noul' && truth.kind === 'noul') {
         prob = ans.probability ?? 0.5;
         const truthVal = (truth.probability ?? 0.5) >= 0.5 ? 1 : 0;
         hit = (prob >= 0.5 ? 1 : 0) === truthVal;
         entry.probs.push(prob);
         entry.truths.push(truthVal);
-        calibRecords.push({ predicted: prob, actual: truthVal as 0 | 1, lang: s.lang });
       } else if (ans.kind === 'choice' && truth.kind === 'choice') {
         // CR3 🟠-2：truth.selected 语义归一——数据集真值形态有三种在野写法
         //（数字下标 0/1/…、标签文本、'opt-N' id），判定头输出恒 'opt-N'。
@@ -273,30 +294,42 @@ export function evaluateZeroShot(
         }
         hit = ans.selected === truthId;
         prob = ans.distribution?.[truthId] ?? 0.5;
-        calibRecords.push({ predicted: prob, actual: hit ? 1 : 0, lang: s.lang });
+        if (isDetAnswer) isCalibRow = false; // 退化分布非概率目标——不进校准面
       } else if (ans.kind === 'score' && truth.kind === 'score') {
         // score 就近容差：真值区间宽度 + SCORE_HIT_SLACK（登记常量，出处：
         // 区间内视为命中是 v1.6.0 判据集语义；0.5 为区间外松弛半档——防
         // 连续值读数的亚档抖动误判 miss，非拍脑袋数字）
         hit = Math.abs((ans.value ?? 0) - (truth.value ?? 0)) <= (truth.interval?.upper ?? 1) - (truth.interval?.lower ?? 0) + SCORE_HIT_SLACK;
+        if (isDetAnswer) isCalibRow = false;
+      }
+      if (isCalibRow && (ans.kind === 'noul' || ans.kind === 'choice')) {
+        const truthVal = ans.kind === 'noul' ? ((truth.probability ?? 0.5) >= 0.5 ? 1 : 0) : hit ? 1 : 0;
+        calibRecords.push({ predicted: prob, actual: truthVal as 0 | 1, lang: s.lang });
       }
       entry.total += 1;
       if (hit) entry.hit += 1;
       if (s.lang === 'zh') { entry.totalZh += 1; if (hit) entry.hitZh += 1; }
       else { entry.totalEn += 1; if (hit) entry.hitEn += 1; }
-      // 判定面分列累计：数值合成面样本的命中单列（语义面 = total - totalNumFacet）
-      if (facet === 'numeric-synthetic') {
-        entry.totalNumFacet += 1;
-        if (hit) entry.hitNumFacet += 1;
-        // 确定性命中留痕：数值面样本的 choice 答案选中项与判别器复算一致即记
-        // （路由层 deterministicJudge 命中时答案即复算结果——此处按复算对账）
-        if (hit && detIndexOf(s, q, i) !== null) entry.detHits += 1;
+      // 分面累计（numeric = route 命中；gradelong = 刻意不覆盖族——单列）
+      const facet: 'semantic' | 'numeric' | 'gradelong' = gradelongSample ? 'gradelong' : rule ? 'numeric' : 'semantic';
+      if (facet === 'numeric') {
+        entry.totalNumeric += 1;
+        if (hit) entry.hitNumeric += 1;
+        if (isDetAnswer && hit) entry.detHits += 1;
+      } else if (facet === 'gradelong') {
+        entry.totalGrade += 1;
+        if (hit) entry.hitGrade += 1;
       }
-      sampleTotalCount += 1;
-      if (hit) sampleHitCount += 1;
+      const agg = facesAgg[facet];
+      if (s.lang === 'zh') { agg.totalZh += 1; if (hit) agg.hitZh += 1; }
+      else { agg.totalEn += 1; if (hit) agg.hitEn += 1; }
+      if (facet !== 'numeric' && isCalibRow && (ans.kind === 'noul' || ans.kind === 'choice')) {
+        // numeric 面不进 ECE（裁决②）——semantic/gradelong 照常
+        const truthVal = ans.kind === 'noul' ? ((truth.probability ?? 0.5) >= 0.5 ? 1 : 0) : hit ? 1 : 0;
+        agg.calib.push({ predicted: prob, actual: truthVal as 0 | 1, lang: s.lang });
+      }
       perCriterion.set(cid, entry);
     });
-    sampleHits.push(sampleTotalCount > 0 && sampleHitCount === sampleTotalCount);
   }
 
   const perCriterionOut: CriterionStat[] = [...perCriterion.entries()].map(([criterionId, e]) => ({
@@ -310,10 +343,10 @@ export function evaluateZeroShot(
       en: e.totalEn === 0 ? 0 : e.hitEn / e.totalEn,
     },
     accuracyByFacet: {
-      semantic: e.total - e.totalNumFacet === 0 ? 0 : (e.hit - e.hitNumFacet) / (e.total - e.totalNumFacet),
-      numericSynthetic: e.totalNumFacet === 0 ? 0 : e.hitNumFacet / e.totalNumFacet,
+      semantic: e.total - e.totalNumeric - e.totalGrade === 0 ? 0 : (e.hit - e.hitNumeric - e.hitGrade) / (e.total - e.totalNumeric - e.totalGrade),
+      numeric: e.totalNumeric === 0 ? 0 : e.hitNumeric / e.totalNumeric,
     },
-    countNumericSynthetic: e.totalNumFacet,
+    countNumeric: e.totalNumeric,
     deterministicHits: e.detHits,
   }));
 
@@ -355,6 +388,22 @@ export function evaluateZeroShot(
   const enAcc = perCriterionOut.reduce((a, c) => a + c.accuracyByLang.en * c.countEn, 0) / Math.max(1, perCriterionOut.reduce((a, c) => a + c.countEn, 0));
   const zhEnGap = Math.abs(zhAcc - enAcc);
 
+  // 分面读数装配（numeric 面 ECE 恒 NOT_MEASURED——裁决②；空侧哨兵防「空集给 0」）
+  const faceReading = (
+    agg: { hitZh: number; totalZh: number; hitEn: number; totalEn: number; calib: CalibrationRecord[] },
+    numericFace: boolean,
+  ): FaceReading => {
+    const calib = numericFace ? null : agg.calib.length > 0 ? computeCalibration(agg.calib) : null;
+    return {
+      agreementZh: agg.totalZh === 0 ? NOT_MEASURED : agg.hitZh / agg.totalZh,
+      agreementEn: agg.totalEn === 0 ? NOT_MEASURED : agg.hitEn / agg.totalEn,
+      countZh: agg.totalZh,
+      countEn: agg.totalEn,
+      eceZh: numericFace || calib === null ? NOT_MEASURED : calib.eceByLang.zh,
+      eceEn: numericFace || calib === null ? NOT_MEASURED : calib.eceByLang.en,
+    };
+  };
+
   const elapsedMs = Date.now() - startedAt;
   const usedCount = dataset.length;
 
@@ -372,9 +421,19 @@ export function evaluateZeroShot(
     },
     zhEnGap,
     zhUsable: zhEnGap <= 0.15, // 超阈不宣称中文可用（阈 0.15——如实落数口径）
-    byFacet: facetBreakdown(dataset, sampleHits),
+    faces: {
+      semantic: faceReading(facesAgg.semantic, false),
+      numeric: faceReading(facesAgg.numeric, true),
+      gradelong: faceReading(facesAgg.gradelong, false),
+    },
+    routing: {
+      enabled: routingEnabled,
+      routedCount,
+      routedByRule,
+      failOpenCount,
+    },
     runtime: { elapsedMs },
-    caveat: '零样本·单次运行·自产基线（不可复算数字不与可复算数字并列展示）',
+    caveat: '零样本·单次运行·自产基线（不可复算数字不与可复算数字并列展示）·分面读数（semantic/numeric/gradelong 三列不合并）',
   };
 }
 
@@ -465,7 +524,7 @@ export function readingFromReport(
   const notMeasured = n === 0;
   // 逐判据一致率（zh/en 分列——各语言侧按自身样本量加权：zh 分母 = ΣcountZh、
   // en 分母 = ΣcountEn。复核第 1 轮错位面：en 曾以全量 zhTotal 作分母，读数
-  // 变成「en 准确率按全量加权」而非 en 一致率，且直接进 0.70 达阈判定）
+  // 变成「en 准确率按全量加权」而非 en 一致率，且直接进 0.70 达阈判定
   const zhTotal = report.perCriterion.reduce((a, c) => a + c.countZh, 0);
   const enTotal = report.perCriterion.reduce((a, c) => a + c.countEn, 0);
   const zhWeighted = report.perCriterion.reduce((a, c) => a + c.accuracyByLang.zh * c.countZh, 0);
