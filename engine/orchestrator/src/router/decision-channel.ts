@@ -470,3 +470,168 @@ export class UnconfiguredDecisionChannel implements DecisionChannel {
 export function createUnconfiguredDecisionChannel(): DecisionChannel {
   return new UnconfiguredDecisionChannel();
 }
+
+// ============================================================
+// v1.8.0 §一 · 契约扩展位（登记不实施）
+// ------------------------------------------------------------
+// 「判定治理生成」的**类型占位**——判定件的第二身份：生成模型产 N 个候选，
+// 判定件打分 / 选择 / 驳回。**本版只留位、不实施**（不改 `judge` 签名）。
+// 为什么必须与默认实现同批留位：通道契约在本版定稿，事后加 = 破契约。
+// 实施归 V2.0 之后（v2.0.0 为宣告版、零新增判定能力）。
+// ============================================================
+
+/** 生成面候选（由生成模型产出，判定件只读不改）。 */
+export interface GenerationCandidate {
+  /** 候选 id（同一批内唯一） */
+  id: string;
+  /** 候选文本（生成本体——判定件不得回写） */
+  text: string;
+}
+
+/** 治理判定（对一批候选打分与裁决）。 */
+export interface GovernedVerdict {
+  /** 候选 id → 校准概率（[0,1]）——`null` 表示该候选弃权不评 */
+  scores: Record<string, number | null>;
+  /** 被选中的候选 id（`null` = 全部驳回） */
+  selected: string | null;
+  /** 驳回理由（`selected === null` 时给出） */
+  rejectReason?: string;
+}
+
+/**
+ * 生成治理通道（**扩展位 · 未实施**）。
+ *
+ * 与 `DecisionChannel` 的关系：平行接口，**不继承、不替代**——`judge` 是「从封闭候选集
+ * 里选一个」，本接口是「对生成面产出的开放候选打分」。两者共用判定件权重，但输入面不同。
+ */
+export interface GovernedGenerationChannel {
+  readonly name: string;
+  /** 对一批生成候选打分并裁决（**未实施**——本版无实现方） */
+  govern(candidates: readonly GenerationCandidate[]): Promise<GovernedVerdict>;
+}
+
+// ============================================================
+// v1.8.0 §一 · 回落面（七路统一入口）
+// ------------------------------------------------------------
+// 纪律：**七路回落一律降级 L0 规则面兜底**，逐路带可查原因，**不得静默放行/静默阻断**。
+// 七路分两类（判据不同、测试不同，不可混算）：
+//   · 通道级（judge 抛错或输出不可用）：load-failed / weights-missing / channel-error /
+//     timeout / type-mismatch
+//   · 答案级（judge 正常返回但答案不可用）：abstained / low-confidence
+// ============================================================
+
+/** 回落原因（七路——`FallbackReason` 是本仓回落面的唯一枚举，勿在别处另立）。 */
+export type FallbackReason =
+  | 'load-failed'
+  | 'weights-missing'
+  | 'channel-error'
+  | 'timeout'
+  | 'type-mismatch'
+  | 'abstained'
+  | 'low-confidence';
+
+/** 通道级原因（judge 未产出可用结果）；其余为答案级。 */
+export const CHANNEL_LEVEL_REASONS: readonly FallbackReason[] = [
+  'load-failed',
+  'weights-missing',
+  'channel-error',
+  'timeout',
+  'type-mismatch',
+] as const;
+
+/** 一次回落的决议（层 + 原因 + 可查细节）。 */
+export interface FallbackDecision {
+  /** 回落目标层——恒为 L0（本仓当前只有 L0 规则面可落） */
+  layer: 'L0';
+  reason: FallbackReason;
+  /** 人可读细节（**不得**携带原始任务文本 / 工具输出——见接线纪律①决策回执） */
+  detail: string;
+  /** 是否通道级（true）/ 答案级（false） */
+  channelLevel: boolean;
+}
+
+/** 统一回落入口——所有回落路径都必须经它，禁止各处自行构造回落对象。 */
+export function resolveFallback(reason: FallbackReason, detail = ''): FallbackDecision {
+  return {
+    layer: 'L0',
+    reason,
+    detail,
+    channelLevel: CHANNEL_LEVEL_REASONS.includes(reason),
+  };
+}
+
+/**
+ * 异常 → 回落原因（通道级五路的唯一归因入口）。
+ *
+ * 归因规则（按具体到宽泛排序，先命中先返回）：
+ *   1. `DecisionChannelUnavailableError` 且消息含「权重」→ `weights-missing`
+ *   2. 同类错误其余情形 → `load-failed`（实现加载失败 / 未配置）
+ *   3. `CalibrationRequiredError` → `type-mismatch`（校准缺失 ⇒ 概率不可用，等同输出不可用）
+ *   4. 名称含 `AbortError` / 消息含 `timeout` → `timeout`
+ *   5. 其余（含契约校验失败）→ `channel-error`
+ *
+ * ⚠️ 类型不符由 `assertContractCompliance` 主动抛 `TypeMismatchError`，走第 5 路之前
+ * 先被第 5 条捕获——此处显式识别它，保证归因落到 `type-mismatch`。
+ */
+export function classifyJudgeError(err: unknown): FallbackReason {
+  const name = (err as { name?: string } | null)?.name ?? '';
+  const msg = err instanceof Error ? err.message : String(err);
+  if (name === 'TypeMismatchError') return 'type-mismatch';
+  if (name === 'DecisionChannelUnavailableError') {
+    return /权重|weights/i.test(msg) ? 'weights-missing' : 'load-failed';
+  }
+  if (name === 'CalibrationRequiredError') return 'type-mismatch';
+  if (name === 'AbortError' || /timeout|超时/i.test(msg)) return 'timeout';
+  return 'channel-error';
+}
+
+/** 输出类型不符（契约校验失败）——显式类型，供归因落到 `type-mismatch`。 */
+export class TypeMismatchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TypeMismatchError';
+  }
+}
+
+/**
+ * 契约合规校验——「换实现不动契约」的**机械判据**（测试与运行时防御共用）。
+ *
+ * 检查项（任一不满足即抛 `TypeMismatchError`）：
+ *   ① 答案数与问句数一致且 id 一一对应（顺序不敏感，集合相等）
+ *   ② 每条 `status` ∈ {answered, abstained}；abstained 必带 `abstainReason`
+ *   ③ 概率 ∈ [0,1]；answered 的 choice 必须有 `distribution` 且和 ≈ 1（±1e-6）
+ *   ④ `modelVersion` 非空、`latencyMs` ≥ 0、`tempBucket` 非空
+ *
+ * 返回 null 表示通过（保持与既有 `validateQuestions` 同风格：返回问题清单）。
+ */
+export function assertContractCompliance(
+  result: DecisionResult,
+  questions: readonly DecisionQuestion[],
+): string[] {
+  const problems: string[] = [];
+  const ids = new Set(questions.map((q) => q.id));
+  const gotIds = new Set(result.answers.map((a) => a.id));
+  if (gotIds.size !== ids.size || [...ids].some((id) => !gotIds.has(id))) {
+    problems.push(`答案 id 集与问句集不一致（问 ${ids.size} / 答 ${gotIds.size}）`);
+  }
+  for (const a of result.answers) {
+    if (a.status !== 'answered' && a.status !== 'abstained') {
+      problems.push(`${a.id}: status 非法 ${String(a.status)}`);
+      continue;
+    }
+    if (a.status === 'abstained' && !a.abstainReason) {
+      problems.push(`${a.id}: abstained 缺 abstainReason`);
+    }
+    if (!(a.probability >= 0 && a.probability <= 1)) {
+      problems.push(`${a.id}: probability 越界 ${a.probability}`);
+    }
+    if (a.status === 'answered' && a.distribution) {
+      const sum = Object.values(a.distribution).reduce((x, y) => x + y, 0);
+      if (Math.abs(sum - 1) > 1e-6) problems.push(`${a.id}: distribution 和 ${sum} ≠ 1`);
+    }
+  }
+  if (!result.modelVersion) problems.push('modelVersion 为空');
+  if (!result.tempBucket) problems.push('tempBucket 为空');
+  if (!(result.latencyMs >= 0)) problems.push(`latencyMs 非法 ${result.latencyMs}`);
+  return problems;
+}
