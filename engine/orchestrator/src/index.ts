@@ -811,6 +811,16 @@
   UnconfiguredDecisionChannel,
   createUnconfiguredDecisionChannel,
 } from './router/decision-channel';
+/* @public */ export {
+  StdioDecisionChannel,
+  StdioTransport,
+} from './router/stdio-decision-channel';
+/* @public */ export type {
+  LoadStrategy,
+  DecisionTransport,
+  StdioDecisionChannelOptions,
+  StdioChannelStats,
+} from './router/stdio-decision-channel';
 /* @public */ export type {
   DecisionPrimitive,
   EvidenceReadiness,
