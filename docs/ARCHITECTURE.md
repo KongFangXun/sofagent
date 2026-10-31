@@ -714,6 +714,10 @@ graph LR
 
 > 📖 来源：知识库消化与维护（2026-10-16 · 5 源：印度 CERT-In 通报 · 澳调查 Medicare 门户 · Gemini 越界 · Irregular 共同源头 · METR 与 HF 入侵）· [IT之家](https://www.ithome.com/1/013/969.htm) · [TechCrunch](https://techcrunch.com/2026/09/24/australia-to-investigate-if-openai-hack-of-government-health-website-broke-the-law)
 
+**执行面准入须留三类记录（两源收敛）**：复盘安装与更新面的事故，反复指向同一缺口——**只记「装了什么」，事后答不出「为什么是这个版本」**。三类留痕须各自独立可查：① 版本血缘（谁引入 / 何时 / 为何 / 上游改版是否同步）；② 安装清单（依赖与扩展的完整来源，含分发账号——**官方账号 ≠ 可信渠道**）；③ 更新滞后基线（每类组件允许的最大滞后并持续度量，滞后长度即可利用窗口）。
+
+> 📖 来源：知识库消化与维护（2026-10-31 · 2 源：Cursor 官方安全公告 · Epoch AI 补丁窗口实验）· [Cursor](https://cursor.com/blog/claude-code-extension-security-notice) · [Epoch AI](https://epochai.substack.com/p/glm-patch-gap-exploit-firefox)
+
 #### 运行时审计 tool wrapper
 
 v1.3.0 把「提交时审计（git diff）」扩展为「运行时拦截 + 留证」——在 `createReactAgent` 的工具定义层包一层 tool wrapper（`FORGE/src/audit-middleware.mjs` 的 `createAuditMiddleware`，对标 `progressMw.wrapToolCall` 模式）：
