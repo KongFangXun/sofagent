@@ -314,18 +314,31 @@ describe('第二章 · 判定分层编排（L0/L1/L2）', () => {
     expect(out.routeReason).toContain('fail-closed');
   });
 
-  it('低置信 → L2 难例兜底（按配置分流）', async () => {
+  it('低置信 → 云端显式开启才走 L2，未开启回落 L0（2026-11-01 T-1 裁定）', async () => {
     const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.3, distribution: { local: 0.3, cloud: 0.7 }, status: 'answered' }]);
+
+    // ① 云端显式开启 ⇒ L2 云端强档（保留 v1.5.4 的难例兜底能力）
     const cloudTriage = new IntentTriage({ channel, config: { l2Policy: 'cloud-strong', cloudAllowed: true } });
     const out = await cloudTriage.triage(state(), choiceQ());
     expect(out.layer).toBe('L2');
     expect(out.fallback).toBe('cloud-strong');
     expect(out.target).toBe('cloud-strong');
 
+    // ② 云端未开启（全封环境默认）⇒ 回落 L0 基线：ASK + 本地，不外发
     const sealedTriage = new IntentTriage({ channel, config: { l2Policy: 'cloud-strong', cloudAllowed: false } });
     const sealed = await sealedTriage.triage(state(), choiceQ());
-    expect(sealed.fallback).toBe('local-offpeak');
+    expect(sealed.layer).toBe('L0');
+    expect(sealed.grade).toBe('ASK');
     expect(sealed.target).toBe('local-executor');
+    expect(sealed.routeReason).toContain('云端未开启');
+  });
+
+  it('弃权（ABSTAIN）同样按 T-1 口径回落：云端未开启 ⇒ L0，不落 L2', async () => {
+    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.99, distribution: { local: 0.01, cloud: 0.99 }, status: 'abstained', abstainReason: 'out-of-domain' }]);
+    const triage = new IntentTriage({ channel, config: { l2Policy: 'local-offpeak', cloudAllowed: false } });
+    const out = await triage.triage(state(), choiceQ());
+    expect(out.layer).toBe('L0');
+    expect(out.grade).toBe('ASK');
   });
 });
 

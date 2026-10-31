@@ -260,8 +260,28 @@ export class IntentTriage {
           audit,
         };
       }
-      // ABSTAIN / SKIP / 低置信 → L2 难例兜底
-      return this.l2Fallback(state, `L1 置信 ${primary.probability.toFixed(3)} 未达阈值 ${this.config.l1MinConfidence}（${grade}）`, audit);
+      // 弃权 / SKIP / 低置信的回落（2026-11-01 T-1 裁定，见 docs/DECISION-POINTS.md §四）：
+      //   **默认回落 L0 基线**（ASK + 本地，不外发）——对齐 v1.8.0 §一 七路回落统一口径；
+      //   仅当云端**显式开启**（cloudAllowed 且 l2Policy='cloud-strong'）才转 L2 云端强档。
+      // 裁定依据（三条实测，非偏好）：
+      //   ① 默认配置下 L2(local-offpeak) 与 L0 的产出同为「本地 + ASK」，差别只在 routeReason
+      //      —— 属假分流；
+      //   ② 本地重试对容量受限题型无增益：main01v6 判 csqa 为本架构容量受限面（训练行自测
+      //      仅 0.35/0.43），而 csqa 占语义面漏判 47%（270/575，v17 三 seed 归因）；
+      //   ③ cloud-strong 在本仓**从未有实测读数**；且弃权→自动外发重判属「弃权变确定」的
+      //      激进方向（论文稿明列不得豁免），故不得作为默认动作。
+      const cloudOn = this.config.l2Policy === 'cloud-strong' && this.config.cloudAllowed;
+      if (cloudOn) {
+        return this.l2Fallback(
+          state,
+          `L1 置信 ${primary.probability.toFixed(3)} 未达阈值 ${this.config.l1MinConfidence}（${grade}）`,
+          audit,
+        );
+      }
+      return this.l0Fallback(
+        state,
+        `L1 ${grade} 未达阈值且云端未开启 → L0 基线兜底（弃权保守回落，不外发）`,
+      );
     } catch (err) {
       // fail-closed：通道不可用 / 超时 ⇒ 降级 L0 规则面兜底
       if (err instanceof DecisionChannelUnavailableError) {
