@@ -164,7 +164,7 @@
 
 ### csqa 定向补训判决（2026-10-31 · main01v6 三 seed · **目标未达，判容量受限面**）
 
-> 任务书 `~/Desktop/main01v6-csqa-补训任务书.md`；基底 26,653 + csqa 增强 2,807 = 29,460 行（唯一变量 csqa 类 3,193→6,000）。制品 `~/WorkBuddy/models/s1m-heads-main01v6-3seed/`（六文件 + `SHA256SUMS` + `COMPLETE` · 双端 sha 三份全一致）。
+> 任务书 `main01v6-csqa-补训任务书.md`（交付侧留存，不随仓分发）；基底 26,653 + csqa 增强 2,807 = 29,460 行（唯一变量 csqa 类 3,193→6,000）。制品 `s1m-heads-main01v6-3seed/`（六文件 + `SHA256SUMS` + `COMPLETE` · 双端 sha 三份全一致）。
 
 | 口径（同片 `frozen-v2/eval` 3,017 行 · 训练一致题面） | v5 基线同片重测 | v6 ensemble（三 seed） | 判定 |
 |---|---|---|---|
