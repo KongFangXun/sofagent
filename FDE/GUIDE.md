@@ -310,6 +310,20 @@ AI 不是司令员只是援军。先集中资源打一场能计算结果的小�
 
 操作要领：访谈到关键节点时别满足于口述——「现场带我走一遍最近一个真实案例」，打开真实系统从头走一遍，才能看到口述里不会说的东西：复制粘贴、私人表格、群内确认、绕过系统的旁路。这些旁路恰是 AI 节点判定的真实依据（旁路多 = 流程未被系统消化 = 自动化价值大）。
 
+### 2.3.3 提问质量判据——带证据的窄问才配得到答案
+
+> 外部印证：FDE-Gym（arXiv 2610.22350，清华/微软等）用 130+ 脚本干系人把「什么问题配得到答案」做成了可复现机制——其**证据门（gate）**设计：关键主题只在提问者**引用具体证据**（数字/例子/文档名）时才解锁回答，自称「有证据」不算；宽泛钓问（「告诉我一切」「有什么建议」）匹配**零主题**。其基准读数同时证明提问有成本：反复提问平均烧掉 0.14–0.22 的交付得分——**好问题的定义是「带具体证据的窄问」，不是「多问」**。
+
+落到访谈操作的三条判据：
+
+| 判据 | 反例（不配得到答案） | 正例 |
+|---|---|---|
+| **窄问**——一次只问一个主题 | 「你们的流程大概是怎么走的？」 | 「工单超过 48 小时未解决的，是谁在跟？」 |
+| **带证据**——引用已掌握的具体事实 | 「我感觉你们客服很忙，大概什么量？」 | 「上月 4280 张工单、平均 16 小时——高峰期堆在哪一步？」 |
+| **问对人**——该主题的知情人 | 向部门经理问一线操作细节 | 旁路操作（微信群确认优先级）问实际执行者 |
+
+与 §2.3.1 证据等级衔接：带证据的窄问拿回来的答案，才能更快爬到「系统可核验」级；宽泛钓问的答案默认按「一线判断」处理并追加验证任务。
+
 ### 2.4 案例：两个节点的五要素
 
 **客服节点**：
@@ -464,13 +478,9 @@ Link Type 定义业务对象之间**可解释、可治理、可追踪的关系**
 - 推导出：「合同」entity（业务对象）→「审核通过」action（动作）→「belongs_to 法务域」relation（归属）
 - 补上边界：「knowledge-domain include = 合同库、审批流；exclude = 人事档案」
 
-> 🤝 **交互模式**：本体推导是**咨询产物**，不是 Agent 单方面生成——**FDE Harness 引导提问，用户拍板确认**：
-> 1. **Agent 引导**：拿五要素当提问脚本，一句句问（「这个节点输入是什么？输出给谁？最卡在哪？」）
-> 2. **Agent 给建议**：根据五要素给出 entity/concept/relations 推导建议（LLM 辅助，供用户参考）
-> 3. **用户拍板**：每个 entity/concept/relations 用户可改、可否定——「合同 belongs_to 订单」对不对只有用户知道
-> 4. **确认后写入**：用户确认 → 落盘 `knowledge/entities/` + `knowledge/concepts/` → `validate_ontology` 校验 → D1-D5 审计
+> 🤝 **交互模式**：本体推导是**咨询产物**，不是 Agent 单方面生成——**FDE Harness 引导提问，用户拍板确认**：① Agent 拿五要素当提问脚本一句句问 → ② 给 entity/concept/relations 推导建议（LLM 辅助）→ ③ 用户逐条可改可否定（业务关系真假只有用户知道）→ ④ 确认后落盘 `knowledge/` → `validate_ontology` 校验 → D1-D5 审计。
 >
-> **为什么必须咨询**：ontology 是**企业业务知识的结构化表达**——只有用户自己知道业务关系是不是真的。模型只能当「建议来源」，不能替代用户确认。这也保证了**没有模型也能生成 ontology**（FDE 的咨询能力，非模型能力）。
+> **为什么必须咨询**：ontology 是企业业务知识的结构化表达，模型只能当「建议来源」不能替代用户确认——这同时保证了**没有模型也能生成 ontology**（FDE 的咨询能力，非模型能力）。
 
 ### 3.6 entity / concept / relations 怎么建
 
@@ -944,17 +954,9 @@ AI 节点跑起来后，自动生成这些文件：
 
 > 📖 [Perspective AI · FDE 量化验收指标](https://www.getperspective.ai)
 >
-> Perspective AI《2026 FDE Founder's Playbook》（1500 名 FDE / 154 家公司普查）给出四指标记分卡：
+> Perspective AI《2026 FDE Founder's Playbook》（1500 名 FDE / 154 家公司普查）四指标记分卡：Deal velocity（试点→生产 ≤90 天）· NRR（≥130%）· 产品化率（≥1.0 功能/engagement）· 复用率（12 个月 ≥70% 代码在主仓）。
 >
-> | 指标 | 参考阈值 | 含义 |
-> |---|---|---|
-> | Deal velocity | 试点→生产 ≤90 天 | 部署速度 |
-> | NRR | ≥130% | 客户续约价值增长 |
-> | 产品化率 | ≥1.0 功能/engagement | 每次部署沉淀的可复用功能 |
-> | 复用率 | 12 个月 ≥70% 代码在主仓 | 从定制退化为产品的反向指标 |
->
-> ⚠️ **口径声明**：上表是**传统 FDE 行业验收阈值参考**（以 1650 测试 / 158 场景为例），**非 sofagent 验收标准**。sofagent 自有体系以门禁脚本实跑为准：测试数 `tools/check/test-count.sh` / 场景数 `playbook/acceptance-test.sh` 头部声明 · 28 条规则。
->场景数 = `acceptance-test.sh` 中 `scenario` 调用行数（SSOT 由 `check-review-system.sh` 对账），**不等于最大 S 编号**——S 编号有历史空洞号，勿按编号去重计数。
+> ⚠️ **口径声明**：上表是**传统 FDE 行业验收阈值参考**，**非 sofagent 验收标准**。sofagent 自有体系以门禁脚本实跑为准：测试数 `tools/check/test-count.sh` / 场景数 `playbook/acceptance-test.sh` 头部声明 · 28 条规则。场景数 = `scenario` 调用行数（SSOT 对账），**不等于最大 S 编号**（有历史空洞号）。
 
 ### 5.11 案例：一次完整交付
 
@@ -983,27 +985,7 @@ AI 节点跑起来后，自动生成这些文件：
 
 > **简单说**：FDE 离场后留下的从「图纸 + 说明书」变成「按图纸造好且自己跑着的工厂」。现有 `registry.ts` 动态注册（v1.0.8 起从 `.sofagent/subagents/*.yml` 加载自定义 Agent）早已铺好轨道——激活链是往轨道上放车厢。详见 docs/guides/fde-activation-chain.md（从 [GitHub 仓库](https://github.com/KongFangXun/sofagent) 获取）。
 
-> **workflow.yml 标准格式（v1.2.6+）**：FDE 交付的 `workflow.yml` 使用**嵌套格式**——`workflow:` 根节点下包含 `name`、`description`、`nodes`。激活链同时兼容旧版平铺格式（无 `workflow:` 包裹层），但新交付物应使用嵌套标准：
->
-> ```yaml
-> workflow:
->   name: 客户接单流程
->   description: 从客户接单到发货的全流程
->   nodes:
->     - id: customer-intake
->       name: 客户接单
->       agent: enterprise
->       type: "🔄"
->       task: 接收客户订单并录入系统
->       actions: [read, write]
->     - id: order-review
->       name: 订单审核
->       agent: enterprise
->       type: "⚡"
->       task: 审核订单金额和客户信用
->       depends_on: [customer-intake]
->       actions: [read]
-> ```
+> **workflow.yml 标准格式（v1.2.6+）**：FDE 交付的 `workflow.yml` 使用**嵌套格式**——`workflow:` 根节点下包含 `name`、`description`、`nodes`（每节点 `id`/`name`/`agent`/`type`/`task`/`actions`，依赖用 `depends_on: [<id>]`）。激活链同时兼容旧版平铺格式（无 `workflow:` 包裹层），但新交付物应使用嵌套标准。
 
 ### 5.13 能力资产管理：企业 AI 能力树（AI Native 组织视角）
 
