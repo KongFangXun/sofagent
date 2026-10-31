@@ -74,6 +74,7 @@ CI 兜底就绪前，本地建议：`chmod 400 ~/.sofagent/config.yml` 降低误
 S1M 判定层失灵面（随阶段一 v1.6.0 零样本基线落数；v1.7.0 §六收口批同批复核，四条与 `docs/VALIDATION.md` §阶段二收口同批记录——含未达阈项，不修饰）——
 
 - **零样本判定力不足**（实测）：逐判据准确率 **0.500**（= 随机基线）——判定力须靠阶段二训练（该基线即「训练提升多少」的分母）。v1.7.0 三态对照第一态（真基座零样本）**not-measured**（无实机基座，不以 mock 充第一态）。可复算产物：`datasets/baseline-zero-shot-run.js` + `baseline-zero-shot-result.json`。
+- **常识推理（csqa）为容量受限面 · 定向补训已证无效**（实测 2026-10-31）：0.3B 契约编码器同片留出 **0.3113**（五选一随机 0.20）；csqa 类 3,193→6,000 行（+88%）**读数反降 0.7pp**。决定性证据是**训练集自测**——练过的行只有 **0.35（增强）/0.43（基底）**，连记忆都做不到 ⇒ 表征能力上限，非数据量。**本架构不承诺常识推理、不为其设验收线**；后续走外部知识/检索或换底座，**不再以加数据重试**。详见 `docs/VALIDATION.md`「csqa 定向补训判决」。
 - **中英落差**（实测）：一致率中 0.667 / 英 0.333 超阈 ⇒ **不宣称中文可用**；en 侧 `completely-stuck` 为阶段二重点输入。v1.7.0 改善幅度 **not-measured**（机制在位：三态 zh/en 分列 + 分列达线；读数待实机训练回填——`docs/VALIDATION.md` §中英倒挂单列）。
 - **域外泛化未验证**：分布外读数原记 0.000 系空 OOD 集默认值（口径见 VALIDATION）——v1.7.0 §六口径修正为 **`not-measured`**（空集复扫值不得以数值形态出现）；OOD 样本已随最小子集入集（`datasets/sofagent-typed-decisions-minimal/`，`ood:true` 行），实测待实机。
 - **校准依赖分布**：阈值/置信度绑定采集分布，漂移须重校准（门槛重标触发器已随阶段一交付；v1.7.0 漂移监测机制在位——`engine/core/src/calibration-registry.ts`，超阈只提示不阻断）。
@@ -367,9 +368,11 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 > ℹ️ **审计历史全局共享是设计决策**：`history.jsonl` / `decision-log.jsonl` 写全局 `~/.sofagent/data/audit/`，不做项目级隔离（**有意为之**：① HMAC 签名链完整性要求全量连续历史，`--verify-chain` 需完整链；② 跨仓库查询是运维刚需）。
 >
-> **运行时审计日志已按 git 仓库隔离**：`runtime-audit.jsonl`（FORGE 自托管路径）与约束层 data-sovereignty / llm-calls Trace 均落 `data/audit/<…>/<repo-hash>/` 段目录（非 git 回退 `nogit-hash`；旧版无段结构历史读侧 fallback 原地可读，不迁移不回填）；commit 级审计历史（`history.jsonl` / `decision-log.jsonl`）保持全局。多项目整目录隔离用 `SOFAGENT_HOME`（⚠️ 指向 home 外根目录需同时设 `SOFAGENT_HOME_ALLOWED_PREFIXES` 放行——越界报错不静默回退；daemon 子命令路径已与 data-paths SSOT 对齐，不再双拼）。
+> **运行时审计日志已按 git 仓库隔离**：`runtime-audit.jsonl`（FORGE 自托管路径）与约束层 data-sovereignty / llm-calls Trace 均落 `data/audit/<…>/<repo-hash>/` 段目录（非 git 回退 `nogit-hash`；旧版无段结构历史读侧 fallback 原地可读，不迁移不回填）；commit 级审计历史（`history.jsonl` / `decision-log.jsonl`）保持全局。
+>多项目整目录隔离用 `SOFAGENT_HOME`（⚠️ 指向 home 外根目录需同时设 `SOFAGENT_HOME_ALLOWED_PREFIXES` 放行——越界报错不静默回退；daemon 子命令路径已与 data-paths SSOT 对齐，不再双拼）。
 
-> ⚠️ **知识库同样全局共享（当前单机单用户设计）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询全局命中，财务/人事等不同域 Agent 数据会串。多人共用需等租户隔离（G7 v0 仅查询侧隔离 orgId 过滤 + `data/<tenant>/`，**写入侧仍全局**——v1.4.9 复核未落地）；**临时方案**：`SOFAGENT_HOME` 隔离（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
+> ⚠️ **知识库同样全局共享（当前单机单用户设计）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询全局命中，财务/人事等不同域 Agent 数据会串。多人共用需等租户隔离（G7 v0 仅查询侧隔离 orgId 过滤 + `data/<tenant>/`，**写入侧仍全局**——v1.4.9 复核未落地）；
+>**临时方案**：`SOFAGENT_HOME` 隔离（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
 > ⚠️ **云 VM 执行面（v1.4.6）数据上云边界**：`train cloud` 远程训练时，经分拣闸（sorting-gate）放行的非敏感/脱敏数据经 ssh 隧道上传云 VM（传输层加密，与 AES-256-GCM 落盘加密是两层防护，见 SECURITY 例外三）。分拣是三档（敏感/脱敏/公开）——敏感档（客户名单/具体价格/财务数字）拦截留本地，但规则驱动、**非零漏判**，脱敏不彻底可能误放行，强合规须人审。
 > 失联止损（心跳超时 → 强制 stop + 清理）防 VM 空烧，但依赖心跳可达——控制面断连时命令无法送达，VM 可能继续计费（见 train-cloud 预算注释）。
@@ -425,7 +428,8 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 ### A2 密钥检测局限——编码与格式绕过（v1.2.5 披露）
 
-> ⚠️ **A2 仅检测明文常见 API key 格式**（AWS AKIA、sk-*、GitHub token、私钥块等；v1.3.6 起含 Stripe 下划线前缀；v1.4.2 起含 Google `AIza`、Slack `xox*-`、JWT 三段式及 AWS Secret 裸 40 位 base64（需同行含 aws/secret/key 才报，防 hash 误报））。**长度门槛**：通用 sk- 形态需整 key ≥29 字符（sk- 后主体 ≥27；v1.7.0 BUG-51 收口——裸串短 key 曾 17 条全过，门槛自 32 字符下探至 29 且全测试集零误报增量）；厂商专属前缀（sk-ant-/sk-proj-/sk-svcacct-/sk-admin-）≥40 字符；Stripe `sk_live_`/`sk_test_` ≥24 字符。
+> ⚠️ **A2 仅检测明文常见 API key 格式**（AWS AKIA、sk-*、GitHub token、私钥块等；v1.3.6 起含 Stripe 下划线前缀；v1.4.2 起含 Google `AIza`、Slack `xox*-`、JWT 三段式及 AWS Secret 裸 40 位 base64（需同行含 aws/secret/key 才报，防 hash 误报））。**长度门槛**：通用 sk- 形态需整 key ≥29 字符（sk- 后主体 ≥27；v1.7.0 BUG-51 收口——裸串短 key 曾 17 条全过，门槛自 32 字符下探至 29 且全测试集零误报增量）；
+>厂商专属前缀（sk-ant-/sk-proj-/sk-svcacct-/sk-admin-）≥40 字符；Stripe `sk_live_`/`sk_test_` ≥24 字符。
 >v1.2.5 起已补 base64/hex 编码检测（新增行先解码再跑正则）与 `.gitattributes -diff` 绕过检测（WARN）。但仍不在检测范围：
 > - 短密钥（通用 sk- 主体 <27 位、厂商专属 <40 位）、非标准格式、其他厂商下划线前缀（保守设计防误报，等真实泄漏案例驱动，不逐格式打地鼠——v1.3.6 决策，Stripe 因前缀在生产代码无合法用途而纳入）
 > - 其他编码（URL-safe base64、rot13、自定义混淆）与压缩/加密后的密钥
