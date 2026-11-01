@@ -124,4 +124,20 @@ describe('audit-merge · 环境指纹调用次数回归锁（R1 性能债）', (
     expect(verifyAuditEntryHmac(entry)).toBe('ok'); // 缺省路径仍自算
     expect(counter.fingerprintCalls).toBe(1);
   });
+
+  // 这条锁防的是「有人把 getEnvFingerprint 提到模块顶层/加全局缓存」：
+  // 指纹陈旧后，全部记录会被静默判 unverifiable（环境漂移），而不是报错。
+  // 若将来有人把该分支改成 throw，本用例会红——那是行为变更，必须显式决策。
+  it('陈旧指纹 → 好记录被静默判为 unverifiable（不抛错）——这是「禁止全局缓存」的反向锁', () => {
+    const fingerprint = getEnvFingerprint();
+    const entry = signEntry(makeEntry(0, fingerprint), fingerprint); // 用当前真实指纹签名：这条 record 本来是好的
+
+    // 对照：正确指纹 → ok（证明这条 entry 本身有效，不是「本来就坏」）
+    expect(verifyAuditEntryHmac(entry, fingerprint)).toBe('ok');
+
+    // 主断言：陈旧/错误指纹 → 静默降级为 unverifiable，且绝不抛错
+    const STALE = 'deadbeef-stale';
+    expect(() => verifyAuditEntryHmac(entry, STALE)).not.toThrow();
+    expect(verifyAuditEntryHmac(entry, STALE)).toBe('unverifiable');
+  });
 });
