@@ -110,7 +110,6 @@
   "engine/daemon/src/long-tasks.ts::#1::catch { // 历史落盘失败不阻断调度（内存态已更新） }",
   "engine/daemon/src/long-tasks.ts::#1::catch { // 回调异常不阻断其余条目恢复 }",
   "engine/daemon/src/long-tasks.ts::#1::catch { // 坏行跳过（WAL 尾部半行——崩溃写入中断的典型形态） }",
-  "engine/daemon/src/push-target.ts::#1::catch { // 单个文件读不了不影响去重流程 }",
   "engine/daemon/src/push-target.ts::#1::catch { // 单个文件读不了不影响排水流程 }",
   "engine/daemon/src/push-target.ts::#1::catch { // 单个文件读不了不影响清理流程 }",
   "engine/daemon/src/push-target.ts::#1::catch { // 目录读取失败忽略 }",

@@ -304,7 +304,7 @@ export async function runDreamCycle(
     lastRunAt: new Date().toISOString(),
   });
   appendWeeklyLog(projectDir, result.counts, result.auditEntryCount, providerStatus, degradedReason);
-  // v1.1.8 新增：cycle_complete 触发知识摘要主动通知（best-effort，失败静默）
+  // v1.1.8 新增：cycle_complete 触发知识摘要主动通知（best-effort，不阻断主流程但失败留痕）
   void pushKnowledgeSummary(projectDir, pushToTarget);
   return result;
 }

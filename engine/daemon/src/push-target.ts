@@ -334,7 +334,8 @@ async function pushOpenClawIM(title: string, message: string): Promise<boolean> 
       try {
         const st = statSync(join(outboxDir, f));
         if (now - st.mtimeMs > retentionMs) {
-          const ageDays = Math.floor((now - st.mtimeMs) / 86_400_000);
+          // 保留一位小数：否则「7 天 2 小时」会被截断成「龄期 7 天 > 保留 7 天」自相矛盾
+          const ageDays = ((now - st.mtimeMs) / 86_400_000).toFixed(1);
           // 静默销毁未投递文件不可接受：删之前必须留痕（文件名 + 龄期）
           notify(
             `im-outbox 清理超龄未投递文件: ${f}（龄期 ${ageDays} 天 > 保留 ${OUTBOX_RETENTION_DAYS} 天）`,
@@ -344,7 +345,12 @@ async function pushOpenClawIM(title: string, message: string): Promise<boolean> 
         } else {
           survivors.push(f);
         }
-      } catch {
+      } catch (err) {
+        // 读不了状态的不删（保守），但必须留痕：否则该文件永远清不掉且无人知
+        notify(`im-outbox 保留策略跳过（状态读失败，文件保留）: ${f} — ${(err as Error).message}`, {
+          source: 'push-target',
+          level: 'warn',
+        });
         survivors.push(f); // 读不了状态的不删（保守）
       }
     }
@@ -371,8 +377,12 @@ async function pushOpenClawIM(title: string, message: string): Promise<boolean> 
           );
           return true; // 已存在相同内容——跳过写入（返回值语义不变）
         }
-      } catch {
-        // 单个文件读不了不影响去重流程
+      } catch (err) {
+        // 读不了就无法比对去重：跳过会导致同一内容重复落盘，必须留痕
+        notify(`im-outbox 去重比对跳过（读失败，可能重复落盘）: ${f} — ${(err as Error).message}`, {
+          source: 'push-target',
+          level: 'warn',
+        });
       }
     }
 

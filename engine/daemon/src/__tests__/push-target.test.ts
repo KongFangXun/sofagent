@@ -145,3 +145,85 @@ describe('drainOutbox im-outbox 排水（v1.4.7 G-2）', () => {
     expect(fs.existsSync(join(outbox, 'failed', 'to-fail.md'))).toBe(true);
   });
 });
+
+// ────────────────────────────────────────────────────────────
+// R2 回归锁：pushOpenClawIM 三条「失败必留痕」路径
+// ────────────────────────────────────────────────────────────
+// 变异可检：删掉任一条 notify，对应用例必须变红（否则等于没有门禁）。
+
+describe('pushOpenClawIM 留痕回归锁（R2）', () => {
+  let lockDir: string;
+  let logSpy: ReturnType<typeof vi.spyOn>;
+  const savedDataDirR2 = process.env.SOFAGENT_DATA;
+
+  /** 取本轮 spy 已捕获的全部 console.log 文本 */
+  const capturedLogs = (): string[] => logSpy.mock.calls.map((c) => String(c[0]));
+
+  beforeEach(() => {
+    lockDir = fs.mkdtempSync(join(os.tmpdir(), 'sofagent-lock-r2-'));
+    process.env.SOFAGENT_DATA = lockDir;
+    fs.mkdirSync(join(lockDir, 'im-outbox'), { recursive: true });
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    logSpy.mockRestore();
+    if (savedDataDirR2 === undefined) delete process.env.SOFAGENT_DATA;
+    else process.env.SOFAGENT_DATA = savedDataDirR2;
+    try { fs.rmSync(lockDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
+  });
+
+  // 用例 A：锁「保留策略清理超龄文件前必须留痕」——删掉该 notify 则本用例变红
+  it('超龄文件被清理时 → warn 带文件名 + 龄期 + 保留上限，且文件确实删除', async () => {
+    const outbox = join(lockDir, 'im-outbox');
+    const stale = join(outbox, 'stale-x.md');
+    fs.writeFileSync(stale, '# 八天前的旧消息\n');
+    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 3600 * 1000);
+    fs.utimesSync(stale, eightDaysAgo, eightDaysAgo);
+
+    const ok = await pushToTarget({ target: 'openclaw:im', title: 'T', message: 'M' });
+
+    expect(ok).toBe(true);
+    const hit = capturedLogs().find((l) => l.includes('清理超龄未投递文件'));
+    expect(hit, `实际日志: ${JSON.stringify(capturedLogs())}`).toBeTruthy();
+    expect(hit).toContain('stale-x.md');
+    expect(hit).toContain('龄期');
+    expect(hit).toContain('保留 7 天');
+    // 龄期保留一位小数（不得出现「龄期 7 天 > 保留 7 天」截断矛盾）
+    expect(hit).toMatch(/龄期 \d+\.\d 天/);
+    // 销毁确实发生
+    expect(fs.existsSync(stale)).toBe(false);
+  });
+
+  // 用例 B：锁「去重命中必须留痕且点明不确认送达」——删掉该 notify 则本用例变红
+  it('同内容二次推送 → 返回 true 且 warn 点明「不确认送达」', async () => {
+    const first = await pushToTarget({ target: 'openclaw:im', title: 'T', message: 'M' });
+    expect(first).toBe(true);
+
+    logSpy.mockClear(); // 只看第二次的日志
+    const second = await pushToTarget({ target: 'openclaw:im', title: 'T', message: 'M' });
+
+    // 返回值语义不变：去重命中仍视为 true（不改为 false）
+    expect(second).toBe(true);
+    const hit = capturedLogs().find((l) => l.includes('不确认送达'));
+    expect(hit, `实际日志: ${JSON.stringify(capturedLogs())}`).toBeTruthy();
+    expect(hit).toContain('跳过写入');
+  });
+
+  // 用例 C：锁「stat 失败仍留痕」——悬空符号链接使 statSync 必 ENOENT，
+  // 比 chmod 稳定（chmod 000 不影响 stat，只挡 read）
+  it('保留策略 stat 失败（悬空软链）→ warn 含「保留策略跳过」且文件不被删', async () => {
+    const outbox = join(lockDir, 'im-outbox');
+    const broken = join(outbox, 'broken-link.md');
+    fs.symlinkSync(join(lockDir, 'no-such-target'), broken);
+
+    const ok = await pushToTarget({ target: 'openclaw:im', title: 'T', message: 'M' });
+
+    expect(ok).toBe(true);
+    const hit = capturedLogs().find((l) => l.includes('保留策略跳过'));
+    expect(hit, `实际日志: ${JSON.stringify(capturedLogs())}`).toBeTruthy();
+    expect(hit).toContain('broken-link.md');
+    // 保守语义不变：状态读不了的文件不删
+    expect(fs.lstatSync(broken).isSymbolicLink()).toBe(true);
+  });
+});

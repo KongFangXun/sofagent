@@ -83,6 +83,7 @@ function readTail(filePath: string, maxChars: number): string | null {
     if (!content) return null;
     return content.length > maxChars ? content.slice(-maxChars) : content;
   } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null; // existsSync 与 read 之间被删：确为无数据
     // 读失败 ≠ 文件不存在：前者必须留痕，否则正文静默退化为「尚无数据」
     notify(`读取失败（不视为无数据）: ${filePath} — ${(err as Error).message}`, {
       source: 'notify',
@@ -151,6 +152,9 @@ export async function pushKnowledgeSummary(
     return results.some((ok) => ok);
   } catch (err) {
     // best-effort：不阻断 dream-cycle / health 主流程，但必须留痕
+    // 可达性：本 catch 只在注入的 pushFn **违约同步抛**时命中；生产注入的 pushToTarget
+    // 是 async（永不 reject，失败归一为 Promise<false>）⇒ 本层是防御层，不是主留痕路径。
+    // 主留痕在 push-target.ts:86（pushToTarget 的 catch：未配置/SSRF/HTTP 非 2xx/请求失败）。
     notify(`知识摘要推送失败（best-effort，未阻断主流程）: ${(err as Error).message}`, {
       source: 'notify',
       level: 'warn',

@@ -442,7 +442,7 @@ export function checkKnowledgeHealth(
   // 唯一写操作：追加 health-report.md（独立报告，不改源数据）
   appendHealthReport(knowledgeDir, reportLines);
 
-  // v1.1.8 新增：health 跑完触发知识摘要主动通知（best-effort，失败静默）
+  // v1.1.8 新增：health 跑完触发知识摘要主动通知（best-effort，不阻断主流程但失败留痕）
   void pushKnowledgeSummary(projectDir, pushToTarget);
 
   // v1.4.9 P1-14：同 checkConflict——去掉 v1.2.1 遗留的 `.sofagent/knowledge` 兜底字面量，
