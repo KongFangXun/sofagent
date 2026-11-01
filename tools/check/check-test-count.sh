@@ -1248,12 +1248,24 @@ if [ -n "$DEV_ORCH_LINE" ]; then
   DEV_ORCH_LINENO=$(echo "$DEV_ORCH_LINE" | cut -d: -f1)
   DEV_ORCH_ACTUAL=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep "orchestrator:.*passed" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
   [ -z "$DEV_ORCH_ACTUAL" ] && DEV_ORCH_ACTUAL=0
+  # 数据门控口径（v1.8.x）：deterministic-replay.test.ts 的 9 例在「无 frozen eval 数据」时
+  # 整组 describe.skipIf（CI 无本机数据盘；本机有数据则实跑）。⇒ 合法等式有两条：
+  #   声称数 = 实测 passed（有数据环境） 或 声称数 = 实测 passed + 9（无数据环境，CI 口径）。
+  # 只放行这一个已声明的差值：其他任何漂移仍判红（不放宽成容差带）。
+  DEV_ORCH_DATA_GATED=${DEV_ORCH_DATA_GATED:-9}
+  DEV_ORCH_ACTUAL_EQ_SKIP=$((DEV_ORCH_ACTUAL + DEV_ORCH_DATA_GATED))
   if [ "$QUIET" = false ]; then
     echo -e "  校验 DEVELOPMENT.md orchestrator（行 ${DEV_ORCH_LINENO}）..."
   fi
   if [ "$DEV_ORCH_CLAIMED" = "$DEV_ORCH_ACTUAL" ]; then
     if [ "$QUIET" = false ]; then
       echo -e "  ${GREEN}✓ DEVELOPMENT.md orchestrator：${DEV_ORCH_CLAIMED}${NC}"
+    fi
+    ((PASS++)) || true
+  elif [ "$DEV_ORCH_CLAIMED" = "$DEV_ORCH_ACTUAL_EQ_SKIP" ]; then
+    # 无数据环境（CI）：实测 passed 少 9（数据门控），声称数 = 实测 + 9 仍视为一致
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${GREEN}✓ DEVELOPMENT.md orchestrator：${DEV_ORCH_CLAIMED}（数据门控口径：实测 ${DEV_ORCH_ACTUAL} + ${DEV_ORCH_DATA_GATED} 门控用例）${NC}"
     fi
     ((PASS++)) || true
   else
