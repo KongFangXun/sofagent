@@ -823,6 +823,10 @@ sofagent 的回溯实现是自有的 FileCheckpointer（五条并发安全规矩
 
 > 📖 [LangChain · Revamping skills in Deep Agents](https://www.langchain.com/blog/revamping-skills-in-deep-agents) · [Cursor · Changelog: Projects](https://cursor.com/changelog/projects)
 
+**工程参照：兼容性是「变更 × 消费者」的关系，不是变更方可以声明的事实。** 一处看似向后兼容的增项（新增一个类）也能让下游失败——下游若用「类型全集」做严格枚举校验，新增项同样破坏它。判定顺序＝先枚举「谁消费这条规格」再对每个消费者各跑一遍回归；版本号由消费侧的失败面而非文件差异决定，变更日志之外须另存**兼容性声明**与**依赖清单**（波及哪些消费方、各自是否已回归）。
+
+> 📖 来源：通往AI之桥《本体版本化与演进治理》(2026-10-31) · [deepseek-ai/dsh-superagent-prototype](https://github.com/deepseek-ai/dsh-superagent-prototype)（Mandate 恢复前须对当前 Policy 重新校验）· Cursor《Agent SDK》evals 内建
+
 ### ⚙️ FORGE 自迭代工具链（内部）
 
 大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 LangGraph createReactAgent 的四节点状态机（`engineer → audit → reviewer → human_confirm`）+ FileCheckpointer 断点续跑 + 上下文四层防御。
