@@ -226,4 +226,26 @@ describe('pushOpenClawIM 留痕回归锁（R2）', () => {
     // 保守语义不变：状态读不了的文件不删
     expect(fs.lstatSync(broken).isSymbolicLink()).toBe(true);
   });
+
+  // 用例 D：锁「去重比对读失败必须留痕」——目录占 .md 名是**唯一**能确定性进到
+  // 该分支的构造：statSync 对目录成功（因而停在保留策略的正常分支），
+  // readFileSync 才抛 EISDIR。别用 chmod（chmod 只挡 read 不挡 stat，
+  // 但 stat 失败会先被上一条 catch 吃掉，进不到去重比对）。
+  it('去重比对读失败（目录占 .md 名）→ warn 含「去重比对跳过」且照常落盘', async () => {
+    const outbox = join(lockDir, 'im-outbox');
+    fs.mkdirSync(join(outbox, 'dir-h.md')); // 目录占 .md 名 → readFileSync EISDIR
+
+    const ok = await pushToTarget({ target: 'openclaw:im', title: 'T', message: 'M' });
+
+    expect(ok).toBe(true);
+    // 区分触发点：必须是「去重比对跳过」，不是「保留策略跳过」
+    expect(capturedLogs().some((l) => l.includes('保留策略跳过'))).toBe(false);
+    const hit = capturedLogs().find((l) => l.includes('去重比对跳过'));
+    expect(hit, `实际日志: ${JSON.stringify(capturedLogs())}`).toBeTruthy();
+    expect(hit).toContain('dir-h.md');
+    expect(hit).toContain('EISDIR');
+    // 控制流不变：比对不了仍照常落盘（不因读失败而放弃写入）——
+    // 目录占位本身就是「漏去重就重复落盘」的入口
+    expect(fs.readdirSync(outbox).filter((f) => f.endsWith('.md'))).toHaveLength(2);
+  });
 });

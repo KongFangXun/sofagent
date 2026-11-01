@@ -123,3 +123,66 @@ describe('pushKnowledgeSummary · 双通道推送（best-effort）', () => {
     expect(warns[0]).toContain('同步炸'); // 含原始错误文案
   });
 });
+
+// ============================================================
+// readTail 留痕回归锁（R2 残余）：区分「素材缺失」与「读取失败」
+// ------------------------------------------------------------
+// 缺陷史：readTail 的 catch 曾与 existsSync 早退同为静默——读失败（EISDIR 等）
+// 会静默退化成正文「尚无数据」，与「文件本来就不存在」不可区分。
+// 变异可检：删掉该 notify → 本用例 ② 段红。③ 段锁的是「不存在 → 零告警」这一
+// 对外行为；existsSync 早退与 catch 内 ENOENT 分支互为冗余，**单独删任一层都不会红**
+// （两层同时删才红）——这是刻意的纵深防御，不是漏锁。
+// ============================================================
+describe('readTail 留痕回归锁 · 无数据不告警 / 读失败必留痕', () => {
+  let dataDir: string;
+  const savedReadTailData = process.env.SOFAGENT_DATA;
+
+  beforeEach(() => {
+    dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-readtail-'));
+    process.env.SOFAGENT_DATA = dataDir;
+  });
+
+  afterEach(() => {
+    if (savedReadTailData === undefined) delete process.env.SOFAGENT_DATA;
+    else process.env.SOFAGENT_DATA = savedReadTailData;
+    try { fs.rmSync(dataDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
+  });
+
+  it('素材缺失 → 零告警；读失败（EISDIR）→ 必留痕；ENOENT 早退 → 零告警', () => {
+    const logs: string[] = [];
+    const spy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+      logs.push(args.map((a) => String(a)).join(' '));
+    });
+
+    try {
+      // ① 无数据：两份素材都不存在 → 零告警（「无数据不告警」是本次区分的另一半）
+      const missing = collectSummaryMaterial(dataDir);
+      expect(missing.weeklyLog).toBeNull();
+      expect(missing.healthReport).toBeNull();
+      expect(logs, `无数据不得告警：\n${logs.join('\n')}`).toHaveLength(0);
+
+      // ② 读失败：log.md 被目录占位 → readFileSync 抛 EISDIR → 必须留痕
+      fs.mkdirSync(path.join(dataDir, 'log.md'), { recursive: true });
+      const broken = collectSummaryMaterial(dataDir);
+      expect(broken.weeklyLog).toBeNull(); // 降级语义不变（仍返回 null）
+      const warns = logs.filter((l) => l.includes('读取失败（不视为无数据）'));
+      expect(warns, `实际日志：\n${logs.join('\n')}`).toHaveLength(1);
+      expect(warns[0]).toContain('log.md'); // 含路径
+      expect(warns[0]).toContain('EISDIR'); // 含原始错误文案
+      // health-report.md 仍不存在 → 不得因它多打一条
+      expect(logs).toHaveLength(1);
+
+      // ③ 早退不误报：悬空软链 → existsSync 为 false → 走早退，零告警
+      //    （注意：这锁的是 existsSync 早退本身；catch 内的 ENOENT 分支只能由
+      //      「existsSync 与 read 之间被删」的真竞态命中，无 hook 无法确定性构造）
+      fs.rmSync(path.join(dataDir, 'log.md'), { recursive: true, force: true });
+      fs.symlinkSync(path.join(dataDir, 'gone-target'), path.join(dataDir, 'log.md'));
+      logs.length = 0;
+      const raced = collectSummaryMaterial(dataDir);
+      expect(raced.weeklyLog).toBeNull();
+      expect(logs, `ENOENT 不得误报：\n${logs.join('\n')}`).toHaveLength(0);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
