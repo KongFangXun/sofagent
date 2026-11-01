@@ -84,7 +84,9 @@ export function readLocalAuditHistory(dataDir?: string): AuditHistoryEntry[] {
  *
  * @param entry 审计记录
  * @param fingerprint 可选——调用方已算好的环境指纹（批量验签时循环外算一次，
- *   避免每条记录起一次 git 子进程）；缺省惰性调用 getEnvFingerprint()
+ *   避免每条记录起一次 git 子进程）；缺省惰性调用 getEnvFingerprint()。
+ *   ⚠️ 传错或不新鲜的指纹**不会报错**，而是把正常记录静默判为 unverifiable
+ *   （环境漂移）；调用方必须保证与实际环境一致。
  * @returns EntryHmacStatus
  */
 export function verifyAuditEntryHmac(entry: AuditHistoryEntry, fingerprint?: string): EntryHmacStatus {
@@ -140,6 +142,8 @@ export function auditMergeKey(entry: AuditHistoryEntry): string | null {
 export function mergeAuditTrails(records: DeviceAuditRecord[]): MergedAuditEntry[] {
   const winners = new Map<string, MergedAuditEntry>();
   // 环境指纹在单次合并内不变：循环外算一次，避免每条记录起一次 git 子进程（R1）
+  // ⚠️ 禁止改为模块级缓存或提到模块顶层：git init / process.chdir() / 密钥轮换后指纹会陈旧，
+  //    届时全部记录会被静默判为 unverifiable（不报错，直接当「环境漂移」）。每批算一次是刻意的。
   const fingerprint = getEnvFingerprint();
 
   for (const record of records) {

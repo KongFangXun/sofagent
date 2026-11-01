@@ -78,19 +78,17 @@ function signEntry(entry: AuditHistoryEntry, fingerprint: string): AuditHistoryE
 describe('audit-merge · 环境指纹调用次数回归锁（R1 性能债）', () => {
   let tmpDir: string;
   let keyPath: string;
-  let origKeyPath: string | undefined;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-auditmerge-fp-'));
     keyPath = path.join(tmpDir, 'test-key');
     fs.writeFileSync(keyPath, 'test-hmac-key-for-audit-merge', 'utf-8');
-    origKeyPath = process.env.SOFAGENT_KEY_PATH;
     vi.stubEnv('SOFAGENT_KEY_PATH', keyPath);
     counter.fingerprintCalls = 0;
   });
 
   afterEach(() => {
-    vi.stubEnv('SOFAGENT_KEY_PATH', origKeyPath ?? '');
+    vi.unstubAllEnvs();
     counter.fingerprintCalls = 0;
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
   });
