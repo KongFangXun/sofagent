@@ -11,7 +11,7 @@
 //   6. pushKnowledgeSummary：推送函数抛错 → 返回 false 不抛异常，且必须打 warn 留痕
 // ============================================================
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -107,7 +107,19 @@ describe('pushKnowledgeSummary · 双通道推送（best-effort）', () => {
   it('推送函数整体抛错 / 全通道失败 → 返回 false 不抛异常，且打 warn 留痕', async () => {
     const allFail = await pushKnowledgeSummary(tmpDir, async () => { throw new Error('通道全挂'); });
     expect(allFail).toBe(false);
+
+    // 同步抛 → notify.ts 外层 catch 唯一可达形态，必须留下 warn。
+    // 这条 spy 断言是「失败必留痕」的回归锁：只留 return false、把 warn 删掉时本用例必红。
+    const logs: string[] = [];
+    const spy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+      logs.push(args.map((a) => String(a)).join(' '));
+    });
     const thrower = await pushKnowledgeSummary(tmpDir, () => { throw new Error('同步炸'); });
+    spy.mockRestore();
     expect(thrower).toBe(false);
+
+    const warns = logs.filter((l) => l.includes('知识摘要推送失败'));
+    expect(warns, `实际日志：\n${logs.join('\n')}`).toHaveLength(1); // warn 真的打了
+    expect(warns[0]).toContain('同步炸'); // 含原始错误文案
   });
 });
