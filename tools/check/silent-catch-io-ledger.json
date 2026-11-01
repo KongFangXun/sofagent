@@ -3,6 +3,7 @@
     "$schema": "外部 IO 面 catch 四分类台账（v1.5.7 F9 · 三包 audit/daemon/mcp 分层收口）",
     "scope": "engine/audit/src · engine/daemon/src · engine/mcp/src 中 catch 块所在 try 上下文含 fetch/execFile/execFileSync/spawn/spawnSync/writeFile/writeFileSync/net.connect/http.request/https.request 任一调用的全部 catch",
     "method": "枚举（IO try 上下文判据 + 块提取 + 剥注释四分类：吞错=剥注释后零语句 / 降级=有 fallback 赋值或默认值 / 转译=throw 或包装 rethrow / 正确=有日志输出或有意义处理）",
+    "_note": "分类为 v1.5.7 F9 时点快照，未随后续修复回溯更新；当前真值以源码为准。（已知偏差示例：push-target.ts:146 与 :392 的 catch 体内已有 notify warn，按上面 method 定义应归「正确」，此表仍记「降级」——错标早于 v1.7.0，本轮未重审 69 处、亦未动 classification 计数。）本表无门禁消费，仅供人读。",
     "classification": {
       "吞错": "17 处（已全部修复：补 console.error [sofagent] 前缀结构化日志 + 发生位置，控制流不变；修复后 catch 不再是静默形态，silent-catch-baseline 定向收窄 17 条）",
       "降级": "34 处（catch 体有 fallback 赋值/默认值/跳过计数——降级语义明确，维持现状）",

@@ -103,20 +103,32 @@ describe('pushKnowledgeSummary · 双通道推送（best-effort）', () => {
   });
 
   // 用例 6：推送函数抛错 → 返回 false 不抛异常（返回值语义不变），
-  // 但失败必须由 notify() 打 warn 留痕——"静默"不是规格，只是待修的缺陷
-  it('推送函数整体抛错 / 全通道失败 → 返回 false 不抛异常，且打 warn 留痕', async () => {
+  // 但失败必须由 notify() 打 warn 留痕——"静默"不是规格，只是待修的缺陷。
+  // 🔴 命名陷阱（v1.7.0 纠）：原名叫「全通道失败」，名不副实——同步抛时
+  // `Promise.all([f(a).catch(), f(b).catch()])` 的**数组字面量求值中断**，
+  // 第二个通道（openclaw:im）根本没被发起，实际只尝试了 1 个通道。
+  // 真正的「全通道失败」是 async 抛（上面 allFail 那段）——但它走 per-channel
+  // `.catch(()=>false)`，到不了外层 catch，故不产生 warn。
+  it('首个通道同步抛 → 整体失败、返回 false（生产注入为 async，此形态仅测试面）', async () => {
+    // ① async 抛（= 生产 pushToTarget 的形态）：两通道都 reject → 被各自
+    //    `.catch(()=>false)` 吞成 false → 返回 false，且**不**出现外层 warn
     const allFail = await pushKnowledgeSummary(tmpDir, async () => { throw new Error('通道全挂'); });
     expect(allFail).toBe(false);
 
-    // 同步抛 → notify.ts 外层 catch 唯一可达形态，必须留下 warn。
-    // 这条 spy 断言是「失败必留痕」的回归锁：只留 return false、把 warn 删掉时本用例必红。
+    // ② 同步抛（注入方违约形态）：数组字面量求值中断 → 只有首个通道被发起 →
+    //    异常落到外层 catch → 必须留下 warn
     const logs: string[] = [];
     const spy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
       logs.push(args.map((a) => String(a)).join(' '));
     });
-    const thrower = await pushKnowledgeSummary(tmpDir, () => { throw new Error('同步炸'); });
+    let calls = 0;
+    const thrower = await pushKnowledgeSummary(tmpDir, () => { calls++; throw new Error('同步炸'); });
     spy.mockRestore();
     expect(thrower).toBe(false);
+
+    // 锁住「只发起 1 个通道」这个事实：改成 2 说明有人给 pushFn 包了
+    // Promise.resolve().then(...)（R7 的可选修法）——那是行为变更，必须显式看见。
+    expect(calls, '同步抛时第二个通道不应被发起（数组字面量求值中断）').toBe(1);
 
     const warns = logs.filter((l) => l.includes('知识摘要推送失败'));
     expect(warns, `实际日志：\n${logs.join('\n')}`).toHaveLength(1); // warn 真的打了
