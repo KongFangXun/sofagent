@@ -83,14 +83,16 @@ export function readLocalAuditHistory(dataDir?: string): AuditHistoryEntry[] {
  *   - 不匹配且环境指纹不一致 → 'unverifiable'（环境漂移，无法复验）
  *
  * @param entry 审计记录
+ * @param fingerprint 可选——调用方已算好的环境指纹（批量验签时循环外算一次，
+ *   避免每条记录起一次 git 子进程）；缺省惰性调用 getEnvFingerprint()
  * @returns EntryHmacStatus
  */
-export function verifyAuditEntryHmac(entry: AuditHistoryEntry): EntryHmacStatus {
+export function verifyAuditEntryHmac(entry: AuditHistoryEntry, fingerprint?: string): EntryHmacStatus {
   const sig = entry.hmacSig;
   if (typeof sig !== 'string' || sig.length === 0) return 'unsigned';
   const hmacKey = getHmacKey();
   if (!hmacKey) return 'unverifiable'; // 读侧无密钥——无法复验（非篡改）
-  const fingerprint = getEnvFingerprint();
+  const fp = fingerprint ?? getEnvFingerprint();
   const recordForSig = {
     ...entry,
     prevHash: undefined,
@@ -99,12 +101,12 @@ export function verifyAuditEntryHmac(entry: AuditHistoryEntry): EntryHmacStatus 
     hmacAlgo: undefined,
   };
   const expected = createHmac('sha256', hmacKey)
-    .update(stableStringify(recordForSig) + '|' + fingerprint)
+    .update(stableStringify(recordForSig) + '|' + fp)
     .digest('hex').slice(0, 32);
   if (sig === expected) return 'ok';
   // HMAC 不匹配：用条目记录的环境指纹区分「真篡改」与「环境漂移」
   const recordedFp = entry.envFingerprint;
-  if (typeof recordedFp === 'string' && recordedFp.length > 0 && recordedFp === fingerprint) {
+  if (typeof recordedFp === 'string' && recordedFp.length > 0 && recordedFp === fp) {
     return 'tampered';
   }
   return 'unverifiable';
@@ -137,10 +139,12 @@ export function auditMergeKey(entry: AuditHistoryEntry): string | null {
  */
 export function mergeAuditTrails(records: DeviceAuditRecord[]): MergedAuditEntry[] {
   const winners = new Map<string, MergedAuditEntry>();
+  // 环境指纹在单次合并内不变：循环外算一次，避免每条记录起一次 git 子进程（R1）
+  const fingerprint = getEnvFingerprint();
 
   for (const record of records) {
     // 1. HMAC 验签——tampered 直接丢弃
-    const hmacStatus = verifyAuditEntryHmac(record.entry);
+    const hmacStatus = verifyAuditEntryHmac(record.entry, fingerprint);
     if (hmacStatus === 'tampered') continue;
 
     const key = auditMergeKey(record.entry);
