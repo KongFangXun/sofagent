@@ -651,7 +651,7 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       if (genesisEntry.hmacAlgo === 'stable' && genesisUseFingerprint) {
         // 与主循环同款判定：用创世条目记录的环境指纹区分「真篡改」与「环境漂移」——
         // 指纹一致说明运行环境未变，HMAC 不匹配只能是内容在签名后被改 → tampered（红）；
-        // 指纹不一致（密钥轮换 / hostname / dataDir 漂移）或未记录指纹 → 不可复验（黄）
+        // 指纹不一致（hostname / user / gitDir / dataDir 漂移——**不含密钥**）或未记录指纹 → 不可复验（黄）
         const genesisRecordedFingerprint = genesisEntry.envFingerprint;
         if (
           typeof genesisRecordedFingerprint === 'string' &&
