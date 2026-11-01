@@ -81,13 +81,49 @@ export function getDecisionLogPath(dataDir?: string): string {
 }
 
 /**
+ * 环境指纹进程内缓存（v1.7.x 性能：每次现算要起一个 `git rev-parse` 子进程，
+ * 实测 ~13.6ms/次；`appendLlmCallRecord` 连调 500 次就有 7.5s 花在这里）。
+ *
+ * key = `${process.cwd()}|${dataDir ?? ''}`。
+ * ⚠️ key **必须**含 cwd——git rev-parse 的结果取决于当前工作目录：
+ *   无 key 的模块级缓存会在 `process.chdir()` 后返回陈旧指纹，而指纹参与
+ *   签名/验链，陈旧值会让**全部记录静默判为 unverifiable（环境漂移）**，
+ *   不报错、无日志。带上 cwd 后 chdir 会自然换 key、自动重算。
+ *
+ * 残留风险（已知且接受）：同进程内、同 cwd 下 `git init`（gitDir 从
+ * "unknown" 变 ".git"）仍会读到陈旧值。理由：生产代码无 `process.chdir`
+ * 且 daemon 生命周期内 git init 概率极低；且**同进程内签名与验签用同一个
+ * 缓存值，链仍然自洽**，只有跨进程（一方缓存了旧值）才可能不一致。
+ * 确实换了环境时，显式调用 `clearEnvFingerprintCache()`。
+ */
+const envFingerprintCache = new Map<string, string>();
+
+/**
+ * 清空环境指纹缓存——供测试隔离，以及「确实换了环境」（git init / 迁移目录）
+ * 的场合显式调用。
+ *
+ * 注：刻意**不**进入包入口 `index.ts` 的 @public 导出面——新增公共符号按
+ * 公开 API 门禁需 bump 包版本并级联改依赖声明，与本次性能修复无关；
+ * core 包内测试用相对路径即可。
+ */
+export function clearEnvFingerprintCache(): void {
+  envFingerprintCache.clear();
+}
+
+/**
  * 环境指纹——用于 hash chain 防篡改（v1.0.6+）。
  *
  * Agent 重算 hash chain 时如果不包含这个指纹，--doctor 重新校验会不一致。
  * 不是完美方案（Agent 如果知道算法可以伪造），但把门槛从"会写 JS"提高到
  * "需要逆向 hash 算法且知道本机 hostname/username/git 路径"。
+ *
+ * 结果按 `${cwd}|${dataDir}` 进程内缓存（见 envFingerprintCache 注释）。
  */
 export function getEnvFingerprint(dataDir?: string): string {
+  const cacheKey = `${process.cwd()}|${dataDir ?? ''}`;
+  const cached = envFingerprintCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
   let gitDir = 'unknown';
   try {
     gitDir = execSync('git rev-parse --git-dir 2>/dev/null || echo "unknown"', { encoding: 'utf-8' }).trim();
@@ -95,7 +131,9 @@ export function getEnvFingerprint(dataDir?: string): string {
     console.error('[audit-history] 获取环境指纹失败（git 不可用）:', err);
   }
   const base = `${hostname()}-${userInfo().username}-${gitDir}-${dataDir ?? ''}`;
-  return createHash('sha256').update(base).digest('hex').slice(0, 8);
+  const fingerprint = createHash('sha256').update(base).digest('hex').slice(0, 8);
+  envFingerprintCache.set(cacheKey, fingerprint);
+  return fingerprint;
 }
 
 /**
