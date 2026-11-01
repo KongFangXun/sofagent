@@ -8,7 +8,7 @@
 //   3. buildSummary：超长正文截断到 SUMMARY_MAX_CHARS
 //   4. pushKnowledgeSummary：双通道推送（daemon:notice + openclaw:im），注入收集器验证
 //   5. pushKnowledgeSummary：单通道失败不阻塞另一通道（best-effort）
-//   6. pushKnowledgeSummary：推送函数抛错 → 返回 false 不抛异常（失败静默）
+//   6. pushKnowledgeSummary：推送函数抛错 → 返回 false 不抛异常，且必须打 warn 留痕
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -102,8 +102,9 @@ describe('pushKnowledgeSummary · 双通道推送（best-effort）', () => {
     expect(pushed).toEqual(['daemon:notice']);
   });
 
-  // 用例 6：推送函数抛错 → 失败静默
-  it('推送函数整体抛错 / 全通道失败 → 返回 false 不抛异常', async () => {
+  // 用例 6：推送函数抛错 → 返回 false 不抛异常（返回值语义不变），
+  // 但失败必须由 notify() 打 warn 留痕——"静默"不是规格，只是待修的缺陷
+  it('推送函数整体抛错 / 全通道失败 → 返回 false 不抛异常，且打 warn 留痕', async () => {
     const allFail = await pushKnowledgeSummary(tmpDir, async () => { throw new Error('通道全挂'); });
     expect(allFail).toBe(false);
     const thrower = await pushKnowledgeSummary(tmpDir, () => { throw new Error('同步炸'); });

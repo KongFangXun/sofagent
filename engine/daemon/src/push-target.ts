@@ -334,6 +334,12 @@ async function pushOpenClawIM(title: string, message: string): Promise<boolean> 
       try {
         const st = statSync(join(outboxDir, f));
         if (now - st.mtimeMs > retentionMs) {
+          const ageDays = Math.floor((now - st.mtimeMs) / 86_400_000);
+          // 静默销毁未投递文件不可接受：删之前必须留痕（文件名 + 龄期）
+          notify(
+            `im-outbox 清理超龄未投递文件: ${f}（龄期 ${ageDays} 天 > 保留 ${OUTBOX_RETENTION_DAYS} 天）`,
+            { source: 'push-target', level: 'warn' },
+          );
           rmSync(join(outboxDir, f), { force: true });
         } else {
           survivors.push(f);
@@ -358,7 +364,12 @@ async function pushOpenClawIM(title: string, message: string): Promise<boolean> 
     for (const f of fileList) {
       try {
         if (readFileSync(join(outboxDir, f), 'utf-8') === body) {
-          return true; // 已存在相同内容——跳过写入
+          // 去重命中 ≠ 已送达：同内容此前已落盘，但 OpenClaw 可能尚未拉取
+          notify(
+            `openclaw:im 内容已存在，跳过写入（不确认送达）: ${f}`,
+            { source: 'push-target', level: 'warn' },
+          );
+          return true; // 已存在相同内容——跳过写入（返回值语义不变）
         }
       } catch {
         // 单个文件读不了不影响去重流程

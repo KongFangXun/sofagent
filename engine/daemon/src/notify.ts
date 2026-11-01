@@ -52,7 +52,8 @@ export function banner(projectDir: string): void {
 // 触发源：dream-cycle cycle_complete / knowledge-health 跑完。
 // 素材：log.md（本周学习摘要）+ health-report.md（健康报告）。
 // 通道：复用 push-target.ts（单机出口 = daemon:notice + openclaw:im outbox）。
-// 语义：best-effort 失败静默；素材缺失降级"尚无数据"；restricted 不进通知。
+// 语义：best-effort（不阻断主流程，但失败必须 notify 留痕）；
+//       素材缺失降级"尚无数据"；restricted 不进通知。
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
@@ -81,7 +82,12 @@ function readTail(filePath: string, maxChars: number): string | null {
     const content = readFileSync(filePath, 'utf-8').trim();
     if (!content) return null;
     return content.length > maxChars ? content.slice(-maxChars) : content;
-  } catch {
+  } catch (err) {
+    // 读失败 ≠ 文件不存在：前者必须留痕，否则正文静默退化为「尚无数据」
+    notify(`读取失败（不视为无数据）: ${filePath} — ${(err as Error).message}`, {
+      source: 'notify',
+      level: 'warn',
+    });
     return null;
   }
 }
@@ -120,7 +126,7 @@ export function buildSummary(material: KnowledgeSummaryMaterial): string {
 }
 
 /**
- * 推送知识摘要（best-effort，失败静默）
+ * 推送知识摘要（best-effort：不阻断主流程，失败返回 false 并 notify 留痕）
  *
  * 单机出口双通道：daemon:notice（本地 console）+ openclaw:im（IM outbox）。
  * pushToTarget 经参数注入（依赖倒置——notify.ts 不直接依赖 push-target，
@@ -143,8 +149,12 @@ export async function pushKnowledgeSummary(
       pushFn({ target: 'openclaw:im', title: '知识沉淀周报', message: summary }).catch(() => false),
     ]);
     return results.some((ok) => ok);
-  } catch {
-    // best-effort：通知失败不影响 dream-cycle / health 主流程
+  } catch (err) {
+    // best-effort：不阻断 dream-cycle / health 主流程，但必须留痕
+    notify(`知识摘要推送失败（best-effort，未阻断主流程）: ${(err as Error).message}`, {
+      source: 'notify',
+      level: 'warn',
+    });
     return false;
   }
 }
