@@ -142,8 +142,9 @@ export function auditMergeKey(entry: AuditHistoryEntry): string | null {
 export function mergeAuditTrails(records: DeviceAuditRecord[]): MergedAuditEntry[] {
   const winners = new Map<string, MergedAuditEntry>();
   // 环境指纹在单次合并内不变：循环外算一次，避免每条记录起一次 git 子进程（R1）
-  // ⚠️ 禁止改为模块级缓存或提到模块顶层：git init / process.chdir() / 密钥轮换后指纹会陈旧，
-  //    届时全部记录会被静默判为 unverifiable（不报错，直接当「环境漂移」）。每批算一次是刻意的。
+  // ⚠️ 禁止改成「无 key 的模块级缓存」：指纹新鲜度由 getEnvFingerprint 内部按
+  //    (cwd, dataDir) + 60s TTL 保证，本层只做「批内复用」，不承担新鲜度责任。
+  //    提到模块顶层会让单次合并跨过 TTL 边界时仍用旧值——批内一次是刻意的。
   const fingerprint = getEnvFingerprint();
 
   for (const record of records) {
