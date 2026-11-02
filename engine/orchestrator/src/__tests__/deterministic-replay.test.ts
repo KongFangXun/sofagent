@@ -61,7 +61,10 @@ function loadPredictions(): PredictionRow[] {
 const familyOf = (r: FrozenRow): string => r.meta.origin.split('#')[0];
 
 // 数据盘守卫：缺则 skip 全部（CI 无数据盘不断言假读数）
-const dataAvailable = existsSync(EVAL_JSONL);
+// v1.8.0 修复：守卫扩到 PREDICTIONS_JSONL——归因预测是 /tmp 一次性产物（v17-attribution），
+// 机器重启/CI 环境缺席属常态，缺席时 skip 而非假红（原守卫只盖数据盘，preds 缺失时
+// sanity 断言读空数组报 expected 0 to be 3357——环境缺席被误判成测试失败）。
+const dataAvailable = existsSync(EVAL_JSONL) && existsSync(PREDICTIONS_JSONL);
 
 // 预加载（describe 顶层一次——3357 行 JSON 解析 ~1s，避免逐 it 重读）
 const rows: FrozenRow[] = dataAvailable ? loadEvalRows() : [];
