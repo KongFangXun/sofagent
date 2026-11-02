@@ -33,6 +33,26 @@ import {
   findSessionConclusions,
 } from '../invalidation';
 
+/**
+ * v1.8.0 修复（ts 碰撞时序脆弱性·系统性修法）：emitDecision 的 ts 是毫秒粒度 ISO，
+ * 本文件大量用例「多连发 + 按 ts 定点失效/过滤」——同毫秒碰撞时按 ts 的定点操作
+ * 会误伤同 ts 的无辜行（实测 serial 模式 6 连跑 3 用例稳定红）。helper 在每次
+ * emit 前同步忙等到系统毫秒翻转（最多 ~2ms），保证本文件所有 emitDecision 产出的
+ * ts 严格递增互异——定点失效语义不再依赖时钟精度。断言语义零变化。
+ */
+let __lastEmitMs = 0;
+function emitStaggered(input: EmitDecisionInput, dataDir?: string): ReturnType<typeof emitDecision> {
+  // 返回值驱动：忙等到系统毫秒严格大于**上次 emit 落盘的 ts 毫秒**——
+  // （检测点与写入点分离的形态在 vitest worker 内观察到同毫秒穿透，故以落盘值为锚）
+  let now = Date.now();
+  while (now <= __lastEmitMs) now = Date.now();
+  __lastEmitMs = now;
+  const out = emitDecision(input, dataDir);
+  const emittedMs = Date.parse(out.ts);
+  if (!Number.isNaN(emittedMs) && emittedMs > __lastEmitMs) __lastEmitMs = emittedMs;
+  return out;
+}
+
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-invalidation-test-${Date.now()}-${randomBytes(4).toString('hex')}`);
   mkdirSync(dir, { recursive: true });
@@ -92,7 +112,7 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
         'authorization-changed', 'incompatible-compaction', 'elevated-risk', 'stale-score', 'fresh-required',
       ] as const;
       for (const reason of reasons) {
-        const entry = emitDecision(
+        const entry = emitStaggered(
           { ...makeInput({ sessionId: `s-${reason}` }), kind: 'INVALIDATION', moment: 'ATTRIBUTION', invalidationReason: reason },
           testDir,
         );
@@ -104,7 +124,7 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
 
     it('非法 invalidationReason 被 schema 拒绝（DecisionSchemaError，不写文件）', () => {
       expect(() =>
-        emitDecision(
+        emitStaggered(
           { ...makeInput(), kind: 'INVALIDATION', invalidationReason: 'NOT_A_REASON' as never },
           testDir,
         ),
@@ -113,7 +133,7 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
     });
 
     it('可选语义：缺省 = 有效——不传则条目不落 invalidationReason 字段', () => {
-      const entry = emitDecision(makeInput(), testDir);
+      const entry = emitStaggered(makeInput(), testDir);
       expect(entry.invalidationReason).toBeUndefined();
       expect(isInvalidationMarker(entry)).toBe(false);
       // 落盘 JSON 中不出现该键（老日志形态逐字一致）
@@ -126,9 +146,9 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
   describe('② 三触发钩子生效', () => {
     it('① 授权变更：以被关规则为依据的既有结论被标记失效', () => {
       // 既有结论：以规则 a1 为依据（tags=['a1']）
-      const conclusion = emitDecision(makeInput({ why: { text: '放行 .env 变更', tags: ['a1'] } }), testDir);
+      const conclusion = emitStaggered(makeInput({ why: { text: '放行 .env 变更', tags: ['a1'] } }), testDir);
       // 无关结论（不受影响）
-      const unrelated = emitDecision(
+      const unrelated = emitStaggered(
         makeInput({ sessionId: 'sess-2', why: { text: '无关决策', tags: ['a9'] } }),
         testDir,
       );
@@ -151,9 +171,9 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
     });
 
     it('② 压缩事件：会话内既有结论全部标记失效（前提不再可核）', () => {
-      const c1 = emitDecision(makeInput({ sessionId: 'sess-c', kind: 'ARTIFACT_EDIT' }), testDir);
-      const c2 = emitDecision(makeInput({ sessionId: 'sess-c', kind: 'ORCHESTRATION', moment: 'INDUC' }), testDir);
-      const other = emitDecision(makeInput({ sessionId: 'sess-other' }), testDir);
+      const c1 = emitStaggered(makeInput({ sessionId: 'sess-c', kind: 'ARTIFACT_EDIT' }), testDir);
+      const c2 = emitStaggered(makeInput({ sessionId: 'sess-c', kind: 'ORCHESTRATION', moment: 'INDUC' }), testDir);
+      const other = emitStaggered(makeInput({ sessionId: 'sess-other' }), testDir);
 
       const marker = hooks.onCompaction({
         agentId: 'sofagent',
@@ -175,7 +195,7 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
       // 并用真实审计历史落一条 FAIL 命中记录（同对象反复出现 = 风险升级）
       const strictRule = defaultRules[0]!;
       const objectRef = 'engine/audit/src/secrets.ts';
-      const conclusion = emitDecision(
+      const conclusion = emitStaggered(
         makeInput({ artifactRef: objectRef, why: { text: `先前判定：${strictRule.name} 未命中`, tags: ['pass'] } }),
         testDir,
       );
@@ -217,7 +237,7 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
     });
 
     it('幂等：同一触发重复调用不重复追加标记', () => {
-      const conclusion = emitDecision(makeInput({ why: { text: 'x', tags: ['a2'] } }), testDir);
+      const conclusion = emitStaggered(makeInput({ why: { text: 'x', tags: ['a2'] } }), testDir);
       const first = hooks.onAuthorizationChanged({ agentId: 'a', sessionId: 's', changedRules: ['a2'] }, testDir);
       const second = hooks.onAuthorizationChanged({ agentId: 'a', sessionId: 's', changedRules: ['a2'] }, testDir);
       expect(first).not.toBeNull();
@@ -226,8 +246,8 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
     });
 
     it('选择器：规则匹配不误伤相邻编号（a1 不命中 a10）', () => {
-      const a1 = emitDecision(makeInput({ why: { text: 'a1', tags: ['a1'] } }), testDir);
-      const a10 = emitDecision(makeInput({ sessionId: 's2', why: { text: 'a10', tags: ['a10'] } }), testDir);
+      const a1 = emitStaggered(makeInput({ why: { text: 'a1', tags: ['a1'] } }), testDir);
+      const a10 = emitStaggered(makeInput({ sessionId: 's2', why: { text: 'a10', tags: ['a10'] } }), testDir);
       expect(findConclusionsByRules(['a1'], testDir)).toEqual([a1.ts]);
       expect(findConclusionsByRules(['a10'], testDir)).toEqual([a10.ts]);
       expect(findConclusionsForObject('no-match', testDir)).toEqual([]);
@@ -248,8 +268,8 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
 
   describe('③ 失效结论被下游过滤', () => {
     it('filterValid 剔除失效条目，未失效条目不受影响', () => {
-      const valid = emitDecision(makeInput({ sessionId: 'v' }), testDir);
-      const invalid = emitDecision(makeInput({ sessionId: 'i' }), testDir);
+      const valid = emitStaggered(makeInput({ sessionId: 'v' }), testDir);
+      const invalid = emitStaggered(makeInput({ sessionId: 'i' }), testDir);
       hooks.onCompaction({ agentId: 'a', sessionId: 's', targets: [invalid.ts] }, testDir);
       const set = collectInvalidations(testDir);
       const kept = filterValid([valid, invalid], set);
@@ -259,8 +279,8 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
 
     it('HITL 依据：findSimilarDecisions（人审先例检索）不返回失效结论', () => {
       const q = { tags: ['hitl-precedent'] };
-      const c1 = emitDecision(makeInput({ sessionId: 'p1', why: { text: '先例一', tags: ['hitl-precedent'] } }), testDir);
-      const c2 = emitDecision(makeInput({ sessionId: 'p2', why: { text: '先例二', tags: ['hitl-precedent'] } }), testDir);
+      const c1 = emitStaggered(makeInput({ sessionId: 'p1', why: { text: '先例一', tags: ['hitl-precedent'] } }), testDir);
+      const c2 = emitStaggered(makeInput({ sessionId: 'p2', why: { text: '先例二', tags: ['hitl-precedent'] } }), testDir);
       expect(findSimilarDecisions(q, {}, testDir).map((h) => h.entry.ts).sort()).toEqual([c1.ts, c2.ts].sort());
 
       hooks.onCompaction({ agentId: 'a', sessionId: 's', targets: [c1.ts] }, testDir);
@@ -269,8 +289,8 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
 
     it('治理 KPI 统计：失效的 TOOL_GATE 结论不计入重复执行维度', () => {
       const agentId = 'kpi-agent';
-      const d1 = emitDecision(makeInput({ agentId, why: { text: 'r1', tags: ['rep'] } }), testDir);
-      emitDecision(makeInput({ agentId, why: { text: 'r2', tags: ['rep'] } }), testDir);
+      const d1 = emitStaggered(makeInput({ agentId, why: { text: 'r1', tags: ['rep'] } }), testDir);
+      emitStaggered(makeInput({ agentId, why: { text: 'r2', tags: ['rep'] } }), testDir);
 
       const before = computeGovernanceKpis({ dataDir: testDir });
       expect(before.repetition.totalDecisions).toBe(2);
@@ -286,45 +306,32 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
     });
 
     it('治理 KPI 统计：失效标记条目自身是元记录，不使决策总数 +1', () => {
-      // v1.8.0 修复：ts 碰撞时序脆弱性——emitDecision 的 ts 是毫秒粒度 ISO，
-      // 三连发落在同一毫秒时 markInvalid(bystander.ts) 会把同 ts 的 r1/r2 一并
-      // 剔除（filterValid 按 ts 集合剔行），totalDecisions 掉到 1（serial 模式
-      // 下高概率触发）。修法：fake timers 逐毫秒推进，保证三条 ts 互异——
-      // 锁定「标记只剔 bystander」的本测语义，不依赖真实时钟精度。
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-11-02T12:00:00.000Z'));
-      try {
         const agentId = 'kpi-marker-agent';
-        emitDecision(makeInput({ agentId, why: { text: 'r1', tags: ['rep2'] } }), testDir);
-        vi.advanceTimersByTime(5);
-        emitDecision(makeInput({ agentId, why: { text: 'r2', tags: ['rep2'] } }), testDir);
-        vi.advanceTimersByTime(5);
-        // 第三条：非 TOOL_GATE，不参与重复执行读数；拿它当失效目标以隔离变量
-        const bystander = emitDecision(makeInput({ agentId, sessionId: 'by', kind: 'ARTIFACT_EDIT' }), testDir);
+      emitStaggered(makeInput({ agentId, why: { text: 'r1', tags: ['rep2'] } }), testDir);
+      emitStaggered(makeInput({ agentId, why: { text: 'r2', tags: ['rep2'] } }), testDir);
+      // 第三条：非 TOOL_GATE，不参与重复执行读数；拿它当失效目标以隔离变量
+      const bystander = emitStaggered(makeInput({ agentId, sessionId: 'by', kind: 'ARTIFACT_EDIT' }), testDir);
 
-        const before = computeGovernanceKpis({ dataDir: testDir, now: () => Date.now() });
-        expect(before.repetition.totalDecisions).toBe(2);
+      const before = computeGovernanceKpis({ dataDir: testDir });
+      expect(before.repetition.totalDecisions).toBe(2);
 
-        const marker = markInvalid({
-          agentId: 'sofagent-audit', sessionId: 's', reason: 'authorization-changed',
-          targets: [bystander.ts], trigger: '标记元记录不计入 KPI',
-        }, testDir);
-        expect(marker.kind).toBe('INVALIDATION');
+      const marker = markInvalid({
+        agentId: 'sofagent-audit', sessionId: 's', reason: 'authorization-changed',
+        targets: [bystander.ts], trigger: '标记元记录不计入 KPI',
+      }, testDir);
+      expect(marker.kind).toBe('INVALIDATION');
 
-        const after = computeGovernanceKpis({ dataDir: testDir, now: () => Date.now() });
-        // 标记条目 +1 落盘（原文留痕），但 KPI 决策总数不因标记而增加
-        expect(rawLines(testDir).filter((l) => l.includes('"kind":"INVALIDATION"'))).toHaveLength(1);
-        expect(after.repetition.totalDecisions).toBe(2);
-        expect(after.repetition.uniqueFingerprints).toBe(before.repetition.uniqueFingerprints);
-      } finally {
-        vi.useRealTimers();
-      }
+      const after = computeGovernanceKpis({ dataDir: testDir });
+      // 标记条目 +1 落盘（原文留痕），但 KPI 决策总数不因标记而增加
+      expect(rawLines(testDir).filter((l) => l.includes('"kind":"INVALIDATION"'))).toHaveLength(1);
+      expect(after.repetition.totalDecisions).toBe(2);
+      expect(after.repetition.uniqueFingerprints).toBe(before.repetition.uniqueFingerprints);
     });
 
     it('决策查询读数：标记条目不作为先例 / 高频模式回灌', () => {
-      const c1 = emitDecision(makeInput({ sessionId: 'm1', why: { text: 'x', tags: ['invalidation'] } }), testDir);
-      const c2 = emitDecision(makeInput({ sessionId: 'm2', why: { text: 'y', tags: ['invalidation'] } }), testDir);
-      const c3 = emitDecision(makeInput({ sessionId: 'm3', why: { text: 'z', tags: ['invalidation'] } }), testDir);
+      const c1 = emitStaggered(makeInput({ sessionId: 'm1', why: { text: 'x', tags: ['invalidation'] } }), testDir);
+      const c2 = emitStaggered(makeInput({ sessionId: 'm2', why: { text: 'y', tags: ['invalidation'] } }), testDir);
+      const c3 = emitStaggered(makeInput({ sessionId: 'm3', why: { text: 'z', tags: ['invalidation'] } }), testDir);
       expect(findSimilarDecisions({ tags: ['invalidation'] }, {}, testDir)).toHaveLength(3);
 
       // 三条同类标记（原始 kind+tags 组合 = 3 次，足以构成高频模式）
@@ -344,8 +351,8 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
 
   describe('④ 原文保留 + HMAC 链不破坏', () => {
     it('标记失效后原条目原始行逐字节不变，且 checkDecisionChainDetailed 仍判 ok', () => {
-      const original = emitDecision(makeInput({ why: { text: '原始结论：放行', tags: ['a3'] } }), testDir);
-      emitDecision(makeInput({ sessionId: 's2' }), testDir); // 保证 ≥2 条（验链下限）
+      const original = emitStaggered(makeInput({ why: { text: '原始结论：放行', tags: ['a3'] } }), testDir);
+      emitStaggered(makeInput({ sessionId: 's2' }), testDir); // 保证 ≥2 条（验链下限）
 
       const lineBefore = rawLineOfTs(testDir, original.ts);
       expect(checkDecisionChainDetailed(testDir).status).toBe('ok');
@@ -367,8 +374,8 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
     });
 
     it('向后兼容：无 invalidationReason 的老口径条目照常解析、验链、且不在失效集合内', () => {
-      const legacy = emitDecision(makeInput(), testDir); // 无新字段 = 老日志形态
-      emitDecision(makeInput({ sessionId: 's2' }), testDir);
+      const legacy = emitStaggered(makeInput(), testDir); // 无新字段 = 老日志形态
+      emitStaggered(makeInput({ sessionId: 's2' }), testDir);
       expect(legacy.invalidationReason).toBeUndefined();
       expect(collectInvalidations(testDir).size).toBe(0);
       expect(isInvalidated(legacy.ts, testDir)).toBe(false);

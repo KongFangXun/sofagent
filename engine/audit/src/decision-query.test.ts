@@ -2,7 +2,7 @@
 // decision-query.test.ts · 决策审计查询层测试（v1.3.0 交付 6 T04）
 // ============================================================
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach , vi } from "vitest";
 import { existsSync, writeFileSync, rmSync, mkdirSync, readFileSync, appendFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -210,16 +210,24 @@ describe('decision causal chain（因果链）', () => {
   });
 
   it('traceDecisionChain 多级回溯 + 链式叙事（路由→拦截→上报）', () => {
-    // 因果铤：路由决策 → 导致拦截 → 导致上报人工
+    // v1.8.0 修复：ts 碰撞时序脆弱性（同 invalidation / mcp audit-query 用例同族）——
+    // 三连发同毫秒时 causedBy 自指致环检测断链（chain 3→2，serial 模式高概率触发）。
+    // fake timers 逐毫秒推进保证三条 ts 互异——锁定多级回溯语义不依赖真实时钟精度。
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-02T12:00:00.000Z'));
+    try {
+    // 因果链：路由决策 → 导致拦截 → 导致上报人工
     const route = emitDecision(makeInput({
       sessionId: 's1', kind: 'ORCHESTRATION', category: 'route',
       why: { text: '任务派给 executor 档', tags: ['route'] },
     }), testDir);
+    vi.advanceTimersByTime(5);
     const block = emitDecision(makeInput({
       sessionId: 's1', kind: 'TOOL_GATE',
       why: { text: '拦截写 .env（A1）', tags: ['a1'], triggeredRule: 'A1' },
       causedBy: [route.ts], causalType: 'caused',
     }), testDir);
+    vi.advanceTimersByTime(5);
     const escalate = emitDecision(makeInput({
       sessionId: 's1', kind: 'ESCALATE_REPORT', category: 'escalate',
       why: { text: '拦截后升级人工复核' },
@@ -236,6 +244,9 @@ describe('decision causal chain（因果链）', () => {
     expect(trace!.narrative).toContain('导致了');
     expect(trace!.narrative).toContain('TOOL_GATE');
     expect(trace!.brokenAt).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('traceDecisionChain 旧条目（无 causedBy）→ 单节点链不报错', () => {
