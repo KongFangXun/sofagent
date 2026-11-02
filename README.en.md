@@ -210,7 +210,7 @@ off the decision path.
 
 | Capability | One-liner | Reachable |
 |---|---|---|
-| **RLCD strictly-proper training** | Per-primitive losses (noul log-score / choice log+spherical / score RPS) + asymmetric penalty on extreme claims + RLOO / KL anchor / downweight defense lines (see Note 1) | CLI reachable: `sofagent train rlcd --data <dataset> [--dryrun]` |
+| **RLCD strictly-proper training** | Per-primitive losses (noul log-score / choice log+spherical / score RPS) + asymmetric penalty on extreme claims + RLOO / KL anchor / downweight defense lines (see Note 1) | CLI reachable: `sofagent train rlcd --data <RlcdTrainSample[] JSON array file> [--dryrun]` |
 | **Bucketed temperature calibration** | Per-primitive fitting · score isotonicity · disjoint calibration set assertion (same criterion across sides) (see Note 2) | SDK-face |
 | **Calibration discipline gate** | Confidence/probability thresholds consumed on decision paths must carry calibration evidence or an explicit `uncalibrated` marker — unmarked ones cannot ship (check-calibration-claims wired into the release chain) | SDK-face · gate |
 | **Abstention as a fourth state** | Abstain stands beside pass/warn/fail (three-source evidence: low confidence / OOD / missing criteria) · per-primitive thresholds · cannot be disabled when ECE misses the line | SDK-face |
@@ -322,7 +322,7 @@ sofagent audit --doctor  # verify the environment (optional)
 
 **To uninstall**: `, ~/.sofagent/scripts/uninstall.sh` (installed layout) or `, engine/scripts/uninstall.sh` (clone layout)—removes the Skill, hook registrations and the three git hooks, while keeping your `~/.sofagent/` data.
 
-Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the single entry from the install-state layout apart (npm bare-name umbrella = sub-package forwarder, see the package-name warning in Usage; the install.sh state
+Full install options (clone / npx / minimal / enterprise), uninstall, and how to tell the single entry from the install-state layout apart (npm bare-name umbrella = sub-package forwarder, see Usage; the install.sh state
 exposes `status` / `web` / `dashboard`) → [HANDBOOK
 · Installation](./docs/HANDBOOK.md).
 
