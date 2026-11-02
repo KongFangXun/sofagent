@@ -40,6 +40,8 @@
 #                             人工项读本版 devlog「文档质量评分」留痕，未确认按不通过计 fail-closed）
 #   + check-npm-claims.mjs  → registry 实测声称对账（文档声称值 vs registry 在线真值；
 #                             离线 SKIP 可见不假绿 · 豁免台账 npm-claims-exempt.json · v1.5.2 A-6 接入）
+#   + check-doc-debt.mjs    → 家族文档债务八类（C1 断链 / C2 术语旧称 / C3 计数口径 / C4 版本状态 /
+#                              C5 可读性棘轮 / C6 退役节 / C7 双语同步 / C8 根级白名单 · 行内标记不生效，豁免走 tools/doc-debt-exempt.json 台账）
 #   + check-seam-contract.mjs → 插件 seam 契约门禁（词汇表正向 + DSH 三处一致 + 宿主反向实跑；
 #                             宿主缺席 SKIP 可见不假绿 · v1.5.7 F31 接入）
 #   + npm run build         → 审计模块构建
@@ -861,6 +863,38 @@ if [ "$MINIMAL" = false ]; then
     unset NPM_CLAIMS_OUT NPM_CLAIMS_RC
   else
     check_fail "tools/check/check-npm-claims.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3l. 家族文档债务八类（check-doc-debt.mjs）
+# 为什么需要：文档债的主要形态不是「写错」而是「写旧」——断链 / 旧称 / 旧计数 /
+#   版本态 / 墙式行 / 退役节 / 双语漂移 / 根级白名单，八类都只能靠人肉 grep 治一次。
+#   该守卫早已存在，但此前**只在 README 里登记、无任何自动调用面**——登记 ≠ 调用，
+#   红项永远不会被 pre-push 拦住（本步的起因）。
+# 三态语义：0 = 八类零违规（可含可见 SKIP——SKIP 会在输出里显式标出，不假绿）；
+#   1 = 有违规；2 = 检查器失明（扫描面/口径不可得，**拒绝假绿，不能当通过**）。
+# C4 现状（暂不开）：C4 版本状态须 `--sofagent <主仓>` 才能取 tag 面；实测开启后全仓多处命中，
+#   混有真债与行级假阳性，须逐条判真伪后单独批次开启——本步先覆盖其余七类；C4 每次运行
+#   都会打印可见 SKIP（SKIP ≠ 通过），不假绿。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3l. 家族文档债务八类 ──${NC}"
+  if [ -f tools/check/check-doc-debt.mjs ]; then
+    DDBT_OUT=$(node tools/check/check-doc-debt.mjs 2>&1)
+    DDBT_RC=$?
+    if [ "$DDBT_RC" -eq 0 ]; then
+      check_pass "check-doc-debt.mjs（八类零违规 · C4 版本状态本次 SKIP，见上方明细）"
+    elif [ "$DDBT_RC" -eq 2 ]; then
+      check_fail "check-doc-debt.mjs 检查器失明（exit 2——拒绝假绿）"
+      printf '%s\n' "$DDBT_OUT" | tail -8
+    else
+      check_fail "check-doc-debt.mjs 家族文档债务违规（exit ${DDBT_RC}）"
+      printf '%s\n' "$DDBT_OUT" | grep -E '❌|C[1-8] ' | head -10
+    fi
+    unset DDBT_OUT DDBT_RC
+  else
+    check_fail "tools/check/check-doc-debt.mjs 不存在（守卫缺失——fail-closed：门禁缺件按未通过处理，不静默放行）"
   fi
 fi
 
