@@ -1,7 +1,7 @@
 # sofagent
 
 <p align="center">
- <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/banner.png" alt="sofagent — FDE Harness: commit-time audit for AI coding agents (banner subtitle in Chinese; canonical capability numbers: 28 rules / 104 MCP tools — see tables below)" width="100%" />
+ <img src="https://gcore.jsdelivr.net/gh/KongFangXun/sofagent@main/docs/assets/banner.png" alt="sofagent — FDE Harness: commit-time audit for AI coding agents" width="100%" />
 </p>
 
 <!-- H1 & banner split: the H1 is the repo name and semantic anchor (search engines / no-image environments / screen readers); the banner carries the visuals -->
@@ -92,7 +92,7 @@ version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 |---|---|---|---|
 | Positioning | full-history secret scanning | generic commit-hook framework | Agent behavior audit harness |
 | Evidence | repo text patterns | your own scripts | git-diff hard evidence + Agent logs + decision trail |
-| Coverage | secret leaks | anything (DIY) | 28 rules: secrets / scope / injection / privilege / backdoors / data products |
+| Coverage | secret leaks | anything (DIY) | 28 rules (17 enabled by default; full set via extendedRulesEnabled): secrets / scope / injection / privilege / backdoors / data products |
 | Deployment cost | Low—standalone binary, zero runtime deps | Low—one CLI from your language ecosystem | Medium—a one-time `install.sh` on the enterprise device (you can also try it zero-config via npx first) |
 | Maintenance burden | Low—rules track upstream | Medium—custom scripts are yours to maintain | Medium—rules and hooks ship with this repo, but each version needs the hook reinstalled and config re-aligned |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both—focused on Agent governance |
@@ -138,7 +138,7 @@ What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🏠 **Stay resident after departure**—the FDE capability remains for inspection, audit, and optimization (daemon inspection requires explicit opt-in at install—off by default, auto-skipped under QUICK_MODE / non-interactive installs),
  7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
-- 🔍 **Zero-setup audit**—`npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (engine ~1.1s / CLI end-to-end 4-5s incl. routing; 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
+- 🔍 **Zero-setup audit**—`npx -y -p sofagent sofagent audit`, auditing the latest commit of any git repo in seconds (engine ~1.1s / CLI end-to-end 0.4-5s (Apple Silicon ~0.4s; cold routing/low-spec up to 5s, 2026-11); 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
 - 🧱 **28 audit rules + 104 MCP tools**—secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 22/28 run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs), 1 filesystem scan, 1 decision-log channel;
  log-based rules such as A7/A8 (see the [rule table](./docs/ARCHITECTURE.md)) are skipped when no Agent logs exist; violations are blocked on the spot (a critical-layer hit skips the rest—fail-fast);
 evidence is based on local diffs; **not fail-closed by default**—config can be tampered with and hooks skipped via `--no-verify` (bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md)); quick runs 17 by default, full 28 = 17 + 11.
@@ -258,7 +258,7 @@ The `alpha` tag remains as a historical release trace and isn't maintained.
 > 🔐 **Data sovereignty**: runtime data never leaves your machine (no network access except the npm package fetch at install time); the three opt-in exits (cloud sync / model inference endpoint / cloud VM execution surface) require your explicit configuration (note: opening the dashboard anonymously
 > fetches the public GitHub star count—read-only, no user data sent, silent fallback on failure)—see [SECURITY](./SECURITY.md).
 
-**30s and up, zero setup** (first run fetches via npx ~30s; reruns in seconds—engine ~1.1s, CLI end-to-end 4-5s)—audit any git repo:
+**30s and up, zero setup** (first run fetches via npx ~30s; reruns in seconds—CLI end-to-end 0.4-5s (Apple Silicon ~0.4s; cold/low-spec up to 5s, 2026-11))—audit any git repo:
 
 ```bash
 npx -y -p sofagent sofagent audit
@@ -320,8 +320,7 @@ sofagent audit --doctor  # verify the environment (optional)
 >
 > 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh—`curl bootstrap.sh | ,` equals "download install.sh + run install.sh". Both install exactly the same thing; bootstrap just saves the manual clone/download step.
 
-**To uninstall**: `, ~/.sofagent/scripts/uninstall.sh` (installed layout) or `, engine/scripts/uninstall.sh` (clone layout)—removes the Skill/constitution files, hook registrations
-and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data.
+**To uninstall**: `, ~/.sofagent/scripts/uninstall.sh` (installed layout) or `, engine/scripts/uninstall.sh` (clone layout)—removes the Skill, hook registrations and the three git hooks, while keeping your `~/.sofagent/` data.
 
 Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the single entry from the install-state layout apart (npm bare-name umbrella = sub-package forwarder, see the package-name warning in Usage; the install.sh state
 exposes `status` / `web` / `dashboard`) → [HANDBOOK

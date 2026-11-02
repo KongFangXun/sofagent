@@ -70,7 +70,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 </details>
 
-**30 秒–2 分钟轻量试用**（首次含 npx 拉包（网络依赖），复跑秒级；引擎本体约 1.1s / 单入口 CLI 总耗时（含路由层）实测 4-5s，双口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
+**30 秒–2 分钟轻量试用**（首次含 npx 拉包（网络依赖），复跑秒级；引擎约 1.1s / 单入口总耗时 0.4-5s（Apple Silicon 约 0.4s，冷路由/低配至 5s，2026-11 实测），双口径见下）：`npx -y -p sofagent sofagent audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
 > 💡 npm 通道只有伞包一个形态：`npm i -g sofagent` 装的就是**完整依赖树**（依赖包数见下，口径以当轮 npm ls 实测为准）——不存在更小的「轻量包」。要更小安装面，用 npx 临时形态（`npx -y -p sofagent sofagent audit`，用完即弃不常驻；能力面见 [LIMITATIONS](./docs/LIMITATIONS.md)）。
 
@@ -95,7 +95,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 |---|---|---|---|
 | 定位 | 密钥全量历史扫描 | 通用提交钩子框架 | Agent 行为审计约束层 |
 | 证据面 | 仓库文本模式 | 自定义脚本 | git diff 硬证据 + Agent 日志 + 决策留痕 |
-| 覆盖维度 | 密钥泄漏 | 任意（自己写） | 28 条规则：密钥/越界/注入/权限/后门/数据产品 |
+| 覆盖维度 | 密钥泄漏 | 任意（自己写） | 28 条规则（默认 17 · 完整 28 见下文）：密钥/越界/注入/权限/后门/数据产品 |
 | 部署成本 | 低——单二进制，零运行时依赖 | 低——随语言生态装一个 CLI | 中——企业设备需一次 `install.sh` 装约束层（也可先用 npx 零配置试用） |
 | 维护负担 | 低——规则随上游更新 | 中——自定义脚本需自己维护 | 中——规则与 hook 随本仓升级，但每版需重装 hook 并对齐配置 |
 | 建议 | 强密钥合规必配 | 已有体系可保留 | 与前两者并用，专注 Agent 治理维度 |
@@ -128,7 +128,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 **治理层 · harness**（离场 · 驻留判断——「harness 治理」，按交付物 7×24 执行，进化时写回）：
 
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化（daemon 巡检需安装时显式确认，默认不装；QUICK_MODE / 非交互安装自动跳过），commit 时触发审计，人离场治理不离开
-- 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（quick 1.1s、5 万行 diff 6.1s，见 [HANDBOOK](./docs/HANDBOOK.md)）
+- 🔍 **零配置审计**——`npx -y -p sofagent sofagent audit`，任何 git 仓库秒级审计最近一次 commit（5 万行 diff 6.1s，见 [HANDBOOK](./docs/HANDBOOK.md)）
 
 - 🧱 **规则与安全面：28 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截；fail-fast（critical 命中后其余跳过）、默认非 fail-closed（配置可被篡改、hook 可经 `--no-verify` 跳过——绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 - 🔧 **工具与能力面：104 个 MCP tool + 证据分档**——28 条规则中 22 条基于 git diff（本地生效、零 token）、4 条 hybrid（diff + Agent 日志）、1 条 filesystem 扫描、1 条走 decision-log（清单见 [SECURITY](./SECURITY.md#28-条审计规则完整清单文档级-ssot)）。其中 commons_invoke 为 dry-run 预检语义（返回能力元数据与调用计划，真实执行由 Agent runtime 注入 executor；见 LIMITATIONS）
@@ -214,7 +214,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 >
 > 🔐 **数据主权**：运行时数据不出本机（除安装时 npm 拉包外不联网）；三个 opt-in 出口（云同步 / 模型推理端点 / 云 VM 执行面）需你显式配置（另：dashboard 打开时会匿名只读拉取 GitHub 公开 star 数，无用户数据外发、失败静默降级），详见 [SECURITY](./SECURITY.md)。
 
-**30 秒起，零配置**（首次含 npx 拉包约 30 秒，复跑秒级——引擎本体约 1.1s，实测口径见上）——在任何 git 仓库跑一次审计：
+**30 秒起，零配置**（首次拉包约 30 秒，复跑秒级，口径见上）——在任何 git 仓库跑一次审计：
 
 ```bash
 npx -y -p sofagent sofagent audit
@@ -266,7 +266,7 @@ sofagent audit --doctor    # 验证环境（可选）
 >
 > 📌 **bootstrap.sh 和 install.sh 的关系**：bootstrap.sh 是 install.sh 的一行下载包装器——`curl bootstrap.sh | bash` 等价于「下载 install.sh + 运行 install.sh」。两个脚本装的是完全一样的东西，bootstrap 只是省掉手动 clone/下载那一步。
 
-**卸载**：`bash ~/.sofagent/scripts/uninstall.sh`（安装态）或 `bash engine/scripts/uninstall.sh`（clone 态）——移除 Skill/约束文件、hook 注册与三个 git hook（`pre-commit` / `commit-msg` / `post-commit`），保留你的 `~/.sofagent/` 数据。
+**卸载**：`bash ~/.sofagent/scripts/uninstall.sh`（安装态）或 `bash engine/scripts/uninstall.sh`（clone 态）——移除 Skill、hook 注册与三个 git hook，保留你的 `~/.sofagent/` 数据。
 
 完整安装方式（clone / npx / 最小安装 / 企业部署）、卸载、以及「单入口与安装态怎么分辨」等消歧细节见 [HANDBOOK · 安装](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js；15 分钟最短路径见其「15 分钟最短路径」小节）。
 
