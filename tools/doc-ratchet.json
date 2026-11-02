@@ -1,0 +1,73 @@
+{
+ "_meta": "可读性棘轮：只许降不许升；口径 = 行>300 / 格>200（唯一实现 check/lib/readability-count.mjs）",
+ "files": {
+  "CHANGELOG.md": {
+   "wall": 1,
+   "cell": 0
+  },
+  "FDE/README.md": {
+   "wall": 1,
+   "cell": 0
+  },
+  "FORGE/LEDGER.md": {
+   "wall": 34,
+   "cell": 0
+  },
+  "FORGE/lessons/driver.md": {
+   "wall": 1,
+   "cell": 0
+  },
+  "FORGE/lessons/index.md": {
+   "wall": 6,
+   "cell": 2
+  },
+  "README.en.md": {
+   "wall": 9,
+   "cell": 3
+  },
+  "README.md": {
+   "wall": 1,
+   "cell": 0
+  },
+  "SECURITY.md": {
+   "wall": 1,
+   "cell": 3
+  },
+  "docs/ARCHITECTURE.md": {
+   "wall": 4,
+   "cell": 4
+  },
+  "docs/HANDBOOK.md": {
+   "wall": 1,
+   "cell": 0
+  },
+  "docs/ROADMAP.md": {
+   "wall": 1,
+   "cell": 3
+  },
+  "docs/VALIDATION.md": {
+   "wall": 3,
+   "cell": 0
+  },
+  "docs/guides/loop-development.md": {
+   "wall": 0,
+   "cell": 1
+  },
+  "playbook/regression-checklist.md": {
+   "wall": 5,
+   "cell": 0
+  },
+  "standards/devlog/_TEMPLATE.md": {
+   "wall": 1,
+   "cell": 0
+  },
+  "tools/STANDARD.md": {
+   "wall": 1,
+   "cell": 0
+  },
+  "tools/check/README.md": {
+   "wall": 1,
+   "cell": 0
+  }
+ }
+}

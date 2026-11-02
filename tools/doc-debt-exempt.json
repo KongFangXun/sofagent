@@ -1,0 +1,341 @@
+{
+  "_schema": "doc-debt 豁免台账（tools/check/check-doc-debt.mjs 消费）——台账为权威，行内标记单写无效（R4）",
+  "entries": [
+    {
+      "file": "docs/changelog/v1.0/v1.0.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.0/v1.0.1.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.0/v1.0.2.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.0/v1.0.3.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.0/v1.0.4.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.0/v1.0.5.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.0/v1.0.6.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.0/v1.0.7.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.0/v1.0.8.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.0/v1.0.9.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.1.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.2.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.3.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.4.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.5.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.6.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.7.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.8.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.1/v1.1.9.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.1.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.2.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.3.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.4.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.5.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.6.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.7.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.8.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.2/v1.2.9.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.1.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.2.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.3.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.4.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.5.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.6.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.7.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.8.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.3/v1.3.9.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.1.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.2.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.3.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.4.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.5.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.6.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.7.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.8.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.4/v1.4.9.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.1.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.2.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.3.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.4.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.5.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.6.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.7.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.8.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.5/v1.5.9.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.6/v1.6.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.7/v1.7.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.8/v1.8.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v1.9/v1.9.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/v2.0/v2.0.0.md",
+      "reason": "C6 退役节历史形态基线（v1.8.0 bugfix 批 F16 建档）：退役义务随各版发版收口批逐份补齐后撤豁免",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/releasing/template.md",
+      "reason": "releasing 模板占位（冻结区形态，vX.Y.Z 占位非死链）",
+      "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/releasing/06-doc-finalize.md",
+      "line": 354,
+      "reason": "releasing SOP 模板占位链接（vX.Y.Z 示例路径，冻结区形态非死链）",
+      "approved": "孔放勋 2026-11-02"
+    }
+  ]
+}
