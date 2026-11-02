@@ -479,6 +479,8 @@
 // ── 审计历史链校验（v1.2.0 从 @sofagent/audit 下沉，消除 core 反向依赖） ──
 /* @public */ export { getHistoryFilePath, getHistoryAnchorFilePath, getDecisionLogPath, getEnvFingerprint, getHmacKey, checkHistoryChainDetailed, stableStringify, validateHmacKey, archiveHistoryHead } from './audit-history';
 /* @public */ export type { ArchiveHistoryHeadResult } from './audit-history';
+// v1.8.0 fresh-eyes F13/F14：DecisionKind 枚举 SSOT（audit 三处 + doctor 单源引用）
+/* @public */ export { ALL_DECISION_KINDS, HISTORICAL_DECISION_KINDS, READABLE_DECISION_KINDS } from './decision-kinds';
 
 // ── 装后验证 ──
 /* @public */ export { verifyEvidence } from './verify-evidence';

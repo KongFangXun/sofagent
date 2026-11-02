@@ -19,7 +19,7 @@
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
-import { getDecisionLogPath } from '@sofagent/core';
+import { getDecisionLogPath, READABLE_DECISION_KINDS } from '@sofagent/core';
 import type { DecisionLogEntry, DecisionKind } from '../decision-schema';
 import { log } from '../logger';
 
@@ -35,14 +35,13 @@ export const DECISION_LOG_FILENAME = 'decision-log.jsonl';
  * ⚠️ 与 decision-log.ts 的 VALID_KINDS 白名单**双落点**（同 DecisionKind union 纪律）——
  * 写侧新增 kind 时须三处同批：decision-schema.ts union + decision-log.ts 白名单 + 本数组。
  */
-const READABLE_KINDS: readonly DecisionKind[] = [
-  'SPEC_CHANGE', 'ARTIFACT_EDIT', 'TOOL_GATE', 'RULE_TOGGLE',
-  'ESCALATE_REPORT', 'FALLBACK_DEGRADE', 'CONFIG_CHANGE',
-  'KNOWLEDGE_DISTILL', 'ORCHESTRATION',
-  'EVOLUTION', 'TEAM', 'COMMONS',
-  'COST', 'COVERAGE', 'INVALIDATION', 'CREDENTIAL_RECONCILE',
-  'LEGACY_CLEANUP', 'DATA_PRODUCT',
-];
+/**
+ * 读侧合法 kind 判定面（v1.8.0 fresh-eyes F13/F14 单源化）。
+ * SSOT = core/decision-kinds.ts 的 READABLE_DECISION_KINDS（现行 19 值 ∪ 历史
+ * MARKET——历史值收编后 v1.3.4 时代 11,126 条 kind=MARKET 记录不再按「形态
+ * 不合法」跳过）。本处不再手抄清单。
+ */
+const READABLE_KINDS: readonly string[] = READABLE_DECISION_KINDS;
 
 // ════════════════════════════════════════
 // 读取面（只读 · 规则侧消费）
@@ -62,6 +61,10 @@ export function readDecisionEntries(filePath: string): DecisionLogEntry[] {
   if (!filePath || !existsSync(filePath)) return [];
   const out: DecisionLogEntry[] = [];
   let badLines = 0;
+  // v1.8.0 fresh-eyes F14：未知 kind 逐 kind 计数明细（此前聚合 badLines 一行
+  // warn 无明细——「写侧新增未同步读侧」的漂移不可定位）。JSON 可解析但 kind
+  // 不在判定面的行，按 kind 值分别计数，循环后 stderr 一行汇总（不逐行刷屏）。
+  const unknownKinds = new Map<string, number>();
   for (const line of readFileSync(filePath, 'utf-8').split('\n')) {
     if (line.trim() === '') continue;
     try {
@@ -76,13 +79,31 @@ export function readDecisionEntries(filePath: string): DecisionLogEntry[] {
       ) {
         out.push(parsed);
       } else {
-        // 形态不合法（非本文件写入方的行 / 半截 JSON）——跳过并计数
-        badLines++;
+        // 形态不合法（非本文件写入方的行 / 半截 JSON）——跳过并计数；
+        // kind 未知但其余字段合法的行单独按 kind 计数（结构漂移信号）
+        if (
+          parsed !== null &&
+          typeof parsed === 'object' &&
+          typeof parsed.ts === 'string' &&
+          typeof parsed.agentId === 'string' &&
+          typeof parsed.sessionId === 'string' &&
+          typeof parsed.kind === 'string' &&
+          !READABLE_KINDS.includes(parsed.kind)
+        ) {
+          unknownKinds.set(parsed.kind, (unknownKinds.get(parsed.kind) ?? 0) + 1);
+        } else {
+          badLines++;
+        }
       }
     } catch {
       // 坏行跳过——不阻断举证（该行的完整性由 verifyChain 复核，读侧不判链）
       badLines++;
     }
+  }
+  if (unknownKinds.size > 0) {
+    const detail = [...unknownKinds.entries()].map(([k, n]) => `${k} ×${n}`).join('、');
+    const total = [...unknownKinds.values()].reduce((a, b) => a + b, 0);
+    log.warn(`[decision-log-source] ${filePath} 有 ${total} 行未知 kind（明细：${detail}）——疑似写侧新增未同步读侧（SSOT：core/decision-kinds.ts）`);
   }
   if (badLines > 0) {
     log.warn(`[decision-log-source] ${filePath} 有 ${badLines} 行无法解析或形态不合法（已跳过，不阻断判定；链完整性请用 verifyChain 复核）`);

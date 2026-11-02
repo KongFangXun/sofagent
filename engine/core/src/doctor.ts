@@ -20,6 +20,7 @@ import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSy
 import { join, dirname, isAbsolute, resolve } from 'path';
 import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
+import { READABLE_DECISION_KINDS } from './decision-kinds';
 import { homedir } from 'os';
 import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
@@ -1081,16 +1082,10 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     // 读隔离面而非加载时快照）
     const decisionLogPath = join(resolveDataDir(), 'audit', 'decision-log.jsonl');
     if (existsSync(decisionLogPath)) {
-      // 与 decision-log-source.READABLE_KINDS 同源的单值枚举（core 不依赖 audit，
-      // 双落点纪律：写侧新增 kind 时须同批 decision-schema / decision-log 白名单 /
-      // 读侧数组 / 本表——见 decision-log-source.ts 的三处同批警告）
-      const READABLE_KINDS = new Set([
-        'SPEC_CHANGE', 'ARTIFACT_EDIT', 'TOOL_GATE', 'RULE_TOGGLE',
-        'ESCALATE_REPORT', 'FALLBACK_DEGRADE', 'CONFIG_CHANGE',
-        'KNOWLEDGE_DISTILL', 'ORCHESTRATION', 'EVOLUTION', 'TEAM', 'COMMONS',
-        'COST', 'COVERAGE', 'INVALIDATION', 'CREDENTIAL_RECONCILE',
-        'LEGACY_CLEANUP', 'DATA_PRODUCT',
-      ]);
+      // v1.8.0 fresh-eyes F13/F14 单源化：可解析率枚举从手抄 18 值改为引用
+      // decision-kinds.ts SSOT（READABLE = 现行 19 值 ∪ 历史 MARKET——写侧新增
+      // kind 自动同步，历史值收编后 MARKET 11,126 条不再计坏行）。
+      const READABLE_KINDS = new Set(READABLE_DECISION_KINDS);
       let total = 0;
       let bad = 0;
       try {

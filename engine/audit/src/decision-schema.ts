@@ -77,6 +77,14 @@ import { REDACTION_PATTERNS } from '@sofagent/core';
  *     decision-log.appendRulerChange 落链——与既有条目同链同 HMAC 纪律。
  *     并列扩容：既有 kind 语义零改（对 decision-log 只加不减）。
  */
+/**
+ * DecisionKind 类型 union（19 值 · 语义注释 SSOT）。
+ * 🔴 v1.8.0 fresh-eyes F13/F14 单源化：**值集** SSOT = core/decision-kinds.ts 的
+ * ALL_DECISION_KINDS（写侧白名单/读侧判定/doctor 可解析率均 import 该常量）；
+ * 本 union 只承载**类型与语义注释**——值与语义分离。新增 kind：改 core/decision-
+ * kinds.ts 数组 + 本 union 各加一行（对齐由 decision-log-source.test.ts 的
+ * ALL_19_KINDS 双源对账用例锁定，漏一侧即红）。
+ */
 export type DecisionKind =
   | 'SPEC_CHANGE'       // 改变需求/规格（范围变更）
   | 'ARTIFACT_EDIT'     // 编辑产物文件（代码/文档/配置）

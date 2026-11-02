@@ -104,6 +104,21 @@ describe('doctor decision-log 可解析率（W8 BUG-14）', () => {
     expect(out).toContain('3 行全部可解析');
   });
 
+  it('RULER_CHANGE 与 MARKET 均不计坏行（v1.8.0 fresh-eyes F13/F14 单源化行为锁）', () => {
+    // 现行第 19 值 RULER_CHANGE（v1.7.0 新增，doctor 手抄曾漏）+ 历史 MARKET
+    // （v1.3.4 引入 v1.3.6 更名 commons_*，11,126 条历史记录曾按坏行跳过）——
+    // 单源化后均属可解析面，可解析率应 100%。
+    const t = setupDecisionLogTest();
+    cleanups.push(t.cleanup);
+    const rulerLine = JSON.stringify({ ts: '2026-10-21T00:00:00Z', agentId: 'a', sessionId: 's', kind: 'RULER_CHANGE', moment: 'ACT', category: 'select', why: { text: 'r' }, evidence: [] });
+    const marketLine = JSON.stringify({ ts: '2026-09-01T00:00:00Z', agentId: 'a', sessionId: 's', kind: 'MARKET', moment: 'ACT', category: 'select', why: { text: 'm' }, evidence: [] });
+    writeFileSync(t.logPath, [t.goodLine(0), rulerLine, marketLine].join('\n') + '\n', 'utf-8');
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('decision-log 可解析率 100%');
+    expect(out).toContain('3 行全部可解析');
+  });
+
   it('文件不存在 → 信息级跳过（缺失项形态，不告警）', () => {
     const t = setupDecisionLogTest();
     cleanups.push(t.cleanup);

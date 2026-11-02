@@ -13,6 +13,7 @@
 // ============================================================
 
 import { getDecisionLogPath, getEnvFingerprint, getHmacKey, assertTestEnvNotWritingRealData } from '@sofagent/core';
+import { ALL_DECISION_KINDS } from '@sofagent/core';
 import { appendChained, type ChainFields } from './chain-kernel';
 import { sanitizeWhy, type DecisionKind, type DecisionCategory, type CausalType, type DecisionLogEntry, type DecisionWhy, type InvalidationReason, type LoopPhase } from './decision-schema';
 import { validateRulerChange, type RulerChangeEvent } from './ruler-change-schema';
@@ -79,40 +80,14 @@ export class DecisionWriteError extends Error {
   }
 }
 
-/** 合法 DecisionKind 集合 */
-const VALID_KINDS: readonly string[] = [
-  'SPEC_CHANGE', 'ARTIFACT_EDIT', 'TOOL_GATE', 'RULE_TOGGLE',
-  'ESCALATE_REPORT', 'FALLBACK_DEGRADE', 'CONFIG_CHANGE',
-  'KNOWLEDGE_DISTILL', 'ORCHESTRATION',
-  'EVOLUTION', 'TEAM', 'COMMONS',
-  // COST：v1.4.0 交付三新增时漏登白名单（类型 13 值 vs 白名单 12 值的
-  // 既有序态缺口）——v1.5.0 章八扩 COVERAGE 时一并对齐
-  'COST',
-  // COVERAGE：v1.5.0 章八——trace 三源对账结果（consistencyRate + 差异清单）
-  'COVERAGE',
-  // INVALIDATION：v1.5.2 章四——审计结论失效标记（append-only 追加：
-  // causedBy 指向被失效结论 ts + invalidationReason 记原因）。失效是标记
-  // 不是抹除——原条目字节不变、HMAC 链完整。
-  'INVALIDATION',
-  // CREDENTIAL_RECONCILE：v1.5.4 章七——授权面 × 凭证面对账结论（台账级三类
-  // 错位：范围超集 / 时效超期 / 无对应授权记录 + 一致结论）。判决类记录
-  // （成对 N 态），已在 check-paired-records.mjs REGISTRY 登记。
-  'CREDENTIAL_RECONCILE',
-  // LEGACY_CLEANUP：v1.5.6 章二——遗留备份接管清理（audit 目录 30 天上限清理动作
-  // 留痕，core/audit-dir-maintenance.ts 写入）。观测/过程记录，无判决两侧，
-  // 已在 check-paired-records.mjs 非判决豁免集登记（reason+trigger 齐备）。
-  'LEGACY_CLEANUP',
-  // DATA_PRODUCT：v1.5.7 章一——SMB 数据产物决策（AI 生成 CSV/JSON/报表的审计判定
-  // 结论与产物生成/修订动作留痕，E5 勾稽/溯源/口径规则的决策面）。与
-  // decision-schema.ts 的 DecisionKind union 双落点同步——只改其一则运行时判非法 kind。
-  'DATA_PRODUCT',
-  // RULER_CHANGE：v1.7.0 §七——尺子变更事件（判据/问句/阈值/代价/域/证据六载体
-  // 之一被人工变更的留痕——「人否机器 → 判据修订 → 再训练」飞轮的修订环节）。
-  // 结构化事件体经 ruler-change-schema.validateRulerChange 校验，经
-  // appendRulerChange 落链（与既有条目同链同 HMAC 纪律）。并列扩容零改既有 kind。
-  // 与 decision-schema.ts 的 DecisionKind union 双落点同步——只改其一则运行时抛错。
-  'RULER_CHANGE',
-];
+/**
+ * 合法 DecisionKind 集合（v1.8.0 fresh-eyes F13/F14 单源化）。
+ * 值集 SSOT = core/decision-kinds.ts 的 ALL_DECISION_KINDS（现行 19 值）——
+ * 本处不再手抄清单；各 kind 的语义与版本出处注释住 decision-schema.ts 的
+ * DecisionKind union（值与语义分离，避免四处双写漂移——RULER_CHANGE 曾因
+ * 手抄漏登 doctor 侧 18 值 vs 19 值）。
+ */
+const VALID_KINDS: readonly string[] = ALL_DECISION_KINDS;
 
 /** 合法 LoopPhase 集合 */
 const VALID_MOMENTS: readonly string[] = [

@@ -125,6 +125,28 @@ describe('decision-log-source · 容错与过滤', () => {
     expect(entries.map((e) => e.kind).sort()).toEqual(['COST', 'FALLBACK_DEGRADE']);
   });
 
+  it('未知 kind 逐 kind 计数留痕（v1.8.0 fresh-eyes F14 行为锁：stderr 明细可定位写读漂移）', () => {
+    const logPath = join(dir, 'audit', DECISION_LOG_FILENAME);
+    const unknown = JSON.stringify({ ts: '2026-11-01T00:00:00Z', agentId: 'a', sessionId: 's', kind: 'UNKNOWN_KIND', moment: 'ACT', why: { text: 'u' } });
+    const unknown2 = JSON.stringify({ ts: '2026-11-01T00:00:01Z', agentId: 'a', sessionId: 's', kind: 'ANOTHER_NEW', moment: 'ACT', why: { text: 'v' } });
+    writeFileSync(logPath, [JSON.stringify(makeEntry('COST')), unknown, unknown2].join('\n') + '\n');
+    // 拦截 log.warn 断言逐 kind 明细
+    const warns: string[] = [];
+    const origWarn = console.warn;
+    console.warn = (m: string) => { warns.push(String(m)); };
+    try {
+      const entries = readDecisionEntries(logPath);
+      expect(entries.length).toBe(1); // 未知 kind 行不进判定面（照旧跳过）
+    } finally {
+      console.warn = origWarn;
+    }
+    const detailWarn = warns.find((w) => w.includes('未知 kind'));
+    expect(detailWarn).toBeDefined();
+    expect(detailWarn).toContain('UNKNOWN_KIND ×1');
+    expect(detailWarn).toContain('ANOTHER_NEW ×1');
+    expect(detailWarn).toContain('2 行未知 kind');
+  });
+
   it('filterByKind 按 kind 过滤（E7 的消费面 helper）', () => {
     const entries = [
       makeEntry('FALLBACK_DEGRADE'),
