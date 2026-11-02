@@ -40,15 +40,15 @@
 <details>
 <summary>🏢 组织视角（点开）</summary>
 
-> AI 落地卡点已从「模型够不够聪明」迁到「组织敢不敢接」——能不能进组织架构、有没有账号、绩效怎么算、做错了怎么退。sofagent 是给数字员工办入职的制度：进场把岗位职责写成文件，离场按文件做绩效考核（每次变更留证据）、组织记忆（沉淀机制随使用迭代，边界见 [LIMITATIONS](./docs/LIMITATIONS.md)）、试错容错（做错退得回）。给 AI 发工号前，先装 sofagent。
+> AI 落地卡点已从「模型够不够聪明」迁到「组织敢不敢接」。sofagent 是给数字员工办入职的制度：进场把岗位职责写成文件，离场按文件做绩效考核（变更留证据）、组织记忆（边界见 [LIMITATIONS](./docs/LIMITATIONS.md)）、试错容错（做错退得回）。给 AI 发工号前，先装 sofagent。
 
 </details>
 
 <details>
 <summary>🧩 三因子口径（点开，术语见〈<a href="#什么是-fde-harness">什么是 FDE Harness</a>〉）</summary>
 
-> sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M，把判定从生成里分出来的决策模型）排期 v1.6.0–v1.9.0 建设、v2.0.0 宣告（阶段一/二已交付）。三层各司其职、不互替。
-> 身份公式定稿 **FDEing × S1A（S1A = S1M + Harness）**，口径 SSOT = [PHILOSOPHY · 身份口径](./docs/PHILOSOPHY.md)。
+> sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M 决策模型）排期 v1.6.0–v1.9.0、v2.0.0 宣告。三层各司其职。
+> 身份公式 **FDEing × S1A（S1A = S1M + Harness）**，口径见 [PHILOSOPHY](./docs/PHILOSOPHY.md)。
 
 </details>
 
@@ -120,10 +120,12 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 - 🤖 **部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），装进你已有的 AI 工具，从"你干活"变"你派活"
 - 📦 **判断冻结成交付物**——每个节点带「做好标准（merge_criteria）· 谁拍板（approver）」，机器可判定、跨阶段共享
 
-**判定层 · S1M**（判断与生成分离的决策模型；**v1.6.0–v1.9.0 施工·v2.0.0 宣告——阶段一/二已交付，阶段三因一致率未达阈暂缓（见 [CHANGELOG](./CHANGELOG.md)·修补位见 [ROADMAP](./docs/ROADMAP.md)）**——本版只声明路线；锚定 [S1M-DECISION-POINTS](./FDE/S1M-DECISION-POINTS.md)，已交付落点是既有判定与举证面）：
+**判定层 · S1M**（判断与生成分离的决策模型；**v1.6.0–v1.9.0 施工·v2.0.0 宣告——阶段一/二已交付，阶段三暂缓已于 2026-10-30 解除（复测三线全达，见 [ROADMAP](./docs/ROADMAP.md) v1.7.x 修补线 · v1.8.0 已开工）**——本版只声明路线；锚定 [S1M-DECISION-POINTS](./FDE/S1M-DECISION-POINTS.md)，已交付落点是既有判定与举证面）：
 
 - 🔎 **判定留痕**——decision-log 因果链记录每个可问责决策（谁拍板、依据什么、为何这么做），供 auto-PR 解释块与 daemon 周报消费
 - 🔗 **判定可举证**——审计历史落 HMAC 链，`--verify-chain` 可离线复算链完整性，结论能被第三方复核
+
+> 边界：当前判定层概率输出尚未完成校准接线（判据阈值仍挂零样本基线），规则判定由确定性判定器兜底——判定层接管为未来态（见 [ARCHITECTURE](./docs/ARCHITECTURE.md)）。
 
 **治理层 · harness**（离场 · 驻留判断——「harness 治理」，按交付物 7×24 执行，进化时写回）：
 
@@ -150,12 +152,12 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 **为什么是 FDE Harness**
 
-- **企业 AI 落地的瓶颈不是模型，是部署**——MIT NANDA《生成式人工智能的鸿沟》：95% 企业 GenAI 项目未能产生可写进财务报表的价值，而 FDE 岗位发布量一年涨 729%（核验见 [VALIDATION](./docs/VALIDATION.md)）
+- **瓶颈不是模型，是部署**——MIT NANDA：95% 企业 GenAI 项目未产生可入财报的价值，FDE 岗位一年涨 729%（见 [VALIDATION](./docs/VALIDATION.md)）
 - **完整来自组合**——DSH 解决「能干活」，sofagent 解决「持续干」，两者合起来才是完整的 FDE Harness（见下一章「多平台挂载」的 DSH 档）
 - **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3，**能力型 harness 数据**，与治理型约束层的可靠性收益非同一量纲，仅作方向性参考）：同一模型仅优化外层 Harness 即可显著提升任务完成率（核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)）
 - **能力可迁移，绝不绑死单一平台**——约束层平台无关（可迁移的是约束资产与审计兜底，注入强度仍按宿主分档：DSH/OpenClaw 硬注入，其余建议性注入 + git hook 兜底——见〈多平台挂载〉档位表），方法论跟着业务走、不跟着平台走
 
-> 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 工作流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
+> 🔄 **自举**：sofagent 给自己做的第一份 FDE 就是自己——项目本身即一条完整 FDE 工作流，本仓库就是那份交付物。
 
 ## 多平台挂载
 
@@ -168,9 +170,9 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（Claude Code 档 PreToolUse 覆盖 Bash/Write/Edit 调用级；Cursor 提交级） |
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
 
-- **别假设能力对齐——档位差的是注入强度，不是「有没有」**：DSH 逐工具调用可拦，OpenClaw 每会话注入一遍，其余宿主靠 Agent 自觉读 Skill 文本。「支持某平台」= 约束资产在该平台可用，**≠ 强度与他平台相同**；跨宿主迁移前先看目标宿主落在哪档，矩阵见 [加载链 HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
+- **档位差的是注入强度，不是「有没有」**：DSH 逐工具调用可拦，OpenClaw 每会话注入一遍，其余靠 Agent 自觉。「支持某平台」= 约束资产可用，**≠ 强度相同**；迁移前看目标宿主档位，矩阵见 [加载链 HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
 - **审计兜底平台无关**——`sofagent audit --install-hook` 走 git hook，任何档位每次 commit 都自动审计（默认启用 17 条；完整 28 条需在 `.sofagent/config.yml` 显式开启 `extendedRulesEnabled: true`），违规硬拦截。
-  约束是建议性的，审计是强制性的（强制的边界：默认非 fail-closed，`--no-verify` 可跳过前两层防线、post-commit 只留痕不阻断——被绕过的 commit 会留痕，详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
+  约束是建议性的，审计是强制性的（边界：默认非 fail-closed，`--no-verify` 可跳过前两层防线、post-commit 只留痕不阻断，详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
@@ -186,7 +188,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | **分桶温度校准** | 三原语分立拟合 · score 保序 · 校准集隔离断言 · 制品纯 JSON 无权重 | SDK 面 |
 | **校准纪律门禁** | 决策路径的置信度阈值须带校准依据或显式 `uncalibrated` | SDK 面 · 发布链 |
 | **弃权第四态** | 与 pass/warn/fail 并列（三源留痕）· 门槛按原语分档 · ECE 未达阈不可关 | SDK 面 |
-| **三态对照与双达阈判定** | 零样本/训练后/校准后对照 · 一致率 ≥0.70（中英分列）与 ECE ≤0.10 两线独立判定；实测：ECE 17/18 达线、一致率未达 ⇒ 阶段三暂缓 | SDK 面 · `sofagent audit --criteria` 判据列示 CLI 可达 |
+| **三态对照与双达阈判定** | 零样本/训练后/校准后对照 · 一致率 ≥0.70（中英分列）与 ECE ≤0.10 两线独立判定；实测：ECE 17/18 达线、一致率未达 ⇒ 阶段三暂缓（该为 v1.7.0 发版时点读数；2026-10-30 复测三线全达，暂缓已解除，见 [ROADMAP](./docs/ROADMAP.md)） | SDK 面 · `sofagent audit --criteria` 判据列示 CLI 可达 |
 
 ## FDE Harness 两阶段
 

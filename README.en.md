@@ -39,14 +39,12 @@
 
 > 💬 **One-sentence version**: on entry, it maps your business and writes it down as files; after it leaves, every time your digital employee touches code or files, the change passes a security check, leaves a record, and saves a snapshot—traceable and roll-backable when things go wrong.
 
-> 🏢 **The organizational lens**: the bottleneck of AI adoption has shifted from "is the model smart enough" to "can the organization dare to onboard it"—does it fit the org chart, does it get an account, how is performance measured, what happens when it errs. sofagent is the onboarding system for
-> digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how—the accumulation mechanism iterates with use; current empirical boundaries in
->[LIMITATIONS](./docs/LIMITATIONS.md)), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
+> 🏢 **Organizational lens**: the AI-adoption bottleneck has shifted from "is the model smart enough" to "can the organization dare to onboard it". sofagent is the onboarding system for digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence per change), organizational memory (boundaries in [LIMITATIONS](./docs/LIMITATIONS.md)), and fault tolerance. Install sofagent before giving AI an employee ID.
 
-> 🧩 **The three-factor framing**: sofagent is a **governance layer for FDE deliverables with a built-in Harness**—the engineering layer (FDEing) and the governance layer (harness) are shipped, while the judgment layer (S1M) is scheduled for v1.6.0–v1.9.0—FDEing is the engineering layer (turning
+> 🧩 **Three-factor framing**: sofagent is a **governance layer for FDE deliverables with a built-in Harness**—engineering (FDEing) and governance (harness) layers shipped; the judgment layer (S1M) scheduled for v1.6.0–v1.9.0—FDEing is the engineering layer (turning
 > FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
-> from generation; stages one and two delivered; stage three deferred; declaration lands with v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities—today's main landing points). Each layer sits in its own place; see "Core Features".
-> The identity formula is settled as **FDEing × S1A (S1A = S1M + Harness)**; canonical wording in [PHILOSOPHY · identity caliber](./docs/PHILOSOPHY.md).
+> from generation; stages one and two delivered; stage three deferral lifted (2026-10-30 retest: all three thresholds met; see ROADMAP; v1.8.0 underway); declaration lands with v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities—today's main landing points). Each layer sits in its own place; see "Core Features".
+> Identity formula: **FDEing × S1A (S1A = S1M + Harness)**; see [PHILOSOPHY](./docs/PHILOSOPHY.md).
 
 **An open-source FDE Harness layer** (FDE = Forward Deployed Engineer, the engineer who embeds models into real enterprise
 operations; a *harness* is the governance layer that keeps every Agent change audited and reversible—see the
@@ -128,11 +126,13 @@ Three layers, each in its place: the **engineering layer (FDEing)** writes judgm
 - 🤖 **Deploy AI nodes**—three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 📦 **Judgment frozen into deliverables**—each node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
-**Judgment layer · S1M** (System One Model—a decision model that separates judgment from generation; **its foundation is under construction across v1.6.0–v1.9.0—stages one and two delivered (v1.6.0 / v1.7.0); stage three deferred pending agreement-rate threshold; full declaration lands with v2.0.0**; the narrative is anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition.
+**Judgment layer · S1M** (System One Model—a decision model that separates judgment from generation; **its foundation is under construction across v1.6.0–v1.9.0—stages one and two delivered (v1.6.0 / v1.7.0); stage three deferral lifted (2026-10-30 retest: all three thresholds met; see ROADMAP); full declaration lands with v2.0.0**; the narrative is anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition.
 What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🔎 **Judgment trail**—decision-log causal chains record each accountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
 - 🔗 **Judgment made provable**—the audit history lands on an HMAC chain; `--verify-chain` recomputes chain integrity offline, so conclusions can be re-checked by a third party
+
+> Boundary: the judgment layer's probability output has not yet completed calibration wiring (criteria thresholds still sit on the zero-shot baseline); rule verdicts are backstopped by deterministic judges—judgment-layer takeover is a future state (see [ARCHITECTURE](./docs/ARCHITECTURE.md)).
 
 **Governance layer · harness** (after departure · retain judgment, the Harness stage—executing against the deliverables 24/7, writing back as it evolves):
 
@@ -176,7 +176,7 @@ together by the deliverables handed over in between**:
 - **Capabilities are portable, never dead-bound to a platform**—the constraint layer is platform-agnostic (what's portable is the constraint assets and the audit fallback; injection strength still varies by host tier: hard interception for DSH/OpenClaw, advisory injection + git-hook audit fallback
   elsewhere—see the tier table in "Multi-platform Mounting"); the methodology follows the business, not the platform
 
-> 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself—the project is a complete FDE workflow (map → build → deploy → depart), and this open-source repository is that deliverable.
+> 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is itself—the project is a complete FDE workflow, and this repository is that deliverable.
 
 ## Multi-platform Mounting
 
@@ -193,9 +193,7 @@ the platform:
 
 > Note 1: 1 optional aggregate plugin also available—see "Upstream & plugin entries" below—7 lifecycle events incl. `tools/pre-execute` (vocabulary table: `engine/dsh-plugins/SEAMS.md`)
 
-- **Never assume capability parity—tiers differ in injection strength, not in "supported or not"**—DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text (advisory). "Supports platform X" means the
- constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls
-into—full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
+- **Tiers differ in injection strength, not in "supported or not"**—DSH intercepts per tool call, OpenClaw injects once per session, others rely on the Skill text (advisory). "Supports platform X" = the constraint assets work there, **not** equal strength; check the target host's tier before migrating—full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
 - **Audit fallback is platform-agnostic**—`sofagent audit --install-hook` runs as a git hook; at every tier, every commit's audited automatically (audits with the 17 default rules out of the box; the full 28 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations
  hard-blocked. Constraints are advisory; auditing is mandatory (boundaries of that mandate: **not fail-closed by default**—`--no-verify` skips the first two defense layers, and
 post-commit only leaves a trace without blocking; bypassed commits do leave traces—see [LIMITATIONS
@@ -214,11 +212,11 @@ off the decision path.
 | **Bucketed temperature calibration** | Per-primitive fitting · score isotonicity · disjoint calibration set assertion (same criterion across sides) (see Note 2) | SDK-face |
 | **Calibration discipline gate** | Confidence/probability thresholds consumed on decision paths must carry calibration evidence or an explicit `uncalibrated` marker — unmarked ones cannot ship (check-calibration-claims wired into the release chain) | SDK-face · gate |
 | **Abstention as a fourth state** | Abstain stands beside pass/warn/fail (three-source evidence: low confidence / OOD / missing criteria) · per-primitive thresholds · cannot be disabled when ECE misses the line | SDK-face |
-| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently; measured: ECE 17/18 pass, agreement misses ⇒ stage three deferred (Note 3) | SDK-face · `sofagent audit --criteria` lists criteria via CLI |
+| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently; measured: ECE 17/18 pass, agreement misses ⇒ stage three deferred (v1.7.0 release-time reading; 2026-10-30 retest: all three thresholds met, deferral lifted, see ROADMAP) (Note 3) | SDK-face · `sofagent audit --criteria` lists criteria via CLI |
 
 > Note 1: probability-target assertion (hard labels rejected) + three-tier weighting + reproducibility manifest
 > Note 2: on isolation violations, emitting readouts for violating samples is rejected (a refusal-to-emit, not a pass) · calibration artifact is plain JSON, weight-free
-> Note 3: not-measured never counts as pass. Measured: ECE 17/18 cells pass, agreement misses ⇒ stage three deferred (honest verdict)
+> Note 3: not-measured never counts as pass. Measured: ECE 17/18 cells pass, agreement misses ⇒ stage three deferred (v1.7.0 release-time reading; 2026-10-30 retest: all three thresholds met, deferral lifted, see ROADMAP)
 
 ## The Two FDE Harness Phases
 
@@ -296,7 +294,7 @@ screenshot above shows the sibling A1 scenario (.env sensitive-file commit block
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.7.0/bootstrap.sh -o bootstrap.sh
-less bootstrap.sh     # review the script first, confirm it's safe
+less bootstrap.sh     # review the script first
 , bootstrap.sh && rm bootstrap.sh
 ```
 
