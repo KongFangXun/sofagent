@@ -244,3 +244,48 @@ describe('F5 R2-2 · 值级脱敏（R3-4：编码密钥不因键名无辜而穿�
     expect(JSON.stringify(r.state)).toContain('hello world 普通');
   });
 });
+
+// R3-4b 回归锁：多层编码迭代解码至不动点（base64→percent→base64 三层不再穿透）
+describe('F5 R2-2 · 多层编码脱敏（R3-4b：迭代至不动点）', () => {
+  it('W1 三层 base64→percent→base64 密钥 ⇒ 迭代解至明文命中，整值 REDACTED', () => {
+    const l1 = Buffer.from('sk-abcdefgh12345678').toString('base64');
+    const l3 = Buffer.from(encodeURIComponent(l1)).toString('base64');
+    const r = buildJudgeState(
+      { text: 'ok', evidenceReadiness: 'none', fields: { note: l3 } },
+      { prefixFields: ['note'], maxChars: 8000, consumer: 'test' },
+    );
+    if (!r.ok) throw new Error('build 失败');
+    const ser = JSON.stringify(r.state);
+    expect(ser).not.toContain(l3); // 外层编码串不上行
+    expect(ser).toContain('[REDACTED:encoded-secret:openai-like-key]');
+    expect(r.meta.redactions).toContain('value:note:openai-like-key');
+  });
+
+  it('W2 四层再深一层（b64→pct→b64→pct）同样收敛', () => {
+    const l1 = Buffer.from('AKIAIOSFODNN7EXAMPLE').toString('base64');
+    const l3 = Buffer.from(encodeURIComponent(l1)).toString('base64');
+    const l4 = encodeURIComponent(l3);
+    const r = buildJudgeState(
+      { text: 'ok', evidenceReadiness: 'none', fields: { payload: l4 } },
+      { prefixFields: ['payload'], maxChars: 8000, consumer: 'test' },
+    );
+    if (!r.ok) throw new Error('build 失败');
+    const ser = JSON.stringify(r.state);
+    expect(ser).not.toContain(l4);
+    expect(ser).toContain('[REDACTED:encoded-secret:aws-access-key]');
+  });
+
+  it('W3 普通文本不动点收敛：无编码层时零迭代零误伤（原文逐字节保留）', () => {
+    const plain = '普通中文日志 hello world 123 456.78 true';
+    const { decoded, layers } = decodeForScreening(plain);
+    expect(decoded).toBe(plain); // 未被任何轮次改动
+    expect(layers).toEqual([]);
+  });
+
+  it('W4 单层 base64 普通内容（非密钥）解出后不 REDACT、不循环', () => {
+    const b64 = Buffer.from('just a normal config line').toString('base64');
+    const { decoded, layers } = decodeForScreening(b64);
+    expect(decoded).toBe('just a normal config line');
+    expect(layers).toEqual(['base64']); // 一轮解出、第二轮不动点退出
+  });
+});

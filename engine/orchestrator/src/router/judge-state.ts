@@ -75,7 +75,8 @@ const NOISE_KEYS = new Set([
 const RISK_WORDS = ['rm -rf', 'curl | sh', 'drop table', 'delete from', 'force push'];
 
 /** 编码解码（筛之前先解，防「编码绕过敏感检出」） */
-export function decodeForScreening(input: string): { decoded: string; layers: string[] } {
+/** 单趟解码链（①base64→②percent→③QP→④HTML，顺序不变——base64 先解防 `=c2` 误判，实测踩过） */
+function decodePass(input: string): { decoded: string; layers: string[] } {
   let s = input;
   const layers: string[] = [];
   // ① base64 先解：形如 `key=QUJD…` 的串，若先跑 QP 会被 `=c2` 误判（实测踩过）
@@ -110,6 +111,24 @@ export function decodeForScreening(input: string): { decoded: string; layers: st
   });
   if (html !== s) { s = html; layers.push('html-entity'); }
   return { decoded: s, layers: [...new Set(layers)] };
+}
+
+/**
+ * 迭代解码至不动点（R3-4b）：循环跑单趟链直到一轮内**零层命中**或达上限（防活锁）。
+ * 多层编码（base64→percent→base64）在单趟结构下只有最外两层被剥——内层 base64
+ * 需要下一轮才会解出。上限 5 轮：四层编码已覆盖现实攻防，超限视为对抗性构造
+ * （层数信息进 layers 供审计判断，不再继续解）。
+ */
+export function decodeForScreening(input: string): { decoded: string; layers: string[] } {
+  const allLayers: string[] = [];
+  let current = input;
+  for (let round = 0; round < 5; round++) {
+    const { decoded, layers } = decodePass(current);
+    if (layers.length === 0) break; // 不动点：本轮无新层可解
+    allLayers.push(...layers);
+    current = decoded;
+  }
+  return { decoded: current, layers: [...new Set(allLayers)] };
 }
 
 /** 敏感串检测（在**解码后**的文本上跑） */
