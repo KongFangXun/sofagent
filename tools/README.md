@@ -32,6 +32,7 @@
 | `check/check-docs.sh` | 文档预算与结构检查（A/B/C/D/E 层行数警戒线） | 发版 SOP / CI |
 | `check/check-docs-all.sh` | 收尾自检套餐（串跑七件：表单/锚点/死链/文档纪律/SOP pin/过时内容/六维评分，汇总总退出码）。**非 CI 门禁**（防线仍由 pre-push 承担），是「落盘批收尾最后一眼」；`--fast` 令 doc-score 走快速档 | 文档收尾 / `--fast` |
 | `check/check-test-count.sh` | 测试数对账（README/文档声称 vs 实测，双口径；漂移输出逐处 `file:line` + 旧→新 + 一条可粘贴执行的修复命令；`--fix` 显式回填并自动复验） | 发版 SOP / CI |
+| `check/check-cli-entry-parity.sh` | 入口等价性门禁（npm-prefix shim 与 `$SOFAGENT_HOME` 单入口对同 argv 同 rc；安装态不可得时静态断言 shim 形态兜底；v1.8.0 fresh-eyes F12/P0 收口批） | pre-push 4c / 重装后 |
 | `check/test-count.sh` | workspace 测试数汇总（SSOT 反查 · 门禁用） | 发版 SOP / 常态 |
 | `check/sync-test-count.sh` | 测试数联动写入（实测值回写文档声称位） | 发版 SOP 数字收口 |
 | `check/check-review-system.sh` | 审查体系一致性（维度数/警戒线/S 编号闭环对账） | 发版 SOP 阶段四 |

@@ -900,6 +900,19 @@ if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
     bash tools/check/check-test-count.sh 2>&1 | grep "✗" | head -5 | sed 's/^/    /'
   fi
 
+  # 4c. 入口等价性门禁（v1.8.0 fresh-eyes F12/P0 收口批接入）
+  # npm-prefix shim 与 $SOFAGENT_HOME 单入口对同 argv（version/--help/help）须同 rc；
+  # 安装态不可得时退化为静态断言（shim exec 指向单入口 + 无参数改写逻辑）。
+  echo -e "\n  ${BOLD}CLI 入口等价性（check-cli-entry-parity.sh）...${NC}"
+  _cep_out=$(bash tools/check/check-cli-entry-parity.sh 2>&1 || true)
+  _cep_rc=$?
+  echo "$_cep_out" | sed 's/^/  /'
+  if [ "$_cep_rc" -eq 0 ]; then
+    check_pass "check-cli-entry-parity.sh（双入口同 argv 同 rc / 静态断言通过）"
+  else
+    check_fail "check-cli-entry-parity.sh 入口等价性失败（RC=${_cep_rc}——见上方明细）"
+  fi
+
   # ════════════════════════════════════════
   # 5b. 文档质量六维评分（doc-score.mjs · 分数棘轮）
   # 为什么需要：本仓 27 项文档检查散落在 8 个门禁 + 若干人工判据里，**没有聚合读数**——
