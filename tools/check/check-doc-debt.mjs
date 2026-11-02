@@ -211,6 +211,11 @@ function run(cfg, docs, ctx) {
   }
 
   // ── C7 双语同步（结构签名：H2 数 / 围栏数 / 互指对称 / 其余链接集合）─────
+  // 互指判定认两种形态：`[x](./other.md)` 与 `<a href="./other.md">`。语言切换行写在
+  // `<p align="center"><sub>` 里，属 HTML 块——块内 markdown 不被解析（GFM 口径：HTML 块
+  // 到空行为止全作原语），故渲染侧只能用 href，`]()` 形态在页面上会连括号一起显示。
+  // 早期只认 `]()`，逼得文档在同一条语言切换行写两条指向同一文件的链接（一条渲染、
+  // 一条喂门禁），既多字又在页面上露出原文；门禁与仓内既有排版对不上时改门禁。
   const sig = (txt, other) => {
     const ls = txt.split('\n');
     let h2 = 0, fence = 0;
@@ -220,7 +225,10 @@ function run(cfg, docs, ctx) {
       if (/^##\s/.test(l)) h2++;
       for (const m of l.matchAll(/\]\((\.[^)#]+)/g)) if (m[1] !== './' + other) links.push(m[1]);
     }
-    return { h2, fence: Math.floor(fence / 2), links: [...new Set(links)].sort().join(','), cross: new RegExp(`\\]\\((\\./)?${other.replace('.', '\\.')}`).test(txt) };
+    const esc = other.replace(/\./g, '\\.');
+    const crossMd = new RegExp('\\]\\((?:\\./)?' + esc).test(txt);
+    const crossHtml = new RegExp('href="(?:\\./)?' + esc + '"').test(txt);
+    return { h2, fence: Math.floor(fence / 2), links: [...new Set(links)].sort().join(','), cross: crossMd || crossHtml };
   };
   for (const pair of cfg.bilingualPairs || []) {
     const [a, b] = pair;
@@ -317,8 +325,10 @@ if (flagOf('--selftest')) {
     return { wall, cell };
   };
   const baseCfg = { repo: 'fixture', exemptQuota: 1, bilingualPairs: [['A.md', 'A_CN.md']], rootWhitelist: ['A.md', 'A_CN.md', 'changelog'], termBlacklist: [[String.raw`24\s*条?规则`, 'stale rule count']], counts: [], __base: {}, __exempt: { entries: [] } };
+  // 正向用例里 A.md 用 HTML href 互指、A_CN.md 用 markdown 互指——两条分支各自被走一遍
+  // （语言切换行写在 HTML 块内只能靠 href，见 C7 注释；只认 markdown 形态会把它判成「未指回」）。
   const clean = [
-    { f: 'A.md', txt: '# A\n\n## One\n\n[x](./A_CN.md)\n' },
+    { f: 'A.md', txt: '# A\n\n## One\n\n<p align="center"><sub>中文 | <a href="./A_CN.md">English</a></sub></p>\n' },
     { f: 'A_CN.md', txt: '# A\n\n## 一\n\n[x](./A.md)\n' },
     { f: 'changelog/v0/0.1.0.md', txt: '# v0.1.0\n\n## 退役\n\n| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n| 7 | 8 | 9 |\n' },
   ];

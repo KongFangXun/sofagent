@@ -15,7 +15,7 @@
 
 </div>
 
-<p align="center"><sub>简体中文 | <a href="./README.en.md">English</a> · [English version](./README.en.md)</sub></p>
+<p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
 
 
 ## 目录

@@ -175,7 +175,8 @@
 
 **根因（决定性）**：训练集自测 **aug 行 0.35 / 基底行 0.43**（五选一随机 0.20）⇒ 连练过的题都答不对，是 **0.3B 契约编码器缺常识表征**，非数据量不足；数据 +88% 完全无效（同数值面剥离逻辑）。
 
-**两条口径事实**：① **历史 0.363 偏乐观**——旧评测用「选项文本」作 label key、训练用 `opt0..opt4`（`train-heads.py:278-280` SSOT），同一 v5 单 seed 制品两口径差 **3pp**（0.3491 vs 0.3184），真实缺口 24pp 而非 19pp；② **重冻破坏了留出源（v6 该四面读数作废）**——v5 冻结件有 141 个 snli 父条目跨片泄漏（早于 10-23 修复），守卫拒载且禁 bypass；全量重切丢掉 v5 的四条**隐式**留出约束：`proc-a-millet` 0/0/185→153/18/14 · `proc-e-bin2s` 231 · `proc-e-gradelong` 81 · `proc-e-minmax22` 45 行**整源搬进 train 且 eval 归零** ⇒ **542 行留出数据被误训**，v6 该四面读数不可用（「millet 未回退」不成立）；剔除 millet 后语义面 0.7341 vs 基线 0.7148（+1.9pp），csqa 结论不受影响（424 条自始零污染）。
+**两条口径事实**：① **历史 0.363 偏乐观**——旧评测用「选项文本」作 label key、训练用 `opt0..opt4`（`train-heads.py:278-280` SSOT），同一 v5 单 seed 制品两口径差 **3pp**（0.3491 vs 0.3184），真实缺口 24pp 而非 19pp；② **重冻破坏了留出源（v6 该四面读数作废）**——v5 冻结件有 141 个 snli 父条目跨片泄漏（早于 10-23 修复），守卫拒载且禁 bypass；
+全量重切丢掉 v5 的四条**隐式**留出约束：`proc-a-millet` 0/0/185→153/18/14 · `proc-e-bin2s` 231 · `proc-e-gradelong` 81 · `proc-e-minmax22` 45 行**整源搬进 train 且 eval 归零** ⇒ **542 行留出数据被误训**，v6 该四面读数不可用（「millet 未回退」不成立）；剔除 millet 后语义面 0.7341 vs 基线 0.7148（+1.9pp），csqa 结论不受影响（424 条自始零污染）。
 
 **干净锚**：v5 于 `frozen-v3` 语义面 **0.7170**（en 0.7075 / zh 0.8054）；boolq 三片恒 0.799 自证管线；snli 泄漏虚高 **1.3pp**；单 seed 抖动 ±0.5pp。
 
@@ -242,7 +243,8 @@ v1.6.0 实测一致率 zh 0.667 / en 0.333（勿与 ECE 行方向混淆）；202
   来源：Anthropic《Demystifying Evals》（IMA 收录）｜ DeepSeek Safety 官方技术报告（IMA 收录）｜ OpenRouter · https://openrouter.ai/blog/tutorials/ai-agent-regression-testing-after-a-prompt-or-model-change/
 - **硅基员工论（Org Graph / Ontology Runtime）**——「长期存活、固定领域、进组织编制」的 Agent 称为 Org Graph 节点，与常驻 Agent 定位字面对应；Ontology Runtime 是企业底座而非 API 网关。
 - **数字员工操作性定义**——四跨越（组织身份/岗位职责/事件驱动/结果负责）+ 结果负责三要素（可观测/可归因/可回滚），与审计/回溯能力对齐。
-- **Agentic Coworker 五项基础（麦肯锡）**——定义句「owns a role and an outcome」与硅基员工哲学同向；五项基础中三项（自主权分级/身份与责任/统一网关 Protect-Prove-Price）为存量同构印证，两项为增量框架：三种记忆（Episodic/Procedural/Semantic ↔ think.md+审计历史/SKILL+workflow.yml/knowledge 本体）与「每个 Agent 须有生命周期人类责任人（不能统一归 AI CoE）」——后者为候选增强（SubAgentDefinition 现无此字段，区别于 workflow owner 与验收 approver）。银行案例数据（未具名转述）不收录。成篇对照见 [归档 · agentic-coworker](./archive/validation-deep/agentic-coworker.md)。
+- **Agentic Coworker 五项基础（麦肯锡）**——定义句「owns a role and an outcome」与硅基员工哲学同向；五项基础中三项（自主权分级/身份与责任/统一网关 Protect-Prove-Price）为存量同构印证，两项为增量框架：三种记忆（Episodic/Procedural/Semantic ↔ think.md+审计历史/SKILL+workflow.yml/knowledge 本体）与「每个 Agent 须有生命周期人类责任人（不能统一归 AI CoE）」——后者为候选增强（SubAgentDefinition 现无此字段，
+  区别于 workflow owner 与验收 approver）。银行案例数据（未具名转述）不收录。成篇对照见 [归档 · agentic-coworker](./archive/validation-deep/agentic-coworker.md)。
   来源：McKinsey（2026-10-26）· https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/the-rise-of-the-agentic-coworker-a-banking-cios-guide-to-the-next-wave-of-ai
 
 > 📌 **本节出处形态说明**：条内已含机构名/论文名的（如 Gartner / MIT NANDA / Anthropic《Demystifying Evals》）为一手来源就地标注；未带链接的条目出处统一在 [归档 · concept-layer](./archive/validation-deep/concept-layer.md)（成篇论证）——本节为一句话判据层，不逐条重复挂链。
@@ -463,11 +465,13 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 
 ⇒ 判据：**任何加速结论须给同表两列**——加速量（墙钟 / 吞吐）+ 总成本（含训练、运维、重试）；缺一列即降级为「局部读数」，不得进对外材料。
 
-**成本计量的粒度是业务结果，不是单次调用**——三条独立实践同向：按任务归属拆成本并配预算线（Databricks，单位成本降九成）；把评审成本按环节四六拆解、定位到具体步骤（Cloudflare）；不看单个 Agent 烧多少 token，而看「完成一个业务流程结果」的全部 AI 成本——含人工复核与异常处理（McKinsey）。⇒ 判据：① 计量单位 = 一个业务流程结果，不是一次调用 / 一个 Agent / 一个月账单；② 分子须含人工复核与异常处理，否则自动化收益被高估；③ 分母是业务产出（处理量 / 周期 / 通过率），与单位成本同表才可判值不值。本条定粒度、上条定同表，互补不替代。
+**成本计量的粒度是业务结果，不是单次调用**——三条独立实践同向：按任务归属拆成本并配预算线（Databricks，单位成本降九成）；把评审成本按环节四六拆解、定位到具体步骤（Cloudflare）；不看单个 Agent 烧多少 token，而看「完成一个业务流程结果」的全部 AI 成本——含人工复核与异常处理（McKinsey）。⇒ 判据：① 计量单位 = 一个业务流程结果，不是一次调用 / 一个 Agent / 一个月账单；② 分子须含人工复核与异常处理，否则自动化收益被高估；③ 分母是业务产出（处理量 / 周期 / 通过率），与单位成本同表才可判值不值。
+本条定粒度、上条定同表，互补不替代。
 
-**成本与上下文的优化杠杆排在「轮次」上，压缩率是末位指标**——三处独立实践同向：OpenRouter 把「至少一次 429 / 需重试比例」显式放进调度目标函数（每百万 token 成本 +7.3%，换 429 比例 7.1%→3.8%、需重试 10.4%→6.9%）；微软研究院×UC Berkeley 的编码 Agent 插件把压缩策略改为「从本仓历史会话学习」，其落点判断是「改变哪些内容进入上下文」而非「同样内容压得更短」（成本最高降 30.9%）；亚信在电信数据开发场景实测单轮检索 4.2 秒落在 Agent 循环之内、按轮次累乘（150 问自测：对象召回 98.6%、产物一次通过率 83.5%）。⇒ 判据三条：① 一次重试＝一次完整上下文重放（一整份输入重读），轮次（含重试 / 429 / 超时）须计入成本模型，不能只当可靠性指标；② 评估一个省 token 方案，先问「是否减少轮次、或改变进入上下文的内容」，压缩率是末位指标；③ 循环内的检索与工具延迟按轮次累乘，故上下文工程的收益常体现在轮次数而非单次准确率。优化顺序：减少轮次 ＞ 提高前缀复用 ＞ 压缩内容。与上两条互补——彼二者定计量口径与呈现方式，本条定优化顺序。
+**成本与上下文的优化杠杆排在「轮次」上，压缩率是末位指标**——三处独立实践同向：OpenRouter 把「至少一次 429 / 需重试比例」显式放进调度目标函数（每百万 token 成本 +7.3%，换 429 比例 7.1%→3.8%、需重试 10.4%→6.9%）；微软研究院×UC Berkeley 的编码 Agent 插件把压缩策略改为「从本仓历史会话学习」，其落点判断是「改变哪些内容进入上下文」而非「同样内容压得更短」（成本最高降 30.9%）；
+亚信在电信数据开发场景实测单轮检索 4.2 秒落在 Agent 循环之内、按轮次累乘（150 问自测：对象召回 98.6%、产物一次通过率 83.5%）。⇒ 判据三条：① 一次重试＝一次完整上下文重放（一整份输入重读），轮次（含重试 / 429 / 超时）须计入成本模型，不能只当可靠性指标；② 评估一个省 token 方案，先问「是否减少轮次、或改变进入上下文的内容」，压缩率是末位指标；③ 循环内的检索与工具延迟按轮次累乘，故上下文工程的收益常体现在轮次数而非单次准确率。优化顺序：减少轮次 ＞ 提高前缀复用 ＞ 压缩内容。与上两条互补——彼二者定计量口径与呈现方式，本条定优化顺序。
 
-> 📖 来源：[《How we rebuilt provider routing for better, faster inference》(2026-10-29)](https://openrouter.ai/blog/announcements/how-we-rebuilt-provider-routing/) · [《Meet TokenEconomizer: Microsoft's Plugin That Cuts Coding Agent Costs by Up to 30.9%》(2026-10-30)](https://www.marktechpost.com/2026/10/30/microsoft-tokeneconomizer-coding-agent-cost-control/)
+> 📖 来源：[《How we rebuilt provider routing for better, faster inference》(2026-10-29)](https://openrouter.ai/blog/announcements/how-we-rebuilt-provider-routing/) · [《Meet TokenEconomizer》(2026-10-30)](https://www.marktechpost.com/2026/10/30/microsoft-tokeneconomizer-coding-agent-cost-control/)
 
 ## 四、市场印证：行业判断被市场买单
 
