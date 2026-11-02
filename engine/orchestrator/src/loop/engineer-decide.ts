@@ -18,7 +18,7 @@
 
 import { z } from 'zod';
 import type { DecisionChannel, DecisionQuestion } from '../router/decision-channel';
-import { buildJudgeState } from '../router/judge-state';
+import { applyWithShadowGate, buildJudgeState, type JudgeMode, type ShadowLedger } from '../router/judge-state';
 import { ModelRouter, type ModelRoute } from '../model-router';
 
 // ============================================================
@@ -234,6 +234,17 @@ export function setDecisionChannel(ch: DecisionChannel | null, questions: Decisi
   decisionQuestions = questions;
 }
 
+/** 影子门运行档（J3:144）：默认 shadow——判定照跑只落痕；live 须过对账（reconciled>0） */
+let judgeMode: JudgeMode = 'shadow';
+/** 影子期对账台账：由运维/部署侧回填（对账一次 +1）；reconciled=0 时 live 启用被拒 */
+const shadowLedger: ShadowLedger = { reconciled: 0 };
+
+/** 切换判定运行档（live 需先过影子期对账，ShadowGateError 拒绝） */
+export function setJudgeMode(mode: JudgeMode, ledger?: ShadowLedger): void {
+  judgeMode = mode;
+  if (ledger) shadowLedger.reconciled = ledger.reconciled;
+}
+
 export async function runDecisionModel(prompt: string): Promise<string> {
   if (!decisionChannel) {
     throw new Error('decision-model 档未注入 DecisionChannel —— fail-closed，绝不回落生成模型');
@@ -246,6 +257,20 @@ export async function runDecisionModel(prompt: string): Promise<string> {
     throw new Error(`判定 state ${built.reason}（${built.chars}/${built.maxChars}）——按处置序弃权，不截断`);
   }
   const r = await decisionChannel.judge(built.state, decisionQuestions);
+  // 影子门（J3:144）：shadow 档判定照跑但 effective 恒为基线（不改变行为）；
+  // live 档未过对账（reconciled=0）⇒ ShadowGateError 拒绝启用。判定结果落痕由
+  // decision-log 侧承担（同源 payload_sha256），此处只管「是否生效」。
+  const gated = applyWithShadowGate(
+    judgeMode,
+    shadowLedger,
+    { grade: String((r as { answers?: unknown[] }).answers?.length ?? 0), target: 'decision-model' },
+    { grade: '0', target: 'decision-model' },
+  );
+  if (gated.shadow) {
+    // shadow：结果照常返回给审计链落痕，但标记未生效——调用方拿到的仍是判定答案，
+    // 「不改变行为」由外层消费者按 applied=false 处置（与 J3:144「只落痕不影响行为」一致）。
+    return JSON.stringify({ ...r, shadowApplied: false });
+  }
   return JSON.stringify(r);
 }
 
@@ -263,7 +288,10 @@ export async function defaultDecideCallLLM(prompt: string, route: ModelRoute): P
     //   又被送到云端，违背数据主权铁律）
     if (route.target === 'block') return '';
     return await callCloudForDecide(prompt);
-  } catch {
+  } catch (err) {
+    // 判定档失败必须外显（fail-closed），不得吞成空串——空串会让调用方把
+    // 判定任务当「模型无输出」静默落回生成/空实现（S2 第 3 轮预阻塞③）。
+    if (route.target === 'decision-model') throw err;
     return '';
   }
 }

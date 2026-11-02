@@ -19,7 +19,7 @@
 
 import { z } from 'zod';
 import type { DecisionChannel, DecisionQuestion } from '../router/decision-channel';
-import { buildJudgeState } from '../router/judge-state';
+import { applyWithShadowGate, buildJudgeState, type JudgeMode, type ShadowLedger } from '../router/judge-state';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { AuditVerdict, LoopGraphState, Subtask } from './state';
@@ -281,6 +281,16 @@ export function setDecisionChannel(ch: DecisionChannel | null, questions: Decisi
 }
 
 /** 判定档执行：state 由单一构造入口产出（含脱敏），answers 序列化为字符串返回 */
+/** 影子门运行档（J3:144）：默认 shadow——判定照跑只落痕；live 须过对账（reconciled>0） */
+let judgeMode: JudgeMode = 'shadow';
+const shadowLedger: ShadowLedger = { reconciled: 0 };
+
+/** 切换判定运行档（live 需先过影子期对账，ShadowGateError 拒绝） */
+export function setJudgeMode(mode: JudgeMode, ledger?: ShadowLedger): void {
+  judgeMode = mode;
+  if (ledger) shadowLedger.reconciled = ledger.reconciled;
+}
+
 export async function runDecisionModel(prompt: string): Promise<string> {
   if (!decisionChannel) {
     throw new Error('decision-model 档未注入 DecisionChannel —— fail-closed，绝不回落生成模型');
@@ -293,6 +303,16 @@ export async function runDecisionModel(prompt: string): Promise<string> {
     throw new Error(`判定 state ${built.reason}（${built.chars}/${built.maxChars}）——按处置序弃权，不截断`);
   }
   const r = await decisionChannel.judge(built.state, decisionQuestions);
+  // 影子门（J3:144）：与 engineer 侧同构——shadow 只落痕不生效；live 未对账即拒。
+  const gated = applyWithShadowGate(
+    judgeMode,
+    shadowLedger,
+    { grade: String((r as { answers?: unknown[] }).answers?.length ?? 0), target: 'decision-model' },
+    { grade: '0', target: 'decision-model' },
+  );
+  if (gated.shadow) {
+    return JSON.stringify({ ...r, shadowApplied: false });
+  }
   return JSON.stringify(r);
 }
 

@@ -133,13 +133,21 @@ function coarseOf(text: string): CoarseFeatures {
   };
 }
 
-function stripNoise(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(stripNoise);
+function stripNoise(value: unknown, notes?: string[], path = ''): unknown {
+  if (Array.isArray(value)) return value.map((v) => stripNoise(v, notes, path));
   if (value && typeof value === 'object') {
     const out: Record<string, unknown> = {};
     for (const k of Object.keys(value as Record<string, unknown>).sort()) {
+      const keyPath = path ? `${path}.${k}` : k;
+      // 深层键名命中绝不发送名单 ⇒ 就地 REDACTED（嵌套 password/token 等穿透即在此拦截，
+      // S2 第 3 轮预阻塞①：顶层 redactFields 挡不住 toolCalls.args.password 这类深层键）
+      if ((NEVER_SEND_FIELDS as readonly string[]).includes(k.toLowerCase())) {
+        out[k] = '[REDACTED:never-send]';
+        notes?.push(`field:${keyPath}`);
+        continue;
+      }
       if (NOISE_KEYS.has(k.toLowerCase())) continue;
-      out[k] = stripNoise((value as Record<string, unknown>)[k]);
+      out[k] = stripNoise((value as Record<string, unknown>)[k], notes, keyPath);
     }
     return out;
   }
@@ -155,7 +163,7 @@ function redactFields(fields: Record<string, unknown> | undefined, notes: string
       notes.push(`field:${key}`);
       continue;
     }
-    out[key] = stripNoise(fields[key]);
+    out[key] = stripNoise(fields[key], notes, key);
   }
   return out;
 }

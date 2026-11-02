@@ -163,3 +163,44 @@ describe('F5 R2-2 · 影子运行门', () => {
     expect(r.effective).toEqual(outcome);
   });
 });
+
+// S2 第 3 轮预阻塞①回归锁：嵌套绝不发送字段穿透拦截（深层键名就地 REDACTED）
+describe('F5 R2-2 · 嵌套脱敏（深层键名穿透拦截）', () => {
+  it('N1 toolCalls.args.password 嵌套两层的 password ⇒ 就地 REDACTED，原值不出现在序列化产物', () => {
+    const r = buildJudgeState(
+      {
+        text: 'ok',
+        evidenceReadiness: 'none',
+        fields: {
+          toolCalls: [
+            { name: 'deploy', args: { password: 'hunter2', region: 'cn' } },
+          ],
+        },
+      },
+      { prefixFields: ['toolCalls'], maxChars: 8000, consumer: 'test' },
+    );
+    if (!r.ok) throw new Error('build 失败');
+    const ser = JSON.stringify(r.state);
+    expect(ser).not.toContain('hunter2');
+    expect(ser).toContain('password'); // 键仍在（结构保留）
+    expect(ser).toContain('[REDACTED:never-send]'); // 值已脱敏（嵌 text 内 JSON 带转义引号，不写死引号形态）
+    expect(r.meta.redactions).toContain('field:toolCalls.args.password'); // 带路径留痕（meta.redactions）
+  });
+
+  it('N2 数组内对象、三层嵌套（config.db.token）同样拦截', () => {
+    const r = buildJudgeState(
+      {
+        text: 'ok',
+        evidenceReadiness: 'none',
+        fields: {
+          list: [{ config: { db: { token: 'sk-abc-123', host: 'db.local' } } }],
+        },
+      },
+      { prefixFields: ['list'], maxChars: 8000, consumer: 'test' },
+    );
+    if (!r.ok) throw new Error('build 失败');
+    const ser = JSON.stringify(r.state);
+    expect(ser).not.toContain('sk-abc-123');
+    expect(ser).toContain('[REDACTED:never-send]');
+  });
+});

@@ -39,19 +39,51 @@ describe('F5 R2-3 · decision-model 档接通', () => {
     await expect(runEngineerDecision('task')).rejects.toThrow(/绝不回落生成模型/);
   });
 
-  it('M2 注入通道 ⇒ 返回类型化答案（四字段），且 state 经单一构造入口', async () => {
+  it('M2 注入通道 ⇒ 返回类型化答案（四字段 + 影子标记），且 state 经单一构造入口', async () => {
     const ch = stub();
     setPlannerChannel(ch, [
       { id: 'q1', primitive: 'choice', options: ['continue', 'human_review'], fallback: 'human_review' },
     ]);
     const out = await runPlannerDecision('请判定该动作是否继续');
     const parsed = JSON.parse(out);
-    expect(Object.keys(parsed).sort()).toEqual(['answers', 'latencyMs', 'modelVersion', 'tempBucket']);
+    // 契约四字段必须齐；shadow 档（默认）额外带 shadowApplied:false（J3:144 落痕信号，
+    // 「只落痕不影响行为」的机械可辨标记——非契约字段，带外于 DecisionResult 序列化产物）
+    for (const k of ['answers', 'latencyMs', 'modelVersion', 'tempBucket']) {
+      expect(Object.keys(parsed)).toContain(k);
+    }
+    expect(parsed.shadowApplied).toBe(false); // 默认 shadow 档：结果未生效
     expect(parsed.answers[0].value).toBe('continue');
     expect(ch.judge).toHaveBeenCalledTimes(1);
     const [state, questions] = ch.judge.mock.calls[0] as [ { text: string }, unknown[] ];
     expect(state.text).toContain('请判定该动作是否继续');
     expect(questions).toHaveLength(1);
+  });
+
+  it('M5 影子门接线：live 未对账 ⇒ ShadowGateError；对账后 live 生效无 shadowApplied', async () => {
+    const ch = stub();
+    setPlannerChannel(ch, []);
+    const { setJudgeMode: setPlannerMode } = await import('../loop/plan-node');
+    // live 但 reconciled=0 ⇒ 拒绝启用
+    setPlannerMode('live', { reconciled: 0 });
+    await expect(runPlannerDecision('判定')).rejects.toThrow(/影子期未对账|ShadowGate/);
+    // 对账后 live ⇒ 生效（无 shadowApplied 标记）
+    setPlannerMode('live', { reconciled: 3 });
+    const out = await runPlannerDecision('判定');
+    expect(JSON.parse(out).shadowApplied).toBeUndefined();
+    // 还原默认 shadow，防污染后续用例
+    setPlannerMode('shadow');
+  });
+
+  it('M6 engineer 侧吞错修复：defaultDecideCallLLM 在 decision-model 档失败必须外显', async () => {
+    const { defaultDecideCallLLM } = await import('../loop/engineer-decide');
+    // 未注入通道（runDecisionModel 会抛）⇒ 外层不得吞成 ''
+    await expect(
+      defaultDecideCallLLM('prompt', { target: 'decision-model' } as never),
+    ).rejects.toThrow(/绝不回落生成模型/);
+    // 其他档（如 block）维持原语义返回 ''
+    await expect(
+      defaultDecideCallLLM('prompt', { target: 'block' } as never),
+    ).resolves.toBe('');
   });
 
   it('M3 超界 ⇒ 弃权（抛 over-limit），不截断、不调用通道', async () => {
