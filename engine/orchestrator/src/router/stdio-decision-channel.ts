@@ -32,6 +32,8 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import {
   assertContractCompliance,
   classifyJudgeError,
+  DecisionChannelUnavailableError,
+  TypeMismatchError,
   type DecisionChannel,
   type DecisionQuestion,
   type DecisionResult,
@@ -120,8 +122,9 @@ export class StdioTransport implements DecisionTransport {
     // runner 的日志一律走 stderr：本层不透传，避免日志混入协议面（排障时由调用方落盘）
     child.stderr.setEncoding('utf8');
     child.on('exit', (code) => {
-      const err = new Error(`判定件进程退出（code=${code ?? 'null'}）`);
-      err.name = 'DecisionChannelUnavailableError';
+      // D-1（2026-11-02）：抛**真类**而非名字冒名——否则 `instanceof` 为 false，
+      // 上层 classifyJudgeError 之外的 instanceof 判定（含 triage 的 fail-closed 分支）会漏判。
+      const err = new DecisionChannelUnavailableError(`判定件进程退出（code=${code ?? 'null'}）`);
       for (const [, p] of this.pending) {
         clearTimeout(p.timer);
         p.reject(err);
@@ -153,8 +156,7 @@ export class StdioTransport implements DecisionTransport {
         frame = JSON.parse(line) as Record<string, unknown>;
       } catch {
         // 协议污染（runner 往 stdout 打了日志）⇒ 类型不符，不静默丢弃
-        const e = new Error(`判定件输出不是合法 JSON：${line.slice(0, 120)}`);
-        e.name = 'TypeMismatchError';
+        const e = new TypeMismatchError(`判定件输出不是合法 JSON：${line.slice(0, 120)}`);
         for (const [, p] of this.pending) {
           clearTimeout(p.timer);
           p.reject(e);
@@ -261,14 +263,14 @@ export class StdioDecisionChannel implements DecisionChannel {
       this.stats.lastFailure = { reason, detail: e instanceof Error ? e.message : String(e) };
       // 自报错误码原样透出（保证归因单出处），其余交给 classifyJudgeError
       if (e instanceof RunnerReportedError) {
-        const err = new Error(e.message);
-        err.name =
-          e.code === 'weights-missing' || e.code === 'load-failed'
-            ? 'DecisionChannelUnavailableError'
-            : e.code === 'type-mismatch'
-              ? 'TypeMismatchError'
-              : 'Error';
-        throw err;
+        // D-1（2026-11-02）：按 code 抛真类，不再名字冒名
+        if (e.code === 'weights-missing' || e.code === 'load-failed') {
+          throw new DecisionChannelUnavailableError(e.message);
+        }
+        if (e.code === 'type-mismatch') {
+          throw new TypeMismatchError(e.message);
+        }
+        throw new Error(e.message);
       }
       throw e;
     }
@@ -282,9 +284,7 @@ export class StdioDecisionChannel implements DecisionChannel {
     if (problems.length) {
       this.stats.failures += 1;
       this.stats.lastFailure = { reason: 'type-mismatch', detail: problems.join('；') };
-      const e = new Error(`判定件输出不合契约：${problems.join('；')}`);
-      e.name = 'TypeMismatchError';
-      throw e;
+      throw new TypeMismatchError(`判定件输出不合契约：${problems.join('；')}`);
     }
     return result;
   }

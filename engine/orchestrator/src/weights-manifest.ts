@@ -29,7 +29,7 @@
 // （供应链完整性——复用 v1.4.1 artifact-signing 的哈希纪律，非签名链）。
 // ============================================================
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
 import { createHash } from 'crypto';
 import { join } from 'path';
 
@@ -37,6 +37,16 @@ import { join } from 'path';
 export const WEIGHTS_MANIFEST_SCHEMA_VERSION = 1;
 
 /** 权重版本条目 */
+/** 远端来源（F5.3：五环已建，唯一缺口＝从远端拉；本字段补这个缺口） */
+export interface RemoteSource {
+  /** 拉取地址（http(s):// 或 file://；不可是相对路径） */
+  url: string;
+  /** 期望 sha256（全值；与拉取内容逐字节比对，不符即拒绝启用） */
+  sha256: string;
+  /** 期望字节数（可选；给了就一并核对） */
+  bytes?: number;
+}
+
 export interface WeightsVersion {
   /** 版本 id（目录名，如 'v1'） */
   id: string;
@@ -48,6 +58,8 @@ export interface WeightsVersion {
   sizeBytes: number;
   /** 追溯元信息（train job / eval 分数） */
   meta?: { trainJobId?: string; evalScore?: number; baseModel?: string; [k: string]: unknown };
+  /** 远端来源（缺省 = 本地投放；有值 = 可从远端拉取并校验） */
+  remote?: RemoteSource;
 }
 
 /** 版本清单（manifest.json） */
@@ -149,6 +161,102 @@ export function hashDir(dir: string): string {
   };
   walk(dir, '');
   return h.digest('hex');
+}
+
+/** 拉取结果（fail-closed：任何一步不成立都不落文件） */
+export interface FetchResult {
+  ok: boolean;
+  /** 落盘路径（ok=true 时非空） */
+  path?: string;
+  /** 实测 sha256（ok=true 时非空） */
+  sha256?: string;
+  /** 失败原因（逐条，非空即 ok=false） */
+  issues: string[];
+  /** 留痕：本条写入 <destDir>/fetch-trace.ndjson 的同一对象 */
+  trace: Record<string, unknown>;
+}
+
+function appendTrace(destDir: string, entry: Record<string, unknown>): void {
+  try {
+    mkdirSync(destDir, { recursive: true });
+    appendFileSync(join(destDir, 'fetch-trace.ndjson'), JSON.stringify(entry) + '\n');
+  } catch {
+    /* 留痕失败不掩盖主结果——但 trace 字段仍随返回值给出 */
+  }
+}
+
+/**
+ * 从远端拉取一个权重文件并校验（F5.3 ①）。
+ *
+ * 纪律（三条，缺一即失败，全部 fail-closed）：
+ *   · 网络不可达 ⇒ 显式报错，**不回退本地旧文件**（不得静默用陈旧权重）；
+ *   · sha256 不符（含篡改一字节）⇒ **不落盘**、留痕、可拒绝启用；
+ *   · 字节数不符（给了 expectedBytes 时）⇒ 同 sha 不符处理。
+ */
+export async function fetchVersion(opts: {
+  url: string;
+  destDir: string;
+  fileName: string;
+  expectedSha256: string;
+  expectedBytes?: number;
+  timeoutMs?: number;
+}): Promise<FetchResult> {
+  const startedAt = new Date().toISOString();
+  const dest = join(opts.destDir, opts.fileName);
+  const baseTrace: Record<string, unknown> = {
+    ts: startedAt,
+    url: opts.url,
+    dest,
+    expectedSha256: opts.expectedSha256,
+    expectedBytes: opts.expectedBytes ?? null,
+  };
+  let body: Buffer;
+  try {
+    const timeoutMs = opts.timeoutMs ?? 30_000;
+    if (opts.url.startsWith('file://')) {
+      body = readFileSync(new URL(opts.url));
+    } else if (/^https?:\/\//.test(opts.url)) {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), timeoutMs);
+      try {
+        const res = await fetch(opts.url, { signal: ctl.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        body = Buffer.from(await res.arrayBuffer());
+      } finally {
+        clearTimeout(timer);
+      }
+    } else {
+      throw new Error('URL 必须是 http(s):// 或 file://');
+    }
+  } catch (err) {
+    // 断网/不可达：显式失败，不静默回退
+    const trace = { ...baseTrace, ok: false, stage: 'fetch', error: err instanceof Error ? err.message : String(err) };
+    appendTrace(opts.destDir, trace);
+    return { ok: false, issues: [`远端不可达（${trace.error}）——显式失败，不回退本地权重`], trace };
+  }
+
+  const actual = createHash('sha256').update(body).digest('hex');
+  if (actual !== opts.expectedSha256) {
+    const trace = { ...baseTrace, ok: false, stage: 'verify', actualSha256: actual, bytes: body.length };
+    appendTrace(opts.destDir, trace);
+    return {
+      ok: false,
+      issues: [`sha256 不符（期望 ${opts.expectedSha256}，实际 ${actual}）——拒绝启用，未落盘`],
+      trace,
+    };
+  }
+  if (opts.expectedBytes !== undefined && body.length !== opts.expectedBytes) {
+    const trace = { ...baseTrace, ok: false, stage: 'verify-bytes', actualSha256: actual, bytes: body.length };
+    appendTrace(opts.destDir, trace);
+    return { ok: false, issues: [`字节数不符（期望 ${opts.expectedBytes}，实际 ${body.length}）——拒绝启用`], trace };
+  }
+
+  mkdirSync(opts.destDir, { recursive: true });
+  writeFileSync(dest, body);
+  writeFileSync(`${dest}.sha256`, `${actual}  ${opts.fileName}\n`);
+  const trace = { ...baseTrace, ok: true, stage: 'done', actualSha256: actual, bytes: body.length };
+  appendTrace(opts.destDir, trace);
+  return { ok: true, path: dest, sha256: actual, issues: [], trace };
 }
 
 /**
