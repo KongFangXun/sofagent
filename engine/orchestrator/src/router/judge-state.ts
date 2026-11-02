@@ -114,21 +114,31 @@ function decodePass(input: string): { decoded: string; layers: string[] } {
 }
 
 /**
- * 迭代解码至不动点（R3-4b）：循环跑单趟链直到一轮内**零层命中**或达上限（防活锁）。
+ * 迭代解码至不动点（R3-4b）：循环跑单趟链直到一轮内**零层命中**或达上限。
  * 多层编码（base64→percent→base64）在单趟结构下只有最外两层被剥——内层 base64
- * 需要下一轮才会解出。上限 5 轮：四层编码已覆盖现实攻防，超限视为对抗性构造
- * （层数信息进 layers 供审计判断，不再继续解）。
+ * 需要下一轮才会解出。
+ *
+ * 🔴 超限处置 = fail-closed（R3-4c）：达 5 轮上限仍可继续解 ⇒ 该值视为对抗性构造，
+ * **原样放行等于把未检面交给上游**——返回 `exhausted: true` + 深度标记，由调用方
+ * （screenStringValue / text 面筛选）按「疑似深编码」处置（fields 值面 ⇒ 整值 REDACTED；
+ * text 面 ⇒ 计入 secrets 命中面，见 findSecrets 的 exhausted-depth 形态）。
  */
-export function decodeForScreening(input: string): { decoded: string; layers: string[] } {
+export function decodeForScreening(input: string): { decoded: string; layers: string[]; exhausted: boolean; rounds: number } {
   const allLayers: string[] = [];
   let current = input;
+  let rounds = 0;
+  let exhausted = false;
   for (let round = 0; round < 5; round++) {
     const { decoded, layers } = decodePass(current);
     if (layers.length === 0) break; // 不动点：本轮无新层可解
     allLayers.push(...layers);
     current = decoded;
+    rounds = round + 1;
   }
-  return { decoded: current, layers: [...new Set(allLayers)] };
+  // 第 5 轮解完仍有层可剥（再跑一轮还会命中）⇒ 未收敛即耗尽——不是「恰好 5 层解完」
+  const probe = decodePass(current);
+  if (rounds === 5 && probe.layers.length > 0) exhausted = true;
+  return { decoded: current, layers: [...new Set(allLayers)], exhausted, rounds };
 }
 
 /** 敏感串检测（在**解码后**的文本上跑） */
@@ -156,11 +166,17 @@ function coarseOf(text: string): CoarseFeatures {
  *  字符串值先过 decodeForScreening（QP/百分号/base64/HTML 实体逐层解码）再 findSecrets，
  *  命中任一密钥形态 ⇒ 整值 REDACTED 并留痕（值本身不上行——粗特征都算多余，秘密就是秘密）。 */
 function screenStringValue(value: string, notes: string[], path: string): string {
-  const { decoded } = decodeForScreening(value);
+  const { decoded, exhausted } = decodeForScreening(value);
+  // 🔴 超限 fail-closed（R3-4c）：5 轮仍可继续解 = 对抗性深编码——原样放行等于把
+  // 未检面交给上游，整值 REDACTED 并带 exhausted 留痕（宁可误伤也不放行未检内容）。
+  if (exhausted) {
+    notes.push(`value:${path}:exhausted-depth`);
+    return '[REDACTED:encoded-exhausted]';
+  }
   const hits = findSecrets(decoded);
   if (hits.length > 0) {
     notes.push(`value:${path}:${hits.join('+')}`);
-    return `[REDACTED:encoded-secret:${hits.join('+')}]`;
+    return `[REDACTED:encoded-redact:${hits.join('+')}]`;
   }
   return value;
 }
@@ -223,8 +239,9 @@ export function buildJudgeState(
   }
 
   // 文本层：先解码再筛 → 命中即整段替换为粗特征占位（原文不外发）
-  const { decoded, layers } = decodeForScreening(raw.text);
+  const { decoded, layers, exhausted } = decodeForScreening(raw.text);
   const secrets = findSecrets(decoded);
+  if (exhausted) secrets.push('exhausted-depth'); // 🔴 超限计入命中面：text 同样不放行未检内容（R3-4c）
   let body = raw.text;
   if (secrets.length || layers.length) {
     const coarse = coarseOf(decoded);

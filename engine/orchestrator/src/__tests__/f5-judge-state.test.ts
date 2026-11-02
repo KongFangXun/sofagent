@@ -218,7 +218,7 @@ describe('F5 R2-2 · 值级脱敏（R3-4：编码密钥不因键名无辜而穿�
     if (!r.ok) throw new Error('build 失败');
     const ser = JSON.stringify(r.state);
     expect(ser).not.toContain(b64); // 原编码串不上行
-    expect(ser).toContain('[REDACTED:encoded-secret:openai-like-key]');
+    expect(ser).toContain('[REDACTED:encoded-redact:openai-like-key]');
     expect(r.meta.redactions).toContain('value:note:openai-like-key'); // 值级留痕带路径
   });
 
@@ -231,7 +231,7 @@ describe('F5 R2-2 · 值级脱敏（R3-4：编码密钥不因键名无辜而穿�
     if (!r.ok) throw new Error('build 失败');
     const ser = JSON.stringify(r.state);
     expect(ser).not.toContain(b64);
-    expect(ser).toContain('[REDACTED:encoded-secret:aws-access-key]');
+    expect(ser).toContain('[REDACTED:encoded-redact:aws-access-key]');
     expect(ser).toContain('fast'); // 非密钥值不受影响
   });
 
@@ -257,7 +257,7 @@ describe('F5 R2-2 · 多层编码脱敏（R3-4b：迭代至不动点）', () => 
     if (!r.ok) throw new Error('build 失败');
     const ser = JSON.stringify(r.state);
     expect(ser).not.toContain(l3); // 外层编码串不上行
-    expect(ser).toContain('[REDACTED:encoded-secret:openai-like-key]');
+    expect(ser).toContain('[REDACTED:encoded-redact:openai-like-key]');
     expect(r.meta.redactions).toContain('value:note:openai-like-key');
   });
 
@@ -272,7 +272,7 @@ describe('F5 R2-2 · 多层编码脱敏（R3-4b：迭代至不动点）', () => 
     if (!r.ok) throw new Error('build 失败');
     const ser = JSON.stringify(r.state);
     expect(ser).not.toContain(l4);
-    expect(ser).toContain('[REDACTED:encoded-secret:aws-access-key]');
+    expect(ser).toContain('[REDACTED:encoded-redact:aws-access-key]');
   });
 
   it('W3 普通文本不动点收敛：无编码层时零迭代零误伤（原文逐字节保留）', () => {
@@ -287,5 +287,63 @@ describe('F5 R2-2 · 多层编码脱敏（R3-4b：迭代至不动点）', () => 
     const { decoded, layers } = decodeForScreening(b64);
     expect(decoded).toBe('just a normal config line');
     expect(layers).toEqual(['base64']); // 一轮解出、第二轮不动点退出
+  });
+});
+
+// R3-4c 回归锁：超限 fail-closed——纯 base64 6/7 层不再静默放行
+describe('F5 R2-2 · 超限深编码 fail-closed（R3-4c）', () => {
+  it('X1 纯 base64 ×6 ⇒ exhausted 标记 + 整值 REDACTED（不再原样放行）', () => {
+    let s = 'sk-abcdefgh12345678';
+    for (let i = 0; i < 6; i++) s = Buffer.from(s).toString('base64');
+    const r = buildJudgeState(
+      { text: 'ok', evidenceReadiness: 'none', fields: { note: s } },
+      { prefixFields: ['note'], maxChars: 8000, consumer: 'test' },
+    );
+    if (!r.ok) throw new Error('build 失败');
+    const ser = JSON.stringify(r.state);
+    expect(ser).not.toContain(s); // 外层串不上行（此前穿透点）
+    expect(ser).toContain('[REDACTED:encoded-exhausted]');
+    expect(r.meta.redactions).toContain('value:note:exhausted-depth');
+  });
+
+  it('X2 纯 base64 ×7 同样 fail-closed；恰好 5 层仍正常解出命中（不误伤边界）', () => {
+    let s7 = 'sk-abcdefgh12345678';
+    for (let i = 0; i < 7; i++) s7 = Buffer.from(s7).toString('base64');
+    const r7 = buildJudgeState(
+      { text: 'ok', evidenceReadiness: 'none', fields: { note: s7 } },
+      { prefixFields: ['note'], maxChars: 8000, consumer: 'test' },
+    );
+    expect(JSON.stringify(r7.state)).not.toContain(s7);
+
+    let s5 = Buffer.from('sk-abcdefgh12345678').toString('base64');
+    for (let i = 0; i < 4; i++) s5 = Buffer.from(s5).toString('base64'); // 共 5 层
+    const r5 = buildJudgeState(
+      { text: 'ok', evidenceReadiness: 'none', fields: { note: s5 } },
+      { prefixFields: ['note'], maxChars: 8000, consumer: 'test' },
+    );
+    // 5 层在限内 ⇒ 正常迭代解出明文命中（openai-like-key），不是 exhausted
+    expect(JSON.stringify(r5.state)).toContain('[REDACTED:encoded-redact:openai-like-key]');
+  });
+
+  it('X3 text 面超限同样计入命中（粗特征替换，不外发原文）', () => {
+    let s = 'sk-abcdefgh12345678';
+    for (let i = 0; i < 6; i++) s = Buffer.from(s).toString('base64');
+    const r = buildJudgeState(
+      { text: s, evidenceReadiness: 'none' },
+      { prefixFields: [], maxChars: 8000, consumer: 'test' },
+    );
+    if (!r.ok) throw new Error('build 失败');
+    expect(JSON.stringify(r.state)).not.toContain(s);
+    expect(JSON.stringify(r.state)).toContain('exhausted-depth');
+  });
+
+  it('X4 普通文本与正常 5 层内编码零误伤回归（W3/W4 兼容）', () => {
+    const { decoded, layers, exhausted } = decodeForScreening('普通中文日志 hello world');
+    expect(decoded).toBe('普通中文日志 hello world');
+    expect(layers).toEqual([]);
+    expect(exhausted).toBe(false);
+    const b64 = Buffer.from('just a normal config line').toString('base64');
+    const d2 = decodeForScreening(b64);
+    expect(d2.exhausted).toBe(false);
   });
 });
