@@ -979,7 +979,13 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   try {
     const result = checkHistoryChainDetailed(undefined, 500);
     if (result.status === 'ok') {
-      ok('审计日志 hash chain 完整性校验通过');
+      // v1.8.0 fresh-eyes F1：ok + 非标准写入行 = 黄绿混合态——链连续性通过，但存在
+      // 链字段齐全、缺 exitCode 的旁路写入行；黄级提示（warn 不判失败），exit 语义不变。
+      if (typeof result.nonstandardCount === 'number' && result.nonstandardCount > 0) {
+        warn(`审计日志 hash chain 完整性校验通过（含 ${result.nonstandardCount} 行非标准写入——${result.detail ?? ''}）`);
+      } else {
+        ok('审计日志 hash chain 完整性校验通过');
+      }
     } else if (result.status === 'tampered') {
       // ① 篡改检测（红）：确为伪造
       auditLogOk = false;

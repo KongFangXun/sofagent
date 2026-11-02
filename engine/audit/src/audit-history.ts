@@ -305,6 +305,11 @@ function getActiveDataKey(): Buffer {
 /**
  * 追加一条审计记录到历史文件
  * 文件不存在时自动创建目录和文件
+ *
+ * 🔴 协议护栏（v1.8.0 fresh-eyes F1）：任何内部验证 / QA 写入必须走本标准 append
+ * 通道（含 exitCode 字段）——旁路直写 history.jsonl（缺 exitCode 等非链必需字段）
+ * 会被 verify-chain 的三态分诊降为黄级 nonstandard-entry 提示，破坏判定面的
+ * 「一红即疑篡改」语义；写不出链字段（prevHash/hmacSig）的行更直接判红 tampered。
  * @param entry 审计历史条目
  * @param dataDir 可选的数据目录覆盖（用于测试）
  */

@@ -301,6 +301,14 @@ export interface ChainCheckResult {
   detail?: string;
   /** 首个异常条目下标（调试用） */
   index?: number;
+  /**
+   * 非标准写入行计数（v1.8.0 fresh-eyes F1 三态分诊）。
+   *
+   * status='ok' 且 nonstandardCount > 0 = 黄绿混合态：链 HMAC 连续性校验通过，但
+   * 存在链字段齐全、仅缺 exitCode 等非链必需字段的旁路写入行（多为历史/内部验证
+   * 写入）。消费面（verify-chain / doctor）可据本字段给出黄级提示，不阻断。
+   */
+  nonstandardCount?: number;
 }
 
 /**
@@ -403,6 +411,14 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
   const lines = content.split('\n');
   /** 非标准 schema 行的原始内容（截断展示，结构异常检测用） */
   const malformedLines: string[] = [];
+  /**
+   * 非标准写入行（v1.8.0 fresh-eyes F1 三态分诊）：
+   * JSON 合法、链字段（prevHash/hmacSig）齐全、timestamp 为 string，仅缺 exitCode
+   * 等非链必需字段——多为历史/内部验证旁路写入（如 QA 期 R5-FIX 行）。这类行
+   * **不进 malformedLines**（不判死整链），照常进 entries 参与 HMAC 链复算；
+   * 最终结果以 nonstandardCount 附带报告（黄级提示，不阻断）。
+   */
+  const nonstandardLines: string[] = [];
 
   // F-29：链校验解密通路。写入侧（audit 包 appendHistory）在静态加密激活时落
   // SOFAGENT-AGE-V1: 前缀密文行——此前本函数逐行 JSON.parse 且零解密通路，
@@ -492,7 +508,22 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       // 带 event 字段的行是合法事件记录（如 rule_disabled），schema 天然不同，豁免。
       const rec = parsed as Record<string, unknown>;
       if (rec.event === undefined && (typeof rec.timestamp !== 'string' || typeof rec.exitCode !== 'number')) {
-        malformedLines.push(plainLine.slice(0, 60));
+        // v1.8.0 fresh-eyes F1 三态分诊：链字段齐全（prevHash/hmacSig 均存在）且
+        // timestamp 为 string、仅缺 exitCode 等非链必需字段的行 = 非标准写入（黄），
+        // 不是伪造行——伪造者写不出链字段（缺 prevHash/hmacSig 仍判红进 malformedLines）。
+        const chainFieldsOk =
+          typeof rec.timestamp === 'string' &&
+          rec.prevHash !== undefined &&
+          rec.hmacSig !== undefined;
+        if (
+          typeof rec.timestamp === 'string' &&
+          typeof rec.exitCode !== 'number' &&
+          chainFieldsOk
+        ) {
+          nonstandardLines.push(plainLine.slice(0, 60));
+        } else {
+          malformedLines.push(plainLine.slice(0, 60));
+        }
       }
     } catch (err) {
       console.error('[audit-history] 解析审计条目 JSON 失败:', err);
@@ -511,6 +542,9 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       detail: `检测到 ${malformedLines.length} 行非标准 schema 记录（如: ${malformedLines[0]}），疑似伪造/篡改`,
     };
   }
+  // v1.8.0 fresh-eyes F1：非标准写入行（链字段齐全、缺 exitCode）不判死——黄级
+  // 提示挂在最终结果上。此处仅记录；真正输出在末尾 ok 返回时以 nonstandardCount
+  // 附带（中间任何红/黄态优先返回时，非标准行计数失去展示意义，自然丢弃）。
 
   // F-29 黄态：密文行存在但全部候选钥（当前 + 归档）解不开——「历史密文不可复验，
   // 非篡改」。放在 malformed 红判之后（红优先）、锚点校验之前（锚点用的是解密成功
@@ -793,12 +827,30 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
         : '';
     return {
       status: 'unverifiable',
+      // v1.8.0 fresh-eyes F1：黄态也附带非标准写入行计数（旁路写入行自身常触发
+      // v2-prevhash-drift 黄——链复算视角它不是标准链成员，但结构视角它是「链字段
+      // 齐全仅缺 exitCode」的非标准写入，两种视角各有信息量，都报给消费面）。
+      ...(nonstandardLines.length > 0
+        ? { nonstandardCount: nonstandardLines.length }
+        : {}),
       detail:
         `部分历史段无法复验（含无 prevHash 的 legacy 条目 / 密钥在场但条目无签名（疑似签名剥离或 legacy 条目）/ v2 含环境指纹条目因 ~/.sofagent-key 或环境指纹漂移），属历史证据不可复验，非篡改` +
-        `；原因：${reasonKinds.join(' / ')}；不可复验记录 ${unverifiableRecords.length} 条，定位：${located}${locatedMore}${windowNote}`,
+        `；原因：${reasonKinds.join(' / ')}；不可复验记录 ${unverifiableRecords.length} 条，定位：${located}${locatedMore}${windowNote}` +
+        (nonstandardLines.length > 0
+          ? `；另检测到 ${nonstandardLines.length} 行非标准写入（链字段齐全、缺 exitCode——多为历史/内部验证旁路写入），链条 HMAC 连续性以链校验为准`
+          : ''),
     };
   }
 
+  // v1.8.0 fresh-eyes F1：链 HMAC 连续性校验通过（ok），但存在非标准写入行时
+  // 附带黄级提示（nonstandardCount + detail）——消费面据以提示「不断链、不判死」。
+  if (nonstandardLines.length > 0) {
+    return {
+      status: 'ok',
+      nonstandardCount: nonstandardLines.length,
+      detail: `检测到 ${nonstandardLines.length} 行非标准写入（链字段齐全、缺 exitCode——多为历史/内部验证旁路写入，如: ${nonstandardLines[0]}），链条 HMAC 连续性以上方校验为准`,
+    };
+  }
   return { status: 'ok' };
 }
 

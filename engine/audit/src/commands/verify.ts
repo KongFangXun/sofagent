@@ -29,6 +29,12 @@ function emitHistoryVerdict(
   switch (result.status) {
     case 'ok':
       console.log('  ✅ HMAC hash chain 完整——所有记录可验证');
+      // v1.8.0 fresh-eyes F1：ok + 非标准写入行 = 黄绿混合态——链连续性通过，但
+      // 存在链字段齐全、缺 exitCode 的旁路写入行；黄级提示、不阻断（exit 0 语义不变）。
+      const ns = (result as { nonstandardCount?: number }).nonstandardCount;
+      if (typeof ns === 'number' && ns > 0) {
+        console.log(`  ⚠️ ${result.detail ?? ''}`);
+      }
       // loadHistory 按时间倒序返回（最新在前；默认窗口最近 100 条）——标签须与排序一致：
       // history[0] = 最新记录；末元素 = 窗口内最早（若历史超 100 条，更早记录被窗口截断，不在此列）。
       console.log(`  最新记录: ${history[0]?.timestamp ?? 'N/A'}`);

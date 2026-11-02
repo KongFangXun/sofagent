@@ -710,11 +710,18 @@ describe('audit-history', () => {
       expect(result.status).toBe('ok');
     });
 
-    describe('结构异常检测：非标准 schema 行 = 篡改（红）', () => {
-      it('追加伪造行（{"tampered":true,"hmacSig":"fake"}）→ tampered 而非 unverifiable', () => {
+    describe('结构异常检测：三态分诊（v1.8.0 fresh-eyes F1 语义演进）', () => {
+      // 语义演进说明：本组原锁定旧判定面「一行非标整链死」——任何 JSON 合法但缺
+      // exitCode 的行（含链字段齐全的 QA 旁路写入）一律判 tampered。fresh-eyes 第 1 轮
+      // P1 实锤：本机 QA 期 R5-FIX 行（链字段齐全、仅缺 exitCode）被整链判死且无恢复
+      // 路径，对外「第三方可复核」承诺被打破。v1.8.0 判定语义有意变更为三态分诊：
+      // ① 缺链字段（prevHash/hmacSig）或 JSON 坏 → 仍红 tampered（伪造者写不出链字段）；
+      // ② 链字段齐全、仅缺 exitCode → 黄级 nonstandardCount 附带（不判死、不阻断）；
+      // ③ 全标准链 → ok。依据：桌面任务书 V1.8.0-bugfix-prompt.md 批一（F1）。
+      it('追加伪造行（{"tampered":true,"hmacSig":"fake"}——缺 prevHash）→ tampered 而非 unverifiable', () => {
         // 攻击链：伪造/篡改者向 history.jsonl 追加非标准 schema 行。
         // 此前该类行因无 prevHash 被归为 unverifiable（黄，exit 1）——
-        // 语义轻描淡写。非标准 schema = 结构异常 = tampered（红，exit 2）。
+        // 语义轻描淡写。缺链字段 = 结构异常 = tampered（红，exit 2）——三态分诊下维持红。
         writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
         appendHistory(makeEntry('2026-06-01T00:00:00Z', 0), testDir);
         appendHistory(makeEntry('2026-06-02T00:00:00Z', 0), testDir);
@@ -728,6 +735,54 @@ describe('audit-history', () => {
         const result = checkHistoryChainDetailed(testDir);
         expect(result.status).toBe('tampered');
         expect(result.detail).toContain('非标准 schema');
+      });
+
+      it('链字段齐全、仅缺 exitCode 的旁路写入行 → 不判死：status 非 tampered，nonstandardCount 计数（黄）', () => {
+        // R5-FIX 形态（v1.8 QA 期旁路写入实测样本）：timestamp/prevHash/hmacSig/
+        // hashVersion 等链字段齐全，仅缺 exitCode——旧判定整链判死，新判定黄级附带。
+        // ⚠️ 构造方式必须是「旁路追加」而非「改写既有行」：改写 appendHistory 产物
+        // （哪怕只抠 exitCode）会改变行内容致自身 hmacSig 失配——那是内容被改的真红
+        // （v2 含指纹条目 HMAC 失配 + 指纹一致 ⇒ tampered），不是本用例对象。真实
+        // R5-FIX 行是标准通道之外的旁路写入，故按实测字段集原样追加。
+        writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
+        appendHistory(makeEntry('2026-06-01T00:00:00Z', 0), testDir);
+        appendHistory(makeEntry('2026-06-02T00:00:00Z', 0), testDir);
+        expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
+
+        const histPath = getHistoryFilePath(testDir);
+        const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+        // 按 R5-FIX 实测字段集构造旁路写入行（链字段齐全 + exitCode 缺失）
+        const bypassLine = JSON.stringify({
+          timestamp: '2026-10-28T05:56:00.029Z',
+          ruleId: 'R5-FIX',
+          verdict: 'PASS',
+          message: 'QA 验证写入（旁路）',
+          diffFiles: [],
+          ruleResults: [],
+          prevHash: 'bypass-not-linked',
+          hashVersion: 2,
+          envFingerprint: 'qa-env',
+          hmacAlgo: 'HMAC-SHA256',
+          hmacSig: 'qa-self-declared',
+        });
+        writeFileSync(histPath, [...lines, bypassLine].join('\n') + '\n');
+
+        const result = checkHistoryChainDetailed(testDir);
+        expect(result.status).not.toBe('tampered');
+        expect(result.nonstandardCount).toBeGreaterThanOrEqual(1);
+        expect(result.detail).toContain('非标准写入');
+      });
+
+      it('伪造行缺 timestamp（链字段也缺）→ 仍红 tampered（三态分诊的反向锁——防降级放水）', () => {
+        writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
+        appendHistory(makeEntry('2026-06-01T00:00:00Z', 0), testDir);
+        appendHistory(makeEntry('2026-06-02T00:00:00Z', 0), testDir);
+        const histPath = getHistoryFilePath(testDir);
+        const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+        // 无 timestamp、无 prevHash——连基础字段都不全，不满足黄态「链字段齐全」前提
+        writeFileSync(histPath, [...lines, '{"hmacSig":"fake","note":"no-ts"}'].join('\n') + '\n');
+        const result = checkHistoryChainDetailed(testDir);
+        expect(result.status).toBe('tampered');
       });
 
       it('非 JSON 行（损坏/手写）→ tampered（结构异常）', () => {
