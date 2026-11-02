@@ -644,28 +644,33 @@ if command -v npm &>/dev/null; then
     # 仓库本地构建已就绪，创建 wrapper 到全局路径
     # v1.6.0 BUG-48 修复：旧 wrapper 名 sofagent-audit 已于 v1.5.9 显式退役（S222/S476
     # 反向断言在案），安装器不得复活退役名。改为：
-    #   ① sofagent 单入口 wrapper（本地 dist 直跑，本地分支的主出口）；
+    #   ① sofagent 单入口 thin shim（转发 $SOFAGENT_HOME/bin/sofagent umbrella 单入口）；
     #   ② sofagent-audit 降为弃用 stub（打印退役提示 + 新入口后 exit 2，与 v2.0.0
     #     章六「显式退役」语义一致，不破坏既有引用的可发现性）。
+    # v1.8.0 fresh-eyes F12（P0）修复：本 wrapper 曾自造「audit-first 参数改写」实现
+    # （shift 去域词直传本地 dist）——dist 引擎无 audit 子命令，裸 `sofagent audit`
+    # exit 2、非 audit 域（version/web/help）全部「未知子命令」；而 $SOFAGENT_HOME/bin/
+    # sofagent 是另一份能跑的 umbrella 实现——两份同名入口能力集不等价，PATH 靠前者
+    # 为准时安装态头号命令族全灭。收敛为 thin shim 后全域能力同源，等价性由
+    # tools/check/check-cli-entry-parity.sh 门禁守护（shim 与单入口对同 argv 同 rc）。
     mkdir -p "$NPM_GLOBAL_BIN" 2>/dev/null || true
     cat > "$NPM_GLOBAL_BIN/sofagent" << WRAPPER_EOF
 #!/usr/bin/env bash
-# sofagent 单入口 wrapper（从仓库本地 dist 安装——audit-first：无参直通审计）
-# 参数改写：\`sofagent audit <X>\` → 去掉 audit 域词直传引擎（index.js 无 audit 子命令——
-# 首参即范围/flag）；\`sofagent <X>\` 直传。其余域（evolve/core/...）本地 dist 态
-# 不含路由，打印指引。
-# 深水审查 P1-A：安装时刻的仓库路径被烧进 wrapper——仓库移动/删除后 CLI 全灭且
-# 报错形态（node: Cannot find module）让用户无法自救。加存在性自检 + 自愈指引。
-_dist="$LOCAL_AUDIT_DIST"
-if [ ! -f "\$_dist" ]; then
-  echo "❌ sofagent: 本地引擎缺失（\${_dist}）" >&2
-  echo "   安装源仓库可能已被移动或删除。修复选项：" >&2
-  echo "   ① 回到仓库目录重跑: bash install.sh --base-only（重建 wrapper）" >&2
-  echo "   ② 改用 npm 全局安装: npm install -g sofagent（不依赖仓库路径）" >&2
+# sofagent 单入口 thin shim——转发 \$SOFAGENT_HOME/bin/sofagent（umbrella 单入口，
+# 保留字直接作答 + 业务域转发 sofagent-router）。本 shim 不做任何参数改写。
+# SOFAGENT_HOME 取法与安装态 bin 脚本同款（engine/scripts/lib/platform-detect.sh
+# 的 resolve_data_dir()：环境变量 → \$HOME/.sofagent 回退）。
+# 深水审查 P1-A 文案模式保留：目标缺失时给自愈指引，不让用户对着裸报错自救。
+_home="\${SOFAGENT_HOME:-\$HOME/.sofagent}"
+_entry="\$_home/bin/sofagent"
+if [ ! -f "\$_entry" ]; then
+  echo "❌ sofagent: 本体未安装或不完整（\$_entry 缺失）" >&2
+  echo "   修复选项：" >&2
+  echo "   ① 重跑安装器: bash install.sh --base-only（重建本体与 shim）" >&2
+  echo "   ② 改用 npm 全局安装: npm install -g sofagent（不依赖本地安装态）" >&2
   exit 1
 fi
-if [ "\$1" = "audit" ]; then shift; fi
-exec node "\$_dist" "\$@"
+exec bash "\$_entry" "\$@"
 WRAPPER_EOF
     chmod +x "$NPM_GLOBAL_BIN/sofagent" 2>/dev/null || true
     cat > "$NPM_GLOBAL_BIN/sofagent-audit" << STUB_EOF
