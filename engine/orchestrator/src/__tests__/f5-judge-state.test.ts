@@ -204,3 +204,43 @@ describe('F5 R2-2 · 嵌套脱敏（深层键名穿透拦截）', () => {
     expect(ser).toContain('[REDACTED:never-send]');
   });
 });
+
+// R3-4 回归锁（J3:139 值面）：非敏感键名下的编码密钥先解码再筛，整值 REDACTED
+describe('F5 R2-2 · 值级脱敏（R3-4：编码密钥不因键名无辜而穿透）', () => {
+  it('V1 base64 密钥藏 note 键下 ⇒ 解码命中 sk- 形态，整值 REDACTED + 留痕', () => {
+    // sk- 后须连续 ≥16 位字母数字（findSecrets 的 openai-like-key 正则不容忍内嵌连字符；
+    // 「sk-live-…」形态不触发是该规则既有口径，非本测试要验证的面）
+    const b64 = Buffer.from('sk-abcdefgh12345678').toString('base64');
+    const r = buildJudgeState(
+      { text: 'ok', evidenceReadiness: 'none', fields: { note: b64 } },
+      { prefixFields: ['note'], maxChars: 8000, consumer: 'test' },
+    );
+    if (!r.ok) throw new Error('build 失败');
+    const ser = JSON.stringify(r.state);
+    expect(ser).not.toContain(b64); // 原编码串不上行
+    expect(ser).toContain('[REDACTED:encoded-secret:openai-like-key]');
+    expect(r.meta.redactions).toContain('value:note:openai-like-key'); // 值级留痕带路径
+  });
+
+  it('V2 嵌套 fields.args.payload（S2 终审原攻击路径）同样拦截', () => {
+    const b64 = Buffer.from('AKIAIOSFODNN7EXAMPLE').toString('base64');
+    const r = buildJudgeState(
+      { text: 'ok', evidenceReadiness: 'none', fields: { args: { payload: b64, mode: 'fast' } } },
+      { prefixFields: ['args'], maxChars: 8000, consumer: 'test' },
+    );
+    if (!r.ok) throw new Error('build 失败');
+    const ser = JSON.stringify(r.state);
+    expect(ser).not.toContain(b64);
+    expect(ser).toContain('[REDACTED:encoded-secret:aws-access-key]');
+    expect(ser).toContain('fast'); // 非密钥值不受影响
+  });
+
+  it('V3 普通字符串值不受值级检测影响（无密钥形态原样通过）', () => {
+    const r = buildJudgeState(
+      { text: 'ok', evidenceReadiness: 'none', fields: { note: 'hello world 普通', n: 42 } },
+      { prefixFields: ['note'], maxChars: 8000, consumer: 'test' },
+    );
+    if (!r.ok) throw new Error('build 失败');
+    expect(JSON.stringify(r.state)).toContain('hello world 普通');
+  });
+});

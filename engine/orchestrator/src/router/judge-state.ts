@@ -133,7 +133,23 @@ function coarseOf(text: string): CoarseFeatures {
   };
 }
 
+/** 值级检测（J3:139「编码后内容先解码再筛」的 fields 值面，R3-4）：
+ *  字符串值先过 decodeForScreening（QP/百分号/base64/HTML 实体逐层解码）再 findSecrets，
+ *  命中任一密钥形态 ⇒ 整值 REDACTED 并留痕（值本身不上行——粗特征都算多余，秘密就是秘密）。 */
+function screenStringValue(value: string, notes: string[], path: string): string {
+  const { decoded } = decodeForScreening(value);
+  const hits = findSecrets(decoded);
+  if (hits.length > 0) {
+    notes.push(`value:${path}:${hits.join('+')}`);
+    return `[REDACTED:encoded-secret:${hits.join('+')}]`;
+  }
+  return value;
+}
+
 function stripNoise(value: unknown, notes?: string[], path = ''): unknown {
+  if (typeof value === 'string') {
+    return notes ? screenStringValue(value, notes, path) : value;
+  }
   if (Array.isArray(value)) return value.map((v) => stripNoise(v, notes, path));
   if (value && typeof value === 'object') {
     const out: Record<string, unknown> = {};
