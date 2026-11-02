@@ -465,6 +465,10 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 
 **成本计量的粒度是业务结果，不是单次调用**——三条独立实践同向：按任务归属拆成本并配预算线（Databricks，单位成本降九成）；把评审成本按环节四六拆解、定位到具体步骤（Cloudflare）；不看单个 Agent 烧多少 token，而看「完成一个业务流程结果」的全部 AI 成本——含人工复核与异常处理（McKinsey）。⇒ 判据：① 计量单位 = 一个业务流程结果，不是一次调用 / 一个 Agent / 一个月账单；② 分子须含人工复核与异常处理，否则自动化收益被高估；③ 分母是业务产出（处理量 / 周期 / 通过率），与单位成本同表才可判值不值。本条定粒度、上条定同表，互补不替代。
 
+**成本与上下文的优化杠杆排在「轮次」上，压缩率是末位指标**——三处独立实践同向：OpenRouter 把「至少一次 429 / 需重试比例」显式放进调度目标函数（每百万 token 成本 +7.3%，换 429 比例 7.1%→3.8%、需重试 10.4%→6.9%）；微软研究院×UC Berkeley 的编码 Agent 插件把压缩策略改为「从本仓历史会话学习」，其落点判断是「改变哪些内容进入上下文」而非「同样内容压得更短」（成本最高降 30.9%）；亚信在电信数据开发场景实测单轮检索 4.2 秒落在 Agent 循环之内、按轮次累乘（150 问自测：对象召回 98.6%、产物一次通过率 83.5%）。⇒ 判据三条：① 一次重试＝一次完整上下文重放（一整份输入重读），轮次（含重试 / 429 / 超时）须计入成本模型，不能只当可靠性指标；② 评估一个省 token 方案，先问「是否减少轮次、或改变进入上下文的内容」，压缩率是末位指标；③ 循环内的检索与工具延迟按轮次累乘，故上下文工程的收益常体现在轮次数而非单次准确率。优化顺序：减少轮次 ＞ 提高前缀复用 ＞ 压缩内容。与上两条互补——彼二者定计量口径与呈现方式，本条定优化顺序。
+
+> 📖 来源：[《How we rebuilt provider routing for better, faster inference》(2026-10-29)](https://openrouter.ai/blog/announcements/how-we-rebuilt-provider-routing/) · [《Meet TokenEconomizer: Microsoft's Plugin That Cuts Coding Agent Costs by Up to 30.9%》(2026-10-30)](https://www.marktechpost.com/2026/10/30/microsoft-tokeneconomizer-coding-agent-cost-control/)
+
 ## 四、市场印证：行业判断被市场买单
 
 > 前三章答「技术对不对」，本章答「市场认不认」。成篇全文见 [归档 · market-validation](./archive/validation-deep/market-validation.md)。
