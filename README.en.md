@@ -17,7 +17,7 @@
 
 </div>
 
-<p align="center"><sub><a href="./README.md">简体中文</a> | English</sub></p>
+<p align="center"><sub><a href="./README.md">简体中文</a> · [中文版](./README.md) | English</sub></p>
 
 
 ## Table of Contents
@@ -428,7 +428,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | Install, use, troubleshoot | [HANDBOOK](./docs/HANDBOOK.md) |
 | Architecture & the 28 rules | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
-| Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
+| Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) · [COMMUNITY](./docs/COMMUNITY.md) |
 
 > 🧪 **Engineering credibility** (current): 6668 tests / 14 packages (`tools/check/test-count.sh` measured standard) + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
 > **Package-count standard** (disambiguation): the **primary-reading standard** = 14 packages (test-count.sh measured; the two calibers below are set definitions)—workspace 29 = 13 module packages + `engine/corpus` (`@sofagent/rsi-corpus` corpus pipeline) + load-chain + dsh-plugin-kit + umbrella

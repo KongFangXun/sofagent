@@ -15,7 +15,7 @@
 
 </div>
 
-<p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
+<p align="center"><sub>简体中文 | <a href="./README.en.md">English</a> · [English version](./README.en.md)</sub></p>
 
 
 ## 目录
@@ -361,7 +361,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 | **全部文档索引**（按意图选路） | [WIKI](./docs/WIKI.md) |
 | 怎么装、怎么用、排查 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 架构设计与 28 条规则 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
+| 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) · [v2.0.0 规划](./docs/changelog/v2.0/v2.0.0.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 社区参与 · 行为准则 | [COMMUNITY](./docs/COMMUNITY.md) |
 | 外部验证与行业对照 | [VALIDATION](./docs/VALIDATION.md) |
