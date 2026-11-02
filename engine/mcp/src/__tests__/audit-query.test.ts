@@ -14,7 +14,7 @@
 // 决策条目经真实 emitDecision 写入（覆盖 causedBy schema 往返）。
 // ============================================================
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -210,16 +210,24 @@ describe('audit_query · decision 面因果链', () => {
   });
 
   it('causedBy：查以该 ts 为因果上游的后继决策 + 上溯链叙事', async () => {
+    // v1.8.0 修复：ts 碰撞时序脆弱性——三连发同毫秒时 block.causedBy=[route.ts] 指向自身
+    // （route.ts===block.ts），traceDecisionChain 判因果环断链（length=1，实测 flaky 率 3/6）。
+    // fake timers 逐毫秒推进保证三条 ts 互异——锁定因果链语义不依赖真实时钟精度。
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-02T12:00:00.000Z'));
+    try {
     // 因果链：route → caused → block → caused → escalate
     const route = emitDecision(makeInput({
       sessionId: 's1', kind: 'ORCHESTRATION', category: 'route',
       why: { text: '任务派给 executor 档', tags: ['route'] },
     }), testDir) as DecisionLogEntry;
+    vi.advanceTimersByTime(5);
     const block = emitDecision(makeInput({
       sessionId: 's1', kind: 'TOOL_GATE',
       why: { text: '拦截写 .env（A1）', tags: ['a1'], triggeredRule: 'A1' },
       causedBy: [route.ts], causalType: 'caused',
     }), testDir) as DecisionLogEntry;
+    vi.advanceTimersByTime(5);
     const escalate = emitDecision(makeInput({
       sessionId: 's1', kind: 'ESCALATE_REPORT', category: 'escalate',
       why: { text: '拦截后升级人工复核' },
@@ -239,6 +247,9 @@ describe('audit_query · decision 面因果链', () => {
     expect(d.chain!.root).toBe(block.ts);
     expect(d.chain!.length).toBe(2);
     expect(d.chain!.narrative).toContain('导致了');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('decision 时间过滤（无 causedBy → 列时间窗内决策）', async () => {
