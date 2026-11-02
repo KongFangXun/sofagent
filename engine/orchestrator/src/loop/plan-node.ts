@@ -18,6 +18,8 @@
 // ============================================================
 
 import { z } from 'zod';
+import type { DecisionChannel, DecisionQuestion } from '../router/decision-channel';
+import { buildJudgeState } from '../router/judge-state';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { AuditVerdict, LoopGraphState, Subtask } from './state';
@@ -266,10 +268,40 @@ export function parsePlanDecide(raw: string): Subtask[] | null {
  *   restricted/confidential → 本地 Ollama（local-executor）
  * LLM 解析失败（SOFAGENT_LLM 未设置等）→ 返回空字符串，由调用方走降级链。
  */
+
+// ── decision-model 档接线（F5 R2-3）────────────────────────────
+// 判定档不走生成模型：注入 DecisionChannel 后由它出**类型化答案**；
+// 未注入 ⇒ fail-closed 抛错（绝不回落到云端/本地生成分支）。
+let decisionChannel: DecisionChannel | null = null;
+let decisionQuestions: DecisionQuestion[] = [];
+
+export function setDecisionChannel(ch: DecisionChannel | null, questions: DecisionQuestion[] = []): void {
+  decisionChannel = ch;
+  decisionQuestions = questions;
+}
+
+/** 判定档执行：state 由单一构造入口产出（含脱敏），answers 序列化为字符串返回 */
+export async function runDecisionModel(prompt: string): Promise<string> {
+  if (!decisionChannel) {
+    throw new Error('decision-model 档未注入 DecisionChannel —— fail-closed，绝不回落生成模型');
+  }
+  const built = buildJudgeState(
+    { text: prompt, evidenceReadiness: 'none' },
+    { prefixFields: [], maxChars: 8000, consumer: 'loop/plan-node' },
+  );
+  if (!built.ok) {
+    throw new Error(`判定 state ${built.reason}（${built.chars}/${built.maxChars}）——按处置序弃权，不截断`);
+  }
+  const r = await decisionChannel.judge(built.state, decisionQuestions);
+  return JSON.stringify(r);
+}
+
 export async function defaultRunPlannerDecide(task: string): Promise<string> {
+  let routedTarget = '';
   try {
     const router = new ModelRouter();
     const route = router.route(task, { agentRole: 'plan', userIntent: task.slice(0, 200) });
+    routedTarget = route.target;
 
     const prompt = [
       '# 任务分解',
@@ -286,14 +318,14 @@ export async function defaultRunPlannerDecide(task: string): Promise<string> {
       return await callOllamaForPlan(prompt);
     }
     if (route.target === 'decision-model') {
-      // 判定档不走生成模型：判定由 DecisionChannel 处理，产出类型化答案而非文本。
-      // 这里显式返回空——绝不落到云端生成分支（那会把判定任务变成生成任务）
-      return '';
+      // 判定档不走生成模型：交 DecisionChannel 出类型化答案（F5 R2-3 接通）
+      return await runDecisionModel(prompt);
     }
     if (route.target === 'block') return '';
     // 云端路径：复用 SOFAGENT_LLM OpenAI 兼容接口
     return await callCloudForPlan(prompt);
-  } catch {
+  } catch (err) {
+    if (routedTarget === 'decision-model') throw err; // 判定档失败必须外显，不得吞成空串
     return '';
   }
 }

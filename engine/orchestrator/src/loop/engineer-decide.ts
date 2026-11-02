@@ -17,6 +17,8 @@
 // ============================================================
 
 import { z } from 'zod';
+import type { DecisionChannel, DecisionQuestion } from '../router/decision-channel';
+import { buildJudgeState } from '../router/judge-state';
 import { ModelRouter, type ModelRoute } from '../model-router';
 
 // ============================================================
@@ -222,15 +224,39 @@ export async function engineerDecide(
  * 云端：OpenAI 兼容接口（SOFAGENT_LLM_API_KEY）
  * 本地：Ollama /api/generate
  */
+
+// ── decision-model 档接线（F5 R2-3）────────────────────────────
+let decisionChannel: DecisionChannel | null = null;
+let decisionQuestions: DecisionQuestion[] = [];
+
+export function setDecisionChannel(ch: DecisionChannel | null, questions: DecisionQuestion[] = []): void {
+  decisionChannel = ch;
+  decisionQuestions = questions;
+}
+
+export async function runDecisionModel(prompt: string): Promise<string> {
+  if (!decisionChannel) {
+    throw new Error('decision-model 档未注入 DecisionChannel —— fail-closed，绝不回落生成模型');
+  }
+  const built = buildJudgeState(
+    { text: prompt, evidenceReadiness: 'none' },
+    { prefixFields: [], maxChars: 8000, consumer: 'loop/engineer-decide' },
+  );
+  if (!built.ok) {
+    throw new Error(`判定 state ${built.reason}（${built.chars}/${built.maxChars}）——按处置序弃权，不截断`);
+  }
+  const r = await decisionChannel.judge(built.state, decisionQuestions);
+  return JSON.stringify(r);
+}
+
 export async function defaultDecideCallLLM(prompt: string, route: ModelRoute): Promise<string> {
   try {
     if (route.target === 'local-executor' || route.target === 'local-pipeline') {
       return await callOllamaForDecide(prompt);
     }
     if (route.target === 'decision-model') {
-      // 判定档不走生成模型：判定由 DecisionChannel 处理，产出类型化答案而非文本。
-      // 这里显式返回空——绝不落到云端生成分支（那会把判定任务变成生成任务）
-      return '';
+      // 判定档不走生成模型：交 DecisionChannel 出类型化答案（F5 R2-3 接通）
+      return await runDecisionModel(prompt);
     }
     // block 档是敏感数据的 fail-closed 出口：**绝不回落到云端**。
     // （此前的写法会让 block 落入下面的云端分支——confidential 数据被阻断后
