@@ -226,6 +226,18 @@ describe('BUG-1 · 单 commit 仓 FULL_ONLY 自动路由的空树兜底', () => 
     expect(explicitEq.status).toBe(2);
     expect(explicitEq.output).toContain('diff range 无效');
   });
+
+  it('单 commit 仓显式 --diff HEAD~1..HEAD → 防呆指引（F4：含「无父基线」提示，不透传裸 git 错误）', () => {
+    // v1.8.0 fresh-eyes F4：首提交用户撞上 HEAD~1..HEAD 无父基线时，git 原始
+    // ambiguous argument 错误对新用户不可解读——改为防呆文案（指引直接跑
+    // sofagent audit 自动对比空树）。该用例经 FULL_BIN（完整引擎 diff 解析层）。
+    const dir = makeRepo('single', false);
+    const env = isolatedEnv();
+    const r = runBin(FULL_BIN, ['--diff', 'HEAD~1..HEAD'], { cwd: dir, env: env.env });
+    expect(r.status).not.toBe(0);
+    expect(r.output).toContain('无父基线');
+    expect(r.output).toContain('sofagent audit');
+  });
 });
 
 // ============================================================

@@ -838,6 +838,9 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
               ? '重新安装 sofagent 以恢复原始 dist：npm i -g sofagent@latest（npm 安装形态无本地构建）'
               : '重新安装 sofagent（npm run build --workspace=engine/audit 或 sofagent audit --install-hook）以恢复原始 dist',
           );
+          // v1.8.0 fresh-eyes F3：多形态共存指引——本机 npx 缓存/仓库态/安装态
+          // 多版本共存时属基线滞后（版本切换后基线未重建），不必然是劫持。
+          console.log('  若本机同时存在 npx 缓存 / 仓库态 / 安装态多版本共存，属版本切换后基线滞后：先确认当前使用形态，再运行 sofagent audit --doctor --baseline 重建信任锚（信任锚 = 你此刻确认 dist 可信的时刻）。');
           distIntegrityOk = false;
         }
       } else {

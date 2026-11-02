@@ -1290,8 +1290,16 @@ async function main(): Promise<void> {
         if (args.json) {
           console.log(JSON.stringify({ exitCode: 2, rules: [], error: 'INVALID_DIFF_RANGE' }, null, 2));
         } else {
-          console.error(`❌ diff range 无效: ${args.diffRange}`);
-          console.error(`  git 报错: ${stderr.trim()}`);
+          // v1.8.0 fresh-eyes F4：单 commit 仓库防呆——HEAD~1 在首提交仓库无父基线，
+          // git 报 ambiguous argument + unknown revision。此时给新手指引（首提交场景
+          // 直接跑 sofagent audit 自动对比空树），不再透传裸 git 错误。其余形态维持原输出。
+          if (stderr.includes('ambiguous argument') && stderr.includes('unknown revision')) {
+            console.error(`⚠️ diff range 无效: ${args.diffRange} —— 当前仓库只有 1 个 commit，无父基线。`);
+            console.error('   首提交场景请直接运行 sofagent audit（不带 --diff：自动对比空树，审计全部新增内容）。');
+          } else {
+            console.error(`❌ diff range 无效: ${args.diffRange}`);
+            console.error(`  git 报错: ${stderr.trim()}`);
+          }
         }
         exit(2);
       }
