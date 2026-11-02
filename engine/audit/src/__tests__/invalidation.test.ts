@@ -9,7 +9,7 @@
 //   ⑤ 向后兼容（老日志无 invalidationReason 字段照常解析/校验）
 // ============================================================
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -286,26 +286,39 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
     });
 
     it('治理 KPI 统计：失效标记条目自身是元记录，不使决策总数 +1', () => {
-      const agentId = 'kpi-marker-agent';
-      emitDecision(makeInput({ agentId, why: { text: 'r1', tags: ['rep2'] } }), testDir);
-      emitDecision(makeInput({ agentId, why: { text: 'r2', tags: ['rep2'] } }), testDir);
-      // 第三条：非 TOOL_GATE，不参与重复执行读数；拿它当失效目标以隔离变量
-      const bystander = emitDecision(makeInput({ agentId, sessionId: 'by', kind: 'ARTIFACT_EDIT' }), testDir);
+      // v1.8.0 修复：ts 碰撞时序脆弱性——emitDecision 的 ts 是毫秒粒度 ISO，
+      // 三连发落在同一毫秒时 markInvalid(bystander.ts) 会把同 ts 的 r1/r2 一并
+      // 剔除（filterValid 按 ts 集合剔行），totalDecisions 掉到 1（serial 模式
+      // 下高概率触发）。修法：fake timers 逐毫秒推进，保证三条 ts 互异——
+      // 锁定「标记只剔 bystander」的本测语义，不依赖真实时钟精度。
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-11-02T12:00:00.000Z'));
+      try {
+        const agentId = 'kpi-marker-agent';
+        emitDecision(makeInput({ agentId, why: { text: 'r1', tags: ['rep2'] } }), testDir);
+        vi.advanceTimersByTime(5);
+        emitDecision(makeInput({ agentId, why: { text: 'r2', tags: ['rep2'] } }), testDir);
+        vi.advanceTimersByTime(5);
+        // 第三条：非 TOOL_GATE，不参与重复执行读数；拿它当失效目标以隔离变量
+        const bystander = emitDecision(makeInput({ agentId, sessionId: 'by', kind: 'ARTIFACT_EDIT' }), testDir);
 
-      const before = computeGovernanceKpis({ dataDir: testDir });
-      expect(before.repetition.totalDecisions).toBe(2);
+        const before = computeGovernanceKpis({ dataDir: testDir, now: () => Date.now() });
+        expect(before.repetition.totalDecisions).toBe(2);
 
-      const marker = markInvalid({
-        agentId: 'sofagent-audit', sessionId: 's', reason: 'authorization-changed',
-        targets: [bystander.ts], trigger: '标记元记录不计入 KPI',
-      }, testDir);
-      expect(marker.kind).toBe('INVALIDATION');
+        const marker = markInvalid({
+          agentId: 'sofagent-audit', sessionId: 's', reason: 'authorization-changed',
+          targets: [bystander.ts], trigger: '标记元记录不计入 KPI',
+        }, testDir);
+        expect(marker.kind).toBe('INVALIDATION');
 
-      const after = computeGovernanceKpis({ dataDir: testDir });
-      // 标记条目 +1 落盘（原文留痕），但 KPI 决策总数不因标记而增加
-      expect(rawLines(testDir).filter((l) => l.includes('"kind":"INVALIDATION"'))).toHaveLength(1);
-      expect(after.repetition.totalDecisions).toBe(2);
-      expect(after.repetition.uniqueFingerprints).toBe(before.repetition.uniqueFingerprints);
+        const after = computeGovernanceKpis({ dataDir: testDir, now: () => Date.now() });
+        // 标记条目 +1 落盘（原文留痕），但 KPI 决策总数不因标记而增加
+        expect(rawLines(testDir).filter((l) => l.includes('"kind":"INVALIDATION"'))).toHaveLength(1);
+        expect(after.repetition.totalDecisions).toBe(2);
+        expect(after.repetition.uniqueFingerprints).toBe(before.repetition.uniqueFingerprints);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('决策查询读数：标记条目不作为先例 / 高频模式回灌', () => {
