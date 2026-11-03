@@ -10,6 +10,7 @@ import { describe, it, expect } from 'vitest';
 import {
   PROBE_THRESHOLDS,
   buildTrends,
+  computeAiParticipation,
   computeUsageMetrics,
   detectCollaborationChannels,
   probeAbstainMutation,
@@ -254,5 +255,31 @@ describe('F6.4 · 面板/周报可见（A② 接线）', () => {
     expect(md.indexOf('distribution-drift')).toBeLessThan(md.indexOf('probability-anomaly'));
     expect(md).toContain('| 40 |');
     expect(md).toContain('上线即被推翻');
+  });
+});
+
+describe('v1.9 §六 · AI 参与度度量（E-10 trailer 口径）', () => {
+  it('含 AI trailer 的提交数 / 总数；三种 trailer 形态都认', () => {
+    const r = computeAiParticipation([
+      { sha: 'a', message: 'feat: x\n\nCo-authored-by: Claude <noreply@anthropic.com>' },
+      { sha: 'b', message: 'fix: y\n\nGenerated-by: deepseek-v4' },
+      { sha: 'c', message: 'docs: z\n\nAI-Assisted: true' },
+      { sha: 'd', message: 'chore: 纯人工' },
+    ]);
+    expect(r.total).toBe(4);
+    expect(r.withAiTrailer).toBe(3);
+    expect(r.ratio).toBe(0.75);
+  });
+
+  it('零提交 ⇒ ratio=null（零样本不报 0）', () => {
+    expect(computeAiParticipation([]).ratio).toBeNull();
+  });
+
+  it('三条局限注记随读数同出（缺一条即不可用）', () => {
+    const r = computeAiParticipation([{ sha: 'a', message: 'x' }]);
+    expect(r.limitations).toHaveLength(3);
+    expect(r.limitations.join('')).toMatch(/漏计/);
+    expect(r.limitations.join('')).toMatch(/人工代提交/);
+    expect(r.limitations.join('')).toMatch(/窗口敏感/);
   });
 });

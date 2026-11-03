@@ -590,3 +590,61 @@ export function buildTrends(points: TrendPoint[], worseWhen: Record<string, -1 |
   }
   return out;
 }
+
+// ============================================================
+// AI 参与度度量（v1.9 §六 · 口径 = commit trailer，E-10 裁定 2026-11-03）
+// ------------------------------------------------------------
+// 口径定义（S3 §三3.38 裁定 ①）：AI 参与比例 = 含 AI trailer 的 commit 数 /
+// 统计窗口内总 commit 数。选 trailer 的理由是它**已被本仓工具链实际记录**
+// （作者白名单需人工维护必漂移；行级来源标注要改造整条 diff 管线）。
+//
+// 三条局限注记随指标一起产出——缺注记的比例数会被当成「全量 AI 参与度」误读：
+//   ① trailer 缺失即漏计（约定是自愿的，没有 trailer 的 AI 协作不可见）
+//   ② 人工代提交不可分辨（人把 AI 产出提交上去，与纯人工提交同形）
+//   ③ 窗口敏感（比例随统计窗口变化，跨窗口比较无意义）
+// ============================================================
+
+/** 提交元数据（trailer 从 commit message 尾部解析后传入） */
+export interface CommitMeta {
+  sha: string;
+  /** 完整 commit message（含 trailer 段） */
+  message: string;
+}
+
+/** AI 归属信号（trailer 键值——命中任一即计为 AI 参与） */
+const AI_TRAILER_PATTERNS: readonly RegExp[] = [
+  /^co-authored-by:.*\b(claude|gpt|deepseek|gemini|copilot|cursor|codex|qwen|glm)\b/im,
+  /^generated-by:\s*\S+/im,
+  /^ai-assisted:\s*true\b/im,
+];
+
+/** AI 参与度读数（含三条局限注记——不得缺） */
+export interface AiParticipation {
+  /** 窗口内总提交数 */
+  total: number;
+  /** 含 AI trailer 的提交数 */
+  withAiTrailer: number;
+  /** 比例（total=0 时为 null——零样本不报 0，报「无数据」） */
+  ratio: number | null;
+  /** 三条局限注记（固定文案，随读数同出） */
+  limitations: string[];
+}
+
+/**
+ * 计算 AI 参与度（纯函数——不做 git 调用，调用方取 message 传入）。
+ * 只观测不评判：比例高不代表质量高，也不单独作能力声明（与判定使用度量同纪律）。
+ */
+export function computeAiParticipation(commits: CommitMeta[]): AiParticipation {
+  const total = commits.length;
+  const withAiTrailer = commits.filter((c) => AI_TRAILER_PATTERNS.some((re) => re.test(c.message))).length;
+  return {
+    total,
+    withAiTrailer,
+    ratio: total === 0 ? null : Number((withAiTrailer / total).toFixed(4)),
+    limitations: [
+      'trailer 缺失即漏计——没有 AI trailer 的协作不可见，比例是下界不是全量',
+      '人工代提交不可分辨——人提交 AI 产出与纯人工提交同形',
+      '窗口敏感——比例随统计窗口变化，跨窗口比较无意义',
+    ],
+  };
+}
