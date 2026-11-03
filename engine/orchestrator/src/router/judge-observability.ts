@@ -275,6 +275,36 @@ export function probeCharacterizationCollapse(embeddings: number[][]): ProbeFind
   };
 }
 
+
+// ============================================================
+// 面板 / 周报渲染（v1.9 §六「告警在面板与周报可见（非仅日志）」）
+// ============================================================
+/**
+ * 把探针结果渲染成**可贴进面板/周报的 markdown 表**。
+ *
+ * 纪律：① alert 排在前（人会先看红）；② 每行带 n（无样本量的告警不可处置）；
+ * ③ 渲染**不改变** finding（纯函数），也不触发任何阻断——探针只报不拦。
+ */
+export function renderProbePanel(findings: ProbeFinding[], usage?: UsageMetrics, title = '判定层失效探测'): string {
+  const order: Record<Severity, number> = { alert: 0, warn: 1, ok: 2 };
+  const rows = [...findings]
+    .sort((a, b) => order[a.severity] - order[b.severity])
+    .map((f) => `| ${f.severity === 'alert' ? '🔴 alert' : f.severity === 'warn' ? '🟡 warn' : '🟢 ok'} | ${f.probe} | ${String(f.metric)} | ${String(f.threshold)} | ${f.n} |`);
+  const counts = {
+    alert: findings.filter((f) => f.severity === 'alert').length,
+    warn: findings.filter((f) => f.severity === 'warn').length,
+    ok: findings.filter((f) => f.severity === 'ok').length,
+  };
+  const head = `### ${title}（alert ${counts.alert} · warn ${counts.warn} · ok ${counts.ok}）`;
+  const usageLine = usage
+    ? `\n**判定使用**：n=${usage.n} · 采纳率 ${usage.adoptionRate ?? 'n/a'} · ASK ${usage.askRate} · DENY ${usage.denyRate} · 推翻率 ${usage.overrideRate ?? 'n/a'}`
+      + ` · 红旗：${usage.unconsumed ? '无人消费 ' : ''}${usage.overridden ? '上线即被推翻' : ''}`.trimEnd()
+    : '';
+  return [head, '', '| 级别 | 探针 | 实测 | 阈值 | n |', '|---|---|---|---|---|', ...rows, usageLine]
+    .filter((x) => x !== undefined)
+    .join('\n');
+}
+
 /** 汇总跑四探针（产出级）+ 表征级（给了嵌入才算） */
 export function runAllProbes(input: {
   window: JudgeObservation[];

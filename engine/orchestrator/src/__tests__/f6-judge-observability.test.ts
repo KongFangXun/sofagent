@@ -17,6 +17,7 @@ import {
   probeDistributionDrift,
   probeLengthLatency,
   probeProbabilityAnomaly,
+  renderProbePanel,
   runAllProbes,
   selectChannelBeforeLoad,
   traceCompression,
@@ -236,5 +237,22 @@ describe('F6.4 · 接线面：前置分流写进审计（decision-dispatch）', 
     const sel = resolveChannelBeforeLoad([{ name: 'x', requiresLoad: true, health: 0.5, priority: 1 }], { allowLoad: false });
     expect(sel.channel).toBeNull();
     expect(sel.reason).toContain('no-usable-channel');
+  });
+});
+
+describe('F6.4 · 面板/周报可见（A② 接线）', () => {
+  it('O19 渲染成 markdown：alert 排前、每行带 n、含使用度量与红旗', () => {
+    const findings = [
+      { probe: 'probability-anomaly' as const, severity: 'ok' as const, metric: 0.7, threshold: 'x', detail: '', n: 30 },
+      { probe: 'distribution-drift' as const, severity: 'alert' as const, metric: 0.2, threshold: 'y', detail: '', n: 40 },
+    ];
+    const md = renderProbePanel(
+      findings,
+      { n: 10, adoptionRate: 0.4, askRate: 0.6, denyRate: 0, overrideRate: 0.6, unconsumed: false, overridden: true },
+    );
+    expect(md).toContain('alert 1 · warn 0 · ok 1');
+    expect(md.indexOf('distribution-drift')).toBeLessThan(md.indexOf('probability-anomaly'));
+    expect(md).toContain('| 40 |');
+    expect(md).toContain('上线即被推翻');
   });
 });

@@ -42,6 +42,12 @@ export interface CompactResult {
     preservedSections: string[];
     compactedLines: number;
     ts: string;
+    /**
+     * 压缩前**判据输入引用**（v1.9 §六「压缩留痕完整性」）。
+     * 为什么必须在 event 与 content 里各留一份：event 走审计落痕（可查「压了什么」），
+     * content 内的索引保证**压缩后的文本自身**仍能还原判定依据引用——只留摘要等于丢证据。
+     */
+    evidenceRefs: string[];
   };
 }
 
@@ -73,6 +79,13 @@ export function compactIfNeeded(
   budget?: LoadChainBudget,
   options?: { onCompact?: OnCompactCallback; maxSectionLines?: number },
 ): CompactResult {
+  // 压缩前先取「判据输入引用」——必须在任何截断之前，否则取到的已是摘要
+  const evidenceRefs = content
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => /^#{1,6}\s+/.test(l) || /^(?:\[ref:|引用[:：])/.test(l))
+    .map((l) => l.replace(/^#{1,6}\s+/, '').replace(/^(?:\[ref:|引用[:：])\s*/, '').trim());
+
   const verdict: BudgetVerdict = checkBudget(content, budget);
   const beforeTokens = verdict.estimatedTokens;
   const ts = new Date().toISOString();
@@ -81,7 +94,15 @@ export function compactIfNeeded(
     const result: CompactResult = {
       content,
       compacted: false,
-      event: { triggered: false, beforeTokens, afterTokens: beforeTokens, preservedSections: [], compactedLines: 0, ts },
+      event: {
+        triggered: false,
+        beforeTokens,
+        afterTokens: beforeTokens,
+        preservedSections: [],
+        compactedLines: 0,
+        ts,
+        evidenceRefs,
+      },
     };
     return result;
   }
@@ -119,12 +140,16 @@ export function compactIfNeeded(
   flush();
 
   const body = outLines.join('\n');
-  const marked = `${COMPACT_START_MARKER}\n${body}\n${COMPACT_END_MARKER}`;
+  // 压缩前证据索引：即便正文段被截断，判定依据的**引用**仍留在交付文本里
+  const indexBlock = evidenceRefs.length
+    ? `<!-- 压缩前证据索引（判定依据引用，不随摘要丢失） -->\n${evidenceRefs.map((r) => `[ref:${r}]`).join('\n')}\n`
+    : '';
+  const marked = `${COMPACT_START_MARKER}\n${indexBlock}${body}\n${COMPACT_END_MARKER}`;
   const afterTokens = estimateTokens(marked);
   const result: CompactResult = {
     content: marked,
     compacted: true,
-    event: { triggered: true, beforeTokens, afterTokens, preservedSections, compactedLines, ts },
+    event: { triggered: true, beforeTokens, afterTokens, preservedSections, compactedLines, ts, evidenceRefs },
   };
   options?.onCompact?.(result);
   return result;
