@@ -252,7 +252,7 @@ export function startSystemoneEndpoint(options: SystemoneEndpointOptions): Syste
     host,
     port,
     close: () => {
-      try { server.close(); } catch { /* 幂等 */ }
+      try { server.close(); } catch { /* 为何可静默：close 幂等，重复关闭无副作用且无降级信息可报 */ }
     },
   };
 }

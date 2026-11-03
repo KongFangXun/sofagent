@@ -64,7 +64,7 @@ function appendTrace(destDir: string, entry: Record<string, unknown>): void {
     mkdirSync(destDir, { recursive: true });
     appendFileSync(join(destDir, 'fetch-trace.ndjson'), JSON.stringify(entry) + '\n');
   } catch {
-    /* 留痕失败不掩盖主结果——但 trace 字段仍随返回值给出 */
+    /* 为何可静默：留痕失败不掩盖主结果——trace 字段仍随返回值给出 */
   }
 }
 
@@ -95,7 +95,7 @@ export async function fetchVersion(opts: FetchVersionOpts): Promise<FetchResult>
   // §五 白名单门（fail-closed）：非白名单源且未显式开启 → 拒收留痕
   if (!isWhitelistedSource(opts.url) && !opts.allowAnySource) {
     const t = { ts: new Date().toISOString(), url: opts.url, ok: false, stage: 'source-policy', sourcePolicy: 'denied-not-whitelisted' };
-    try { mkdirSync(opts.destDir, { recursive: true }); appendTrace(opts.destDir, t); } catch { /* trace 尽力 */ }
+    try { mkdirSync(opts.destDir, { recursive: true }); appendTrace(opts.destDir, t); } catch { /* 为何可静默：trace 尽力——拒绝结论随返回值给出，不因留痕失败改变判定 */ }
     return { ok: false, issues: [`来源 ${new URL(opts.url).hostname} 不在白名单（WEIGHTS_SOURCE_WHITELIST）——非白名单源须显式 allowAnySource=true 且留痕`], trace: t };
   }
   const retries = opts.retries ?? 2;
@@ -184,7 +184,7 @@ async function fetchVersionOnce(opts: FetchVersionOpts, attempt: number): Promis
   mkdirSync(opts.destDir, { recursive: true });
   writeFileSync(dest, body);
   // P1-5：校验通过后清 .part（本次拉取完整落盘，残留 .part 会误导下次续传）
-  try { (await import('fs')).unlinkSync(dest + '.part'); } catch { /* 无 .part 即跳过 */ }
+  try { (await import('fs')).unlinkSync(dest + '.part'); } catch { /* 为何可静默：无 .part 即跳过（不存在不是错误，删除目标为可选残留） */ }
   writeFileSync(`${dest}.sha256`, `${actual}  ${opts.fileName}\n`);
   const trace = { ...baseTrace, ok: true, stage: 'done', actualSha256: actual, bytes: body.length };
   appendTrace(opts.destDir, trace);
