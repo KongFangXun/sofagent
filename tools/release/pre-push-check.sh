@@ -92,6 +92,10 @@ while [[ $# -gt 0 ]]; do
         #   本模式 **约 30 秒**（守卫对 2000+ tracked 文件逐个 `file` 探测，慢在这）。
         #   判据：**只有「push 之后发现就来不及」的检查才配进 hook**（公开面泄漏即此类——
         #   清理须移动已发布 tag，通常做不到）；其余检查都能事后修，交给 CI 与手动全量预检。
+        #   家族文档债务（C3 计数口径 / C4 版本状态）同属此类：一旦推送，对外文档的「旧数字 /
+        #   旧版本态」即已公开，事后修等于改已发布内容 ⇒ 纳入载荷；代价实测 0.25 s（可忽略）。
+        #   🔴 历史坑：第 3l 段曾只在文档里登记、无调用面；接线后又只接到 full/quick 分支，
+        #   而 hook 走 --guard-only 且在参数解析期 exit ⇒ **仍然永不执行**。本块是它的真载荷。
         # ⚠️ 本块在辅助函数定义之前（参数解析期）执行，故只用 echo，**不得调 check_pass/check_fail**。
         echo -e "${BOLD}── 不可逆风险守卫（非完整预检）──${NC}"
         _g_rc=0
@@ -101,7 +105,23 @@ while [[ $# -gt 0 ]]; do
         else
           echo -e "  ${RED}✗${NC} check-open-boundary.sh 发现公开面泄漏（rc=${_g_rc}）"
         fi
-        echo -e "  ${YELLOW}⚠ 本模式仅覆盖不可逆风险守卫；完整预检请跑 --quick 或全量${NC}"
+        if [ ! -f tools/check/check-doc-debt.mjs ]; then
+          echo -e "  ${RED}✗${NC} tools/check/check-doc-debt.mjs 不存在（守卫缺失——fail-closed：缺件按未通过处理，不静默放行）"
+          _g_rc=1
+        else
+          _d_rc=0
+          node tools/check/check-doc-debt.mjs || _d_rc=$?
+          if [ "$_d_rc" -eq 0 ]; then
+            echo -e "  ${GREEN}✓${NC} check-doc-debt.mjs（八类零违规 · C4 本次 SKIP，SKIP ≠ 通过）"
+          elif [ "$_d_rc" -eq 2 ]; then
+            echo -e "  ${RED}✗${NC} check-doc-debt.mjs 检查器失明（exit 2——拒绝假绿）"
+            _g_rc=1
+          else
+            echo -e "  ${RED}✗${NC} check-doc-debt.mjs 家族文档债务违规（rc=${_d_rc}）"
+            _g_rc=1
+          fi
+        fi
+        echo -e "  ${YELLOW}⚠ 本模式仅覆盖不可逆风险守卫 + 家族文档债务八类；完整预检请跑 --quick 或全量${NC}"
         [ "$_g_rc" -eq 0 ] || exit 1
         exit 0 ;;
       --install-hook)
