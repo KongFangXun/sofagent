@@ -14,6 +14,7 @@
 //     train 侧 `router-exporter.ts` 的 `assertSchemaFamilyAlignment` 校验
 // ============================================================
 
+import { selectChannelBeforeLoad, type ChannelCandidate, type ChannelSelection } from './judge-observability';
 import { createHmac } from 'crypto';
 import { z } from 'zod';
 
@@ -93,6 +94,32 @@ export interface DecisionDispatcherDeps {
  * 组包顺序：入参 → RouteDispositionSchema 校验（fail-closed，坏格式拒绝下达）
  * → HMAC 签名 → 传输 → 审计挂链。
  */
+/**
+ * 前置分流（F6.4 接线面 · v1.9 §六「入口前置分流」）。
+ *
+ * 为什么放在 dispatch 而不是「分发时再选」：通道选择必须在**任何模型加载之前**完成。
+ * 本函数不 import 任何加载器、不触发 IO——只吃候选表，把决定与理由写进审计（`auditAppend`），
+ * 使「一开始就选错路径」这种事后探针抓不到的失效**在选择的当下就可查**。
+ */
+export function resolveChannelBeforeLoad(
+  candidates: ChannelCandidate[],
+  ctx: { allowLoad: boolean },
+  auditAppend?: (line: string) => void,
+): ChannelSelection {
+  const selection = selectChannelBeforeLoad(candidates, ctx);
+  auditAppend?.(
+    JSON.stringify({
+      event: 'channel-selection',
+      ts: new Date().toISOString(),
+      channel: selection.channel?.name ?? null,
+      reason: selection.reason,
+      decidedBeforeLoad: selection.decidedBeforeLoad,
+      excluded: selection.excluded,
+    }),
+  );
+  return selection;
+}
+
 export class DecisionDispatcher {
   private readonly hmacKey: string | null;
   private readonly transport: DispatchTransport;

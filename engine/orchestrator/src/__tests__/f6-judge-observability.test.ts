@@ -24,6 +24,7 @@ import {
   type JudgeObservation,
   type UsageRecord,
 } from '../router/judge-observability';
+import { resolveChannelBeforeLoad } from '../router/decision-dispatch';
 
 /** 造 n 条观测：dist 固定、可调置信/弃权/长度/延迟 */
 function obs(n: number, dist: number[], extra: Partial<JudgeObservation> = {}): JudgeObservation[] {
@@ -208,5 +209,32 @@ describe('F6.4 · 压缩留痕完整性 + 四层趋势', () => {
     expect(t.points).toHaveLength(3);
     expect(t.points[1].delta).toBeCloseTo(0.02, 6);
     expect(t.degrading).toBe(true);
+  });
+});
+
+describe('F6.4 · 接线面：前置分流写进审计（decision-dispatch）', () => {
+  it('O17 选择决定与理由可查：禁加载时选免加载通道，审计行含 event/channel/reason/excluded', () => {
+    const lines: string[] = [];
+    const sel = resolveChannelBeforeLoad(
+      [
+        { name: 'local-judge', requiresLoad: true, health: 0.9, priority: 1 },
+        { name: 'rule-l0', requiresLoad: false, health: null, priority: 2 },
+      ],
+      { allowLoad: false },
+      (l) => lines.push(l),
+    );
+    expect(sel.channel?.name).toBe('rule-l0');
+    expect(lines).toHaveLength(1);
+    const rec = JSON.parse(lines[0]!);
+    expect(rec.event).toBe('channel-selection');
+    expect(rec.channel).toBe('rule-l0');
+    expect(rec.decidedBeforeLoad).toBe(true);
+    expect(rec.excluded).toContainEqual({ name: 'local-judge', why: 'requires-load-but-load-not-allowed' });
+  });
+
+  it('O18 无可用通道时不静默：channel=null 且理由为 no-usable-channel', () => {
+    const sel = resolveChannelBeforeLoad([{ name: 'x', requiresLoad: true, health: 0.5, priority: 1 }], { allowLoad: false });
+    expect(sel.channel).toBeNull();
+    expect(sel.reason).toContain('no-usable-channel');
   });
 });
