@@ -70,7 +70,7 @@
 > 🗑️ **API 退役公告（v1.5.7 · 浏览器实现底座删除与公开面 4 符号吊销）**
 >
 > **`@sofagent/orchestrator` 公开面吊销 4 符号**：`BrowserSession` / `BrowserDriver` / `BrowserAuditSink` / `BrowserSessionFactory`（`public-api-baseline` 同批移除，2549→2545）——实现底座 `engine/orchestrator/src/refine-agent/browser-tools.ts`（260 行）与其单测（204 行）已删除，
->对齐 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md) 裁定（orchestrator 侧能力库）。触发链：[v1.5.7 第二章 UI 审计可行性报告](./docs/eval/ui-audit-feasibility.md)落盘（结论「不实做」）⇒ 四件套随之退役删除。
+>对齐 [v2.0.0 §七 B 表](./docs/changelog/v2.0/v2.0.0.md) 裁定（orchestrator 侧能力库）。触发链：[v1.5.7 第二章 UI 审计可行性报告](./docs/archive/ui-audit-feasibility.md)落盘（结论「不实做」）⇒ 四件套随之退役删除。
 > **升级影响（公开 API 删除）**：外部代码 import 上述 4 符号将编译失败——四件套自 MCP 面 2026-09-26 注销（107→103）后已零生产消费面，SDK 面台账零登记（`check-unwired-exports` 实测零命中），实际破坏面为零；历史实现可自 v1.4.x tag 取回。
 >**保留不变**：三件图像能力 `analyzeScreenshot` / `readImageMeta` / `degradeImageToText`（dsh-vision 视觉降级本体，非四件套）迁 `engine/orchestrator/src/refine-agent/image-meta.ts`，`@public` 导出与基线条目原样保留（导出改指新模块，导入路径无需变更）。MCP 工具面无增删（仍 104）。
 

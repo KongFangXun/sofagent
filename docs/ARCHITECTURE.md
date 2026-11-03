@@ -220,7 +220,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | 包 | 职责 | 状态 |
 |---|---|---|
 | audit | 提交时审计，28 条规则（17 默认 + 11 扩展，[完整清单见 SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1633 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（700 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（708 测试） |
 | inject | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
@@ -248,7 +248,9 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
   v1.5.0 时点值 2547（双向变动：存量清扫退役 3 符号，新功能新增 56——章一治理面 16 + 章二双时态 9 + 章八 trace 对账 24 + 章五数据集审阅 4 + 章五陪跑期 3，两段不重叠故 56 即净值）；
 
-  时点沿革：v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364。本行口径以 live 提取为准；磁盘基线随发版重建对齐（当前基线 2561（v1.9.0 §四:9 MLflow exporter 退役 -5：`logBenchmarkToMlflow`/`buildMetrics`/`llmAsJudge`/`MlflowMetrics`/`MlflowRunResult`，2566→2561），v1.4.9 时代生成——发版时以 --update-baseline 重建后此处回填终值；v1.5.7 章二浏览器底座退役 -4：`BrowserAuditSink`/`BrowserDriver`/`BrowserSession`/`BrowserSessionFactory` 四符号吊销，2549→2545）。
+  时点沿革：v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364。本行口径以 live 提取为准；磁盘基线随发版重建对齐（当前基线 2561
+  （v1.9.0 §四:9 MLflow exporter 退役 -5：`logBenchmarkToMlflow`/`buildMetrics`/`llmAsJudge`/`MlflowMetrics`/`MlflowRunResult`，2566→2561），
+  v1.4.9 时代生成——发版时以 --update-baseline 重建后此处回填终值；v1.5.7 章二浏览器底座退役 -4：`BrowserAuditSink`/`BrowserDriver`/`BrowserSession`/`BrowserSessionFactory` 四符号吊销，2549→2545）。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：
@@ -668,7 +670,8 @@ graph LR
 **行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 A15 约束验证同源（同 §三审计外置原则）；Palantir OAG 的「确定性与概率性分离」与 sofagent 审计完全同构（22/28 条纯 git-diff、不依赖 Agent 配合即其工程实现）。
 完整的行业对标（Palantir OAG 五层映射、Ledger-Views-Policy 对照、DeerFlow / Omnigent / DataFlow 等）见 [VALIDATION](./VALIDATION.md)（**行业印证 SSOT**）与 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型)。
 
-> 💡 **规则编号说明**：A1–A11 + A18–A23 为默认规则（17 条），A14–A17 + A24 + E1/E2/E4/E5/E6/E7 为扩展规则（11 条，需 opt-in），全量 28 条（17 默认 + 11 扩展）。**28 条规则完整清单（文档级 SSOT）见 [SECURITY.md → 28 条审计规则完整清单](../SECURITY.md#28-条审计规则完整清单文档级-ssot)**，逐条行为表见 `engine/audit/README.md`。A12/A13 已在 v0.99.4 合并入 A11，E3 已在 v1.2.5 并入 A11，编号不再使用。
+> 💡 **规则编号说明**：A1–A11 + A18–A23 为默认规则（17 条），A14–A17 + A24 + E1/E2/E4/E5/E6/E7 为扩展规则（11 条，需 opt-in），全量 28 条（17 默认 + 11 扩展）。
+> **28 条规则完整清单（文档级 SSOT）见 [SECURITY.md → 28 条审计规则完整清单](../SECURITY.md#28-条审计规则完整清单文档级-ssot)**，逐条行为表见 `engine/audit/README.md`。A12/A13 已在 v0.99.4 合并入 A11，E3 已在 v1.2.5 并入 A11，编号不再使用。
 >
 >
 
