@@ -458,3 +458,19 @@ describe('v1.8.0 §二 · 同源对账四件与写时锚定（行为锁）', () 
     expect(e.judgeReceipt!.provenance!.payload_sha256).toHaveLength(64);
   });
 });
+
+describe('v1.8.0 review r1 · 原型污染键拒收', () => {
+  it('judgeReceipt 含 constructor/prototype 键即拒（字面量路径）', () => {
+    const base = {
+      stateDigest: 'd'.repeat(64), evidenceRefs: [], modelIdentity: 'm',
+      probabilities: [0.5], deterministicBaseline: 'L0',
+    };
+    // 字面量对象的自有键直达校验面（constructor/prototype 是自有键名——非原型链语义）
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...base, constructor: 'x' } as never, content: false,
+    }), '/tmp/proto-t1')).toThrow(/原型污染键/);
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...base, prototype: 1 } as never, content: false,
+    }), '/tmp/proto-t2')).toThrow(/原型污染键/);
+  });
+});

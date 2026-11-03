@@ -281,20 +281,15 @@ export function setDecisionChannel(ch: DecisionChannel | null, questions: Decisi
 }
 
 /** 判定档执行：state 由单一构造入口产出（含脱敏），answers 序列化为字符串返回 */
-/** 影子门运行档（J3:144）：默认 shadow——判定照跑只落痕；active 须过对账（reconciled>0）；off 由路由层归一（本模块不持 off 分支） */
-let judgeMode: JudgeMode = 'shadow';
-const shadowLedger: ShadowLedger = { reconciled: 0 };
-
-/** 切换判定运行档（active 需先过影子期对账，ShadowGateError 拒绝；off 生效位置在 model-router.route()，非本模块） */
-export function setJudgeMode(mode: JudgeMode, ledger?: ShadowLedger): void {
-  judgeMode = mode;
-  if (ledger) shadowLedger.reconciled = ledger.reconciled;
-}
+// v1.8.0 §一（review P1-3）：judgeMode/shadowLedger 收敛到 router/judge-mode.ts 单例——
+// 两 loop 共享同一状态源，plan 侧切档 engineer 侧即见（此前各持一份会漂移）。
+export { setJudgeMode } from '../router/judge-mode';
+import { getJudgeMode, getShadowLedger } from '../router/judge-mode';
 
 export async function runDecisionModel(prompt: string): Promise<string> {
   // v1.8.0 §一：off 兜底断言——正常路径 off 在路由层已归一 local-executor，
   // 本函数不可达；被误调（绕过路由层直接调用）即抛 JudgeOffError。
-  if (judgeMode === 'off') {
+  if (getJudgeMode() === 'off') {
     throw new Error('judgeMode=off：判定点不启用——runDecisionModel 不应被调用（路由层应已归一 local-executor），上游漏判');
   }
   if (!decisionChannel) {
@@ -311,8 +306,8 @@ export async function runDecisionModel(prompt: string): Promise<string> {
   // 影子门（J3:144）：与 engineer 侧同构——shadow 只落痕不生效；active 未对账即拒；
   // off 档在本函数不可达（路由层归一 local-executor，runDecisionModel 首行断言兜底）。
   const gated = applyWithShadowGate(
-    judgeMode,
-    shadowLedger,
+    getJudgeMode(),
+    getShadowLedger(),
     { grade: String((r as { answers?: unknown[] }).answers?.length ?? 0), target: 'decision-model' },
     { grade: '0', target: 'decision-model' },
   );
@@ -327,7 +322,7 @@ export async function defaultRunPlannerDecide(task: string): Promise<string> {
   try {
     const router = new ModelRouter();
     // v1.8.0 §一：judgeMode 单源——由本模块当前档位传入 context（router 只读不自持）
-    const route = router.route(task, { agentRole: 'plan', userIntent: task.slice(0, 200), judgeMode });
+    const route = router.route(task, { agentRole: 'plan', userIntent: task.slice(0, 200), judgeMode: getJudgeMode() });
     routedTarget = route.target;
 
     const prompt = [

@@ -190,6 +190,7 @@ export class ModelRouter {
     if (context.judgeMode === 'off') {
       return { target: 'local-executor', reason: 'judge-off', sensitivity: 'restricted', complexity: 'simple' };
     }
+    // P2-1（review r1）：off 判定先于显式请求——off 下即便 requestDecisionModel=true 也不可达（off 语义不被 request 翻转）。
     // v1.8.0 §四：判定档可达性 = 上游显式请求（requestDecisionModel=true）——
     // 不参与「敏感度 × 复杂度」自动矩阵（SSOT §四 交付表「与本地两档的分工
     // 声明」行：判定档由判定任务发起时指定）。off 之外的 shadow/active 档下，

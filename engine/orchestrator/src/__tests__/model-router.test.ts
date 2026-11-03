@@ -670,3 +670,13 @@ describe('v1.8.0 §四 · 判定档可达性与可观测四字段', () => {
     expect(blk.target).not.toMatch(/^cloud/);
   });
 });
+
+
+describe('v1.8.0 review r1 · off 语义不被显式请求翻转', () => {
+  it('judgeMode=off 且 requestDecisionModel=true → 仍归一 local-executor（judge-off 优先）', () => {
+    const router = new ModelRouter();
+    const r = router.route('判定任务', { judgeMode: 'off', requestDecisionModel: true });
+    expect(r.target).toBe('local-executor');
+    expect(r.reason).toBe('judge-off');
+  });
+});

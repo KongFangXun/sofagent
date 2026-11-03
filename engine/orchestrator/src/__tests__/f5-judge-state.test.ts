@@ -381,7 +381,8 @@ describe('v1.8.0 §一 · 三档开关（off/shadow/active）', () => {
     try {
       await expect(planNode.runDecisionModel('test')).rejects.toThrow(/judgeMode=off/);
     } finally {
-      planNode.setJudgeMode('shadow'); // 还原默认档，防污染同文件其他用例
+      const { resetJudgeModeForTest } = await import('../router/judge-mode');
+      resetJudgeModeForTest(); // P2（review r1）：单例复位——两 loop 共享态，用单例复位口防跨文件污染
     }
   });
 });
@@ -420,5 +421,20 @@ describe('v1.8.0 §二 · 动作输入三件（结构化参数向量 / shell 拆
 
   it('执行体绑定：basename 不在白名单 → undefined（未知执行体从严，不放行）', () => {
     expect(bindExecutable('/tmp/evil-bin/definitely-not-known', new Set())).toBeUndefined();
+  });
+});
+
+
+describe('v1.8.0 review r1 · judgeMode 单例（两 loop 共享态）', () => {
+  it('plan 侧切 off ⇒ engineer 侧即见（单例语义——不再各持一份）', async () => {
+    const planNode = await import('../loop/plan-node');
+    const engineer = await import('../loop/engineer-decide');
+    const { resetJudgeModeForTest } = await import('../router/judge-mode');
+    try {
+      planNode.setJudgeMode('off');
+      await expect(engineer.runDecisionModel('test')).rejects.toThrow(/judgeMode=off/);
+    } finally {
+      resetJudgeModeForTest();
+    }
   });
 });

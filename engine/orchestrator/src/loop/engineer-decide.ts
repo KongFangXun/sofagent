@@ -191,7 +191,7 @@ export async function engineerDecide(
   const route = router.route(ctx.task, {
     agentRole: 'engineer-decide',
     userIntent: ctx.task.slice(0, 200),
-    judgeMode,
+    judgeMode: getJudgeMode(),
   });
   log(`[decide] route target=${route.target} sensitivity=${route.sensitivity}`);
 
@@ -236,21 +236,15 @@ export function setDecisionChannel(ch: DecisionChannel | null, questions: Decisi
   decisionQuestions = questions;
 }
 
-/** 影子门运行档（J3:144）：默认 shadow——判定照跑只落痕；active 须过对账（reconciled>0）；off 由路由层归一（本模块不持 off 分支） */
-let judgeMode: JudgeMode = 'shadow';
-/** 影子期对账台账：由运维/部署侧回填（对账一次 +1）；reconciled=0 时 active 启用被拒 */
-const shadowLedger: ShadowLedger = { reconciled: 0 };
-
-/** 切换判定运行档（active 需先过影子期对账，ShadowGateError 拒绝；off 生效位置在 model-router.route()，非本模块） */
-export function setJudgeMode(mode: JudgeMode, ledger?: ShadowLedger): void {
-  judgeMode = mode;
-  if (ledger) shadowLedger.reconciled = ledger.reconciled;
-}
+// v1.8.0 §一（review P1-3）：judgeMode/shadowLedger 收敛到 router/judge-mode.ts 单例——
+// 两 loop 共享同一状态源，plan 侧切档 engineer 侧即见（此前各持一份会漂移）。
+export { setJudgeMode } from '../router/judge-mode';
+import { getJudgeMode, getShadowLedger } from '../router/judge-mode';
 
 export async function runDecisionModel(prompt: string): Promise<string> {
   // v1.8.0 §一：off 兜底断言——正常路径 off 在路由层已归一 local-executor，
   // 本函数不可达；被误调（绕过路由层直接调用）即抛 JudgeOffError。
-  if (judgeMode === 'off') {
+  if (getJudgeMode() === 'off') {
     throw new Error('judgeMode=off：判定点不启用——runDecisionModel 不应被调用（路由层应已归一 local-executor），上游漏判');
   }
   if (!decisionChannel) {
@@ -269,8 +263,8 @@ export async function runDecisionModel(prompt: string): Promise<string> {
   // （路由层归一，runDecisionModel 首行断言兜底）。判定结果落痕由
   // decision-log 侧承担（同源 payload_sha256），此处只管「是否生效」。
   const gated = applyWithShadowGate(
-    judgeMode,
-    shadowLedger,
+    getJudgeMode(),
+    getShadowLedger(),
     { grade: String((r as { answers?: unknown[] }).answers?.length ?? 0), target: 'decision-model' },
     { grade: '0', target: 'decision-model' },
   );

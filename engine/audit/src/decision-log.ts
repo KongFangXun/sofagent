@@ -227,6 +227,10 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
         `judgeReceipt 五件必选缺失：${missing.join('/')}（实际 ${keys.join('/') || '(空)'}）`,
       );
     }
+    // P1-2（review r1）：原型污染键显式拒收（Object.keys 不列 __proto__ 但 JSON.parse 的键会进对象——
+    // 任何以 __ 开头的键与 constructor/prototype 一律拒，防校验面被键名怪异形态绕过）
+    const protoKeys = keys.filter((k) => k.startsWith('__') || k === 'constructor' || k === 'prototype');
+    if (protoKeys.length > 0) throw new DecisionSchemaError(`judgeReceipt 含原型污染键：${protoKeys.join('/')}`);
     const unknown = keys.filter((k) => k !== 'provenance' && !(REQUIRED as readonly string[]).includes(k));
     if (unknown.length > 0) {
       throw new DecisionSchemaError(

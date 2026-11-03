@@ -37,6 +37,8 @@ export class JudgeHeadError extends Error {
 
 /** choice 头：候选项打分 + 归一 */
 export interface ChoiceHeadOutput {
+  /** 原始线性分数（v1.8.0 §三 分块层用——跨块比价须在 softmax 前的线性域，二次 softmax 有 1e-12 钳位下溢失真） */
+  raw?: Record<string, number>;
   scores: Record<string, number>; // 归一后分布（顺序不变性：候选打乱分布不变）
 }
 
@@ -61,9 +63,11 @@ export function choiceHead(
     const sliceOpts = options.slice(lo, lo + VOCAB_CHUNK);
     const sliceIds = (optionIds ?? options).slice(lo, lo + VOCAB_CHUNK);
     const part = choiceHeadDirect(encoder, state, sliceOpts, sliceIds);
-    sliceIds.forEach((id, j) => {
-      const p = part.scores[id] ?? 1e-12;
-      flat.push({ id, logit: Math.log(Math.max(p, 1e-12)) });
+    // P1-1（review r1）：跨块比价取 softmax 前的线性域 raw 分数——
+    // 此前取块内概率 p 再 log，p<1e-12 被钳位 ⇒ 恒等 logit、跨块失真；
+    // 线性域全局 softmax 与不分块路径数学等价（softmax 平移不变）。
+    sliceIds.forEach((id) => {
+      flat.push({ id, logit: part.raw?.[id] ?? -Infinity });
     });
   }
   const mx = Math.max(...flat.map((f) => f.logit));
@@ -107,6 +111,7 @@ function choiceHeadDirect(
     raw[ids[i]!] = optScore;
   });
   // softmax 归一（顺序不变——逐项独立变换后归一，与候选顺序无关）
+  const rawCopy: Record<string, number> = { ...raw };
   const vals = Object.values(raw);
   const max = Math.max(...vals);
   const exps = vals.map((v) => Math.exp(v - max));
@@ -115,7 +120,7 @@ function choiceHeadDirect(
   Object.keys(raw).forEach((k, i) => {
     dist[k] = exps[i]! / sum;
   });
-  return { scores: dist };
+  return { scores: dist, raw: rawCopy };
 }
 
 /** score 头：序回归（分值 + 区间） */
