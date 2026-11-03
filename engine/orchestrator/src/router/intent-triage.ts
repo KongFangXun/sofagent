@@ -34,6 +34,13 @@ export type JudgeAuditSink = (receipt: {
   deterministicBaseline: string;
   routeReason: string;
   dataDir?: string;
+  /** §二 同源对账四件（可选——meta 在位时由调用方随判定传入） */
+  provenance?: {
+    payload_sha256: string;
+    stateConstructorVersion: string;
+    redactionVersion: string;
+    criteriaVersion: string;
+  };
 }) => void;
 
 /** 生产 sink：回执五件 + 四态/routeReason 落 decision-log（kind=ORCHESTRATION） */

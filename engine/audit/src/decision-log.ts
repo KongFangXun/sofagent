@@ -80,6 +80,13 @@ export interface EmitDecisionInput {
     modelIdentity: string;
     probabilities: number[];
     deterministicBaseline: string;
+    /** §二 同源对账四件（可选——传入时四件必须齐，缺一即拒） */
+    provenance?: {
+      payload_sha256: string;
+      stateConstructorVersion: string;
+      redactionVersion: string;
+      criteriaVersion: string;
+    };
   };
   /**
    * 内容语义位（v1.8.0 §二 · 可选）：true=条目携带原文内容；false=只记指纹与
@@ -213,12 +220,25 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
   if (input.judgeReceipt !== undefined) {
     const r = input.judgeReceipt;
     const REQUIRED = ['stateDigest', 'evidenceRefs', 'modelIdentity', 'probabilities', 'deterministicBaseline'] as const;
-    const keys = Object.keys(r).sort();
-    const want = [...REQUIRED].sort();
-    if (keys.length !== want.length || keys.some((k, i) => k !== want[i])) {
+    const keys = Object.keys(r);
+    const missing = REQUIRED.filter((k) => !(k in r));
+    if (missing.length > 0) {
       throw new DecisionSchemaError(
-        `judgeReceipt 字段集必须恰为五件（${REQUIRED.join('/')}）——实际 ${keys.join('/') || '(空)'}`,
+        `judgeReceipt 五件必选缺失：${missing.join('/')}（实际 ${keys.join('/') || '(空)'}）`,
       );
+    }
+    const unknown = keys.filter((k) => k !== 'provenance' && !(REQUIRED as readonly string[]).includes(k));
+    if (unknown.length > 0) {
+      throw new DecisionSchemaError(
+        `judgeReceipt 字段集越界：${unknown.join('/')}（五件 + 可选 provenance 之外不得有其他键）`,
+      );
+    }
+    // §二 同源对账四件：provenance 在位时必须四件齐
+    if (r.provenance !== undefined) {
+      const p = r.provenance;
+      const PV = ['payload_sha256', 'stateConstructorVersion', 'redactionVersion', 'criteriaVersion'] as const;
+      const pMiss = PV.filter((k) => !(k in p) || typeof (p as Record<string, unknown>)[k] !== 'string');
+      if (pMiss.length > 0) throw new DecisionSchemaError(`judgeReceipt.provenance 四件缺失或非串：${pMiss.join('/')}`);
     }
     if (typeof r.stateDigest !== 'string' || r.stateDigest.trim() === '') throw new DecisionSchemaError('judgeReceipt.stateDigest 必须是非空字符串（sha256 摘要）');
     if (!Array.isArray(r.evidenceRefs) || r.evidenceRefs.some((e) => typeof e !== 'string')) throw new DecisionSchemaError('judgeReceipt.evidenceRefs 必须是字符串数组');

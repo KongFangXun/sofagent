@@ -350,14 +350,14 @@ describe('v1.8.0 §一 · 判定回执（接线纪律①行为锁）', () => {
   it('回执字段集恰为五件：多一项即拒（schema 违规不写盘）', () => {
     expect(() => emitDecision(makeInput({
       judgeReceipt: { ...goodReceipt, extra: 'x' } as never, content: false,
-    }), testDir)).toThrow(/恰为五件/);
+    }), testDir)).toThrow(/五件必选缺失|字段集越界/);
   });
 
   it('回执缺一项即拒', () => {
     const { stateDigest: _drop, ...four } = goodReceipt;
     expect(() => emitDecision(makeInput({
       judgeReceipt: four as never, content: false,
-    }), testDir)).toThrow(/恰为五件/);
+    }), testDir)).toThrow(/五件必选缺失|字段集越界/);
   });
 
   it('三项禁入内容：回执携带疑似原文（>2048 字符）即拒', () => {
@@ -391,5 +391,70 @@ describe('v1.8.0 §一 · 判定回执（接线纪律①行为锁）', () => {
     expect(receiptJson).not.toContain('provider error');
     expect(receiptJson).not.toContain('tool_output');
     expect(JSON.stringify(e2.judgeReceipt)).not.toMatch(/[\u4e00-\u9fa5]{20,}/);  // 回执不携带长自由文本
+  });
+});
+
+describe('v1.8.0 §二 · 同源对账四件与写时锚定（行为锁）', () => {
+  let testDir: string;
+  let savedKeyPath: string | undefined;
+
+  beforeEach(() => {
+    testDir = tmpDir();
+    savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+    process.env.SOFAGENT_KEY_PATH = join(testDir, 'test-hmac-key');
+    writeFileSync(process.env.SOFAGENT_KEY_PATH, randomBytes(32).toString('hex'));
+  });
+
+  afterEach(() => {
+    try { rmSync(testDir, { recursive: true, force: true }); } catch { /* */ }
+    if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+    else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
+  });
+
+  const base = {
+    stateDigest: 'b'.repeat(64),
+    evidenceRefs: ['q-1'],
+    modelIdentity: 'main01v5@r1',
+    probabilities: [0.9],
+    deterministicBaseline: 'L0',
+  };
+  const prov = {
+    payload_sha256: 'c'.repeat(64),
+    stateConstructorVersion: 'judge-state/v1',
+    redactionVersion: 'redaction/v1',
+    criteriaVersion: 'criteria/2026-11-03',
+  };
+
+  it('provenance 四件齐落盘并进签名体', () => {
+    const e = emitDecision(makeInput({
+      judgeReceipt: { ...base, provenance: { ...prov } }, content: false,
+    }), testDir);
+    expect(e.judgeReceipt!.provenance).toEqual(prov);
+    expect(readFileSync(getDecisionLogPath(testDir), 'utf-8')).toContain('"payload_sha256"');
+  });
+
+  it('provenance 缺一件即拒', () => {
+    const { criteriaVersion: _d, ...three } = prov;
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...base, provenance: three as never }, content: false,
+    }), testDir)).toThrow(/provenance 四件缺失/);
+  });
+
+  it('写时锚定：落盘行含 hmacSig（签名与落盘同一次原子写，非事后补签）', () => {
+    emitDecision(makeInput({
+      judgeReceipt: { ...base, provenance: { ...prov } }, content: false,
+    }), testDir);
+    const line = JSON.parse(readFileSync(getDecisionLogPath(testDir), 'utf-8').trim());
+    expect(typeof line.hmacSig).toBe('string');   // 写时已签名（链式）
+    expect(line.hmacSig.length).toBeGreaterThan(0);
+  });
+
+  it('可回放性：回执 + provenance 齐备 ⇒ 判定输入可由指纹对账复现（脱原模型回放的结构前提）', () => {
+    const e = emitDecision(makeInput({
+      judgeReceipt: { ...base, provenance: { ...prov } }, content: false,
+    }), testDir);
+    // 回放判据（结构面）：stateDigest 与 payload_sha256 双指纹在位 ⇒ 指纹对账可行
+    expect(e.judgeReceipt!.stateDigest).toHaveLength(64);
+    expect(e.judgeReceipt!.provenance!.payload_sha256).toHaveLength(64);
   });
 });

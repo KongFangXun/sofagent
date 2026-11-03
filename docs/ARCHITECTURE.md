@@ -915,6 +915,10 @@ graph LR
 
 > 🧭 **域二 · S1M 判定层**——判据从哪来、怎么判、如何留痕举证：28 条判定化边界（见 [§三](#审计规则面的判定化边界28-条规则--判定层接管)）与执法手册判定语义均在本域。
 
+### 判定面输入契约（v1.8.0 §二 · state 构造口径）
+
+state 由 `buildJudgeState` 单一入口产出（定序去噪 + 出站脱敏 + 超限显式 `over-limit` 不截断）。逐消费面：① 判定请求——发最小可判定前缀，绝不发任务全文与绝不发送类字段原文；② decision-log——发指纹（stateDigest/payload_sha256）+ 版本锚四件，敏感 payload 不上链（content:false）；③ state 快照——本版不落盘，重放时由调用方传入；④ MCP 出站——只出计数与摘要（回执五件），用户文本与工具输出原文零出站。
+
 ### DecisionChannel 默认实现与七路回落面（v1.8.0 §一）
 
 `StdioDecisionChannel`（子进程 NDJSON over stdio）落地 v1.5.4 契约：runner 由提供方交付，本仓只管「启动、说话、守时、收尸」；懒/预加载双档、超时杀进程、`assertContractCompliance` 校验。七路回落（统一回 L0，fail-closed）：`load-failed`/`weights-missing`/`channel-error`/`timeout`/`type-mismatch`+弃权+低置信（T-1）。三档 off/shadow/active；回执五件+content:false。

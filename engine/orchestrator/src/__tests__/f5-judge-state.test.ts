@@ -14,6 +14,8 @@ import {
   NEVER_SEND_FIELDS,
   ShadowGateError,
   type JudgeMode,
+  splitShellAction,
+  bindExecutable,
   type JudgeStatePolicy,
 } from '../router/judge-state';
 
@@ -381,5 +383,42 @@ describe('v1.8.0 §一 · 三档开关（off/shadow/active）', () => {
     } finally {
       planNode.setJudgeMode('shadow'); // 还原默认档，防污染同文件其他用例
     }
+  });
+});
+
+describe('v1.8.0 §二 · 动作输入三件（结构化参数向量 / shell 拆分 / 执行体绑定）', () => {
+  it('shell 包装拆分：bash -lc "a && b" → 两条底层动作（与等价直调同构）', () => {
+    const r = splitShellAction('bash -lc "npm test && git commit -m x"');
+    expect(r.strictFromRaw).toBe(false);
+    expect(r.items).toHaveLength(2);
+    expect(r.items[0]).toEqual({ executable: 'npm', args: ['test'] });
+    expect(r.items[1]).toEqual({ executable: 'git', args: ['commit', '-m', 'x'] });
+  });
+
+  it('sh -c 分号形态同样可拆', () => {
+    const r = splitShellAction("sh -c 'echo hi; rm temp.log'");
+    expect(r.strictFromRaw).toBe(false);
+    expect(r.items).toHaveLength(2);
+  });
+
+  it('非 shell 包装 → 整串从严（strictFromRaw=true，单条不拆）', () => {
+    const r = splitShellAction('node tools/check/check-docs.sh --strict');
+    expect(r.strictFromRaw).toBe(true);
+    expect(r.items).toHaveLength(1);
+    expect(r.items[0]!.executable).toBe('node');
+  });
+
+  it('执行体绑定：精确匹配优先', () => {
+    const known = new Set(['/usr/local/bin/node']);
+    expect(bindExecutable('/usr/local/bin/node', known)).toBe('/usr/local/bin/node');
+  });
+
+  it('执行体绑定：basename 回退在白名单内 → 绑定 basename', () => {
+    expect(bindExecutable('/opt/homebrew/bin/git', new Set())).toBe('git');
+    expect(bindExecutable('/usr/bin/python3', new Set())).toBe('python3');
+  });
+
+  it('执行体绑定：basename 不在白名单 → undefined（未知执行体从严，不放行）', () => {
+    expect(bindExecutable('/tmp/evil-bin/definitely-not-known', new Set())).toBeUndefined();
   });
 });

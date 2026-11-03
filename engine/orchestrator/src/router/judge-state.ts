@@ -48,6 +48,8 @@ export interface JudgeStateMeta {
   content: false;
   /** 被摘除的字段/命中规则名（可审计） */
   redactions: string[];
+  /** 脱敏层版本锚（v1.8.0 §二——decodeForScreening/findSecrets 规则集代次，随判定落痕可复现） */
+  redactionVersion: 'redaction/v1';
   coarse: CoarseFeatures;
   /** 是否发生过截断——恒 false：本构造器不截断 */
   truncated: false;
@@ -278,6 +280,7 @@ export function buildJudgeState(
       payload_sha256: payloadSha,
       content: false,
       redactions: [...new Set(notes)],
+      redactionVersion: 'redaction/v1',
       coarse: coarseOf(decoded),
       truncated: false,
     },
@@ -321,4 +324,59 @@ export function applyWithShadowGate<T extends { grade: string; target: string }>
   }
   // shadow：不改变行为，只落痕（effective 恒为 baseline）
   return { applied: false, effective: { grade: baseline.grade, target: baseline.target }, shadow: true };
+}
+
+
+// ══════════════════════════════════════════════════════════
+// v1.8.0 §二 · 动作输入三件（J3「动作输入取结构化参数向量」的判定面）
+// ══════════════════════════════════════════════════════════
+
+/** 动作输入向量（结构化参数——shell 包装拆分后的逐条底层动作） */
+export interface ActionVectorItem {
+  /** 执行体（bin——shell 包装拆分后为首 token；basename 回退见 bindExecutable） */
+  executable: string;
+  /** 参数向量（argv） */
+  args: string[];
+}
+
+/**
+ * shell 包装拆分（§二「可拆分则按底层动作逐条判、拆不动则整串从严」）：
+ * 输入若为 `bash -lc "a && b"` / `sh -c 'a; b'` 形态，解出内层命令串并按
+ * && / ; / || 拆为逐条动作；非 shell 包装或拆不动（引号不配对等）→ 整串
+ * 作为单条、strictFromRaw=true（从严：调用方按整串判，不做逐条放行）。
+ */
+export function splitShellAction(raw: string): { items: ActionVectorItem[]; strictFromRaw: boolean } {
+  const shellWrap = /^\s*(bash|sh|zsh)\s+(-lc|-c)\s+([\'\"])([\s\S]*)\3\s*$/;
+  const m = raw.match(shellWrap);
+  if (!m) return { items: [{ executable: raw.trim().split(/\s+/)[0] ?? '', args: raw.trim().split(/\s+/).slice(1) }], strictFromRaw: true };
+  const inner = m[4] ?? '';
+  if (!inner.trim()) return { items: [{ executable: m[1] ?? 'sh', args: [] }], strictFromRaw: true };
+  const parts = inner.split(/\s*(?:&&|;|\|\|)\s*/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length === 0) return { items: [{ executable: m[1] ?? 'sh', args: [] }], strictFromRaw: true };
+  return {
+    items: parts.map((p) => {
+      const toks = p.split(/\s+/);
+      return { executable: toks[0] ?? '', args: toks.slice(1) };
+    }),
+    strictFromRaw: false,
+  };
+}
+
+/** 执行体白名单（basename 回退的许可面——精确匹配优先，basename 须在此面内） */
+const EXECUTABLE_BASENAME_WHITELIST = new Set([
+  'node', 'npm', 'npx', 'git', 'bash', 'sh', 'python3', 'python',
+  'jq', 'curl', 'mkdir', 'cp', 'mv', 'rm', 'cat', 'grep', 'sed', 'awk', 'echo',
+]);
+
+/**
+ * 执行体路径绑定（§二「精确匹配优先，basename 回退须在白名单内」）：
+ * - 输入与已知执行体**精确相等** → 直接绑定；
+ * - 否则取 basename：在白名单内 → 绑定为 basename；不在 → 绑定失败
+ *   （返回 undefined，调用方按「未知执行体」从严处置，不放行）。
+ */
+export function bindExecutable(input: string, knownExecutables: ReadonlySet<string>): string | undefined {
+  if (knownExecutables.has(input)) return input;
+  const base = input.split('/').pop() ?? input;
+  if (EXECUTABLE_BASENAME_WHITELIST.has(base)) return base;
+  return undefined;
 }
