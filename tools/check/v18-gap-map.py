@@ -116,6 +116,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="对 TICK 集合翻勾（- [ ] → - [x]）")
     ap.add_argument("--table", action="store_true", help="输出 markdown 对号表")
+    ap.add_argument(
+        "--include-ticked",
+        action="store_true",
+        help="表中同时列出已补勾的条目（翻勾后仍可复核原判据）",
+    )
     a = ap.parse_args()
 
     rows = scan()
@@ -155,9 +160,17 @@ def main() -> int:
         print(f"已翻勾 {len(tick)} 条 → 现勾选 {sum(1 for r in after if r[2])}/{len(after)}", file=sys.stderr)
 
     if a.table:
+        # 翻勾后 TICK 条目不再是「留白」，但对号表必须能复核它们 —— 显式补回
+        shown = list(g13)
+        if a.include_ticked:
+            already = {ln for ln, _s, c, _t in rows if c}
+            shown = sorted(
+                shown + [r for r in rows if r[0] in TICK and r[0] in already],
+                key=lambda r: r[0],
+            )
         print("| 行 | 章 | 条目（摘要） | 处置 | 依据 / 落点 |")
         print("|---|---|---|---|---|")
-        for ln, sec, _c, text in g13:
+        for ln, sec, _c, text in shown:
             t = re.sub(r"[`*|]", "", text)[:46].replace("\n", " ")
             if ln in TICK:
                 print(f"| {ln} | §{sec} | {t} | **补勾** | {TICK[ln]} |")
