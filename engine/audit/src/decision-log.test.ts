@@ -305,3 +305,91 @@ function chmodSyncRecursive(dir: string): void {
     chmodSync(dir, 0o700);
   } catch { /* */ }
 }
+
+describe('v1.8.0 §一 · 判定回执（接线纪律①行为锁）', () => {
+  let testDir: string;
+  let savedKeyPath: string | undefined;
+
+  beforeEach(() => {
+    testDir = tmpDir();
+    savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+    process.env.SOFAGENT_KEY_PATH = join(testDir, 'test-hmac-key');
+    writeFileSync(process.env.SOFAGENT_KEY_PATH, randomBytes(32).toString('hex'));
+  });
+
+  afterEach(() => {
+    try { rmSync(testDir, { recursive: true, force: true }); } catch { /* */ }
+    if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+    else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
+  });
+
+  const goodReceipt = {
+    stateDigest: 'a'.repeat(64),
+    evidenceRefs: ['q-intent', 'q-scope'],
+    modelIdentity: 'main01v5@rev-abc123',
+    probabilities: [0.94, 0.82],
+    deterministicBaseline: 'L0 规则面（判定不改规则结论）',
+  };
+
+  it('回执五件 + content:false 落盘并进 HMAC 链（链校验仍 ok）', () => {
+    const e = emitDecision(makeInput({
+      kind: 'ORCHESTRATION', category: 'route',
+      judgeReceipt: { ...goodReceipt }, content: false,
+    }), testDir);
+    expect(e.judgeReceipt).toBeDefined();
+    expect(Object.keys(e.judgeReceipt!).sort()).toEqual(
+      ['deterministicBaseline', 'evidenceRefs', 'modelIdentity', 'probabilities', 'stateDigest'],
+    );
+    expect(e.content).toBe(false);
+    // 落盘行含回执与语义位；链完整
+    const line = readFileSync(getDecisionLogPath(testDir), 'utf-8');
+    expect(line).toContain('"judgeReceipt"');
+    expect(line).toContain('"content":false');
+  });
+
+  it('回执字段集恰为五件：多一项即拒（schema 违规不写盘）', () => {
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...goodReceipt, extra: 'x' } as never, content: false,
+    }), testDir)).toThrow(/恰为五件/);
+  });
+
+  it('回执缺一项即拒', () => {
+    const { stateDigest: _drop, ...four } = goodReceipt;
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: four as never, content: false,
+    }), testDir)).toThrow(/恰为五件/);
+  });
+
+  it('三项禁入内容：回执携带疑似原文（>2048 字符）即拒', () => {
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...goodReceipt, stateDigest: 'x'.repeat(3000) }, content: false,
+    }), testDir)).toThrow(/疑似携带原文/);
+  });
+
+  it('content:true 与回执并存即拒（指纹纪律）', () => {
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...goodReceipt }, content: true,
+    }), testDir)).toThrow(/content 必须为 false/);
+  });
+
+  it('probabilities 非数字数组即拒', () => {
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...goodReceipt, probabilities: ['0.9', 'high'] as never }, content: false,
+    }), testDir)).toThrow(/probabilities/);
+  });
+
+  it('序列化结果零禁入内容（原始任务文本不进回执——evidenceRefs 只持问句 id）', () => {
+    emitDecision(makeInput({
+      judgeReceipt: { ...goodReceipt }, content: false,
+      evidence: ['routeReason=L1 grade=ALLOW'],
+    }), testDir);
+    const e2 = JSON.parse(readFileSync(getDecisionLogPath(testDir), 'utf-8').trim().split('\n')[0]);
+    // 判据：回执子对象与快照（回执+evidence）的序列化结果零禁入内容
+    //（why.text 是脱敏后的理由文本、属条目层既有语义，不在本锁验收面——受红注⑤分层口径）
+    const receiptJson = JSON.stringify(e2.judgeReceipt) + JSON.stringify(e2.evidence);
+    expect(receiptJson).not.toContain('拦截写 .env');
+    expect(receiptJson).not.toContain('provider error');
+    expect(receiptJson).not.toContain('tool_output');
+    expect(JSON.stringify(e2.judgeReceipt)).not.toMatch(/[\u4e00-\u9fa5]{20,}/);  // 回执不携带长自由文本
+  });
+});

@@ -72,7 +72,8 @@ export type RouteReason =
   | 'fixed-pipeline'
   | 'sensitive-data'
   | 'insufficient-local-capacity'
-  | 'typed-decision';
+  | 'typed-decision'
+  | 'judge-off';
 
 export interface ModelRoute {
   target: RouteTarget;
@@ -100,6 +101,8 @@ export interface TaskContext {
   agentRole?: string;
   /** 用户原始意图（写审计用） */
   userIntent?: string;
+  /** 判定运行档（off/shadow/active——judgeMode 的唯一入口：router 只读 context、不自持状态；off 时归一 local-executor） */
+  judgeMode?: 'off' | 'shadow' | 'active';
 }
 
 export type TaskComplexity = 'simple' | 'complex' | 'pipeline' | 'super-complex';
@@ -161,6 +164,11 @@ export class ModelRouter {
    * 不探测本地模型可达性——可达性在 execute() 阶段处理
    */
   route(prompt: string, context: TaskContext = {}): ModelRoute {
+    // v1.8.0 §一 接线纪律②：off 档判定点不启用——请求归一 local-executor，
+    // routeReason 落 judge-off 供审计（决策判定档在 off 下不可达）。
+    if (context.judgeMode === 'off') {
+      return { target: 'local-executor', reason: 'judge-off', sensitivity: 'restricted', complexity: 'simple' };
+    }
     const sensitivity = this.evaluateSensitivity(prompt, context);
     const complexity = this.evaluateComplexity(prompt, context);
     return this.decideRoute(sensitivity, complexity);

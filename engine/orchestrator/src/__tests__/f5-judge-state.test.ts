@@ -13,6 +13,7 @@ import {
   findSecrets,
   NEVER_SEND_FIELDS,
   ShadowGateError,
+  type JudgeMode,
   type JudgeStatePolicy,
 } from '../router/judge-state';
 
@@ -146,7 +147,7 @@ describe('F5 R2-2 · 影子运行门', () => {
   const baseline = { grade: 'ASK', target: 'local-pipeline' };
 
   it('S1 live 档无对账记录 ⇒ 拒绝启用', () => {
-    expect(() => applyWithShadowGate('live', { reconciled: 0 }, outcome, baseline))
+    expect(() => applyWithShadowGate('active', { reconciled: 0 }, outcome, baseline))
       .toThrow(ShadowGateError);
   });
 
@@ -158,7 +159,7 @@ describe('F5 R2-2 · 影子运行门', () => {
   });
 
   it('S3 live 档已对账 ⇒ 放行', () => {
-    const r = applyWithShadowGate('live', { reconciled: 3 }, outcome, baseline);
+    const r = applyWithShadowGate('active', { reconciled: 3 }, outcome, baseline);
     expect(r.applied).toBe(true);
     expect(r.effective).toEqual(outcome);
   });
@@ -345,5 +346,40 @@ describe('F5 R2-2 · 超限深编码 fail-closed（R3-4c）', () => {
     const b64 = Buffer.from('just a normal config line').toString('base64');
     const d2 = decodeForScreening(b64);
     expect(d2.exhausted).toBe(false);
+  });
+});
+
+describe('v1.8.0 §一 · 三档开关（off/shadow/active）', () => {
+  it('JudgeMode 三档枚举在位（off | shadow | active，无 live）', () => {
+    const modes: JudgeMode[] = ['off', 'shadow', 'active'];
+    expect(modes).toHaveLength(3);
+  });
+
+  it('applyWithShadowGate 对 off 显式抛错（上游漏判即暴露）', () => {
+    const outcome = { grade: 'A', target: 'decision-model' };
+    const baseline = { grade: '0', target: 'decision-model' };
+    expect(() => applyWithShadowGate('off', { reconciled: 3 }, outcome, baseline))
+      .toThrow(/off 档判定点不启用/);
+  });
+
+  it('router.route() 在 judgeMode=off 时归一 local-executor 且 reason=judge-off', async () => {
+    const { ModelRouter } = await import('../model-router');
+    const router = new ModelRouter();
+    const route = router.route('做一个多步推理规划任务', { judgeMode: 'off', agentRole: 'plan' });
+    expect(route.target).toBe('local-executor');
+    expect(route.reason).toBe('judge-off');
+    // 对照：同 prompt 不传 judgeMode 时不应归一（判定档可达性不受影响）
+    const route2 = router.route('做一个多步推理规划任务', { agentRole: 'plan' });
+    expect(route2.target).not.toBe('local-executor');
+  });
+
+  it('runDecisionModel 在 judgeMode=off 时抛错（兜底断言——正常路径路由层已归一，不可达）', async () => {
+    const planNode = await import('../loop/plan-node');
+    planNode.setJudgeMode('off');
+    try {
+      await expect(planNode.runDecisionModel('test')).rejects.toThrow(/judgeMode=off/);
+    } finally {
+      planNode.setJudgeMode('shadow'); // 还原默认档，防污染同文件其他用例
+    }
   });
 });

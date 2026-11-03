@@ -64,10 +64,10 @@ describe('F5 R2-3 · decision-model 档接通', () => {
     setPlannerChannel(ch, []);
     const { setJudgeMode: setPlannerMode } = await import('../loop/plan-node');
     // live 但 reconciled=0 ⇒ 拒绝启用
-    setPlannerMode('live', { reconciled: 0 });
+    setPlannerMode('active', { reconciled: 0 });
     await expect(runPlannerDecision('判定')).rejects.toThrow(/影子期未对账|ShadowGate/);
     // 对账后 live ⇒ 生效（无 shadowApplied 标记）
-    setPlannerMode('live', { reconciled: 3 });
+    setPlannerMode('active', { reconciled: 3 });
     const out = await runPlannerDecision('判定');
     expect(JSON.parse(out).shadowApplied).toBeUndefined();
     // 还原默认 shadow，防污染后续用例

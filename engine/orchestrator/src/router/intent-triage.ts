@@ -23,6 +23,41 @@
 // ============================================================
 
 import type { RouteTarget } from '../model-router';
+import { emitDecision } from '@sofagent/audit';
+
+/** 判定留痕 sink（v1.8.0 §一 接线纪律①——回执五件落 decision-log） */
+export type JudgeAuditSink = (receipt: {
+  stateDigest: string;
+  evidenceRefs: string[];
+  modelIdentity: string;
+  probabilities: number[];
+  deterministicBaseline: string;
+  routeReason: string;
+  dataDir?: string;
+}) => void;
+
+/** 生产 sink：回执五件 + 四态/routeReason 落 decision-log（kind=ORCHESTRATION） */
+export function createJudgeAuditSink(dataDir?: string): JudgeAuditSink {
+  return (r) => {
+    emitDecision({
+      agentId: 'intent-triage',
+      sessionId: 'judge',
+      kind: 'ORCHESTRATION',
+      category: 'route',
+      moment: 'ACT',
+      why: { text: 'L1 判定留痕（回执五件 + routeReason）', tags: ['judge'] },
+      judgeReceipt: {
+        stateDigest: r.stateDigest,
+        evidenceRefs: r.evidenceRefs,
+        modelIdentity: r.modelIdentity,
+        probabilities: r.probabilities,
+        deterministicBaseline: r.deterministicBaseline,
+      },
+      content: false,
+      evidence: ['routeReason=' + r.routeReason],
+    }, r.dataDir ?? dataDir);
+  };
+}
 import {
   DEFAULT_CALIBRATION_POLICY,
   DEFAULT_GRADE_THRESHOLDS,
@@ -161,6 +196,12 @@ export interface IntentTriageDeps {
   config?: Partial<IntentTriageConfig>;
   /** 升档阈值参数（代价反推；缺省 escalateCost=1, mistakeCost=10 → 阈值 0.9） */
   escalationCosts?: { escalateCost: number; mistakeCost: number };
+  /**
+   * 判定留痕 sink（v1.8.0 §一 接线纪律①）——L1 判定结果经回执五件落 decision-log。
+   * 注入即启用；未注入 = 留痕面未接线（测试/无审计环境）。留痕失败不阻断判定
+   * （try/catch 兜住，console.error 可见）——对齐 ai-node-governance sink 先例。
+   */
+  auditSink?: JudgeAuditSink;
 }
 
 /**
@@ -174,12 +215,14 @@ export class IntentTriage {
   private readonly channel: DecisionChannel;
   private readonly slotManager?: SlotManager;
   private readonly calibration?: CalibrationGate;
+  private readonly auditSink?: JudgeAuditSink;
   private readonly escalationThreshold: number;
 
   constructor(deps: IntentTriageDeps = {}) {
     this.config = { ...DEFAULT_TRIAGE_CONFIG, ...(deps.config ?? {}) };
     this.channel = deps.channel ?? createUnconfiguredDecisionChannel();
     if (deps.slotManager) this.slotManager = deps.slotManager;
+    if (deps.auditSink) this.auditSink = deps.auditSink;
     if (deps.calibration) this.calibration = deps.calibration;
     const costs = deps.escalationCosts ?? { escalateCost: 1, mistakeCost: 10 };
     this.escalationThreshold = computeEscalationThreshold(costs.escalateCost, costs.mistakeCost);
@@ -253,6 +296,22 @@ export class IntentTriage {
         threshold: this.escalationThreshold,
         escalate: grade !== 'ALLOW',
       });
+      // v1.8.0 §一 接线纪律①：判定留痕——回执五件 + routeReason 落 decision-log
+      //（留痕失败不阻断判定，console.error 可见——对齐 ai-node-governance sink 先例）。
+      if (this.auditSink) {
+        try {
+          this.auditSink({
+            stateDigest: audit.stateDigest,
+            evidenceRefs: audit.questionIds,
+            modelIdentity: audit.modelVersion,
+            probabilities: audit.answers.map((a) => a.probability),
+            deterministicBaseline: 'L0 规则面（判定不改规则结论——建议非执法）',
+            routeReason: `L1 语义分类（${this.channel.name} · grade=${grade}）`,
+          });
+        } catch (sinkErr) {
+          console.error(`[intent-triage] 判定留痕失败（不阻断判定）：${sinkErr instanceof Error ? sinkErr.message : String(sinkErr)}`);
+        }
+      }
       if (grade === 'ALLOW' || grade === 'ASK') {
         return {
           layer: 'L1',

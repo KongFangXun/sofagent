@@ -11,6 +11,7 @@
 
 import { REDACTION_PATTERNS } from '@sofagent/core';
 
+
 /** 决策种类（16 类）——覆盖 Agent 生命周期内所有可问责决策
  *
  * v1.3.3 新增 EVOLUTION（进化动作）+ TEAM（团队协作动作）：
@@ -283,6 +284,20 @@ export interface DecisionLogEntry {
   hmacAlgo?: 'stable';
   /** ⚠️ 必加——读侧 checkDecisionChainDetailed 靠它区分「真篡改 vs 环境漂移」 */
   envFingerprint?: string;
+  /**
+   * 判定回执子对象（v1.8.0 §一 接线纪律① · 可选——仅判定类条目）。
+   * 字段集恰为五件：stateDigest/evidenceRefs/modelIdentity/probabilities/
+   * deterministicBaseline（校验在 decision-log.emitDecision，写前拦截）。
+   */
+  judgeReceipt?: {
+    stateDigest: string;
+    evidenceRefs: string[];
+    modelIdentity: string;
+    probabilities: number[];
+    deterministicBaseline: string;
+  };
+  /** 内容语义位（v1.8.0 §二 · 可选）：false=只记指纹与引用（判定条目默认纪律） */
+  content?: boolean;
   /** 决策记录来源标识（缺省 'sofagent audit'） */
   engine?: string;
   /** 触发证据链（字符串数组，可空）—— v1.3.3 新增

@@ -16,7 +16,8 @@
 //   ④ 出站脱敏三层：**先解码再筛**（QP/百分号/base64/HTML 实体）→ 命中凭证即摘除 →
 //      只以**粗特征**（长度档/有无代码块/有无风险词）替代；`绝不发送` 类字段一律不传。
 //
-// 影子门（J3:144）：`shadow` 档下判定照跑、结果只落痕不改行为；未过对账记录不得启用 live。
+// 影子门（J3:144）：`off` 档判定点不启用（路由层归一 local-executor，见 model-router）；
+// `shadow` 档下判定照跑、结果只落痕不改行为；未过对账记录不得启用 active。
 // ============================================================
 
 import { createHash } from 'node:crypto';
@@ -284,7 +285,7 @@ export function buildJudgeState(
 }
 
 // ── 影子运行门（J3:144）─────────────────────────────────────
-export type JudgeMode = 'shadow' | 'live';
+export type JudgeMode = 'off' | 'shadow' | 'active';
 
 export interface ShadowLedger {
   /** 对账记录条数（影子期判定与真实处置的逐条差异） */
@@ -300,7 +301,8 @@ export class ShadowGateError extends Error {
 
 /**
  * 影子门：`shadow` 档 → 判定照跑、只落痕，**不改变 grade/target**；
- * `live` 档 → 必须有对账记录（reconciled > 0），否则拒绝启用。
+ * `active` 档 → 必须有对账记录（reconciled > 0），否则拒绝启用；
+ * `off` 档 → 本不该被调用到这里（路由层已归一），抛错即暴露上游漏判。
  */
 export function applyWithShadowGate<T extends { grade: string; target: string }>(
   mode: JudgeMode,
@@ -308,9 +310,12 @@ export function applyWithShadowGate<T extends { grade: string; target: string }>
   outcome: T,
   baseline: { grade: string; target: string },
 ): { applied: boolean; effective: { grade: string; target: string }; shadow: boolean } {
-  if (mode === 'live') {
+  if (mode === 'off') {
+    throw new ShadowGateError('off 档判定点不启用——本函数不应被调用（路由层应已归一 local-executor），上游漏判');
+  }
+  if (mode === 'active') {
     if (!(ledger.reconciled > 0)) {
-      throw new ShadowGateError('影子期未对账（reconciled=0）——拒绝启用 live 判定');
+      throw new ShadowGateError('影子期未对账（reconciled=0）——拒绝启用 active 判定');
     }
     return { applied: true, effective: { grade: outcome.grade, target: outcome.target }, shadow: false };
   }

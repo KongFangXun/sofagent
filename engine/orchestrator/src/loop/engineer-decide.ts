@@ -187,9 +187,11 @@ export async function engineerDecide(
   const router = deps.router ?? new ModelRouter();
 
   // 路由判定（decide 层专属：agentRole='engineer-decide'）
+  // v1.8.0 §一：judgeMode 单源——由本模块当前档位传入 context（router 只读不自持）
   const route = router.route(ctx.task, {
     agentRole: 'engineer-decide',
     userIntent: ctx.task.slice(0, 200),
+    judgeMode,
   });
   log(`[decide] route target=${route.target} sensitivity=${route.sensitivity}`);
 
@@ -234,18 +236,23 @@ export function setDecisionChannel(ch: DecisionChannel | null, questions: Decisi
   decisionQuestions = questions;
 }
 
-/** 影子门运行档（J3:144）：默认 shadow——判定照跑只落痕；live 须过对账（reconciled>0） */
+/** 影子门运行档（J3:144）：默认 shadow——判定照跑只落痕；active 须过对账（reconciled>0）；off 由路由层归一（本模块不持 off 分支） */
 let judgeMode: JudgeMode = 'shadow';
-/** 影子期对账台账：由运维/部署侧回填（对账一次 +1）；reconciled=0 时 live 启用被拒 */
+/** 影子期对账台账：由运维/部署侧回填（对账一次 +1）；reconciled=0 时 active 启用被拒 */
 const shadowLedger: ShadowLedger = { reconciled: 0 };
 
-/** 切换判定运行档（live 需先过影子期对账，ShadowGateError 拒绝） */
+/** 切换判定运行档（active 需先过影子期对账，ShadowGateError 拒绝；off 生效位置在 model-router.route()，非本模块） */
 export function setJudgeMode(mode: JudgeMode, ledger?: ShadowLedger): void {
   judgeMode = mode;
   if (ledger) shadowLedger.reconciled = ledger.reconciled;
 }
 
 export async function runDecisionModel(prompt: string): Promise<string> {
+  // v1.8.0 §一：off 兜底断言——正常路径 off 在路由层已归一 local-executor，
+  // 本函数不可达；被误调（绕过路由层直接调用）即抛 JudgeOffError。
+  if (judgeMode === 'off') {
+    throw new Error('judgeMode=off：判定点不启用——runDecisionModel 不应被调用（路由层应已归一 local-executor），上游漏判');
+  }
   if (!decisionChannel) {
     throw new Error('decision-model 档未注入 DecisionChannel —— fail-closed，绝不回落生成模型');
   }
@@ -258,7 +265,8 @@ export async function runDecisionModel(prompt: string): Promise<string> {
   }
   const r = await decisionChannel.judge(built.state, decisionQuestions);
   // 影子门（J3:144）：shadow 档判定照跑但 effective 恒为基线（不改变行为）；
-  // live 档未过对账（reconciled=0）⇒ ShadowGateError 拒绝启用。判定结果落痕由
+  // active 档未过对账（reconciled=0）⇒ ShadowGateError 拒绝启用；off 在本函数不可达
+  // （路由层归一，runDecisionModel 首行断言兜底）。判定结果落痕由
   // decision-log 侧承担（同源 payload_sha256），此处只管「是否生效」。
   const gated = applyWithShadowGate(
     judgeMode,

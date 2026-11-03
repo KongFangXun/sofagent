@@ -62,6 +62,30 @@ export interface EmitDecisionInput {
    * 格式：字符串数组，每项为一条证据描述。非数组值将被拒绝。
    */
   evidence?: string[];
+  /**
+   * 判定回执子对象（v1.8.0 §一 接线纪律① · 可选——仅判定类条目传）。
+   * 字段集**恰为五件**（多一件少一件判 schema 违规）：
+   *   ① stateDigest——state 摘要（sha256，不落原文）
+   *   ② evidenceRefs——证据引用（条目引用串数组，不携带原文）
+   *   ③ modelIdentity——判定件身份（模型名 + 代次号/revision）
+   *   ④ probabilities——完整概率（逐问概率数组，含弃权问）
+   *   ⑤ deterministicBaseline——不变的确定性基线（L0 规则面对同一问句的结论，
+   *      判定前后不变——「建议非执法」的可审计锚）
+   * 三项禁入内容（原始任务文本 / 工具输出 / provider 错误文本）在回执与
+   * 快照序列化结果中必须零命中（emitDecision 写前校验，命中即拒绝写入）。
+   */
+  judgeReceipt?: {
+    stateDigest: string;
+    evidenceRefs: string[];
+    modelIdentity: string;
+    probabilities: number[];
+    deterministicBaseline: string;
+  };
+  /**
+   * 内容语义位（v1.8.0 §二 · 可选）：true=条目携带原文内容；false=只记指纹与
+   * 引用（判定类条目的默认纪律）。回执子对象在位时本位必须为 false。
+   */
+  content?: boolean;
 }
 
 /** schema 校验失败（kind/moment 非法、必填缺失）——不写文件 */
@@ -185,6 +209,34 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     throw new DecisionSchemaError(`非法 invalidationReason "${String(input.invalidationReason)}"——必须在 InvalidationReason 枚举内（authorization-changed/incompatible-compaction/elevated-risk/stale-score/fresh-required）`);
   }
 
+  // v1.8.0 §一 接线纪律①：判定回执子对象校验——字段集恰为五件 + 三项禁入内容零命中
+  if (input.judgeReceipt !== undefined) {
+    const r = input.judgeReceipt;
+    const REQUIRED = ['stateDigest', 'evidenceRefs', 'modelIdentity', 'probabilities', 'deterministicBaseline'] as const;
+    const keys = Object.keys(r).sort();
+    const want = [...REQUIRED].sort();
+    if (keys.length !== want.length || keys.some((k, i) => k !== want[i])) {
+      throw new DecisionSchemaError(
+        `judgeReceipt 字段集必须恰为五件（${REQUIRED.join('/')}）——实际 ${keys.join('/') || '(空)'}`,
+      );
+    }
+    if (typeof r.stateDigest !== 'string' || r.stateDigest.trim() === '') throw new DecisionSchemaError('judgeReceipt.stateDigest 必须是非空字符串（sha256 摘要）');
+    if (!Array.isArray(r.evidenceRefs) || r.evidenceRefs.some((e) => typeof e !== 'string')) throw new DecisionSchemaError('judgeReceipt.evidenceRefs 必须是字符串数组');
+    if (typeof r.modelIdentity !== 'string' || r.modelIdentity.trim() === '') throw new DecisionSchemaError('judgeReceipt.modelIdentity 必须是非空字符串');
+    if (!Array.isArray(r.probabilities) || r.probabilities.some((p) => typeof p !== 'number' || !Number.isFinite(p))) throw new DecisionSchemaError('judgeReceipt.probabilities 必须是有限数字数组');
+    if (typeof r.deterministicBaseline !== 'string') throw new DecisionSchemaError('judgeReceipt.deterministicBaseline 必须是字符串（L0 基线结论，可为空串表示无基线）');
+    // 三项禁入内容：原始任务文本/工具输出/provider 错误文本不得混入回执
+    // （回执五件全部是摘要/引用/数字/身份——任何长自由文本都视为疑似原文，拒收）
+    const suspicious = [r.stateDigest, r.modelIdentity, r.deterministicBaseline, ...r.evidenceRefs].join('\n');
+    if (suspicious.length > 2048) {
+      throw new DecisionSchemaError('judgeReceipt 疑似携带原文（回执五件总长 >2048 字符）——原始任务文本/工具输出/provider 错误文本不入回执');
+    }
+    // content 语义位联动：回执在位 ⇒ content 必须为 false（指纹纪律）
+    if (input.content === true) {
+      throw new DecisionSchemaError('judgeReceipt 在位时 content 必须为 false（回执只记指纹与引用，不携带内容）');
+    }
+  }
+
   const filePath = getDecisionLogPath(dataDir);
   // 写侧护栏：测试环境解析到真实数据根 → fail-loud 拒绝写入（先于任何 fs 写）
   assertTestEnvNotWritingRealData(filePath, 'emitDecision');
@@ -210,6 +262,9 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     ...(input.artifactRef ? { artifactRef: input.artifactRef } : {}),
     ...(input.entityValidity !== undefined ? { entityValidity: input.entityValidity } : {}),
     ...(input.evidence !== undefined ? { evidence: input.evidence } : {}),
+    // v1.8.0 §一/§二：判定回执（五件）与 content 语义位——传了才落盘并纳入 HMAC
+    ...(input.judgeReceipt !== undefined ? { judgeReceipt: input.judgeReceipt } : {}),
+    ...(input.content !== undefined ? { content: input.content } : {}),
     engine: input.engine ?? 'sofagent audit',
   };
 
