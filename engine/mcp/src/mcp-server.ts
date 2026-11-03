@@ -15,6 +15,16 @@ import type { AuditResult } from '@sofagent/audit';
 import { TOOLS } from './tool-registry';
 // v1.4.0: 工具角色分层
 import { getActiveRoles, filterToolsByRoles, isToolExposed } from './tool-roles';
+import {
+  type AllowListEntry,
+  assertAllowList,
+  assertNoMisleadingTools,
+  assertNoServiceToken,
+  buildInstructions,
+  exposureLedger,
+  isAllowed,
+  resolveAllowList,
+} from './tool-allowlist';
 
 // resources
 import { listResources, readResource } from './resources';
@@ -68,6 +78,21 @@ function isToolError(r: unknown): r is ToolError {
 
 class McpServer {
   private initialized = false;
+  /** v1.9 §五 A37：显式 allow-list（null = 未启用，保持既有全量暴露语义） */
+  private readonly allowList: readonly AllowListEntry[] | null;
+
+  constructor() {
+    // ⑤ 禁服务级长期凭证：带万能钥匙即拒绝启动
+    assertNoServiceToken();
+    // ⑥ + ③ 名单解析与启动期对账：解析失败 / 名单项在工具面不存在 ⇒ 启动失败
+    const resolved = resolveAllowList();
+    if (resolved) {
+      assertAllowList(TOOLS.map((t) => t.name), resolved.entries);
+      assertNoMisleadingTools(resolved.entries);
+      process.stderr.write(`[${SERVER_NAME}] allow-list 生效：${exposureLedger(TOOLS.length, resolved.entries)}（来源 ${resolved.source}，默认拒绝）\n`);
+    }
+    this.allowList = resolved ? resolved.entries : null;
+  }
 
   start(): void {
     // v1.3.0 (交付 10 MA1)：启动时读 memory_backends 注册动态工具——优雅降级不 crash
@@ -124,8 +149,11 @@ class McpServer {
       case 'tools/list': if (this.checkInit(id)) {
         // v1.3.0 (交付 10 MA1)：动态工具合并——不污染静态 TOOLS 清单
         // v1.4.0：角色分层过滤——默认全量（未配置/all），SOFAGENT_MCP_ROLES 显式收窄专职面
+        // v1.9 §五 A37：显式 allow-list（opt-in——SOFAGENT_MCP_ALLOWLIST）在角色过滤之后再收一层
         const activeRoles = getActiveRoles();
-        this.sendResult(id, { tools: filterToolsByRoles([...TOOLS, ...getDynamicTools()], activeRoles) });
+        const scoped = filterToolsByRoles([...TOOLS, ...getDynamicTools()], activeRoles);
+        const list = this.allowList;
+        this.sendResult(id, { tools: list ? scoped.filter((t) => isAllowed(t.name, list)) : scoped });
       } break;
       case 'tools/call': if (this.checkInit(id)) await this.handleToolsCall(id, params); break;
       case 'resources/list': if (this.checkInit(id)) this.sendResult(id, listResources()); break;
@@ -143,10 +171,13 @@ class McpServer {
   private handleInitialize(id: number | string | null): void {
     if (this.initialized) { process.stderr.write(`[${SERVER_NAME}] Already initialized\n`); return; }
     this.initialized = true;
+    // v1.9 §五 A37 ②：握手时主动声明工具先后顺序（allow-list 生效时）——
+    // 不声明顺序时模型容易直奔最重的那个（原文：否则模型直奔最重的那个）
     this.sendResult(id, {
       protocolVersion: PROTOCOL_VERSION,
       serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
       capabilities: { tools: { listChanged: false }, resources: { listChanged: false, subscribe: false } },
+      ...(this.allowList ? { instructions: buildInstructions(this.allowList) } : {}),
     });
     process.stderr.write(`[${SERVER_NAME}] Initialized\n`);
   }
@@ -200,6 +231,13 @@ class McpServer {
       if (staticTool && activeRoles !== null && !isToolExposed(staticTool.roles, activeRoles)) {
         callStatus = 'error';
         this.sendError(id, -32602, `工具 ${toolName} 未在当前角色集（${activeRoles.join(',')}）暴露——设 ${'SOFAGENT_MCP_ROLES'}=all 恢复全量`);
+        return;
+      }
+
+      // v1.9 §五 A37 ⑥：allow-list 默认拒绝——名单外的静态工具明确拒绝（不是静默 404）
+      if (staticTool && this.allowList && !isAllowed(canonicalName, this.allowList)) {
+        callStatus = 'error';
+        this.sendError(id, -32602, `工具 ${canonicalName} 不在 allow-list（${exposureLedger(TOOLS.length, this.allowList)}）——默认拒绝；确需启用请列入 SOFAGENT_MCP_ALLOWLIST`);
         return;
       }
 
