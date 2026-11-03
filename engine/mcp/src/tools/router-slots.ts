@@ -82,6 +82,13 @@ export interface RouterSlotsResult {
       queueDepth: number;
       decisionInFlight: number;
       queued: SlotManagerState['queued'];
+      /** §四 判定档可观测四字段（router 未挂载时 null——字段位恒在） */
+      decisionModelMetrics?: {
+        calls: number;
+        failures: number;
+        degradations: number;
+        latencyMs: { under50: number; under200: number; under1000: number; over1000: number };
+      } | null;
     };
     /** route-preview 面 */
     decision?: { target: string; reason: string; sensitivity: string; taskClass: string; routeReason: string };

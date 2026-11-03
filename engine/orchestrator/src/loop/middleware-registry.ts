@@ -58,9 +58,12 @@ let sharedProgressMw: ProgressMiddleware | null = null;
  */
 let sharedMandateGateMw: MandateGateMiddleware | null = null;
 
-/** 获取/初始化 ModelRouter 单例 */
+/** 获取/初始化 ModelRouter 单例（v1.8.0 §四：单例同时挂载到 globalThis.__sofagentModelRouter——mcp router-slots snapshot 的判定档可观测四字段透传读它；生产链路 = 本单例 ⇒ mcp 侧恒有数，不再是只有测试挂载） */
 export function getLoopRouter(): ModelRouter {
-  if (!sharedRouter) sharedRouter = new ModelRouter();
+  if (!sharedRouter) {
+    sharedRouter = new ModelRouter();
+    (globalThis as { __sofagentModelRouter?: ModelRouter }).__sofagentModelRouter = sharedRouter;
+  }
   return sharedRouter;
 }
 

@@ -184,7 +184,12 @@ export async function engineerDecide(
   deps: EngineerDecideDeps,
 ): Promise<EngineerDecideResult | null> {
   const log = deps.log ?? (() => {});
-  const router = deps.router ?? new ModelRouter();
+  // §四 观测链路：缺省取 loop 单例（globalThis 挂载源）——注入 router 仍优先（测试面）
+  let router = deps.router;
+  if (!router) {
+    const { getLoopRouter } = await import('./middleware-registry');
+    router = getLoopRouter();
+  }
 
   // 路由判定（decide 层专属：agentRole='engineer-decide'）
   // v1.8.0 §一：judgeMode 单源——由本模块当前档位传入 context（router 只读不自持）

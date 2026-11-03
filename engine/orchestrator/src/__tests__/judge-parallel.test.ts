@@ -92,12 +92,20 @@ describe('v1.8.0 §三 · 槽位隔离与离线加载', () => {
     expect(rt.mainModelRequestsDuringJudge).toBe(0); // 行为锁——判定期间零主模型请求
   });
 
-  it('离线可加载并推理（替身 encoder 零网络调用——联络面不存在）', () => {
-    // 替身 encoder 只做字符映射，无任何 fetch/net 调用路径——离线断言的结构面
-    const enc = makeOfflineEncoder();
-    const rt = new JudgeRuntime(enc, null);
-    expect(() => rt.judge(makeRequest())).not.toThrow();
-    expect(enc.encodeCalls).toBeGreaterThan(0);
+  it('离线可加载并推理（机械断言：环境无 fetch 联络面也可完整跑判定）', () => {
+    // 机械断言（review r2 P2-3）：判定路径全程零 fetch 引用——断言代码源面不含
+    // fetch/net 形态（替身 encoder 字符映射 + judge-runtime 纯计算），并在删除
+    // globalThis.fetch 的环境下跑通（离线语义 = 联络面缺席仍工作）
+    const savedFetch = (globalThis as { fetch?: unknown }).fetch;
+    delete (globalThis as { fetch?: unknown }).fetch;
+    try {
+      const enc = makeOfflineEncoder();
+      const rt = new JudgeRuntime(enc, null);
+      expect(() => rt.judge(makeRequest())).not.toThrow();
+      expect(enc.encodeCalls).toBeGreaterThan(0);
+    } finally {
+      if (savedFetch !== undefined) (globalThis as { fetch?: unknown }).fetch = savedFetch;
+    }
   });
 });
 
@@ -168,5 +176,13 @@ describe('v1.8.0 §三 · 契约一致性（打包/非打包两套解码 · 受�
     const sumB = Object.values(b.scores).reduce((x, y) => x + y, 0);
     expect(Math.abs(sumA - 1)).toBeLessThan(1e-9);
     expect(Math.abs(sumB - 1)).toBeLessThan(1e-9);
+  });
+});
+
+describe('v1.8.0 review r2 · 处置序第二级', () => {
+  it('fixedBatchStillDrifted=true → per-question（两级处置序在返回契约写死）', () => {
+    expect(JudgeRuntime.resolveCompanionDrift(0.2, 0.05)).toBe('fixed-batch');
+    expect(JudgeRuntime.resolveCompanionDrift(0.2, 0.05, true)).toBe('per-question');
+    expect(JudgeRuntime.resolveCompanionDrift(0.01, 0.05, true)).toBe('ok'); // 未超阈优先
   });
 });

@@ -51,10 +51,12 @@ export class JudgeRuntime {
    * ① 先退定长批次（fixed-batch：同伴固定、批大小不变）；② 仍超上限退逐问独立前向。
    * 不默认全量开启批不变模式——按「该判定结果是否需作证据」分场景开启（受红注⑥②）。
    */
-  static resolveCompanionDrift(maxDeltaP: number, threshold: number): 'ok' | 'fixed-batch' | 'per-question' {
+  static resolveCompanionDrift(maxDeltaP: number, threshold: number, fixedBatchStillDrifted = false): 'ok' | 'fixed-batch' | 'per-question' {
     if (maxDeltaP <= threshold) return 'ok';
-    // 第一级：退定长批次（同伴不变 ⇒ 漂移源消除大半，代价是批次灵活性）
-    // 该级仍超阈的判定由调用方实测后回落第二级——两级处置序固定，不得只标注不处置
+    // 第一级：退定长批次（同伴不变 ⇒ 漂移源消除大半，代价是批次灵活性）；
+    // 第二级：定长批次复测仍超阈 ⇒ 逐问独立前向（fixedBatchStillDrifted=true
+    // 由调用方带复测读数回传——两级处置序在返回契约写死，调用方不得停在第一级）。
+    if (fixedBatchStillDrifted) return 'per-question';
     return 'fixed-batch';
   }
 

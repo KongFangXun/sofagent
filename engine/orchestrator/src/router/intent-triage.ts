@@ -314,6 +314,14 @@ export class IntentTriage {
             probabilities: audit.answers.map((a) => a.probability),
             deterministicBaseline: 'L0 规则面（判定不改规则结论——建议非执法）',
             routeReason: `L1 语义分类（${this.channel.name} · grade=${grade}）`,
+            // P2-5（review r2）：provenance 四件随判定喂数（此前 sink 类型有位但调用点没传——
+            // stateDigest 即 payload 的 sha256 指纹、构造/脱敏版本锚见 judge-state、判据版本取通道名）
+            provenance: {
+              payload_sha256: audit.stateDigest,
+              stateConstructorVersion: 'judge-state/v1',
+              redactionVersion: 'redaction/v1',
+              criteriaVersion: `criteria/${this.channel.name}`,
+            },
           });
         } catch (sinkErr) {
           console.error(`[intent-triage] 判定留痕失败（不阻断判定）：${sinkErr instanceof Error ? sinkErr.message : String(sinkErr)}`);

@@ -140,9 +140,17 @@ async function fetchVersionOnce(opts: FetchVersionOpts, attempt: number): Promis
         const total = res.headers.get('content-length') ? Number(res.headers.get('content-length')) + offset : null;
         opts.onProgress?.(offset, total);
         const buf = Buffer.from(await res.arrayBuffer());
-        body = offset > 0 && res.status === 206
-          ? Buffer.concat([readFileSync(dest0 + '.part'), buf])   // 续传拼接
-          : buf;
+        // P1-5（review r2）：断点续传闭环——分段写 .part（崩溃可续），完成时在下方
+        // 校验通过后 rename 为 dest；此前 .part 只读不写，续传从未生效（offset 恒 0）。
+        const partPath = dest0 + '.part';
+        if (offset > 0 && res.status === 206) {
+          const prev = readFileSync(partPath);
+          body = Buffer.concat([prev, buf]);
+          writeFileSync(partPath, body); // 追加后的全量回写 .part（崩溃点后移）
+        } else {
+          writeFileSync(partPath, buf); // 首段落 .part
+          body = buf;
+        }
         opts.onProgress?.(body.length, total);
       } finally {
         clearTimeout(timer);
@@ -175,6 +183,8 @@ async function fetchVersionOnce(opts: FetchVersionOpts, attempt: number): Promis
 
   mkdirSync(opts.destDir, { recursive: true });
   writeFileSync(dest, body);
+  // P1-5：校验通过后清 .part（本次拉取完整落盘，残留 .part 会误导下次续传）
+  try { (await import('fs')).unlinkSync(dest + '.part'); } catch { /* 无 .part 即跳过 */ }
   writeFileSync(`${dest}.sha256`, `${actual}  ${opts.fileName}\n`);
   const trace = { ...baseTrace, ok: true, stage: 'done', actualSha256: actual, bytes: body.length };
   appendTrace(opts.destDir, trace);

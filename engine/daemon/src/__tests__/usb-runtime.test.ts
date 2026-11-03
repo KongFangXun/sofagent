@@ -12,11 +12,18 @@ import { tmpdir } from 'os';
 import { setupPortableEnv, resolveUsbIoMode } from '../usb-runtime';
 
 let dir: string;
-const savedData = process.env.SOFAGENT_DATA;
-const savedOpenclaw = process.env.OPENCLAW_HOME;
-const savedWeights = process.env.SOFAGENT_WEIGHTS_DIR;
+// P2-4（review r2）：env 快照放 beforeEach 内逐用例重捕——顶层捕获发生在任何
+// 用例跑之前（值=原始态），但用例间可能有别的文件改过 env；逐用例捕获/还原才精确
+let savedData: string | undefined;
+let savedOpenclaw: string | undefined;
+let savedWeights: string | undefined;
 
-beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'usb-rt-')); });
+beforeEach(() => {
+  dir = mkdtempSync(join(tmpdir(), 'usb-rt-'));
+  savedData = process.env.SOFAGENT_DATA;
+  savedOpenclaw = process.env.OPENCLAW_HOME;
+  savedWeights = process.env.SOFAGENT_WEIGHTS_DIR;
+});
 afterEach(() => {
   try { rmSync(dir, { recursive: true, force: true }); } catch { /* */ }
   for (const [k, v] of [['SOFAGENT_DATA', savedData], ['OPENCLAW_HOME', savedOpenclaw], ['SOFAGENT_WEIGHTS_DIR', savedWeights]] as const) {

@@ -320,7 +320,8 @@ export async function runDecisionModel(prompt: string): Promise<string> {
 export async function defaultRunPlannerDecide(task: string): Promise<string> {
   let routedTarget = '';
   try {
-    const router = new ModelRouter();
+    const { getLoopRouter } = await import('./middleware-registry');
+    const router = getLoopRouter(); // §四 观测链路：单例即 globalThis 挂载源（review r2 P1）
     // v1.8.0 §一：judgeMode 单源——由本模块当前档位传入 context（router 只读不自持）
     const route = router.route(task, { agentRole: 'plan', userIntent: task.slice(0, 200), judgeMode: getJudgeMode() });
     routedTarget = route.target;
