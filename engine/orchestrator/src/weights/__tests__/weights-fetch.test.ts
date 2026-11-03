@@ -86,3 +86,22 @@ describe('v1.8.0 §五 · 重试语义', () => {
     expect(verifyCount).toBe(traceLinesBefore + 1);
   });
 });
+
+describe('v1.8.0 review r3 · remote 锚校验上移 blocking', () => {
+  it('revision=main 的 manifest → checkWeightsDir ok=false（阻断注册，非告警）', async () => {
+    const { checkWeightsDir, manifestPath } = await import('../../weights-manifest');
+    const { mkdirSync, writeFileSync, mkdirSync: md } = await import('fs');
+    const { join } = await import('path');
+    // 造一个合法 manifest 但 revision 钉 main（浮动指针）
+    const wdir = join(dir, 'weights-badrev');
+    md(join(wdir, 'v1'), { recursive: true });
+    writeFileSync(join(wdir, 'v1', 'model.bin'), 'x');
+    writeFileSync(manifestPath(wdir), JSON.stringify({
+      schemaVersion: 1, model: 'test', current: 'v1',
+      versions: [{ id: 'v1', sha256: 'a'.repeat(64), remote: { url: 'https://huggingface.co/x', sha256: 'b'.repeat(64), generation: 'V2', revision: 'main' } }],
+    }));
+    const r = checkWeightsDir(wdir);
+    expect(r.ok).toBe(false);
+    expect(r.issues.some((i) => i.includes('revision') && i.includes('main'))).toBe(true);
+  });
+});

@@ -320,7 +320,9 @@ export class IntentTriage {
               payload_sha256: audit.stateDigest,
               stateConstructorVersion: 'judge-state/v1',
               redactionVersion: 'redaction/v1',
-              criteriaVersion: `criteria/${this.channel.name}`,
+              // P2-1（review r3）：判据集版本与通道实例解耦——取判定结果的 modelVersion
+              //（同一判据集随代次走，channel.name 是实现名非判据版本）
+              criteriaVersion: `criteria@${result.modelVersion}`,
             },
           });
         } catch (sinkErr) {

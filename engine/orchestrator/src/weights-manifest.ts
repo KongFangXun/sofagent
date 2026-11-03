@@ -141,23 +141,26 @@ export function checkWeightsDir(weightsDir: string, opts?: { verifyHash?: boolea
     return { ok: false, issues: [`当前版本目录缺失：${currentPath}`] };
   }
 
-  // v1.8.0 §五：remote.generation / revision 校验（纯增量——remote 在场才判）
+  // v1.8.0 §五（review r3 P1 上移 blocking）：remote.generation / revision 校验——
+  // SSOT 验收原文「取 main 即判不过，有断言」：浮动指针让 sha256 期望值失去意义
+  //（等于完整性校验降级为下载成功即信），故非法即 ok:false 阻断注册，非告警。
   for (const v of m.versions) {
     const r = v.remote;
     if (!r) continue;
     if (r.generation !== undefined) {
       // 代次号：V2 / V2.1 式（非 semver、非仓版本号）——semver 三段即拒
       if (!/^V\d+(\.\d+)?$/.test(r.generation) || /^\d+\.\d+\.\d+$/.test(r.generation)) {
-        issues.push(`版本 ${v.id} remote.generation「${r.generation}」非法——须为代次号（V2 / V2.1 式，非 semver）`);
+        blocking.push(`版本 ${v.id} remote.generation「${r.generation}」非法——须为代次号（V2 / V2.1 式，非 semver）`);
       }
     }
     if (r.revision !== undefined) {
       // 产出锚：钉死 tag 或 commit——浮动分支（main/master）与空串即拒
       if (r.revision === '' || r.revision === 'main' || r.revision === 'master') {
-        issues.push(`版本 ${v.id} remote.revision「${r.revision}」非法——须钉死 tag 或 commit（取 main 即判不过）`);
+        blocking.push(`版本 ${v.id} remote.revision「${r.revision}」非法——须钉死 tag 或 commit（取 main 即判不过）`);
       }
     }
   }
+  if (blocking.length > 0) return { ok: false, issues: blocking };
 
   if (opts?.verifyHash) {
     const cur = m.versions.find((v) => v.id === m.current);
