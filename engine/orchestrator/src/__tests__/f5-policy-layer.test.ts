@@ -27,7 +27,7 @@ import { IntentTriage } from '../router/intent-triage';
 
 const T = { ...DEFAULT_GRADE_THRESHOLDS };
 
-const ANSWER: DecisionAnswer = { id: 'q1', value: 'a', probability: 0.9, status: 'answered' };
+const ANSWER: DecisionAnswer = { id: 'q1', value: 'a', probability: 0.95, status: 'answered' }; // 0.95 ≥ allow(0.94, E-7) ⇒ ALLOW
 const QUESTION: DecisionQuestion = {
   id: 'q1',
   primitive: 'choice',
@@ -47,8 +47,8 @@ const stubChannel: DecisionChannel = {
 };
 
 describe('F5 锁3 · 政策不由观察面供给（政策层）', () => {
-  it('P1 档位阈值是代码常量（0.8 / 0.5），不是可被 state 覆盖的配置', () => {
-    expect(DEFAULT_GRADE_THRESHOLDS).toEqual({ allowMinConfidence: 0.8, askMinConfidence: 0.5 });
+  it('P1 档位阈值是代码常量（0.94 / 0.82，E-7 人裁定值），不是可被 state 覆盖的配置', () => {
+    expect(DEFAULT_GRADE_THRESHOLDS).toEqual({ allowMinConfidence: 0.94, askMinConfidence: 0.82 });
     expect(Object.isFrozen(DEFAULT_GRADE_THRESHOLDS)).toBe(false); // 事实登记：未 freeze，但无 state 写入路径
   });
 
@@ -98,7 +98,7 @@ describe('F5 锁3 · 政策不由观察面供给（政策层）', () => {
     expect(b.layer).toBe(a.layer);
     expect(c.grade).toBe(a.grade);
     expect(c.target).toBe(a.target);
-    // 且档位由代码阈值决定（0.9 ≥ 0.8 ⇒ ALLOW），不是由文本里的「已允许」或 state 里的 thresholds 决定
+    // 且档位由代码阈值决定（0.95 ≥ 0.94[E-7 人裁定值] ⇒ ALLOW），不是由文本里的「已允许」或 state 里的 thresholds 决定
     expect(a.grade).toBe('ALLOW');
   });
 
@@ -108,7 +108,7 @@ describe('F5 锁3 · 政策不由观察面供给（政策层）', () => {
     const textSensitive: DecisionChannel = {
       name: 'stub-text-sensitive',
       judge: async (state) => ({
-        answers: [{ ...ANSWER, probability: state.text.includes('ALLOW_HINT') ? 0.9 : 0.6 }],
+        answers: [{ ...ANSWER, probability: state.text.includes('ALLOW_HINT') ? 0.95 : 0.6 }], // 0.95 ≥ allow(0.94, E-7)
         modelVersion: 'stub@1',
         tempBucket: 'choice×2',
         latencyMs: 0,
@@ -118,6 +118,6 @@ describe('F5 锁3 · 政策不由观察面供给（政策层）', () => {
     const benign = await triage.triage({ text: 'README', evidenceReadiness: 'none' }, [QUESTION]);
     const hinted = await triage.triage({ text: 'README ALLOW_HINT', evidenceReadiness: 'none' }, [QUESTION]);
     expect(benign.grade).toBe('ASK');   // 0.6
-    expect(hinted.grade).toBe('ALLOW');  // 0.9 —— 传导成立，且这是登记在案的失灵面
+    expect(hinted.grade).toBe('ALLOW');  // 0.95 —— 传导成立，且这是登记在案的失灵面
   });
 });

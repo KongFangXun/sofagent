@@ -280,7 +280,7 @@ describe('第二章 · 判定分层编排（L0/L1/L2）', () => {
   });
 
   it('L1 语义分类命中（一次提交全部问句——批量纪律）', async () => {
-    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.9, distribution: { local: 0.9, cloud: 0.1 }, status: 'answered' }]);
+    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.95, distribution: { local: 0.95, cloud: 0.05 }, status: 'answered' }]); // 0.95 ≥ allow(0.94, E-7)
     const triage = new IntentTriage({ channel });
     const questions: DecisionQuestion[] = [
       { id: 'route', primitive: 'choice', options: ['local', 'cloud'], fallback: 'local' },
@@ -289,7 +289,7 @@ describe('第二章 · 判定分层编排（L0/L1/L2）', () => {
     const out = await triage.triage(state(), questions);
     expect(out.layer).toBe('L1');
     expect(out.grade).toBe('ALLOW');
-    expect(out.confidence).toBeCloseTo(0.9);
+    expect(out.confidence).toBeCloseTo(0.95);
     expect(channel.calls).toBe(1); // 批量：一次调用
     expect(out.audit?.stateDigest).toMatch(/^[0-9a-f]{64}$/); // stateDigest 非原文
     expect(JSON.stringify(out.audit)).not.toContain(state().text); // 不落原文
@@ -482,7 +482,7 @@ describe('第二章 · 判据启用门控（证据就绪度 + 校准硬线）', 
   });
 
   it('校准硬线：已校准（达阈）分桶 ⇒ 放行判定', async () => {
-    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.9, distribution: { local: 0.9, cloud: 0.1 }, status: 'answered' }]);
+    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.95, distribution: { local: 0.95, cloud: 0.05 }, status: 'answered' }]); // 0.95 ≥ allow(0.94, E-7)
     const registry = new CalibrationRegistry();
     registry.register({ bucketKey: 'choice×2', ece: 0.01, sampleCount: 200, modelVersion: 'test-v1', fittedAt: '2026-09-28T00:00:00.000Z' });
     const triage = new IntentTriage({ channel, calibration: { registry } });
@@ -519,7 +519,7 @@ describe('第二章 · 判定链接入去向下达（PolicyEngine.decideByAdjudi
   });
 
   it('判定链产出 target → 映射分级 → decideAndDispatch 下达（IntentTriage 被实际调用）', async () => {
-    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.9, distribution: { local: 0.9, cloud: 0.1 }, status: 'answered' }]);
+    const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.95, distribution: { local: 0.95, cloud: 0.05 }, status: 'answered' }]); // 0.95 ≥ allow(0.94, E-7)
     const triage = new IntentTriage({ channel });
     const engine = new PolicyEngine({ triage });
     const out = await engine.decideByAdjudication({ state: state(), questions: choiceQ(), sensitivity: 'internal' });

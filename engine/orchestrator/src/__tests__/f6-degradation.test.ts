@@ -33,7 +33,7 @@ const STATE = { text: '{"agent":"ops","action":"list /tmp"}', evidenceReadiness:
 const healthy: DecisionChannel = {
   name: 'stub-healthy',
   judge: async () => ({
-    answers: [{ id: 'q1', value: 'continue', probability: 0.9, status: 'answered' as const }],
+    answers: [{ id: 'q1', value: 'continue', probability: 0.95, status: 'answered' as const }], // 0.95 ≥ allow(0.94, E-7)
     modelVersion: 'stub@1',
     tempBucket: 'choice×2',
     latencyMs: 1,

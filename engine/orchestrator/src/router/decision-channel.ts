@@ -149,8 +149,11 @@ export interface GradeThresholds {
 
 /** 缺省档位阈值（保守起步——企业按代价反推覆盖） */
 export const DEFAULT_GRADE_THRESHOLDS: Omit<GradeThresholds, 'redlineHit' | 'criticalNode' | 'inDomain'> = {
-  allowMinConfidence: 0.8,
-  askMinConfidence: 0.5,
+  // 2026-11-03 E-7 人裁定值（原 0.8/0.5）：三 seed 最坏错误率须 ≤5% 预算——
+  // 实测反解 allow=0.94（err 1.03–4.61%）/ ask=0.82（10% 预算边界）；
+  // 旧值 0.8/0.5 自动段错误率 7.7–10.8% 超预算，已弃用。依据 A24 + FOUR-LAYER-REPORT §三。
+  allowMinConfidence: 0.94,
+  askMinConfidence: 0.82,
 };
 
 /** 判定通道不可用（fail-closed——降级 L0 规则面兜底，不得静默放行） */
