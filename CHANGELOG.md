@@ -16,7 +16,7 @@
 >
 > 注：本节「正式版」是相对 v0.x「实验版」的**里程碑分类**；接口稳定性承诺见 [README 版本阶段](./README.md#安装)——v1.x 为**阿尔法施工期**，v2.0.0 起贝塔。
 
-- **v1.8.0** — 🧭 判定底座·阶段三（接线与分发）——开发中（devlog [v1.8.0](./docs/changelog/v1.8/v1.8.0.md)）：DecisionChannel 默认实现（StdioDecisionChannel · 本地子进程 NDJSON）· 三档接线（off/shadow/active + judgeMode 单源）· 判定回执五件落链 + content:false 指纹纪律 · 同源对账四件 · 并行约束解码结构面（打包开关/批内同伴处置序/超词表分块零截断）· 判定档显式请求 + 可观测四字段（mcp 透传）·
+- **v1.8.0** — 🧭 判定底座·阶段三（接线与分发）——开发中·待发版（devlog [v1.8.0](./docs/changelog/v1.8/v1.8.0.md)）：DecisionChannel 默认实现（StdioDecisionChannel · 本地子进程 NDJSON）· 三档接线（off/shadow/active + judgeMode 单源）· 判定回执五件落链 + content:false 指纹纪律 · 同源对账四件 · 并行约束解码结构面（打包开关/批内同伴处置序/超词表分块零截断）· 判定档显式请求 + 可观测四字段（mcp 透传）·
   权重分发通路（来源白名单/sha256 强校验/断点续传/USB 两档/generation+revision 锚/可复现重放）——
   **形态成立**；能力水平宣称留 v2.0.0 证据链
 - **v1.7.0** — 🧭 判定底座·阶段二（模型与校准）——2026-10-22 已发版（✅ 已发版）：RLCD 严格适当评分训练（三类原语分派损失+非对称惩罚+RLOO/KL/降权三防线）· 分桶温度校准（三原语分立+保序+独立校准集隔离断言）· 校准纪律门禁（uncalibrated 声明制+check-calibration-claims 接入发布链）· 弃权第四态（三源留痕+分档门槛+未达阈不可关）· 三原语概率面完整化 · 三态对照与双达阈判定（实测：ECE 17/18 格达线 · 一致率 zh 0.425/en 0.665 未达 ⇒ 阶段三暂缓，
