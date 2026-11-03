@@ -45,6 +45,17 @@ export interface RemoteSource {
   sha256: string;
   /** 期望字节数（可选；给了就一并核对） */
   bytes?: number;
+  /**
+   * 制品代次号（v1.8.0 §五）：代次号字符串（"V2" / "V2.1" 式——非 semver、
+   * 非仓版本号；标注权重制品的代系，回挂旧版代码时按代次判兼容）。
+   * 写入时校验：/^^V\d+(\.\d+)?$/ 形态，semver（x.y.z 三段）即拒。
+   */
+  generation?: string;
+  /**
+   * 产出锚（v1.8.0 §五）：钉死到 git tag 或 commit hash——
+   * 写入时校验："main" / "master" / 空串即拒（浮动分支不可复现）。
+   */
+  revision?: string;
 }
 
 export interface WeightsVersion {
@@ -130,6 +141,24 @@ export function checkWeightsDir(weightsDir: string, opts?: { verifyHash?: boolea
     return { ok: false, issues: [`当前版本目录缺失：${currentPath}`] };
   }
 
+  // v1.8.0 §五：remote.generation / revision 校验（纯增量——remote 在场才判）
+  for (const v of m.versions) {
+    const r = v.remote;
+    if (!r) continue;
+    if (r.generation !== undefined) {
+      // 代次号：V2 / V2.1 式（非 semver、非仓版本号）——semver 三段即拒
+      if (!/^V\d+(\.\d+)?$/.test(r.generation) || /^\d+\.\d+\.\d+$/.test(r.generation)) {
+        issues.push(`版本 ${v.id} remote.generation「${r.generation}」非法——须为代次号（V2 / V2.1 式，非 semver）`);
+      }
+    }
+    if (r.revision !== undefined) {
+      // 产出锚：钉死 tag 或 commit——浮动分支（main/master）与空串即拒
+      if (r.revision === '' || r.revision === 'main' || r.revision === 'master') {
+        issues.push(`版本 ${v.id} remote.revision「${r.revision}」非法——须钉死 tag 或 commit（取 main 即判不过）`);
+      }
+    }
+  }
+
   if (opts?.verifyHash) {
     const cur = m.versions.find((v) => v.id === m.current);
     if (cur) {
@@ -163,101 +192,6 @@ export function hashDir(dir: string): string {
   return h.digest('hex');
 }
 
-/** 拉取结果（fail-closed：任何一步不成立都不落文件） */
-export interface FetchResult {
-  ok: boolean;
-  /** 落盘路径（ok=true 时非空） */
-  path?: string;
-  /** 实测 sha256（ok=true 时非空） */
-  sha256?: string;
-  /** 失败原因（逐条，非空即 ok=false） */
-  issues: string[];
-  /** 留痕：本条写入 <destDir>/fetch-trace.ndjson 的同一对象 */
-  trace: Record<string, unknown>;
-}
-
-function appendTrace(destDir: string, entry: Record<string, unknown>): void {
-  try {
-    mkdirSync(destDir, { recursive: true });
-    appendFileSync(join(destDir, 'fetch-trace.ndjson'), JSON.stringify(entry) + '\n');
-  } catch {
-    /* 留痕失败不掩盖主结果——但 trace 字段仍随返回值给出 */
-  }
-}
-
-/**
- * 从远端拉取一个权重文件并校验（F5.3 ①）。
- *
- * 纪律（三条，缺一即失败，全部 fail-closed）：
- *   · 网络不可达 ⇒ 显式报错，**不回退本地旧文件**（不得静默用陈旧权重）；
- *   · sha256 不符（含篡改一字节）⇒ **不落盘**、留痕、可拒绝启用；
- *   · 字节数不符（给了 expectedBytes 时）⇒ 同 sha 不符处理。
- */
-export async function fetchVersion(opts: {
-  url: string;
-  destDir: string;
-  fileName: string;
-  expectedSha256: string;
-  expectedBytes?: number;
-  timeoutMs?: number;
-}): Promise<FetchResult> {
-  const startedAt = new Date().toISOString();
-  const dest = join(opts.destDir, opts.fileName);
-  const baseTrace: Record<string, unknown> = {
-    ts: startedAt,
-    url: opts.url,
-    dest,
-    expectedSha256: opts.expectedSha256,
-    expectedBytes: opts.expectedBytes ?? null,
-  };
-  let body: Buffer;
-  try {
-    const timeoutMs = opts.timeoutMs ?? 30_000;
-    if (opts.url.startsWith('file://')) {
-      body = readFileSync(new URL(opts.url));
-    } else if (/^https?:\/\//.test(opts.url)) {
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), timeoutMs);
-      try {
-        const res = await fetch(opts.url, { signal: ctl.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        body = Buffer.from(await res.arrayBuffer());
-      } finally {
-        clearTimeout(timer);
-      }
-    } else {
-      throw new Error('URL 必须是 http(s):// 或 file://');
-    }
-  } catch (err) {
-    // 断网/不可达：显式失败，不静默回退
-    const trace = { ...baseTrace, ok: false, stage: 'fetch', error: err instanceof Error ? err.message : String(err) };
-    appendTrace(opts.destDir, trace);
-    return { ok: false, issues: [`远端不可达（${trace.error}）——显式失败，不回退本地权重`], trace };
-  }
-
-  const actual = createHash('sha256').update(body).digest('hex');
-  if (actual !== opts.expectedSha256) {
-    const trace = { ...baseTrace, ok: false, stage: 'verify', actualSha256: actual, bytes: body.length };
-    appendTrace(opts.destDir, trace);
-    return {
-      ok: false,
-      issues: [`sha256 不符（期望 ${opts.expectedSha256}，实际 ${actual}）——拒绝启用，未落盘`],
-      trace,
-    };
-  }
-  if (opts.expectedBytes !== undefined && body.length !== opts.expectedBytes) {
-    const trace = { ...baseTrace, ok: false, stage: 'verify-bytes', actualSha256: actual, bytes: body.length };
-    appendTrace(opts.destDir, trace);
-    return { ok: false, issues: [`字节数不符（期望 ${opts.expectedBytes}，实际 ${body.length}）——拒绝启用`], trace };
-  }
-
-  mkdirSync(opts.destDir, { recursive: true });
-  writeFileSync(dest, body);
-  writeFileSync(`${dest}.sha256`, `${actual}  ${opts.fileName}\n`);
-  const trace = { ...baseTrace, ok: true, stage: 'done', actualSha256: actual, bytes: body.length };
-  appendTrace(opts.destDir, trace);
-  return { ok: true, path: dest, sha256: actual, issues: [], trace };
-}
 
 /**
  * 登记新版本——训练产物落盘后调用（artifact-register 消费面）。
@@ -288,3 +222,8 @@ export function appendVersion(
   atomicWriteSync(mf, JSON.stringify(m, null, 2));
   return m;
 }
+
+// v1.8.0 §五：fetchVersion 已迁入 ./weights/weights-fetch.ts（断点续传/重试/
+// 进度/白名单在其上补齐）——此处 re-export 保持既有调用面不变（迁移纪律：
+// 「移除 Y 先查落点」同规则，f5-weights-remote.test.ts 四条取证不迁不改）。
+export { fetchVersion, type FetchResult } from './weights/weights-fetch';

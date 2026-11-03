@@ -195,6 +195,35 @@ export function setupPortableEnv(usbRoot: string): void {
   fs.mkdirSync(openclawHome, { recursive: true });
   process.env.SOFAGENT_DATA = sofagentData;
   process.env.OPENCLAW_HOME = openclawHome;
+  // ── v1.8.0 §五 USB B 档 · 权重定位段 ──────────────────────
+  // 判定权重在 U 盘上的规范位置：<U盘>/weights/（与 weights-manifest 的
+  // manifest.json 规范同构）。目录在场（且过 manifest 校验）→ 设
+  // SOFAGENT_WEIGHTS_DIR 指向它；不在场 = A 档纯引擎 USB（判定走确定性
+  // 前置/L0 回落，不因缺权重阻断启动）。校验不阻断 USB 启动：坏清单只
+  // 留痕（security-events）并把判定档按未配置处理（fail-closed 在判定侧）。
+  const weightsDir = path.join(root, 'weights');
+  if (fs.existsSync(path.join(weightsDir, 'manifest.json'))) {
+    process.env.SOFAGENT_WEIGHTS_DIR = weightsDir;
+    console.log(`  📦 判定权重定位：${weightsDir}（manifest.json 在场）`);
+  } else if (fs.existsSync(weightsDir)) {
+    writeSecurityEvent(root, 'weights-manifest-missing', `${weightsDir} 存在但缺 manifest.json——判定档按未配置处理`);
+  }
+}
+
+/**
+ * USB B 档运行模式（v1.8.0 §五 usb.ioMode 配置）：
+ *   - 'A-ram'（缺省）：knowledge 明文只进内存（既有语义——零残留）；
+ *   - 'B-self-extract'：携带 weights/ 与判定 runner 的自解包档——介质上的
+ *     权重与 knowledge 加密存放、运行时解包到内存（判定档可用）。
+ * 读取顺序：federation.json 的 usb.ioMode → env SOFAGENT_USB_IOMODE → 缺省 A-ram。
+ */
+export type UsbIoMode = 'A-ram' | 'B-self-extract';
+
+export function resolveUsbIoMode(federation: { usb?: { ioMode?: string } }): UsbIoMode {
+  const fromFederation = federation.usb?.ioMode;
+  const fromEnv = process.env.SOFAGENT_USB_IOMODE;
+  const mode = fromFederation ?? fromEnv;
+  return mode === 'B-self-extract' ? 'B-self-extract' : 'A-ram';
 }
 
 // ============================================================

@@ -37,6 +37,7 @@ async function main() {
     console.log('  start                        启动守护进程（cron + 文件监听）');
     console.log('                                 [--usb-root <path>] 走 U 盘便携运行时');
     console.log('  create-usb-key               写入 U 盘完整运行时（v1.1.8 新增）');
+    console.log('  verify-media                 离线介质验签（v1.8.0 §五 USB A 档）');
     console.log('                                 --role <角色> --target <U盘路径> --platform <macos|linux|win>');
     console.log('                                 [--node-binary-path <path>]');
     console.log('  snapshot list                列出所有快照');
@@ -583,6 +584,43 @@ async function main() {
       console.log(`  ✅ knowledge/ 已 AES-256 加密落盘（明文只在内存）`);
       console.log('');
       console.log('  员工使用：插上 U 盘 → 双击 start（macOS 用 start.command）→ 联邦在线');
+      break;
+    }
+    case 'verify-media': {
+      // v1.8.0 §五 USB A 档：离线介质验签命令——收方插入 U 盘后独立复验
+      // （同一 verifyUsbSignature 路径，不依赖启动流程；验签失败 exit 1）
+      let target = '';
+      for (let i = 1; i < args.length; i++) {
+        if (args[i] === '--target') target = args[++i] ?? '';
+      }
+      if (!target) {
+        console.error('❌ verify-media 需要 --target 参数（U 盘根目录）');
+        console.error('   用法: sofagent daemon verify-media --target /Volumes/SOFAGENT');
+        process.exit(1);
+      }
+      const { verifyUsbSignature } = await import('./usb-signature');
+      const { readFileSync } = await import('fs');
+      const { join: joinPath } = await import('path');
+      console.log(`sofagent daemon v${VERSION} — 离线介质验签（USB A 档）`);
+      let hmacKey: string | undefined;
+      try {
+        const fed = JSON.parse(readFileSync(joinPath(target, 'federation.json'), 'utf-8'));
+        hmacKey = typeof fed.hmacKey === 'string' ? fed.hmacKey : undefined;
+      } catch {
+        console.error('❌ 读不到 federation.json（U 盘未初始化或非 sofagent 介质）');
+        process.exit(1);
+      }
+      if (!hmacKey) {
+        console.error('❌ federation.json 缺 hmacKey——无法验签');
+        process.exit(1);
+      }
+      const result = verifyUsbSignature(target, Buffer.from(hmacKey, 'hex'));
+      if (result.ok) {
+        console.log('  ✅ 介质验签通过（HMAC 全量——与启动时同一校验路径）');
+      } else {
+        console.error(`  ❌ 介质验签失败：${result.reason ?? 'unknown'}`);
+        process.exit(1);
+      }
       break;
     }
     case 'doctor': {
