@@ -12,6 +12,8 @@
 
 import type { AuditHistoryEntry } from './audit-history';
 
+import { hw } from '@sofagent/core';
+
 /**
  * 配置建议——从根因分析生成的可操作建议
  */
@@ -254,7 +256,7 @@ function generateSuggestions(
         currentValue: '默认阈值',
         suggestedValue: '调高阈值或添加白名单',
         reason: `${rule.ruleName} 的 WARN(${rule.warnCount}) 远大于 FAIL(${rule.failCount})，WARN 占比 ${(warnRatio * 100).toFixed(0)}%，可能存在误报`,
-        confidence: 0.7,
+        confidence: hw(0.7),
       });
     }
   }
@@ -268,7 +270,7 @@ function generateSuggestions(
         currentValue: `${file.filePath} 不在 lowRiskPatterns 中`,
         suggestedValue: `将 ${file.filePath} 加入 lowRiskPatterns`,
         reason: `${file.filePath} 被标记 ${file.flaggedCount} 次（规则: ${file.rules.join(', ')}），可能是已知的安全文件`,
-        confidence: 0.6,
+        confidence: hw(0.6),
       });
     }
   }
@@ -284,7 +286,7 @@ function generateSuggestions(
           currentValue: '启用',
           suggestedValue: '评估是否关闭',
           reason: `${rule.ruleName} 在最近 ${historyCount} 次审计中从未触发，可能是无效规则`,
-          confidence: 0.3,
+          confidence: hw(0.3),
         });
       }
     }

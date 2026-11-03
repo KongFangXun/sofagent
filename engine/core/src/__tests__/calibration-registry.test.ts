@@ -90,6 +90,8 @@ describe('§三 门禁：决策路径未校准即断言失败', () => {
         id: 'gate-ok',
         inDecisionPath: true,
         calibStatus: 'calibrated',
+        // F6.2 契约收紧：calibrated 必须声明 semantics='probability'（权重/等级无「校准」一说）
+        semantics: 'probability',
         evidence: { calibrationSetVersion: 'calib-v1', ece: 0.06, fittedAt: '2026-10-20T00:00:00Z' },
       }),
     );

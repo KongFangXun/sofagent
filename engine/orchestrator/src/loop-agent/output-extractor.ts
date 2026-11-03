@@ -16,6 +16,8 @@
 
 import type { ModelMessage } from '@sofagent/core';
 
+import { hw } from '@sofagent/core';
+
 /** 提取结果 */
 export interface ExtractionResult {
   /** 提取出的结构化字段（字段名 → 值） */
@@ -59,7 +61,7 @@ export async function extractStructuredOutput(
     return {
       fields: jsonResult as Record<string, unknown>,
       method: 'json-parse',
-      confidence: 1.0,
+      confidence: hw(1.0),
     };
   }
 
@@ -69,7 +71,7 @@ export async function extractStructuredOutput(
     return {
       fields: jsonFragment as Record<string, unknown>,
       method: 'json-parse',
-      confidence: 0.9,
+      confidence: hw(0.9),
     };
   }
 
@@ -90,7 +92,7 @@ export async function extractStructuredOutput(
   return {
     fields: heuristicFields,
     method: Object.keys(heuristicFields).length > 0 ? 'heuristic' : 'empty',
-    confidence: 0.3,
+    confidence: hw(0.3),
   };
 }
 
@@ -149,7 +151,7 @@ async function llmExtract(
     return {
       fields: parsed as Record<string, unknown>,
       method: 'llm-assist',
-      confidence: 0.7,
+      confidence: hw(0.7),
     };
   }
   return { fields: {}, method: 'empty', confidence: 0 };

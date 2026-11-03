@@ -13,6 +13,7 @@
 // 排期见 v1.8.0（一体机离线推理）。
 // ============================================================
 
+import { prob } from '@sofagent/core';
 /** 编码器接口（契约面——任何基座实现此接口即可换入，判定头不动） */
 export interface EncoderLike {
   /** 基座/权重版本哈希（随判定落 decision-log——权重溯源） */
@@ -122,5 +123,7 @@ export function noulHead(encoder: EncoderLike, state: string): NoulHeadOutput {
   }
   const last = tokens[tokens.length - 1] ?? [0];
   const logit = last.reduce((a, b) => a + b, 0) / Math.max(1, last.length);
-  return { probability: 1 / (1 + Math.exp(-logit)) };
+  // 真概率（sigmoid）——但**未校准**：能否进门槛由 calibration-registry 的
+  // calibStatus 决定（未校准的概率仍可做排序，不可按错误率解释）
+  return { probability: prob(1 / (1 + Math.exp(-logit))) };
 }

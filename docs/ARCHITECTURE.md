@@ -1619,3 +1619,9 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 ## 八、数据层路线建议
 
 > 数据层路线建议（设计过程记录，非现态——不修改任何既有引擎行为）已归档。**一句话结论**：语义层/本体采用混合路线——Policy 层（人工认证）永远压顶、Views 层（自动派生）只补全不推翻、权威排序显式化为「命中次数 × 来源可信度」；`certified` 语义尚未落地（引擎源码零实现）。全文（两条路线对照 / 三条待硬化设计决策 / 落版下一步 / 待办问题）见 [归档](./archive/validation-deep/architecture-datalayer-roadmap.md)。
+
+## 置信度语义（F6.2）
+
+引擎内的「置信度」数值分三类（概率 / 启发式权重 / 序数等级），语义口径与普查清单的唯一正本在
+`docs/LIMITATIONS.md` §六·五；代码侧载体为 `engine/core/src/confidence-semantics.ts`。
+**本节只做指针，不复制口径**（同一事实写两处必然漂移）。

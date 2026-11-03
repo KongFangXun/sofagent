@@ -21,6 +21,8 @@ import { summarizeDiff } from './diff-report';
 import type { ModelMessage } from '@sofagent/core';
 import { reportAnomalyToDefaultBus } from '../events';
 
+import { hw } from '@sofagent/core';
+
 /** 错误源（四类——LLM 推理输出） */
 export type ErrorSource = 'skill' | 'ontology' | 'prompt' | 'knowledge';
 
@@ -305,7 +307,7 @@ function heuristicLocalize(
   if (fieldMissingCount > mismatches.length / 2) {
     return {
       errorSource: 'ontology',
-      confidence: 0.6,
+      confidence: hw(0.6),
       reasoning: `差异以 field_missing 为主（${fieldMissingCount}/${mismatches.length}）——Ontology 预期字段在输出中缺失，可能是 Ontology 定义缺实体或 Agent 未生成预期字段`,
       evidence: {
         diffCount: mismatches.length,
@@ -319,7 +321,7 @@ function heuristicLocalize(
   if (valueErrorCount > mismatches.length / 2) {
     return {
       errorSource: 'prompt',
-      confidence: 0.55,
+      confidence: hw(0.55),
       reasoning: `差异以 value_error 为主（${valueErrorCount}/${mismatches.length}）——输出值与预期不符，可能是 system prompt 未约束正确行为`,
       evidence: {
         diffCount: mismatches.length,
@@ -333,7 +335,7 @@ function heuristicLocalize(
   if (relationBrokenCount > 0) {
     return {
       errorSource: 'knowledge',
-      confidence: 0.5,
+      confidence: hw(0.5),
       reasoning: `存在 relation_broken（${relationBrokenCount} 条）——实体间关系断裂，可能是知识库缺概念关联`,
       evidence: {
         diffCount: mismatches.length,
@@ -345,7 +347,7 @@ function heuristicLocalize(
   // 默认：skill 工具描述不够
   return {
     errorSource: 'skill',
-    confidence: 0.4,
+    confidence: hw(0.4),
     reasoning: '无法明确分类——默认归因 Skill 工具描述/few-shot 不够（LLM 不可用，启发式置信度低）',
     evidence: {
       diffCount: mismatches.length,

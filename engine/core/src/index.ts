@@ -650,3 +650,16 @@ export {
   AnchorComparability,
 } from './calibration-registry';
 /* @internal */ export { CalibrationRegistryError } from './calibration-registry';
+/* @internal */ export {
+  hw,
+  ol,
+  prob,
+  SEMANTICS_REGISTRY,
+} from './confidence-semantics';
+/* @internal */ export type {
+  ConfidenceSemantics,
+  TaggedNumber,
+  HeuristicWeight,
+  OrdinalLevel,
+  Probability,
+} from './confidence-semantics';

@@ -689,6 +689,27 @@ A16（非授权文件变更）与 A17（异常批量变更）是**行为级**检
 A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daemon 模式下需 daemon 主动填充 `ctx.diffFiles`。A17 的跨审计聚合依赖 `ctx.history` 窗口数据，daemon 模式下若未传入历史数据则只能检测单次批量变更。
 
 
+## 六·五、置信度数值的语义局限（F6.2 正名）
+
+引擎内被称作「置信度」的数值有三种互不相同的性质，混用会让门槛含义失真。本仓自 v1.9.0 起
+按下表正名，**数值本身不变**（正名不改行为）：
+
+| 语义 | 含义 | 能否按错误率解释 | 典型位置 |
+|---|---|---|---|
+| `probability` | 由概率模型算出（sigmoid / softmax / 温度校准后 sigmoid） | **可**（但未校准时仍不可） | `judge-heads/index.ts`（sigmoid）、`rlcd/calibration.ts`（温度校准后） |
+| `heuristic-weight` | 人手写死的经验值 | **不可**——没有任何校准依据 | `audit-root-cause.ts`（0.7/0.6/0.3）、`output-extractor.ts`、`error-localizer.ts`、`dream-cycle/extract-facts.ts` |
+| `ordinal-level` | 枚举/等级映射出的数，只保证顺序 | **不可**——间距无实测依据 | `pr-store.ts`（confirmed→1.0 / suggested→0.5）、`intent-triage.ts`（L0 命中=确定性路由） |
+
+三条纪律：
+
+1. **标记缺失按不可信处理**：`calibration-registry` 的决策路径门禁会拒绝「未标语义 + 声称 calibrated」
+   的组合；权重/等级声称 calibrated 同样被拒（它们没有「校准」这一说）。
+2. **门槛口径写在消费点**：以序数等级作门槛时（如 `confidence-min: gte:0.7`），门槛含义是
+   **「按经验阈值」**，不是「错误率 ≤X%」。
+3. **普查可复算**：`node tools/audit/fake-probability-census.mjs` 输出全量清单
+   （口径：git 全量受控文件 · `engine/` + `tools/` · 排除 `dist/` 与测试；按代码里有无
+   `hw()/ol()/prob()` 包装判定语义，不读登记表）。
+
 ## 七、历史遗留与迁移说明
 
 > 定时触发已解决（见「✅ 已解决的历史问题」区）；Windows 平台差异见 §二「🪟 Windows 支持是实验性的」。

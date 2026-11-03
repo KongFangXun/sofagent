@@ -27,6 +27,8 @@
 // policy-engine 消费（读 uncalibrated 状态转人审提示）。
 // ============================================================
 
+import type { ConfidenceSemantics } from './confidence-semantics';
+
 /** 校准判据纪律错误（fail-closed 载体） */
 export class CalibrationRegistryError extends Error {
   constructor(message: string) {
@@ -56,6 +58,19 @@ export interface ConfidenceClaim {
   path: string;
   /** 消费的置信度统计量（max-prob / normalized-entropy / margin——统计量一致性对账锚） */
   statistic: string;
+  /**
+   * 数值的**语义类别**（F6.2 正名，v1.9.0 §二）。
+   *
+   * 为什么必填而不给默认值：默认值会让「没想过它是什么」的登记静默通过，
+   * 而正名的全部意义就是逼出这个判断。三类的含义见 `confidence-semantics.ts`：
+   *   probability      —— 概率（可谈校准）
+   *   heuristic-weight —— 启发式权重（无校准依据，不得按错误率解释）
+   *   ordinal-level    —— 序数等级（只有顺序，没有间距）
+   * **缺失即视为不可信**：门禁按「未标记」拒（见 assertNoUncalibratedInDecisionPath）。
+   * 为什么是可选字段而不是必填：必填会构成 `@public` breaking（所有外部调用点同时断），
+   * 须走 breaking 流程；本版用**运行时门禁**兜住同一语义，类型面保持兼容。
+   */
+  semantics?: ConfidenceSemantics;
   /** 校准状态（calibrated 须带 evidence） */
   calibStatus: CalibStatus;
   /** 校准依据（calibStatus='calibrated' 必填） */
@@ -188,6 +203,18 @@ export class CalibrationClaimRegistry {
    * 「把纪律变成机制，不靠自觉」的执行点。
    */
   assertNoUncalibratedInDecisionPath(): void {
+    // F6.2：非 probability 的语义不得声称 calibrated——权重/等级没有「校准」这一说，
+    // 声称即口径错误（比未校准更糟：它会让下游以为错误率可预测）。
+    const mislabeled = this.claimsInDecisionPath().filter(
+      (c) => c.calibStatus === 'calibrated' && c.semantics !== 'probability',
+    );
+    if (mislabeled.length) {
+      throw new CalibrationRegistryError(
+        `语义与校准状态矛盾（非概率却标 calibrated）：${mislabeled
+          .map((c) => `${c.id}(${c.semantics ?? '未标记'})`)
+          .join('、')}`,
+      );
+    }
     const violating = this.claimsInDecisionPath().filter((c) => c.calibStatus === 'uncalibrated');
     if (violating.length > 0) {
       const list = violating.map((c) => `${c.id}（${c.path}）`).join('、');
@@ -320,6 +347,7 @@ export function registerLegacyConfidenceClaims(
       statistic: 'ordinal-tier',
       calibStatus: 'uncalibrated',
       inDecisionPath: false,
+      semantics: 'ordinal-level',
       note: "decision-log 置信度三档 'high'|'med'|'low'——序数档位非概率（留痕面非门控面）",
     },
     {

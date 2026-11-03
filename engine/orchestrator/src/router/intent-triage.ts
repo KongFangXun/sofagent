@@ -50,6 +50,7 @@ import {
 import {
   calibrationClaimRegistry,
   registerLegacyConfidenceClaims,
+  ol,
 } from '@sofagent/core';
 import type { SlotManager } from './slot-manager';
 
@@ -204,7 +205,9 @@ export class IntentTriage {
         layer: 'L0',
         target: l0.target,
         grade: 'ALLOW',
-        confidence: 1,
+        // 序数等级（**不是概率**）：L0 是声明式规则命中，1 表示「确定性路由」，
+        // 不是「模型有 100% 把握」——两者性质不同，不得混用于概率门槛。
+        confidence: ol(1),
         routeReason: `L0 声明式映射命中（${l0.reason}）——零模型调用`,
       };
     }

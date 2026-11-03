@@ -12,7 +12,10 @@ import { createHash } from 'crypto';
 import type { Fact, Ledger, LLMProvider } from './types';
 import { validateExtractOutput, scanInjection } from './injection-guard';
 // v1.2.9 功能①：事实抽取后自动写入事实级记忆存储
-import { createMemoryStore } from '@sofagent/core';
+import {
+  createMemoryStore,
+  hw,
+} from '@sofagent/core';
 
 /** 文本 → 稳定 fact id（内容 hash 前 12 位） */
 function factId(text: string): string {
@@ -48,7 +51,7 @@ export async function extractFacts(ledger: Ledger, llm: LLMProvider): Promise<Fa
           key: `think.${fact.id}`,
           value: text,
           source: 'think.md',
-          confidence: 0.8,
+          confidence: hw(0.8),
           tags: ['dream-cycle', 'think'],
         });
       } catch {
@@ -75,7 +78,7 @@ export async function extractFacts(ledger: Ledger, llm: LLMProvider): Promise<Fa
         key: `audit.${rule}.${fact.id}`,
         value: text,
         source: `audit:${rule}`,
-        confidence: 0.9,
+        confidence: hw(0.9),
         tags: ['dream-cycle', 'audit', rule],
       });
     } catch {

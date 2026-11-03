@@ -34,6 +34,8 @@
 
 import type { RlcdTrainSample } from './train-rlcd';
 
+import { prob } from '@sofagent/core';
+
 /** 校准件错误（fail-closed 载体） */
 export class CalibrationError extends Error {
   constructor(message: string) {
@@ -381,7 +383,8 @@ export function applyBucketedTemperature(
   if (item.primitive === 'noul') {
     const p = Math.min(Math.max(item.reportedProb as number, LOG_CLAMP), 1 - LOG_CLAMP);
     const logit = Math.log(p / (1 - p));
-    return { prob: sigmoidTemp(logit, t) };
+    // 温度校准后的 sigmoid ⇒ 真概率（calibStatus 由调用方按 calibrationSetVersion 声明）
+    return { prob: prob(sigmoidTemp(logit, t)) };
   }
   const dist = item.reportedDist as number[];
   const logits = dist.map((p) => Math.log(Math.min(Math.max(p, LOG_CLAMP), 1)));

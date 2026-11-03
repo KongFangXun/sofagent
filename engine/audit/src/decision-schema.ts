@@ -137,13 +137,23 @@ export type LoopPhase =
   | 'ATTRIBUTION'; // 归因（审计/追责）
 
 /** 决策理由结构 */
+/** 决策置信度三态——**序数等级（ordinal-level）**，非概率（见 DecisionWhy.confidence） */
+export type ConfidenceTier = 'high' | 'med' | 'low';
+
 export interface DecisionWhy {
   /** 决策理由文本（写入前经 sanitizeWhy 脱敏） */
   text: string;
   /** 可选的标签（用于 kind-wise back 聚合） */
   tags?: string[];
-  /** 决策置信度 */
-  confidence?: 'high' | 'med' | 'low';
+  /**
+   * 决策置信度——**序数等级（ordinal-level），不是概率**。
+   *
+   * 只保证 high > med > low 的顺序；三值之间没有实测间距，也没有校准依据。
+   * ⇒ 不得按「错误率」解释（如「high = 90% 正确」），也不得直接当概率与阈值比较。
+   * 需要概率面的消费方应改读判定底座的 `probability`（F5 交付；未校准时由
+   * calibration-registry 标 uncalibrated）。类型别名见 `ConfidenceTier`。
+   */
+  confidence?: ConfidenceTier;
   /** 触发该决策的规则名（TOOL_GATE / RULE_TOGGLE 时通常有值） */
   triggeredRule?: string;
   /**

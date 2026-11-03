@@ -27,7 +27,11 @@
 
 import { existsSync, readFileSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { atomicWriteSync } from '@sofagent/core';
+import {
+  type OrdinalLevel,
+  ol,
+  atomicWriteSync,
+} from '@sofagent/core';
 import { emitDecision } from './decision-log';
 
 // ────────────────────────────────────────────────────────────
@@ -209,9 +213,11 @@ export function upsertTriggerBinding(
  *   suggested（启发式）  = 0.5
  *   无 triggerBinding    = 0
  */
-function confidenceValue(pr: StoredPr): number {
-  if (!pr.triggerBinding) return 0;
-  return pr.triggerBinding.confidence === 'confirmed' ? 1.0 : 0.5;
+function confidenceValue(pr: StoredPr): OrdinalLevel {
+  if (!pr.triggerBinding) return ol(0);
+  // 序数等级（**不是概率**）：只保证 confirmed > suggested 的顺序；
+  // 1.0 / 0.5 的间距无实测依据 ⇒ 以此为门槛时，门槛含义是「按经验阈值」而非「按错误率」（F6.2 正名）
+  return pr.triggerBinding.confidence === 'confirmed' ? ol(1.0) : ol(0.5);
 }
 
 /** 解析 confidence-min 的 detail（形如 'gte:0.7'）——返回 null 表示畸形/缺失 */
@@ -229,6 +235,9 @@ function parseGteThreshold(detail: string | undefined): number | null {
  * 内置 kind 清单：
  *   - 'approver-review'：PR 已被非提交者审阅（reviewer 存在且 ≠ submitter）
  *   - 'confidence-min'：triggerBinding 映射值 ≥ detail 阈值（'gte:0.7'）
+ *     ⚠️ **门槛含义（F6.2 正名）**：该阈值比较的是**序数等级映射值**（confirmed=1.0 /
+ *     suggested=0.5），不是概率 ⇒ 「≥0.7」的实际含义是「只接受 confirmed」，
+ *     而**不是**「错误率 ≤30%」。写成后者属口径错误：0.7 这个数从未被任何校准集测过。
  *   - 未知 kind / detail 畸形缺失 → passed:false（走 HITL 人审）
  */
 function evaluateCriterion(
