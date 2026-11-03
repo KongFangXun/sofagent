@@ -105,3 +105,4 @@ acceptance-raw.log
 /d-review.md
 /result-verified-batch-*.md
 /summary-batch-*.md
+engine/orchestrator/.vitest/
