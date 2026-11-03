@@ -87,6 +87,59 @@ describe('v1.8.0 §五 · 重试语义', () => {
   });
 });
 
+describe('v1.8.0 §五 · 断点续传（Range 语义 + 拼接闭环）', () => {
+  it('已有 .part → 发 Range: bytes=<offset>-，206 拼接后通过校验且清 .part', async () => {
+    const whole = 'ABCDEFGHIJ-weights-payload';
+    const cut = 7;
+    const dest = join(dir, 'resume.bin');
+    writeFileSync(dest + '.part', whole.slice(0, cut)); // 模拟上次崩溃留下的半截
+    let seenRange: string | null = null;
+    const { vi } = await import('vitest');
+    vi.stubGlobal('fetch', async (_url: string, init?: { headers?: Record<string, string> }) => {
+      seenRange = init?.headers?.Range ?? null;
+      const rest = Buffer.from(whole.slice(cut));
+      return {
+        ok: true,
+        status: 206,
+        headers: { get: () => String(rest.length) },
+        arrayBuffer: async () => rest.buffer.slice(rest.byteOffset, rest.byteOffset + rest.byteLength),
+      };
+    });
+    try {
+      const r = await fetchVersion({ url: 'https://huggingface.co/x/y.bin', destDir: dir, fileName: 'resume.bin', expectedSha256: sha(whole) });
+      expect(seenRange).toBe(`bytes=${cut}-`);          // 断点续传真实生效（offset 非 0）
+      expect(r.ok).toBe(true);
+      expect(readFileSync(dest, 'utf-8')).toBe(whole);   // 拼接后与完整件逐字一致
+      expect(() => readFileSync(dest + '.part')).toThrow(); // 校验通过后清 .part（不误导下次续传）
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('服务端忽略 Range 回 200 全量 → 不拼接、按全量校验（不把 200 当 206 拼）', async () => {
+    const whole = 'full-body-no-range';
+    const dest = join(dir, 'norange.bin');
+    writeFileSync(dest + '.part', 'stale-'); // 有残留 .part，但服务端不支持续传
+    const { vi } = await import('vitest');
+    vi.stubGlobal('fetch', async () => {
+      const buf = Buffer.from(whole);
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => String(buf.length) },
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      };
+    });
+    try {
+      const r = await fetchVersion({ url: 'https://huggingface.co/x/z.bin', destDir: dir, fileName: 'norange.bin', expectedSha256: sha(whole) });
+      expect(r.ok).toBe(true);
+      expect(readFileSync(dest, 'utf-8')).toBe(whole); // 若误拼接会变成 stale-full... 而校验失败
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
 describe('v1.8.0 review r3 · remote 锚校验上移 blocking', () => {
   it('revision=main 的 manifest → checkWeightsDir ok=false（阻断注册，非告警）', async () => {
     const { checkWeightsDir, manifestPath } = await import('../../weights-manifest');

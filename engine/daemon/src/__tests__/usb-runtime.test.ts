@@ -51,6 +51,14 @@ describe('v1.8.0 §五 · usb.ioMode 三源解析序', () => {
   it('非法值回退 A-ram（不抛错——fail-safe 到零残留档）', () => {
     expect(resolveUsbIoMode({ usb: { ioMode: 'C-what' } })).toBe('A-ram');
   });
+
+  it('原文两档名互为别名：self-extract ⇒ B 档、media-run ⇒ A 档（配置了必生效，不静默落空）', () => {
+    expect(resolveUsbIoMode({ usb: { ioMode: 'self-extract' } })).toBe('B-self-extract');
+    expect(resolveUsbIoMode({ usb: { ioMode: 'media-run' } })).toBe('A-ram');
+    delete process.env.SOFAGENT_USB_IOMODE;
+    process.env.SOFAGENT_USB_IOMODE = 'self-extract';
+    expect(resolveUsbIoMode({})).toBe('B-self-extract');
+  });
 });
 
 describe('v1.8.0 §五 · 权重定位段（setupPortableEnv B 档）', () => {

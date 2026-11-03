@@ -394,6 +394,36 @@ async function main() {
         }
       }
 
+      // ③ /v1/systemone 兼容门面（v1.8.0 §五 协议面）：SOFAGENT_SYSTEMONE_PORT 显式配置才启用
+      //    （默认关闭不占端口；启用时默认环回绑定）。判定件用 StdioDecisionChannel
+      //    承接——未配 runner 即不建门面（缺判定件时开个空门面等于制造「就绪」假象）。
+      if (process.env.SOFAGENT_SYSTEMONE_PORT) {
+        try {
+          const port = Number(process.env.SOFAGENT_SYSTEMONE_PORT);
+          const runner = (process.env.SOFAGENT_SYSTEMONE_RUNNER ?? '').trim();
+          if (!Number.isFinite(port) || port <= 0) {
+            console.warn(`  ⚠️ SOFAGENT_SYSTEMONE_PORT 非法（${process.env.SOFAGENT_SYSTEMONE_PORT}）——跳过 /v1/systemone 启动`);
+          } else if (runner === '') {
+            console.warn('  ⚠️ /v1/systemone 未启动：缺 SOFAGENT_SYSTEMONE_RUNNER（判定件可执行文件路径）——不建空门面');
+          } else {
+            const { startSystemoneEndpoint } = await import('./systemone-endpoint');
+            const { StdioDecisionChannel } = await import('@sofagent/orchestrator');
+            let runnerArgs: string[] = [];
+            try {
+              const parsedArgs: unknown = JSON.parse(process.env.SOFAGENT_SYSTEMONE_RUNNER_ARGS ?? '[]');
+              if (Array.isArray(parsedArgs)) runnerArgs = parsedArgs.map(String);
+            } catch {
+              console.warn('  ⚠️ SOFAGENT_SYSTEMONE_RUNNER_ARGS 不是 JSON 数组——按空参启动');
+            }
+            const channel = new StdioDecisionChannel({ command: runner, args: runnerArgs, name: 'systemone-facade' });
+            const ep = startSystemoneEndpoint({ port, deps: { judge: (s, q) => channel.judge(s, q) } });
+            console.log(`  ✅ /v1/systemone 门面已启动（${ep.host}:${ep.port}，默认环回绑定）`);
+          }
+        } catch (err) {
+          console.warn(`  ⚠️ /v1/systemone 门面启动失败（不影响 daemon 启动）: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+
       // v1.4.4 #32+47：退出收尾——任何退出路径都落盘退出码，doctor 才能感知守护死亡
       const exitWith = (code: number, reason: 'sigint' | 'sigterm' | 'uncaught-exception' | 'startup-failure' | 'unknown', detail?: string) => {
         clearInterval(heartbeatTimer);

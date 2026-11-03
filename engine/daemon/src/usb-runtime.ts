@@ -219,11 +219,24 @@ export function setupPortableEnv(usbRoot: string): void {
  */
 export type UsbIoMode = 'A-ram' | 'B-self-extract';
 
+/**
+ * 配置面允许的**两档名**（v1.8.0 §五 原文用词 `self-extract` / `media-run`）：
+ * 原文名与本仓既有实现名互为别名，两份写法都认——避免「判据名与代码名不一致
+ * ⇒ 配置了却不生效」这类静默失败。运行时**不静默选择**：非法值才回退缺省档，
+ * 且回退方向固定为零残留档（A-ram）。
+ */
+const USB_IO_ALIASES: Readonly<Record<string, UsbIoMode>> = {
+  'A-ram': 'A-ram',
+  'media-run': 'A-ram',
+  'B-self-extract': 'B-self-extract',
+  'self-extract': 'B-self-extract',
+};
+
 export function resolveUsbIoMode(federation: { usb?: { ioMode?: string } }): UsbIoMode {
   const fromFederation = federation.usb?.ioMode;
   const fromEnv = process.env.SOFAGENT_USB_IOMODE;
   const mode = fromFederation ?? fromEnv;
-  return mode === 'B-self-extract' ? 'B-self-extract' : 'A-ram';
+  return USB_IO_ALIASES[mode ?? ''] ?? 'A-ram';
 }
 
 // ============================================================
