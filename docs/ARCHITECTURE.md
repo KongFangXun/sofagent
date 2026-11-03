@@ -1009,6 +1009,10 @@ Boris Cherny「Harness 补丁保质期约半年」+ 规则库消融删除法（�
 
 DeepSeek Engram 查算分离与本仓「外部记忆层与模型参数化能力正交」同构——冷热分层映射（热=加载链/温=knowledge//冷=归档 wiki）已归档。
 
+**会话与任务状态的归属是架构决策，不是参数调优**——把「每轮重放全部历史」换成「引用历史」：状态上移到服务端或持久化工作流引擎后客户端只发增量，官方实测 500k–1M token 请求首 token 时间中位数降约 35%；代价随归属转移——线程何时过期、重发如何幂等、并发写同一线程谁赢、失败重试的顺序语义，都必须显式定义。反向判据：判断 harness 是否真可替换，看**状态与文件系统归谁**，不是模型调用能否对接。
+
+> 📖 来源：[Anthropic《Message threads》(2026-11-02)](https://claude.com/blog/message-threads) · [MiniMax《OpenAgentCore》(2026-10-27)](https://github.com/MiniMax-AI/OpenAgentCore)
+
 > 📚 全文：[归档](./archive/validation-digest/README.md)
 
 ### 三种记忆 × 沉淀资产对照（麦肯锡 Agentic Coworker）

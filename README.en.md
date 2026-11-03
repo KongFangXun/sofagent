@@ -130,7 +130,8 @@ Three layers, each in its place: the **engineering layer (FDEing)** writes judgm
 What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🔎 **Judgment trail**—decision-log causal chains record each accountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
-- ⚙️ **Decision channel & distribution (v1.8.0 form)**—the default `DecisionChannel` implementation (local subprocess, NDJSON over stdio) + off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a weights distribution path (source whitelist / strict sha256 / resumable download / two-tier USB offline runtime)—the form holds; capability-level claims land with v2.0.0
+- ⚙️ **Decision channel & distribution (v1.8.0 form)**—the default `DecisionChannel` implementation (local subprocess, NDJSON over stdio) +
+off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a weights distribution path (source whitelist / strict sha256 / resumable download / two-tier USB offline runtime)—the form holds; capability-level claims land with v2.0.0
 - 🔗 **Judgment made provable**—the audit history lands on an HMAC chain; `--verify-chain` recomputes chain integrity offline, so conclusions can be re-checked by a third party
 
 > Boundary: the judgment layer's probability output has not yet completed calibration wiring (criteria thresholds still sit on the zero-shot baseline); rule verdicts are backstopped by deterministic judges—judgment-layer takeover is a future state (see [ARCHITECTURE](./docs/ARCHITECTURE.md)).
