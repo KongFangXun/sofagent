@@ -40,7 +40,42 @@ export interface ChoiceHeadOutput {
   scores: Record<string, number>; // 归一后分布（顺序不变性：候选打乱分布不变）
 }
 
+/** choice 头（公开入口）：超词表上界自动分块打分 + 末轮归一（候选不静默截断） */
 export function choiceHead(
+  encoder: EncoderLike,
+  state: string,
+  options: readonly string[],
+  optionIds?: readonly string[],
+): ChoiceHeadOutput {
+  // v1.8.0 §三：词表上界 = EncoderLike 一次可稳定打分的候选数上限（实现方声明；缺省 64）
+  const VOCAB_CHUNK = (encoder as { vocabChunkSize?: number }).vocabChunkSize ?? 64;
+  if (options.length <= VOCAB_CHUNK) {
+    return choiceHeadDirect(encoder, state, options, optionIds);
+  }
+  // 分块逐块打分（块内 softmax），末轮跨块归一（全局 softmax over chunk log-p）——
+  // 候选集零截断：每个 option 都进分布，只是经过两轮归一
+  const chunkCount = Math.ceil(options.length / VOCAB_CHUNK);
+  const flat: Array<{ id: string; logit: number }> = [];
+  for (let c = 0; c < chunkCount; c++) {
+    const lo = c * VOCAB_CHUNK;
+    const sliceOpts = options.slice(lo, lo + VOCAB_CHUNK);
+    const sliceIds = (optionIds ?? options).slice(lo, lo + VOCAB_CHUNK);
+    const part = choiceHeadDirect(encoder, state, sliceOpts, sliceIds);
+    sliceIds.forEach((id, j) => {
+      const p = part.scores[id] ?? 1e-12;
+      flat.push({ id, logit: Math.log(Math.max(p, 1e-12)) });
+    });
+  }
+  const mx = Math.max(...flat.map((f) => f.logit));
+  const exps = flat.map((f) => Math.exp(f.logit - mx));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  const dist: Record<string, number> = {};
+  flat.forEach((f, i) => { dist[f.id] = exps[i]! / sum; });
+  return { scores: dist };
+}
+
+/** 块内直打分（≤ 词表上界候选集——分块打分的单元实现） */
+function choiceHeadDirect(
   encoder: EncoderLike,
   state: string,
   options: readonly string[],
@@ -54,6 +89,7 @@ export function choiceHead(
     );
   }
   // tokenizer 对齐校验：选项须单 token 化 + decode 回环一致
+  // v1.8.0 §三：**零微调路线的编码性断言在选项集构造期**（多 token 标签不得静默退化）
   for (const opt of options) {
     if (!encoder.isSingleToken(opt)) {
       throw new JudgeHeadError(`选项「${opt}」未单 token 化——拒载该问句（tokenizer 对齐失败）`);

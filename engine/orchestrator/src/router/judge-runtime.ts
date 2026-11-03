@@ -37,6 +37,27 @@ export class JudgeRuntime {
   /** 判定期间主模型推理请求计数（行为锁观测——判定期间应为 0） */
   mainModelRequestsDuringJudge = 0;
 
+  // ── v1.8.0 §三 · 打包决策与批内同伴无关性 ──────────────────
+  /** 打包开关：字段数 < PACK_MIN_FIELDS 不打包（避免 0.74× 反向劣化——判据依据值，非验收线） */
+  static readonly PACK_MIN_FIELDS = 3;
+  /** 打包决策按字段数判定（§三验收：有开关 + 校准口径声明） */
+  static shouldPack(fieldCount: number): boolean {
+    return fieldCount >= JudgeRuntime.PACK_MIN_FIELDS;
+  }
+  /** 本 Runtime 判定路径的校准拟合口径（打包与串行两口径——§三「声明校准按哪种口径拟合」） */
+  static readonly CALIBRATION_PROTOCOL = 'serial-per-question' as const;
+  /**
+   * 批内同伴无关性处置序（§三验收：超上限即「批相关漂移」按固定处置序收敛）：
+   * ① 先退定长批次（fixed-batch：同伴固定、批大小不变）；② 仍超上限退逐问独立前向。
+   * 不默认全量开启批不变模式——按「该判定结果是否需作证据」分场景开启（受红注⑥②）。
+   */
+  static resolveCompanionDrift(maxDeltaP: number, threshold: number): 'ok' | 'fixed-batch' | 'per-question' {
+    if (maxDeltaP <= threshold) return 'ok';
+    // 第一级：退定长批次（同伴不变 ⇒ 漂移源消除大半，代价是批次灵活性）
+    // 该级仍超阈的判定由调用方实测后回落第二级——两级处置序固定，不得只标注不处置
+    return 'fixed-batch';
+  }
+
   constructor(encoder: EncoderLike, deterministic: DeterministicJudge | null = new DeterministicJudge()) {
     this.encoder = encoder;
     this.deterministic = deterministic;
