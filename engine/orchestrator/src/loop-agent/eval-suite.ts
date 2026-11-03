@@ -206,7 +206,7 @@ export async function runEvalSuite(
   for (const evalCase of suite.cases) {
     const startedAt = Date.now();
     let output = '';
-    // v1.4.0 交付九：failureCode 用 EvaluationFailureCode 枚举（MLflow CaseEvaluation 类型对齐）
+    // failureCode 用 EvaluationFailureCode 枚举（与评测记录契约对齐）
     let failureCode: import('../benchmark/case-evaluator').EvaluationFailureCode | null = null;
 
     try {
@@ -234,41 +234,9 @@ export async function runEvalSuite(
     // 日志写入失败静默（eval 运行优先）
   }
 
-  // v1.4.0 交付九：MLflow 旁路导出（tracking server 不可达降级 ok=false 不抛——
-  // evaluation-log 仍是主存储，MLflow 是旁路；商业侧「评测迭代主权」链路接通）
-  try {
-    const { logBenchmarkToMlflow, buildMetrics } = await import('../benchmark/mlflow-exporter');
-    await logBenchmarkToMlflow({
-      evaluation: {
-        benchmarkId: suite.benchmarkId,
-        caseId: evalCase.id,
-        revision: suite.revision,
-        score,
-        failureCode,
-        details: [],
-        workspace: '',
-        durationMs,
-      },
-      benchmarkId: suite.benchmarkId,
-      caseId: evalCase.id,
-      metrics: buildMetrics(
-        {
-          benchmarkId: suite.benchmarkId,
-          caseId: evalCase.id,
-          revision: suite.revision,
-          score,
-          failureCode,
-          details: [],
-          workspace: '',
-          durationMs,
-        },
-        { judgeScore: score },
-      ),
-    });
-  } catch {
-    // MLflow 不可达/失败静默降级（主存储 evaluation-log 不受影响）
-  }
-
+  // v1.9.0 §四:9：外挂实验跟踪导出已退役（exporter 单文件删除，全仓叙事面清零）。
+  // 评测结果的主存储始终是 evaluation-log；旁路导出未进入任何判据通道，
+  // 删除后「跑一次评测 → 读 evaluation-log」的链路不变。
   caseResults.push({
     caseId: evalCase.id,
     score,

@@ -67,7 +67,7 @@ Node 发 SIGINT → Python 捕获后存 checkpoint 优雅退出（退出码 0）
 | 能力 | 决策 | 依据 |
 |---|---|---|
 | LoRA 计算 | **复用** LLaMA-Factory / Unsloth / verl spawn | 确定性计算，成熟框架，自研无增益 |
-| 实验跟踪 | **复用** MLflow | 标准生态，Node 侧只消费其 API |
+| 实验跟踪 | **不外挂**（v1.9.0 §四:9 退役） | 评测结果落 `evaluation-log`（主存储）；四层性能标准的落数通道见 `docs/VALIDATION.md` |
 | 推理（评估 / 采样） | **复用** vLLM / SGLang | 高吞吐推理是独立成熟赛道 |
 | 训练任务编排 + 六源语料闭环 + 训练审计 | **自研** | sofagent 的产品核心——约束层治理视角的编排 / 审计 / 回溯是差异化所在，外部框架没有等价物 |
 

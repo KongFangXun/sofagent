@@ -28,8 +28,7 @@
   ParsedBenchmarkConfig,
 } from '../benchmark/benchmark-designer';
 /* @public */ export { evaluateCase, defaultScoringFn, evalBridgeScoringFn, DEFAULT_EVALUATE_TIMEOUT_MS } from '../benchmark/case-evaluator';
-/* @public */ export { logBenchmarkToMlflow, buildMetrics, llmAsJudge } from '../benchmark/mlflow-exporter';
-/* @public */ export type { MlflowMetrics, MlflowRunResult } from '../benchmark/mlflow-exporter';
+// v1.9.0 §四:9：外挂实验跟踪导出退役（见 index.ts 同名说明）
 /* @public */ export type {
   EvaluateCaseInput,
   AgentExecutionContext,

@@ -220,7 +220,6 @@
   "engine/orchestrator/src/loop-agent/driver.ts::#1::catch { // 调试记录写入失败静默 }",
   "engine/orchestrator/src/loop-agent/error-localizer.ts::#1::catch { // 尝试提取 JSON 片段 }",
   "engine/orchestrator/src/loop-agent/error-localizer.ts::#1::catch { // 解析失败 }",
-  "engine/orchestrator/src/loop-agent/eval-suite.ts::#1::catch { // MLflow 不可达/失败静默降级（主存储 evaluation-log 不受影响） }",
   "engine/orchestrator/src/loop-agent/eval-suite.ts::#1::catch { // 日志写入失败静默（eval 运行优先） }",
   "engine/orchestrator/src/loop-agent/fix-applier.ts::#1::catch { // git checkout 失败静默（文件可能不在 git 管理中） }",
   "engine/orchestrator/src/loop-state-extractor.ts::#1::catch { /* 清理失败可忽略 */ }",

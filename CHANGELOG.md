@@ -74,6 +74,14 @@
 > **升级影响（公开 API 删除）**：外部代码 import 上述 4 符号将编译失败——四件套自 MCP 面 2026-09-26 注销（107→103）后已零生产消费面，SDK 面台账零登记（`check-unwired-exports` 实测零命中），实际破坏面为零；历史实现可自 v1.4.x tag 取回。
 >**保留不变**：三件图像能力 `analyzeScreenshot` / `readImageMeta` / `degradeImageToText`（dsh-vision 视觉降级本体，非四件套）迁 `engine/orchestrator/src/refine-agent/image-meta.ts`，`@public` 导出与基线条目原样保留（导出改指新模块，导入路径无需变更）。MCP 工具面无增删（仍 104）。
 
+> 🗑️ **API 退役公告（v1.9.0 §四:9 · 外挂实验跟踪导出删除与公开面 5 符号吊销）**
+>
+> **`@sofagent/orchestrator` 公开面吊销 5 符号**：`logBenchmarkToMlflow` / `buildMetrics` / `llmAsJudge` / `MlflowMetrics` / `MlflowRunResult`（`public-api-baseline` 同批移除，2566→2561）——实现底座 `engine/orchestrator/src/benchmark/mlflow-exporter.ts`（29 处 MLflow 相关行）与其单测已删除，
+> 对齐 [v1.9.0 §四:9](./docs/changelog/v1.9/v1.9.0.md) 裁定（四层性能标准自有落数通道，不再外挂 MLflow 输出形态）。
+> **升级影响（公开 API 删除）**：外部代码 import 上述 5 符号将编译失败——该旁路自引入即为「旁路导出」（`evaluation-log` 始终是主存储），生产判定与评测链路零消费；历史实现可自 v1.8.x tag 取回。
+> **保留不变**：`evaluateCase` / `defaultScoringFn` / `evalBridgeScoringFn` / `DEFAULT_EVALUATE_TIMEOUT_MS` 与 `benchmark/**` 其余三件（设计器/评估器/评测日志）原样保留；`evaluation-log` 写路径不变。
+> **叙事面**：`docs/HANDBOOK.md` 能力条目、`docs/guides/train-stack.md` 实验跟踪行、`docs/VALIDATION.md` 评测迭代表述同批清零；历史变更日志（v1.3/v1.4/v2.0）作为档案**不回改**。
+
 - **v1.3.9** — 🔍 官方 AST 规则引擎（8+2 规则同管线）+ meta-harness 多 harness 编排 + worklog 数据层 + API 分级 @public/@internal（1439 符号门禁）+ FORGE 切 DSH + MLflow agent 评估 + Agentic Browser + 跨平台适配器 + ATTRIBUTION 归因 + Dream Sandbox + >5MB diff 修复 + 长任务进程自愈（守护 daemon + watcher，
   进程被外部回收后自动恢复） · 测试 2782→**2903**（+121）· 2026-08-23 · [开发日志](./docs/changelog/v1.3/v1.3.9.md)
 - **v1.3.8** — 🛡️ 代理网关硬边界（唯一出入口 + HITL 审批队列首场景）+ 🔐 数据静态加密（能力交付：AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1，见 SECURITY）+ ⏸️ Durable Execution L3（WAL 三档可逆）+ ⏰ 异步长任务自治（cron + 依赖图）+ FORGE 保活三件套 + SDK `sandbox:true` + release-gate 瘦身 + 审查成本计量（逐步 token 记账 + 单次草稿模式） + 快照写路径加固 · 测试

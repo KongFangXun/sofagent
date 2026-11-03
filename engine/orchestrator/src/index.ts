@@ -649,9 +649,7 @@
   ParsedBenchmarkConfig,
 } from './benchmark/benchmark-designer';
 /* @public */ export { evaluateCase, defaultScoringFn, evalBridgeScoringFn, DEFAULT_EVALUATE_TIMEOUT_MS } from './benchmark/case-evaluator';
-// v1.4.0 交付九：MLflow 接线——logBenchmarkToMlflow 进公共 API（eval/mcp/外部脚本 import 用）
-/* @public */ export { logBenchmarkToMlflow, buildMetrics, llmAsJudge } from './benchmark/mlflow-exporter';
-/* @public */ export type { MlflowMetrics, MlflowRunResult } from './benchmark/mlflow-exporter';
+// v1.9.0 §四:9：外挂实验跟踪导出退役（三函数与两类型已移出公共 API；详见 CHANGELOG breaking 条）
 // v1.3.9 交付七：dsh-vision 视觉降级三件进公共 API（原随 Agentic Browser 交付；
 // v1.5.7 章二：浏览器实现底座退役删除，三件图像能力迁 image-meta.ts 保留）
 /* @public */ export { analyzeScreenshot, degradeImageToText, readImageMeta } from './refine-agent/image-meta';

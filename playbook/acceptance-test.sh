@@ -2656,10 +2656,11 @@ grep -q "preferred" "$EB" || S311_OK=false
 grep -q "SOFAGENT_EXECUTION_BACKEND" "$EB" || S311_OK=false
 grep -q "createDshCliBackend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backends/dsh-backend.ts" || S311_OK=false
 $S311_OK && pass "DSH 后端选择（EXECUTION_BACKEND）+CLI 桥接+降级在位" || fail "DSH 执行后端缺失"
-scenario 312 "v1.3.9 交付六：MLflow agent 评估集成——13 指标映射 + LLM-as-Judge 降级"; S312_OK=true
-[ -f "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" ] || S312_OK=false
-grep -q "SCORE\|RATIONALE\|0..100\|clamp" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" 2>/dev/null || S312_OK=false
-$S312_OK && pass "MLflow 导出器在位" || fail "MLflow 集成缺失"
+scenario 312 "v1.3.9 交付六：外挂实验跟踪导出（v1.9.0 §四:9 退役——单文件删除 + 公共 API 五符号吊销 + 叙事面清零）"; S312_OK=true
+S312_F="$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts"
+[ ! -f "$S312_F" ] || S312_OK=false
+grep -q "logBenchmarkToMlflow" "$PROJECT_ROOT/engine/orchestrator/src/index.ts" && S312_OK=false
+$S312_OK && pass "外挂实验跟踪导出已退役（文件删除 + 公共 API 摘除）" || fail "退役未完成（文件残留或公共 API 未摘）"
 scenario 313 "v1.3.9 交付七：Agentic Browser / Playwright——实现底座已删除 × MCP 面无回潮（v1.5.7 章二「浏览器实现底座处置（本版收口）」兑现 v2.0.0 §七 B 表终态：底座文件删除 + 三件图像能力迁 image-meta.ts；与 S396 不互斥：两个同名不同物文件 · 见 devlog 审查修复批 #15）"; S313_OK=true
 S313_F="$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts"; S313_IM="$PROJECT_ROOT/engine/orchestrator/src/refine-agent/image-meta.ts"; S313_PW=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const {TOOLS}=require(process.env.PROJECT_ROOT+'/engine/mcp/dist/tool-registry.js');process.stdout.write(TOOLS.some(t=>/^playwright_/.test(t.name))?'1':'0')" 2>/dev/null)
 [ ! -f "$S313_F" ] && [ -f "$S313_IM" ] && grep -q "degradeImageToText" "$S313_IM" 2>/dev/null && [ "$S313_PW" = "0" ] || S313_OK=false
