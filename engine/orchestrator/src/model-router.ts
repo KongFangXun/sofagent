@@ -103,6 +103,8 @@ export interface TaskContext {
   userIntent?: string;
   /** 判定运行档（off/shadow/active——judgeMode 的唯一入口：router 只读 context、不自持状态；off 时归一 local-executor） */
   judgeMode?: 'off' | 'shadow' | 'active';
+  /** 判定档显式请求（v1.8.0 §四：判定档不进自动矩阵——上游判定任务发起时置 true 才产出 decision-model 路由） */
+  requestDecisionModel?: boolean;
 }
 
 export type TaskComplexity = 'simple' | 'complex' | 'pipeline' | 'super-complex';
@@ -152,6 +154,25 @@ export class ModelRouter {
   private readonly localProbe: (endpoint: string) => Promise<boolean>;
   private readonly alert: (msg: string) => void;
 
+  // ── v1.8.0 §四 · 判定档可观测四字段（计数在 orchestrator、透传在 mcp）────
+  /** 判定档调用量（decision-model 路由命中次数） */
+  readonly decisionModelCalls = { calls: 0, failures: 0, degradations: 0 } as const;
+  /** 判定档延迟直方图（ms 桶：<50 / <200 / <1000 / ≥1000——粗粒度够用，不存原始序列） */
+  readonly decisionModelLatencyMs = { under50: 0, under200: 0, under1000: 0, over1000: 0 };
+
+  /** 记一次判定档调用（§四 可观测——调用方在判定执行点上报） */
+  noteDecisionModelCall(outcome: { ok: boolean; latencyMs: number; degraded?: boolean }): void {
+    const c = this.decisionModelCalls as { calls: number; failures: number; degradations: number };
+    c.calls += 1;
+    if (!outcome.ok) c.failures += 1;
+    if (outcome.degraded) c.degradations += 1;
+    const h = this.decisionModelLatencyMs;
+    if (outcome.latencyMs < 50) h.under50 += 1;
+    else if (outcome.latencyMs < 200) h.under200 += 1;
+    else if (outcome.latencyMs < 1000) h.under1000 += 1;
+    else h.over1000 += 1;
+  }
+
   constructor(deps: ModelRouterDeps = {}) {
     this.config = deps.config ?? loadModelRouterConfig(deps.cwd, deps.configPath);
     this.logger = deps.logger ?? new DataSovereigntyLogger();
@@ -168,6 +189,13 @@ export class ModelRouter {
     // routeReason 落 judge-off 供审计（决策判定档在 off 下不可达）。
     if (context.judgeMode === 'off') {
       return { target: 'local-executor', reason: 'judge-off', sensitivity: 'restricted', complexity: 'simple' };
+    }
+    // v1.8.0 §四：判定档可达性 = 上游显式请求（requestDecisionModel=true）——
+    // 不参与「敏感度 × 复杂度」自动矩阵（SSOT §四 交付表「与本地两档的分工
+    // 声明」行：判定档由判定任务发起时指定）。off 之外的 shadow/active 档下，
+    // 显式请求才产出 decision-model 路由。
+    if (context.requestDecisionModel === true) {
+      return { target: 'decision-model', reason: 'typed-decision', sensitivity: this.evaluateSensitivity(prompt, context), complexity: this.evaluateComplexity(prompt, context) };
     }
     const sensitivity = this.evaluateSensitivity(prompt, context);
     const complexity = this.evaluateComplexity(prompt, context);

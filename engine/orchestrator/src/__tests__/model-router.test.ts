@@ -628,3 +628,45 @@ describe('ModelRouter · client_type 模型插槽', () => {
     expect(route.target).toBe('local-executor');
   });
 });
+
+describe('v1.8.0 §四 · 判定档可达性与可观测四字段', () => {
+  it('判定档不进自动矩阵：无显式请求时 route() 从不产出 decision-model', () => {
+    const router = new ModelRouter();
+    // 遍历敏感度 × 复杂度代表性组合——全部不落 decision-model
+    for (const prompt of ['翻译这段', '做一个多步推理规划分析', '处理跨文件全链路 workflow']) {
+      const r = router.route(prompt, { agentRole: 'plan' });
+      expect(r.target).not.toBe('decision-model');
+    }
+  });
+
+  it('显式请求（requestDecisionModel=true）才可达：产出 decision-model + typed-decision', () => {
+    const router = new ModelRouter();
+    const r = router.route('判定任务：该提交是否允许合入', { agentRole: 'plan', requestDecisionModel: true });
+    expect(r.target).toBe('decision-model');
+    expect(r.reason).toBe('typed-decision');
+  });
+
+  it('可观测四字段：增量断言——成功/失败各一次后 calls/failures 各 +1，降级后 degradations +1', () => {
+    const router = new ModelRouter();
+    const before = { ...router.decisionModelCalls };
+    router.noteDecisionModelCall({ ok: true, latencyMs: 30 });
+    router.noteDecisionModelCall({ ok: false, latencyMs: 500, degraded: true });
+    expect(router.decisionModelCalls.calls).toBe(before.calls + 2);
+    expect(router.decisionModelCalls.failures).toBe(before.failures + 1);
+    expect(router.decisionModelCalls.degradations).toBe(before.degradations + 1);
+    // 延迟直方图：30ms → under50；500ms → under1000
+    expect(router.decisionModelLatencyMs.under50).toBeGreaterThanOrEqual(1);
+    expect(router.decisionModelLatencyMs.under1000).toBeGreaterThanOrEqual(1);
+  });
+
+  it('判定档与拦截档绝不落云端生成分支（回归锁）', () => {
+    const router = new ModelRouter();
+    const dm = router.route('判定任务', { requestDecisionModel: true });
+    expect(dm.target).toBe('decision-model');
+    // block 档：confidential 超复杂 → block（不是 cloud-*）
+    const blk = router.route('跨文件多步 workflow 全链路机密数据超级复杂任务', {
+      filePath: 'a.confidential.md', frontmatter: { sensitivity: 'confidential' },
+    });
+    expect(blk.target).not.toMatch(/^cloud/);
+  });
+});

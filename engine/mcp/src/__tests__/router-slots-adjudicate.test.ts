@@ -65,3 +65,32 @@ describe('router_slots · adjudicate（判定链生产接线）', () => {
     expect(res.data.snapshot?.maxSlots).toBe(3);
   });
 });
+
+describe('v1.8.0 §四 · 判定档可观测四字段透传（mcp 侧）', () => {
+  it('snapshot 输出含 decisionModelMetrics 字段位（router 未挂载时为 null——字段位恒在）', async () => {
+    delete (globalThis as { __sofagentModelRouter?: unknown }).__sofagentModelRouter;
+    const res = await routerSlots({ action: 'snapshot', max_slots: 2 });
+    const snap = (res.data as { snapshot: Record<string, unknown> }).snapshot;
+    expect('decisionModelMetrics' in snap).toBe(true);
+    expect(snap.decisionModelMetrics).toBeNull(); // 未挂载 → null（字段位在、值空）
+  });
+
+  it('router 挂载后四字段可见（calls/latencyMs/failures/degradations 透传）', async () => {
+    const { ModelRouter } = await import('@sofagent/orchestrator');
+    const router = new ModelRouter();
+    router.noteDecisionModelCall({ ok: true, latencyMs: 20 });
+    router.noteDecisionModelCall({ ok: false, latencyMs: 300, degraded: true });
+    (globalThis as { __sofagentModelRouter?: InstanceType<typeof ModelRouter> }).__sofagentModelRouter = router;
+    try {
+      const res = await routerSlots({ action: 'snapshot', max_slots: 2 });
+      const m = (res.data as { snapshot: { decisionModelMetrics: Record<string, unknown> } }).snapshot.decisionModelMetrics;
+      expect(m).not.toBeNull();
+      expect(m.calls).toBe(2);
+      expect(m.failures).toBe(1);
+      expect(m.degradations).toBe(1);
+      expect((m.latencyMs as Record<string, number>).under50).toBe(1);
+    } finally {
+      delete (globalThis as { __sofagentModelRouter?: unknown }).__sofagentModelRouter;
+    }
+  });
+});

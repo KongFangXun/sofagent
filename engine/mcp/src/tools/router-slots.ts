@@ -209,6 +209,11 @@ export async function routerSlots(args: RouterSlotsArgs): Promise<RouterSlotsRes
     ? SlotManager.fromState(persisted)
     : new SlotManager(typeof args.max_slots === 'number' ? { maxSlots: args.max_slots } : {});
   const snap = manager.snapshot();
+  // v1.8.0 §四：判定档可观测四字段透传（计数在 orchestrator ModelRouter、
+  // 透传在 mcp——依赖方向 mcp → orchestrator。字段：calls / latencyMs 直方图 /
+  // failures / degradations；router 实例由调用方共享，此处只读快照。）
+  const { ModelRouter } = await import('@sofagent/orchestrator');
+  const routerObs = (globalThis as { __sofagentModelRouter?: InstanceType<typeof ModelRouter> }).__sofagentModelRouter;
   return {
     text: `[sofagent] 本地槽位态：占用 ${snap.inUse}/${snap.maxSlots}（空闲 ${snap.available}）· 排队 ${snap.queueDepth} · 判定链在飞 ${snap.decisionInFlight}`,
     data: {
@@ -222,6 +227,15 @@ export async function routerSlots(args: RouterSlotsArgs): Promise<RouterSlotsRes
         queueDepth: snap.queueDepth,
         decisionInFlight: snap.decisionInFlight,
         queued: manager.toState().queued,
+        // §四 四字段（router 未挂载时为 null——字段位恒在，mcp 侧断言面）
+        decisionModelMetrics: routerObs
+          ? {
+              calls: routerObs.decisionModelCalls.calls,
+              failures: routerObs.decisionModelCalls.failures,
+              degradations: routerObs.decisionModelCalls.degradations,
+              latencyMs: { ...routerObs.decisionModelLatencyMs },
+            }
+          : null,
       },
     },
   };
