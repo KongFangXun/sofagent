@@ -13,6 +13,10 @@
  * 守护进程 — 持续审计 / 文件监听 / 自动修复循环
  */
 
+// 挂-4 影子门 live 装载（F6.5 #5 · 内部件，不标 @public：部署面专用）
+export { bootJudgeMode, switchJudgeModeLive } from './judge-mode-control';
+export type { BootResult, SwitchInput, SwitchResult } from './judge-mode-control';
+
 // Cron
 /* @public */ export { startCron, loadTrainArchiveCronConfig } from './cron';
 /* @public */ export type { CronJob } from './cron';

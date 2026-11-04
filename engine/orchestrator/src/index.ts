@@ -479,6 +479,14 @@
   type CommitMeta,
 } from './router/judge-observability';
 /* @public */ export {
+  setJudgeMode,
+  getJudgeMode,
+  getShadowLedger,
+  bootstrapJudgeModeState,
+  recordShadowReconciliation,
+} from './router/judge-mode';
+/* @public */ export type { JudgeMode, ShadowLedger } from './router/judge-state';
+/* @public */ export {
   buildAiAttributionReport,
   renderAiAttributionReport,
   readCommitMeta,

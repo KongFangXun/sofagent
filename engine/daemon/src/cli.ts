@@ -223,6 +223,27 @@ async function main() {
       process.exit(1);
       break;
     }
+    case 'judge-mode': {
+      // 挂-4 live 切档（F6.5 #5）：切档与对账台账回填同一调用内完成。
+      const { switchJudgeModeLive } = await import('./judge-mode-control');
+      const { getDataDir: getJudgeDataDir2 } = await import('@sofagent/core');
+      const modeIdx = args.indexOf('--mode');
+      const mode = modeIdx !== -1 ? String(args[modeIdx + 1]) : '';
+      if (!['shadow', 'active', 'off'].includes(mode)) {
+        console.error('❌ judge-mode --mode 需为 shadow|active|off');
+        process.exit(1);
+      }
+      const shIdx = args.indexOf('--shadow');
+      const acIdx = args.indexOf('--actual');
+      const r = switchJudgeModeLive(getJudgeDataDir2(), {
+        mode: mode as 'shadow' | 'active' | 'off',
+        ...(shIdx !== -1 && acIdx !== -1
+          ? { shadow: String(args[shIdx + 1]), actual: String(args[acIdx + 1]) }
+          : {}),
+      });
+      console.log(`✅ 判定档已切到 ${r.mode}（reconciled=${r.reconciled}${r.recorded ? ' · 已落对账' : ''}）`);
+      break;
+    }
     case 'start': {
       // --help/-h 在子命令后也打印帮助退出，不误触发真启动（2026-08-18 修复：
       // `start --help` 原先被当未知 flag 忽略直接拉起守护进程）
@@ -380,6 +401,17 @@ async function main() {
       //    （默认关闭不占端口；启用时 loopback 绑定——外部不可达默认安全）。
       if (process.env.SOFAGENT_HEALTH_PORT) {
         try {
+          // 挂-4 live 装载（F6.5 #5）：daemon 启动即把持久对账面装进进程内单例。
+          // 台账损坏 ⇒ 告警并保持拒绝（不静默归零：损坏 ≠ 没对过账）。
+          try {
+            const { bootJudgeMode } = await import('./judge-mode-control');
+            const { getDataDir: getJudgeDataDir } = await import('@sofagent/core');
+            const b = bootJudgeMode(getJudgeDataDir());
+            console.log(`  ✅ 判定影子门台账已装载（reconciled=${b.reconciled} · mode=${b.mode}）`);
+          } catch (e) {
+            console.warn(`  ⚠️ 判定影子门台账装载失败：${(e as Error).message}——active 门保持拒绝`);
+          }
+
           const { startHealthEndpoint } = await import('./health-endpoint');
           const { getDataDir: getCoreDataDir } = await import('@sofagent/core');
           const port = Number(process.env.SOFAGENT_HEALTH_PORT);
