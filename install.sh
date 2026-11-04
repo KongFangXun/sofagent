@@ -256,14 +256,26 @@ for _arg in "$@"; do [ "$_arg" = "--with-first-deploy-cron" ] && WITH_FIRST_DEPL
 # ── USB A 安装器档（v1.8.0 L348）：--media 预扫描（同 --base-only 模式）──
 # 形态：--media <root> 或 --media=<root>；只记根路径，校验与切换在远程分支之后做。
 MEDIA_ROOT=""
+MEDIA_FLAG=0
 _prev=""
 for _arg in "$@"; do
+  case "$_arg" in
+    --media|--media=*) MEDIA_FLAG=1 ;;
+  esac
   case "$_arg" in
     --media=*) MEDIA_ROOT="${_arg#--media=}" ;;
     *) if [ "$_prev" = "--media" ]; then MEDIA_ROOT="$_arg"; fi ;;
   esac
   _prev="$_arg"
 done
+# 值缺省判定：`--media` 后跟另一个 flag（或以 - 开头）视同「没给值」，不得把 --base-only 当路径
+case "${MEDIA_ROOT}" in -*|"") : ;; esac
+if [ -n "${MEDIA_ROOT}" ] && [ "${MEDIA_ROOT#-}" != "${MEDIA_ROOT}" ]; then MEDIA_ROOT=""; fi
+if [ "${MEDIA_FLAG}" = "1" ] && [ -z "${MEDIA_ROOT}" ]; then
+  err "--media 需要一个介质根路径（例：bash install.sh --media /Volumes/SOFAGENT）"
+  echo "用法: bash install.sh --media <介质根> [--base-only] [--platform <name>]" >&2
+  exit 2
+fi
 
 # ── 预扫描 --base-only（在 source/参数解析前捕获）──
 for _arg in "$@"; do [ "$_arg" = "--base-only" ] && BASE_ONLY=1; done
