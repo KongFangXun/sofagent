@@ -131,6 +131,7 @@ sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
 用法:
   bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Skill
   bash install.sh --base-only           仅装约束层（审计·回溯·daemon·dashboard，不装 Agent Skill）
+  bash install.sh --media /Volumes/USB   USB A 安装器档：从介质装（同套 sha256 校验，全程不联网）
   bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes / cursor / gemini
   bash install.sh --with-im-bridge      可选：安装 IM 桥远程指挥（@xmanrui/dsh-im 社区插件，默认不装）
   bash install.sh --with-first-deploy-cron  可选：装完自动建首部署 cron job（daily-health 每日巡检，默认不装）
@@ -252,6 +253,18 @@ for _arg in "$@"; do [ "$_arg" = "--with-im-bridge" ] && WITH_IM_BRIDGE=1; done
 WITH_FIRST_DEPLOY_CRON=0
 for _arg in "$@"; do [ "$_arg" = "--with-first-deploy-cron" ] && WITH_FIRST_DEPLOY_CRON=1; done
 
+# ── USB A 安装器档（v1.8.0 L348）：--media 预扫描（同 --base-only 模式）──
+# 形态：--media <root> 或 --media=<root>；只记根路径，校验与切换在远程分支之后做。
+MEDIA_ROOT=""
+_prev=""
+for _arg in "$@"; do
+  case "$_arg" in
+    --media=*) MEDIA_ROOT="${_arg#--media=}" ;;
+    *) if [ "$_prev" = "--media" ]; then MEDIA_ROOT="$_arg"; fi ;;
+  esac
+  _prev="$_arg"
+done
+
 # ── 预扫描 --base-only（在 source/参数解析前捕获）──
 for _arg in "$@"; do [ "$_arg" = "--base-only" ] && BASE_ONLY=1; done
 
@@ -335,6 +348,34 @@ if [ "${REMOTE_MODE}" = "1" ]; then
     err "git 不可用——远程安装需要 git。请先安装 git 或使用完整安装方式："
     err "  git clone https://github.com/KongFangXun/sofagent.git && cd sofagent && bash install.sh"
     exit 1
+  fi
+fi
+
+# ── USB A 安装器档：介质校验 → 从介质重入（fail-closed，绝不回退联网）──
+if [ -n "${MEDIA_ROOT}" ]; then
+  info "USB A 安装器档：介质根 ${MEDIA_ROOT}"
+  if ! bash "${SCRIPT_DIR}/tools/install/verify-media.sh" "${MEDIA_ROOT}"; then
+    err "介质校验失败——拒绝安装（fail-closed，不回退联网下载）"
+    exit 3
+  fi
+  if [ ! -f "${MEDIA_ROOT}/repo/install.sh" ]; then
+    err "介质缺 repo/install.sh（载荷不完整）——拒绝安装"
+    exit 2
+  fi
+  pass_args=(); _skip=0
+  for _arg in "${ORIGINAL_ARGS[@]}"; do
+    if [ "$_skip" = "1" ]; then _skip=0; continue; fi
+    case "$_arg" in
+      --media) _skip=1; continue ;;
+      --media=*) continue ;;
+    esac
+    pass_args+=("$_arg")
+  done
+  ok "介质校验通过——从介质安装（不联网）"
+  if [ ${#pass_args[@]} -gt 0 ]; then
+    exec bash "${MEDIA_ROOT}/repo/install.sh" "${pass_args[@]}"
+  else
+    exec bash "${MEDIA_ROOT}/repo/install.sh"
   fi
 fi
 
