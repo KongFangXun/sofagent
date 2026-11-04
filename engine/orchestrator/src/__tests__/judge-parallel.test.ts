@@ -212,3 +212,34 @@ describe('v1.8.0 fresh-eyes P2-③ · 分块 softmax 数值等价锁', () => {
     expect(sorted[0]! - sorted[1]!).toBeGreaterThan(1e-3);
   });
 });
+
+describe('v1.8.0 §三 L238 · 扩散路线以硬件档为启用条件（resolveRouteEnablement）', () => {
+  it('①GPU 档且显存达线 → diffusion 启用', () => {
+    const r = JudgeRuntime.resolveRouteEnablement({ route: 'diffusion', hardwareTier: 'gpu', vramGb: 16 });
+    expect(r.enabled).toBe(true);
+    expect(r.reason).toContain('扩散路线启用');
+  });
+
+  it('②cpu-xinchuang 档 → diffusion 不启用，reason 含「硬件档」且不含「显存」', () => {
+    const r = JudgeRuntime.resolveRouteEnablement({ route: 'diffusion', hardwareTier: 'cpu-xinchuang' });
+    expect(r.enabled).toBe(false);
+    expect(r.reason).toContain('硬件档');
+    expect(r.reason).not.toContain('显存');
+  });
+
+  it('③parallel-decode 在 cpu-xinchuang 档仍启用（主力路线不吃显存门槛）', () => {
+    const r = JudgeRuntime.resolveRouteEnablement({ route: 'parallel-decode', hardwareTier: 'cpu-xinchuang' });
+    expect(r.enabled).toBe(true);
+  });
+
+  it('④GPU 档但显存不足 → diffusion 不启用，reason 含「显存」', () => {
+    const r = JudgeRuntime.resolveRouteEnablement({ route: 'diffusion', hardwareTier: 'gpu', vramGb: 4 });
+    expect(r.enabled).toBe(false);
+    expect(r.reason).toContain('显存');
+  });
+
+  it('⑤score-head 两档均启用（辅助路线不设硬件门槛）', () => {
+    expect(JudgeRuntime.resolveRouteEnablement({ route: 'score-head', hardwareTier: 'gpu', vramGb: 4 }).enabled).toBe(true);
+    expect(JudgeRuntime.resolveRouteEnablement({ route: 'score-head', hardwareTier: 'cpu-xinchuang' }).enabled).toBe(true);
+  });
+});

@@ -60,6 +60,36 @@ export class JudgeRuntime {
     return 'fixed-batch';
   }
 
+  // ── v1.8.0 §三 L238 · 路线启用条件（硬件档决定，纯函数零 IO）──────────
+  /**
+   * 扩散路线的显存门槛（判据依据值，非验收线——目标硬件实测后可按读数调整；
+   * 与 PACK_MIN_FIELDS 同族：常量写死、调整须留痕）。
+   */
+  static readonly DIFFUSION_MIN_VRAM_GB = 8;
+  /**
+   * 路线启用判定（§三 L238：条件路线以硬件档为启用条件，**信创 CPU 档不受其显存门槛约束**）：
+   *   - diffusion：仅 GPU 档且显存达线时启用；显存不足 reason 含「显存」；
+   *     cpu-xinchuang 档一律不启用且 reason 含「硬件档」——**不提显存**（显存门槛不适用于该档）；
+   *   - parallel-decode / score-head：两档均可启用（主力/辅助路线不依赖显存）。
+   */
+  static resolveRouteEnablement(input: {
+    route: 'parallel-decode' | 'diffusion' | 'score-head';
+    hardwareTier: 'gpu' | 'cpu-xinchuang';
+    vramGb?: number;
+  }): { enabled: boolean; reason: string } {
+    if (input.route === 'diffusion') {
+      if (input.hardwareTier === 'cpu-xinchuang') {
+        return { enabled: false, reason: '扩散路线依赖加速硬件——信创 CPU 档按硬件档不启用（该档不适用容量类门槛）' };
+      }
+      const vram = input.vramGb ?? 0;
+      if (vram < JudgeRuntime.DIFFUSION_MIN_VRAM_GB) {
+        return { enabled: false, reason: `扩散路线显存不足（${vram}GB < ${JudgeRuntime.DIFFUSION_MIN_VRAM_GB}GB 门槛）` };
+      }
+      return { enabled: true, reason: `扩散路线启用（GPU 档 · 显存 ${vram}GB 达线）` };
+    }
+    return { enabled: true, reason: `${input.route} 路线不依赖显存门槛（两档均启用）` };
+  }
+
   constructor(encoder: EncoderLike, deterministic: DeterministicJudge | null = new DeterministicJudge()) {
     this.encoder = encoder;
     this.deterministic = deterministic;
