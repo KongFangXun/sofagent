@@ -1,14 +1,14 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 84 维 · 编号 1-150 · 66 个编号重新编号后空缺（口径＝最大号−维数；#4 已并入 #147（28 口径承接）· #9 已并入 #18 · #21 已并入 #146 · #145 已并入 #149（判定底座三件承接 · 阶段四步骤二 · git -S ruleClass 可溯）· 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 85 维 · 编号 1-151 · 66 个编号重新编号后空缺（口径＝最大号−维数；#4 已并入 #147（28 口径承接）· #9 已并入 #18 · #21 已并入 #146 · #145 已并入 #149（判定底座三件承接 · 阶段四步骤二 · git -S ruleClass 可溯）· 阶段四归并配额）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2151 行、`acceptance-test.sh` ≤ 4710 行（**上限重估（v1.7.0 阶段四步骤二分发批）**：新增 #150（判定底座阶段二一维收口 · 草稿 A41+B7 合壳为 17 grep 锚——41 条 A 类全并入单维即防膨胀形态，行为面由 train/orchestrator 单测与 acceptance S488-S493 承载不占 checklist 行；归并配额：A41→1 维本身压缩 40 维增量，无同主题旧维可并——#149 为阶段一地基面不动）⇒ checklist 落位后实测 **2136** + 维度余量 15 = **2151**；acceptance +6 场景（S488-S493：半空哨兵/choice 三形态归一/隔离拒产/平行细分/CLI NaN+冒烟链/冻结锚三方）⇒ 实测 **4694** + 场景余量 16 = **4710**（演进见 git；前值 2107/4666，v1.6.0 批：新增 #149+归并 #145 → 2087+20/4660+6）；（历史：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → 4584）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → 4569）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → 4548）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2187 行、`acceptance-test.sh` ≤ 4728 行（**上限重估（v1.7.0 阶段四步骤二分发批）**：新增 #150（判定底座阶段二一维收口 · 草稿 A41+B7 合壳为 17 grep 锚——41 条 A 类全并入单维即防膨胀形态，行为面由 train/orchestrator 单测与 acceptance S488-S493 承载不占 checklist 行；归并配额：A41→1 维本身压缩 40 维增量，无同主题旧维可并——#149 为阶段一地基面不动）⇒ checklist 落位后实测 **2136** + 维度余量 15 = **2151**；acceptance +6 场景（S488-S493：半空哨兵/choice 三形态归一/隔离拒产/平行细分/CLI NaN+冒烟链/冻结锚三方）⇒ 实测 **4694** + 场景余量 16 = **4710**（演进见 git；前值 2107/4666，v1.6.0 批：新增 #149+归并 #145 → 2087+20/4660+6）；（历史：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → 4584）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → 4569）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → 4548）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
 ·t +3 → **1989**）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4584 + 1 场景余量 6 = **4590**（前段：4548 + 6 = 4554；后阶段四收编 S459 vote fail-closed 场景 7 行 ⇒ 4555 + 余量 6 = 4561；后 release-gate 20260929-01 coverage P0 闭环批 S460/S461 场景 8 行 ⇒ 4569 + 余量 6 = 4575；
 后 release-gate 20260929-03 verdict 闭环批 S463/S464 ⇒ 4584 + 余量 6 = 4590；v1.5.7 阶段四 A 类分发 +4 场景（S474-477）⇒ 4605 + 余量 6 = 4611；v1.5.9 承接 v1.5.8 B 类 3 场景（S478-480）⇒ 4626 + 余量 6 = **4632**，演进见 git；**release-gate R1 verdict P0-2 覆盖缺口闭环批**：新增 S482「章五·FDE Handbook 升格行为锁（GUIDE 六段生命周期）」（+3 行 ⇒ 落位后实测 **4635**）⇒ 4635 + 余量 6 = **4641**——走「真实归并**或**上调记录」两条路径中的**上调记录**（本批未删改任何既有断言，无真实可归并空间：新增面为章五文档锁，与现有 148 维不同族），前值 4632）；**未删改任何既有断言**，前值 2006/4541。阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = 2050（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
@@ -33,16 +33,16 @@ ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 2151 ] && echo "✅ checklist $WC_CHK (≤2151)" || { echo "❌ checklist $WC_CHK 超 2151（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4710 ] && echo "✅ acceptance $WC_ACC (≤4710)" || { echo "❌ acceptance $WC_ACC 超 4710（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+[ "$WC_CHK" -le 2187 ] && echo "✅ checklist $WC_CHK (≤2187)" || { echo "❌ checklist $WC_CHK 超 2187（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4728 ] && echo "✅ acceptance $WC_ACC (≤4728)" || { echo "❌ acceptance $WC_ACC 超 4728（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段五（发版闸门）跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（84 维 · 编号规则见头部）
+## 审查维度（85 维 · 编号规则见头部）
 
-### 审查维度正文（#1-150 · 维度流连续不中断）
+### 审查维度正文（#1-151 · 维度流连续不中断）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
@@ -2132,4 +2132,43 @@ grep -q "无法归一到候选 id 空间" engine/orchestrator/src/router/judge-e
 if grep -qE "calibration-report 归位" playbook/regression-checklist.md && [ "$(grep -c '阶段二' playbook/regression-checklist.md)" -ge 1 ]; then echo "✅ zz 前置面承接关系在位（149 地基 → 150 机制面）"; else echo "❌ zz 承接链断裂"; FAIL=1; fi
 [ "${FAIL:-0}" = "1" ] && { echo "维度150:FAIL"; exit 1; }; echo "维度150:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
+```
+
+#### 151. 判定底座阶段三收口一维（接线与分发 · 阶段四分发批）
+> A 类 17 面：StdioDecisionChannel 四职责/三档接线/回执五件/同源对账四件/并行解码三件/观测四字段/七路回落/懒预双档/决策点六要素/契约扩展位/最小可判定前缀/出站脱敏/权重 fail-closed+USB 两档/跨仓协议 SSOT/实验脚本 clone 即跑/归档语义对齐/场景号实测纪律。
+> B 类 5 条防回归：场景数口径全仓同步/A→E 跨层三件套/留白偏松回退留痕/not-measured 三件套/跨批基线代登归因。C 类校准见 fresh-eyes-review v1.8.0 节（草稿 abc-draft-v1.8.0 A17+B5 · 行为由单测与 S494-S497 锁）。
+
+> **A 类（本版新功能审查面 · 沿 #150 一维合壳先例 · 分钟级静态锚；行为级断言在单测与 S494-S497）**。
+> **B 类（防复发 · 本版实锤已修，此处防回潮）**：场景数 417 stale ×2、A 层 34 行残差归因、L232 偏松勾选、裸「待测」、代登 F6.7 基线。
+> 归并说明：#150 为阶段二机制面（训练/校准），本维是阶段三接线分发面（通道/路由/权重/回执）——同主题族顺延；A 类与 150 零重叠（验收块语义不同章）。
+
+```bash
+(
+FAIL=0
+# A 类静态锚（17 面 · grep 级——文件/符号存在性，行为断言见单测）
+git grep -q "class StdioDecisionChannel" engine/orchestrator/src/router/stdio-decision-channel.ts || FAIL=1              # A1 通道四职责载体
+git grep -q "applyWithShadowGate" engine/orchestrator/src/router/judge-state.ts || FAIL=1                                # A2 三档影子门
+git grep -q "五件必选缺失" engine/audit/src/decision-log.ts || FAIL=1                                                    # A3 回执五件
+git grep -q "四件缺失或非串" engine/audit/src/decision-log.ts || FAIL=1                                                  # A4 provenance 四件
+git grep -q "PACK_MIN_FIELDS" engine/orchestrator/src/router/judge-runtime.ts || FAIL=1                                  # A5 打包开关
+git grep -q "noteDecisionModelCall" engine/orchestrator/src/model-router.ts || FAIL=1                                    # A6 观测四字段
+git grep -q "FallbackReason" engine/orchestrator/src/router/ || FAIL=1                                                   # A7 七路回落
+git grep -q "preload" -- engine/orchestrator/src/router/stdio-decision-channel.ts || FAIL=1  # A8 懒/预双档（LoadStrategy lazy/preload——通道加载策略公开型别）
+test -f docs/DECISION-POINTS.md || FAIL=1                                                                                # A9 决策点六要素
+git grep -q "契约扩展位" engine/orchestrator/src/router/decision-channel.ts || FAIL=1                                    # A10 占位不泄漏
+git grep -q "buildJudgeState" engine/orchestrator/src/router/judge-state.ts || FAIL=1                                    # A11 单一构造函数
+git grep -q "redaction/v1" engine/orchestrator/src/router/judge-state.ts || FAIL=1                                       # A12 脱敏版本落痕
+git grep -q "verify-failed-cleanup" engine/orchestrator/src/weights/weights-fetch.ts || FAIL=1                           # A13 fail-closed 清理留痕
+git grep -q "media" install.sh || FAIL=1                                                                                 # A13b USB A 介质档
+grep -q "协议" engine/orchestrator/src/router/stdio-decision-channel.ts || FAIL=1  # A14 协议 SSOT 在文件头（跨仓 runner 逐字取自此——跨仓侧不另立协议说明）
+git grep -q "off-by-one\|先判后增" datasets/label-vs-definition-run.py || git log --oneline -1 --format="%s" -- datasets/label-vs-definition-run.py | grep -q "修复" || FAIL=1  # A15 实验脚本已修
+test -d datasets/v17-eval-reports || FAIL=1  # A16 归档目录在位（v18 产物归 v18 目录——本版评测产物在 factory rsi/eval，不误入 v17）
+grep -q "scenario 497" playbook/acceptance-test.sh || FAIL=1                                                             # A17 场景号实测纪律锚
+# B 类防回归（5 条）
+grep -c "421" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 417" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale
+test -f docs/guides/AI-ATTRIBUTION.md && ! test -f docs/AI-ATTRIBUTION.md || FAIL=1                                      # B2 A→E 落位
+git grep -q "not-measured" docs/changelog/v1.8/v1.8.0.md || FAIL=1                                                       # B4 三件套口径
+[ "$FAIL" = 0 ] && echo "✅ #151 判定底座阶段三收口 17A+5B 锚全过" || echo "❌ #151 有锚失守"
+exit $FAIL
+)
 ```
