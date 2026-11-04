@@ -366,14 +366,32 @@ fi
 # ── USB A 安装器档：介质校验 → 从介质重入（fail-closed，绝不回退联网）──
 if [ -n "${MEDIA_ROOT}" ]; then
   info "USB A 安装器档：介质根 ${MEDIA_ROOT}"
-  if ! bash "${SCRIPT_DIR}/tools/install/verify-media.sh" "${MEDIA_ROOT}"; then
-    err "介质校验失败——拒绝安装（fail-closed，不回退联网下载）"
-    exit 3
+  # 校验三面（清单指纹 + 逐件 + 集合）由 verify-media.sh 负责；退出码原样透出，
+  # 不把「结构缺失(2)/指纹不符(4)」一律折成 3——否则排障时看不出是哪种不合格。
+  bash "${SCRIPT_DIR}/tools/install/verify-media.sh" "${MEDIA_ROOT}"
+  _vm_rc=$?
+  if [ "$_vm_rc" -ne 0 ]; then
+    err "介质校验失败（rc=${_vm_rc}）——拒绝安装（fail-closed，不回退联网下载）"
+    exit "$_vm_rc"
   fi
   if [ ! -f "${MEDIA_ROOT}/repo/install.sh" ]; then
     err "介质缺 repo/install.sh（载荷不完整）——拒绝安装"
     exit 2
   fi
+  # ── 判定件 + DSH 节点落位（L348 要求「装 sofagent + 判定件 + DSH 节点」）──
+  # 介质里三面齐是校验硬条件；此处把非源码两面搬到本机固定落点，
+  # 再以环境变量交给介质内 installer 消费（不联网、不猜路径）。
+  MEDIA_STAGE="${HOME}/.sofagent/media"
+  mkdir -p "${MEDIA_STAGE}"
+  rm -rf "${MEDIA_STAGE}/weights" "${MEDIA_STAGE}/dsh"
+  cp -R "${MEDIA_ROOT}/weights" "${MEDIA_STAGE}/weights" || {
+    err "判定件落位失败：${MEDIA_STAGE}/weights"; exit 3; }
+  cp -R "${MEDIA_ROOT}/dsh" "${MEDIA_STAGE}/dsh" || {
+    err "DSH 节点落位失败：${MEDIA_STAGE}/dsh"; exit 3; }
+  export SOFAGENT_MEDIA_ROOT="${MEDIA_ROOT}"
+  export SOFAGENT_MEDIA_WEIGHTS="${MEDIA_STAGE}/weights"
+  export SOFAGENT_MEDIA_DSH="${MEDIA_STAGE}/dsh"
+  ok "判定件 + DSH 节点已落位：${MEDIA_STAGE}（weights / dsh）"
   pass_args=(); _skip=0
   for _arg in "${ORIGINAL_ARGS[@]}"; do
     if [ "$_skip" = "1" ]; then _skip=0; continue; fi

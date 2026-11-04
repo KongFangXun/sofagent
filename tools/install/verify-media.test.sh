@@ -1,41 +1,75 @@
 #!/usr/bin/env bash
-# 三态单测：介质缺失 / 校验失败 / 正常
+# ============================================================
+# verify-media.test.sh · 介质校验十态测试（F6.7 D-2 / D-13）
+# ============================================================
+# 覆盖：正例 · 结构缺失 · 清单指纹 · 逐件缺/改 · 集合多塞/少件 · 必需单元缺 · 未钉指纹
+# 全部在临时目录内造件，不碰仓库、不联网。
+# 退出：0 = 全部通过（pass=N fail=0）；1 = 有失败
+# ============================================================
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"
-V="$HERE/verify-media.sh"
-TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERIFY="${SELF_DIR}/verify-media.sh"
+PACK="${SELF_DIR}/pack-media.sh"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/media-test.XXXXXX")"
+trap 'rm -rf "$WORK"' EXIT
+
 pass=0; fail=0
-chk () { # chk <期望退出码> <描述> <命令...>
-  want="$1"; desc="$2"; shift 2
-  "$@" >/dev/null 2>&1; got=$?
-  if [ "$got" = "$want" ]; then echo "  ✓ ${desc}（exit ${got}）"; pass=$((pass+1));
-  else echo "  × ${desc}（期望 exit ${want}，实得 ${got}）"; fail=$((fail+1)); fi
+ck () { # <描述> <期望 rc> <实际 rc>
+  if [ "$2" = "$3" ]; then echo "  ✓ $1（exit $3）"; pass=$((pass+1));
+  else echo "  ✗ $1（期望 exit $2 · 实得 exit $3）"; fail=$((fail+1)); fi
 }
 
-# ① 介质缺失
-chk 2 "介质目录缺失 ⇒ exit 2" bash "$V" "$TMP/nope"
+# ── 造源：repo 树 / 权重 / DSH 载荷 ──
+mkdir -p "$WORK/src/repo" "$WORK/src/weights" "$WORK/src/dsh/plugins"
+printf '#!/usr/bin/env bash\necho stub\n' > "$WORK/src/repo/install.sh"
+printf 'readme\n' > "$WORK/src/repo/README.md"
+printf 'W1\n' > "$WORK/src/weights/model.safetensors"
+printf 'W2\n' > "$WORK/src/weights/tokenizer.json"
+printf 'dsh-core\n' > "$WORK/src/dsh/core.bin"
+printf 'dsh-plugin\n' > "$WORK/src/dsh/plugins/a.js"
 
-# ② 缺 SHA256SUMS
-mkdir -p "$TMP/m2"
-chk 2 "缺 SHA256SUMS ⇒ exit 2" bash "$V" "$TMP/m2"
+# ── 正例介质 + 临时 pin ──
+if ! "$PACK" --out "$WORK/media" --repo "$WORK/src/repo" --weights "$WORK/src/weights" \
+      --dsh "$WORK/src/dsh" --version "test-artifact@1" >/dev/null 2>&1; then
+  echo "✗ pack-media.sh 组装失败——用例无法进行"; exit 1
+fi
+PIN="$WORK/pin.txt"
+printf 'test-artifact@1 %s\n' "$(shasum -a 256 "$WORK/media/MANIFEST.json" | cut -d' ' -f1)" > "$PIN"
 
-# ③ 校验失败（清单写错 sha）
-mkdir -p "$TMP/m3"
-echo "hello" > "$TMP/m3/payload.txt"
-printf '%s  %s\n' "0000000000000000000000000000000000000000000000000000000000000000" "payload.txt" > "$TMP/m3/SHA256SUMS"
-chk 3 "sha 不符 ⇒ exit 3" bash "$V" "$TMP/m3"
+echo "── 十态 ──"
+run () { bash "$VERIFY" "$1" --pin "$PIN" >/dev/null 2>&1; echo $?; }
 
-# ④ 缺件（清单列了但文件不在）
-mkdir -p "$TMP/m4"
-printf '%s  %s\n' "aa11" "ghost.bin" > "$TMP/m4/SHA256SUMS"
-chk 3 "清单列件但介质缺件 ⇒ exit 3" bash "$V" "$TMP/m4"
+ck "正常介质" 0 "$(run "$WORK/media")"
+ck "缺介质目录" 2 "$(run "$WORK/nope")"
 
-# ⑤ 正常（真算 sha 写清单）
-mkdir -p "$TMP/m5"
-echo "sofagent-media-ok" > "$TMP/m5/repo.tar"
-S=$(shasum -a 256 "$TMP/m5/repo.tar" | cut -d' ' -f1)
-printf '%s  %s\n' "$S" "repo.tar" > "$TMP/m5/SHA256SUMS"
-chk 0 "介质完整 ⇒ exit 0" bash "$V" "$TMP/m5"
+cp -a "$WORK/media" "$WORK/m-nomanifest"; rm "$WORK/m-nomanifest/MANIFEST.json"
+ck "缺 MANIFEST" 2 "$(run "$WORK/m-nomanifest")"
+
+cp -a "$WORK/media" "$WORK/m-repin"
+node -e "const fs=require('fs');const f='$WORK/m-repin/MANIFEST.json';const j=JSON.parse(fs.readFileSync(f,'utf8'));j.note+=' 篡改';fs.writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
+ck "清单被重签（指纹不符）" 4 "$(run "$WORK/m-repin")"
+
+cp -a "$WORK/media" "$WORK/m-missing"; rm "$WORK/m-missing/weights/tokenizer.json"
+ck "逐件缺件" 3 "$(run "$WORK/m-missing")"
+
+cp -a "$WORK/media" "$WORK/m-alter"; printf 'W2-x\n' > "$WORK/m-alter/weights/tokenizer.json"
+ck "逐件改字节" 3 "$(run "$WORK/m-alter")"
+
+cp -a "$WORK/media" "$WORK/m-extra"; printf 'sneaky\n' > "$WORK/m-extra/repo/backdoor.sh"
+ck "集合多塞一件" 3 "$(run "$WORK/m-extra")"
+
+cp -a "$WORK/media" "$WORK/m-treedel"; rm "$WORK/m-treedel/dsh/plugins/a.js"
+ck "集合少一件" 3 "$(run "$WORK/m-treedel")"
+
+cp -a "$WORK/media" "$WORK/m-nodsh"
+node -e "const fs=require('fs');const f='$WORK/m-nodsh/MANIFEST.json';const j=JSON.parse(fs.readFileSync(f,'utf8'));j.trees=j.trees.filter(t=>t.kind!=='dsh');fs.writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
+printf 'test-artifact@1 %s\n' "$(shasum -a 256 "$WORK/m-nodsh/MANIFEST.json" | cut -d' ' -f1)" > "$WORK/pin-nodsh.txt"
+bash "$VERIFY" "$WORK/m-nodsh" --pin "$WORK/pin-nodsh.txt" >/dev/null 2>&1 && _rc=0 || _rc=$?
+ck "缺 dsh 必需单元" 3 "$_rc"
+
+printf 'UNPINNED -\n' > "$WORK/pin-un.txt"
+bash "$VERIFY" "$WORK/media" --pin "$WORK/pin-un.txt" >/dev/null 2>&1 && _rc2=0 || _rc2=$?
+ck "未钉指纹" 2 "$_rc2"
 
 echo "—— verify-media: pass=$pass fail=$fail"
-[ "$fail" -eq 0 ] || exit 1
+[ "$fail" -eq 0 ]

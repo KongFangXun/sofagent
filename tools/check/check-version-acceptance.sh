@@ -18,12 +18,16 @@ while IFS= read -r f; do
   ver="$(basename "$f" .md)"
   if git tag -l "${ver}" 2>/dev/null | grep -q .; then continue; fi
 
-  # 只认**首部状态行**（前 25 行内的 `> 状态…` 行）——正文里出现的「全绿/✅」是历史叙述，不作判据
-  if ! head -25 "$f" | grep -qE '^>[^|]*状态[^|]*[✅]|^>[^|]*(发版完成|已发版|全绿)'; then continue; fi
+  # 只认**首部状态行**（前 25 行内的 `> 状态…` 行）——正文里出现的「全绿/✅」是历史叙述，不作判据。
+  # D-10：表格形态（`> | 状态 | ✅ 已发 |`）曾漏网——先把行首可选的 `| ` 剥掉再匹配同一口径。
+  # 剥掉行内所有 `|` 再匹配（表格形态 `> | 状态 | ✅ 已发 |` 与行文形态同一口径；
+  # 用 tr 而非 sed，避开 BSD/GNU sed 对 ERE 里转义竖线的方言差异）
+  if ! head -25 "$f" | tr -d '|' | grep -qE '^>[^|]*状态[^|]*[✅]|^>[^|]*(发版完成|已发版|全绿)'; then continue; fi
   total=$(grep -c '^- \[ \]' "$f" || true)
   [ "${total:-0}" -eq 0 ] && continue
-  # 未勾项里，允许「同行带四态登记」的
-  unregistered=$(grep -n '^- \[ \]' "$f" | grep -vcE '转出|not-measured|部分通过' || true)
+  # 未勾项里，允许「同行带四态登记」的。
+  # D-10：登记必须是**四态列**（`四态=<值>`）——正文里随便提到 not-measured 不算登记。
+  unregistered=$(grep -n '^- \[ \]' "$f" | grep -vcE '四态[[:space:]]*=[[:space:]]*(转出|not-measured|部分通过)' || true)
   if [ "${unregistered:-0}" -gt 0 ]; then
     echo "❌ ${f}：宣称已完成，但仍有 ${unregistered}/${total} 条未勾且未做四态登记" >&2
     grep -n '^- \[ \]' "$f" | grep -vE '转出|not-measured|部分通过' | head -3 | sed 's/^/     /' >&2

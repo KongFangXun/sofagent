@@ -11,6 +11,7 @@
 #   - sofagent-audit.yml    → sofagent-audit --silent --diff HEAD~1..HEAD
 #   + check-version.sh      → 版本号一致性（v1.4.9 G-2③：发版窗口自动加 --strict，warning 也阻断）
 #   + check-docs.sh         → 文档预算+死链+Skill 行数
+#   + check-version-acceptance.sh → 版本验收留白（已宣称完成却留白未登记 · F6.7 G1）
 #   + check-literals.sh     → 手填字面量对账（真相源 vs 文档手抄件）
 #   + test-count.sh         → 各包测试数汇总（任一包失败即拦截）
 #   + check-test-count.sh   → 文档声称测试数 vs 实际值一致性（P1-3 根治）
@@ -579,6 +580,21 @@ if [ "$MINIMAL" = false ]; then
   else
     check_fail "check-docs.sh 有问题"
     bash tools/check/check-docs.sh 2>&1 | grep "❌\|⚠️" | head -10
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3b. 版本验收留白门禁（check-version-acceptance.sh · F6.7 G1 · 2026-11-04 接入）
+# 版本标「已完成/全绿」但验收清单还有未勾且未做四态登记的留白 ⇒ 红。
+# 与 .github/workflows/pr-check.yml 同名 step 等价（本脚本头注释要求本地链同套）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3b. 版本验收留白门禁 ──${NC}"
+  if bash tools/check/check-version-acceptance.sh >/dev/null 2>&1; then
+    check_pass "check-version-acceptance.sh 全部通过（无未登记留白）"
+  else
+    check_fail "check-version-acceptance.sh：存在「已宣称完成但留白未登记」"
+    bash tools/check/check-version-acceptance.sh 2>&1 | grep "❌" | head -6
   fi
 fi
 
