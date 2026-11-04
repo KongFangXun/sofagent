@@ -87,6 +87,32 @@ export interface EmitDecisionInput {
       redactionVersion: string;
       criteriaVersion: string;
     };
+    /**
+     * v1.8.0 §二 门槛参数随判定落痕（可选——「本次判定用的门槛是多少」可回放）：
+     * escalation 必为有限非负数字；abstain 在位时三原语键（noul/choice/score）必须齐
+     * 且各为有限非负数字（分档不完整 = 变相全局化，拒收）。结构非法即拒。
+     */
+    thresholds?: {
+      escalation: number;
+      abstain?: {
+        noul: number;
+        choice: number;
+        score: number;
+      };
+    };
+    /**
+     * v1.8.0 §二 校准参数随判定落痕（可选——「这次判定有没有校准依据」可回放）：
+     * calibrated 必带 evidence（三件齐：校准集版本 / 拟合 ECE / 拟合时间），缺即拒；
+     * uncalibrated 带 evidence 即拒（声明未校准却附校准依据 = 矛盾态）。
+     */
+    calibration?: {
+      calibStatus: 'calibrated' | 'uncalibrated';
+      evidence?: {
+        calibrationSetVersion: string;
+        ece: number;
+        fittedAt: string;
+      };
+    };
   };
   /**
    * 内容语义位（v1.8.0 §二 · 可选）：true=条目携带原文内容；false=只记指纹与
@@ -231,10 +257,10 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     // 任何以 __ 开头的键与 constructor/prototype 一律拒，防校验面被键名怪异形态绕过）
     const protoKeys = keys.filter((k) => k.startsWith('__') || k === 'constructor' || k === 'prototype');
     if (protoKeys.length > 0) throw new DecisionSchemaError(`judgeReceipt 含原型污染键：${protoKeys.join('/')}`);
-    const unknown = keys.filter((k) => k !== 'provenance' && !(REQUIRED as readonly string[]).includes(k));
+    const unknown = keys.filter((k) => k !== 'provenance' && k !== 'thresholds' && k !== 'calibration' && !(REQUIRED as readonly string[]).includes(k));
     if (unknown.length > 0) {
       throw new DecisionSchemaError(
-        `judgeReceipt 字段集越界：${unknown.join('/')}（五件 + 可选 provenance 之外不得有其他键）`,
+        `judgeReceipt 字段集越界：${unknown.join('/')}（五件 + 可选 provenance/thresholds/calibration 之外不得有其他键）`,
       );
     }
     // §二 同源对账四件：provenance 在位时必须四件齐
@@ -243,6 +269,55 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
       const PV = ['payload_sha256', 'stateConstructorVersion', 'redactionVersion', 'criteriaVersion'] as const;
       const pMiss = PV.filter((k) => !(k in p) || typeof (p as Record<string, unknown>)[k] !== 'string');
       if (pMiss.length > 0) throw new DecisionSchemaError(`judgeReceipt.provenance 四件缺失或非串：${pMiss.join('/')}`);
+    }
+    // v1.8.0 §二 门槛参数随判定落痕：结构非法即拒收（escalation 有限非负数字；
+    // abstain 在位时三原语键齐且各为有限非负数字——分档不完整即变相全局化）
+    if (r.thresholds !== undefined) {
+      const t = r.thresholds as Record<string, unknown>;
+      const esc = t['escalation'];
+      if (typeof esc !== 'number' || !Number.isFinite(esc) || esc < 0) {
+        throw new DecisionSchemaError('judgeReceipt.thresholds.escalation 必须是有限非负数字（本次判定实际使用的升级门槛）');
+      }
+      if (t['abstain'] !== undefined) {
+        const a = t['abstain'] as Record<string, unknown>;
+        if (typeof a !== 'object' || a === null) {
+          throw new DecisionSchemaError('judgeReceipt.thresholds.abstain 必须是对象（{noul,choice,score} 三原语分档）');
+        }
+        const aMiss = (['noul', 'choice', 'score'] as const).filter((k) => {
+          const v = a[k];
+          return typeof v !== 'number' || !Number.isFinite(v) || v < 0;
+        });
+        if (aMiss.length > 0) {
+          throw new DecisionSchemaError(`judgeReceipt.thresholds.abstain 缺原语键或非有限非负数字：${aMiss.join('/')}（三键全必填——分档不完整即变相全局化）`);
+        }
+      }
+    }
+    // v1.8.0 §二 校准参数随判定落痕：两态互斥校验
+    //（calibrated 必带 evidence 三件；uncalibrated 带 evidence 即矛盾态——拒）
+    if (r.calibration !== undefined) {
+      const c = r.calibration as Record<string, unknown>;
+      const status = c['calibStatus'];
+      if (status !== 'calibrated' && status !== 'uncalibrated') {
+        throw new DecisionSchemaError(`judgeReceipt.calibration.calibStatus 必须是 'calibrated' | 'uncalibrated'（实际 ${String(status)}）`);
+      }
+      const ev = c['evidence'];
+      if (status === 'calibrated') {
+        if (ev === undefined) {
+          throw new DecisionSchemaError('judgeReceipt.calibration 声明 calibrated 必须带 evidence（校准集版本 / ECE / 拟合时间——缺依据不得称已校准）');
+        }
+        const e = ev as Record<string, unknown>;
+        if (typeof e['calibrationSetVersion'] !== 'string' || e['calibrationSetVersion'].trim() === '') {
+          throw new DecisionSchemaError('judgeReceipt.calibration.evidence.calibrationSetVersion 必须是非空字符串（校准集版本）');
+        }
+        if (typeof e['ece'] !== 'number' || !Number.isFinite(e['ece']) || e['ece'] < 0) {
+          throw new DecisionSchemaError('judgeReceipt.calibration.evidence.ece 必须是有限非负数字（拟合时 ECE 读数）');
+        }
+        if (typeof e['fittedAt'] !== 'string' || e['fittedAt'].trim() === '') {
+          throw new DecisionSchemaError('judgeReceipt.calibration.evidence.fittedAt 必须是非空字符串（ISO 8601 拟合时间）');
+        }
+      } else if (ev !== undefined) {
+        throw new DecisionSchemaError('judgeReceipt.calibration 声明 uncalibrated 不得附 evidence（未校准却带校准依据 = 矛盾态）');
+      }
     }
     if (typeof r.stateDigest !== 'string' || r.stateDigest.trim() === '') throw new DecisionSchemaError('judgeReceipt.stateDigest 必须是非空字符串（sha256 摘要）');
     if (!Array.isArray(r.evidenceRefs) || r.evidenceRefs.some((e) => typeof e !== 'string')) throw new DecisionSchemaError('judgeReceipt.evidenceRefs 必须是字符串数组');

@@ -474,3 +474,130 @@ describe('v1.8.0 review r1 · 原型污染键拒收', () => {
     }), '/tmp/proto-t2')).toThrow(/原型污染键/);
   });
 });
+
+describe('v1.8.0 §二 · 门槛参数随判定落痕（行为锁）', () => {
+  let testDir: string;
+  let savedKeyPath: string | undefined;
+
+  beforeEach(() => {
+    testDir = tmpDir();
+    savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+    process.env.SOFAGENT_KEY_PATH = join(testDir, 'test-hmac-key');
+    writeFileSync(process.env.SOFAGENT_KEY_PATH, randomBytes(32).toString('hex'));
+  });
+
+  afterEach(() => {
+    try { rmSync(testDir, { recursive: true, force: true }); } catch { /* */ }
+    if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+    else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
+  });
+
+  const baseReceipt = {
+    stateDigest: 'b'.repeat(64),
+    evidenceRefs: ['q-1'],
+    modelIdentity: 'main01v5@rev-xyz',
+    probabilities: [0.9],
+    deterministicBaseline: 'L0 规则面（判定不改规则结论）',
+  };
+
+  it('①thresholds 在位落盘且值等于输入（escalation + abstain 三原语分档）', () => {
+    const thresholds = { escalation: 0.9, abstain: { noul: 0.5, choice: 0.45, score: 0.4 } };
+    const e = emitDecision(makeInput({
+      kind: 'ORCHESTRATION', category: 'route',
+      judgeReceipt: { ...baseReceipt, thresholds }, content: false,
+    }), testDir);
+    expect(e.judgeReceipt!.thresholds).toEqual(thresholds);
+    // 回放面：落盘行 JSON 可解析出同值（「本次判定按什么门槛」可离线复读）
+    const line = readFileSync(getDecisionLogPath(testDir), 'utf8').trim().split('\n').pop()!;
+    const parsed = JSON.parse(line) as DecisionLogEntry;
+    expect(parsed.judgeReceipt!.thresholds!.escalation).toBe(0.9);
+    expect(parsed.judgeReceipt!.thresholds!.abstain!.choice).toBe(0.45);
+  });
+
+  it('②escalation 非数字 / 负数 / NaN 即拒（结构非法不进链）', () => {
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...baseReceipt, thresholds: { escalation: '0.9' } } as never, content: false,
+    }), testDir)).toThrow(/thresholds\.escalation/);
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...baseReceipt, thresholds: { escalation: -0.1 } }, content: false,
+    }), testDir)).toThrow(/thresholds\.escalation/);
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...baseReceipt, thresholds: { escalation: Number.NaN } }, content: false,
+    }), testDir)).toThrow(/thresholds\.escalation/);
+  });
+
+  it('③abstain 缺原语键即拒（分档不完整 = 变相全局化）', () => {
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: {
+        ...baseReceipt,
+        thresholds: { escalation: 0.9, abstain: { noul: 0.5, choice: 0.4 } },
+      } as never, content: false,
+    }), testDir)).toThrow(/abstain/);
+  });
+});
+
+describe('v1.8.0 §二 · 校准参数随判定落痕（行为锁）', () => {
+  let testDir: string;
+  let savedKeyPath: string | undefined;
+
+  beforeEach(() => {
+    testDir = tmpDir();
+    savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+    process.env.SOFAGENT_KEY_PATH = join(testDir, 'test-hmac-key');
+    writeFileSync(process.env.SOFAGENT_KEY_PATH, randomBytes(32).toString('hex'));
+  });
+
+  afterEach(() => {
+    try { rmSync(testDir, { recursive: true, force: true }); } catch { /* */ }
+    if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+    else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
+  });
+
+  const baseReceipt = {
+    stateDigest: 'c'.repeat(64),
+    evidenceRefs: ['q-cal'],
+    modelIdentity: 'main01v5@rev-cal',
+    probabilities: [0.77],
+    deterministicBaseline: 'L0 规则面（判定不改规则结论）',
+  };
+  const evidence = { calibrationSetVersion: 'calib-2026-10', ece: 0.061, fittedAt: '2026-10-30T00:00:00Z' };
+
+  it('①calibrated 带 evidence 三件落盘并进签名体（可回放）', () => {
+    const e = emitDecision(makeInput({
+      kind: 'ORCHESTRATION', category: 'route',
+      judgeReceipt: { ...baseReceipt, calibration: { calibStatus: 'calibrated', evidence } }, content: false,
+    }), testDir);
+    expect(e.judgeReceipt!.calibration!.calibStatus).toBe('calibrated');
+    expect(e.judgeReceipt!.calibration!.evidence).toEqual(evidence);
+    const line = readFileSync(getDecisionLogPath(testDir), 'utf8').trim().split('\n').pop()!;
+    const parsed = JSON.parse(line) as DecisionLogEntry;
+    expect(parsed.judgeReceipt!.calibration!.evidence!.ece).toBe(0.061);
+  });
+
+  it('②calibrated 缺 evidence 即拒（缺依据不得称已校准）', () => {
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...baseReceipt, calibration: { calibStatus: 'calibrated' } }, content: false,
+    }), testDir)).toThrow(/必须带 evidence/);
+  });
+
+  it('③uncalibrated 带 evidence 即拒（矛盾态）', () => {
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: { ...baseReceipt, calibration: { calibStatus: 'uncalibrated', evidence } }, content: false,
+    }), testDir)).toThrow(/不得附 evidence/);
+  });
+
+  it('④calibrated evidence 三件缺一/ece 非法即拒（结构完整性）', () => {
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: {
+        ...baseReceipt,
+        calibration: { calibStatus: 'calibrated', evidence: { calibrationSetVersion: '', ece: 0.06, fittedAt: 'x' } },
+      }, content: false,
+    }), testDir)).toThrow(/calibrationSetVersion/);
+    expect(() => emitDecision(makeInput({
+      judgeReceipt: {
+        ...baseReceipt,
+        calibration: { calibStatus: 'calibrated', evidence: { calibrationSetVersion: 'v1', ece: Number.NaN, fittedAt: 'x' } },
+      }, content: false,
+    }), testDir)).toThrow(/ece/);
+  });
+});

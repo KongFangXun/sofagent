@@ -41,6 +41,24 @@ export type JudgeAuditSink = (receipt: {
     redactionVersion: string;
     criteriaVersion: string;
   };
+  /**
+   * §二 门槛参数随判定落痕（可选——本次判定实际使用的门槛可回放）：
+   * escalation 取 IntentTriage 的升级门槛；abstain 仅在调用方配置弃权门槛时随附
+   * （三原语分档形态，引用 abstain-policy.ThresholdsByPrimitive，不外抄结构）。
+   */
+  thresholds?: {
+    escalation: number;
+    abstain?: { noul: number; choice: number; score: number };
+  };
+  /**
+   * §二 校准参数随判定落痕（可选——本次判定的校准状态与依据可回放）：
+   * calibStatus 两态；calibrated 必带 evidence 三件（校准集版本 / ECE / 拟合时间），
+   * 结构由 decision-log 写前校验（缺依据称已校准 / 未校准带依据 均拒）。
+   */
+  calibration?: {
+    calibStatus: 'calibrated' | 'uncalibrated';
+    evidence?: { calibrationSetVersion: string; ece: number; fittedAt: string };
+  };
 }) => void;
 
 /** 生产 sink：回执五件 + 四态/routeReason 落 decision-log（kind=ORCHESTRATION） */
@@ -59,6 +77,9 @@ export function createJudgeAuditSink(dataDir?: string): JudgeAuditSink {
         modelIdentity: r.modelIdentity,
         probabilities: r.probabilities,
         deterministicBaseline: r.deterministicBaseline,
+        ...(r.provenance !== undefined ? { provenance: r.provenance } : {}),
+        ...(r.thresholds !== undefined ? { thresholds: r.thresholds } : {}),
+        ...(r.calibration !== undefined ? { calibration: r.calibration } : {}),
       },
       content: false,
       evidence: ['routeReason=' + r.routeReason],
@@ -95,6 +116,8 @@ import {
   ol,
 } from '@sofagent/core';
 import type { SlotManager } from './slot-manager';
+import { assertThresholdsByPrimitive } from './abstain-policy';
+import type { ThresholdsByPrimitive } from './abstain-policy';
 
 /** 判定层标识 */
 export type TriageLayer = 'L0' | 'L1' | 'L2';
@@ -209,6 +232,12 @@ export interface IntentTriageDeps {
    * （try/catch 兜住，console.error 可见）——对齐 ai-node-governance sink 先例。
    */
   auditSink?: JudgeAuditSink;
+  /**
+   * 弃权门槛分档（v1.8.0 §二 门槛随判定落痕用）——三原语各一档，注入后随回执
+   * 落 decision-log（`judgeReceipt.thresholds.abstain`）。未注入 = 本实例不产弃权档门槛
+   * （回执只带 escalation）。构造时过 assertThresholdsByPrimitive 断言（结构非法即抛）。
+   */
+  abstainThresholds?: ThresholdsByPrimitive;
 }
 
 /**
@@ -224,6 +253,7 @@ export class IntentTriage {
   private readonly calibration?: CalibrationGate;
   private readonly auditSink?: JudgeAuditSink;
   private readonly escalationThreshold: number;
+  private readonly abstainThresholds?: ThresholdsByPrimitive;
 
   constructor(deps: IntentTriageDeps = {}) {
     this.config = { ...DEFAULT_TRIAGE_CONFIG, ...(deps.config ?? {}) };
@@ -231,8 +261,33 @@ export class IntentTriage {
     if (deps.slotManager) this.slotManager = deps.slotManager;
     if (deps.auditSink) this.auditSink = deps.auditSink;
     if (deps.calibration) this.calibration = deps.calibration;
+    if (deps.abstainThresholds !== undefined) {
+      // 构造即断言（分档不完整/单数字/越界即抛——门槛结构非法不得进判定链）
+      assertThresholdsByPrimitive(deps.abstainThresholds);
+      this.abstainThresholds = deps.abstainThresholds;
+    }
     const costs = deps.escalationCosts ?? { escalateCost: 1, mistakeCost: 10 };
     this.escalationThreshold = computeEscalationThreshold(costs.escalateCost, costs.mistakeCost);
+  }
+
+  /**
+   * §二 校准参数随判定落痕（v1.8.0）：从校准门控读本次判定面的校准状态——
+   *   - 未注入 calibration（校准面未接线）⇒ undefined（不编造状态）；
+   *   - 决策路径声明含 uncalibrated ⇒ `{calibStatus:'uncalibrated'}`（不得附依据）；
+   *   - 全 calibrated ⇒ 取首个带 evidence 的声明作代表（三件随附）；
+   *   - 决策路径无声明 ⇒ undefined（无状态可报）。
+   */
+  private calibrationReceipt():
+    | { calibStatus: 'calibrated' | 'uncalibrated'; evidence?: { calibrationSetVersion: string; ece: number; fittedAt: string } }
+    | undefined {
+    if (!this.calibration) return undefined;
+    const claims = this.calibration.registry.claimsInDecisionPath();
+    if (claims.length === 0) return undefined;
+    if (claims.some((c) => c.calibStatus === 'uncalibrated')) return { calibStatus: 'uncalibrated' };
+    const withEvidence = claims.find((c) => c.evidence !== undefined);
+    return withEvidence?.evidence !== undefined
+      ? { calibStatus: 'calibrated', evidence: withEvidence.evidence }
+      : undefined;
   }
 
   /**
@@ -324,6 +379,15 @@ export class IntentTriage {
               //（同一判据集随代次走，channel.name 是实现名非判据版本）
               criteriaVersion: `criteria@${result.modelVersion}`,
             },
+            // v1.8.0 §二 门槛参数随判定落痕：升级门槛取本实例实际计算值
+            //（computeEscalationThreshold 的产物——判「本次判定按什么门槛升级」可回放）；
+            // 弃权门槛仅在调用方配置 abstainThresholds 时随附（三原语分档形态）
+            thresholds: {
+              escalation: this.escalationThreshold,
+              ...(this.abstainThresholds !== undefined ? { abstain: this.abstainThresholds } : {}),
+            },
+            // v1.8.0 §二 校准参数随判定落痕：门控注入时如实报两态（未注入/无登记不编造）
+            ...(this.calibrationReceipt() !== undefined ? { calibration: this.calibrationReceipt()! } : {}),
           });
         } catch (sinkErr) {
           console.error(`[intent-triage] 判定留痕失败（不阻断判定）：${sinkErr instanceof Error ? sinkErr.message : String(sinkErr)}`);
