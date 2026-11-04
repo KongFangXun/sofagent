@@ -195,8 +195,11 @@ describe('第三章 · 异常决策挂因果边入 decision-log', () => {
     });
 
     const entries = readDecisions(tmpDir);
-    const anomaly = entries.find((e) => e.ts === result.decisionTs)!;
+    // 选择键=sessionId（anomaly-<nodeId>，确定性唯一）；**不用 ts**：emitDecision 的 ts 是
+    // 毫秒级且无注入点，同毫秒内上游决策与本条并存时 find(ts) 会取到上游条目（预存 flaky 根因）。
+    const anomaly = entries.find((e) => e.sessionId === 'anomaly-worker-e')!;
     expect(anomaly).toBeDefined();
+    expect(anomaly.ts).toBe(result.decisionTs); // report 返回的 ts 确实指向它写的那条
     expect(anomaly.causedBy).toEqual([upstreamTs]);
     expect(anomaly.causalType).toBe('caused');
     expect(anomaly.moment).toBe('ATTRIBUTION');
@@ -222,7 +225,10 @@ describe('第三章 · 异常决策挂因果边入 decision-log', () => {
     const reported = anomalies.reportFromDeadLetter(deadId)!;
     expect(reported).not.toBeNull();
 
-    const anomaly = readDecisions(tmpDir).find((e) => e.ts === reported.decisionTs)!;
+    // 选择键=异常类标签（本用例只上报一条 retryable）；不用 ts（毫秒级会与上游 publish 决策撞车），
+    // 也不用 sessionId（死信路径的 sessionId 由 event.correlationId 兜底，非 anomaly-<nodeId>）。
+    const anomaly = readDecisions(tmpDir).find((e) => (e.why.tags ?? []).includes('retryable'))!;
+    expect(anomaly.ts).toBe(reported.decisionTs);
     expect(anomaly.causedBy).toEqual([publishResult.decisionTs]);
   });
 });
@@ -254,8 +260,11 @@ describe('第三章 · 三类异常在 decision-log 中可区分', () => {
     });
 
     const entries = readDecisions(tmpDir);
-    const pick = (ts: string) => entries.find((e) => e.ts === ts)!;
-    const three = [pick(retryable.decisionTs), pick(needsHuman.decisionTs), pick(needsRollback.decisionTs)];
+    // 选择键=sessionId（anomaly-<nodeId>）；ts 选择键在同毫秒撞车时会把三条错配/取到上游条目。
+    const pick = (nodeId: string) => entries.find((e) => e.sessionId === `anomaly-${nodeId}`)!;
+    const three = [pick('n-retry'), pick('n-human'), pick('n-rollback')];
+    // report 返回值与落盘条目的 ts 链接（同毫秒下值仍应相等，不依赖唯一性）
+    expect(three.map((e) => e.ts)).toEqual([retryable.decisionTs, needsHuman.decisionTs, needsRollback.decisionTs]);
 
     // ① kind 互不相同——三类共用同一 kind 时本断言变红（静默退化的机械拦截）
     const kinds = three.map((e) => e.kind);
