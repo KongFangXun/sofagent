@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：421 个场景（编号口径声明：**编号非连续**——S1–S497 中有 76 个历史空号
+# 场景数：422 个场景（编号口径声明：**编号非连续**——S1–S498 中有 76 个历史空号
 # （退役/归并/重构所致），计数 SSOT = 本文件 scenario 行数（check-test-count.sh 机械对账），
 # 非最大编号；空号不代表缺失，亦无须逐号登记——任何新增场景只须编号顺延当前最大号。
 # 411 个场景（v1.6.0 阶段四步骤二分发 +4：S484 pause 全停命令行为锁（#1/#2/#9/#10 合壳·marker 消费链/ENOENT 兜底/损坏降级/文案对齐）/ S485 采集归类判别键（#12/#13·adversarial 拒判+drift 单向偏移）/ S486 合成概率不进校准集（#6·calibrationEligible 双侧豁免）/ S487 OOD 空集默认值与快照对账（#14·含 datasets 语义边界））（前值 407：v1.6.0 章二收口批 +1：S483 exit_when 可判定性行为锁（F-03+N-3：parser+schema-gate 双门同函数 fail-closed））（前值 406：v1.5.9 承接 v1.5.8 B 类 +5：S478 准入门接线行为锁 / S479 只读位 fail-closed 锁 / S480 reward basis 无硬编码数字锁 + S481 七章一维收口行为锁（1243dee24）+ S482 章五 FDE Handbook 升格行为锁（R1 verdict 闭环批））（前值 401：v1.5.7 阶段四 A 类分发 +4：S474 审计三规则与双落点 / S475 章四能力治理 / S476 章五可拔契约+域 barrel 等价 / S477 章七国标+章九 ACS 结论）（前值 397：v1.5.6 coverage S473；SSOT=check-test-count 校验，口径=scenario 行数）（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
@@ -4706,6 +4706,12 @@ $S496_OK && pass "观测四字段链路（计数/延迟桶/globalThis 挂载）"
 scenario 497 "v1.8.0 判定头契约一致性行为锁——两条路线（分块 64 / 分块 4）同组问句 typed 形状与概率字段逐字段一致"; S497_OK=true
 node -e 'const RP=process.env.PROJECT_ROOT;const bad=[];const jh=require(RP+"/engine/orchestrator/dist/router/judge-heads/index.js");const mk=(chunk)=>({modelRevision:"acc-"+chunk,maxContextTokens:4096,vocabChunkSize:chunk,encode:(s)=>[[...s].map(c=>c.charCodeAt(0)%97)],isSingleToken:()=>true,decodeToken:(t)=>String.fromCharCode(t)});const state="判定：该合同是否允许签署";const opts=["allow","deny","escalate"];const a=jh.choiceHead(mk(64),state,opts),b=jh.choiceHead(mk(4),state,opts);const ka=Object.keys(a.scores).sort().join(","),kb=Object.keys(b.scores).sort().join(",");if(ka!==kb)bad.push("distribution 键集不一致");const sa=Object.values(a.scores).reduce((x,y)=>x+y,0),sb=Object.values(b.scores).reduce((x,y)=>x+y,0);if(Math.abs(sa-1)>1e-6||Math.abs(sb-1)>1e-6)bad.push("概率未归一");const s1=jh.scoreHead(mk(64),state,{min:0,max:10}),s2=jh.scoreHead(mk(4),state,{min:0,max:10});for(const k of ["value","interval"]){if(s1[k]===undefined||s2[k]===undefined)bad.push("score 字段缺:"+k)}if(!(s1.interval.lower<=s1.value&&s1.value<=s1.interval.upper))bad.push("区间失序");const n1=jh.noulHead(mk(64),state),n2=jh.noulHead(mk(4),state);if(!(n1.probability>=0&&n1.probability<=1))bad.push("noul 越界");if(typeof n2.probability!=="number")bad.push("noul 缺字段");console.log(bad.length?"FAIL:"+bad.join("|"):"OK")' | grep -q "^OK" || S497_OK=false
 $S497_OK && pass "判定头契约一致性（两路线形状逐字段一致）" || fail "契约随实现漂移——§三——见上方 ✗ 行"
+scenario 498 "v1.8.0 fresh-eyes 审查收口批族代表锚（bugfix 批防复发 · 对齐 S281/S343/S440 先例）——批零·P0 F12 wrapper thin-shim 转发形态锁（install.sh 单入口转发 + 无独立实现残留）+ 入口等价性门禁在位且绿（check-cli-entry-parity 双入口同 rc）+ 收口批登记口径句在位（登记≠宣告完成）"; S498_OK=true
+grep -q "thin shim" "$PROJECT_ROOT/install.sh" || { echo "  ✗ S498: install.sh 缺 thin shim 转发形态（F12 修复回退）"; S498_OK=false; }
+grep -q "单入口 thin shim" "$PROJECT_ROOT/install.sh" || { echo "  ✗ S498: 单入口注释锚缺失"; S498_OK=false; }
+bash "$PROJECT_ROOT/tools/check/check-cli-entry-parity.sh" >/dev/null 2>&1 || { echo "  ✗ S498: 入口等价性门禁红（npm-prefix 与 SOFAGENT_HOME 双入口 rc 不一致）"; S498_OK=false; }
+grep -q "登记 ≠ 宣告完成" "$PROJECT_ROOT/docs/changelog/v1.8/v1.8.0.md" || { echo "  ✗ S498: 收口批登记口径句缺失"; S498_OK=false; }
+$S498_OK && pass "fresh-eyes 收口族代表锚（F12 转发形态 + 入口等价门禁 + 登记口径）" || fail "fresh-eyes 收口批防复发锚回退——见上方 ✗ 行"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数

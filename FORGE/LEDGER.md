@@ -493,3 +493,5 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 | 2026-11-04 | A-path | fresh-eyes（v1.8.0 阶段三 · A 路径） | A 路径单次草稿 + 修复批 | no-p0-p1-2rounds（两轮零新发现） | 草稿 16 视角（~/Desktop/fresh-eyes-draft-v1.8.0.md）→ 修复批 5 实锤（e55ae4e8b）→ 结构留白批（5 条，beffaf239…495aaca6e）→ L235 勾选 + 七条四态登记（7e5a6030f）→ L232 偏松回退（f073775f7） | ~/Desktop/fresh-eyes-draft-v1.8.0.md（A 路径无 run 目录，以草稿路径代替） |
 
 2026-11-05     | 20261105-01    | release-gate | 4    | PASS       | SKIP       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-11-05/run-01
+
+2026-11-05     | 20261105-02    | release-gate | 4    | PASS       | FAIL       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-11-05/run-02

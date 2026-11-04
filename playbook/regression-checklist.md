@@ -1318,7 +1318,7 @@ grep -qE "正式版发布后自动|rc 期\*\*优先内嵌" engine/orchestrator/s
 
 ```bash
 grep -q "'COMMONS'" engine/audit/src/decision-schema.ts || echo "⚠️ DecisionKind.COMMONS 缺失"
-grep -q "COMMONS" engine/audit/src/decision-log.ts || echo "⚠️ decision-log 未支持 COMMONS" # 更名同步
+grep -q "COMMONS" engine/core/src/decision-kinds.ts || echo "⚠️ decision-log 未支持 COMMONS" # 更名同步（v1.8.0 锚随单源化升位 decision-log→decision-kinds，与 acceptance S268 同批）
 grep -q "EVOLUTION" engine/orchestrator/src/commons/retire.ts || echo "⚠️ 退役应走 EVOLUTION（刻意设计）"
 ```
 
