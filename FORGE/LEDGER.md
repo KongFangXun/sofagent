@@ -497,3 +497,5 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 2026-11-05     | 20261105-02    | release-gate | 4    | PASS       | FAIL       | FAIL     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-11-05/run-02
 
 2026-11-05     | 20261105-03    | release-gate | 4    | PASS       | FAIL       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-11-05/run-03
+
+2026-11-05     | 20261105-04    | release-gate | 4    | PASS       | PASS       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-11-05/run-04

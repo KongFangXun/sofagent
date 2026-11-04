@@ -443,6 +443,11 @@ else
     _mark_n=$(printf '%s\n' "$_all_marks" | grep -c . || true)
     _idx_n=$(printf '%s\n' "$_all_marks" | grep -cE '^v?[0-9][0-9.,+ ]*$' || true)
     [ "$_mark_n" -gt 0 ] && [ "$_mark_n" -eq "$_idx_n" ] && IDX_ONLY=1
+    # 机械登记词分判（v1.8.0 release-gate R4 实测误报）：coverage 机器标记行
+    # （**machineVerdict** 等）是结构化登记非来源语汇——ASCII 无空格被 keep 过滤
+    # 却被 MARK_N 计入，触发「失明」假红。与版本号索引同口径：非召回对象。
+    _mech_n=$(printf '%s\n' "$_all_marks" | grep -cE '^(machineVerdict|EXEMPT|covered-by|reason|trigger)$' || true)
+    [ "$_mark_n" -gt 0 ] && [ "$(( _idx_n + _mech_n ))" -eq "$_mark_n" ] && IDX_ONLY=1
     # 徽章/链接形态分判（v1.8.0 收尾批实测误报）：加粗内容是 [![badge](url)](url)
     #   形态——标记存在但语义是图片/链接，非来源语汇。判据：标记内以 [![ 开头或
     #   含 ]( 且剥掉 markdown 链接后无剩余汉字/单词 ⇒ 本面无召回对象（同 IDX_ONLY 口径）。
