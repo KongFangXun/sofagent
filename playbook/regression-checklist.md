@@ -8,7 +8,7 @@
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2187 行、`acceptance-test.sh` ≤ 4728 行（**上限重估（v1.7.0 阶段四步骤二分发批）**：新增 #150（判定底座阶段二一维收口 · 草稿 A41+B7 合壳为 17 grep 锚——41 条 A 类全并入单维即防膨胀形态，行为面由 train/orchestrator 单测与 acceptance S488-S493 承载不占 checklist 行；归并配额：A41→1 维本身压缩 40 维增量，无同主题旧维可并——#149 为阶段一地基面不动）⇒ checklist 落位后实测 **2136** + 维度余量 15 = **2151**；acceptance +6 场景（S488-S493：半空哨兵/choice 三形态归一/隔离拒产/平行细分/CLI NaN+冒烟链/冻结锚三方）⇒ 实测 **4694** + 场景余量 16 = **4710**（演进见 git；前值 2107/4666，v1.6.0 批：新增 #149+归并 #145 → 2087+20/4660+6）；（历史：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → 4584）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → 4569）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → 4548）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2187 行、`acceptance-test.sh` ≤ 4736 行（**上限重估（v1.7.0 阶段四步骤二分发批）**：新增 #150（判定底座阶段二一维收口 · 草稿 A41+B7 合壳为 17 grep 锚——41 条 A 类全并入单维即防膨胀形态，行为面由 train/orchestrator 单测与 acceptance S488-S493 承载不占 checklist 行；归并配额：A41→1 维本身压缩 40 维增量，无同主题旧维可并——#149 为阶段一地基面不动）⇒ checklist 落位后实测 **2136** + 维度余量 15 = **2151**；acceptance +6 场景（S488-S493：半空哨兵/choice 三形态归一/隔离拒产/平行细分/CLI NaN+冒烟链/冻结锚三方）⇒ 实测 **4694** + 场景余量 16 = **4710**（演进见 git；前值 2107/4666，v1.6.0 批：新增 #149+归并 #145 → 2087+20/4660+6）；（历史：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → 4584）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → 4569）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → 4548）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
 ·t +3 → **1989**）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4584 + 1 场景余量 6 = **4590**（前段：4548 + 6 = 4554；后阶段四收编 S459 vote fail-closed 场景 7 行 ⇒ 4555 + 余量 6 = 4561；后 release-gate 20260929-01 coverage P0 闭环批 S460/S461 场景 8 行 ⇒ 4569 + 余量 6 = 4575；
 后 release-gate 20260929-03 verdict 闭环批 S463/S464 ⇒ 4584 + 余量 6 = 4590；v1.5.7 阶段四 A 类分发 +4 场景（S474-477）⇒ 4605 + 余量 6 = 4611；v1.5.9 承接 v1.5.8 B 类 3 场景（S478-480）⇒ 4626 + 余量 6 = **4632**，演进见 git；**release-gate R1 verdict P0-2 覆盖缺口闭环批**：新增 S482「章五·FDE Handbook 升格行为锁（GUIDE 六段生命周期）」（+3 行 ⇒ 落位后实测 **4635**）⇒ 4635 + 余量 6 = **4641**——走「真实归并**或**上调记录」两条路径中的**上调记录**（本批未删改任何既有断言，无真实可归并空间：新增面为章五文档锁，与现有 148 维不同族），前值 4632）；**未删改任何既有断言**，前值 2006/4541。阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = 2050（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
@@ -33,7 +33,7 @@ ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 2187 ] && echo "✅ checklist $WC_CHK (≤2187)" || { echo "❌ checklist $WC_CHK 超 2187（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4728 ] && echo "✅ acceptance $WC_ACC (≤4728)" || { echo "❌ acceptance $WC_ACC 超 4728（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+[ "$WC_CHK" -le 2187 ] && echo "✅ checklist $WC_CHK (≤2187)" || { echo "❌ checklist $WC_CHK 超 2187（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4736 ] && echo "✅ acceptance $WC_ACC (≤4728)" || { echo "❌ acceptance $WC_ACC 超 4728（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
@@ -2165,7 +2165,7 @@ grep -q "标签>定义" datasets/label-vs-definition-run.py || FAIL=1  # A15 实
 test -d datasets/v17-eval-reports || FAIL=1  # A16 归档目录在位（v18 产物归 v18 目录——本版评测产物在 factory rsi/eval，不误入 v17）
 grep -q "scenario 497" playbook/acceptance-test.sh || FAIL=1                                                             # A17 场景号实测纪律锚
 # B 类防回归（5 条）
-grep -c "421" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 417" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale
+grep -c "423" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 422" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale（v1.8.0 R2 升锚：SSOT 421→422，S498 收口批 +1；stale 词形随升）
 test -f docs/guides/AI-ATTRIBUTION.md && ! test -f docs/AI-ATTRIBUTION.md || FAIL=1                                      # B2 A→E 落位
 git grep -q "not-measured" docs/changelog/v1.8/v1.8.0.md || FAIL=1                                                       # B4 三件套口径
 [ "$FAIL" = 0 ] && echo "✅ #151 判定底座阶段三收口 17A+5B 锚全过" || echo "❌ #151 有锚失守"

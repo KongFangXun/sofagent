@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：422 个场景（编号口径声明：**编号非连续**——S1–S498 中有 76 个历史空号
+# 场景数：423 个场景（编号口径声明：**编号非连续**——S1–S499 中有 76 个历史空号
 # （退役/归并/重构所致），计数 SSOT = 本文件 scenario 行数（check-test-count.sh 机械对账），
 # 非最大编号；空号不代表缺失，亦无须逐号登记——任何新增场景只须编号顺延当前最大号。
 # 411 个场景（v1.6.0 阶段四步骤二分发 +4：S484 pause 全停命令行为锁（#1/#2/#9/#10 合壳·marker 消费链/ENOENT 兜底/损坏降级/文案对齐）/ S485 采集归类判别键（#12/#13·adversarial 拒判+drift 单向偏移）/ S486 合成概率不进校准集（#6·calibrationEligible 双侧豁免）/ S487 OOD 空集默认值与快照对账（#14·含 datasets 语义边界））（前值 407：v1.6.0 章二收口批 +1：S483 exit_when 可判定性行为锁（F-03+N-3：parser+schema-gate 双门同函数 fail-closed））（前值 406：v1.5.9 承接 v1.5.8 B 类 +5：S478 准入门接线行为锁 / S479 只读位 fail-closed 锁 / S480 reward basis 无硬编码数字锁 + S481 七章一维收口行为锁（1243dee24）+ S482 章五 FDE Handbook 升格行为锁（R1 verdict 闭环批））（前值 401：v1.5.7 阶段四 A 类分发 +4：S474 审计三规则与双落点 / S475 章四能力治理 / S476 章五可拔契约+域 barrel 等价 / S477 章七国标+章九 ACS 结论）（前值 397：v1.5.6 coverage S473；SSOT=check-test-count 校验，口径=scenario 行数）（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
@@ -4712,6 +4712,15 @@ grep -q "单入口 thin shim" "$PROJECT_ROOT/install.sh" || { echo "  ✗ S498: 
 bash "$PROJECT_ROOT/tools/check/check-cli-entry-parity.sh" >/dev/null 2>&1 || { echo "  ✗ S498: 入口等价性门禁红（npm-prefix 与 SOFAGENT_HOME 双入口 rc 不一致）"; S498_OK=false; }
 grep -q "登记 ≠ 宣告完成" "$PROJECT_ROOT/docs/changelog/v1.8/v1.8.0.md" || { echo "  ✗ S498: 收口批登记口径句缺失"; S498_OK=false; }
 $S498_OK && pass "fresh-eyes 收口族代表锚（F12 转发形态 + 入口等价门禁 + 登记口径）" || fail "fresh-eyes 收口批防复发锚回退——见上方 ✗ 行"
+scenario 499 "v1.8.0 章六·自带件形态锁（对外口径变化的行为锚 · coverage C-02 闭环）——包内零权重制品（files 白名单无 weights/*.bin + weights-fetch 只拉不装包）+ 判定头三件可加载（choiceHead/scoreHead/noulHead 从 dist require 成功）+ 自带件口径句在位（changelog §六标题）"; S499_OK=true
+for _pkg in orchestrator audit core daemon; do
+  _files=$(node -e "const p=require('$PROJECT_ROOT/engine/$_pkg/package.json');console.log((p.files||[]).join(' '))")
+  case "$_files" in *weights*|*.bin*) echo "  ✗ S499: $_pkg files 白名单含权重制品"; S499_OK=false;; esac
+done
+grep -q "fetchVersion" "$PROJECT_ROOT/engine/orchestrator/src/weights/weights-fetch.ts" && pass "S499-子断言: weights-fetch 在位（远端拉取，不入包）" || { echo "  ✗ S499: weights-fetch 缺失"; S499_OK=false; }
+node -e "const jh=require('$PROJECT_ROOT/engine/orchestrator/dist/router/judge-heads/index.js');const bad=[];for(const h of ['choiceHead','scoreHead','noulHead'])if(typeof jh[h]!=='function')bad.push(h);if(bad.length){console.log('✗ S499: 判定头缺 '+bad.join(','));process.exit(1)}" || S499_OK=false
+grep -q "自带件形态成立" "$PROJECT_ROOT/docs/changelog/v1.8/v1.8.0.md" || { echo "  ✗ S499: 自带件口径句缺失"; S499_OK=false; }
+$S499_OK && pass "自带件形态锁（包内零权重 + 判定头三件可加载 + 口径句在位）" || fail "自带件形态回退——章六对外口径无锁——见上方 ✗ 行"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数
