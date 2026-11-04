@@ -609,11 +609,37 @@ export interface CommitMeta {
   sha: string;
   /** 完整 commit message（含 trailer 段） */
   message: string;
+  /** 轨①：author 邮箱（可选；缺省即不判轨①） */
+  authorEmail?: string;
+  /** 轨①：committer 邮箱（可选；缺省即不判轨①） */
+  committerEmail?: string;
 }
 
-/** AI 归属信号（trailer 键值——命中任一即计为 AI 参与） */
+/**
+ * AI 账号域清单（轨①判据）。
+ * 真值与证据见 `docs/AI-ATTRIBUTION.md` §2.2——改这里必须同批改该文件，禁单改一处。
+ */
+export const AI_ACCOUNT_DOMAINS: readonly string[] = [
+  'anthropic.com',
+  'deepseek.com',
+  'cursor.com',
+  'tencent.com',
+  'sofagent.dev',
+];
+
+/** 邮箱是否落在 AI 账号域（域级匹配；不做人名匹配——人名会漂移） */
+export function isAiAccountEmail(email: string | undefined | null): boolean {
+  if (!email) return false;
+  const at = email.lastIndexOf('@');
+  if (at < 0) return false;
+  const domain = email.slice(at + 1).trim().toLowerCase();
+  return AI_ACCOUNT_DOMAINS.some((d) => domain === d || domain.endsWith(`.${d}`));
+}
+
+/** AI 归属信号（轨②：trailer 键值——命中任一即计为 AI 参与） */
 const AI_TRAILER_PATTERNS: readonly RegExp[] = [
   /^co-authored-by:.*\b(claude|gpt|deepseek|gemini|copilot|cursor|codex|qwen|glm)\b/im,
+  /^co-authored-by:.*@(anthropic|deepseek|cursor|tencent|sofagent)\.(com|dev)\b/im,
   /^generated-by:\s*\S+/im,
   /^ai-assisted:\s*true\b/im,
 ];
@@ -622,10 +648,16 @@ const AI_TRAILER_PATTERNS: readonly RegExp[] = [
 export interface AiParticipation {
   /** 窗口内总提交数 */
   total: number;
-  /** 含 AI trailer 的提交数 */
+  /** 轨②：含 AI trailer 的提交数 */
   withAiTrailer: number;
+  /** 轨①：author/committer 命中 AI 账号域的提交数 */
+  withAiAuthorDomain: number;
+  /** 双轨并集（同一提交只计一次）——比例分子用这个 */
+  withAiSignal: number;
   /** 比例（total=0 时为 null——零样本不报 0，报「无数据」） */
   ratio: number | null;
+  /** 分轨明细（供报告区分「无人消费」与「被推翻」之外的归属来源） */
+  byTrack: { authorDomain: number; trailer: number; union: number };
   /** 三条局限注记（固定文案，随读数同出） */
   limitations: string[];
 }
@@ -636,11 +668,19 @@ export interface AiParticipation {
  */
 export function computeAiParticipation(commits: CommitMeta[]): AiParticipation {
   const total = commits.length;
-  const withAiTrailer = commits.filter((c) => AI_TRAILER_PATTERNS.some((re) => re.test(c.message))).length;
+  const hasTrailer = (c: CommitMeta): boolean => AI_TRAILER_PATTERNS.some((re) => re.test(c.message));
+  const hasAuthorDomain = (c: CommitMeta): boolean =>
+    isAiAccountEmail(c.authorEmail) || isAiAccountEmail(c.committerEmail);
+  const withAiTrailer = commits.filter(hasTrailer).length;
+  const withAiAuthorDomain = commits.filter(hasAuthorDomain).length;
+  const withAiSignal = commits.filter((c) => hasTrailer(c) || hasAuthorDomain(c)).length;
   return {
     total,
     withAiTrailer,
-    ratio: total === 0 ? null : Number((withAiTrailer / total).toFixed(4)),
+    withAiAuthorDomain,
+    withAiSignal,
+    byTrack: { authorDomain: withAiAuthorDomain, trailer: withAiTrailer, union: withAiSignal },
+    ratio: total === 0 ? null : Number((withAiSignal / total).toFixed(4)),
     limitations: [
       'trailer 缺失即漏计——没有 AI trailer 的协作不可见，比例是下界不是全量',
       '人工代提交不可分辨——人提交 AI 产出与纯人工提交同形',

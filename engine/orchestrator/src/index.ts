@@ -472,6 +472,18 @@
 /* @public */ export { judgeQuality, qualityFeedbackText, QUALITY_TARGET_FIELDS } from './refine-agent/quality-judge';
 /* @public */ export type { QualityJudgeOptions } from './refine-agent/quality-judge';
 /* @public */ export {
+  computeAiParticipation,
+  isAiAccountEmail,
+  AI_ACCOUNT_DOMAINS,
+  type AiParticipation,
+  type CommitMeta,
+} from './router/judge-observability';
+/* @public */ export {
+  buildAiAttributionReport,
+  renderAiAttributionReport,
+  readCommitMeta,
+} from './router/ai-attribution-report';
+/* @public */ export {
   loadQualityRuleSet,
   builtinQualityRules,
   parseFdeDeliveryReport,

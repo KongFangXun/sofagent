@@ -290,6 +290,60 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
       }
       break;
     }
+    case 'judge-attribution': {
+      // 生产调用点（F6.4 #5）：AI 参与度审计报告。
+      // 口径真值在 docs/AI-ATTRIBUTION.md；本命令只取数 + 渲染，不做归属判定。
+      const { buildAiAttributionReport } = await import('./router/ai-attribution-report');
+      const limitIdx = args.indexOf('--limit');
+      const cwdIdx = args.indexOf('--cwd');
+      const limit = limitIdx !== -1 ? Number(args[limitIdx + 1]) : undefined;
+      const cwd = cwdIdx !== -1 ? String(args[cwdIdx + 1]) : process.cwd();
+      if (limit !== undefined && (!Number.isFinite(limit) || limit <= 0)) {
+        console.error('❌ judge-attribution --limit 需为正整数');
+        process.exit(1);
+      }
+      const { text, metrics } = buildAiAttributionReport(cwd, limit);
+      console.log(text);
+      if (args.includes('--json')) console.log(JSON.stringify(metrics, null, 2));
+      break;
+    }
+    case 'judge-probes': {
+      // 生产调用点（F6.4 #4）：跑四探针并把 findings 落盘，供 dashboard 消费。
+      const { produceProbeSnapshot, probeSnapshotPath } = await import('./router/judge-store');
+      const inIdx = args.indexOf('--input');
+      if (inIdx === -1) {
+        console.error('❌ judge-probes 需要 --input <observations.json>（{window,baseline,embeddings?,usage?}）');
+        process.exit(1);
+      }
+      const { readFileSync } = await import('fs');
+      const payload = JSON.parse(readFileSync(String(args[inIdx + 1]), 'utf8'));
+      const dataDir = args.includes('--data-dir') ? String(args[args.indexOf('--data-dir') + 1]) : process.env.SOFAGENT_HOME || process.cwd();
+      const { path, snapshot } = produceProbeSnapshot(dataDir, payload);
+      console.log(`✅ 探针 findings 已落盘：${path}（${snapshot.findings.length} 条）`);
+      console.log(`   面板：${probeSnapshotPath(dataDir)}`);
+      console.log(snapshot.panel);
+      break;
+    }
+    case 'judge-trends': {
+      // 生产调用点（F6.4 #8）：趋势落盘 / 读取。
+      const { appendTrendPoints, buildTrendReport } = await import('./router/judge-store');
+      const fileIdx = args.indexOf('--file');
+      if (fileIdx === -1) {
+        console.error('❌ judge-trends 需要 --file <trends.jsonl>');
+        process.exit(1);
+      }
+      const file = String(args[fileIdx + 1]);
+      const apIdx = args.indexOf('--append');
+      if (apIdx !== -1) {
+        const { readFileSync } = await import('fs');
+        const pts = JSON.parse(readFileSync(String(args[apIdx + 1]), 'utf8'));
+        const r = appendTrendPoints(file, Array.isArray(pts) ? pts : [pts]);
+        console.log(`✅ 追加 ${r.appended} 点，累计 ${r.total} 点 → ${r.path}`);
+      }
+      const rep = buildTrendReport(file);
+      console.log(rep.text);
+      break;
+    }
     case 'activate': {
       const dryRun = args.includes('--dry-run');
       const filterIdx = args.indexOf('--node-filter');

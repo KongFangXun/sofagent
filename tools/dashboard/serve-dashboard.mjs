@@ -883,6 +883,22 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // /api/judge-probes → 判定探针 findings（F6.4 #4 消费点）
+  // 生产者：`sofagent-orchestrator judge-probes --data-dir <dir>` 写 <dir>/dashboard/judge-probes.json
+  // 本路由只读该快照；缺失返回 ok:false（页面走空态，不伪造数据）。
+  if (urlPath.startsWith('/api/judge-probes')) {
+    const snapPath = join(SOFAGENT_HOME_INSTALL, 'dashboard', 'judge-probes.json');
+    try {
+      const raw = readFileSync(snapPath, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, snapshot: JSON.parse(raw) }));
+    } catch {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, snapshot: null, hint: '先跑 judge-probes 生成快照' }));
+    }
+    return;
+  }
+
   // /api/audit-recent → 审计记录分页（过滤测试记录，timestamp 倒序取窗口——summary recent 同口径）
   if (urlPath.startsWith('/api/audit-recent')) {
     const u = new URL(req.url, 'http://localhost');
