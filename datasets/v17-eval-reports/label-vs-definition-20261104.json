@@ -306,7 +306,7 @@
  },
  "_meta": {
   "model": "laya multilingual (local)",
-  "weights": "/Users/kongfangxun/Workbuddy/models/laya-official/multilingual",
+  "weights": "~/WorkBuddy/models/laya-official/multilingual",
   "bench": "zh-decision-bench v0.2",
   "protocol": "A=原文 B=删定义(空串) C=无语义标签(甲乙丙…)+原定义",
   "anon_pool": [

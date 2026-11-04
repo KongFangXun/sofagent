@@ -16,8 +16,8 @@ from laya import Agent  # 实测版：laya 0.4.2（PyPI）——复刻须同版
 
 # 路径三参可覆盖（环境变量或 argv[1..3]=BENCH,WEIGHTS,OUT）——默认给维护者本机值（评测产物，非运行时）
 import os
-BENCH = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("LVD_BENCH", "/Users/kongfangxun/Workbuddy/datasets/external/zh-decision-bench")
-WEIGHTS = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("LVD_WEIGHTS", "/Users/kongfangxun/Workbuddy/models/laya-official/multilingual")
+BENCH = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("LVD_BENCH", os.path.expanduser("~/WorkBuddy/datasets/external/zh-decision-bench"))
+WEIGHTS = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("LVD_WEIGHTS", os.path.expanduser("~/WorkBuddy/models/laya-official/multilingual"))
 OUT = sys.argv[3] if len(sys.argv) > 3 else os.environ.get("LVD_OUT", os.path.join(os.path.dirname(os.path.abspath(__file__)), "v17-eval-reports", "label-vs-definition-20261104.json"))
 
 ANON = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]  # 无语义标签池（中文字面无域语义）
