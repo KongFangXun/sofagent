@@ -122,7 +122,10 @@ if (readdirSync(out).includes('Modelfile')) {
 
 // trees：路径相对介质根；文件数/字节数/聚合 sha256 三项即「集合指纹」
 const trees = [];
-for (const [kind, rel] of [['repo', 'repo'], ['dsh', 'dsh']]) {
+// 集合绑定覆盖面（D-2 ③）：repo/dsh 是「树」，weights/gguf 也必须纳入——
+// 否则多塞一个未列权重仍会全绿，而 install.sh 会整目录 cp -R 落位（=未校验载荷进生产）。
+for (const [kind, rel] of [['repo', 'repo'], ['dsh', 'dsh'], ['weights', 'weights'], ['gguf', 'gguf']]) {
+  if (kind === 'gguf' && !readdirSync(out).includes('gguf')) continue;
   const line = execFileSync('node', [tool, join(out, rel)], { encoding: 'utf8' }).trim();
   const [nf, nb, agg] = line.split(' ');
   trees.push({ kind, path: rel, files: Number(nf), bytes: Number(nb), sha256: agg });
@@ -153,7 +156,12 @@ if (deliv) {
   delivery = { path: deliv, artifactVersion: d.artifactVersion ?? null, entries: (d.files || []).length, result: 'all-match' };
   console.log(`交付清单对账：${delivery.entries} 件全等（artifactVersion=${delivery.artifactVersion}）`);
 } else {
-  console.warn('⚠️ 未给 --delivery-manifest：本次未与交付清单对账（只允许测试介质；正式介质必须给）');
+  // D-2 ① 收紧（F6.7 R3）：交付清单对账从「可选」改为「必填」。
+  // 为什么不能只警告：介质一旦打出，安装方无法分辨「对过账」与「没对过账」——
+  // 警告在 200 行日志里等于没有。缺失即 fail-closed，测试介质也必须造一份真清单。
+  console.error('❌ 缺 --delivery-manifest：正式介质必须与交付清单逐件对账（fail-closed）');
+  console.error('   用法：pack-media.sh --out <dir> ... --delivery-manifest <factory>/s1m/delivery/MANIFEST.json');
+  process.exit(2);
 }
 
 const man = {

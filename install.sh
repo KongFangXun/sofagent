@@ -388,6 +388,11 @@ if [ -n "${MEDIA_ROOT}" ]; then
     err "判定件落位失败：${MEDIA_STAGE}/weights"; exit 3; }
   cp -R "${MEDIA_ROOT}/dsh" "${MEDIA_STAGE}/dsh" || {
     err "DSH 节点落位失败：${MEDIA_STAGE}/dsh"; exit 3; }
+  # 三个变量的消费方（不是只落位——R7-3）：
+  #   SOFAGENT_MEDIA_WEIGHTS → engine/orchestrator/src/weights/media-source.ts
+  #                            （fetchVersion 首步读介质，缺件/坏件 fail-closed，不回退联网）
+  #   SOFAGENT_MEDIA_DSH     → engine/core/src/trace-reconcile/dsh-adapter.ts
+  #                            （dshHomeRoot 优先级：入参 > 介质 > $DSH_HOME > ~/.dsh）
   export SOFAGENT_MEDIA_ROOT="${MEDIA_ROOT}"
   export SOFAGENT_MEDIA_WEIGHTS="${MEDIA_STAGE}/weights"
   export SOFAGENT_MEDIA_DSH="${MEDIA_STAGE}/dsh"

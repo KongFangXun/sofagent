@@ -75,7 +75,7 @@ fi
 
 # ── ② 逐件 + ③ 集合（解析交给 node，输出「OK/FAIL 行」）──────
 RESULT="$(PIN_VER="$PIN_VER" node - "$MANIFEST" "$ROOT" "$TREE_HASH" <<'NODE'
-const { readFileSync, statSync, existsSync } = require('node:fs');
+const { readFileSync, readdirSync, statSync, existsSync } = require('node:fs');
 const { createHash } = require('node:crypto');
 const { basename, join } = require('node:path');
 const { execFileSync } = require('node:child_process');
@@ -98,6 +98,16 @@ const sha256file = (p) => createHash('sha256').update(readFileSync(p)).digest('h
 
 if (!Array.isArray(man.files) || man.files.length === 0) fail('清单 files[] 为空——无可校验条目');
 
+// ①′ 交付清单对账结果必须是清单的一部分（D-2 ① 收紧）
+// 为什么查这里：pack 已强制对账，但「对过账」这个事实必须能被**校验侧**读到——
+// 否则旧格式清单（deliveryManifest:null）照样过，等于对账可被绕过。
+const dm = man.deliveryManifest;
+if (!dm || dm.result !== 'all-match' || !(Number(dm.entries) > 0)) {
+  fail('清单未记录交付清单对账（deliveryManifest 缺失或非 all-match）——正式介质必须对账');
+} else {
+  ok(`交付清单对账：${dm.entries} 件全等（artifactVersion=${dm.artifactVersion ?? 'n/a'}）`);
+}
+
 let checkedFiles = 0;
 for (const f of man.files ?? []) {
   const k = KINDS[f.kind];
@@ -115,6 +125,25 @@ for (const f of man.files ?? []) {
   checkedFiles++;
 }
 if (checkedFiles > 0) ok(`逐件 ${checkedFiles}/${man.files.length} 件通过`);
+
+// ③′ 目录集合等值：weights/gguf 不得有清单未列的文件
+// 为什么不能只靠树聚合：树聚合要求清单里带该 kind 的 trees[]，而历史/手写清单可能没有；
+// 目录等值是无条件兜底——「多塞一个未列权重」在这里必被判红。
+for (const kind of ['weights', 'gguf']) {
+  const want = (man.files ?? []).filter((f) => f.kind === kind).map((f) => basename(f.path)).sort();
+  const relDir = KINDS[kind].dir;
+  const dir = join(root, relDir);
+  if (!existsSync(dir)) {
+    if (want.length) fail(`载荷目录缺失：${relDir}/`);
+    continue;
+  }
+  const actual = readdirSync(dir).filter((n) => statSync(join(dir, n)).isFile()).sort();
+  const extra = actual.filter((n) => !want.includes(n));
+  const missing = want.filter((n) => !actual.includes(n));
+  if (extra.length) fail(`集合含未列件：${relDir}/（${extra.slice(0, 3).join('、')}${extra.length > 3 ? ' …' : ''}）——未列件一律拒绝`);
+  if (missing.length) fail(`集合缺件：${relDir}/（${missing.slice(0, 3).join('、')}）`);
+  if (!extra.length && !missing.length) ok(`集合等值 ${relDir}/：${actual.length} 件与清单一致（无未列件）`);
+}
 
 // ③ 树聚合：集合绑定（多件/缺件/改字节都会变）
 const trees = Array.isArray(man.trees) ? man.trees : [];
@@ -135,6 +164,9 @@ for (const t of trees) {
     continue;
   }
   ok(`集合 ${t.path}：${files} 件一致（聚合 ${String(agg).slice(0, 16)}…）`);
+}
+if ((man.files ?? []).some((f) => f.kind === 'weights') && !trees.some((t) => t.kind === 'weights')) {
+  fail('清单缺 weights 树指纹——weights 集合未绑（D-2 ③）');
 }
 for (const need of ['repo', 'dsh']) {
   if (!trees.some((t) => t.kind === need)) fail(`载荷缺必需单元：${need}（L348 要求 sofagent + 判定件 + DSH 节点三面齐）`);

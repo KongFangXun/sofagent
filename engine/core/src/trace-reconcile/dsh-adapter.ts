@@ -37,9 +37,23 @@ const defaultDecompress: DecompressFn = (input) => {
   return fzstd.decompress(input);
 };
 
-/** DSH sessions 根目录（$DSH_HOME 或 ~/.dsh 回退） */
+/**
+ * DSH 节点根目录（优先级：显式入参 > 介质载荷 > $DSH_HOME > ~/.dsh）。
+ *
+ * 为什么把「介质载荷」排在 $DSH_HOME 之前：USB A 安装器档要求「介质内**读源**」——
+ * 装了介质却仍去读本机 ~/.dsh，等于介质里的 DSH 节点只是被拷了一份、没被用过（F6.7 R7-3）。
+ * 介质档由 install.sh 落位后 export `SOFAGENT_MEDIA_DSH`，此处是它的消费方。
+ */
+export function dshHomeRoot(dshHome?: string): string {
+  if (dshHome) return dshHome;
+  const media = process.env.SOFAGENT_MEDIA_DSH;
+  if (media && media.trim() !== '') return media;
+  return process.env.DSH_HOME ?? join(homedir(), '.dsh');
+}
+
+/** DSH sessions 根目录（显式入参 > 介质载荷 > $DSH_HOME > ~/.dsh） */
 export function dshSessionsRoot(dshHome?: string): string {
-  return join(dshHome ?? process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'sessions');
+  return join(dshHomeRoot(dshHome), 'sessions');
 }
 
 /** 单个 DSH session 目录内的轨迹文件名 */

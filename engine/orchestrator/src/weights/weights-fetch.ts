@@ -11,6 +11,7 @@
 import { createHash } from 'crypto';
 import { mkdirSync, readFileSync, writeFileSync, existsSync, statSync, appendFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
+import { tryImportWeightFromMedia } from './media-source';
 
 /** 来源白名单（可枚举——SSOT 判据①「两源在白名单面可枚举」；内网镜像可配置增补） */
 export const WEIGHTS_SOURCE_WHITELIST: readonly string[] = [
@@ -92,6 +93,19 @@ export interface FetchVersionOpts {
 }
 
 export async function fetchVersion(opts: FetchVersionOpts): Promise<FetchResult> {
+  // ── 介质内读源优先（USB A 安装器档 · F6.7 R7-3）──
+  // 为什么放在白名单门之前：介质档下 URL 只是「这个件叫什么」的标识，根本不发生网络请求；
+  // 放在后面会让「介质件 + 非白名单 URL」被误判成来源违规。
+  // 语义：未设 SOFAGENT_MEDIA_WEIGHTS ⇒ 返回 null，走原联网路径（行为不变）；
+  //       已设 ⇒ 只用介质，缺件/坏件一律 fail-closed，**不回退联网**。
+  const fromMedia = tryImportWeightFromMedia({
+    destDir: opts.destDir,
+    fileName: opts.fileName,
+    expectedSha256: opts.expectedSha256,
+    ...(typeof opts.expectedBytes === 'number' ? { expectedBytes: opts.expectedBytes } : {}),
+  });
+  if (fromMedia !== null) return fromMedia;
+
   // §五 白名单门（fail-closed）：非白名单源且未显式开启 → 拒收留痕
   if (!isWhitelistedSource(opts.url) && !opts.allowAnySource) {
     const t = { ts: new Date().toISOString(), url: opts.url, ok: false, stage: 'source-policy', sourcePolicy: 'denied-not-whitelisted' };

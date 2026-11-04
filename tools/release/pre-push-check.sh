@@ -122,7 +122,29 @@ while [[ $# -gt 0 ]]; do
             _g_rc=1
           fi
         fi
-        echo -e "  ${YELLOW}⚠ 本模式仅覆盖不可逆风险守卫 + 家族文档债务八类；完整预检请跑 --quick 或全量${NC}"
+        # ── 版本验收留白（F6.7 G1）────────────────────────────
+        # 为什么进 hook：版本号一旦打出「已发版/全绿」，留白即刻对外可见，事后补等于改已发布内容
+        # ⇒ 与开源边界同类（不可逆风险）。代价实测 2.1 s（81 个 changelog）。
+        # 🔴 R7-1 教训：本检查原先只写在 `MINIMAL=false` 分支（3b 段），而 hook 走 --guard-only
+        #   在参数解析期 exit ⇒ 该段永不执行，门禁等于只在 CI 生效。**判据是「hook 载荷里有它」，
+        #   不是「脚本里有它」**——新增门禁时先问：hook 会走到这一行吗？
+        if [ ! -f tools/check/check-version-acceptance.sh ]; then
+          echo -e "  ${RED}✗${NC} tools/check/check-version-acceptance.sh 不存在（守卫缺失——fail-closed）"
+          _g_rc=1
+        else
+          _va_rc=0
+          _va_out=$(bash tools/check/check-version-acceptance.sh 2>&1) || _va_rc=$?
+          if [ "$_va_rc" -eq 0 ]; then
+            echo -e "  ${GREEN}✓${NC} check-version-acceptance.sh（版本验收留白：0 处）"
+          else
+            echo -e "  ${RED}✗${NC} check-version-acceptance.sh 发现版本验收留白（rc=${_va_rc}）"
+            printf '%s\n' "$_va_out" | grep '❌' | head -5 | sed 's/^/    /'
+            _g_rc=1
+          fi
+          unset _va_out
+        fi
+
+        echo -e "  ${YELLOW}⚠ 本模式仅覆盖不可逆风险守卫 + 家族文档债务八类 + 版本验收留白；完整预检请跑 --quick 或全量${NC}"
         [ "$_g_rc" -eq 0 ] || exit 1
         exit 0 ;;
       --install-hook)
@@ -146,7 +168,7 @@ exec bash "$TOP/tools/release/pre-push-check.sh" --guard-only
 SOFAGENT_PREPUSH
         chmod +x "$_GD/hooks/pre-push" || { echo "✗ chmod 失败"; exit 1; }
         echo "✓ 已安装 pre-push hook：$_GD/hooks/pre-push"
-        echo "  作用：每次 push 前自动跑不可逆风险守卫（约 30 秒，含开源边界断言）"
+        echo "  作用：每次 push 前自动跑不可逆风险守卫（约 30 秒；含开源边界断言 + 家族文档债务 + 版本验收留白）"
         echo "  卸载：rm \"$_GD/hooks/pre-push\"   临时绕过：git push --no-verify"
         unset _GD
         exit 0 ;;
