@@ -131,7 +131,7 @@ What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🔎 **Judgment trail**—decision-log causal chains record each accountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
 - ⚙️ **Decision channel & distribution (v1.8.0 form)**—the default `DecisionChannel` implementation (local subprocess, NDJSON over stdio) +
-off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a weights distribution path (source whitelist / strict sha256 / resumable download / two-tier USB offline runtime)—the form holds; capability-level claims land with v2.0.0
+off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a weights distribution path (source whitelist / strict sha256 / resumable download / two-tier USB offline runtime)—v1.8.0 in development, unreleased (form holds; capability claims land with v2.0.0; latest release v1.7.0)
 - 🔗 **Judgment made provable**—the audit history lands on an HMAC chain; `--verify-chain` recomputes chain integrity offline, so conclusions can be re-checked by a third party
 
 > Boundary: the judgment layer's probability output has not yet completed calibration wiring (criteria thresholds still sit on the zero-shot baseline); rule verdicts are backstopped by deterministic judges—judgment-layer takeover is a future state (see [ARCHITECTURE](./docs/ARCHITECTURE.md)).
@@ -432,7 +432,7 @@ npx -y -p sofagent sofagent audit --ruleset security  # load the security rulese
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) · [COMMUNITY](./docs/COMMUNITY.md) |
 
-> 🧪 **Engineering credibility** (current): 6853 tests / 14 packages (`tools/check/test-count.sh` measured standard) + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
+> 🧪 **Engineering credibility** (current): 6861 tests / 14 packages (`tools/check/test-count.sh` measured standard) + 12 plugins (8 DSH + 4 OpenClaw) · 28 audit rules · fresh-eyes independent review (process and recent conclusions in [review-system](./docs/guides/review-system.md)).
 > **Package-count standard** (disambiguation): the **primary-reading standard** = 14 packages (test-count.sh measured; the two calibers below are set definitions)—workspace 29 = 13 module packages + `engine/corpus` (`@sofagent/rsi-corpus` corpus pipeline) + load-chain + dsh-plugin-kit + umbrella
 > + 8 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count
 > standard** = 13 module packages (27 workspaces bear a test script; plugin packages,

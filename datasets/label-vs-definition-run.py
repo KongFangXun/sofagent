@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ============================================================
-# label-vs-definition.py · USC「标签>定义」实验在 zh-decision-bench 上的复刻
+# label-vs-definition-run.py · USC「标签>定义」实验在 zh-decision-bench 上的复刻
 # 协议（对齐 USC 论文三条件）：
 #   A 原文    ：label + definition（基线）
 #   B 删定义  ：label + 空定义（""）——检验「定义是否被读」
@@ -12,11 +12,13 @@
 # 输出：JSON 报告（三面 acc + 翻转明细 + 按题型/难度切片）
 # ============================================================
 import json, sys, time, random
-from laya import Agent
+from laya import Agent  # 实测版：laya 0.4.2（PyPI）——复刻须同版
 
-BENCH = "/Users/kongfangxun/Workbuddy/datasets/external/zh-decision-bench"
-WEIGHTS = "/Users/kongfangxun/Workbuddy/models/laya-official/multilingual"
-OUT = "/Users/kongfangxun/Workbuddy/sofagent/datasets/v17-eval-reports/label-vs-definition-20261104.json"
+# 路径三参可覆盖（环境变量或 argv[1..3]=BENCH,WEIGHTS,OUT）——默认给维护者本机值（评测产物，非运行时）
+import os
+BENCH = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("LVD_BENCH", "/Users/kongfangxun/Workbuddy/datasets/external/zh-decision-bench")
+WEIGHTS = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("LVD_WEIGHTS", "/Users/kongfangxun/Workbuddy/models/laya-official/multilingual")
+OUT = sys.argv[3] if len(sys.argv) > 3 else os.environ.get("LVD_OUT", os.path.join(os.path.dirname(os.path.abspath(__file__)), "v17-eval-reports", "label-vs-definition-20261104.json"))
 
 ANON = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]  # 无语义标签池（中文字面无域语义）
 
@@ -63,9 +65,9 @@ def run(agent, rows, limit=None):
         if not qids:
             skipped["score_noul"] += 1
             continue
-        n_items += 1
-        if limit and n_items > limit:
+        if limit and n_items >= limit:
             break
+        n_items += 1
         outs = {}
         for face, qs, gold in (("A", a, gold_a), ("B", b, gold_a), ("C", c, gold_c)):
             try:
