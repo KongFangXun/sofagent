@@ -40,6 +40,26 @@ export class CalibrationRegistryError extends Error {
 /** 校准状态两态（未标注来源的数字不得出现在决策路径上） */
 export type CalibStatus = 'calibrated' | 'uncalibrated';
 
+/** 概率消费用途两分（v1.8.0 §二 T4）：ranking=排序（相对序即可用）；threshold=门槛/分流/弃权带决策（必须校准） */
+export type ProbabilityPurpose = 'ranking' | 'threshold';
+
+/**
+ * 概率可否按指定用途消费（v1.8.0 §三 L237：辅助路线/打分头未校准前不得作概率消费）。
+ *
+ * 判据面：「未校准的概率可用于排序、不得用于门槛/分流/弃权带决策」。
+ *   - calibrated ⇒ 两用途均可（true）；
+ *   - uncalibrated + ranking ⇒ true（相对序不依赖校准）；
+ *   - uncalibrated + threshold ⇒ false（门槛是绝对尺度决策，未校准即不可用）。
+ * 调用方按返回值判（函数不抛错——拒绝方式由调用方按场景选择）。
+ */
+export function isProbabilityConsumable(
+  claim: Pick<ConfidenceClaim, 'calibStatus'>,
+  purpose: ProbabilityPurpose,
+): boolean {
+  if (claim.calibStatus === 'calibrated') return true;
+  return purpose === 'ranking';
+}
+
 /** 校准依据三件（calibStatus='calibrated' 时必齐——少一件即拒载） */
 export interface CalibrationEvidence {
   /** 校准集版本（拟合所用的独立校准集标识——ECE 达标的分母出处） */
@@ -215,7 +235,9 @@ export class CalibrationClaimRegistry {
           .join('、')}`,
       );
     }
-    const violating = this.claimsInDecisionPath().filter((c) => c.calibStatus === 'uncalibrated');
+    // v1.8.0 §三 L237 落地（T4）：决策路径的门槛消费判定统一走 isProbabilityConsumable
+    //（uncalibrated 不可作 threshold 消费——与「打分头未校准不得作概率消费」同一条纪律）
+    const violating = this.claimsInDecisionPath().filter((c) => !isProbabilityConsumable(c, 'threshold'));
     if (violating.length > 0) {
       const list = violating.map((c) => `${c.id}（${c.path}）`).join('、');
       throw new CalibrationRegistryError(

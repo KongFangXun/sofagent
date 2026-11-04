@@ -639,10 +639,13 @@ export {
   registerLegacyConfidenceClaims,
   judgmentAnchor,
   anchorComparability,
+  // v1.8.0 §三 L237：未校准概率的消费用途判定（ranking 可用 / threshold 不可用）
+  isProbabilityConsumable,
 } from './calibration-registry';
 /* @public */ export type {
   ConfidenceClaim,
   CalibStatus,
+  ProbabilityPurpose,
   CalibrationEvidence,
   DriftSample,
   DriftHint,

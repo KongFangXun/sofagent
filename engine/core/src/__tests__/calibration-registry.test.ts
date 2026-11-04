@@ -13,6 +13,7 @@ import {
   judgmentAnchor,
   anchorComparability,
   CalibrationRegistryError,
+  isProbabilityConsumable,
   type ConfidenceClaim,
 } from '../calibration-registry';
 
@@ -212,5 +213,36 @@ describe('§三 既有置信度普查登记', () => {
     const ids = calibrationClaimRegistry.all().map((c) => c.id);
     expect(ids).toContain('decision-channel/default-grade-thresholds/allow');
     expect(ids).toContain('intent-triage/l1-min-confidence');
+  });
+});
+
+describe('v1.8.0 §三 L237 · 未校准概率的消费用途判定（isProbabilityConsumable）', () => {
+  it('①uncalibrated + ranking 可用（相对序不依赖校准）', () => {
+    expect(isProbabilityConsumable({ calibStatus: 'uncalibrated' }, 'ranking')).toBe(true);
+  });
+
+  it('②uncalibrated + threshold 不可用（门槛/分流/弃权带是绝对尺度决策）', () => {
+    expect(isProbabilityConsumable({ calibStatus: 'uncalibrated' }, 'threshold')).toBe(false);
+  });
+
+  it('③calibrated + threshold 可用（已校准即两用途均放行）', () => {
+    expect(isProbabilityConsumable({ calibStatus: 'calibrated' }, 'threshold')).toBe(true);
+    expect(isProbabilityConsumable({ calibStatus: 'calibrated' }, 'ranking')).toBe(true);
+  });
+
+  it('④门禁复用回归：assertNoUncalibratedInDecisionPath 与用途判定同源（行为不变）', () => {
+    const reg = new CalibrationClaimRegistry();
+    reg.registerConfidenceClaim(mkClaim({ id: 'uncal-path', inDecisionPath: true, calibStatus: 'uncalibrated' }));
+    expect(() => reg.assertNoUncalibratedInDecisionPath()).toThrow(CalibrationRegistryError);
+    // 补齐校准依据后放行（同一纪律的两面：threshold 消费要求 calibrated）
+    const reg2 = new CalibrationClaimRegistry();
+    reg2.registerConfidenceClaim(mkClaim({
+      id: 'cal-path',
+      inDecisionPath: true,
+      calibStatus: 'calibrated',
+      semantics: 'probability',
+      evidence: { calibrationSetVersion: 'calib-v1', ece: 0.08, fittedAt: '2026-10-30T00:00:00Z' },
+    }));
+    expect(() => reg2.assertNoUncalibratedInDecisionPath()).not.toThrow();
   });
 });
