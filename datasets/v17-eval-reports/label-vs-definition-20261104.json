@@ -1,0 +1,326 @@
+{
+ "acc": {
+  "A": 0.8487394957983193,
+  "B": 0.803921568627451,
+  "C": 0.7647058823529411
+ },
+ "counts": {
+  "A": {
+   "ok": 303,
+   "n": 357
+  },
+  "B": {
+   "ok": 287,
+   "n": 357
+  },
+  "C": {
+   "ok": 273,
+   "n": 357
+  }
+ },
+ "flips_AB": {
+  "A_right_B_wrong": 25,
+  "B_right_A_wrong": 9
+ },
+ "flip_details": [
+  {
+   "id": "mass_0030",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.3468,
+   "B_p": 0.3552
+  },
+  {
+   "id": "mass_0008",
+   "qid": "route",
+   "A_ok": false,
+   "B_ok": true,
+   "A_p": 0.8615,
+   "B_p": 0.3316
+  },
+  {
+   "id": "mass_0076",
+   "qid": "route",
+   "A_ok": false,
+   "B_ok": true,
+   "A_p": 0.6184,
+   "B_p": 0.5938
+  },
+  {
+   "id": "mass_0007",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.9692,
+   "B_p": 0.9888
+  },
+  {
+   "id": "mass_0002",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.9226,
+   "B_p": 0.4229
+  },
+  {
+   "id": "mass_0018",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.694,
+   "B_p": 0.9514
+  },
+  {
+   "id": "mass_0123",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.6167,
+   "B_p": 0.7565
+  },
+  {
+   "id": "mass_0013",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.8054,
+   "B_p": 0.6073
+  },
+  {
+   "id": "mass_0112",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.5355,
+   "B_p": 0.7502
+  },
+  {
+   "id": "mass_0010",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.6619,
+   "B_p": 0.4542
+  },
+  {
+   "id": "mass_0067",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.8715,
+   "B_p": 0.64
+  },
+  {
+   "id": "mass_0015",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.8831,
+   "B_p": 0.3476
+  },
+  {
+   "id": "mass_0154",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.5419,
+   "B_p": 0.8816
+  },
+  {
+   "id": "mass_0147",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.4836,
+   "B_p": 0.9848
+  },
+  {
+   "id": "mass_0131",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.9527,
+   "B_p": 0.9658
+  },
+  {
+   "id": "mass_0153",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.9736,
+   "B_p": 0.3389
+  },
+  {
+   "id": "mass_0009",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.2956,
+   "B_p": 0.3242
+  },
+  {
+   "id": "mass_0180",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.8365,
+   "B_p": 0.48
+  },
+  {
+   "id": "mass_0181",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.9441,
+   "B_p": 0.4611
+  },
+  {
+   "id": "mass_0185",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.9767,
+   "B_p": 0.2859
+  },
+  {
+   "id": "mass_0194",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.999,
+   "B_p": 0.4714
+  },
+  {
+   "id": "mass_0196",
+   "qid": "route",
+   "A_ok": false,
+   "B_ok": true,
+   "A_p": 0.5251,
+   "B_p": 0.8895
+  },
+  {
+   "id": "mass_0202",
+   "qid": "route",
+   "A_ok": false,
+   "B_ok": true,
+   "A_p": 0.383,
+   "B_p": 0.3975
+  },
+  {
+   "id": "mass_0203",
+   "qid": "route",
+   "A_ok": false,
+   "B_ok": true,
+   "A_p": 0.3482,
+   "B_p": 0.249
+  },
+  {
+   "id": "mass_0205",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.8381,
+   "B_p": 0.5085
+  },
+  {
+   "id": "mass_0207",
+   "qid": "route",
+   "A_ok": false,
+   "B_ok": true,
+   "A_p": 0.341,
+   "B_p": 0.3501
+  },
+  {
+   "id": "mass_0246",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.999,
+   "B_p": 0.8109
+  },
+  {
+   "id": "mass_0301",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.5405,
+   "B_p": 0.7699
+  },
+  {
+   "id": "mass_0305",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.8833,
+   "B_p": 0.7243
+  },
+  {
+   "id": "mass_0321",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.9162,
+   "B_p": 0.4577
+  },
+  {
+   "id": "syn_cs_0002",
+   "qid": "route",
+   "A_ok": false,
+   "B_ok": true,
+   "A_p": 0.9368,
+   "B_p": 0.6308
+  },
+  {
+   "id": "syn_cs_0017",
+   "qid": "route",
+   "A_ok": true,
+   "B_ok": false,
+   "A_p": 0.7132,
+   "B_p": 0.6766
+  },
+  {
+   "id": "syn_cs_v02_0001",
+   "qid": "route",
+   "A_ok": false,
+   "B_ok": true,
+   "A_p": 0.9999,
+   "B_p": 0.8089
+  },
+  {
+   "id": "syn_cs_v02_0005",
+   "qid": "route",
+   "A_ok": false,
+   "B_ok": true,
+   "A_p": 0.3656,
+   "B_p": 0.5625
+  }
+ ],
+ "n_items": 357,
+ "skipped": {
+  "score_noul": 21
+ },
+ "elapsed_s": 189.1,
+ "per_qid_n": {
+  "route": 357
+ },
+ "_meta": {
+  "model": "laya multilingual (local)",
+  "weights": "/Users/kongfangxun/Workbuddy/models/laya-official/multilingual",
+  "bench": "zh-decision-bench v0.2",
+  "protocol": "A=原文 B=删定义(空串) C=无语义标签(甲乙丙…)+原定义",
+  "anon_pool": [
+   "甲",
+   "乙",
+   "丙",
+   "丁",
+   "戊",
+   "己",
+   "庚",
+   "辛",
+   "壬",
+   "癸"
+  ],
+  "at": "2026-11-04T12:16:18+0800"
+ }
+}
