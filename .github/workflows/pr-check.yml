@@ -41,6 +41,10 @@ jobs:
         run: npm ci
       - name: check-version.sh
         run: bash tools/check/check-version.sh --strict
+      # F6.7 G1 护栏：版本标「已完成/全绿」但验收清单还有未勾且未做四态登记的留白 ⇒ 红。
+      # 只认首部状态行（前 25 行），正文历史叙述里的「全绿」不触发；已打 tag 的版本视为考古跳过。
+      - name: check-version-acceptance.sh（版本验收留白门禁）
+        run: bash tools/check/check-version-acceptance.sh
       - name: check-docs.sh
         run: bash tools/check/check-docs.sh
       # v1.4.6：手填字面量对账——同一事实被手抄两份（真相源 + 文档手填数字）时
