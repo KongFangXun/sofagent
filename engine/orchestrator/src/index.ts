@@ -787,7 +787,7 @@
   SlotSnapshot,
   SlotManagerState,
 } from './router/slot-manager';
-/* @public */ export { IntentTriage, DEFAULT_TRIAGE_CONFIG } from './router/intent-triage';
+/* @public */ export { IntentTriage, DEFAULT_TRIAGE_CONFIG, createJudgeAuditSink } from './router/intent-triage';
 /* @public */ export type {
   TriageLayer,
   L0MappingEntry,
@@ -795,6 +795,7 @@
   IntentTriageConfig,
   TriageOutcome,
   IntentTriageDeps,
+  JudgeAuditSink,
 } from './router/intent-triage';
 /* @public */ export {
   MAX_OPTIONS,

@@ -170,7 +170,11 @@ export async function routerSlots(args: RouterSlotsArgs): Promise<RouterSlotsRes
     // ── 判定链生产接线（v1.5.4 第二章）──
     // 构造判定分层编排（IntentTriage）并**注入** PolicyEngine——`decideByAdjudication`
     // 缺判定链即 fail-closed 拒绝执行；本处是它在生产路径上的实际构造/调用点。
-    const triage = new IntentTriage();
+    // v1.8.0 §一（fresh-eyes P1-①）：注入生产 auditSink——L1 判定回执（五件 +
+    // provenance 四件 + routeReason）经 createJudgeAuditSink 落 decision-log
+    //（emitDecision 受控写入口，HMAC 链内——不旁路签名链）。
+    const { createJudgeAuditSink } = await import('@sofagent/orchestrator');
+    const triage = new IntentTriage({ auditSink: createJudgeAuditSink(getDataDir()) });
     const engine = new PolicyEngine({ triage });
     // 问句集缺省 = 单问句 choice[allow, deny]（带兜底候选，满足 DecisionChannel 契约）
     const questions = args.questions && args.questions.length > 0

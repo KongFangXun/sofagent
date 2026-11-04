@@ -64,6 +64,20 @@ describe('router_slots · adjudicate（判定链生产接线）', () => {
     expect(res.data.ok).toBe(true);
     expect(res.data.snapshot?.maxSlots).toBe(3);
   });
+
+  it('生产 auditSink 注入（fresh-eyes P1-①）：triage 构造含 createJudgeAuditSink(getDataDir())——源面接线断言', async () => {
+    // adjudicate 的 IntentTriage 未注入 channel（缺省 unconfigured ⇒ L1 fail-closed
+    // 降 L0，receipt 不触发）——故本断言取**源面机械接线**形态（先例：orchestrator
+    // judge-parallel 的零 fetch 源面断言）：证明生产构造处 sink 已注入；
+    // sink 本体的 receipt 落链行为锁在 orchestrator 侧 router-slot.test（带通道验证）。
+    const { readFileSync } = await import('fs');
+    const { join, dirname } = await import('path');
+    const { fileURLToPath } = await import('url');
+    const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'tools', 'router-slots.ts'), 'utf-8');
+    const adjudicateSeg = src.slice(src.indexOf("action === 'adjudicate'"));
+    expect(adjudicateSeg).toContain('new IntentTriage({ auditSink: createJudgeAuditSink(getDataDir()) })');
+    expect(adjudicateSeg).toContain("await import('@sofagent/orchestrator')");
+  });
 });
 
 describe('v1.8.0 §四 · 判定档可观测四字段透传（mcp 侧）', () => {

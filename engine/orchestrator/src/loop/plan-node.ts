@@ -292,29 +292,47 @@ export async function runDecisionModel(prompt: string): Promise<string> {
   if (getJudgeMode() === 'off') {
     throw new Error('judgeMode=off：判定点不启用——runDecisionModel 不应被调用（路由层应已归一 local-executor），上游漏判');
   }
-  if (!decisionChannel) {
-    throw new Error('decision-model 档未注入 DecisionChannel —— fail-closed，绝不回落生成模型');
+  // v1.8.0 §四（fresh-eyes P1-①）：判定档可观测四字段写侧喂点——判定执行点上报
+  // calls/latencyMs/failures/degradations（计数在 ModelRouter 单例，mcp snapshot 透传读）。
+  // 上报失败不阻断判定（观测面 best-effort）；off 误调不计数（判定未开始，非判定调用）。
+  const startedAt = Date.now();
+  const noteCall = async (outcome: { ok: boolean; degraded?: boolean }): Promise<void> => {
+    try {
+      const { getLoopRouter } = await import('./middleware-registry');
+      getLoopRouter().noteDecisionModelCall({ latencyMs: Date.now() - startedAt, ...outcome });
+    } catch { /* 观测失败静默——不阻断判定主链路 */ }
+  };
+  let result: string;
+  try {
+    if (!decisionChannel) {
+      throw new Error('decision-model 档未注入 DecisionChannel —— fail-closed，绝不回落生成模型');
+    }
+    const built = buildJudgeState(
+      { text: prompt, evidenceReadiness: 'none' },
+      { prefixFields: [], maxChars: 8000, consumer: 'loop/plan-node' },
+    );
+    if (!built.ok) {
+      throw new Error(`判定 state ${built.reason}（${built.chars}/${built.maxChars}）——按处置序弃权，不截断`);
+    }
+    const r = await decisionChannel.judge(built.state, decisionQuestions);
+    // 影子门（J3:144）：与 engineer 侧同构——shadow 只落痕不生效；active 未对账即拒；
+    // off 档在本函数不可达（路由层归一 local-executor，runDecisionModel 首行断言兜底）。
+    const gated = applyWithShadowGate(
+      getJudgeMode(),
+      getShadowLedger(),
+      { grade: String((r as { answers?: unknown[] }).answers?.length ?? 0), target: 'decision-model' },
+      { grade: '0', target: 'decision-model' },
+    );
+    result = gated.shadow
+      ? JSON.stringify({ ...r, shadowApplied: false })
+      : JSON.stringify(r);
+  } catch (err) {
+    // 判定档失败 ⇒ 上游走降级链/兜底（回落口径）——failures 与 degradations 各记一次
+    await noteCall({ ok: false, degraded: true });
+    throw err;
   }
-  const built = buildJudgeState(
-    { text: prompt, evidenceReadiness: 'none' },
-    { prefixFields: [], maxChars: 8000, consumer: 'loop/plan-node' },
-  );
-  if (!built.ok) {
-    throw new Error(`判定 state ${built.reason}（${built.chars}/${built.maxChars}）——按处置序弃权，不截断`);
-  }
-  const r = await decisionChannel.judge(built.state, decisionQuestions);
-  // 影子门（J3:144）：与 engineer 侧同构——shadow 只落痕不生效；active 未对账即拒；
-  // off 档在本函数不可达（路由层归一 local-executor，runDecisionModel 首行断言兜底）。
-  const gated = applyWithShadowGate(
-    getJudgeMode(),
-    getShadowLedger(),
-    { grade: String((r as { answers?: unknown[] }).answers?.length ?? 0), target: 'decision-model' },
-    { grade: '0', target: 'decision-model' },
-  );
-  if (gated.shadow) {
-    return JSON.stringify({ ...r, shadowApplied: false });
-  }
-  return JSON.stringify(r);
+  await noteCall({ ok: true });
+  return result;
 }
 
 export async function defaultRunPlannerDecide(task: string): Promise<string> {

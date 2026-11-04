@@ -252,33 +252,50 @@ export async function runDecisionModel(prompt: string): Promise<string> {
   if (getJudgeMode() === 'off') {
     throw new Error('judgeMode=off：判定点不启用——runDecisionModel 不应被调用（路由层应已归一 local-executor），上游漏判');
   }
-  if (!decisionChannel) {
-    throw new Error('decision-model 档未注入 DecisionChannel —— fail-closed，绝不回落生成模型');
+  // v1.8.0 §四（fresh-eyes P1-①）：判定档可观测四字段写侧喂点——与 plan-node 同构。
+  // 上报失败不阻断判定（观测面 best-effort）；off 误调不计数（判定未开始）。
+  const startedAt = Date.now();
+  const noteCall = async (outcome: { ok: boolean; degraded?: boolean }): Promise<void> => {
+    try {
+      const { getLoopRouter } = await import('./middleware-registry');
+      getLoopRouter().noteDecisionModelCall({ latencyMs: Date.now() - startedAt, ...outcome });
+    } catch { /* 观测失败静默——不阻断判定主链路 */ }
+  };
+  let result: string;
+  try {
+    if (!decisionChannel) {
+      throw new Error('decision-model 档未注入 DecisionChannel —— fail-closed，绝不回落生成模型');
+    }
+    const built = buildJudgeState(
+      { text: prompt, evidenceReadiness: 'none' },
+      { prefixFields: [], maxChars: 8000, consumer: 'loop/engineer-decide' },
+    );
+    if (!built.ok) {
+      throw new Error(`判定 state ${built.reason}（${built.chars}/${built.maxChars}）——按处置序弃权，不截断`);
+    }
+    const r = await decisionChannel.judge(built.state, decisionQuestions);
+    // 影子门（J3:144）：shadow 档判定照跑但 effective 恒为基线（不改变行为）；
+    // active 档未过对账（reconciled=0）⇒ ShadowGateError 拒绝启用；off 在本函数不可达
+    // （路由层归一，runDecisionModel 首行断言兜底）。判定结果落痕由
+    // decision-log 侧承担（同源 payload_sha256），此处只管「是否生效」。
+    const gated = applyWithShadowGate(
+      getJudgeMode(),
+      getShadowLedger(),
+      { grade: String((r as { answers?: unknown[] }).answers?.length ?? 0), target: 'decision-model' },
+      { grade: '0', target: 'decision-model' },
+    );
+    result = gated.shadow
+      // shadow：结果照常返回给审计链落痕，但标记未生效——调用方拿到的仍是判定答案，
+      // 「不改变行为」由外层消费者按 applied=false 处置（与 J3:144「只落痕不影响行为」一致）。
+      ? JSON.stringify({ ...r, shadowApplied: false })
+      : JSON.stringify(r);
+  } catch (err) {
+    // 判定档失败 ⇒ 上游走降级链/兜底（回落口径）——failures 与 degradations 各记一次
+    await noteCall({ ok: false, degraded: true });
+    throw err;
   }
-  const built = buildJudgeState(
-    { text: prompt, evidenceReadiness: 'none' },
-    { prefixFields: [], maxChars: 8000, consumer: 'loop/engineer-decide' },
-  );
-  if (!built.ok) {
-    throw new Error(`判定 state ${built.reason}（${built.chars}/${built.maxChars}）——按处置序弃权，不截断`);
-  }
-  const r = await decisionChannel.judge(built.state, decisionQuestions);
-  // 影子门（J3:144）：shadow 档判定照跑但 effective 恒为基线（不改变行为）；
-  // active 档未过对账（reconciled=0）⇒ ShadowGateError 拒绝启用；off 在本函数不可达
-  // （路由层归一，runDecisionModel 首行断言兜底）。判定结果落痕由
-  // decision-log 侧承担（同源 payload_sha256），此处只管「是否生效」。
-  const gated = applyWithShadowGate(
-    getJudgeMode(),
-    getShadowLedger(),
-    { grade: String((r as { answers?: unknown[] }).answers?.length ?? 0), target: 'decision-model' },
-    { grade: '0', target: 'decision-model' },
-  );
-  if (gated.shadow) {
-    // shadow：结果照常返回给审计链落痕，但标记未生效——调用方拿到的仍是判定答案，
-    // 「不改变行为」由外层消费者按 applied=false 处置（与 J3:144「只落痕不影响行为」一致）。
-    return JSON.stringify({ ...r, shadowApplied: false });
-  }
-  return JSON.stringify(r);
+  await noteCall({ ok: true });
+  return result;
 }
 
 export async function defaultDecideCallLLM(prompt: string, route: ModelRoute): Promise<string> {

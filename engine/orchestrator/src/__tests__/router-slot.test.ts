@@ -340,6 +340,37 @@ describe('第二章 · 判定分层编排（L0/L1/L2）', () => {
     expect(out.layer).toBe('L0');
     expect(out.grade).toBe('ASK');
   });
+
+  it('生产 auditSink（fresh-eyes P1-①）：L1 判定回执经 createJudgeAuditSink 落 decision-log 链（receipt 落链可见）', async () => {
+    // 与 mcp router-slots adjudicate 同款生产 sink（createJudgeAuditSink）——
+    // 本处注入 FakeChannel 让 L1 真实可达，断言回执五件经 emitDecision 受控
+    // 写入口落 decision-log.jsonl（HMAC 链内，不旁路）。
+    const { readFileSync } = await import('fs');
+    const { getDecisionLogPath } = await import('@sofagent/core');
+    const { createJudgeAuditSink } = await import('../router/intent-triage');
+    const tmp = mkdtempSync(join(tmpdir(), 'judge-sink-'));
+    const savedKey = process.env.SOFAGENT_KEY_PATH;
+    process.env.SOFAGENT_KEY_PATH = join(tmp, 'hmac-key'); // 密钥隔离（先例：decision-chain.test）
+    const { writeFileSync } = await import('fs');
+    writeFileSync(join(tmp, 'hmac-key'), 'test-hmac-key-0123456789abcdef');
+    try {
+      const channel = new FakeChannel([{ id: 'route', value: 'local', probability: 0.95, distribution: { local: 0.95, cloud: 0.05 }, status: 'answered' }]);
+      const triage = new IntentTriage({ channel, auditSink: createJudgeAuditSink(tmp) });
+      const out = await triage.triage(state(), choiceQ());
+      expect(out.layer).toBe('L1'); // L1 真实可达（sink 只在 L1 成功路径触发）
+      const log = readFileSync(getDecisionLogPath(tmp), 'utf-8');
+      const entry = JSON.parse(log.trim().split('\n').at(-1)!);
+      expect(entry.agentId).toBe('intent-triage');      // 生产 sink 签名
+      expect(entry.judgeReceipt).toBeDefined();          // 回执五件落链
+      expect(entry.judgeReceipt.stateDigest).toMatch(/^[0-9a-f]{64}$/); // 摘要非原文
+      expect(entry.judgeReceipt.probabilities).toEqual([0.95]);
+      expect(JSON.stringify(entry)).not.toContain(state().text);      // 不落原文
+    } finally {
+      if (savedKey === undefined) delete process.env.SOFAGENT_KEY_PATH;
+      else process.env.SOFAGENT_KEY_PATH = savedKey;
+      try { rmSync(tmp, { recursive: true, force: true }); } catch { /* */ }
+    }
+  });
 });
 
 // ────────────────────────────────────────────────
