@@ -617,7 +617,7 @@ export interface CommitMeta {
 
 /**
  * AI 账号域清单（轨①判据）。
- * 真值与证据见 `docs/AI-ATTRIBUTION.md` §2.2——改这里必须同批改该文件，禁单改一处。
+ * 真值与证据见 `docs/guides/AI-ATTRIBUTION.md` §2.2——改这里必须同批改该文件，禁单改一处。
  */
 export const AI_ACCOUNT_DOMAINS: readonly string[] = [
   'anthropic.com',

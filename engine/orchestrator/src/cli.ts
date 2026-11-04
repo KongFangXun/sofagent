@@ -292,7 +292,7 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
     }
     case 'judge-attribution': {
       // 生产调用点（F6.4 #5）：AI 参与度审计报告。
-      // 口径真值在 docs/AI-ATTRIBUTION.md；本命令只取数 + 渲染，不做归属判定。
+      // 口径真值在 docs/guides/AI-ATTRIBUTION.md；本命令只取数 + 渲染，不做归属判定。
       const { buildAiAttributionReport } = await import('./router/ai-attribution-report');
       const limitIdx = args.indexOf('--limit');
       const cwdIdx = args.indexOf('--cwd');

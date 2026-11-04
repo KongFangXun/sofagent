@@ -3,7 +3,7 @@
 // ------------------------------------------------------------
 // 分工：`judge-observability.computeAiParticipation` 只做**纯计算**（不碰 git）；
 // 本模块负责**取数 + 渲染**，由 `cli.ts` 的 `judge-attribution` 子命令调用。
-// 口径真值：`docs/AI-ATTRIBUTION.md`（S3 §十二·四 裁定）；本文件不定义口径，只消费。
+// 口径真值：`docs/guides/AI-ATTRIBUTION.md`（S3 §十二·四 裁定）；本文件不定义口径，只消费。
 // ============================================================
 
 import { execFileSync } from 'child_process';
@@ -61,7 +61,7 @@ export function renderAiAttributionReport(p: AiParticipation, opts: { window: st
   lines.push('**局限（随读数同出，缺一条即不可用）**');
   for (const l of p.limitations) lines.push(`- ${l}`);
   lines.push('');
-  lines.push('> 口径：双轨归属（邮箱域 / 协作 trailer），真值见 `docs/AI-ATTRIBUTION.md`；只观测不评判，不单独作能力声明。');
+  lines.push('> 口径：双轨归属（邮箱域 / 协作 trailer），真值见 `docs/guides/AI-ATTRIBUTION.md`；只观测不评判，不单独作能力声明。');
   return lines.join('\n');
 }
 
