@@ -271,17 +271,18 @@ export class IntentTriage {
   }
 
   /**
-   * §二 校准参数随判定落痕（v1.8.0）：从校准门控读本次判定面的校准状态——
-   *   - 未注入 calibration（校准面未接线）⇒ undefined（不编造状态）；
+   * §二 校准参数随判定落痕（v1.8.0）：从 core 的置信度声明登记表（calibrationClaimRegistry
+   * 单例——决策路径校准状态的既有读面，与 uncalibratedDecisionPathClaims 同源）读本次判定面状态：
    *   - 决策路径声明含 uncalibrated ⇒ `{calibStatus:'uncalibrated'}`（不得附依据）；
    *   - 全 calibrated ⇒ 取首个带 evidence 的声明作代表（三件随附）；
-   *   - 决策路径无声明 ⇒ undefined（无状态可报）。
+   *   - 决策路径无声明 ⇒ undefined（无状态可报，不编造）。
+   * ⚠️ 与 CalibrationRegistry（decision-channel 的分桶记录表）不是一张表——别混用。
    */
   private calibrationReceipt():
     | { calibStatus: 'calibrated' | 'uncalibrated'; evidence?: { calibrationSetVersion: string; ece: number; fittedAt: string } }
     | undefined {
-    if (!this.calibration) return undefined;
-    const claims = this.calibration.registry.claimsInDecisionPath();
+    registerLegacyConfidenceClaimsOnce();
+    const claims = calibrationClaimRegistry.claimsInDecisionPath();
     if (claims.length === 0) return undefined;
     if (claims.some((c) => c.calibStatus === 'uncalibrated')) return { calibStatus: 'uncalibrated' };
     const withEvidence = claims.find((c) => c.evidence !== undefined);
