@@ -1842,7 +1842,8 @@ async function s444() {
   // ② 章九 DSH 插件 npm 首发面（仓内**可发布**就绪态）
   const dshDir = rel('engine/dsh-plugins');
   const plugins = fs.readdirSync(dshDir).filter((n) => n.startsWith('cordis-plugin-sofagent')).sort();
-  if (plugins.length !== 7) bad.push('DSH 插件包数=' + plugins.length + '（应 7）');
+  // v1.8.0 升锚 7→8：cordis-plugin-sofagent-rsi-corpus 有意新增（B2 插件，golden 64 位 sha 冻结）
+  if (plugins.length !== 8) bad.push('DSH 插件包数=' + plugins.length + '（应 8）');
   for (const n of plugins) {
     const pkgPath = rel('engine/dsh-plugins/' + n + '/package.json');
     const patchPath = rel('engine/dsh-plugins/' + n + '/cordis.patch.yml');
@@ -1913,7 +1914,7 @@ async function s444() {
     const oos = ms.evaluateMandateRequest({ subject: 'bot-444', action: 'rm_rf' }, new Date(), dataDir);
     if (oos.verdict !== 'out-of-scope') bad.push('越界动作未判 out-of-scope:' + JSON.stringify(oos));
   } catch (e) { bad.push('授权补环行为探针异常:' + (e && e.message)); }
-  _s41x_done(bad, 'S444', '授权三态=no-mandate/covered/out-of-scope·插件包可发布就绪=' + plugins.length + '（+kit 转正，不计入 7）');
+  _s41x_done(bad, 'S444', '授权三态=no-mandate/covered/out-of-scope·插件包可发布就绪=' + plugins.length + '（+kit 转正，不计入 8）');
 }
 
 // ── S445 · v1.5.2 章八 BugFix 批五族代表锚点（release-gate P0-1 闭环，对齐 S343/S440 先例）──
@@ -1958,7 +1959,7 @@ async function s447() {
   for (const s of ['三因子口径', 'FDEing', 'S1M', '交付物治理层']) if (!zh.includes(s)) bad.push('README.md 缺锚:' + s);
   // ② 英文 README：对应段锚词
   const en = fs.readFileSync(rel('README.en.md'), 'utf-8');
-  for (const s of ['three-factor framing', 'FDEing', 'S1M', 'harness']) if (!en.includes(s)) bad.push('README.en.md 缺锚:' + s);
+  for (const s of ['Three-factor framing', 'FDEing', 'S1M', 'harness']) if (!en.includes(s)) bad.push('README.en.md 缺锚:' + s); // v1.8.0 锚随 bee4bdc2c 句式改写升位（the→The）
   // ③ 双语共生：身份叙事任一侧清零 = 漂移（阈值只防清零，不做密度比值——中英行文密度天然不同）
   const zhCount = (zh.match(/FDEing/g) || []).length;
   const enCount = (en.match(/FDEing/g) || []).length;

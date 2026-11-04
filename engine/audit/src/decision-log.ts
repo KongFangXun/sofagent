@@ -195,6 +195,20 @@ type DecisionBusinessEntry = Omit<DecisionLogEntry, keyof ChainFields>;
  * @throws DecisionSchemaError 校验失败（不写文件；含 kind 非法——由内核 kind 门抛出）
  * @throws DecisionWriteError 写入失败（向上传播）
  */
+// v1.8.0 修复（S368 实锤）：进程内单调 ts 生成——同毫秒连写时后者 +1ms 推进。
+// ts 是 decision-log 的主键（查询侧 byTs Map 按它索引），同刻碰撞会让
+// traceDecisionChain 的 Map 后写覆盖先写 ⇒ 因果链断为单节点。emitDecision
+// 连写三条的合法场景（S368 三级因果链实测 5/10 复现）必须被防住。
+// 进程内 lastEmittedTs 足以覆盖同进程连写；跨进程并发写同目录属未支持形态
+// （appendChained 的 prevHash 相接本就要求写侧串行）。
+let lastEmittedTs = 0;
+function monotonicTs(): string {
+  let ms = Date.now();
+  if (ms <= lastEmittedTs) ms = lastEmittedTs + 1;
+  lastEmittedTs = ms;
+  return new Date(ms).toISOString();
+}
+
 export function emitDecision(input: EmitDecisionInput, dataDir?: string): DecisionLogEntry {
   // ── 校验（写前）──
   // 注：kind 合法性由链内核的 kind 门判定（validKinds=VALID_KINDS）——本函数不再重复。
@@ -344,7 +358,7 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
 
   // ── 2-3. 先脱敏再签名（铁律）——业务字段（不含链字段）──
   const baseSanitized: DecisionBusinessEntry = {
-    ts: new Date().toISOString(),
+    ts: monotonicTs(), // v1.8.0：单调化（同毫秒碰撞防护，S368 修复）
     agentId: input.agentId,
     sessionId: input.sessionId,
     kind: input.kind,
@@ -404,7 +418,7 @@ export type EmitRulerChangeInput = Omit<RulerChangeEvent, 'ts'> & { ts?: string 
  */
 export function appendRulerChange(input: EmitRulerChangeInput, dataDir?: string): DecisionLogEntry & { rulerChange: RulerChangeEvent } {
   // fail-closed 业务校验（ruler-change-schema 侧——ts 缺省补写时刻）
-  const event = validateRulerChange({ ts: input.ts ?? new Date().toISOString(), ...stripUndefinedTs(input) });
+  const event = validateRulerChange({ ts: input.ts ?? monotonicTs(), ...stripUndefinedTs(input) }); // v1.8.0：缺省 ts 单调化（与 emitDecision 同防，S368 同根因）
 
   const filePath = getDecisionLogPath(dataDir);
   assertTestEnvNotWritingRealData(filePath, 'appendRulerChange');

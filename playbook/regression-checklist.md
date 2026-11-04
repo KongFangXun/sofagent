@@ -2161,7 +2161,7 @@ git grep -q "redaction/v1" engine/orchestrator/src/router/judge-state.ts || FAIL
 git grep -q "verify-failed-cleanup" engine/orchestrator/src/weights/weights-fetch.ts || FAIL=1                           # A13 fail-closed 清理留痕
 git grep -q "media" install.sh || FAIL=1                                                                                 # A13b USB A 介质档
 grep -q "协议" engine/orchestrator/src/router/stdio-decision-channel.ts || FAIL=1  # A14 协议 SSOT 在文件头（跨仓 runner 逐字取自此——跨仓侧不另立协议说明）
-git grep -q "off-by-one\|先判后增" datasets/label-vs-definition-run.py || git log --oneline -1 --format="%s" -- datasets/label-vs-definition-run.py | grep -q "修复" || FAIL=1  # A15 实验脚本已修
+grep -q "标签>定义" datasets/label-vs-definition-run.py || FAIL=1  # A15 实验脚本在位（v1.8.0 升锚：原 off-by-one 词形从未存在于文件、fallback 钉「最后 commit msg 含修复」被后续 fix commit 顶掉——改锚持久事实=脚本头实验标识；off-by-one 修复语义由 git 演进史承载）
 test -d datasets/v17-eval-reports || FAIL=1  # A16 归档目录在位（v18 产物归 v18 目录——本版评测产物在 factory rsi/eval，不误入 v17）
 grep -q "scenario 497" playbook/acceptance-test.sh || FAIL=1                                                             # A17 场景号实测纪律锚
 # B 类防回归（5 条）

@@ -35,6 +35,7 @@
 | `check/check-cli-entry-parity.sh` | 入口等价性门禁（npm-prefix shim 与 `$SOFAGENT_HOME` 单入口对同 argv 同 rc；安装态不可得时静态断言 shim 形态兜底；v1.8.0 fresh-eyes F12/P0 收口批） | pre-push 4c / 重装后 |
 | `check/test-count.sh` | workspace 测试数汇总（SSOT 反查 · 门禁用） | 发版 SOP / 常态 |
 | `check/sync-test-count.sh` | 测试数联动写入（实测值回写文档声称位） | 发版 SOP 数字收口 |
+| `check/check-version-acceptance.sh` | G1 机械门禁（F6.7 护栏）：已标发版态的 changelog，其 `- [ ]` 留白必须逐条带四态登记（转出/not-measured/部分通过），防「出口判据过了、验收清单留白」 | CI（pr-check）/ 发版 SOP |
 | `check/check-review-system.sh` | 审查体系一致性（维度数/警戒线/S 编号闭环对账） | 发版 SOP 阶段四 |
 | `check/check-tool-health.sh` | 工具脚本健康（路径活性/孤儿配置/set -u 守卫/README 收录对账——递归扫 tools/ 全部 .sh 含子目录；**README 未收录自 v1.4.8 起阻断**） | CI / 发版 SOP 阶段九 |
 | `check/check-daemon-freshness.sh` | daemon 运行态新鲜度守卫（F4 二次复发固化：worktree 滞后/dist 陈旧/进程陈旧三查——修复落运行态第三层的机械防线） | 晨间例行 / daemon 侧提交后 |
@@ -218,6 +219,7 @@
 | `audit/audit-questionnaires/*.json` | 7 个行业审计问卷（每行业 15-20 题，三段式：审计现状/痛点定位/合规要求），`client-audit.mjs` 数据源 |
 | `audit-baseline-sync.sh` | dist 聚合哈希基线同步（rebuild 后重置 `~/.sofagent/internal/audit-dist-hash.txt` 基线——不跑则 P1-A2 影子审计器拦 commit） | 发版 SOP 阶段七 |
 | `audit-dist-hash.mjs` | dist 多入口聚合哈希计算（排序逐文件哈希再聚合——P1-A2 判定的数据源） | 随 baseline-sync 调用 |
+| `fake-probability-census.mjs` | F6.2「既有置信度数值逐条登记」普查器（全量受控文件 grep 置信度数值，产出位置/值/性质/处置四栏台账；引用计数须连文件头部口径段） | F6.2 普查 / 复算 |
 
 > 📌 源码指纹脚本 `audit-src-fingerprint.mjs` **已迁出 tools/**：它必须随包分发（hook 只能从
 > 可信源执行，禁执行被审仓 `tools/` 下的同名脚本——v1.5.4 #28），现位于
@@ -260,6 +262,8 @@
 
 以下脚本**刻意不接 CI**——接了会永久红或本身不是门禁。此处登记用途与「不接线」理由，防「不登记的新脚本过几版就没人知道为什么存在」（对齐 `docs/changelog/releasing/07-tool-health.md` 的登记纪律）。
 
+**根目录数据配置（非脚本，被脚本消费）**：`doc-debt.config.json`（doc-debt 八类判据的仓库术语与计数配置）、`doc-debt-exempt.json`（doc-debt 豁免台账——台账为权威，行内标记单写无效；R4）——由 `check/check-doc-debt.mjs` 消费，挂载 `check-docs` 面。
+
 | 脚本 | 用途 | 不接 CI 的理由 |
 |---|---|---|
 | `check/check-deps.sh` | 关键依赖版本检查（含 DSH / LangGraph / automerge 等；详见 §一） | **exit 1 = 有依赖落后于上游最新版**，而「是否升级」是人工决策（SOP 步骤 5 决策规则）——接线即永久红。需要人做决策的工具不进 CI |
@@ -270,6 +274,18 @@
 | `check/check-forge-branches.sh` | FORGE 分支收编标记对账（未标记的 `forge/*` 分支四要素列出） | 输出为 **INFO 级**（未标记分支需人工确认后补标记），由 `playbook/acceptance-test.sh` 人工链调用 |
 | `check/check-interface-roadmap.mjs` | 接口编号承载对账（G1-G14 接口编号 ↔ ROADMAP/开发日志的真实承载版本；C1-C5 FAIL + C6 WARN，防「编号标了版本、版本却没承载它」） | **需 `--spec <商业机制文档>` 参数**：无参数时打印 SKIP 并 exit 0（SKIP 不算通过）。spec 属商业侧文档、不进开源仓——CI 无处传参，只在商业侧对账时人工跑 |
 | `maintenance/prune-spill.mjs` | spill 临时文件 TTL 回收（>5MB diff 落盘的密钥类内容按保留期清理） | 独立工具（cron/手动） |
+
+## 十二、install/
+
+USB A 安装器档介质工具族（F6.7 D-2 交付面；`install.sh --media` 消费 verify 侧）。
+
+| 脚本 | 用途 | 何时使用 |
+|---|---|---|
+| `install/pack-media.sh` | 组装断网可装介质根并写**权威清单** MANIFEST.json（files[] 逐件 + trees[] 集合指纹；`--delivery-manifest` 对账 factory 交付清单，任一不符 exit 3） | 出正式介质时 |
+| `install/verify-media.sh` | 介质三面校验（fail-closed）：清单指纹 pin / 逐件 bytes+sha256 / 集合树指纹；必需单元 repo+dsh；退出码 2/3/4 分级 | `install.sh --media` 内部 / 介质抽检 |
+| `install/media-tree-hash.mjs` | 树聚合指纹（每行 `<fileSha256>  <relpath>` 按字节序拼接再 sha256——抗「多塞/少塞/改一字节」） | 上面两者内部调用 |
+| `install/verify-media.test.sh` | 介质校验十五态测试（正例/结构/指纹/逐件缺改/集合多塞少件/必需单元/未钉/对账必填/对账可见性） | 改 install 族后 |
+| `install/manifest-pin.txt` | 介质清单指纹钉（当前 `UNPINNED`——未出正式介质前 fail-closed；出介质后回填真指纹） | 随介质发布更新 |
 
 ---
 

@@ -72,6 +72,11 @@
       "require": "./dist/domain/webhook.js",
       "default": "./dist/domain/webhook.js"
     },
+    "./domain/runtime": {
+      "types": "./dist/domain/runtime.d.ts",
+      "require": "./dist/domain/runtime.js",
+      "default": "./dist/domain/runtime.js"
+    },
     "./domain/device": {
       "types": "./dist/domain/device.d.ts",
       "require": "./dist/domain/device.js",

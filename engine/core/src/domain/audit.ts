@@ -88,3 +88,13 @@
   AnchorComparability,
 } from '../calibration-registry';
 /* @internal */ export { CalibrationRegistryError } from '../calibration-registry';
+// ── v1.8.0 · 域分拣补齐（S476 barrel 等价：新符号先进根 barrel 再同步分拣的纪律执行）──
+// 983625ee（isProbabilityConsumable）+ 29bb92e30（decision-kinds 三常量）曾只加根 barrel 未分拣。
+/* @public */ export { isProbabilityConsumable } from '../calibration-registry';
+/* @public */ export { ALL_DECISION_KINDS, HISTORICAL_DECISION_KINDS, READABLE_DECISION_KINDS } from '../decision-kinds';
+/* @internal */ export {
+  hw,
+  ol,
+  prob,
+  SEMANTICS_REGISTRY,
+} from '../confidence-semantics';

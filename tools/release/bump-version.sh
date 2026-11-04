@@ -378,7 +378,12 @@ while IFS= read -r ts; do
   #   同款/先于此立（跨版纪律引用）· changelog 描述一致（对账行）· BUG-xx（bugfix 引用）·
   #   口径/语义/留档/读数/归因/枚举/改判/勘误（行为出处叙述）——2026-10-21 v1.7.0 gate R1 实锤：
   #   8+ 文件头部锚是更早版本、正文引用 v1.6.0 被 BUG-27 误拒。真锚=文件头 vX.Y.Z 声明。
-  _tail_anchor=$(tail -n +11 "$ts" 2>/dev/null | grep -E '^[[:space:]]*//' | grep -vE '同款|先于此立|changelog 描述一致|BUG-[0-9]+|口径|语义|留档|读数|归因|枚举|改判|勘误|章' | grep -oE "v($OLD_3SEG|$OLD_2SEG)([^0-9.]|$)" | head -1 || true)
+  _tail_anchor=$(tail -n +11 "$ts" 2>/dev/null | grep -E '^[[:space:]]*//' | grep -vE '同款|先于此立|changelog 描述一致|BUG-[0-9]+|口径|语义|留档|读数|归因|枚举|改判|勘误|章|收录|§' | grep -oE "v($OLD_3SEG|$OLD_2SEG)([^0-9.]|$)" | head -1 || true)
+  # 「收录」「§」入豁免（v1.8.0 S378 定案）：「（vX.Y.Z P0-16 收录）」是功能溯源标记
+  # （该符号出生于哪版），「vX.Y.Z §七 ·」是 devlog 分节出处引用——两者与「新增/交付」
+  # 同族永不抬号。不豁免会把 flag-table.ts / decision-log.ts 类文件误判「锚点滑出
+  # 窗口」fail-closed exit 1，下游 $(...) || 兜底再把已捕获 stdout 覆盖为空串
+  # （S378 umbrella 断言连坐红）。真锚 = 文件头 vX.Y.Z 声明，§/收录只出现在引用里。
   if [ -z "$_head_hit" ] && [ -n "$_tail_anchor" ]; then
     echo "❌ [bump-version] 版本锚点不在 $ts 头部 10 行内——head -10 切片失效，拒绝静默漏 bump" >&2
     exit 1

@@ -270,7 +270,7 @@ describe('SEC-14 · 恢复关口完整性验证 + 路径边界（revertToSnapsho
 
   it('test_revertToSnapshot_正常round-trip多快照幂等_不回归', () => {
     // v1 内容 + 嵌套子目录
-    fs.mkdirSync(path.join(tmpRoot, 'sub'), { recursive: true });
+    fs.mkdirSync(path.join(tmpRoot, 'sub'), { recursive: true, mode: 0o700 });
     fs.writeFileSync(path.join(tmpRoot, 'app.md'), 'v1 内容');
     fs.writeFileSync(path.join(tmpRoot, 'sub', 'b.txt'), 'nested-1');
     const sha1 = commitSnapshot(tmpRoot);
