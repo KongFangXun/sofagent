@@ -26,7 +26,12 @@ export function getShadowLedger(): ShadowLedger {
   return shadowLedger;
 }
 
-/** 切换判定运行档（唯一写口——active 需先过影子期对账，ShadowGateError 拒绝；off 生效位置在 model-router.route()） */
+/**
+ * 切换判定运行档（唯一写口——直接赋值；shadow→active 的消费侧校验不在本函数：
+ * 影子门在消费处 applyWithShadowGate（judge-state.ts:319-322）——active 未过对账
+ * 时消费面抛 ShadowGateError（纵深防御第二层）；台账装载 bootstrapJudgeModeState
+ * 为持久化层第三口。off 生效位置在 model-router.route()）。
+ */
 export function setJudgeMode(mode: JudgeMode, ledger?: ShadowLedger): void {
   judgeMode = mode;
   if (ledger) shadowLedger.reconciled = ledger.reconciled;

@@ -9,7 +9,7 @@
 //   非白名单源须显式开启（allowAnySource=true）且留痕（trace.sourcePolicy）。
 // ============================================================
 import { createHash } from 'crypto';
-import { mkdirSync, readFileSync, writeFileSync, existsSync, statSync, appendFileSync } from 'fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync, statSync, appendFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 
 /** 来源白名单（可枚举——SSOT 判据①「两源在白名单面可枚举」；内网镜像可配置增补） */
@@ -167,7 +167,10 @@ async function fetchVersionOnce(opts: FetchVersionOpts, attempt: number): Promis
 
   const actual = createHash('sha256').update(body).digest('hex');
   if (actual !== opts.expectedSha256) {
-    const trace = { ...baseTrace, ok: false, stage: 'verify', actualSha256: actual, bytes: body.length };
+    // 校验失败先清 .part（best-effort）：篡改件/坏件残留 .part 会误导下次断点续传
+    //（续传拼出的仍是坏件）；unlink 失败仅留痕，不影响失败结论返回。
+    try { unlinkSync(dest + '.part'); } catch { /* 无 .part 或不可删——跳过（非本次校验结论的一部分） */ }
+    const trace = { ...baseTrace, ok: false, stage: 'verify', actualSha256: actual, bytes: body.length, cleanup: 'verify-failed-cleanup' };
     appendTrace(opts.destDir, trace);
     return {
       ok: false,
@@ -176,7 +179,8 @@ async function fetchVersionOnce(opts: FetchVersionOpts, attempt: number): Promis
     };
   }
   if (opts.expectedBytes !== undefined && body.length !== opts.expectedBytes) {
-    const trace = { ...baseTrace, ok: false, stage: 'verify-bytes', actualSha256: actual, bytes: body.length };
+    try { unlinkSync(dest + '.part'); } catch { /* 同上——坏件不残留续传面 */ }
+    const trace = { ...baseTrace, ok: false, stage: 'verify-bytes', actualSha256: actual, bytes: body.length, cleanup: 'verify-failed-cleanup' };
     appendTrace(opts.destDir, trace);
     return { ok: false, issues: [`字节数不符（期望 ${opts.expectedBytes}，实际 ${body.length}）——拒绝启用`], trace };
   }

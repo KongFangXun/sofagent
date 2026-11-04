@@ -7,7 +7,7 @@
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync } from 'fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, existsSync } from 'fs';
 import { createHash } from 'crypto';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -68,6 +68,54 @@ describe('v1.8.0 §五 · sha256 强校验（fail-closed）', () => {
     // 落盘的只有 trace（无制品本体）
     const out = readFileSync(join(dir, 'fetch-trace.ndjson'), 'utf-8');
     expect(out).toContain('"stage":"verify"');
+  });
+
+  it('校验失败先清 .part（fresh-eyes P2-①）：坏件不残留续传面，错误信息保留且留痕 stage=verify-failed-cleanup', async () => {
+    // http 桩：下载「完成」但内容被篡改 ⇒ sha256 失败——此时 .part 已写入（首段），
+    // 校验失败路径必须在返回前 unlink .part（残留会误导下次断点续传拼出同一坏件）
+    const dest = join(dir, 'cleanme.bin');
+    const { vi } = await import('vitest');
+    const buf = Buffer.from('tampered-full-body');
+    vi.stubGlobal('fetch', async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => String(buf.length) },
+      arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+    }));
+    let partExistedOnVerify = false;
+    try {
+      const r = await fetchVersion({
+        url: 'https://huggingface.co/x/t.bin', destDir: dir, fileName: 'cleanme.bin',
+        expectedSha256: '0'.repeat(64), // 恒不匹配 ⇒ 走 verify 失败路径
+      });
+      expect(r.ok).toBe(false);
+      expect(r.issues[0]).toContain('sha256 不符'); // 错误结论保留（清理不掩盖失败）
+      expect(r.issues[0]).toContain('拒绝启用');
+      // .part 已清：不存在
+      expect(existsSync(dest + '.part')).toBe(false);
+      // trace 留痕：cleanup 标记在位（stage 仍为 verify——终态结论不变）
+      const trace = readFileSync(join(dir, 'fetch-trace.ndjson'), 'utf-8');
+      expect(trace).toContain('"stage":"verify"');
+      expect(trace).toContain('verify-failed-cleanup');
+      void partExistedOnVerify;
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('字节数不符（sha 恰好对不上位数约束）同样清 .part', async () => {
+    const content = 'exact-bytes-content';
+    const url = makeSource(content);
+    const dest = join(dir, 'bytesmismatch.bin');
+    // 先制造 .part 残留（模拟上次半截），file:// 全量读取后走 verify-bytes 失败
+    writeFileSync(dest + '.part', 'stale-half');
+    const r = await fetchVersion({
+      url, destDir: dir, fileName: 'bytesmismatch.bin',
+      expectedSha256: sha(content), expectedBytes: 999, // 字节数恒不符
+    });
+    expect(r.ok).toBe(false);
+    expect(r.issues[0]).toContain('字节数不符');
+    expect(existsSync(dest + '.part')).toBe(false); // 坏件不残留续传面
   });
 });
 

@@ -186,3 +186,29 @@ describe('v1.8.0 review r2 · 处置序第二级', () => {
     expect(JudgeRuntime.resolveCompanionDrift(0.01, 0.05, true)).toBe('ok'); // 未超阈优先
   });
 });
+
+describe('v1.8.0 fresh-eyes P2-③ · 分块 softmax 数值等价锁', () => {
+  it('数学等价锁：分块不得改变概率数值（分块解码与单块全量对同一候选逐项近似相等）', () => {
+    // 同一候选集分两种形态打分：
+    //   单块全量：vocabChunkSize=64（≤ 上界，choiceHeadDirect 一次 softmax）
+    //   分块：vocabChunkSize=3（两块，块内 softmax 后线性域全局归一——softmax 平移不变）
+    // 候选构造含跨块边界的概率悬殊项：选项分数含 opt.length 项（示意实现的线性读数），
+    // 用长短悬殊的标签把 0.9 vs 1e-7 量级的分布做出来，悬殊项跨块放置。
+    const opts = ['aaa', 'bbb', 'ccc', 'dddddddddddddddddddd', 'eee', 'fff'];
+    const ids = opts.map((_, i) => `c${i}`);
+    const direct = choiceHead(makeOfflineEncoder(64), STATE, opts, ids);   // 单块全量
+    const chunked = choiceHead(makeOfflineEncoder(3), STATE, opts, ids);   // 两块（3+3）
+    expect(Object.keys(chunked.scores)).toHaveLength(6);                   // 全候选在分布
+    for (const id of ids) {
+      const a = direct.scores[id]!;
+      const b = chunked.scores[id]!;
+      expect(Number.isFinite(a) && Number.isFinite(b)).toBe(true);
+      // 数值等价：同一候选两形态概率差 < 1e-9（线性域全局 softmax 数学等价——
+      // 若退回「块内概率再 log」路径，1e-12 钳位会让悬殊项此处差出数量级）
+      expect(Math.abs(a - b)).toBeLessThan(1e-9);
+    }
+    // 悬殊面确在：长选项（c3，20 字符）与其余短选项的概率差应显著（分块不磨平差异）
+    const sorted = ids.map((id) => chunked.scores[id]!).sort((x, y) => y - x);
+    expect(sorted[0]! - sorted[1]!).toBeGreaterThan(1e-3);
+  });
+});
