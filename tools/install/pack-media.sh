@@ -19,9 +19,10 @@
 #                 --dsh <DSH 载荷目录> [--gguf <file>] [--modelfile <file>] \
 #                 [--delivery-manifest <factory s1m/delivery/MANIFEST.json>] [--version <artifactVersion>]
 #
-# 交付清单对账（D-2 ①）：给了 --delivery-manifest 就按 kind+basename 逐件比对
-#   bytes 与 sha256，**任一不符即 exit 3**（复用其 sha256 作独立真值源；介质侧不自签）。
-#   未给 ⇒ 打警告并在清单记 deliveryManifest:null（只允许测试介质）。
+# 交付清单对账（D-2 ① · R8-3 起**双向**）：按 kind+basename 逐件比 bytes 与 sha256，
+#   **任一不符即 exit 3**；且介质内不得出现清单未列的件（多摆一件同样 exit 3）。
+#   为什么双向：单向时「多塞一个未列权重」仍记 all-match，而安装会整目录落位。
+#   --delivery-manifest 必填：未给即 exit 2（正式介质必须对账，测试亦须造真清单）。
 #
 # 退出：0=成功 · 2=用法/缺参/源缺失 · 3=与交付清单对账失败
 # 纪律：只读源、只写 <out>；不联网。
@@ -63,12 +64,17 @@ rm -rf "$OUT"
 mkdir -p "$OUT/weights" "$OUT/dsh"
 
 # ── 载荷复制（rsync 优先；无 rsync 用 cp -R）────────────────
-copy_tree () { # <src> <dst>；排除 .git 与 node_modules（介质不装开发依赖）
+copy_tree () { # <src> <dst>；排除 .git / node_modules / .sofagent
+  # · node_modules：介质不带开发依赖（体积 + 平台相关）
+  # · .sofagent：**本机运行态残留**（gitignore 过，含 .git-shadow 快照，实测 38 MB）。
+  #   两个理由必须排除：① 介质不该带走打包者的本机安装态（可能含审计链/凭据类数据）；
+  #   ② 内层 install.sh 会 `rm -rf "${SCRIPT_DIR}/.sofagent"`（旧安装态清理）——若介质里带了这个目录，
+  #   装一次就把介质自己改了，第二次 verify 必红（实测 5987→5985 件/144→104 MB，fail-closed 拒绝安装）。
   local src="$1" dst="$2"
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a --exclude '.git/' --exclude 'node_modules/' "$src/" "$dst/"
+    rsync -a --exclude '.git/' --exclude 'node_modules/' --exclude '.sofagent/' "$src/" "$dst/"
   else
-    ( cd "$src" && tar -cf - --exclude='.git' --exclude='node_modules' . ) | ( cd "$dst" && tar -xf - )
+    ( cd "$src" && tar -cf - --exclude='.git' --exclude='node_modules' --exclude='.sofagent' . ) | ( cd "$dst" && tar -xf - )
   fi
 }
 copy_tree "$REPO" "$OUT/repo"
@@ -100,7 +106,19 @@ const { basename, join } = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const [out, version, tool, deliv] = process.argv.slice(2);
-const sha256 = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
+// 大文件必须流式：readFileSync 对 >2 GiB 文件抛 ERR_FS_FILE_TOO_LARGE。
+// 真权重 3.44 GB / GGUF 3.45 GB 实测踩到——合成介质只有几字节，永远测不出这个上限（R4 新发现）。
+const sha256 = (p) => {
+  const { openSync, readSync, closeSync } = require('node:fs');
+  const h = createHash('sha256');
+  const fd = openSync(p, 'r');
+  try {
+    const buf = Buffer.allocUnsafe(4 << 20);
+    let n;
+    while ((n = readSync(fd, buf, 0, buf.length, null)) > 0) h.update(buf.subarray(0, n));
+  } finally { closeSync(fd); }
+  return h.digest('hex');
+};
 
 const files = [];
 const pushFiles = (dir, kind) => {
@@ -148,8 +166,17 @@ if (deliv) {
     if (hit.sha256 !== e.sha256) bad.push(`sha 不符：${e.kind}/${b}（介质 ${String(hit.sha256).slice(0, 16)}… ≠ 交付 ${String(e.sha256).slice(0, 16)}…）`);
     else if (Number.isFinite(e.bytes) && hit.bytes !== e.bytes) bad.push(`字节数不符：${e.kind}/${b}（${hit.bytes} ≠ ${e.bytes}）`);
   }
+  // ── 反向对账（R8-3）：介质多摆的件同样必须拒 ──
+  // 为什么单向不够：只查「清单列了、介质有没有」时，往 weights/ 多塞一个未列件仍算 all-match，
+  // 而安装会把整个 weights/ 目录 cp -R 落位 ⇒ 未过账的权重进生产。两侧都查才算「集合相等」。
+  const listed = new Set((d.files || []).map((e) => `${e.kind}:${basename(e.path)}`));
+  const stray = files.filter((f) => !listed.has(`${f.kind}:${f.path}`));
+  if (stray.length) {
+    bad.push(...stray.map((f) => `介质含交付清单未列件：${f.kind}/${f.path}（未过账，拒收）`));
+  }
+
   if (bad.length) {
-    console.error(`❌ 与交付清单对账失败（fail-closed）：${bad.length} 处`);
+    console.error(`❌ 与交付清单对账失败（fail-closed，双向）：${bad.length} 处`);
     for (const b of bad) console.error(`   · ${b}`);
     process.exit(3);
   }

@@ -396,6 +396,17 @@ if [ -n "${MEDIA_ROOT}" ]; then
   export SOFAGENT_MEDIA_ROOT="${MEDIA_ROOT}"
   export SOFAGENT_MEDIA_WEIGHTS="${MEDIA_STAGE}/weights"
   export SOFAGENT_MEDIA_DSH="${MEDIA_STAGE}/dsh"
+  # ── 持久化（F6.7 R8-5）：环境变量只活在安装进程里，daemon 重启是新进程 ⇒ 必须落文件 ──
+  # 消费方：engine/daemon/src/media-env.ts 的 loadMediaEnv()（daemon start 第一步读回）。
+  # 选文件而非 plist/systemd：launchd / systemd / 手动三种拉起共用一条路径，且随卸载一起清。
+  cat > "${MEDIA_STAGE}/media.env" <<MEDIA_ENV_EOF
+# USB A 安装器档 · 介质读源（由 install.sh --media 写入；daemon 启动时读回）
+# 键名与 engine/daemon/src/media-env.ts 的 MEDIA_ENV_KEYS 必须一致。
+SOFAGENT_MEDIA_ROOT=${MEDIA_ROOT}
+SOFAGENT_MEDIA_WEIGHTS=${MEDIA_STAGE}/weights
+SOFAGENT_MEDIA_DSH=${MEDIA_STAGE}/dsh
+MEDIA_ENV_EOF
+  ok "介质读源已持久化：${MEDIA_STAGE}/media.env（重启后 daemon 读回）"
   ok "判定件 + DSH 节点已落位：${MEDIA_STAGE}（weights / dsh）"
   pass_args=(); _skip=0
   for _arg in "${ORIGINAL_ARGS[@]}"; do

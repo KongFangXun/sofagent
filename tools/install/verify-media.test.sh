@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ============================================================
-# verify-media.test.sh · 介质校验十四态测试（F6.7 D-2 / D-13 / R7-2）
+# verify-media.test.sh · 介质校验十五态测试（F6.7 D-2 / D-13 / R7-2 / R8-3）
 # ============================================================
 # 覆盖：正例 · 结构缺失 · 清单指纹 · 逐件缺/改 · 集合多塞/少件 · 必需单元缺 · 未钉指纹
 #       · 交付清单对账必填（pack 侧）· 对账结果必被 verify 读到
-#       · weights/gguf 未列件必拒（R7-2：原先只绑 repo/dsh）
+#       · weights/gguf 未列件必拒（R7-2：原先只绑 repo/dsh）· pack 侧反向对账（R8-3）
 # 全部在临时目录内造件，不碰仓库、不联网。
 # 退出：0 = 全部通过（pass=N fail=0）；1 = 有失败
 # ============================================================
@@ -62,7 +62,7 @@ fi
 PIN="$WORK/pin.txt"
 printf 'test-artifact@1 %s\n' "$(shasum -a 256 "$WORK/media/MANIFEST.json" | cut -d' ' -f1)" > "$PIN"
 
-echo "── 十四态 ──"
+echo "── 十五态 ──"
 run () { bash "$VERIFY" "$1" --pin "$PIN" >/dev/null 2>&1; echo $?; }
 
 ck "正常介质" 0 "$(run "$WORK/media")"
@@ -113,6 +113,15 @@ node -e "const fs=require('fs');const f='$WORK/m-nodelivrec/MANIFEST.json';const
 printf 'test-artifact@1 %s\n' "$(shasum -a 256 "$WORK/m-nodelivrec/MANIFEST.json" | cut -d' ' -f1)" > "$WORK/pin-nodeliv.txt"
 bash "$VERIFY" "$WORK/m-nodelivrec" --pin "$WORK/pin-nodeliv.txt" >/dev/null 2>&1 && _rc4=0 || _rc4=$?
 ck "清单无对账记录（D-2①·verify 侧）" 3 "$_rc4"
+
+# ── R8-3：pack 侧反向对账（介质不得含清单未列件）──────────
+mkdir -p "$WORK/src2/weights"
+cp "$WORK/src/weights/"* "$WORK/src2/weights/"
+printf 'stray\n' > "$WORK/src2/weights/stray.bin"
+"$PACK" --out "$WORK/media-stray" --repo "$WORK/src/repo" --weights "$WORK/src2/weights" \
+  --dsh "$WORK/src/dsh" --gguf "$WORK/src/gguf/adapter.gguf" \
+  --version "test-artifact@1" --delivery-manifest "$WORK/deliv.json" >/dev/null 2>&1 && _rc5=0 || _rc5=$?
+ck "pack 反向对账：源多摆未列件（R8-3）" 3 "$_rc5"
 
 echo "—— verify-media: pass=$pass fail=$fail"
 [ "$fail" -eq 0 ]

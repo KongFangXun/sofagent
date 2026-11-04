@@ -158,8 +158,12 @@ while [[ $# -gt 0 ]]; do
         cat > "$_GD/hooks/pre-push" <<'SOFAGENT_PREPUSH'
 #!/bin/bash
 # sofagent pre-push hook —— 由 `bash tools/release/pre-push-check.sh --install-hook` 生成
-# 只跑不可逆风险守卫（--guard-only，约 30 秒）。刻意不跑完整预检：hook 必须快到
-# 没人想绕过，否则会被 --no-verify 绕开，比不装更糟。完整预检仍由 CI 与手动全量承担。
+# 载荷 = `--guard-only` 三段（约 30 秒）：
+#   ① 开源边界守卫（check-open-boundary.sh）② 家族文档债务八类（check-doc-debt.mjs）
+#   ③ 版本验收留白（check-version-acceptance.sh）
+# 刻意不跑完整预检：hook 必须快到没人想绕过，否则会被 --no-verify 绕开，比不装更糟。
+# 完整预检仍由 CI 与手动全量承担。**改 hook 载荷后必须重跑 --install-hook**，
+# 否则现有 .git/hooks/pre-push 不会更新（历史坑：第 3l 段只登记未接线）。
 # 卸载：rm .git/hooks/pre-push
 # 临时绕过（谨慎）：git push --no-verify
 TOP=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0

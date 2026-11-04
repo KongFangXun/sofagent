@@ -49,7 +49,7 @@ command -v node >/dev/null 2>&1 || { echo "❌ 需要 node（用于解析清单�
 sha_of () {
   if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1
   elif command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
-  else node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync(process.argv[1])).digest('hex'))" "$1"
+  else node -e "const c=require('crypto'),f=require('fs');const h=c.createHash('sha256');const fd=f.openSync(process.argv[1],'r');const b=Buffer.allocUnsafe(4<<20);let n;while((n=f.readSync(fd,b,0,b.length,null))>0)h.update(b.subarray(0,n));f.closeSync(fd);process.stdout.write(h.digest('hex'))" "$1"
   fi
 }
 
@@ -94,7 +94,19 @@ const KINDS = {
   modelfile: { dir: '' },
 };
 
-const sha256file = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
+// 大文件必须流式：readFileSync 对 >2 GiB 文件抛 ERR_FS_FILE_TOO_LARGE。
+// 真权重 3.44 GB / GGUF 3.45 GB 实测踩到——合成介质只有几字节，永远测不出这个上限（R4 新发现）。
+const sha256file = (p) => {
+  const { openSync, readSync, closeSync } = require('node:fs');
+  const h = createHash('sha256');
+  const fd = openSync(p, 'r');
+  try {
+    const buf = Buffer.allocUnsafe(4 << 20);
+    let n;
+    while ((n = readSync(fd, buf, 0, buf.length, null)) > 0) h.update(buf.subarray(0, n));
+  } finally { closeSync(fd); }
+  return h.digest('hex');
+};
 
 if (!Array.isArray(man.files) || man.files.length === 0) fail('清单 files[] 为空——无可校验条目');
 

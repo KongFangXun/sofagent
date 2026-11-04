@@ -401,6 +401,19 @@ async function main() {
       //    （默认关闭不占端口；启用时 loopback 绑定——外部不可达默认安全）。
       if (process.env.SOFAGENT_HEALTH_PORT) {
         try {
+          // 介质读源持久化读回（F6.7 R8-5）：安装期的 SOFAGENT_MEDIA_* 只活在安装进程里，
+          // 重启后 daemon 是新进程 ⇒ 必须从 <dataDir>/media/media.env 读回，否则退回联网路径。
+          try {
+            const { loadMediaEnv } = await import('./media-env');
+            const { getDataDir: getMediaDataDir } = await import('@sofagent/core');
+            const m = loadMediaEnv(getMediaDataDir());
+            if (m.loaded.length > 0) {
+              console.log(`  ✅ 介质读源已读回：${m.loaded.join(', ')}（${m.path}）`);
+            }
+          } catch (e) {
+            console.warn(`  ⚠️ 介质读源读回失败：${(e as Error).message}——权重将走联网路径`);
+          }
+
           // 挂-4 live 装载（F6.5 #5）：daemon 启动即把持久对账面装进进程内单例。
           // 台账损坏 ⇒ 告警并保持拒绝（不静默归零：损坏 ≠ 没对过账）。
           try {
