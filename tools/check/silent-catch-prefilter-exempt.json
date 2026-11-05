@@ -101,6 +101,7 @@
   "engine/orchestrator/src/refine-agent/image-meta.ts",
   "engine/orchestrator/src/refine-agent/quality-rule-set.ts",
   "engine/orchestrator/src/route/route-request.ts",
+  "engine/orchestrator/src/router/ai-attribution-report.ts",
   "engine/orchestrator/src/router/calibration-report.ts",
   "engine/orchestrator/src/router/decision-abstain.ts",
   "engine/orchestrator/src/router/deterministic-judge.ts",
