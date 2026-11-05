@@ -14,6 +14,7 @@ import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
 import * as auditHistory from '../audit-history';
 import { runDoctor, detectInstallShape, formatVersionRepairHint } from '../doctor';
+import { VERSION } from '../shared/constants';
 
 /**
  * v1.4.3 十三：Ontology 完整性检查测试的公共隔离装置。
@@ -712,11 +713,12 @@ describe('doctor 安装完整性异源对账（P0-17）', () => {
   });
 
   it('VERSION 文件缺失 + 实装目录存在 → 退化对引擎版本对账并告警缺失', () => {
-    writeRouterPkgs({ audit: '1.7.0' });
+    // 实装版本动态取引擎 VERSION——写死版本号会在每次 bump 后必红（发版批实测）
+    writeRouterPkgs({ audit: VERSION });
     const r = runDoctor(projDir);
     const out = t.output();
     expect(out).toContain('VERSION 文件缺失——无法对账');
-    // 实装 1.7.0 == 引擎 VERSION → 不出差异明细，但缺失本身已 installIntegrity=false
+    // 实装 == 引擎 VERSION → 不出差异明细，但缺失本身已 installIntegrity=false
     expect(out).not.toContain('≠ VERSION 标记');
     expect(r.installIntegrity).toBe(false);
   });
