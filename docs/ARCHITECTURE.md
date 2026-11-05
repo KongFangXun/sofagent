@@ -225,7 +225,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
-| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 工具门禁 + 判定通道（v1.8.0：DecisionChannel/三档接线/回执五件/并行解码/权重分发，详见 [§四 判定路由](#三档分工边界v180-四--判定档出判定--执行档出行为)） |
+| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 工具门禁 + 判定通道（v1.8.0：DecisionChannel/三档接线/回执五件/并行解码/权重分发，详见 [判定路由（三档分工）](#三档分工边界v180-四--判定档出判定--执行档出行为)） |
 | train | 后训模块：train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告 + 云端执行面（替换路径 `import { createTrainJob } from '@sofagent/train'`） | ✅ 已实现（测试数活读数） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（684 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources 暴露（104 tools 分域清单见 [API](./API.md)，由 tool-registry 生成） |

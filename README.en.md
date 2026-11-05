@@ -27,7 +27,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.7.0: Decision Substrate · Stage 2 (Model & Calibration)](#v170-decision-substrate--stage-2-model--calibration)
+- [v1.8.0: Judgment Foundation - Stage 3 (Wiring & Distribution)](#v180-judgment-foundation---stage-3-wiring--distribution)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
