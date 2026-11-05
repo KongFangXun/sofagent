@@ -131,7 +131,7 @@ What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🔎 **Judgment trail**—decision-log causal chains record each accountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
 - ⚙️ **Decision channel & distribution (v1.8.0 form)**—the default `DecisionChannel` implementation (local subprocess, NDJSON over stdio) +
-off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a weights distribution path (source whitelist / strict sha256 / resumable download / two-tier USB offline runtime)—v1.8.0 in development, unreleased (form holds; capability claims land with v2.0.0; latest release v1.7.0)
+off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a weights distribution path (source whitelist / strict sha256 / resumable download / two-tier USB offline runtime)—v1.8.0 developed, unreleased (form holds; capability claims land with v2.0.0; latest release v1.7.0)
 - 🔗 **Judgment made provable**—the audit history lands on an HMAC chain; `--verify-chain` recomputes chain integrity offline, so conclusions can be re-checked by a third party
 
 > Boundary: the judgment layer's probability output has not yet completed calibration wiring (criteria thresholds still sit on the zero-shot baseline); rule verdicts are backstopped by deterministic judges—judgment-layer takeover is a future state (see [ARCHITECTURE](./docs/ARCHITECTURE.md)).
@@ -203,22 +203,19 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.7.0: Decision Substrate · Stage 2 (Model & Calibration)
+## v1.8.0: Judgment Foundation - Stage 3 (Wiring & Distribution)
 
-🧪 **Making probabilities mean something** — stage two of the four-stage substrate: training uses strictly proper scoring rules (truthful probabilities score better than skewed ones), calibration makes output probabilities readable against reality, and discipline gates keep unjustified confidence
-off the decision path.
+🧭 **The judge goes from "model-ready" to "engineering-integrable"** — third stage of the four-stage judgment foundation: judgment plugs into orchestration via a standard channel (never occupying the local main-model slot), and ships as a distributable artifact (sha256-verified end to end):
 
-| Capability | One-liner | Reachable |
+| Capability | One-liner | Access |
 |---|---|---|
-| **RLCD strictly-proper training** | Per-primitive losses (noul log-score / choice log+spherical / score RPS) + asymmetric penalty on extreme claims + RLOO / KL anchor / downweight defense lines (see Note 1) | CLI reachable: `sofagent train rlcd --data <RlcdTrainSample[] JSON array file> [--dryrun]` |
-| **Bucketed temperature calibration** | Per-primitive fitting · score isotonicity · disjoint calibration set assertion (same criterion across sides) (see Note 2) | SDK-face |
-| **Calibration discipline gate** | Confidence/probability thresholds consumed on decision paths must carry calibration evidence or an explicit `uncalibrated` marker — unmarked ones cannot ship (check-calibration-claims wired into the release chain) | SDK-face · gate |
-| **Abstention as a fourth state** | Abstain stands beside pass/warn/fail (three-source evidence: low confidence / OOD / missing criteria) · per-primitive thresholds · cannot be disabled when ECE misses the line | SDK-face |
-| **Three-state comparison & dual-threshold verdict** | Zero-shot / trained / calibrated side by side · agreement ≥0.70 (zh/en split) and ECE ≤0.10 (per primitive × language) judged independently; measured: ECE 17/18 pass, agreement misses ⇒ stage three deferred (v1.7.0 release-time reading; 2026-10-30 retest: all three thresholds met, deferral lifted, see ROADMAP) (Note 3) | SDK-face · `sofagent audit --criteria` lists criteria via CLI |
-
-> Note 1: probability-target assertion (hard labels rejected) + three-tier weighting + reproducibility manifest
-> Note 2: on isolation violations, emitting readouts for violating samples is rejected (a refusal-to-emit, not a pass) · calibration artifact is plain JSON, weight-free
-> Note 3: not-measured never counts as pass. Measured: ECE 17/18 cells pass, agreement misses ⇒ stage three deferred (v1.7.0 release-time reading; 2026-10-30 retest: all three thresholds met, deferral lifted, see ROADMAP)
+| **DecisionChannel default impl** | Local subprocess NDJSON protocol (StdioDecisionChannel): per-request timeout kill · guaranteed process reaping · single-source protocol SSOT | SDK |
+| **Three-mode wiring** | off normalizes / shadow never changes behavior / active requires reconciliation — the decision tier never enters the auto-routing matrix | `judgeMode` config |
+| **Five-part receipt on-chain** | state digest / evidence refs / model identity / full probabilities / deterministic baseline — every judgment is replayable (content:false fingerprint discipline) | decision-log |
+| **Parallel constrained decoding** | One forward pass yields all fields: field-count-based packing · over-vocab chunking with zero truncation · companion-drift handling | SDK |
+| **Four observability fields** | calls / failures / degradations / latency buckets, exposed via MCP | `sofagent daemon` |
+| **Weights distribution path** | fail-closed four red lines (allowlist/sha256/resume/progress) + two USB offline modes (A installer --media · B portable plug-and-run) | `install.sh --media` |
+| **/v1/systemone facade** | The judge is directly consumable by existing System One clients (loopback binding · zero content logging) | HTTP POST |
 
 ## The Two FDE Harness Phases
 

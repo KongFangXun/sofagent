@@ -179,17 +179,19 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 > 📌 `AGENTS.md`（Codex）/ `GEMINI.md`（Gemini CLI）/ `.claude/` / `.cursor/` 为各宿主的分层挂载点，均为对 `SKILL/` 的薄引用。
 
-## v1.7.0：判定底座 · 阶段二（模型与校准）
+## v1.8.0：判定底座 · 阶段三（接线与分发）
 
-🧪 **让概率变得有意义**——四阶段判定底座第二版：训练用严格适当评分规则（报真实概率得分优于偏离概率），校准让输出概率可对表读数，纪律门禁让无依据的置信度上不了决策路径：
+🧭 **判定件从「模型可用」到「工程可接」**——四阶段判定底座第三版：判定以标准通道接入编排（不占本地主模型槽），以可分发制品走出仓库（sha256 全程校验）：
 
 | 能力 | 一句话 | 触达方式 |
 |---|---|---|
-| **RLCD 严格适当评分训练** | 三原语分派损失 + 非对称惩罚 + RLOO/KL/降权三防线；概率目标断言 + 三档加权 + 可复现清单 | CLI 可达：`sofagent train rlcd --data <RlcdTrainSample[] JSON 数组文件> [--dryrun]` |
-| **分桶温度校准** | 三原语分立拟合 · score 保序 · 校准集隔离断言 · 制品纯 JSON 无权重 | SDK 面 |
-| **校准纪律门禁** | 决策路径的置信度阈值须带校准依据或显式 `uncalibrated` | SDK 面 · 发布链 |
-| **弃权第四态** | 与 pass/warn/fail 并列（三源留痕）· 门槛按原语分档 · ECE 未达阈不可关 | SDK 面 |
-| **三态对照与双达阈判定** | 零样本/训练后/校准后对照 · 一致率 ≥0.70（中英分列）与 ECE ≤0.10 两线独立判定；实测：ECE 17/18 达线、一致率未达 ⇒ 阶段三暂缓（该为 v1.7.0 发版时点读数；2026-10-30 复测三线全达，暂缓已解除，见 [ROADMAP](./docs/ROADMAP.md)） | SDK 面 · `sofagent audit --criteria` 判据列示 CLI 可达 |
+| **DecisionChannel 默认实现** | 本地子进程 NDJSON 协议（StdioDecisionChannel）：逐请求超时即杀 · 进程必回收 · 协议 SSOT 单源 | SDK 面 |
+| **三档接线** | off 归一 / shadow 影子不改行为 / active 过对账才生效——判定档永不进自动路由矩阵 | `judgeMode` 配置 |
+| **判定回执五件落链** | state 摘要 / 证据引用 / 模型身份 / 完整概率 / 确定性基线——每次判定可回放（content:false 指纹纪律） | decision-log |
+| **并行约束解码** | 一次前向出全部字段：打包按字段数 · 超词表分块零截断 · 批内同伴处置序 | SDK 面 |
+| **观测四字段** | calls / failures / degradations / 延迟桶计数，经 MCP 透传 | `sofagent daemon` |
+| **权重分发通路** | fail-closed 四红线（白名单/sha256/断点续传/进度回调）+ USB 两档离线（A 安装器 --media · B 便携即插即跑） | `install.sh --media` |
+| **/v1/systemone 门面** | 判定件可被 System One 既有客户端直接消费（环回绑定 · 零内容日志） | HTTP POST |
 
 ## FDE Harness 两阶段
 
