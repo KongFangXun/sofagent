@@ -47,7 +47,7 @@
 <details>
 <summary>🧩 三因子口径（点开，术语见〈<a href="#什么是-fde-harness">什么是 FDE Harness</a>〉）</summary>
 
-> sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M 决策模型）排期 v1.6.0–v1.9.0、v2.0.0 宣告。三层各司其职。
+> sofagent 是**自带 Harness 的 FDE 交付物治理层**——工程层（FDEing）与治理层（harness）已交付，判定层（S1M 决策模型）排期 v1.6.0–v1.9.0、v2.0.0 宣告（阶段三 v1.8.0 已发版 2026-11-05）。三层各司其职。
 > 身份公式 **FDEing × S1A（S1A = S1M + Harness）**，口径见 [PHILOSOPHY](./docs/PHILOSOPHY.md)。
 
 </details>
@@ -120,7 +120,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 - 🤖 **部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），装进你已有的 AI 工具，从"你干活"变"你派活"
 - 📦 **判断冻结成交付物**——每个节点带「做好标准（merge_criteria）· 谁拍板（approver）」，机器可判定、跨阶段共享
 
-**判定层 · S1M**（判断与生成分离的决策模型；**v1.6.0–v1.9.0 施工·v2.0.0 宣告——阶段一/二已交付，阶段三暂缓已于 2026-10-30 解除（复测三线全达，见 [ROADMAP](./docs/ROADMAP.md) v1.7.x 修补线 · v1.8.0 已开工）**——本版只声明路线；锚定 [S1M-DECISION-POINTS](./FDE/S1M-DECISION-POINTS.md)，已交付落点是既有判定与举证面）：
+**判定层 · S1M**（判断与生成分离的决策模型；**v1.6.0–v1.9.0 施工·v2.0.0 宣告——阶段一/二已交付，阶段三已于 v1.8.0 交付（接线与分发，2026-11-05 发版）**——本版只声明路线；锚定 [S1M-DECISION-POINTS](./FDE/S1M-DECISION-POINTS.md)，已交付落点是既有判定与举证面）：
 
 - 🔎 **判定留痕**——decision-log 因果链记录每个可问责决策（谁拍板、依据什么、为何这么做），供 auto-PR 解释块与 daemon 周报消费
 - ⚙️ **判定通道与分发（v1.8.0 形态）**——`DecisionChannel` 默认实现（本地子进程 NDJSON）+ off/shadow/active 三档接线 + 判定回执五件落链 + 权重分发通路（来源白名单 / sha256 强校验 / 断点续传 / USB 两档离线运行）——v1.8.0 已发版（2026-11-05）

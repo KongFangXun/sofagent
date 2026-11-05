@@ -43,7 +43,7 @@
 
 > 🧩 **Three-factor framing**: sofagent is a **governance layer for FDE deliverables with a built-in Harness**—engineering (FDEing) and governance (harness) layers shipped; the judgment layer (S1M) scheduled for v1.6.0–v1.9.0—FDEing is the engineering layer (turning
 > FDE from human labor into a reusable capability), S1M is the judgment layer (System One Model, a decision model that separates judgment
-> from generation; stages one and two delivered; stage three deferral lifted (2026-10-30 retest: all three thresholds met; see ROADMAP; v1.8.0 underway); declaration lands with v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities—today's main landing points). Each layer sits in its own place; see "Core Features".
+> from generation; stages one through three delivered—v1.8.0 released 2026-11-05; declaration lands with v2.0.0), and **harness** is the governance layer (the five constraint-layer capabilities—today's main landing points). Each layer sits in its own place; see "Core Features".
 > Identity formula: **FDEing × S1A (S1A = S1M + Harness)**; see [PHILOSOPHY](./docs/PHILOSOPHY.md).
 
 **An open-source FDE Harness layer** (FDE = Forward Deployed Engineer, the engineer who embeds models into real enterprise
@@ -126,12 +126,12 @@ Three layers, each in its place: the **engineering layer (FDEing)** writes judgm
 - 🤖 **Deploy AI nodes**—three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 📦 **Judgment frozen into deliverables**—each node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
-**Judgment layer · S1M** (System One Model—a decision model that separates judgment from generation; **its foundation is under construction across v1.6.0–v1.9.0—stages one and two delivered (v1.6.0 / v1.7.0); stage three deferral lifted (2026-10-30 retest: all three thresholds met; see ROADMAP); full declaration lands with v2.0.0**; the narrative is anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition.
+**Judgment layer · S1M** (System One Model—a decision model that separates judgment from generation; **its foundation is under construction across v1.6.0–v1.9.0—stages one through three delivered (v1.8.0—wiring & distribution, released 2026-11-05); full declaration lands with v2.0.0**; the narrative is anchored to [FDE/S1M-DECISION-POINTS.md](./FDE/S1M-DECISION-POINTS.md) and the [v2.0.0 §1](./docs/changelog/v2.0/v2.0.0.md) planning definition.
 What ships today in this layer is the existing judgment-and-evidence surface):
 
 - 🔎 **Judgment trail**—decision-log causal chains record each accountable decision (who signed off, on what basis, why), consumed by auto-PR explanation blocks and the daemon weekly digest
 - ⚙️ **Decision channel & distribution (v1.8.0 form)**—the default `DecisionChannel` implementation (local subprocess, NDJSON over stdio) +
-off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a weights distribution path (source whitelist / strict sha256 / resumable download / two-tier USB offline runtime)—v1.8.0 developed, unreleased (form holds; capability claims land with v2.0.0; latest release v1.7.0)
+off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a weights distribution path (source whitelist / strict sha256 / resumable download / two-tier USB offline runtime)—v1.8.0 released (2026-11-05)
 - 🔗 **Judgment made provable**—the audit history lands on an HMAC chain; `--verify-chain` recomputes chain integrity offline, so conclusions can be re-checked by a third party
 
 > Boundary: the judgment layer's probability output has not yet completed calibration wiring (criteria thresholds still sit on the zero-shot baseline); rule verdicts are backstopped by deterministic judges—judgment-layer takeover is a future state (see [ARCHITECTURE](./docs/ARCHITECTURE.md)).
