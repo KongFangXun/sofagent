@@ -537,6 +537,19 @@ version --prefer-online` + `for p in $(node -p "require('./engine/dsh-plugins/pl
 
 > 任何一件不满足 = 发版未完成，当场补（重推 tag / 补 publish / 修 URL），不带病进入收尾。
 
+### 🔴 已知坑六处 + 处置（处方 SSOT · 阶段八 prompt 精简转述的正文出处）
+
+> 本段是 [08-confirm 步骤六](./08-confirm.md)「处方清单必附」的**正文唯一源**；prompt 内可按条精简转述，不得省略。前四条为发布链路时序态，后两条为发版脚本结构性缺陷（v1.8.0 发版批实锤）。
+
+| # | 坑 | 症状 | 处置 |
+|:--:|---|---|---|
+| 1 | **release.yml 瞬时 E404** | tag 刚推、CI 尚未注册该 tag → workflow 内拉取 404 | 等 30s 重查，勿判发布失败 |
+| 2 | **E409 staged** | registry 侧版本占位未 finalize（约 5 分钟自动完成） | 等 300s 重查 `npm view <pkg> dist-tags.latest`；仍未 finalize 见下方 E409 段（可 unpublish staged 后重发） |
+| 3 | **裸 `npm view` 吃缓存** | 本地缓存 5 分钟窗口内误报「404 未发」/读到上版号 | 对账一律 `--prefer-online` |
+| 4 | **批量脚本即时验证传播延迟** | publish 后立即批量 view 全报失败（实际已成） | 逐包验证或等传播约 1 分钟；「失败」须以 API/--prefer-online 复核定性 |
+| 5 | **`npm ls` 全树直连管道 SIGPIPE** | `set -o pipefail` 下拓扑分段判死（表现为 JSON 空解析失败，报错面与成因无关） | 输出先落临时文件再读（`publish-packages.sh` 已修，见 B16① 回归锚）；**不是**加 `\|\| true` 掩盖 |
+| 6 | **`$( )` 内多行 `node -e` + 参数尾接受空 stdin** | 单行能过、多行即炸（JSON.parse 空输入） | heredoc 落 `.mjs` 再 `node file.mjs "$ARG"`（`publish-packages.sh` 已修，见 B16②） |
+
 ### Release Note 生成 → 自检 → 上一版结构对照（三道工序 · 步骤七必做）
 
 > 🔴 **release note 必须先过自检 + 上一版结构对照，才允许 gh release create**——「改了再发」的成本是 npm 用户看到的第一个版本就是错的（曾连续多版发布后都发现问题再改）。三道工序缺一不可：

@@ -74,7 +74,7 @@ CUR_VER=$(node -p "require('./package.json').version"); grep -q "\*\*v${CUR_VER}
 CN_VER=$(grep -m1 -oE '^## v[0-9]+\.[0-9]+\.[0-9]+' README.md | grep -oE 'v[0-9.]+'); EN_VER=$(grep -m1 -oE '^## v[0-9]+\.[0-9]+\.[0-9]+' README.en.md | grep -oE 'v[0-9.]+'); [ -n "$CN_VER" ] && [ "$CN_VER" = "$EN_VER" ] && echo "✅ README 双语版本段一致 ($CN_VER)" || echo "⚠️ README 双语版本段不一致：CN=$CN_VER EN=$EN_VER"
 # 子项 k: 新文件版本头匹配当前 SSOT（归并原维度 78——开发期禁超前写下一版本号，bump 时统一提升）
 bash tools/check/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && echo "✅ 版本头一致" || echo "⚠️ 参见 check-version TS 文件头段"
-# 注：echo 变量插值禁全角括号——macOS bash 3.2 多字节展开 bug 吞「）」首字节+变量值（FFFD），半角安全
+# 注：echo 变量插值禁全角括号——macOS bash 3.2 多字节展开 bug 吞右括号首字节+变量值（FFFD），半角安全
 ```
 
 #### 3. 文档规范源与归属一致性
@@ -82,7 +82,7 @@ bash tools/check/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && 
 ```bash
 (
 # 子项 a: think.md 始终为 Ledger/source（非 Views/派生视图） 注意：grep 须精确匹配"think.md 被标为 Views"，而非"think.md 和 Views 出现在同一行" 正确模式：think.md 后跟 Views/派生（think.md = Views）→ 误标；think.md 后跟 Ledger/source → 正确
-grep -rnE "think\.md *= *(Views|派生视图)|think\.md（Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/GUIDE.md; # 期望：无匹配
+grep -rnE "think\.md *= *(Views|派生视图)|think\.md\uFF08Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/GUIDE.md; # 期望：无匹配
 # 正则收紧（实证）：原 `think\.md.* Views` 会跨语义单元误命中——正解行写的是
 # 「task/logs + think.md = Ledger → knowledge/ = Views」，同行后续出现 Views 即被误判。
 # 本注释上方原有「正确模式：think.md 后跟 Views/派生」的说明，正则却未按该意图实现，
@@ -1540,6 +1540,14 @@ grep -o '~[0-9]* 行' bootstrap.sh | grep -o '[0-9]*' | awk -v n="$(wc -l < inst
 grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing.md && head -5 docs/changelog/releasing.md | grep -q "入口" && echo "✅ FORGE/SKILL 区分 + releasing 入口指引在位" || { echo "❌ 结构可发现性缺失（FORGE/SKILL 或 releasing 入口）"; exit 1; }
 # B11 双 manifest 版本一致（阶段十一 ClawHub 拒收实录：openclaw.plugin.json 从未被 bump 覆盖 4 款全漂移）——命令体见 acceptance S331
 # B12 bump 跳过逻辑无通配误伤（阶段十一静默漏 bump 实录：通配误伤 sofagent audit）——命令体见 acceptance S331（S332 已合族并入）
+# B15 bump 覆盖面三类盲区（v1.8.0 发版批实锤，CI 逐轮报红）：①生成物（cordis.patch.yml 等由 gen 脚本产出，bump 不覆盖）②测试内硬编码版本（doctor.test.ts 写死 1.7.0 期望）③CHANGELOG 索引行缺「测试 N」口径（test-count 锚定回退旧版行报漂移）
+node tools/gen/gen-plugin-manifests.mjs >/dev/null 2>&1 && bash tools/check/check-template-drift.sh >/dev/null 2>&1 && echo '✅ B15① 生成物与 manifest 同版' || { echo '❌ B15① 生成物版本漂移——重跑 gen-plugin-manifests.mjs'; exit 1; }
+if git grep -nE "'1\\.[0-9]+\\.[0-9]+'" -- 'engine/**/__tests__/*.ts' 2>/dev/null | grep -vE 'VERSION|1\.0\.0|0\.0\.1' | head -3 | grep -q .; then echo '🟡 B15② 测试内疑似硬编码版本（人工核：期望值应动态取 VERSION 常量）'; else echo '✅ B15② 测试无硬编码版本期望'; fi
+grep -qE '测试 [0-9]+→\*\*[0-9]+\*\*' CHANGELOG.md && echo '✅ B15③ 索引行含测试数口径' || { echo '❌ B15③ CHANGELOG 索引行缺「测试 N→M」口径（test-count 会锚定回退旧版行）'; exit 1; }
+# B16 发版脚本管道/替换陷阱族（v1.8.0 发版批三例实锤）：①npm ls 全树输出超 pipe 缓冲 → node 先退 → SIGPIPE(141) 在 set -o pipefail 下判死 ②bash cmd 替换内 node -e 多行脚本 + 参数尾接形态收空 stdin ③目录真名与 cwd 大小写不一致（WorkBuddy vs Workbuddy）在 forceConsistentCasing 下报 TS1149 假红
+grep -q 'NPM_LS_TMP' tools/release/publish-packages.sh && echo '✅ B16① npm ls 落盘读（SIGPIPE 面已消）' || { echo '❌ B16① publish 脚本回退到管道直读'; exit 1; }
+grep -q 'LAYERS_EOF' tools/release/publish-packages.sh && echo '✅ B16② 拓扑脚本走 .mjs 文件形态' || { echo '❌ B16② 回退为 cmd 替换内 node -e 多行'; exit 1; }
+node -e 'const fs=require("fs");const real=fs.readdirSync(process.env.HOME).filter(d=>d.toLowerCase()==="workbuddy");const actual=fs.realpathSync(process.cwd()).split("/").slice(0,4)[3];if(real[0]&&actual!==real[0]){console.error("❌ B16③ cwd 大小写 ≠ 目录真名("+actual+" vs "+real[0]+")——tsc TS1149 假红来源");process.exit(1)}console.log("✅ B16③ cwd 与目录真名一致")'
 # k（原 #121）：dashboard 工作明细栏在位——插件目录已由 B11/S331 锁、cost_query 已由 S347/S348 锁
 grep -q "worklog" tools/dashboard/dashboard.html && echo "✅ dashboard 工作明细栏在位" || { echo "❌ dashboard worklog 缺失"; exit 1; }
 # 原 #122 并入（发版流程防复发——新 workspace 包 lock 同步 / DSH plugin 分发包装 / npm publish staged 等待 / lock 零本地部署树路径）
