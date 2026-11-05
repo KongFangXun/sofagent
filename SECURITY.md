@@ -184,6 +184,13 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 
 > 通过 `openclaw:im` 推送的知识摘要不含 restricted 内容（sensitivity 双重过滤），但 internal 内容可能含项目内部信息。`openclaw:im` 通道的安全性由 OpenClaw 保证（本地回环 ws://，摘要内容不含结构化密钥格式，redactForPrompt 管道同样适用于通知内容）。
 
+### 判定分发安全面（v1.8.0）
+
+> 判定件走出仓库的通路自带三道防线（与上表 USB 防线互补——那是便携运行时，这是制品分发）：
+> ① **来源白名单 fail-closed**：权重下载只认白名单域（HF 主载 + hf-mirror/ModelScope 替代源 + 本机回环 + `file://` 本地介质），非白名单源须显式 `allowAnySource` 且留痕；
+> ② **sha256 全程校验**：下载后逐制品校验，不符即拒启用且不落盘（`stage=verify` 留痕）——导入路径不得成为绕过校验的后门（USB A 档 `install.sh --media` 同一套校验）；
+> ③ **判定通道进程纪律**：StdioDecisionChannel 逐请求超时即杀、进程必回收；判定回执 `content:false`（指纹纪律——原始任务文本/工具输出/provider 错误零入链）。
+
 ### USB 完整运行时攻防表
 
 
