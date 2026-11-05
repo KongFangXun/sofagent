@@ -53,7 +53,7 @@
 - [x] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)
 - [x] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
 - [x] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)
-- [ ] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)
+- [x] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)
 - [ ] 九 · 发布流水线（本机自装→检查→push→tag→release→npm publish · 项目负责人或授权 AI）→ [09-publish.md](./releasing/09-publish.md)
 - [ ] 十 · 分发（Skill / DSH plugin / OpenClaw plugin / 设备端安装 · 项目负责人或授权 AI）→ [10-distribute.md](./releasing/10-distribute.md)
 - [ ] 十一 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [11-post-publish.md](./releasing/11-post-publish.md)
