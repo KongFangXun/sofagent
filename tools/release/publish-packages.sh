@@ -106,48 +106,43 @@ echo ""
 echo "=== 依赖拓扑分层 ==="
 
 # 用 node 从 npm ls --all --json 算拓扑分层（Kahn 算法）
-LAYERS_JSON=$(npm ls --all --json 2>/dev/null | node -e '
-const data = JSON.parse(require("fs").readFileSync("/dev/stdin","utf8"));
+NPM_LS_TMP=$(mktemp)
+trap 'rm -f "$NPM_LS_TMP"' EXIT
+npm ls --all --json > "$NPM_LS_TMP" 2>/dev/null || true   # 🔴 SIGPIPE 修复（2026-11-05 v1.8.0 发版批实锤）：npm ls 全树输出超 pipe 缓冲，node 消费完先退 → npm ls 收 SIGPIPE(141) → set -o pipefail 判死。先落临时文件再读，消掉截断面（阶段七「管道无匹配+pipefail」同族坑）。
+if [ ! -s "$NPM_LS_TMP" ]; then
+  echo "  WARN npm ls 首跑吐空（瞬时态），重试一次…" >&2
+  npm ls --all --json > "$NPM_LS_TMP" 2>/dev/null || true
+fi
+[ -s "$NPM_LS_TMP" ] || { echo "FAIL npm ls 两次均空输出——环境异常，停手" >&2; exit 1; }
+NPM_LS_JS=$(mktemp /tmp/sofagent-layers.XXXXXX.mjs)
+cat > "$NPM_LS_JS" <<'LAYERS_EOF'
+import fs from "fs";
+const data = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const deps = data.dependencies || {};
-
-// 只取 @sofagent/* 包
 const pkgs = {};
 for (const [name, info] of Object.entries(deps)) {
   if (!name.startsWith("@sofagent/")) continue;
-  const internal = Object.keys(info.dependencies || {}).filter(d => d.startsWith("@sofagent/"));
-  pkgs[name] = internal;
+  pkgs[name] = Object.keys(info.dependencies || {}).filter(d => d.startsWith("@sofagent/"));
 }
-
-// Kahn 拓扑排序：分层输出
 const layers = [];
 const published = new Set();
 const remaining = new Set(Object.keys(pkgs));
-
 while (remaining.size > 0) {
   const layer = [];
   for (const pkg of remaining) {
-    const deps = pkgs[pkg];
-    if (deps.every(d => published.has(d))) {
-      layer.push(pkg);
-    }
+    if (pkgs[pkg].every(d => published.has(d))) layer.push(pkg);
   }
   if (layer.length === 0) {
-    // 剩余包互相依赖（如 daemon↔orchestrator），放同一层一起发布
-    // npm publish 不要求依赖已在 registry（workspace 本地 symlink 可用）
     layer.push(...remaining);
-    if (remaining.size > 0) {
-      console.error("⚠️ 检测到互相依赖的包（放同一层）: " + [...remaining].join(", "));
-    }
+    if (remaining.size > 0) console.error("WARN 互相依赖同层: " + [...remaining].join(", "));
   }
   layers.push(layer);
-  for (const pkg of layer) {
-    published.add(pkg);
-    remaining.delete(pkg);
-  }
+  for (const pkg of layer) { published.add(pkg); remaining.delete(pkg); }
 }
-
 console.log(JSON.stringify(layers));
-')
+LAYERS_EOF
+LAYERS_JSON=$(node "$NPM_LS_JS" "$NPM_LS_TMP")
+rm -f "$NPM_LS_JS"
 
 echo "$LAYERS_JSON" | node -e '
 const layers = JSON.parse(require("fs").readFileSync("/dev/stdin","utf8"));
