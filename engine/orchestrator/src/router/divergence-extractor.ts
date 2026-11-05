@@ -1,4 +1,4 @@
-// divergence-extractor.ts · v1.7.0 §七 · 偏离提取器（refs 命中 → 偏离模式 · 确定性）
+// divergence-extractor.ts · v1.8.0 §七 · 偏离提取器（refs 命中 → 偏离模式 · 确定性）
 // ============================================================
 // 从 ruler-change 事件 rationale.refs 命中的 decision-log 条目集合，
 // 聚成结构化偏离模式（时间窗内 · 按 aspect 归类 · 确定性输出——同输入

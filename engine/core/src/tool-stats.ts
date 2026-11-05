@@ -1,5 +1,5 @@
 // ============================================================
-// tool-stats.ts · tool 使用率盘点（v1.7.0 章四）
+// tool-stats.ts · tool 使用率盘点（v1.8.0 章四）
 //
 // 读 {dataDir}/tool-usage.jsonl（usage-tracker 落盘），产出四视图：
 //   ① 被调用清单（去重 tool 名 + 次数 + 最近调用——registry 过滤后）

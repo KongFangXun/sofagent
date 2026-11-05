@@ -1,4 +1,4 @@
-// effect-backfill.ts · v1.7.0 §七 · effect 窗口回填（override 率对比 → verdict 三态）
+// effect-backfill.ts · v1.8.0 §七 · effect 窗口回填（override 率对比 → verdict 三态）
 // ============================================================
 // 尺子变更的 effect 回填：变更生效后按窗口对比 override 率——
 //   { windowDays, overrideRateBefore, overrideRateAfter, verdict }

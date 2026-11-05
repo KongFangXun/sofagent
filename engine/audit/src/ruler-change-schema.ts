@@ -1,5 +1,5 @@
 // ============================================================
-// ruler-change-schema.ts · v1.7.0 §七 · 尺子变更事件 schema（RulerChangeEvent）
+// ruler-change-schema.ts · v1.8.0 §七 · 尺子变更事件 schema（RulerChangeEvent）
 //
 // 「人否机器 → 判据修订 → 再训练」飞轮上，判据修订环节此前无任何留痕
 // （W2 数据飞轮链路缺口）。本文件把「人为什么改判据」结构化：

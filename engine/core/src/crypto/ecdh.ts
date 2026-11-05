@@ -6,7 +6,7 @@
  *   - 曲线：prime256v1（NIST P-256，Node 内置支持）
  *   - 双方各自 generateKeyPair() → 交换公钥 → deriveSharedKey() 派生同一把 32 字节 AES key
  *   - 派生链路：ECDH shared secret → HKDF-SHA256（带 info 上下文绑定）→ 32 字节 AES-256 key
- *   - key 只存内存，不落盘明文（磁盘静态加密已接线 daemon start 路径——initDataEncryption()；演进排期见 ROADMAP v1.7.0 后续章节，部署面见 enterprise-deploy 指南（docs/guides/enterprise-deploy.md，仓根相对）；本模块仍只管配对协商）
+ *   - key 只存内存，不落盘明文（磁盘静态加密已接线 daemon start 路径——initDataEncryption()；演进排期见 ROADMAP v1.8.0 后续章节，部署面见 enterprise-deploy 指南（docs/guides/enterprise-deploy.md，仓根相对）；本模块仍只管配对协商）
  */
 
 import crypto from 'node:crypto';
