@@ -1,6 +1,6 @@
 # @sofagent/daemon
 
-sofagent 守护进程——持续审计、文件监听（chokidar）、cron 定时巡检、USB federation 检测、Dream Cycle 6 阶段管道、设备 OTA 远程升级执行器（事件总线拉取 + 验签 + 灰度批次）。
+sofagent 守护进程——持续审计、文件监听（chokidar）、cron 定时巡检、USB federation 检测（v1.8.0：/v1/systemone 判定门面 + USB 便携运行时）、Dream Cycle 6 阶段管道、设备 OTA 远程升级执行器（事件总线拉取 + 验签 + 灰度批次）。
 
 ## 安装
 
