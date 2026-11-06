@@ -499,3 +499,4 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 2026-11-05     | 20261105-03    | release-gate | 4    | PASS       | FAIL       | PASS     | FAIL    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-11-05/run-03
 
 2026-11-05     | 20261105-04    | release-gate | 4    | PASS       | PASS       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-11-05/run-04
+2026-11-05     | 20261105-05    | fresh-eyes  | 1    | 11/0/6     | V1:2/V4:1/V5:1/V6:1/V7:1/V8:2/V10:3/V11:1/V12:1/V17-19:2/V22:1 | 0（D 首跑网络中断 1 次，D2 完成） | orchestrator-stop（D 判 CLEAN 建议 stop；未开 round-02，理由见 verdict.md） | FORGE/SKILL/fresh-eyes-loop/runs/2026/11/05/run-01

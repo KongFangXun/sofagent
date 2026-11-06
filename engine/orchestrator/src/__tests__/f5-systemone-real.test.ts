@@ -9,7 +9,7 @@
 //   SYSTEMONE_RUNNER=~/…/factory/rsi/scripts/systemone-runner.py \
 //   ./node_modules/.bin/vitest run engine/orchestrator/src/__tests__/f5-systemone-real.test.ts
 //
-// 判据（tasks/F5.md 判据 a）：
+// 判据（内部工作稿「F5 任务清单」（未随仓分发）判据 a；仓内可复算替代锚 = 本文件 ①② 断言——给 SYSTEMONE_MODEL / SYSTEMONE_RUNNER 跑本文件即验）：
 //   ① 一次调用返回 DecisionResult 四字段齐 + 每条 answer 含 value/probability/status
 //   ② 必红对偶①：移走权重目录 ⇒ 抛 **真类** DecisionChannelUnavailableError（instanceof 为 true）
 //      ⇒ IntentTriage 落 L0 且 routeReason 可查

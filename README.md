@@ -172,7 +172,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
 
 - **档位差的是注入强度，不是「有没有」**：DSH 逐工具调用可拦，OpenClaw 每会话注入一遍，其余靠 Agent 自觉。「支持某平台」= 约束资产可用，**≠ 强度相同**；迁移前看目标宿主档位，矩阵见 [加载链 HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
-- **审计兜底平台无关**——`sofagent audit --install-hook` 走 git hook，任何档位每次 commit 都自动审计（默认启用 17 条；完整 28 条需在 `.sofagent/config.yml` 显式开启 `extendedRulesEnabled: true`），违规硬拦截。
+- **审计兜底平台无关**——`sofagent audit --install-hook` 走 git hook，任何档位每次 commit 都自动审计（默认启用 17 条；完整 28 条只认 `.sofagent/config.yml` 的 `extendedRulesEnabled: true` 开关——`--full` 不开规则集，只选引擎与 diff 范围），违规硬拦截。
   约束是建议性的，审计是强制性的（边界：默认非 fail-closed，`--no-verify` 可跳过前两层防线、post-commit 只留痕不阻断，详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
@@ -225,7 +225,7 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 npx -y -p sofagent sofagent audit
 ```
 
-> 💡 quick 跑 17 条默认（A1–A11 + A18–A23；其中 A9 commit-msg 注入检测——读最近一次 commit 消息，无消息时按无输入跳过（A3 无task跳过））；`--init` 的 hook 默认同样 17 条，完整 28 条需在 `.sofagent/config.yml` 开 `extendedRulesEnabled: true`——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
+> 💡 quick 跑 17 条默认（A1–A11 + A18–A23；A9 读最近一次 commit 消息，无消息按无输入跳过（A3 无task跳过））；`--init` 同样 17 条，完整 28 条**只认** `.sofagent/config.yml` 的 `extendedRulesEnabled: true` 开关（`--full` 只选引擎与 diff 范围，不开规则集）——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
 > ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent audit --init`（见下方完整安装）。
 

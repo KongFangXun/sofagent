@@ -90,7 +90,7 @@ version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 |---|---|---|---|
 | Positioning | full-history secret scanning | generic commit-hook framework | Agent behavior audit harness |
 | Evidence | repo text patterns | your own scripts | git-diff hard evidence + Agent logs + decision trail |
-| Coverage | secret leaks | anything (DIY) | 28 rules (17 enabled by default; full set via extendedRulesEnabled): secrets / scope / injection / privilege / backdoors / data products |
+| Coverage | secret leaks | anything (DIY) | 28 audit rules (17 rules enabled by default; full set via extendedRulesEnabled): secrets / scope / injection / privilege / backdoors / data products |
 | Deployment cost | Low—standalone binary, zero runtime deps | Low—one CLI from your language ecosystem | Medium—a one-time `install.sh` on the enterprise device (you can also try it zero-config via npx first) |
 | Maintenance burden | Low—rules track upstream | Medium—custom scripts are yours to maintain | Medium—rules and hooks ship with this repo, but each version needs the hook reinstalled and config re-aligned |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both—focused on Agent governance |
@@ -196,7 +196,7 @@ the platform:
 > Note 1: 1 optional aggregate plugin also available—see "Upstream & plugin entries" below—7 lifecycle events incl. `tools/pre-execute` (vocabulary table: `engine/dsh-plugins/SEAMS.md`)
 
 - **Tiers differ in injection strength, not in "supported or not"**—DSH intercepts per tool call, OpenClaw injects once per session, others rely on the Skill text (advisory). "Supports platform X" = the constraint assets work there, **not** equal strength; check the target host's tier before migrating—full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
-- **Audit fallback is platform-agnostic**—`sofagent audit --install-hook` runs as a git hook; at every tier, every commit's audited automatically (audits with the 17 default rules out of the box; the full 28 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`), violations
+- **Audit fallback is platform-agnostic**—`sofagent audit --install-hook` runs as a git hook; at every tier, every commit's audited automatically (audits with the 17 default rules out of the box; the full 28 require enabling `extendedRulesEnabled: true` in `.sofagent/config.yml`—**the config switch is the only way to widen the rule set**; `--full` just switches to the full engine and scopes the diff), violations
  hard-blocked. Constraints are advisory; auditing is mandatory (boundaries of that mandate: **not fail-closed by default**—`--no-verify` skips the first two defense layers, and
 post-commit only leaves a trace without blocking; bypassed commits do leave traces—see [LIMITATIONS
  §3](./docs/LIMITATIONS.md)).
@@ -264,7 +264,7 @@ npx -y -p sofagent sofagent audit
 > 💡 The npm channel ships one form only — the umbrella: `npm i -g sofagent` installs the **full dependency tree** (602-package basis below; no smaller package exists). For a smaller footprint, use the ephemeral npx form (`npx -y -p sofagent sofagent audit`, nothing stays
 > installed; capability boundary in [LIMITATIONS · package deps](./docs/LIMITATIONS.md)).
 
-> 💡 quick runs the **17 default rules** (A3/A9 active—quick auto-reads the last commit message; without one, A9 skipped). `--init` installs the hook (same 17 defaults); the full 28 require `extendedRulesEnabled: true`—see [LIMITATIONS §3](./docs/LIMITATIONS.md).
+> 💡 quick runs the **17 default rules** (A3/A9 active—quick auto-reads the last commit message; without one, A9 skipped). `--init` installs the hook (same 17 defaults); the full 28 require `extendedRulesEnabled: true` (**the config switch is the main path**; `--full` only switches to the full engine and scopes the diff, e.g. `sofagent audit --full --diff HEAD~1..HEAD`—on its own it does not widen the rule set)—see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
 > ⚠️ This step is a **one-off audit** (inside a single process)—it doesn't install a git hook, so later commits won't be auto-blocked. For continuous protection run `sofagent audit --init` (see Full install below).
 

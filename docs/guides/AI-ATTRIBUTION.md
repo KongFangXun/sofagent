@@ -1,6 +1,8 @@
 # 代码面归属约定（AI 参与度度量的判据前置）
 
-> **裁定源**：`tasks/F6.md` §十二·四（S3 裁定 2026-11-04）· 判据原文要求「先登记裁定再接线」
+> **裁定源**：内部工作稿「F6 任务清单」（未随仓分发）§十二·四（S3 裁定 2026-11-04）· 判据原文要求「先登记裁定再接线」——**仓内可复算替代锚**：裁定正本在 `docs/changelog/v1.9/v1.9.0.md:298`。
+> 复核命令 `git grep -n '归属约定裁定（2026-10-14 已拍：三选一取「写面留痕扩面」为主）' -- docs/changelog/v1.9/v1.9.0.md` 应得 **1 命中且行号为 298**（行号随文档增删漂移，以命令实返行号为准；**锚定的是该字符串而非行号**）。
+> 裁定要点 = ①主信号「写面留痕扩到代码面」②commit trailer 仅辅助、非必需 ③视野外写入不作「全量 AI 参与度」声明；代码侧落点为 `engine/orchestrator/src/router/judge-observability.ts:669`（`computeAiParticipation`）
 > **本文件的作用**：给 `computeAiParticipation` 提供**可复算的归属口径**与**实测的域清单**。口径由裁定给死，本文件只登记真值，不改口径。
 
 ## 一、口径（照抄裁定，不得改写）
@@ -71,4 +73,4 @@ node engine/orchestrator/dist/cli.js judge-attribution --limit 0 | head -5
 - `CommitMeta.authorEmail` / `committerEmail` —— 轨①输入（可选，缺省即不判轨①）
 - `AI_TRAILER_PATTERNS` —— 轨②输入（正则含域白名单，避免把任意 `Co-authored-by: 张三` 计入）
 
-**改口径的路径**：只走 `tasks/F6.md` §十二·四 重裁 → 同批改本文件 §一 与代码常量。**不得单改一处**。
+**改口径的路径**：只走内部工作稿「F6 任务清单」（未随仓分发）§十二·四 重裁 → 同批改本文件 §一 与代码常量（`engine/orchestrator/src/router/judge-observability.ts:622` 的 `AI_ACCOUNT_DOMAINS` 等）。**不得单改一处**。
