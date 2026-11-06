@@ -400,7 +400,10 @@ export function generateQuickOutput(
   //   双 ⓘ 裸连排时新用户分不清「哪条是我该做的事」。结果语义先行、动作引导明确；
   //   「未检查 ≠ 通过」措辞属既有校准产物，一字不动（见上方 QUICK_SKIP_HINT）。
   parts.push('');
-  parts.push('ⓘ 下一步：默认只跑 17 条规则（quick 模式不读 config；完整 28 条请用 sofagent audit --full 并在 .sofagent/config.yml 开 extendedRulesEnabled: true）——规则集用 --ruleset 加载');
+  // v1.9.0 R5：提示须为**可执行形态**——裸 `--full` 经 umbrella 路由剥参数后落到用法屏
+  //   （exit 2），用户照抄拿不到审计结果。改为 `--full --diff HEAD~1..HEAD` 成对形态，
+  //   与完整引擎用法屏 / README「完整 28 条」同口径。
+  parts.push('ⓘ 下一步：默认只跑 17 条规则（quick 模式不读 config；完整 28 条请用 sofagent audit --full --diff HEAD~1..HEAD 并在 .sofagent/config.yml 开 extendedRulesEnabled: true）——规则集用 --ruleset 加载');
   parts.push('ⓘ 装完整版（hook 自动审计 + 快照回滚）：sofagent audit --init');
 
   // 产品签名

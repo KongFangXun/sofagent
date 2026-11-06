@@ -18,7 +18,7 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { execFileSync } from 'child_process';
 import { join, dirname } from 'path';
-import { existsSync, mkdtempSync, rmSync } from 'fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 
@@ -161,7 +161,12 @@ describe('退出码 help 披露面（v1.4.9 P2-8）', () => {
   // v1.6.0 BUG-05：`sofagent audit --full` 裸调经 umbrella 路由剥掉 --full 后
   //   以空参数抵达完整引擎用法屏——改前 exit 0（CI 把「什么都没做」当成功），
   //   现改 exit 2（用法错误档）+ 首行操作指引（含「快速审计直接 sofagent audit」）。
-  it('完整引擎空参数（--full 裸调形态）：用法屏 exit 2 + 操作指引（改前 exit 0 死胡同）', () => {
+  // v1.9.0 R5（同一缺陷的 quick 侧）：两入口的「下一步」指引都须为**可执行形态**。
+  //   quick 结果屏改前写「完整 28 条请用 sofagent audit --full 并在 .sofagent/config.yml 开 …」
+  //   ——裸 `--full` 经 umbrella 路由剥参数后落到用法屏（exit 2），照抄不可执行；
+  //   现改为 `--full --diff HEAD~1..HEAD` 成对形态（与完整引擎侧同口径）。
+  //   两处断言同址：一处断言「可执行形态在位」，一处反向锁「裸 --full + 并在 句式不得回归」。
+  it('指引命令为可执行形态（完整引擎用法屏 + quick 结果屏·改前裸 --full 是死胡同）', () => {
     const r = run(FULL_BIN, []);
     expect(r.status).toBe(2);
     expect(r.output).toContain('未指定任何操作');
@@ -169,6 +174,26 @@ describe('退出码 help 披露面（v1.4.9 P2-8）', () => {
     // 指引命令须为可执行形态（--full --diff 成对出现），不再推荐裸 --full
     expect(r.output).toContain('sofagent audit --full --diff HEAD~1..HEAD');
     expect(r.output).not.toMatch(/sofagent audit --full\s+完整引擎/);
+
+    // ── quick 侧（v1.9.0 R5）──
+    const dir = mkdtempSync(join(tmpdir(), 'sofagent-r5-quick-'));
+    tmpDirs.push(dir);
+    const git = (args: string[]): void => {
+      execFileSync('git', ['-c', 'user.email=r5@test.local', '-c', 'user.name=r5', ...args], { cwd: dir, stdio: 'ignore' });
+    };
+    // 须有首个 commit：空仓走「首提交无父基线」早退分支，不出结果屏提示。
+    git(['init', '-q']);
+    writeFileSync(join(dir, 'a.js'), 'console.log(1);\n');
+    git(['add', '-A']);
+    git(['commit', '-qm', 'r5 probe commit']);
+    const env: NodeJS.ProcessEnv = { ...process.env };
+    delete env.SOFAGENT_HOME;
+    delete env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+    const q = run(QUICK_BIN, [], { cwd: dir, env });
+    expect(q.output).toContain('下一步');
+    expect(q.output).toContain('sofagent audit --full --diff HEAD~1..HEAD');
+    // 反向锁：改前的「裸 --full 并在 …」形态不得回归
+    expect(q.output).not.toMatch(/--full\s+并在/);
   });
 
   // 🔴 真行为锁（v1.4.9 收尾新增）：两入口对同一处境给**不同**退出码——

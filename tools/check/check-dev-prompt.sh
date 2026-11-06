@@ -1192,12 +1192,25 @@ ACC_SSOT=$(grep -oE 'docs/changelog/v[0-9.]+/v[0-9.]+\.md' "$FILE" 2>/dev/null |
 if [ -z "$ACC_SSOT" ] || [ ! -f "$ACC_SSOT" ]; then
   echo "  （prompt 未声明可读的 SSOT 开发日志路径，跳过逐字对账）"
 else
-  # SSOT 侧 checkbox 归一化：开发完成翻勾（[ ]→[x]）是定稿态合法变迁——判据本体
-  # 逐字不变，仅勾选态演进；任务书侧是开工快照（恒 [ ]）。归一 = 去勾选标记后比对。
+  # 两侧 checkbox 归一化：任务书是 devlog 的**逐字镜像**，勾选态亦属镜像内容——
+  # 任务书侧同样允许 `- [x]`（镜像已完成的条目），两侧统一 `sed -E` 归一再 diff。
+  # 若仍把 prompt 侧限定为 `- [ ]`，镜像只能全 `[ ]`，与「镜像」语义冲突（实测假红）。
+  # 注意：这只是**扩兼容**，判据本体仍是逐字零差；文本一旦漂移照样报红。
   if diff <(awk '/^### 验收标准/{f=1;next} /^## /{f=0} f&&/^- \[[ x]\] /' "$ACC_SSOT" | sed -E 's/^- \[[ x]\] /- /') \
-          <(grep '^- \[ \] ' "$FILE" | sed -E 's/^- \[ \] /- /') > /dev/null 2>&1; then
-    printf '  ✅ 与 %s 逐字零差（%s 条）\n' "$ACC_SSOT" "$(grep -c '^- \[ \] ' "$FILE")"
+          <(grep -E '^- \[[ x]\] ' "$FILE" | sed -E 's/^- \[[ x]\] /- /') > /dev/null 2>&1; then
+    printf '  ✅ 与 %s 逐字零差（%s 条）\n' "$ACC_SSOT" "$(grep -cE '^- \[[ x]\] ' "$FILE")"
     OKS=$((OKS + 1))
+    # 勾选态单独对账（归一化会把 [ ]/[x] 差异吃掉，故须另比一次状态序列）：
+    # 「勾选态亦属镜像内容」⇒ devlog 已翻 [x] 而 prompt 仍 [ ] 即红。只比状态不比文本，
+    # 与上面的文本对账互补，合计覆盖「文本 + 勾选态」两面；两者都是收紧，不是放宽。
+    if diff <(awk '/^### 验收标准/{f=1;next} /^## /{f=0} f&&/^- \[[ x]\] /' "$ACC_SSOT" | sed -E 's/^- \[ \] .*/0/; s/^- \[x\] .*/1/') \
+            <(grep -E '^- \[[ x]\] ' "$FILE" | sed -E 's/^- \[ \] .*/0/; s/^- \[x\] .*/1/') > /dev/null 2>&1; then
+      echo "  ✅ 勾选态与 SSOT 一致（镜像含勾选态）"
+      OKS=$((OKS + 1))
+    else
+      printf '  %s 勾选态与 %s 不一致（0=未做 / 1=已完成）——任务书是 devlog 镜像，勾选态须同态\n' "$EMARK" "$ACC_SSOT"
+      mark_err
+    fi
   else
     printf '  %s 验收块与 %s 有差——逐行核对（语义压缩即丢判据；人工命令见 releasing SOP 步骤七 ①b）\n' "$EMARK" "$ACC_SSOT"
     mark_err

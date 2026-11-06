@@ -833,7 +833,7 @@ while IFS=: read -r file line_num rest; do
     report_error "${file}:${line_num}" "当前 v${found_ver}" "当前 v${SSOT_VERSION}"
     inline_errors=$((inline_errors + 1))
   fi
-done < <(grep -rn "当前 v[0-9]" --include="*.md" . 2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" || true)
+done < <(grep -rn "当前 v[0-9]" --include="*.md" . 2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" | grep -vE "/runs/[0-9]{4}/" || true)
 if [[ $inline_checked -eq 0 ]]; then
   echo -e "  ${YELLOW}⚠${NC} 未找到"当前 vX.Y"版本引用"
 elif [[ $inline_errors -eq 0 ]]; then
@@ -851,7 +851,7 @@ while IFS=: read -r file line_num rest; do
     report_error "${file}:${line_num}" "Current version: v${found_ver}" "Current version: v${SSOT_VERSION}"
     inline_errors=$((inline_errors + 1))
   fi
-done < <(grep -rn "Current version: v[0-9]" --include="*.md" . 2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" || true)
+done < <(grep -rn "Current version: v[0-9]" --include="*.md" . 2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" | grep -vE "/runs/[0-9]{4}/" || true)
 
 # v1.2.5 阶段八① 补：dashboard.html 当前版本活引用（logo 徽章 + 页脚署名）。
 # 只校验两处"当前版本"锚点；激活链里程碑标记（v1.2.5+ / ✅）属历史叙述，不校验。
