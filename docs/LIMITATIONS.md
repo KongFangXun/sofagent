@@ -83,6 +83,9 @@ S1M 判定层失灵面（随阶段一 v1.6.0 零样本基线落数；v1.7.0 §�
 > 读数与可复算产物见 `datasets/` 与 [v1.6.0 开发日志](./changelog/v1.6/v1.6.0.md)；v1.7.0 复核面见 [v1.7.0 开发日志](./changelog/v1.7/v1.7.0.md) §六。
 
 口径对齐 [v1.8.0 §六](./changelog/v1.8/v1.8.0.md) / [v1.9.0 §五](./changelog/v1.9/v1.9.0.md)（不另立第二套表述），[v2.0.0 §三](./changelog/v2.0/v2.0.0.md) 补全时销账。当前不声称判定能力已实装。
+- **无 GPU 单机档不支持「自动降档」**：超阈`judge-memcheck` 拒绝并 `rc=2`（不降档）；16/4 GB 未实测、系数为经验值 ⇒ `not-measured`。
+
+
 
 ### 🧩 commons_invoke 为 dry-run 预检语义（有意设计，非缺陷）
 返回能力元数据与调用计划，不真实执行（真实执行由 Agent runtime 注入 executor）——MCP 层默认占位是有意设计（防未审计代码执行），非缺陷。
@@ -554,7 +557,7 @@ sofagent audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 1652 个、全 workspace 6919 个测试（口径：14 包 workspace＝13 模块＋corpus；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 1652 个、全 workspace 6926 个测试（口径：14 包 workspace＝13 模块＋corpus；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |---|---|---|
@@ -643,7 +646,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 423 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1652 个、全 workspace 6919 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1652 个、全 workspace 6926 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 423 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -756,7 +759,7 @@ Ontology 合并逻辑从 `knowledge/entities/` 的 frontmatter 提取实体关�
 
 ### DSH 插件 npm 首发（v1.5.2 章九起）的四条真实局限
 
-> **历史局限已消解**：v1.5.2 章九前，`engine/dsh-plugins/**` 下全部插件都是 `private: true`（不对 npm 发布），宿主聚合插件（`cordis-plugin-sofagent`）声明的 6 条 `optionalDependencies`（inject / audit / evolve / rollback / daemon / fde）**在 npm 通道结构性地无法解析**（private 包没有注册表条目，不在 npm 解析域内），当时该声明的真实作用只是本地文件链接下的版本对齐。
+> **历史局限已消解**：v1.5.2 起 `engine/dsh-plugins/**` 可发布，宿主聚合插件（`cordis-plugin-sofagent`）的 6 条 `optionalDependencies`（inject / audit / evolve / rollback / daemon / fde）可在 npm 正常解析。
 >v1.5.2 章九起七款插件摘 `private` + 加 `files` 白名单转为 npm 发布物，**这一条不再成立**；换来的是下面三条新的真实局限。
 
 1. **首发依赖顺序被钉死**：六款原子插件以**包名** `@sofagent/dsh-plugin-kit` 依赖基座（v1.5.2 章九二轮起——此前用相对路径，registry 单装必挂 `MODULE_NOT_FOUND`）⇒ 该基座**必须先于七款插件发布**，顺序反了挂载即失败。

@@ -344,6 +344,32 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
       console.log(rep.text);
       break;
     }
+    case 'judge-memcheck': {
+      // L228 收口补件（2026-11-06）：内存档前置检查——**超阈拒绝加载并非 0 退出**（不降档）。
+      // 用途：判定件加载前先跑本命令，返回非 0 即禁止加载（fail-closed）。
+      const { checkMemoryTier } = await import('./router/memory-tier-guard');
+      const { totalmem, freemem } = await import('os');
+      const sizeIdx = args.indexOf('--model-size-mb');
+      if (sizeIdx === -1) {
+        console.error('❌ judge-memcheck 需要 --model-size-mb <MB>（判定件体积，通常取 weights-manifest 的 sizeBytes / 1MiB）');
+        process.exit(1);
+      }
+      const sizeMb = Number(args[sizeIdx + 1]);
+      const headIdx = args.indexOf('--headroom');
+      const verdict = checkMemoryTier({
+        totalMemBytes: totalmem(),
+        freeMemBytes: freemem(),
+        modelSizeBytes: sizeMb * 1024 ** 2,
+        ...(headIdx === -1 ? {} : { headroomRatio: Number(args[headIdx + 1]) }),
+      });
+      if (!verdict.ok) {
+        console.error(`❌ ${verdict.detail}`);
+        // 区分退出码：非法输入=1（用法问题），内存不足=2（环境问题，调用方据此拒绝加载）
+        process.exit(verdict.reason === 'invalid-input' ? 1 : 2);
+      }
+      console.log(`✅ ${verdict.detail}`);
+      break;
+    }
     case 'activate': {
       const dryRun = args.includes('--dry-run');
       const filterIdx = args.indexOf('--node-filter');

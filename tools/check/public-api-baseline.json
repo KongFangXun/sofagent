@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T11:41:10.306Z",
+  "generatedAt": "2026-11-06T09:41:30.477Z",
   "packages": {
     "@sofagent/inject": {
       "version": "1.4.9",
@@ -1040,6 +1040,9 @@
         "LowScoreFeedback",
         "ManifestCheck",
         "MemberState",
+        "MemoryTierInput",
+        "MemoryTierLabel",
+        "MemoryTierVerdict",
         "MergeConflictInput",
         "MergeCriterion",
         "MergeGateOptions",
@@ -1330,6 +1333,7 @@
         "checkAcceptance",
         "checkContamination",
         "checkDangerousCommand",
+        "checkMemoryTier",
         "checkNoModelPersistence",
         "checkThreshold",
         "checkWeightsDir",
@@ -1657,6 +1661,7 @@
         "switchModel",
         "takeSnapshot",
         "teamFeedbacksToRules",
+        "tierOf",
         "toSubAgentConfigs",
         "toolCandidatesFromSamples",
         "toolGate",

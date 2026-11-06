@@ -485,6 +485,13 @@
   type ProbeSnapshot,
 } from './router/judge-store';
 /* @public */ export {
+  checkMemoryTier,
+  tierOf,
+  type MemoryTierInput,
+  type MemoryTierVerdict,
+  type MemoryTierLabel,
+} from './router/memory-tier-guard';
+/* @public */ export {
   setJudgeMode,
   getJudgeMode,
   getShadowLedger,
