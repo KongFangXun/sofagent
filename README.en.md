@@ -209,13 +209,13 @@ One command selects your mounting tier: `install.sh --platform <platform-name>` 
 
 | Capability | One-liner | Access |
 |---|---|---|
-| **DecisionChannel default impl** | Local subprocess NDJSON protocol (StdioDecisionChannel): per-request timeout kill · guaranteed process reaping · single-source protocol SSOT | SDK |
-| **Three-mode wiring** | off normalizes / shadow never changes behavior / active requires reconciliation — the decision tier never enters the auto-routing matrix | `judgeMode` config |
-| **Five-part receipt on-chain** | state digest / evidence refs / model identity / full probabilities / deterministic baseline — every judgment is replayable (content:false fingerprint discipline) | decision-log |
-| **Parallel constrained decoding** | One forward pass yields all fields: field-count-based packing · over-vocab chunking with zero truncation · companion-drift handling | SDK |
-| **Four observability fields** | calls / failures / degradations / latency buckets, exposed via MCP | `sofagent daemon` |
-| **Weights distribution path** | fail-closed four red lines (allowlist/sha256/resume/progress) + two USB offline modes (A installer --media · B portable plug-and-run) | `install.sh --media` |
-| **/v1/systemone facade** | The judge is directly consumable by existing System One clients (loopback binding · zero content logging) | HTTP POST |
+| **DecisionChannel default impl** | Local subprocess NDJSON protocol (StdioDecisionChannel): per-request timeout kill · guaranteed process reaping · single-source protocol SSOT | SDK-face |
+| **Three-mode wiring** | off normalizes / shadow never changes behavior / active requires reconciliation — the decision tier never enters the auto-routing matrix | In-process (`judgeMode` config) |
+| **Five-part receipt on-chain** | state digest / evidence refs / model identity / full probabilities / deterministic baseline — every judgment is replayable (content:false fingerprint discipline) | In-process (auto-chained to decision-log) |
+| **Parallel constrained decoding** | One forward pass yields all fields: field-count-based packing · over-vocab chunking with zero truncation · companion-drift handling | SDK-face |
+| **Four observability fields** | calls / failures / degradations / latency buckets, exposed via MCP | CLI reachable (`sofagent daemon`) |
+| **Weights distribution path** | fail-closed four red lines (allowlist/sha256/resume/progress) + two USB offline modes (A installer --media · B portable plug-and-run) | CLI reachable (`install.sh --media`) |
+| **/v1/systemone facade** | The judge is directly consumable by existing System One clients (loopback binding · zero content logging) | SDK-face (HTTP POST) |
 
 ## The Two FDE Harness Phases
 

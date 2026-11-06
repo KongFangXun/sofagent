@@ -186,12 +186,12 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 | 能力 | 一句话 | 触达方式 |
 |---|---|---|
 | **DecisionChannel 默认实现** | 本地子进程 NDJSON 协议（StdioDecisionChannel）：逐请求超时即杀 · 进程必回收 · 协议 SSOT 单源 | SDK 面 |
-| **三档接线** | off 归一 / shadow 影子不改行为 / active 过对账才生效——判定档永不进自动路由矩阵 | `judgeMode` 配置 |
-| **判定回执五件落链** | state 摘要 / 证据引用 / 模型身份 / 完整概率 / 确定性基线——每次判定可回放（content:false 指纹纪律） | decision-log |
+| **三档接线** | off 归一 / shadow 影子不改行为 / active 过对账才生效——判定档永不进自动路由矩阵 | 进程内自动（`judgeMode` 配置） |
+| **判定回执五件落链** | state 摘要 / 证据引用 / 模型身份 / 完整概率 / 确定性基线——每次判定可回放（content:false 指纹纪律） | 进程内自动（decision-log 自动落链） |
 | **并行约束解码** | 一次前向出全部字段：打包按字段数 · 超词表分块零截断 · 批内同伴处置序 | SDK 面 |
-| **观测四字段** | calls / failures / degradations / 延迟桶计数，经 MCP 透传 | `sofagent daemon` |
-| **权重分发通路** | fail-closed 四红线（白名单/sha256/断点续传/进度回调）+ USB 两档离线（A 安装器 --media · B 便携即插即跑） | `install.sh --media` |
-| **/v1/systemone 门面** | 判定件可被 System One 既有客户端直接消费（环回绑定 · 零内容日志） | HTTP POST |
+| **观测四字段** | calls / failures / degradations / 延迟桶计数，经 MCP 透传 | CLI 可达（`sofagent daemon`） |
+| **权重分发通路** | fail-closed 四红线（白名单/sha256/断点续传/进度回调）+ USB 两档离线（A 安装器 --media · B 便携即插即跑） | CLI 可达（`install.sh --media`） |
+| **/v1/systemone 门面** | 判定件可被 System One 既有客户端直接消费（环回绑定 · 零内容日志） | SDK 面（HTTP POST） |
 
 ## FDE Harness 两阶段
 

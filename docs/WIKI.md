@@ -1,4 +1,4 @@
-| 下一版 | **v1.9.0**（📋 规划中——判定底座 · 阶段四（判定质量）） |# sofagent 项目导航索引（WIKI）
+# sofagent 项目导航索引（WIKI）
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
@@ -256,7 +256,7 @@ graph TB
 | 项 | 值 |
 |---|---|
 | 当前版本 | **v1.8.0**（2026-11-05，✅ 已发版 · 判定底座 · 阶段三（接线与分发）） |
-| 下一版 | **v1.8.0**（📋 规划中——判定底座 · 阶段三（接线分发，含 v1.7.0 SDK 面先行符号清偿）；以 [ROADMAP](./ROADMAP.md) 为准） |
+| 下一版 | **v1.9.0**（📋 规划中——判定底座 · 阶段四（消费与收口）：判定面收敛与假概率正名；以 [ROADMAP](./ROADMAP.md) 为准） |
 | 测试覆盖 | 6919 测试 / 14 包（标准：`tools/check/test-count.sh` 执行的 workspace 包；声称数校验见 `check-test-count.sh`；包数口径见下表注） |
 | 审计规则 | 28 条（17 默认 + 11 扩展）· 每次 commit 自动跑（编号构成与合并史见 [§七 术语表](#七术语表)；完整清单见 [SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)） |
 | FORGE | release-gate-loop 运行中 · fresh-eyes-loop 按需人工触发 |
