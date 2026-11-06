@@ -83,7 +83,7 @@ S1M 判定层失灵面（随阶段一 v1.6.0 零样本基线落数；v1.7.0 §�
 > 读数与可复算产物见 `datasets/` 与 [v1.6.0 开发日志](./changelog/v1.6/v1.6.0.md)；v1.7.0 复核面见 [v1.7.0 开发日志](./changelog/v1.7/v1.7.0.md) §六。
 
 口径对齐 [v1.8.0 §六](./changelog/v1.8/v1.8.0.md) / [v1.9.0 §五](./changelog/v1.9/v1.9.0.md)（不另立第二套表述），[v2.0.0 §三](./changelog/v2.0/v2.0.0.md) 补全时销账。当前不声称判定能力已实装。
-- **无 GPU 单机档不支持「自动降档」**：超阈`judge-memcheck` 拒绝并 `rc=2`（不降档）；16/4 GB 未实测、系数为经验值 ⇒ `not-measured`。
+- **无 GPU 单机档不支持「自动降档」**：超阈 `judge-memcheck` 拒绝并 `rc=2`；16 GB 机两档实测过闸、4 GB 边界（bf16 擦边 / fp32 OOM）。
 
 
 
@@ -759,7 +759,7 @@ Ontology 合并逻辑从 `knowledge/entities/` 的 frontmatter 提取实体关�
 
 ### DSH 插件 npm 首发（v1.5.2 章九起）的四条真实局限
 
-> **历史局限已消解**：v1.5.2 起 `engine/dsh-plugins/**` 可发布，宿主聚合插件（`cordis-plugin-sofagent`）的 6 条 `optionalDependencies`（inject / audit / evolve / rollback / daemon / fde）可在 npm 正常解析。
+> **历史局限已消解**：v1.5.2 起 `engine/dsh-plugins/**` 可发布，宿主聚合插件 6 条 `optionalDependencies` 可在 npm 正常解析。
 >v1.5.2 章九起七款插件摘 `private` + 加 `files` 白名单转为 npm 发布物，**这一条不再成立**；换来的是下面三条新的真实局限。
 
 1. **首发依赖顺序被钉死**：六款原子插件以**包名** `@sofagent/dsh-plugin-kit` 依赖基座（v1.5.2 章九二轮起——此前用相对路径，registry 单装必挂 `MODULE_NOT_FOUND`）⇒ 该基座**必须先于七款插件发布**，顺序反了挂载即失败。

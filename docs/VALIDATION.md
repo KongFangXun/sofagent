@@ -633,12 +633,12 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 | 内存档 | 机型/依据 | 延迟 p50 / p95 | 吞吐（c=1） | 可承载基座规模 | 状态 |
 |---|---|---|---|---|---|
 | **8 GB** | Apple A18 Pro（代理档，非目标机型） | 13.81 s / 14.88 s | 0.071 rps | 1.7B（bf16 3.44 GB + KV，实测 RSS 未采） | **measured** |
-| 16 GB（目标机） | 未取得 | not-measured | not-measured | not-measured | not-measured（U-1） |
-| 4 GB | 未取得 | not-measured | not-measured | not-measured | not-measured（U-2） |
+| 16 GB | Apple M4（17.2 GB · arm64 · 非 x86） | bf16 3.624 s / fp32 0.450 s | — | 1.7B 双档可载 | **measured**（RSS 4.216 / 8.047 GB） |
+| 4 GB | Ubuntu VM 3.8 GiB（无 swap） | bf16 4.472 s / fp32 OOM | — | bf16 擦边 3.775 GB | **measured（边界）** |
 
 并发劣化（同档）：c=1/2/4 → p50 13.81/27.38/28.65 s，倍数 1.0/1.98/2.07，失败 0/9。
 
-**降级机制**：**未实现**（无「内存不足自动降档/拒绝加载」路径），实测 9 次判定 0 次触发（0/9）⇒ 只能给「不触发」的事实断言，不给「降级正确」；实现后须补「超阈拒绝加载 + exit 非 0 + 单测」。
+**降级机制**：**已实现（拒绝而非降档）** —— `checkMemoryTier` + CLI `judge-memcheck`（超阈 `rc=2`）+ 7 单测；实测印证：4 GB 档 fp32 OOM(137)、bf16 擦边无交付稳定性。
 > 代理档声明：8 GB 档是代理、非目标机型，**不得写成达标**；`tiers.server_gpu` 为 not-measured。
 
 #### 延迟 → 职责层级映射（L234 · **族=部署容量曲线**）
