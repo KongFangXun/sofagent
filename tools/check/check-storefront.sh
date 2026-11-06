@@ -52,11 +52,12 @@ echo "════════════════════════�
 TOOL_COUNT=$(node tools/check/lib/mcp-tool-count.mjs 2>/dev/null || echo "")
 
 DSH_COUNT=0
-for d in engine/dsh-plugins/cordis-plugin-sofagent*; do
+# 实数一律取 git 跟踪面（坑位⑳：切分支后的 gitignored 构建目录会让裸 glob 误计）
+for d in $(git ls-tree -d --name-only HEAD engine/dsh-plugins/ 2>/dev/null | grep '^engine/dsh-plugins/cordis-plugin-sofagent'); do
   [ -d "$d" ] && DSH_COUNT=$((DSH_COUNT + 1))
 done
 OC_COUNT=0
-for d in engine/openclaw-plugins/sofagent-*; do
+for d in $(git ls-tree -d --name-only HEAD engine/openclaw-plugins/ 2>/dev/null | grep '^engine/openclaw-plugins/sofagent-'); do
   [ -d "$d" ] && OC_COUNT=$((OC_COUNT + 1))
 done
 PLUGIN_TOTAL=$((DSH_COUNT + OC_COUNT))
@@ -228,9 +229,20 @@ fi
 echo ""
 
 # ── gh 可达性探测（三态门禁的 SKIP 分支）──
-GH_DESC=$(gh api repos/KongFangXun/sofagent --jq .description 2>/dev/null)
-GH_HOME=$(gh api repos/KongFangXun/sofagent --jq .homepage 2>/dev/null)
-GH_TOPIC_COUNT=$(gh api repos/KongFangXun/sofagent --jq '.topics | length' 2>/dev/null)
+# 瞬断重试：2026-11-06 实测单次抖动使 `.description` 返空 ⇒ 「未找到 (N tools)」假红两条。
+# 空返回一律重试一次（真实离线/未登录时两次皆空，仍走下方 SKIP 分支，语义不变）。
+gh_retry() {
+  local _out="" _n
+  for _n in 1 2; do
+    _out=$(gh api "$@" 2>/dev/null)
+    [ -n "$_out" ] && break
+    sleep 2
+  done
+  printf '%s' "$_out"
+}
+GH_DESC=$(gh_retry repos/KongFangXun/sofagent --jq .description)
+GH_HOME=$(gh_retry repos/KongFangXun/sofagent --jq .homepage)
+GH_TOPIC_COUNT=$(gh_retry repos/KongFangXun/sofagent --jq '.topics | length')
 # 🔴 失效凭证守卫：token 失效时 gh api 把 JSON 错误体打到 **stdout**（非 stderr），
 # 2>/dev/null 拦不住——三变量各自捕获到 112 字节的「Bad credentials」文本，均非空
 # → 走不进下方 SKIP 分支 → 错误体被当 description 解析 = 假红两连
@@ -251,7 +263,7 @@ if [ -z "$GH_DESC" ] && [ -z "$GH_HOME" ] && [ -z "$GH_TOPIC_COUNT" ]; then
 fi
 
 # ── 断言 ⓪：topics 面（v1.6.0 BUG-40——GH_TOPIC_COUNT 此前采集后从不参与断言）──
-GH_TOPIC_LIST=$(gh api repos/KongFangXun/sofagent --jq '.topics | join(",")' 2>/dev/null || echo "")
+GH_TOPIC_LIST=$(gh_retry repos/KongFangXun/sofagent --jq '.topics | join(",")' || echo "")
 if [ -n "$GH_TOPIC_COUNT" ]; then
   ASSERTS=$((ASSERTS + 1))
   if [ "$GH_TOPIC_COUNT" -lt 10 ] || [ "$GH_TOPIC_COUNT" -gt 20 ]; then
@@ -346,12 +358,25 @@ fi
 # （改量词消歧），**不收窄本断言**——裸变体是历史旧口径的最强兜底，收窄即漏报。
 echo ""
 echo "── 规则数口径五变体全仓扫描（活区零残留断言）──"
+# 扫描面只收「非 gitignored」文件（2026-11-06 实测假红：FORGE/SKILL/*/runs/ 下的 run 产物被
+# 当成活区文档判红——该目录 .gitignore:59 已忽略，不是活区）。**不收窄变体表**：仅按 git 忽略
+# 面过滤噪声，git 跟踪面与未跟踪的活区文件照旧全扫，兜底能力不变。
+_ignored_drop() {
+  local _line _p
+  while IFS= read -r _line; do
+    _p="${_line%%:*}"
+    [ -n "$_p" ] || continue
+    if git check-ignore -q -- "$_p" 2>/dev/null; then continue; fi
+    printf '%s\n' "$_line"
+  done
+}
 STALE_HITS=$(grep -rnE "25 条|25条|25 discipline rules|27 条规则|24 git-diff|20 条纯 git-diff|20 条零 token|17 默认 \+ 8 扩展|17 默认 \+ 8\)" . \
   --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=.workbuddy --exclude-dir=.sofagent \
   2>/dev/null \
   | grep -vE "docs/changelog/v1\.[0-5]/|docs/archive/|playbook/regression-checklist|FORGE/LEDGER|releasing/06-doc-finalize|releasing/11-post-publish|dream-cycle|audit-root-cause|rule-metadata-snapshot|governance\.test|dataset-builder|check-readme-parity|check-docs\.sh:6[0-9][0-9]|federation-e2e|dual-device-federation" \
   | grep -vE "25 条历史|不是第 25|第 25、26、27" \
-  | grep -vE "check-storefront\.sh:|check-docs\.sh:|tool-registry\.ts:158|27 个规则源文件|acceptance-test\.sh:35[0-9][0-9]:# |acceptance-test\.sh:150[0-9]:# " || true)
+  | grep -vE "check-storefront\.sh:|check-docs\.sh:|tool-registry\.ts:158|27 个规则源文件|acceptance-test\.sh:35[0-9][0-9]:# |acceptance-test\.sh:150[0-9]:# " \
+  | _ignored_drop || true)
 if [ -n "$STALE_HITS" ]; then
   echo "$STALE_HITS" | while IFS= read -r _hit; do
     echo "  ❌ [rule-count] $_hit"
@@ -369,7 +394,7 @@ STALE_HITS2=$(grep -rnE "25 规则|25 rules|25 discipline" . \
   --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=.workbuddy --exclude-dir=.sofagent \
   2>/dev/null \
   | grep -vE "docs/changelog/v1\.[0-5]/|docs/archive/|playbook/regression-checklist|FORGE/LEDGER|releasing/06-doc-finalize|releasing/11-post-publish|dream-cycle|audit-root-cause|dataset-builder|governance\.test|rule-metadata-snapshot|check-readme-parity|check-storefront" \
-  || true)
+  | _ignored_drop || true)
 if [ -n "$STALE_HITS2" ]; then
   echo "$STALE_HITS2" | while IFS= read -r _hit2; do
     echo "  ❌ [rule-count-bare] $_hit2"
