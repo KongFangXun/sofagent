@@ -479,6 +479,12 @@
   type CommitMeta,
 } from './router/judge-observability';
 /* @public */ export {
+  probeSnapshotPath,
+  produceProbeSnapshot,
+  readProbeSnapshot,
+  type ProbeSnapshot,
+} from './router/judge-store';
+/* @public */ export {
   setJudgeMode,
   getJudgeMode,
   getShadowLedger,

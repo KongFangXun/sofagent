@@ -121,7 +121,7 @@ describe('runWeeklyDigest（@weekly 周报巡检）', () => {
     expect(report.interventions.resolved[0]!.checkpointId).toBe('cp-1');
 
     // 数据源均可用 ⇒ 无降级说明
-    expect(report.notes).toEqual([]);
+    expect(report.notes.filter((x) => !x.includes('判定探针'))).toEqual([]);
   });
 
   it('窗口外决策/介入不入本周报', () => {
@@ -171,14 +171,15 @@ describe('runWeeklyDigest（@weekly 周报巡检）', () => {
     const { report } = readDigest();
 
     // ① 跳过数留痕（一次汇总一行，不逐文件刷屏）
-    expect(report.notes).toHaveLength(1);
-    expect(report.notes[0]).toContain('有 2 个文件无法解析');
-    expect(report.notes[0]).toContain('已跳过');
+    const hitlNotes = report.notes.filter((x) => !x.includes('判定探针'));
+    expect(hitlNotes).toHaveLength(1);
+    expect(hitlNotes[0]).toContain('有 2 个文件无法解析');
+    expect(hitlNotes[0]).toContain('已跳过');
     // ② 好文件照常计入——坏文件不拖垮聚合
     expect(report.interventions.resolvedThisWeek).toBe(1);
     expect(report.interventions.resolved[0]!.checkpointId).toBe('cp-good');
     // ③ 同一个 notes 通道也透出到巡检结果（双出口可见）
-    expect(result.message).toContain('降级 1 项');
+    expect(result.message).toContain('降级 2 项'); // 坏 HITL 1 + 判定探针快照缺失 1（两个数据源各留一条，不合并）
   });
 
   it('注册点：INSPECTORS 的 L2 名单含 weekly-digest，且分层调度真跑到它', () => {
@@ -187,5 +188,45 @@ describe('runWeeklyDigest（@weekly 周报巡检）', () => {
 
     const layered = runLayeredInspection(ISO_DIR, 'L2');
     expect(layered.results.map((r) => r.name)).toContain('weekly-digest');
+  });
+
+  it('判定探针快照在位 ⇒ anomalies.judgeProbes 并出（alert/warn 计数 + TOP 只列非 ok + usage 同出）', () => {
+    writeDecisions([decision(minutesAgo(30))]);
+    const snap = {
+      ts: minutesAgo(10),
+      findings: [
+        { probe: 'abstain-mutation', severity: 'alert', metric: 0.4, threshold: 0.25, detail: '弃权率 0%→40%（n=120）', n: 120 },
+        { probe: 'probability-anomaly', severity: 'warn', metric: 0.5, threshold: 0.5, detail: '长期贴 0.5（n=200）', n: 200 },
+        { probe: 'distribution-drift', severity: 'ok', metric: 0.02, threshold: 0.2, detail: '正常（n=150）', n: 150 },
+      ],
+      panel: '# 判定层失效探测\n',
+      usage: { n: 50, adoptionRate: 0.8, askRate: 0.1, denyRate: 0.1, overrideRate: 0.05, unconsumed: false, overridden: false },
+    };
+    mkdirSync(join(ISO_DIR, 'dashboard'), { recursive: true });
+    writeFileSync(join(ISO_DIR, 'dashboard', 'judge-probes.json'), JSON.stringify(snap), 'utf-8');
+
+    runWeeklyDigest(ISO_DIR);
+    const { report } = readDigest();
+
+    expect(report.anomalies.judgeProbes).toBeDefined();
+    const jp = report.anomalies.judgeProbes!;
+    expect(jp.alerts).toBe(1);
+    expect(jp.warns).toBe(1);
+    expect(jp.observedAt).toBe(snap.ts);
+    expect(jp.top).toHaveLength(2); // ok 不入 TOP
+    expect(jp.top[0]!.probe).toBe('abstain-mutation'); // alert 排前
+    expect(jp.top.every((t) => t.severity !== 'ok')).toBe(true);
+    expect(jp.top.every((t) => typeof t.n === 'number' && t.n > 0)).toBe(true); // 无 n 的告警不可处置
+    expect(jp.usage?.unconsumed).toBe(false);
+    expect(jp.usage?.overridden).toBe(false);
+  });
+
+  it('判定探针快照缺失 ⇒ 不写该段（不补零）+ notes 留痕（不静默）', () => {
+    writeDecisions([decision(minutesAgo(30))]);
+    runWeeklyDigest(ISO_DIR);
+    const { report } = readDigest();
+
+    expect(report.anomalies.judgeProbes).toBeUndefined();
+    expect(report.notes.some((n) => n.includes('判定探针快照缺失'))).toBe(true);
   });
 });

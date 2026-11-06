@@ -70,6 +70,20 @@ export interface DigestDecisionHighlight {
 }
 
 /** 异常分类汇总（按 decision-log 的 kind 归桶——不新增 kind，只用既有值） */
+/** 判定层探针周报摘要（源自 `<dataDir>/dashboard/judge-probes.json`；缺失即不写该段——不补零） */
+export interface DigestJudgeProbes {
+  /** 快照采集时点（ISO；周报须能说明「这是哪一刻的探针态」） */
+  observedAt: string;
+  /** alert 级命中数 */
+  alerts: number;
+  /** warn 级命中数 */
+  warns: number;
+  /** 命中 TOP（按严重度排序，最多 5 条——每条带 n，无 n 的告警不可处置） */
+  top: Array<{ probe: string; severity: string; metric: number | string; threshold: number | string; n: number; detail: string }>;
+  /** 判定使用度量（快照内有则并出——无人消费与上线即被推翻须可区分） */
+  usage?: { n: number; adoptionRate: number | null; askRate: number; denyRate: number; overrideRate: number | null; unconsumed: boolean; overridden: boolean };
+}
+
 export interface DigestAnomalies {
   total: number;
   /** 降级执行（FALLBACK_DEGRADE） */
@@ -80,6 +94,8 @@ export interface DigestAnomalies {
   rollback: number;
   /** 工具门禁触发（TOOL_GATE——拦截/放行/告警） */
   blocked: number;
+  /** 判定层探针告警（本章「告警须在面板与周报可见，非仅日志」的周报面） */
+  judgeProbes?: DigestJudgeProbes;
 }
 
 /** 人工介入汇总（HITL 目录口径，与 governance ③ 同源——口径不另立） */
@@ -133,7 +149,7 @@ function whyTextOf(entry: DecisionLogEntry): string {
 }
 
 /** 异常桶归类（只读既有 kind 值，不新增 kind、不改判定逻辑） */
-function classifyAnomaly(kind: string): keyof Omit<DigestAnomalies, 'total'> | null {
+function classifyAnomaly(kind: string): keyof Omit<DigestAnomalies, 'total' | 'judgeProbes'> | null {
   switch (kind) {
     case 'FALLBACK_DEGRADE':
       return 'degraded';
@@ -233,6 +249,75 @@ function collectNodeStats(
 }
 
 /** HITL 介入汇总（只读目录扫描——与 governance 同源口径） */
+/** judge-store 最小形状（容错 require——未构建时 notes 留痕，不炸周报） */
+interface JudgeStoreModule {
+  readProbeSnapshot(dataDir: string): {
+    ts: string;
+    findings: Array<{
+      probe: string;
+      severity: string;
+      metric: number | string;
+      threshold: number | string;
+      detail: string;
+      n: number;
+    }>;
+    usage?: DigestJudgeProbes['usage'];
+  } | null;
+}
+
+function loadJudgeStoreModule(notes: string[]): JudgeStoreModule | null {
+  try {
+    return require('@sofagent/orchestrator') as JudgeStoreModule;
+  } catch (err) {
+    notes.push(
+      `判定探针不可用（@sofagent/orchestrator 未构建）：${err instanceof Error ? err.message : String(err)}——周报探针段不写`,
+    );
+    return null;
+  }
+}
+
+/**
+ * 采集判定层探针摘要（judge-store 落盘快照）。
+ * 三条纪律：① 缺失即不写该段（不补零）；② notes 必留痕（不静默）；③ 只列 alert/warn（ok 不入 TOP）。
+ */
+function collectJudgeProbes(dataDir: string, notes: string[]): DigestJudgeProbes | null {
+  const mod = loadJudgeStoreModule(notes);
+  if (mod === null) return null;
+  let snap: ReturnType<JudgeStoreModule['readProbeSnapshot']>;
+  try {
+    snap = mod.readProbeSnapshot(dataDir);
+  } catch (err) {
+    notes.push(`判定探针快照读取失败：${err instanceof Error ? err.message : String(err)}——周报探针段不写`);
+    return null;
+  }
+  if (snap === null) {
+    notes.push('判定探针快照缺失（dashboard/judge-probes.json 未生成）——周报探针段不写');
+    return null;
+  }
+  const severityOrder: Record<string, number> = { alert: 0, warn: 1, ok: 2 };
+  const alerts = snap.findings.filter((f) => f.severity === 'alert').length;
+  const warns = snap.findings.filter((f) => f.severity === 'warn').length;
+  const top = snap.findings
+    .filter((f) => f.severity === 'alert' || f.severity === 'warn')
+    .sort((a, b) => (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9))
+    .slice(0, 5)
+    .map((f) => ({
+      probe: f.probe,
+      severity: f.severity,
+      metric: f.metric,
+      threshold: f.threshold,
+      n: f.n,
+      detail: f.detail,
+    }));
+  return {
+    observedAt: snap.ts,
+    alerts,
+    warns,
+    top,
+    ...(snap.usage ? { usage: snap.usage } : {}),
+  };
+}
+
 function collectInterventions(
   dataDir: string,
   windowStartMs: number,
@@ -364,6 +449,12 @@ export function runWeeklyDigest(_projectDir: string): InspectorResult {
 
   // ── ③ 人工介入汇总 ──
   const interventions = collectInterventions(dataDir, windowStartMs, notes);
+
+  // ── ④ 判定层探针（「告警须在面板与周报可见，非仅日志」的周报面）
+  //     数据源 = judge-store 落盘的 <dataDir>/dashboard/judge-probes.json；
+  //     缺失/不可读 ⇒ 不写该段（不补零、不静默——notes 留痕）
+  const judgeProbes = collectJudgeProbes(dataDir, notes);
+  if (judgeProbes !== null) anomalies.judgeProbes = judgeProbes;
 
   const report: WeeklyDigestReport = {
     schemaVersion: 'v1',
