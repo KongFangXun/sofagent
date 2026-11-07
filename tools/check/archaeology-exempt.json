@@ -171,6 +171,11 @@
       "file": "playbook/fresh-eyes-calibration.md",
       "anchor": "> 来源：run-01（deepseek-flash V4.1 首轮）A 类 16 条",
       "reason": "校准来源的 runDir 出处指针（同款先例：本表「## 阶段四校准（run-01 收编」锚）——run 编号是可复算定位键（FORGE/SKILL/fresh-eyes-loop/runs/2026/10/run-01），非跑批叙事；删它则 4 条收编教训无法回溯原始审查证据（A/C 类计数与合并原则的对照源）"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "docs/changelog/v1.8/v1.8.0.md || FAIL=1",
+      "reason": "B4「三件套口径」断言的**对照对象本体**——grep 目标就是这个文件路径，版本号在此是路径字面量（待核对象），不是「哪版引入」的出身叙事。删它或改成 glob 会让断言从「精确指向该版 changelog」退化为模糊匹配（同树下有副本或别名即静默放宽），该断言的全部价值就在于精确命中。同款先例：本表「B-快照端点对账——v1.6.0 devlog 施工区间」锚。"
     }
   ],
   "exemptAnchors_spec": {

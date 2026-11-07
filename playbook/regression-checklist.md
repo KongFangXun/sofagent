@@ -1318,7 +1318,7 @@ grep -qE "正式版发布后自动|rc 期\*\*优先内嵌" engine/orchestrator/s
 
 ```bash
 grep -q "'COMMONS'" engine/audit/src/decision-schema.ts || echo "⚠️ DecisionKind.COMMONS 缺失"
-grep -q "COMMONS" engine/core/src/decision-kinds.ts || echo "⚠️ decision-log 未支持 COMMONS" # 更名同步（v1.8.0 锚随单源化升位 decision-log→decision-kinds，与 acceptance S268 同批）
+grep -q "COMMONS" engine/core/src/decision-kinds.ts || echo "⚠️ decision-log 未支持 COMMONS" # 更名同步（锚随单源化升位 decision-log→decision-kinds，与 acceptance S268 同批）
 grep -q "EVOLUTION" engine/orchestrator/src/commons/retire.ts || echo "⚠️ 退役应走 EVOLUTION（刻意设计）"
 ```
 
@@ -1540,11 +1540,11 @@ grep -o '~[0-9]* 行' bootstrap.sh | grep -o '[0-9]*' | awk -v n="$(wc -l < inst
 grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing.md && head -5 docs/changelog/releasing.md | grep -q "入口" && echo "✅ FORGE/SKILL 区分 + releasing 入口指引在位" || { echo "❌ 结构可发现性缺失（FORGE/SKILL 或 releasing 入口）"; exit 1; }
 # B11 双 manifest 版本一致（阶段十一 ClawHub 拒收实录：openclaw.plugin.json 从未被 bump 覆盖 4 款全漂移）——命令体见 acceptance S331
 # B12 bump 跳过逻辑无通配误伤（阶段十一静默漏 bump 实录：通配误伤 sofagent audit）——命令体见 acceptance S331（S332 已合族并入）
-# B15 bump 覆盖面三类盲区（v1.8.0 发版批实锤，CI 逐轮报红）：①生成物（cordis.patch.yml 等由 gen 脚本产出，bump 不覆盖）②测试内硬编码版本（doctor.test.ts 写死 1.7.0 期望）③CHANGELOG 索引行缺「测试 N」口径（test-count 锚定回退旧版行报漂移）
+# B15 bump 覆盖面三类盲区（CI 逐轮报红）：①生成物（cordis.patch.yml 等由 gen 脚本产出，bump 不覆盖）②测试内硬编码版本（doctor.test.ts 写死 1.7.0 期望）③CHANGELOG 索引行缺「测试 N」口径（test-count 锚定回退旧版行报漂移）
 node tools/gen/gen-plugin-manifests.mjs >/dev/null 2>&1 && bash tools/check/check-template-drift.sh >/dev/null 2>&1 && echo '✅ B15① 生成物与 manifest 同版' || { echo '❌ B15① 生成物版本漂移——重跑 gen-plugin-manifests.mjs'; exit 1; }
 if git grep -nE "'1\\.[0-9]+\\.[0-9]+'" -- 'engine/**/__tests__/*.ts' 2>/dev/null | grep -vE 'VERSION|1\.0\.0|0\.0\.1' | head -3 | grep -q .; then echo '🟡 B15② 测试内疑似硬编码版本（人工核：期望值应动态取 VERSION 常量）'; else echo '✅ B15② 测试无硬编码版本期望'; fi
 grep -qE '测试 [0-9]+→\*\*[0-9]+\*\*' CHANGELOG.md && echo '✅ B15③ 索引行含测试数口径' || { echo '❌ B15③ CHANGELOG 索引行缺「测试 N→M」口径（test-count 会锚定回退旧版行）'; exit 1; }
-# B16 发版脚本管道/替换陷阱族（v1.8.0 发版批三例实锤）：①npm ls 全树输出超 pipe 缓冲 → node 先退 → SIGPIPE(141) 在 set -o pipefail 下判死 ②bash cmd 替换内 node -e 多行脚本 + 参数尾接形态收空 stdin ③目录真名与 cwd 大小写不一致（WorkBuddy vs Workbuddy）在 forceConsistentCasing 下报 TS1149 假红
+# B16 发版脚本管道/替换陷阱族：①npm ls 全树输出超 pipe 缓冲 → node 先退 → SIGPIPE(141) 在 set -o pipefail 下判死 ②bash cmd 替换内 node -e 多行脚本 + 参数尾接形态收空 stdin ③目录真名与 cwd 大小写不一致（WorkBuddy vs Workbuddy）在 forceConsistentCasing 下报 TS1149 假红
 grep -q 'NPM_LS_TMP' tools/release/publish-packages.sh && echo '✅ B16① npm ls 落盘读（SIGPIPE 面已消）' || { echo '❌ B16① publish 脚本回退到管道直读'; exit 1; }
 grep -q 'LAYERS_EOF' tools/release/publish-packages.sh && echo '✅ B16② 拓扑脚本走 .mjs 文件形态' || { echo '❌ B16② 回退为 cmd 替换内 node -e 多行'; exit 1; }
 node -e 'const fs=require("fs");const real=fs.readdirSync(process.env.HOME).filter(d=>d.toLowerCase()==="workbuddy");const actual=fs.realpathSync(process.cwd()).split("/").slice(0,4)[3];if(real[0]&&actual!==real[0]){console.error("❌ B16③ cwd 大小写 ≠ 目录真名("+actual+" vs "+real[0]+")——tsc TS1149 假红来源");process.exit(1)}console.log("✅ B16③ cwd 与目录真名一致")'
@@ -2144,7 +2144,7 @@ if grep -qE "calibration-report 归位" playbook/regression-checklist.md && [ "$
 
 #### 151. 判定底座阶段三收口一维（接线与分发 · 阶段四分发批）
 > A 类 17 面：StdioDecisionChannel 四职责/三档接线/回执五件/同源对账四件/并行解码三件/观测四字段/七路回落/懒预双档/决策点六要素/契约扩展位/最小可判定前缀/出站脱敏/权重 fail-closed+USB 两档/跨仓协议 SSOT/实验脚本 clone 即跑/归档语义对齐/场景号实测纪律。
-> B 类 5 条防回归：场景数口径全仓同步/A→E 跨层三件套/留白偏松回退留痕/not-measured 三件套/跨批基线代登归因。C 类校准见 fresh-eyes-review v1.8.0 节（草稿 abc-draft-v1.8.0 A17+B5 · 行为由单测与 S494-S497 锁）。
+> B 类 5 条防回归：场景数口径全仓同步/A→E 跨层三件套/留白偏松回退留痕/not-measured 三件套/跨批基线代登归因。C 类校准见 fresh-eyes-review「发版批校准」节（该批草稿 A17+B5 · 行为由单测与 S494-S497 锁）。
 
 > **A 类（本版新功能审查面 · 沿 #150 一维合壳先例 · 分钟级静态锚；行为级断言在单测与 S494-S497）**。
 > **B 类（防复发 · 本版实锤已修，此处防回潮）**：场景数 417 stale ×2、A 层 34 行残差归因、L232 偏松勾选、裸「待测」、代登 F6.7 基线。
@@ -2169,11 +2169,11 @@ git grep -q "redaction/v1" engine/orchestrator/src/router/judge-state.ts || FAIL
 git grep -q "verify-failed-cleanup" engine/orchestrator/src/weights/weights-fetch.ts || FAIL=1                           # A13 fail-closed 清理留痕
 git grep -q "media" install.sh || FAIL=1                                                                                 # A13b USB A 介质档
 grep -q "协议" engine/orchestrator/src/router/stdio-decision-channel.ts || FAIL=1  # A14 协议 SSOT 在文件头（跨仓 runner 逐字取自此——跨仓侧不另立协议说明）
-grep -q "标签>定义" datasets/label-vs-definition-run.py || FAIL=1  # A15 实验脚本在位（v1.8.0 升锚：原 off-by-one 词形从未存在于文件、fallback 钉「最后 commit msg 含修复」被后续 fix commit 顶掉——改锚持久事实=脚本头实验标识；off-by-one 修复语义由 git 演进史承载）
+grep -q "标签>定义" datasets/label-vs-definition-run.py || FAIL=1  # A15 实验脚本在位（升锚：原 off-by-one 词形从未存在于文件、fallback 钉「最后 commit msg 含修复」被后续 fix commit 顶掉——改锚持久事实=脚本头实验标识；off-by-one 修复语义由 git 演进史承载）
 test -d datasets/v17-eval-reports || FAIL=1  # A16 归档目录在位（v18 产物归 v18 目录——本版评测产物在 factory rsi/eval，不误入 v17）
 grep -q "scenario 497" playbook/acceptance-test.sh || FAIL=1                                                             # A17 场景号实测纪律锚
 # B 类防回归（5 条）
-grep -c "423" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 422" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale（v1.8.0 R2 升锚：SSOT 421→422，S498 收口批 +1；stale 词形随升）
+grep -c "423" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 422" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale（R2 升锚：SSOT 421→422，S498 收口批 +1；stale 词形随升）
 test -f docs/guides/AI-ATTRIBUTION.md && ! test -f docs/AI-ATTRIBUTION.md || FAIL=1                                      # B2 A→E 落位
 git grep -q "not-measured" docs/changelog/v1.8/v1.8.0.md || FAIL=1                                                       # B4 三件套口径
 [ "$FAIL" = 0 ] && echo "✅ #151 判定底座阶段三收口 17A+5B 锚全过" || echo "❌ #151 有锚失守"

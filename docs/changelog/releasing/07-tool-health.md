@@ -52,7 +52,7 @@
 | 六 | | **🔴 hook 端到端实测**（见下方脚本） | 拦截 exit 2 + 放行 exit 0 |
 | 七 | | **shell 变量定界守卫**（`tools/` 下全部 `.sh` 中 `$VAR` 后紧跟**非 ASCII 字符** → 变量名被吞，set -u 崩溃 / 无 set -u 时静默展开为空）。⚠️ 危害主形态是**变量静默展开为空**（无 set -u 时不报错，只在输出里丢值，常藏在仅失败分支触发的行里）——不是只有 set -u 崩溃一种形态。**同族第二形态：管道无匹配 + pipefail**——`… \| grep X` 在 `bash -eo pipefail`（CI 形态）下无匹配即整管道非 0 → 脚本以无关名义硬失败（实测：install.sh `head -2 \| grep` 炸）——凡新增 `\| grep`/`\| head` 类管道，要么补 `\|\| true` 兜底要么确保匹配面恒存在 |
 | 八 | | **🔴 防线失明自检** | 正常态 RC=0 且注入矩阵全报红；人为让 perl 失效重跑必须 RC≠0 |
-> 🔴 **同族第三形态（v1.8.0 发版批实锤）：`npm ls --all --json` 等超缓冲区输出直连管道**——消费端（node）先读完退出 → 生产端收 SIGPIPE(141) → `set -o pipefail` 判死，报错面与真实成因无关（表现为 JSON 空解析失败）。处置：**输出先落临时文件再读**，不直连管道。
+> 🔴 **同族第三形态：`npm ls --all --json` 等超缓冲区输出直连管道**——消费端（node）先读完退出 → 生产端收 SIGPIPE(141) → `set -o pipefail` 判死，报错面与真实成因无关（表现为 JSON 空解析失败）。处置：**输出先落临时文件再读**，不直连管道。
 > 🔴 **同族第四形态（同日实锤）：bash `$( )` 替换内含多行 `node -e` 且尾部接参数**——引号嵌套下 stdin 被吃空、参数传递失效（偶发形态，测单行能过、多行即炸）。处置：heredoc 落 `.mjs` 临时文件再 `node file.mjs "$ARG"`。
 > 🔴 **环境级假红第五形态：目录真名与 cwd 大小写不一致**——macOS APFS 不敏感允许小写进目录，但 `forceConsistentCasingInFileNames` 判 `Workbuddy` 与真名 `WorkBuddy` 为两 casing，报 `TS1149` 且两路径视觉完全相同（差异在第 23 字节）。处置：**发版/构建命令一律用 `readdir` 真名进目录**；定性方法 = 逐字符 diff 报错里的两个路径。 `bash tools/check/check-cjk-var.sh` 全绿 |
 

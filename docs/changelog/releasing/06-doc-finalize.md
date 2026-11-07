@@ -287,9 +287,9 @@ node tools/check/doc-score.mjs --json   # 机读输出（供本版 devlog「文�
 ## Release Notes（GitHub Release 发布用）
 
 > 面向用户的发布说明——开发日志正文给开发者看，Release Notes（本段 + GitHub Release body）给用户看。
-> **结构 SSOT = 上一版实际发布物**（`gh release view v上一版 --json body` 动态拉取）——本节范本快照仅供追溯，**每版发布前必须重新拉取上一版对照**，禁止按本节文字直接生成（范本段与实际发布物的结构差异曾在发布前才暴露）。已知结构基线（v1.8.0 实测回写）：H1 品名式标题（`# vX.Y.Z · 主题 · 阶段`）→ 定位句（emoji + 主题 + 人话，**破坏性变更预告并入此段**，≤220 字符）→ TL;DR (EN)（≤650）→ ⚡ Install / Upgrade（**三块**：新装 curl / 已装升级 `npx --doctor` / `uses:` GitHub Action）→ 🔨 核心变更（**H3 分节，末节为 🔒 BugFix（上版遗留）**——v1.8.0 起已按 SOP 归位；前序功能节 3-4 个，末功能节为 🛠 工具链与闸门加固口径）→ ✅ 质量验证（**表格**「检查项 / 结果」两列，**恰 7 项**：npm test / acceptance-test / shellcheck / check-version / 回归检查 / release-gate / fresh-eyes）→ ⚠️ 破坏性变更（bullet 直列；本节无 `> 升级必读` 引导句）→ 🔗 深入了解（四行表：CHANGELOG / SECURITY / HANDBOOK / Discussions）+ 📖 尾链（blob/main 绝对 URL）；
->核心变更下 H3 子节数随版本交付面伸缩（v1.8.0 实测 5 节：🧭 判定通道与三档接线 / ⚡ 并行解码与观测 / 📦 权重分发通路 / 🛠 工具链与闸门加固 / 🔒 BugFix（上版遗留）——每节 2-3 条 bullet，末节固定 BugFix）。五 H2 同构，条数勿照抄本节。
-> ✅ **BugFix 节位置已归位（v1.8.0 实测确认）**：`### 🔒 BugFix（上版遗留）` 位于核心变更末节、质量验证之前——v1.7.0 曾误落破坏性变更节内，v1.8.0 已按 SOP 纠正。生成时按此位置，勿照抄 v1.7.0。
+> **结构 SSOT = 上一版实际发布物**（`gh release view v上一版 --json body` 动态拉取）——本节范本快照仅供追溯，**每版发布前必须重新拉取上一版对照**，禁止按本节文字直接生成（范本段与实际发布物的结构差异曾在发布前才暴露）。已知结构基线（实测回写）：H1 品名式标题（`# vX.Y.Z · 主题 · 阶段`）→ 定位句（emoji + 主题 + 人话，**破坏性变更预告并入此段**，≤220 字符）→ TL;DR (EN)（≤650）→ ⚡ Install / Upgrade（**三块**：新装 curl / 已装升级 `npx --doctor` / `uses:` GitHub Action）→ 🔨 核心变更（**H3 分节，末节为 🔒 BugFix（上版遗留）**——v1.8.0 起已按 SOP 归位；前序功能节 3-4 个，末功能节为 🛠 工具链与闸门加固口径）→ ✅ 质量验证（**表格**「检查项 / 结果」两列，**恰 7 项**：npm test / acceptance-test / shellcheck / check-version / 回归检查 / release-gate / fresh-eyes）→ ⚠️ 破坏性变更（bullet 直列；本节无 `> 升级必读` 引导句）→ 🔗 深入了解（四行表：CHANGELOG / SECURITY / HANDBOOK / Discussions）+ 📖 尾链（blob/main 绝对 URL）；
+>核心变更下 H3 子节数随版本交付面伸缩（实测 5 节：🧭 判定通道与三档接线 / ⚡ 并行解码与观测 / 📦 权重分发通路 / 🛠 工具链与闸门加固 / 🔒 BugFix（上版遗留）——每节 2-3 条 bullet，末节固定 BugFix）。五 H2 同构，条数勿照抄本节。
+> ✅ **BugFix 节位置已归位**：`### 🔒 BugFix（上版遗留）` 位于核心变更末节、质量验证之前——曾误落破坏性变更节内，现已按 SOP 纠正。生成时按此位置，勿按旧版布局放置。
 > 🔴 **元说明的第三种残留形态 = HTML 注释**：除顶部/尾部两段 blockquote，草稿文件常带首行
 > `<!-- …阶段八生成／阶段九… -->` 内部注记——渲染不可见但 raw 可读，且含流程黑话，**必须一并剥掉**。
 > 自检命令同步扩到注释形态：`grep -cE "阶段六定稿必备项|数字取值说明|\.\./releasing/|Release body 同源|阶段八生成|阶段九步骤七" body.md` 应为 0。

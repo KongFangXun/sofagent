@@ -525,9 +525,9 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 > 🔧 **工程规则与校准档案已外移**：报告判别规则（审查校准）、driver/管道/门禁的工程防线、文档治理规则及已消化校准索引，见 [fresh-eyes-calibration.md](./fresh-eyes-calibration.md)（维护者文档——**worker 不加载**防注意力锚定，**报告判读者/收口方必读**）。本文件保持「视角 + 纪律」纯审查输入；新校准往档案加，本文件不再因校准内容涨行（警戒线权威出处 `docs/changelog/releasing/04-review-system.md`，本处仅外链、不自带数字）。
 
-### v1.8.0 发版批校准（C 类 · 2026-11-05）
+### 发版批校准（C 类）
 
-- **「发布完成」≠ 没有问题**：v1.8.0 报完成时有 7 类盲区未暴露，全靠作者追问「你确定全都没问题？」后复检抓出（生成物版本行 / 测试硬编码版本 / CHANGELOG 口径 / 静默 catch / forms 结构二义 / SDK-face 到期 / 双语集合不对称）。**发版批收口必须把 CI 三条 workflow 结论作为硬判据**（closeout ④），而非本地绿即宣称完成。
+- **「发布完成」≠ 没有问题**：报完成时曾有 7 类盲区未暴露，全靠作者追问「你确定全都没问题？」后复检抓出（生成物版本行 / 测试硬编码版本 / CHANGELOG 口径 / 静默 catch / forms 结构二义 / SDK-face 到期 / 双语集合不对称）。**发版批收口必须把 CI 三条 workflow 结论作为硬判据**（closeout ④），而非本地绿即宣称完成。
 - **bump 的第三种盲区是生成物**：bump 只改「文本里出现旧版本号」的面，**由脚本生成的产物**（`cordis.patch.yml` 八份）不在其覆盖内——bump 后必须跑生成器重生成 + drift 检查，不能等 CI 报红。
 - **测试里的版本期望必须动态**：`doctor.test.ts` 写死 `1.7.0` 当作「引擎版本」，bump 后必红（verify 唯一失败项）。写死版本 = 下版埋雷；期望值一律取 `VERSION` 常量。
 - **环境级假红要查目录真名**：tsc `TS1149`（同路径两 casing）耗 40 分钟定位，真因是**目录真名 `WorkBuddy`（大 B）与 session cwd `Workbuddy`（小 b）不一致**——APFS 不敏感允许进入，但 `forceConsistentCasingInFileNames` 判两者为不同 casing。**发版/构建命令一律用 `readdir` 真名进目录**。
@@ -535,7 +535,7 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **`npm ls --all --json` 全树输出超 pipe 缓冲**：消费端先退 → npm 收 SIGPIPE(141) → `set -o pipefail` 判死。落临时文件再读，不直连管道。
 - **守卫自带 `--fix` 优先用**：`check-anchors --fix` 一次写正，手动复算 GitHub slug 连错三版（含从 `.mjs` 提取正则转义失败两次）。有官方修复通道时不自己重造算法。
 
-### v1.8.0 阶段三批校准（C 类 · 2026-11-04）
+### 阶段三批校准（C 类）
 
 - **判据文本 ≠ 实现存在**：SSOT 写「有单测」不代表单测存在——L147/L148 门槛/校准落痕曾全仓零实现命中（后被 STAGE3-STRUCT-5 补做）。勾选前逐条 `git grep` 实现符号，找不到即留白。
 - **勾选偏松的回退纪律**：L232 判据前半（默认关闭）有断言、后半（触发时单问句补前向）无实现——**半成立的判据整条不勾**，四态登记「部分通过」并写明缺口。
