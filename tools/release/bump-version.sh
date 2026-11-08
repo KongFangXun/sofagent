@@ -762,21 +762,52 @@ BUMP_INTERNAL_DEPS_COUNT=0
 # v1.2.2: 用环境变量传递 DRY_RUN 状态给 node 脚本（避免 shellcheck SC1046 误报）
 export SOFAGENT_BUMP_WRITE="0"
 if ! $DRY_RUN; then SOFAGENT_BUMP_WRITE="1"; fi
+# 🔴 内部依赖的声明值来源是**被引用包的实际 version**，不是本次发布号。
+#    `@sofagent/rsi-corpus` 走独立小版本线（0.1.0；VERSION 常量与 golden 基线都钉在 0.1.0），
+#    若一律写 NEW_3SEG 就会造出「声明 1.8.0 / 实装 0.1.0」的 invalid 依赖——`npm outdated`
+#    全绿也发现不了，只有 `npm ls --workspaces` 的 ELSPROBLEMS（exit=1）才暴露。
+#    本表必须在 [2c/13] 之后构建（那时 version 字段已 bump 完），才读得到新版本号。
+SOFAGENT_BUMP_WSMAP=$(node -e "
+  const fs = require('fs'), path = require('path');
+  const out = {};
+  const walk = (d) => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      if (!e.isDirectory()) {
+        if (e.name === 'package.json') {
+          try {
+            const j = JSON.parse(fs.readFileSync(path.join(d, e.name), 'utf8'));
+            if (j.name) out[j.name] = j.version;
+          } catch {}
+        }
+        continue;
+      }
+      if (e.name === 'node_modules' || e.name === '_archive') continue;
+      walk(path.join(d, e.name));
+    }
+  };
+  walk('$PROJECT_ROOT/engine');
+  console.log(JSON.stringify(out));
+")
+export SOFAGENT_BUMP_WSMAP
 while IFS= read -r -d '' pkg_json; do
   NEW_CONTENT=$(node -e "
     const fs = require('fs');
     const pkg = JSON.parse(fs.readFileSync('$pkg_json', 'utf-8'));
+    const wsmap = JSON.parse(process.env.SOFAGENT_BUMP_WSMAP || '{}');
     let changed = false;
     for (const field of ['dependencies', 'optionalDependencies']) {
       if (pkg[field]) {
         for (const [name, ver] of Object.entries(pkg[field])) {
           if (name.startsWith('@sofagent/')) {
-            // 检查版本是否匹配旧版本（精确匹配或 3 段匹配）
-            const ver_2seg = ver.replace(/\.[^.]+$/, '');  // 去掉 patch
-            if (ver_2seg === '$OLD_2SEG' || ver === '$OLD_2SEG.0' || ver === '$OLD_VERSION') {
-              // 保持原有的语义（如果有 ^ 前缀就保留）
-              const prefix = ver.match(/^[~^>=<]+/) || '';
-              pkg[field][name] = prefix ? prefix[0] + '$NEW_2SEG.0' : '$NEW_VERSION';
+            // 比较前先剥掉语义前缀（^ ~ >= …）——不剥则 "^1.7.0" 永远匹配不上，
+            // 该依赖会被静默漏 bump（原判定直接把含前缀的串拿去比 "1.7"）。
+            const prefix = ver.match(/^[~^>=<]+/) || '';
+            const bare = prefix ? ver.slice(prefix[0].length) : ver;
+            const bare_2seg = bare.replace(/\.[^.]+$/, '');  // 去掉 patch
+            if (bare_2seg === '$OLD_2SEG' || bare === '$OLD_2SEG.0' || bare === '$OLD_VERSION') {
+              // 目标版本 = 被引用包的实际 version（映射缺失才退回发布版本号）
+              const target = wsmap[name] || '$NEW_VERSION';
+              pkg[field][name] = prefix ? prefix[0] + target : target;
               changed = true;
             }
           }
