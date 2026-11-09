@@ -79,6 +79,9 @@ S1M 判定层失灵面（随阶段一 v1.6.0 零样本基线落数；v1.7.0 §�
 - **中英落差**（实测）：一致率中 0.667 / 英 0.333 超阈 ⇒ **不宣称中文可用**；en 侧 `completely-stuck` 为阶段二重点输入。v1.7.0 改善幅度 **not-measured**（机制在位：三态 zh/en 分列 + 分列达线；读数待实机训练回填——`docs/VALIDATION.md` §中英倒挂单列）。
 - **域外泛化未验证**：分布外读数原记 0.000 系空 OOD 集默认值（口径见 VALIDATION）——v1.7.0 §六口径修正为 **`not-measured`**（空集复扫值不得以数值形态出现）；OOD 样本已随最小子集入集（`datasets/sofagent-typed-decisions-minimal/`，`ood:true` 行），实测待实机。
 - **校准依赖分布**：阈值/置信度绑定采集分布，漂移须重校准（门槛重标触发器已随阶段一交付；v1.7.0 漂移监测机制在位——`engine/core/src/calibration-registry.ts`，超阈只提示不阻断）。
+- **域外只出 observe / ask，不出 auto**：非 td 分布下 auto 档须在目标域重拟合校准件并重测 `cov` 后才可开；随模型卡发布。依据 [v1.9.0 §十 10.5](./changelog/v1.9/v1.9.0.md) 与 `factory/tasks/F11.md §11`。
+- **校准不改分流能力**：温度缩放保序，ECE 达标不等于可自动放行的样本变多；校准件须按域拟合、按域分发。同上依据。
+- **本地判定延迟 not-measured**：判定头接进 DecisionChannel 前无一手读数；`factory/tasks/F9.md:150` 的「32 ms/题」是 F9.2 云端评测单题推理耗时，不得引用为本地性能承诺。
 
 > 读数与可复算产物见 `datasets/` 与 [v1.6.0 开发日志](./changelog/v1.6/v1.6.0.md)；v1.7.0 复核面见 [v1.7.0 开发日志](./changelog/v1.7/v1.7.0.md) §六。
 
