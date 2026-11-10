@@ -456,7 +456,7 @@ export function runCliQuick(argv: string[]): number {
       // BUG-2（v1.7.0 修复批）：help 宣称 quick「不写 history.jsonl 无留痕」，但
       // FULL_ONLY 自动路由后完整引擎按自身行为写 ~/.sofagent/data/audit/
       // （history.jsonl + session report）——承诺被静默打破。路由前显式告知。
-      console.log('ⓘ [sofagent] 该 flag 已自动路由完整引擎——本次审计将写入 ~/.sofagent/data/audit/（history.jsonl 与 session report）');
+      console.log('ⓘ [sofagent] 该 flag 已自动路由完整引擎——本次审计将写入 ~/.sofagent/data/audit/（history.jsonl 与 session report；若设 SOFAGENT_HOME，以该路径为准）');
       // v1.5.7 F6：自动路由属于「单入口内部转发」，不是用户直敲旧命令——
       // 置 SOFAGENT_SINGLE_ENTRY=1（与 umbrella 路由同键同义——v1.6.0 BUG-56：该键当前无读者，保留作单入口标记），quick 侧本条
       // 弃用提示已在上方打印、full 侧 (index.ts) 同键静默，避免一次调用叠两条提示。
@@ -699,7 +699,7 @@ export function runCliQuick(argv: string[]): number {
   } catch {
     // finding-09 fail-closed 收口后，不可解析 ref 在此抛错——文案对齐 v1.5.1 F1 契约（回显范围可诊断）
     console.log('⚠️  diff 解析失败。');
-    console.log(`   无法解析 diff 范围「${diffRange}」的 ref——请检查 ref 是否存在（如 HEAD~1..HEAD、origin/main..HEAD），或仓库是否尚无提交。`);
+    console.log(`   无法解析 diff 范围「${diffRange}」的 ref——请检查 ref 是否存在（如 HEAD~1..HEAD、origin/main..HEAD），或仓库是否尚无提交。${diffRange === 'doctor' ? '若想运行环境健康检查，请用 sofagent audit --doctor（带 -- 前缀）。' : ''}`);
     return 3;
   }
 
@@ -791,7 +791,7 @@ export function runCliQuick(argv: string[]): number {
       // 根 commit 空树补审），故根 commit / 真无变更两种既有行为与文案零变化。
       if (!isResolvableDiffRange(diffRange)) {
         console.log('⚠️  diff 解析失败。');
-        console.log(`   无法解析 diff 范围「${diffRange}」的 ref——请检查 ref 是否存在（如 HEAD~1..HEAD、origin/main..HEAD），或仓库是否尚无提交。`);
+        console.log(`   无法解析 diff 范围「${diffRange}」的 ref——请检查 ref 是否存在（如 HEAD~1..HEAD、origin/main..HEAD），或仓库是否尚无提交。${diffRange === 'doctor' ? '若想运行环境健康检查，请用 sofagent audit --doctor（带 -- 前缀）。' : ''}`);
         return 3;
       }
       const f3Explicit = checkEmptyBranchMessage();
