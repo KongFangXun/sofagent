@@ -133,6 +133,8 @@ What ships today in this layer is the existing judgment-and-evidence surface):
 - ⚙️ **Decision channel & distribution (v1.8.0 form)**—the default `DecisionChannel` implementation (local subprocess, NDJSON over stdio) +
 off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a weights distribution path (source whitelist / strict sha256 / resumable download / two-tier USB offline runtime)—v1.8.0 released (2026-11-05)
 - 🔗 **Judgment made provable**—the audit history lands on an HMAC chain; `--verify-chain` recomputes chain integrity offline, so conclusions can be re-checked by a third party
+  - Premise one: **re-verification needs the same environment fingerprint**—a new machine needs the old fingerprint to recompute, else `unverifiable` (yellow: not recomputable, not tampering)
+  - Premise two: historical `decision-log.jsonl` mixes early test/device write surfaces—8,333 of 104,337 entries are unverifiable; handled as "history as-is + segment new writes", no re-signing, no deletion
 
 > Boundary: the judgment layer's probability output has not yet completed calibration wiring (criteria thresholds still sit on the zero-shot baseline); rule verdicts are backstopped by deterministic judges—judgment-layer takeover is a future state (see [ARCHITECTURE](./docs/ARCHITECTURE.md)).
 

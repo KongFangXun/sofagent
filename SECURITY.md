@@ -337,6 +337,9 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 
 > ⚠️ **HMAC 威胁模型边界**：HMAC 防的是「**无密钥方**伪造/篡改签名」。同机同用户场景下，密钥文件 `~/.sofagent-key`（权限 0600）可被同用户进程读取——与用户同身份运行的 Agent 可读取密钥后重签整条链，HMAC 无法阻止（同 LIMITATIONS「文件权限不防同用户进程」的既有披露）。因此 HMAC 的实际防御面是**异地/跨用户**攻击；对同用户重签，防线只剩事后 `--doctor` 体检 + CI 侧独立审计（CI 凭据与开发机隔离，不可被开发机进程重签）。
 
+> 🔗 **可复验性两前提**：① **可复验 = 同一环境指纹下**——换机后须持旧 fingerprint 复算，否则判 `unverifiable`（黄态，非篡改）；② 历史 `decision-log.jsonl` 含早期测试与设备面，104,337 条中 8,333 条不可复验——按「**历史原样 + 新写入面分段**」处置：不重签、不删件。
+> **分链规则（新写入面）**：agentId ∈ {A, B, a, smoke, smoke2, test-agent} → `chains/test/`；`device-*` → `chains/device/`；其余 → 原位宿主链（key 不同源，混链即不可读）。验链分链：`--verify-chain --chain <host|device|test|all>`（缺省 host；`all` 逐链报条数/状态，不合并计数）
+
 ### 审计模块安全性（sofagent audit）
 
 sofagent audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统的主力路径是 `execFileSync('git', ...)`（数组传参、不走 shell）。不使用 eval、不执行外部脚本；git 命令参数以数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。
