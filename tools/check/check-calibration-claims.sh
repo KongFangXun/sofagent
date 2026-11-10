@@ -313,14 +313,50 @@ else
   [ "$c6_bad" -eq 1 ] && bad=1 || echo "${GREEN}  ✓ C6 manifest 三件套齐（来源构成/行数对账三方复算：manifest ↔ line-reconciliation ↔ questions.jsonl 实际行数/污染声明）${NC}"
 fi
 
+# ── C7 三域校准声明对账（v1.9.0 §三③④ 扩面——2026-11-11）────────
+# 判据面从审计域扩到 workflow/ontology/routing 三域后，域级校准状态须显式
+# 声明且未校准域断言在位（§三验收第 3/4 条）。实测面：dist 产物运行时对账
+# （DOMAIN_CALIBRATION 三域齐 + assertDomainCalibratedForDecision 抛错语义）。
+echo ""
+echo "── C7 三域判据域校准声明（v1.9.0 §三 扩面）──"
+c7_bad=0
+if node -e "
+  const m = require('./engine/orchestrator/dist/router/criteria/domain-criteria.js');
+  const domains = ['workflow', 'ontology', 'routing'];
+  for (const d of domains) {
+    const s = m.DOMAIN_CALIBRATION[d];
+    if (!s || !s.calibrationStatus || !s.declaredAt) {
+      console.error('  ✗ C7 域「' + d + '」校准状态未显式声明（DOMAIN_CALIBRATION 缺项）'); process.exit(1);
+    }
+  }
+  // 未校准域断言语义：interface-only 域进决策路径必须抛（fail-closed）
+  for (const d of domains) {
+    if (m.DOMAIN_CALIBRATION[d].calibrationStatus !== 'calibrated') {
+      try { m.assertDomainCalibratedForDecision(d); console.error('  ✗ C7 未校准域「' + d + '」未抛错（门禁断言失效）'); process.exit(1); }
+      catch (e) { if (e.name !== 'UncalibratedDomainError') { console.error('  ✗ C7 断言抛错类型非预期: ' + e.name); process.exit(1); } }
+    }
+  }
+  // 三域判据集加载校验零问题（§三验收第 1 条——同面回归）
+  const sets = m.loadDomainCriteriaSets();
+  for (const d of domains) {
+    if (sets[d].problems.length > 0) { console.error('  ✗ C7 域「' + d + '」判据集校验问题: ' + JSON.stringify(sets[d].problems).slice(0, 120)); process.exit(1); }
+  }
+" 2>/dev/null; then
+  echo "${GREEN}  ✓ C7 三域校准声明齐（interface-only 如实登记）+ 未校准域断言 fail-closed + 判据集加载零问题${NC}"
+else
+  echo "${RED}  ✗ C7 三域校准声明对账未过（见上——或 dist 未构建，先 npm run build --workspace=engine/orchestrator）${NC}"
+  c7_bad=1
+fi
+[ "$c7_bad" -eq 1 ] && bad=1
+
 # ── 汇总 ──────────────────────────────────────────────────
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$bad" -eq 0 ]; then
-  echo "${GREEN}  6 项判定 / 0 处违规${NC}"
-  echo "[check:coverage] script=check-calibration-claims asserts=6 covered=6"
+  echo "${GREEN}  7 项判定 / 0 处违规${NC}"
+  echo "[check:coverage] script=check-calibration-claims asserts=7 covered=7"
   exit 0
 fi
-echo "${RED}  6 项判定 / 违规已列出（见上）${NC}"
-echo "[check:coverage] script=check-calibration-claims asserts=6"
+echo "${RED}  7 项判定 / 违规已列出（见上）${NC}"
+echo "[check:coverage] script=check-calibration-claims asserts=7"
 exit 1

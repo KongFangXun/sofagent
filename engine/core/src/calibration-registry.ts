@@ -308,24 +308,32 @@ export function registerLegacyConfidenceClaims(
 ): void {
   const claims: ConfidenceClaim[] = [
     {
-      id: 'decision-channel/default-grade-thresholds/allow',
-      path: 'engine/orchestrator/src/router/decision-channel.ts:152',
+      id: 'decision-channel/default-grade-thresholds/decl',
+      path: 'engine/orchestrator/src/router/decision-channel.ts:151',
       statistic: 'max-prob',
       calibStatus: 'uncalibrated',
       inDecisionPath: true,
-      note: 'ALLOW 档最低置信 0.8（DEFAULT_GRADE_THRESHOLDS.allowMinConfidence）——三段门控高自动段边界，未在独立校准集上拟合',
+      note: 'DEFAULT_GRADE_THRESHOLDS 声明行（E-7 裁定值 0.94/0.82 的载体对象——成员值登记见 allow/ask 两条）',
+    },
+    {
+      id: 'decision-channel/default-grade-thresholds/allow',
+      path: 'engine/orchestrator/src/router/decision-channel.ts:155',
+      statistic: 'max-prob',
+      calibStatus: 'uncalibrated',
+      inDecisionPath: true,
+      note: 'ALLOW 档最低置信 0.94（E-7 人裁定 2026-11-03——三 seed 最坏错误率 ≤5% 预算实测反解；DEFAULT_GRADE_THRESHOLDS.allowMinConfidence）——三段门控高自动段边界，未在独立校准集上拟合',
     },
     {
       id: 'decision-channel/default-grade-thresholds/ask',
-      path: 'engine/orchestrator/src/router/decision-channel.ts:153',
+      path: 'engine/orchestrator/src/router/decision-channel.ts:156',
       statistic: 'max-prob',
       calibStatus: 'uncalibrated',
       inDecisionPath: true,
-      note: 'ASK 档最低置信 0.5（DEFAULT_GRADE_THRESHOLDS.askMinConfidence）——三段门控中复核段边界，未实测重标',
+      note: 'ASK 档最低置信 0.82（E-7 人裁定 2026-11-03——10% 预算边界；DEFAULT_GRADE_THRESHOLDS.askMinConfidence）——三段门控中复核段边界，未实测重标',
     },
     {
       id: 'intent-triage/l1-min-confidence',
-      path: 'engine/orchestrator/src/router/intent-triage.ts:95',
+      path: 'engine/orchestrator/src/router/intent-triage.ts:161',
       statistic: 'max-prob',
       calibStatus: 'uncalibrated',
       inDecisionPath: true,
