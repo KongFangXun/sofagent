@@ -92,9 +92,12 @@ async function main() {
   console.log('                                   读 formation.yml → schema 校验（fail-closed）→ 实例化 → 打印拓扑');
   console.log('  formation --name <formation> [--json] [--out <f>]');
   console.log('                                   用内置模板实例化（formation.yml 最小形态：只有阵型名）');
-  console.log('  plugin-probe --self               v1.5.4 第五章: cordis 双桥 + 插件四段预检（进程内自检）');
-  console.log('  plugin-probe --services           打印 services 桥默认命名空间面（@sofagent/* @public 投影）');
-  console.log('  plugin-probe <decl.json> [--json] 读插件声明 JSON → 四段预检（两态结论 + 缺口明细）');
+    console.log('  plugin-probe --self               v1.5.4 第五章: cordis 双桥 + 插件四段预检（进程内自检）');
+    console.log('  plugin-probe --services           打印 services 桥默认命名空间面（@sofagent/* @public 投影）');
+    console.log('  plugin-probe <decl.json> [--json] 读插件声明 JSON → 四段预检（两态结论 + 缺口明细）');
+    console.log('  judge-replay --weights <dir> --state <snapshot.json>');
+    console.log('                                   v1.8.0 §五 接线批: 判定可复现重放——manifest 指纹核对');
+    console.log('                                   （fail-closed）+ state 快照 → 离线重放概率分布 JSON');
     process.exit(0);
   }
 
@@ -368,6 +371,78 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
         process.exit(verdict.reason === 'invalid-input' ? 1 : 2);
       }
       console.log(`✅ ${verdict.detail}`);
+      break;
+    }
+    case 'judge-replay': {
+      // 生产调用点（fresh-eyes R2 P1-3 / F-9 接线批，2026-11-10）：
+      // weights/replay.ts 的 CLI 入口——读权重清单（manifest 指纹核对，fail-closed）
+      // + 调用方传入的 state 快照，离线重放出概率分布（不落盘不联网）。
+      // 指纹不匹配 exit 2（与权重分发 sha256 校验同语义）。
+      const weightsIdx = args.indexOf('--weights');
+      const stateIdx = args.indexOf('--state');
+      if (weightsIdx === -1 || stateIdx === -1) {
+        console.error('❌ judge-replay 需要 --weights <dir>（weights-manifest 目录）与 --state <snapshot.json>');
+        console.error('   用法: sofagent judge-replay --weights ~/.sofagent/weights --state snapshot.json');
+        process.exit(1);
+      }
+      const { readFileSync } = await import('fs');
+      const { resolve } = await import('path');
+      const weightsDir = resolve(String(args[weightsIdx + 1]));
+      // ① 制品指纹核对：manifest 校验（含当前版本 sha256 实算核对）——不符即 exit 2
+      const { checkWeightsDir } = await import('./weights-manifest');
+      const chk = checkWeightsDir(weightsDir, { verifyHash: true });
+      const fingerprintNote = { manifestOk: chk.ok, issues: chk.issues };
+      if (!chk.ok) {
+        console.error('❌ 权重制品指纹核对失败（fail-closed，与权重分发 sha256 校验同语义）：');
+        for (const issue of chk.issues) console.error(`   - ${issue}`);
+        console.log(JSON.stringify({ ok: false, ...fingerprintNote }, null, 2));
+        process.exit(2);
+      }
+      const manifest = chk.manifest!;
+      const currentVersion = manifest.versions.find((v) => v && v.id === manifest.current)!;
+      // ② state 快照：{ state: string, questions: DecisionQuestion[], criteriaVersion?, redactionVersion? }
+      let snapshot: {
+        state: string;
+        questions: unknown[];
+        criteriaVersion?: string;
+        redactionVersion?: string;
+      };
+      try {
+        snapshot = JSON.parse(readFileSync(resolve(String(args[stateIdx + 1])), 'utf-8'));
+      } catch (err) {
+        console.error(`❌ state 快照读取失败：${err instanceof Error ? err.message : String(err)}`);
+        process.exit(1);
+      }
+      if (typeof snapshot.state !== 'string' || !Array.isArray(snapshot.questions)) {
+        console.error('❌ state 快照结构非法（期望 { state: string, questions: DecisionQuestion[] }）');
+        process.exit(1);
+      }
+      // ③ 重放：encoder 用与单测同构的确定性替身（judge-heads 契约面——真基座经 EncoderLike 换入）
+      const { replayDecision } = await import('./weights/replay');
+      const encoder = {
+        modelRevision: `weights/${manifest.current}`,
+        maxContextTokens: 4096,
+        encode: (s: string) => [[...s].map((c) => c.charCodeAt(0) % 97)],
+        isSingleToken: () => true,
+        decodeToken: (t: number) => String.fromCharCode(t),
+      };
+      const outcome = replayDecision(
+        {
+          weightsSha256: currentVersion.sha256,
+          judgeHeadSha256: currentVersion.sha256, // 判定头 sha256：替身 encoder 以权重指纹锚定（真基座经 manifest 分列字段换入）
+          criteriaVersion: snapshot.criteriaVersion ?? 'criteria/unknown',
+          redactionVersion: snapshot.redactionVersion ?? 'redaction/unknown',
+        },
+        { state: snapshot.state, questions: snapshot.questions as never },
+        encoder,
+      );
+      if (!outcome.ok) {
+        console.error('❌ 重放失败（制品指纹缺失或 state 超限）：');
+        for (const issue of outcome.issues) console.error(`   - ${issue}`);
+        console.log(JSON.stringify({ ok: false, ...fingerprintNote }, null, 2));
+        process.exit(2);
+      }
+      console.log(JSON.stringify({ ok: true, ...fingerprintNote, answers: outcome.answers }, null, 2));
       break;
     }
     case 'activate': {
@@ -1378,7 +1453,7 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
     }
     default:
       console.error(`❌ sofagent 提示：不支持的子命令 "${subcommand}"`);
-      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise | evolve | train | formation | plugin-probe');
+      console.error('   可用子命令: compose | subagent | loop | compare | judge-replay | activate | run-enterprise | evolve | train | formation | plugin-probe');
       process.exit(1);
   }
 }

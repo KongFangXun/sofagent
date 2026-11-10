@@ -894,6 +894,11 @@
 } from './weights-manifest';
 /* @public */ export type { WeightsManifest, WeightsVersion, ManifestCheck } from './weights-manifest';
 
+// Weights Replay（v1.8.0 §五 判定可复现重放 · F-9 接线批 2026-11-10 从 Library-only 接入交付面：
+// CLI 入口 judge-replay + 包导出双登记——消费点 = orchestrator cli.ts case 'judge-replay'）
+/* @public */ export { replayDecision, assertReplayDeterminism } from './weights/replay';
+/* @public */ export type { ReplayArtifactFingerprint, ReplayOutcome } from './weights/replay';
+
 // Route Policy（v1.3.6 交付 ⑧ · 路由决策可解释性 Policy 构件）
 /* @public */ export {
   loadRoutePolicy,
