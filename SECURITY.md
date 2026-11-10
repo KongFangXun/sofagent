@@ -339,6 +339,7 @@ sofagent 是一套 FDE 能力——**自带治理环境的 S1A**（S1A = S1M + H
 
 > 🔗 **可复验性两前提**：① **可复验 = 同一环境指纹下**——换机后须持旧 fingerprint 复算，否则判 `unverifiable`（黄态，非篡改）；② 历史 `decision-log.jsonl` 含早期测试与设备面，104,337 条中 8,333 条不可复验——按「**历史原样 + 新写入面分段**」处置：不重签、不删件。
 > **分链规则（新写入面）**：agentId ∈ {A, B, a, smoke, smoke2, test-agent} → `chains/test/`；`device-*` → `chains/device/`；其余 → 原位宿主链（key 不同源，混链即不可读）。验链分链：`--verify-chain --chain <host|device|test|all>`（缺省 host；`all` 逐链报条数/状态，不合并计数）
+> **创世条目判红是既有事实**：历史索引 0 条目由 2026-08-08 早期一次性测试 key 签发（key 已不可得），其环境指纹与当前一致而验签不过，判定器据「指纹一致 + 签名不符」判 `tampered`（红）而非 `unverifiable`（黄）——属**混链遗留，不是新写入被篡改**；自分链起新写入面不再产生此类条目。本次分链只治新写入面，**判定器判据未改**（弱化篡改检测属产品面变更，不在本次范围）。
 
 ### 审计模块安全性（sofagent audit）
 

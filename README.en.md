@@ -135,6 +135,7 @@ off/shadow/active three-mode wiring + five-field judgment receipts on-chain + a 
 - 🔗 **Judgment made provable**—the audit history lands on an HMAC chain; `--verify-chain` recomputes chain integrity offline, so conclusions can be re-checked by a third party
   - Premise one: **re-verification needs the same environment fingerprint**—a new machine needs the old fingerprint to recompute, else `unverifiable` (yellow: not recomputable, not tampering)
   - Premise two: historical `decision-log.jsonl` mixes early test/device write surfaces—8,333 of 104,337 entries are unverifiable; handled as "history as-is + segment new writes", no re-signing, no deletion
+  - Premise three: the **genesis entry (index 0) reads red today**—signed on 2026-08-08 by a one-off test key now gone; its fingerprint matches the environment yet its signature fails, so the judge reports `tampered` (red), not `unverifiable` (yellow). **Mixed-chain legacy, not tampering of new writes**; post-segmentation writes no longer produce such entries
 
 > Boundary: the judgment layer's probability output has not yet completed calibration wiring (criteria thresholds still sit on the zero-shot baseline); rule verdicts are backstopped by deterministic judges—judgment-layer takeover is a future state (see [ARCHITECTURE](./docs/ARCHITECTURE.md)).
 
