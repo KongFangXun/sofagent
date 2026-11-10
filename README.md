@@ -332,7 +332,7 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 
 ## 生态与文档索引
 
-**Featured in**（社区收录 · 13 项已收录）：
+**Featured in**（社区收录 · 14 项已收录）：
 
 [![Awesome AI Agents](https://img.shields.io/badge/Awesome_AI_Agents-featured-2ea44f)](https://github.com/NipunaRanasinghe/awesome-ai-agents)
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
@@ -347,9 +347,10 @@ npx -y -p sofagent sofagent audit --ruleset security   # 加载安全规则集
 [![awesome-ai-governance](https://img.shields.io/badge/awesome--ai--governance-listed-brightgreen)](https://github.com/agentrust-io/awesome-ai-governance)
 [![awesome-auditable-ai](https://img.shields.io/badge/awesome--auditable--ai-listed-brightgreen)](https://github.com/yzhao062/awesome-auditable-ai)
 [![loop-engineering](https://img.shields.io/badge/loop--engineering-listed-brightgreen)](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/adopters.md)
+[![awesome-harness-engineering (walkinglabs)](https://img.shields.io/badge/awesome--harness--engineering%20%28walkinglabs%29-listed-brightgreen)](https://github.com/walkinglabs/awesome-harness-engineering)
 
 **收录申请中（PR open）**：
-[![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
+[![awesome-harness-engineering (ai-boost)](https://img.shields.io/badge/awesome--harness--engineering%20%28ai--boost%29-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
 [![awesome-ai-agents (e2b)](https://img.shields.io/badge/awesome--ai--agents%20%28e2b%29-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
 
 **仓库内两大目录的语义归属**：
