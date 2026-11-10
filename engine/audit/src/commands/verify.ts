@@ -107,7 +107,9 @@ export function collectDecisionChainReports(
     if (chain !== 'host' && !existsSync(filePath)) {
       // 分段链空态：设备/测试写入面此前可能从未使用——常态，不是故障
       reports.push({ chain, filePath, entries: 0, status: 'empty', detail: EMPTY_CHAIN_NOTE, code: 1 });
-      code = 1 as VerifyCode;
+      // 整体退出码**取最严**（不得被空链覆盖成 1——宿主链 tampered=2 时，
+      // 后面遇到的空链不得把 2 降级；空链本身只贡献 1）。
+      if (code === 0) code = 1 as VerifyCode;
       continue;
     }
     const result = checkDecisionChainDetailed(dataDir, chain);

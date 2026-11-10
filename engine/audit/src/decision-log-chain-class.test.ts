@@ -229,6 +229,24 @@ describe('collectDecisionChainReports · 分链报告不合并计数', () => {
     expect(code).toBe(1);
   });
 
+  it('整体退出码取最严：宿主链 tampered(2) 不被后续空链降级成 1', () => {
+    // 回归锁（--chain all 的真实落点）：宿主链红 + device/test 空链时，
+    // 报出的整体退出码必须是 2（tampered 最严），不得被「空链=1」覆盖成 1。
+    const hostPath = getDecisionLogPath(testDir, 'host');
+    const lines = readFileSync(hostPath, 'utf-8').trim().split('\n');
+    const tampered = JSON.parse(lines[0]!) as Record<string, unknown>;
+    tampered.sessionId = 'tampered-session';
+    lines[0] = JSON.stringify(tampered);
+    writeFileSync(hostPath, lines.join('\n') + '\n');
+
+    // 顺序即真实报告顺序 host → device → test（空链排在红链之后）
+    const { reports, code } = collectDecisionChainReports(['host', 'device', 'test'], testDir);
+    expect(reports.find((r) => r.chain === 'host')!.code).toBe(2);
+    expect(reports.find((r) => r.chain === 'device')!.status).toBe('empty');
+    expect(reports.find((r) => r.chain === 'test')!.status).toBe('ok');
+    expect(code).toBe(2);
+  });
+
   it('没有任何一条报告持有跨链合并计数（禁止重造「混合链」假象）', () => {
     const { reports } = collectDecisionChainReports(['host', 'device', 'test'], testDir);
     const total = reports.reduce((sum, r) => sum + r.entries, 0);
