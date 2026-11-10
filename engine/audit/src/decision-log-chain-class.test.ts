@@ -106,6 +106,18 @@ describe('emitDecision · 写入面分链硬闸（防复发核心）', () => {
     expect(existsSync(getDecisionLogPath(testDir, 'host'))).toBe(false);
   });
 
+  it('smoke 家族（smoke2 / smoke3 / smoke4 / smokeN）一律降链 test——列举型白名单漏过 smoke3/smoke4', () => {
+    // 回归锁：真实不可复验条目里实测存在 smoke3 1 条、smoke4 2 条，早期白名单只列了
+    // smoke / smoke2，这两个 id 会静默写进宿主链。改为家族匹配后全族改道。
+    const ids = ['smoke2', 'smoke3', 'smoke4', 'smoke7'];
+    for (const agentId of ids) {
+      const entry = emitDecision(makeInput({ agentId }), testDir);
+      expect(entry.chainClass).toBe('test');
+    }
+    expect(readChainEntries(testDir, 'test').map((e) => e.agentId)).toEqual(ids);
+    expect(existsSync(getDecisionLogPath(testDir, 'host'))).toBe(false);
+  });
+
   it('agentId="device-abc"（设备写入面）在 host 请求下被强制降链 device', () => {
     const entry = emitDecision(makeInput({ agentId: 'device-abc' }), testDir);
 

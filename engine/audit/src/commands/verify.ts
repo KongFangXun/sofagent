@@ -345,9 +345,10 @@ function runVerifyChainAll(): void {
   console.log('\n  写入面分链校验（--chain all）——三类链逐链报告，条数与状态不合并\n');
   const { reports, code } = collectDecisionChainReports(VERIFY_CHAIN_CLASSES);
   for (const report of reports) emitOneChainReport(report);
-  const total = reports.reduce((sum, r) => sum + r.entries, 0);
+  // 只列各链**自身**条数，不给「三链共 N 条」这类合并总数——合并数正是被修的
+  // 缺陷形态（三类链 key 结构性不同，加起来只会得到一个来源混杂的数字）。
   console.log(
-    `\n  合计（仅参考，不作判定）：三链共 ${total} 条——` +
+    `\n  各链条数（仅参考，不作判定）：` +
       reports.map((r) => `${r.chain}=${r.entries}`).join(' / ') +
       '（判定按各链自身状态，见上）',
   );

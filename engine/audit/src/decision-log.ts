@@ -124,7 +124,7 @@ export interface EmitDecisionInput {
    *
    * 优先级：本字段 > `SOFAGENT_CHAIN_CLASS` > `'host'`（缺省即宿主链，老调用方零改动）。
    * 硬闸（仅当解析结果为 host 时生效，显式请求 test/device 不受影响）：
-   *   · `agentId` ∈ {A, B, a, smoke, smoke2, test-agent} ⇒ 强制落 `test` 链；
+   *   · `agentId` ∈ {A, B, a, test-agent} 或形如 `smoke`/`smokeN` ⇒ 强制落 `test` 链；
    *   · `agentId` 以 `device-` 开头 ⇒ 强制落 `device` 链。
    * 落链路径见 `@sofagent/core` 的 `getDecisionLogPath(dataDir, chainClass)`。
    */
@@ -138,7 +138,10 @@ export interface EmitDecisionInput {
 // 缺陷形态（实测定性）：单条 decision-log.jsonl 里混着三种结构性不同的写入面——
 // 宿主（host key）/ 设备侧（device key，agentId = `device-*`）/ 早期测试夹具
 // （一次性测试 key，agentId ∈ 下列白名单）。混链后整链必然出现「不可复验」长段
-// （实测 104,337 条中 8,333 条不可复验，非篡改），验链结论因此不可读。
+// （实测 104,337 条中 96,002 条验签有效、8,333 条按各自自带指纹复算验签不过、2 条无签名；
+//   8,333 里 8,330 条自带指纹恰等于当前环境指纹，故默认验链会判 tampered——判据是
+//   「指纹一致 + 签名不符」，见 chain-kernel 创世/主循环分支；定性仍是混链遗留，非篡改），
+// 验链结论因此不可读。
 // 本节的职责：**新的写入面按下表硬性分链落盘**，从源头止住混链（历史条目一律不动）。
 
 /**
@@ -155,11 +158,27 @@ export type DecisionChainClass = 'host' | 'device' | 'test';
 const CHAIN_CLASS_VALUES: readonly DecisionChainClass[] = ['host', 'device', 'test'];
 
 /**
- * 测试夹具 agentId 白名单（实测来源：不可复验条目里的 A 类 8,114 条——
- * `A` 5,194 / `B` 2,913 / `test-agent` 2 / `smoke` 1 / `smoke2` 1，另含小写 `a` 变体）。
- * 命中者的写入一律改道 `chains/test/`，**永不进宿主链**。
+ * 测试夹具 agentId 名单（**精确 id**，不含家族）。
+ *
+ * 实测来源（2026-11 复算：104,337 条全量逐条验签，8,333 条验签不过）：
+ * 测试面合计 **8,116** 条 = `A` 5,194 / `B` 2,913 / `a` 2 / `test-agent` 2 /
+ * `smoke` 1 / `smoke2` 1 / `smoke3` 1 / `smoke4` 2；设备面 **217** 条（217 个不同 `device-*`）；
+ * 8,116 + 217 = 8,333 ✓。命中者的写入一律改道 `chains/test/`，**永不进宿主链**。
  */
-const TEST_WRITE_AGENT_IDS: readonly string[] = ['A', 'B', 'a', 'smoke', 'smoke2', 'test-agent'];
+const TEST_WRITE_AGENT_IDS: readonly string[] = ['A', 'B', 'a', 'test-agent'];
+
+/**
+ * 测试夹具 agentId 的**家族**模式——`smoke` / `smoke2` / `smoke3` / `smoke4` 实测同属
+ * 早期一次性测试面（各自 1~2 条），此后新增 `smokeN` 亦应归测试面。
+ * 只做家族匹配，不做「列举全部历史 id」——列举型白名单漏一个就静默写进宿主链
+ * （实测就漏过 `smoke3` / `smoke4` 两个）。
+ */
+const TEST_WRITE_AGENT_ID_PATTERN: RegExp = /^smoke\d*$/;
+
+/** 是否为测试写入面 agentId（精确名单 ∪ `smokeN` 家族） */
+function isTestWriteAgentId(agentId: string): boolean {
+  return TEST_WRITE_AGENT_IDS.includes(agentId) || TEST_WRITE_AGENT_ID_PATTERN.test(agentId);
+}
 
 /**
  * 设备侧写入的 agentId 前缀（实测 217 条不可复验条目全是 217 个不同的 `device-*` id）——
@@ -180,7 +199,7 @@ interface WriteChainClassResolution {
  *
  * 分类来源优先级：入参 `chainClass` > `SOFAGENT_CHAIN_CLASS` > `'host'`（与 core 同规格）。
  * 硬闸（仅在解析结果为 `host` 时生效——显式请求 test/device 的不受影响）：
- *   ① `agentId` ∈ TEST_WRITE_AGENT_IDS ⇒ 强制 `test`；
+ *   ① `agentId` 命中 `isTestWriteAgentId()`（{A, B, a, test-agent} ∪ `smokeN` 家族）⇒ 强制 `test`；
  *   ② `agentId` 以 `device-` 开头     ⇒ 强制 `device`。
  * 顺序固定：两条同时可能命中时以 ① 为准（测试夹具优先识别——测试 id 更具体）。
  *
@@ -203,7 +222,7 @@ function resolveWriteChainClass(explicit?: string, agentId?: string): WriteChain
     return { chainClass: requested, downgradedFrom: null };
   }
   const id = agentId ?? '';
-  if (TEST_WRITE_AGENT_IDS.includes(id)) {
+  if (isTestWriteAgentId(id)) {
     return { chainClass: 'test', downgradedFrom: 'host' };
   }
   if (id.startsWith(DEVICE_AGENT_ID_PREFIX)) {
