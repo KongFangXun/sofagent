@@ -13,6 +13,10 @@
 //
 // 幂等：同一份 plugins.json 跑两次 → 逐字节相同（key 顺序固定 + 2 空格缩进 + 末尾单换行）。
 // 门禁：`--check` 只比对、不落盘；发现任何漂移即 exit 1（check-template-drift.sh 断言六调用）。
+// v1.9.0 bugfix F-2 夹具形态（无测试族，在此登记）：bridge 型条目的 optionalDependencies
+//   生成值必须 == 被引包 package.json 实值——实例断言 cordis-plugin-sofagent-rsi-corpus
+//   → @sofagent/rsi-corpus = 0.1.0（复现命令：node tools/gen/gen-plugin-manifests.mjs --check
+//   后 git diff 为空 + check-template-drift.sh 断言六绿；生成器回退旧行为时该断言即红）。
 // 附加守卫：`--check` 同时核对每个插件 src/index.ts 的**字面量 seam** 与 plugins.json 是否一致
 //           ——check-seam-contract.mjs 的正向检查读的是 src 的字面量，若只改 plugins.json
 //           忘改 src，两处会静默漂移；本守卫把这种漂移变成硬红。
@@ -274,23 +278,60 @@ function renderPatch(entry, version) {
 }
 
 /**
+ * 解析被引用包的实际版本（v1.9.0 bugfix F-2：bridge 依赖版本取被引包实值）。
+ * 包名 → 仓内 workspace 路径解析：root package.json workspaces 逐条目展开（目录或
+ * 目录前缀通配），读每个候选的 package.json name→version 建映射（一次构建，多 entry 复用）。
+ * 解析不到任何包时由调用方 fail-loud（禁止静默回退插件版本——2b324f0e4 只改产物
+ * 未改生成源的幂等断裂正是「一律填插件版本」的产物）。
+ * @param {string} root 仓根
+ * @returns {Record<string, string>} 包名 → version 映射
+ */
+function buildWorkspaceVersionMap(root) {
+  const rootPkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const globs = Array.isArray(rootPkg.workspaces) ? rootPkg.workspaces : [];
+  const map = {};
+  for (const g of globs) {
+    // workspaces 条目为目录（无通配：直接读）或目录前缀 + 通配（readdir 展开）
+    const base = path.join(root, g.replace(/\*.*$/, '').replace(/\/+$/, ''));
+    const candidates = g.includes('*')
+      ? fs.readdirSync(base, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => path.join(base, d.name))
+      : [base];
+    for (const dir of candidates) {
+      const pj = path.join(dir, 'package.json');
+      if (!fs.existsSync(pj)) continue;
+      const { name, version } = JSON.parse(fs.readFileSync(pj, 'utf8'));
+      if (name && version) map[name] = version;
+    }
+  }
+  return map;
+}
+
+/**
  * 生成 package.json 的生成段（description / sofagent / dsh / //optionalDependencies / optionalDependencies）
  * @param {object} entry 清单条目
  * @param {string} version 插件版本
  * @param {{name: string, roles: string[]}[]} registry tool-registry.ts 解析结果（v1.4.9 F1① / P2）
+ * @param {Record<string, string>} wsVersions 包名→version 映射（v1.9.0 bugfix F-2 注入；bridge 解析 fail-loud）
  */
-function generatedSegments(entry, version, registry) {
+function generatedSegments(entry, version, registry, wsVersions = {}) {
   // optionalDependencies 的取值面按类别分流：
   //   · bridge 型 → 声明的全部桥接包（单包 bridgePkg 既有形态 / P2 多包 bridges 并集）
   //   · suite  型 → 全部兄弟插件包（懒加载逐个 import——缺哪个只记 failed，不整挂失败）
+  // v1.9.0 bugfix F-2：bridge 型版本取**被引用包 package.json 实值**（与 2b324f0e4
+  // 「内部依赖声明改取被引用包实际版本」修复语义对齐——此前一律填插件自身 version，
+  // 与手改落盘 0.1.0 构成幂等断裂）。解析不到即 fail-loud，不静默回退。
   const bridgePkgs =
     Array.isArray(entry.bridges) && entry.bridges.length > 0
       ? entry.bridges.map((b) => b.pkg)
       : [entry.bridgePkg];
+  const depVersionOf = (pkgName) => {
+    if (Object.prototype.hasOwnProperty.call(wsVersions, pkgName)) return wsVersions[pkgName];
+    throw new Error(`[gen-plugin-manifests] bridge 依赖包 ${pkgName} 未在仓内 workspace 解析到（entry=${entry.id}）——核对包名与 root workspaces 清单；禁止静默回退插件自身版本`);
+  };
   const optionalDependencies =
     entry.kind === KIND_SUITE
       ? Object.fromEntries(entry.suite.map((dep) => [dep, version]))
-      : Object.fromEntries(bridgePkgs.map((p) => [p, version]));
+      : Object.fromEntries(bridgePkgs.map((p) => [p, depVersionOf(p)]));
   const optDepsNote =
     entry.kind === KIND_SUITE
       ? `v1.4.8 第8批：src/index.ts 逐个 await import('<兄弟插件 id>')（懒加载 + 逐个降级不抛——缺任一原子插件只记入 failed 数组，不整挂失败），聚合层自身零 @sofagent/* 依赖；对齐 root package.json F-18 optionalDependencies 先例。`
@@ -657,6 +698,8 @@ function suiteCheck(entry, plugins, root) {
 function planOutputs(root) {
   const plugins = loadManifest(root);
   const rootVersion = readRootVersion(root);
+  // v1.9.0 bugfix F-2：bridge 依赖版本取被引包实值——一次构建 workspace 版本映射，多 entry 复用
+  const wsVersions = buildWorkspaceVersionMap(root);
   // v1.4.9 F1①：tool-registry.ts 单一源解析（有 toolsRole 声明才消费；零声明时解析一次的开销可忽略）
   const registry = parseToolRegistry(fs.readFileSync(path.join(root, TOOL_REGISTRY), 'utf8'));
   if (registry.length === 0) {
@@ -686,7 +729,7 @@ function planOutputs(root) {
     });
 
     // ② package.json（生成段覆盖 + 规范键序）
-    const next = reorder({ ...pkg, ...generatedSegments(entry, version, registry) });
+    const next = reorder({ ...pkg, ...generatedSegments(entry, version, registry, wsVersions) });
     outputs.push({ path: `${DSH_PLUGINS_DIR}/${entry.id}/package.json`, content: serialize(next), kind: 'pkg' });
 
     // ③ 附加守卫：src/index.ts 的字面量 seam 必须 == plugins.json（否则两处静默漂移）
