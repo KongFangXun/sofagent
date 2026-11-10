@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.8.0 · 2026-11-05（GMT+8）· ✅ 已发版 · 孔放勋 · 判定底座 · 阶段二（模型与校准）。完整历史见 [CHANGELOG](../CHANGELOG.md)。
+> v1.8.0 · 2026-11-05（GMT+8）· ✅ 已发版 · 孔放勋 · 判定底座 · 阶段三（接线与分发）。完整历史见 [CHANGELOG](../CHANGELOG.md)。
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
 
