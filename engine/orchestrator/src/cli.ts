@@ -98,6 +98,9 @@ async function main() {
     console.log('  judge-replay --weights <dir> --state <snapshot.json>');
     console.log('                                   v1.8.0 §五 接线批: 判定可复现重放——manifest 指纹核对');
     console.log('                                   （fail-closed）+ state 快照 → 离线重放概率分布 JSON');
+    console.log('  judge-local --weights <dir> --state <snap.json> [--criteria-version <v>]');
+    console.log('                                   v1.9.0 §十 P-5: 本地判定五环——sha fail-closed + 内存档 +');
+    console.log('                                   三头前向 → 回执（判据版本/权重sha16/读数/时间）');
     process.exit(0);
   }
 
@@ -443,6 +446,43 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
         process.exit(2);
       }
       console.log(JSON.stringify({ ok: true, ...fingerprintNote, answers: outcome.answers }, null, 2));
+      break;
+    }
+    case 'judge-local': {
+      // v1.9.0 §十 P-5 第 3 条（端到端一条）：固定输入 → 本地判定（五环）→ 回执
+      // 含判据版本 / 权重 sha16 / 读数 / 时间四项，可复算。第 1/2 条由 weights/local-judge.ts
+      // （fail-closed 五环）与 systemone-endpoint（四态裁决）承载，本命令是端到端回执入口。
+      const wIdx = args.indexOf('--weights');
+      const sIdx = args.indexOf('--state');
+      if (wIdx === -1 || sIdx === -1) {
+        console.error('❌ judge-local 需要 --weights <dir>（weights-manifest 目录）与 --state <snapshot.json>');
+        console.error('   用法: sofagent judge-local --weights ~/.sofagent/weights --state snapshot.json');
+        process.exit(1);
+      }
+      const { readFileSync } = await import('fs');
+      const { resolve } = await import('path');
+      const weightsDir = resolve(String(args[wIdx + 1]));
+      const criteriaIdx = args.indexOf('--criteria-version');
+      const criteriaVersion = criteriaIdx !== -1 ? String(args[criteriaIdx + 1]) : undefined;
+      let snapshot: { state: string; questions: unknown[] };
+      try {
+        snapshot = JSON.parse(readFileSync(resolve(String(args[sIdx + 1])), 'utf-8'));
+      } catch (err) {
+        console.error(`❌ state 快照读取失败：${err instanceof Error ? err.message : String(err)}`);
+        process.exit(1);
+      }
+      const { judgeLocal, LocalJudgeUnavailableError } = await import('./weights/local-judge');
+      try {
+        const receipt = judgeLocal(snapshot.state, snapshot.questions as never, { weightsDir, criteriaVersion });
+        console.log(JSON.stringify({ ok: true, ...receipt }, null, 2));
+      } catch (err) {
+        // fail-closed：拒绝判定（exit 2 与 judge-replay/分发 sha 校验同语义），不回落 LLM
+        if (err instanceof LocalJudgeUnavailableError) {
+          console.error(`❌ 本地判定 fail-closed（code=${err.code}）：${err.message}`);
+          process.exit(2);
+        }
+        throw err;
+      }
       break;
     }
     case 'activate': {
@@ -1453,7 +1493,7 @@ async function loadLoopGraphOrExit(): Promise<typeof import('./loop/graph')> {
     }
     default:
       console.error(`❌ sofagent 提示：不支持的子命令 "${subcommand}"`);
-      console.error('   可用子命令: compose | subagent | loop | compare | judge-replay | activate | run-enterprise | evolve | train | formation | plugin-probe');
+      console.error('   可用子命令: compose | subagent | loop | compare | judge-replay | judge-local | activate | run-enterprise | evolve | train | formation | plugin-probe');
       process.exit(1);
   }
 }

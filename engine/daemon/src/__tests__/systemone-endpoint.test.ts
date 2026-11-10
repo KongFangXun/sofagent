@@ -17,6 +17,7 @@ import {
   resolveBindHost,
   toInternal,
   toWire,
+  verdictOf,
 } from '../systemone-endpoint';
 
 /** 固定判定桩：记录收到的入参，返回合法四字段结果 */
@@ -137,5 +138,61 @@ describe('v1.8.0 §五 · 默认拒绝与显式失败', () => {
     });
     expect(bad.status).toBe(502);
     expect(JSON.stringify(bad.body)).toContain('判定通道失败');
+  });
+});
+
+// ── v1.9.0 §十 P-5 第 2 条：四态裁决可读（allow/ask/veto/abstain 并列透出）──
+describe('v1.9.0 §十 P-5 · 四态裁决可读', () => {
+  it('allow：noul 概率 ≥0.75 → verdict=allow（非弃权非失败）', async () => {
+    const { fn } = stubJudge({
+      answers: [{ id: 'q1', value: true, probability: 0.92, status: 'answered' }],
+    });
+    const r = await handleSystemoneRequest(JSON.stringify({ type: 'noul' }), { judge: fn });
+    expect(r.status).toBe(200);
+    expect((r.body as { verdict: string }).verdict).toBe('allow');
+    expect((r.body as { abstained: boolean }).abstained).toBe(false);
+  });
+
+  it('ask：概率落不确定带 [0.45,0.75) → verdict=ask（须人工复核，非失败）', async () => {
+    const { fn } = stubJudge({
+      answers: [{ id: 'q1', value: true, probability: 0.6, status: 'answered' }],
+    });
+    const r = await handleSystemoneRequest(JSON.stringify({ type: 'noul' }), { judge: fn });
+    expect(r.status).toBe(200);
+    expect((r.body as { verdict: string }).verdict).toBe('ask');
+  });
+
+  it('veto：概率 ≤0.45 → verdict=veto（判定拒绝）', async () => {
+    const { fn } = stubJudge({
+      answers: [{ id: 'q1', value: true, probability: 0.2, status: 'answered' }],
+    });
+    const r = await handleSystemoneRequest(JSON.stringify({ type: 'noul' }), { judge: fn });
+    expect((r.body as { verdict: string }).verdict).toBe('veto');
+  });
+
+  it('abstain：弃权透出 verdict=abstain（不压扁成单一 error——返回值语义）', async () => {
+    const { fn } = stubJudge({
+      answers: [{ id: 'q1', value: 'a', probability: 0.3, status: 'abstained', abstainReason: 'out-of-domain' }],
+    });
+    const r = await handleSystemoneRequest(JSON.stringify({ type: 'noul' }), { judge: fn });
+    expect(r.status).toBe(200); // 弃权是返回值语义，不是 HTTP 失败
+    expect((r.body as { verdict: string }).verdict).toBe('abstain');
+    expect((r.body as { abstained: boolean }).abstained).toBe(true);
+  });
+
+  it('choice 也带 verdict（选中项概率驱动；有分布无概率的兼容面 → ask）', async () => {
+    const wire = toWire('choice', {
+      answers: [{ id: 'q1', value: 'b', probability: 0.81, distribution: { a: 0.19, b: 0.81 }, status: 'answered' }],
+      modelVersion: 'x', tempBucket: 'choice:k2', latencyMs: 1,
+    });
+    expect(wire.verdict).toBe('allow');
+  });
+
+  it('阈值写死默认（不可注入）：verdictOf 纯函数确定性映射', () => {
+    expect(verdictOf(true, 0.9)).toBe('allow');
+    expect(verdictOf(true, 0.5)).toBe('ask');
+    expect(verdictOf(true, 0.1)).toBe('veto');
+    expect(verdictOf(false, undefined)).toBe('abstain');
+    expect(verdictOf(true, undefined)).toBe('ask');
   });
 });

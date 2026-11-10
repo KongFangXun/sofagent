@@ -51,6 +51,34 @@ export interface SystemoneResponse {
   /** 弃权（四态语义原样透出，不在此翻译成 HTTP 错误） */
   abstained?: boolean;
   reason?: string;
+  /**
+   * 判定四态裁决（v1.9.0 §十 P-5 第 2 条——「返回体区分 allow / ask / veto / abstain
+   * 四态，调用方可读；压扁成单一 error 即红」）：
+   *   allow   判定通过（noul/score 概率 ≥ allow 阈；choice 选中项即建议）
+   *   ask     不确定带（概率落在 ask 带内——须人工复核，非失败）
+   *   veto    判定拒绝（概率 ≤ veto 阈——不建议执行）
+   *   abstain 弃权（一等输出态——判不了，不是失败）
+   * 与 abstained 布尔并存：布尔是 v1.8.0 兼容面，verdict 是 P-5 四态可读面。
+   */
+  verdict?: 'allow' | 'ask' | 'veto' | 'abstain';
+}
+
+/**
+ * 四态裁决阈值（v1.9.0 P-5）——noul/score 概率的三段映射。
+ * 口径与 decision-output.fourStateMapping 同族（分段阈值而非单点），但语义面不同：
+ * 四态映射管「成立度分段」，本阈值管「处置建议档」——allow ≥ 0.75 /
+ * ask 带 [0.45, 0.75) / veto ≤ 0.45（写死默认，调用方不可注入——阈值变更属
+ * 判据治理面，不属协议门面）。
+ */
+export const SYSTEMONE_VERDICT_THRESHOLDS = { allowLower: 0.75, askLower: 0.45 } as const;
+
+/** 概率 → 四态裁决（纯函数——确定性映射，同输入同输出） */
+export function verdictOf(answered: boolean, probability: number | undefined): 'allow' | 'ask' | 'veto' | 'abstain' {
+  if (!answered) return 'abstain';
+  if (probability === undefined) return 'ask'; // 有答案无概率（choice 兼容面）→ 交人工
+  if (probability >= SYSTEMONE_VERDICT_THRESHOLDS.allowLower) return 'allow';
+  if (probability >= SYSTEMONE_VERDICT_THRESHOLDS.askLower) return 'ask';
+  return 'veto';
 }
 
 /** 判定函数类型（门面只依赖这一个能力，便于注入测试） */
@@ -139,18 +167,18 @@ export function toInternal(
   return { state, questions: [q] };
 }
 
-/** 内部结果 → 线格式（弃权原样透出） */
+/** 内部结果 → 线格式（弃权原样透出 + P-5 四态裁决并列） */
 export function toWire(type: SystemoneRequest['type'], result: DecisionResult): SystemoneResponse {
   const answer = result.answers?.[0];
-  if (!answer) return { type, abstained: true, reason: 'runner-no-answer' };
+  if (!answer) return { type, abstained: true, reason: 'runner-no-answer', verdict: 'abstain' };
   const abstained = answer.status === 'abstained';
-  if (abstained) return { type, abstained: true, reason: answer.abstainReason };
+  if (abstained) return { type, abstained: true, reason: answer.abstainReason, verdict: 'abstain' };
   if (type === 'choice') {
     const dist = answer.distribution ?? {};
     const label = String(answer.value ?? Object.entries(dist).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '');
-    return { type, label, probabilities: dist, abstained: false };
+    return { type, label, probabilities: dist, abstained: false, verdict: verdictOf(true, answer.probability) };
   }
-  return { type, probability: answer.probability, abstained: false };
+  return { type, probability: answer.probability, abstained: false, verdict: verdictOf(true, answer.probability) };
 }
 
 /** 处理一次请求（纯函数形态——便于单测，不起 socket） */

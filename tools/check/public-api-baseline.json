@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T14:19:51.861Z",
+  "generatedAt": "2026-11-10T17:33:31.549Z",
   "packages": {
     "@sofagent/inject": {
       "version": "1.8.0",
@@ -1268,6 +1268,10 @@
         "LoadRuleSetOptions",
         "LoadStrategy",
         "LocalEndpointView",
+        "LocalJudgeFailCode",
+        "LocalJudgeOptions",
+        "LocalJudgeReceipt",
+        "LocalJudgeUnavailableError",
         "LocalLane",
         "LocalTeamSyncChannel",
         "LocalizationContext",
@@ -1834,6 +1838,7 @@
         "isoWeekKey",
         "isolationViolationsPath",
         "judgeAndPromote",
+        "judgeLocal",
         "judgeQuality",
         "judgeRunResult",
         "juryRules",

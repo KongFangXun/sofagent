@@ -898,6 +898,11 @@
 // CLI 入口 judge-replay + 包导出双登记——消费点 = orchestrator cli.ts case 'judge-replay'）
 /* @public */ export { replayDecision, assertReplayDeterminism } from './weights/replay';
 /* @public */ export type { ReplayArtifactFingerprint, ReplayOutcome } from './weights/replay';
+// v1.9.0 §十 P-5 判定头接线（本地推理环）：judgeLocal 五环（manifest sha fail-closed +
+// 内存档 + 三头前向）→ 回执四项（判据版本/权重sha16/读数/时间）；消费点 =
+// orchestrator cli.ts case 'judge-local' + systemone 门面无外部 runner 时的本地注入位。
+/* @public */ export { judgeLocal, LocalJudgeUnavailableError } from './weights/local-judge';
+/* @public */ export type { LocalJudgeReceipt, LocalJudgeOptions, LocalJudgeFailCode } from './weights/local-judge';
 
 // Route Policy（v1.3.6 交付 ⑧ · 路由决策可解释性 Policy 构件）
 /* @public */ export {
