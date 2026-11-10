@@ -549,10 +549,9 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 
 - **三条案例**（逐条三行制展开——判据 / 事实 / 出处——见[归档 · negative-cases](./archive/validation-deep/negative-cases.md)）：**「越用越好」进化实证边界** —— 进化宣称须 ≥1 周持续样本 + A/B 对照，v1.4.5 收口前仅 11 个一次性 Case；**Dream Cycle 采样恒真缺陷**（v1.5.7 F45 修复）—— 采样器曾恒真，零产出探针是计数器不是成功证明；**v1.4.8 判据偏差登记** —— 判据与实际行为不符，以登记形态在 CHANGELOG 留痕。
 
-## 四层性能标准（v1.9.0 §四 · 2026-11-03 实测 · 对外能力声明唯一依据）
+## 四层性能标准（v1.9.0 §四 · 2026-11-03 实测 · 内部登记台账）
 
-> 本节是四层性能标准的**唯一对外依据**（§四 交付要点）。四层**分开报告、无合成分数**；每个数字的
-> 可复算产物（脚本 sha16 + 输出 JSON）在 factory 仓 `rsi/eval/FOUR-LAYER-REPORT.md` 与 `rsi/eval/out/`。
+> 本节是四层性能标准的**内部登记台账**；可复算产物（脚本 sha16 + 输出 JSON）在 factory 内部仓 `rsi/eval/`（仓外路径，本仓不镜像副本），对外能力声明以 README/WIKI 为准（§四 交付要点）。四层**分开报告、无合成分数**，口径随产物同源可溯。
 > 机器：Apple A18 Pro / 8 GB 统一内存（**无独立 GPU 的单机档代理**，非一体机机型）；服务器档 not-measured。
 
 ### 判据级（L1 · 同数据集同评测器）
