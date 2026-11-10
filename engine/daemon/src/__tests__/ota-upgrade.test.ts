@@ -37,6 +37,7 @@ import * as os from 'os';
 import {
   generateAgentIdentity,
   generateEd25519KeyPair,
+  getDecisionLogPath,
   type AgentIdentity,
 } from '@sofagent/core';
 import { checkDecisionChainDetailed } from '@sofagent/audit';
@@ -661,10 +662,11 @@ describe('G12 版本清单上报与审计留痕', () => {
     });
     expect(ok.auditLogged).toBe(true);
 
-    const chain = checkDecisionChainDetailed(dataDir);
+    // 2026-11 写入面分段：设备侧写入（agentId = device-ota-*）落 chains/device/，故校验该链
+    const chain = checkDecisionChainDetailed(dataDir, 'device');
     expect(chain.status).toBe('ok');
 
-    const logPath = path.join(dataDir, 'audit', 'decision-log.jsonl');
+    const logPath = getDecisionLogPath(dataDir, 'device');
     const lines = fs.readFileSync(logPath, 'utf-8').trim().split('\n').filter(Boolean);
     expect(lines.length).toBe(3);
     const entries = lines.map((l) => JSON.parse(l) as { kind: string; agentId: string; evidence?: string[] });
@@ -750,8 +752,8 @@ describe('G12 device.deploy 内容下发', () => {
       deployImporter: async () => ({ ok: false, code: 'bundle-corrupt', message: '包缺 manifest 或 workflow.yml' }),
     });
     await bus.emit(EVENT_TYPES.DEVICE_DEPLOY, deployPayload(), { metadata: { targetDevice: identity.agentId } });
-    // 拒绝也留痕：decision-log 有对应条目
-    const chain = checkDecisionChainDetailed(dataDir);
+    // 拒绝也留痕：decision-log（设备链）有对应条目
+    const chain = checkDecisionChainDetailed(dataDir, 'device');
     expect(chain.status === 'ok' || chain.status === 'insufficient').toBe(true);
   });
 
@@ -761,7 +763,7 @@ describe('G12 device.deploy 内容下发', () => {
     const bus = mkFakeBus();
     registerDeviceOtaSubscriptions(bus, { identity, dataDir, nowMs: localNoonMs(), nowIso: NOON_ISO });
     await bus.emit(EVENT_TYPES.DEVICE_DEPLOY, deployPayload(), { metadata: { targetDevice: identity.agentId } });
-    const logPath = path.join(dataDir, 'audit', 'decision-log.jsonl');
+    const logPath = getDecisionLogPath(dataDir, 'device');
     const text = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf-8') : '';
     expect(text).toContain('no-importer');
   });

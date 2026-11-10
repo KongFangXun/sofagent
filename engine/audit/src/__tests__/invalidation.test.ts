@@ -144,6 +144,10 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
   // ── ② 三触发钩子 ──────────────────────────────────────────
 
   describe('② 三触发钩子生效', () => {
+    // ⚠️ 夹具 agentId 用 'agent-a' 而非 'a'：小写 'a' 已被保留为**测试夹具写入面标识**
+    // （decision-log 的写入面硬闸会把 agentId ∈ {A, B, a, smoke, smoke2, test-agent}
+    // 的写入强制改道 chains/test/），用保留 id 做「生产面」夹具会让标记写进测试链、
+    // 而查询面读宿主链 ⇒ 用例测的不是它想测的东西。
     it('① 授权变更：以被关规则为依据的既有结论被标记失效', () => {
       // 既有结论：以规则 a1 为依据（tags=['a1']）
       const conclusion = emitStaggered(makeInput({ why: { text: '放行 .env 变更', tags: ['a1'] } }), testDir);
@@ -238,8 +242,8 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
 
     it('幂等：同一触发重复调用不重复追加标记', () => {
       const conclusion = emitStaggered(makeInput({ why: { text: 'x', tags: ['a2'] } }), testDir);
-      const first = hooks.onAuthorizationChanged({ agentId: 'a', sessionId: 's', changedRules: ['a2'] }, testDir);
-      const second = hooks.onAuthorizationChanged({ agentId: 'a', sessionId: 's', changedRules: ['a2'] }, testDir);
+      const first = hooks.onAuthorizationChanged({ agentId: 'agent-a', sessionId: 's', changedRules: ['a2'] }, testDir);
+      const second = hooks.onAuthorizationChanged({ agentId: 'agent-a', sessionId: 's', changedRules: ['a2'] }, testDir);
       expect(first).not.toBeNull();
       expect(second).toBeNull();
       expect(collectInvalidations(testDir).has(conclusion.ts)).toBe(true);
@@ -256,10 +260,10 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
 
     it('markInvalid 校验：空 targets / 非法 reason 拒绝写入', () => {
       expect(() => markInvalid({
-        agentId: 'a', sessionId: 's', reason: 'elevated-risk', targets: [], trigger: 't',
+        agentId: 'agent-a', sessionId: 's', reason: 'elevated-risk', targets: [], trigger: 't',
       }, testDir)).toThrow(/targets/);
       expect(() => markInvalid({
-        agentId: 'a', sessionId: 's', reason: 'nope' as never, targets: ['x'], trigger: 't',
+        agentId: 'agent-a', sessionId: 's', reason: 'nope' as never, targets: ['x'], trigger: 't',
       }, testDir)).toThrow(/失效原因/);
     });
   });
@@ -270,7 +274,7 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
     it('filterValid 剔除失效条目，未失效条目不受影响', () => {
       const valid = emitStaggered(makeInput({ sessionId: 'v' }), testDir);
       const invalid = emitStaggered(makeInput({ sessionId: 'i' }), testDir);
-      hooks.onCompaction({ agentId: 'a', sessionId: 's', targets: [invalid.ts] }, testDir);
+      hooks.onCompaction({ agentId: 'agent-a', sessionId: 's', targets: [invalid.ts] }, testDir);
       const set = collectInvalidations(testDir);
       const kept = filterValid([valid, invalid], set);
       expect(kept.map((e) => e.ts)).toEqual([valid.ts]);
@@ -283,7 +287,7 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
       const c2 = emitStaggered(makeInput({ sessionId: 'p2', why: { text: '先例二', tags: ['hitl-precedent'] } }), testDir);
       expect(findSimilarDecisions(q, {}, testDir).map((h) => h.entry.ts).sort()).toEqual([c1.ts, c2.ts].sort());
 
-      hooks.onCompaction({ agentId: 'a', sessionId: 's', targets: [c1.ts] }, testDir);
+      hooks.onCompaction({ agentId: 'agent-a', sessionId: 's', targets: [c1.ts] }, testDir);
       expect(findSimilarDecisions(q, {}, testDir).map((h) => h.entry.ts)).toEqual([c2.ts]);
     });
 
@@ -296,7 +300,7 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
       expect(before.repetition.totalDecisions).toBe(2);
       expect(before.repetition.repeatedFingerprints).toBe(1);
 
-      hooks.onAuthorizationChanged({ agentId: 'a', sessionId: 's', targets: [d1.ts] }, testDir);
+      hooks.onAuthorizationChanged({ agentId: 'agent-a', sessionId: 's', targets: [d1.ts] }, testDir);
 
       const after = computeGovernanceKpis({ dataDir: testDir });
       expect(after.repetition.totalDecisions).toBe(1);
@@ -336,7 +340,7 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
 
       // 三条同类标记（原始 kind+tags 组合 = 3 次，足以构成高频模式）
       for (const t of [c1.ts, c2.ts, c3.ts]) {
-        markInvalid({ agentId: 'a', sessionId: 's', reason: 'elevated-risk', targets: [t], trigger: 't' }, testDir);
+        markInvalid({ agentId: 'agent-a', sessionId: 's', reason: 'elevated-risk', targets: [t], trigger: 't' }, testDir);
       }
       // 先例列表：失效结论与其标记都不出现
       expect(findSimilarDecisions({ tags: ['invalidation'] }, {}, testDir)).toHaveLength(0);

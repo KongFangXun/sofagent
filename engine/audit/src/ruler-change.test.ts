@@ -166,7 +166,7 @@ describe('appendRulerChange · 同链写入（prevHash 相接 + HMAC 可验）',
     // 结构化事件体随链落盘（机器消费面读 rulerChange 本体）
     expect(second.rulerChange?.targetId).toBe('A1-1');
     // 验链（同链可验签——与既有条目共用 checkDecisionChainDetailed）
-    const chain = checkDecisionChainDetailed(filePath, testDir);
+    const chain = checkDecisionChainDetailed(testDir);
     expect(['ok', 'insufficient']).toContain(chain.status);
     expect(chain.status).not.toBe('tampered');
   });
@@ -194,7 +194,7 @@ describe('appendRulerChange · 同链写入（prevHash 相接 + HMAC 可验）',
     expect(lines.length).toBe(3);
     const kinds = lines.map((l) => (JSON.parse(l) as { kind: string }).kind);
     expect(kinds).toEqual(['SPEC_CHANGE', 'RULER_CHANGE', 'SPEC_CHANGE']);
-    const chain = checkDecisionChainDetailed(getDecisionLogPath(testDir), testDir);
+    const chain = checkDecisionChainDetailed(testDir);
     expect(chain.status).not.toBe('tampered');
   });
 

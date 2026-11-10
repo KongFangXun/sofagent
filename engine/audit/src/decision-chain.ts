@@ -42,10 +42,14 @@ interface ChainEntry {
  * 「定位文件 + 读取 + JSONL 解析 + 注入环境值」。
  *
  * @param dataDir 可选的数据目录覆盖
+ * @param chainClass 可选链分类（host / device / test；2026-11 写入面分段）。
+ *   缺省 = 宿主链（原位路径，行为与加本参前逐字一致）；显式 'device'/'test' 时校验
+ *   `data/audit/chains/<cls>/decision-log.jsonl`——分链验链的唯一入口（路径解析仍收口
+ *   在 core 的 getDecisionLogPath，此处只透传，不另起一套）。
  * @returns ChainCheckResult
  */
-export function checkDecisionChainDetailed(dataDir?: string): DecisionChainCheckResult {
-  const filePath = getDecisionLogPath(dataDir);
+export function checkDecisionChainDetailed(dataDir?: string, chainClass?: string): DecisionChainCheckResult {
+  const filePath = getDecisionLogPath(dataDir, chainClass);
 
   if (!existsSync(filePath)) {
     return { status: 'insufficient', detail: '决策日志文件不存在，无法验证防篡改链' };

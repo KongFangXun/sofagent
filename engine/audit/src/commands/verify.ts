@@ -6,8 +6,15 @@
 // v1.8.0 章二扩展：--verify-chain 同批校验 decision 链（消费既有
 // checkDecisionChainDetailed），消除「决策链 100% 带链字段写入但零消费校验」
 // 的通道缺口；双链退出码取最严（ok→0 / tampered→2 / unverifiable|insufficient→1）。
+//
+// 2026-11 扩展（写入面分段配套）：--verify-chain 增加 `--chain <host|device|test|all>`。
+// 背景：单条 decision-log 混着宿主 / 设备 / 测试三种写入面（不同 key 结构性不同），
+// 之前只能整链一把验 ⇒ 结论必然是「部分不可复验」，且分不清是哪一面。
+// 现在按链分别验、分别报条数与状态——**禁止把三类合并成一个计数**（合并会重造
+// 「混合链」假象，那正是要修的缺陷形态）。缺省 `host` 且输出文案与退出码与加本参前
+// **逐字一致**（demo 幕⑤ 依赖 'HMAC hash chain 完整' 子串）。
 // ============================================================
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { loadHistory, checkHistoryChainDetailed, getHistoryFilePath } from '../audit-history';
 import { checkDecisionChainDetailed } from '../decision-chain';
 import { resolveDataDir, getDecisionLogPath } from '@sofagent/core';
@@ -17,6 +24,124 @@ type ChainStatus = 'ok' | 'tampered' | 'unverifiable' | 'insufficient';
 
 /** 退出码：ok→0 / tampered→2 / unverifiable|insufficient→1 */
 type VerifyCode = 0 | 1 | 2;
+
+/**
+ * 可分链校验的三类写入面（顺序固定，报告与计数一律按本顺序逐链输出）。
+ * 与 core `AuditChainClass` / audit `DecisionChainClass` 同值域。
+ */
+const VERIFY_CHAIN_CLASSES = ['host', 'device', 'test'] as const;
+
+/** 单链分类 */
+type WriteChainClass = (typeof VERIFY_CHAIN_CLASSES)[number];
+
+/** `--chain` 的合法取值（三链 + all） */
+const VALID_CHAIN_SELECTORS: readonly string[] = [...VERIFY_CHAIN_CLASSES, 'all'];
+
+/** 链的人类可读名（报告用） */
+const CHAIN_DISPLAY_NAME: Record<WriteChainClass, string> = {
+  host: '宿主链 host',
+  device: '设备链 device',
+  test: '测试链 test',
+};
+
+/**
+ * 单链校验报告（**分链独立**——条数与状态都是该链自己的读数，绝不跨链相加）。
+ * `status: 'empty'` = 该链尚无任何写入（目录或文件不存在，属设备/测试面的常态）。
+ */
+export interface DecisionChainReport {
+  /** 本条报告对应的链 */
+  chain: WriteChainClass;
+  /** 该链落盘文件绝对路径 */
+  filePath: string;
+  /** 该链条目数（该文件自身的非空行数；不跨链合并） */
+  entries: number;
+  /** 该链校验状态；'empty' = 尚无写入 */
+  status: ChainStatus | 'empty';
+  /** 人类可读说明（'empty' 时为固定文案） */
+  detail?: string;
+  /** 该链自己的退出码贡献（ok→0 / tampered→2 / 其余→1；'empty'→1） */
+  code: VerifyCode;
+}
+
+/** 空链固定文案（`--chain device|test` 与 `--chain all` 共用，措辞一致） */
+const EMPTY_CHAIN_NOTE = '该链尚无写入（空链）——设备/测试写入面此前可能从未使用，属常态，非异常';
+
+/**
+ * 读某链的条目数（非空行数）。
+ *
+ * 只用于**报告**：判定仍由 checkDecisionChainDetailed 给出（本函数不参与任何结论）。
+ * 读不到（文件不存在 / 权限 / IO）一律返回 0——该链随后由调用方按「空链」处理，
+ * 与「文件不存在」同一分支，不新增误判可能。
+ * @param filePath 该链落盘文件路径
+ */
+function countChainEntries(filePath: string): number {
+  try {
+    return readFileSync(filePath, 'utf-8').split('\n').filter((line) => line.trim() !== '').length;
+  } catch {
+    // 为何可静默：本条只服务报告读数——读不到即按 0 条处理，该链会走「空链」分支，
+    // 结论不由此处决定（判定在 checkDecisionChainDetailed），不隐藏任何异常态。
+    return 0;
+  }
+}
+
+/**
+ * 逐链校验并产出**互不合并**的报告（纯函数——不打印、不 exit，便于单测直接断言）。
+ *
+ * 空链语义按链分工（不得混用同一句话）：
+ *   · **host**：文件不存在走判定器既有口径（`insufficient`——「宿主链被清空」是可疑事件，
+ *     不能与「设备面从未使用」同话说）；
+ *   · **device / test**：文件不存在 = 该写入面尚无写入（`empty`，属常态，非异常）。
+ *
+ * @param chains 要校验的链（顺序即报告顺序）
+ * @param dataDir 可选数据目录覆盖（测试隔离用；缺省走 core 的默认解析链）
+ * @returns reports 逐链报告 + code 整体退出码（取最严）
+ */
+export function collectDecisionChainReports(
+  chains: readonly WriteChainClass[],
+  dataDir?: string,
+): { reports: DecisionChainReport[]; code: VerifyCode } {
+  const reports: DecisionChainReport[] = [];
+  let code: VerifyCode = 0;
+  for (const chain of chains) {
+    const filePath = getDecisionLogPath(dataDir, chain);
+    if (chain !== 'host' && !existsSync(filePath)) {
+      // 分段链空态：设备/测试写入面此前可能从未使用——常态，不是故障
+      reports.push({ chain, filePath, entries: 0, status: 'empty', detail: EMPTY_CHAIN_NOTE, code: 1 });
+      code = 1 as VerifyCode;
+      continue;
+    }
+    const result = checkDecisionChainDetailed(dataDir, chain);
+    const chainCode: VerifyCode = result.status === 'ok' ? 0 : result.status === 'tampered' ? 2 : 1;
+    reports.push({
+      chain,
+      filePath,
+      entries: countChainEntries(filePath),
+      status: result.status,
+      ...(result.detail !== undefined ? { detail: result.detail } : {}),
+      code: chainCode,
+    });
+    if (chainCode > code) code = chainCode;
+  }
+  return { reports, code };
+}
+
+/** 打印 `--chain` 用法（非法取值时用；与 --help 的输出保持同一措辞） */
+function printChainUsage(): void {
+  console.error('❌ sofagent 提示：--chain 的取值非法');
+  console.error('   用法: sofagent audit --verify-chain [--chain <host|device|test|all>]');
+  console.error('     host    只校验宿主链（缺省；含 history.jsonl 与 decision-log.jsonl）');
+  console.error('     device  只校验设备写入面 chains/device/decision-log.jsonl');
+  console.error('     test    只校验测试写入面 chains/test/decision-log.jsonl');
+  console.error('     all     三类链逐链校验并分别报告（条数与状态**不合并**）');
+}
+
+/** 状态 → 图标 */
+function statusBadge(status: ChainStatus | 'empty'): string {
+  if (status === 'ok') return '✅';
+  if (status === 'tampered') return '❌';
+  if (status === 'empty') return '⚪';
+  return '⚠️';
+}
 
 /**
  * 渲染历史链结论并返回退出码（既有文案逐字保留——demo 幕⑤ 依赖
@@ -91,9 +216,37 @@ function emitDecisionVerdict(result: { status: ChainStatus; detail?: string }): 
 }
 
 /**
- * --verify-chain：校验 HMAC hash chain 完整性（历史链 + 决策链，双链取最严退出码）。
+ * --verify-chain：校验 HMAC hash chain 完整性。
+ *
+ * @param chainArg `--chain` 的取值（host / device / test / all；缺省 host）。
+ *   缺省 `host` 时输出文案与退出码与「增加 --chain 之前」**逐字一致**
+ *   （历史链 + 决策链双链取最严）；`all` 时三类链逐链独立报告，**计数不合并**。
+ *   非法取值 ⇒ 打用法并退出码 1（fail-loud，不静默降级为 host）。
  */
-export function runVerifyChain(): void {
+export function runVerifyChain(chainArg?: string): void {
+  const selector = chainArg ?? 'host';
+  if (!VALID_CHAIN_SELECTORS.includes(selector)) {
+    printChainUsage();
+    process.exit(1);
+  }
+  if (selector === 'host') {
+    runVerifyChainHost();
+    return;
+  }
+  if (selector === 'all') {
+    runVerifyChainAll();
+    return;
+  }
+  runVerifySingleChain(selector as WriteChainClass);
+}
+
+/**
+ * 缺省（host）路径：历史链 + 决策链双链校验，退出码取最严。
+ *
+ * ⚠️ 本函数是「加 --chain 之前」的 runVerifyChain 函数体，**逐字保留**——
+ * demo 幕⑤ 断言输出含 'HMAC hash chain 完整' 子串，且既有用户/CI 依赖其退出码语义。
+ */
+function runVerifyChainHost(): void {
   const history = loadHistory();
 
   // ── 历史链 ──
@@ -156,6 +309,67 @@ export function runVerifyChain(): void {
     console.log('\n  结论：⚠️ 链不可完全复验或记录不足');
   }
   process.exit(finalCode);
+}
+
+/** 单链分报告的渲染（all / device / test 三种模式共用同一措辞） */
+function emitOneChainReport(report: DecisionChainReport): void {
+  console.log(`\n  ── ${CHAIN_DISPLAY_NAME[report.chain]} ──\n`);
+  console.log(`  ${statusBadge(report.status)} 状态：${report.status} · 条目：${report.entries} 条`);
+  console.log(`  路径：${report.filePath}`);
+  if (report.detail !== undefined && report.detail !== '') {
+    console.log(`  详情：${report.detail}`);
+  }
+}
+
+/** 整体结论行（与 host 分支同一措辞族，便于人读对比） */
+function emitFinalConclusion(code: VerifyCode): void {
+  if (code === 0) {
+    console.log('\n  结论：✅ 链完整');
+  } else if (code === 2) {
+    console.log('\n  结论：❌ 检测到链异常（篡改或链头不符）');
+  } else {
+    console.log('\n  结论：⚠️ 链不可完全复验或记录不足');
+  }
+}
+
+/**
+ * `--chain all`：三类链**逐链**校验，分链报告条数 / 状态，**不合并计数**。
+ *
+ * 合并计数是被修的缺陷形态本身：三类链 key 结构性不同，把条数加起来只会得到
+ * 一个「看起来很大、实际来源混杂」的数字，读者无法判断哪一面出了问题。
+ * 退出码取三链最严（ok→0 / tampered→2 / unverifiable|insufficient|空链→1）。
+ */
+function runVerifyChainAll(): void {
+  console.log('\n  写入面分链校验（--chain all）——三类链逐链报告，条数与状态不合并\n');
+  const { reports, code } = collectDecisionChainReports(VERIFY_CHAIN_CLASSES);
+  for (const report of reports) emitOneChainReport(report);
+  const total = reports.reduce((sum, r) => sum + r.entries, 0);
+  console.log(
+    `\n  合计（仅参考，不作判定）：三链共 ${total} 条——` +
+      reports.map((r) => `${r.chain}=${r.entries}`).join(' / ') +
+      '（判定按各链自身状态，见上）',
+  );
+  emitFinalConclusion(code);
+  process.exit(code);
+}
+
+/**
+ * `--chain device|test`：只校验该链。
+ * 链目录 / 文件不存在 ⇒ 明示「该链尚无写入（空链）」并 exit 1，**不报 error**
+ * （该写入面从未使用属常态，不是故障）。
+ */
+function runVerifySingleChain(chain: WriteChainClass): void {
+  const { reports, code } = collectDecisionChainReports([chain]);
+  const report = reports[0]!;
+  if (report.status === 'empty') {
+    console.log(`\n  ⚪ ${CHAIN_DISPLAY_NAME[chain]}：${EMPTY_CHAIN_NOTE}`);
+    console.log(`  路径：${report.filePath}`);
+    console.log('\n  结论：⚠️ 该链无记录可校验（空链）');
+    process.exit(1);
+  }
+  emitOneChainReport(report);
+  emitFinalConclusion(code);
+  process.exit(code);
 }
 
 /**

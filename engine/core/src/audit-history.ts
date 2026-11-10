@@ -68,16 +68,90 @@ interface HistoryChainHeadAnchor {
   updatedAt?: string;
 }
 
+// ════════════════════════════════════════
+// 审计链分类（写入面分段 · 2026-11 缺陷修复）
+// ════════════════════════════════════════
+//
+// 背景（实测定性，非推测）：`~/.sofagent/data/audit/decision-log.jsonl` 单文件里混着
+// **三种结构性不同的写入面**，却共用一条 HMAC 链——
+//   · host   —— 宿主（正式安装面）写入，用宿主 key 签名；
+//   · device —— 设备侧写入（agentId = `device-*`，217 个不同 id），用 device key 签名；
+//   · test   —— 早期测试夹具（agentId ∈ {A, B, a, smoke, smoke2, test-agent}），
+//               用一次性测试 key 签名。
+// 三类 key 结构性不同、且测试 key 已不可得 ⇒ 混链后整链必然出现「大量不可复验」
+// 的段（实测 104,337 条中 8,333 条不可复验，已定性为**非篡改**）——那是环境指纹漂移 +
+// 一次性 key 缺失的必然结果，不是证据面被改。
+//
+// 处置策略（负责人拍板「历史原样 + 新写入面分段 + 对外话术如实化」）：
+//   · 历史条目**一律不动**（append-only 资产不删件、不重签、不改写）；
+//   · **新写入**按写入面分链落盘，使每条链的 key/来源同构，验链结论才有意义。
+// 本节提供「分类解析 + 分链路径」两个原语；写入侧的强制降链闸在 @sofagent/audit 的
+// decision-log.emitDecision，验链侧的逐链报告在 `--verify-chain --chain <cls>`。
+
+/** 审计链分类三值（host = 原位宿主链；device / test = 分段链） */
+export type AuditChainClass = 'host' | 'device' | 'test';
+
+/** 合法的链分类取值（顺序即 fail-loud 报错时的列举顺序） */
+const VALID_CHAIN_CLASSES: readonly string[] = ['host', 'device', 'test'];
+
 /**
- * 获取决策审计日志文件路径（v1.3.0 交付 6 T01）
- * 解析链与 getHistoryFilePath 完全一致（显式 dataDir 参数 > SOFAGENT_DATA 环境变量 > data/audit/decision-log.jsonl）。
- * 决策日志与 history.jsonl 同级兄弟文件——共用同一防篡改 HMAC 哈希链语义。
- * @param dataDir 可选的数据目录覆盖（用于测试）
+ * 解析审计链分类（写入面分段原语）。
+ *
+ * 优先级：显式入参 > `SOFAGENT_CHAIN_CLASS` 环境变量 > `'host'`。
+ *
+ * 🔴 非法值 **fail-loud 抛错**，不做任何静默降级——本仓既有纪律（data-paths.ts 的
+ * TENANT_PATTERN 同款）：静默降级会把数据写进**错的坑**，而这里的「坑」是防篡改链落点，
+ * 写错面的后果是「链看起来齐整、实际来源混杂」——正是本次要修的缺陷形态。
+ * 空串 / 纯空白同样按非法值处理（`SOFAGENT_CHAIN_CLASS=` 这种「设了但没值」的
+ * 环境变量形态不做猜测性兜底：请 `unset` 而不是留空）。
+ *
+ * ⚠️ 本函数**故意不进包出口**（engine/core/src/index.ts）：新增公共符号按公开 API
+ * 门禁需 bump 包版本并级联改依赖声明，与本次修复无关（同 clearEnvFingerprintCache 先例）。
+ * @param explicit 显式指定的链分类（最高优先级）
+ * @returns 归一后的链分类（三值之一）
+ * @throws Error 取值不在三值内（含空串）
  */
-export function getDecisionLogPath(dataDir?: string): string {
+export function resolveChainClass(explicit?: string): AuditChainClass {
+  const raw = explicit ?? process.env.SOFAGENT_CHAIN_CLASS ?? 'host';
+  if (!VALID_CHAIN_CLASSES.includes(raw)) {
+    throw new Error(
+      `[audit-history] 非法审计链分类 "${raw}"——必须是 ${VALID_CHAIN_CLASSES.join(' / ')} 之一` +
+        '（不做静默降级：错链会把数据写进错的坑）。来源：显式入参 / SOFAGENT_CHAIN_CLASS 环境变量。',
+    );
+  }
+  return raw as AuditChainClass;
+}
+
+/** 非宿主链的落盘子目录名（位于同一个 audit 目录下：`<audit>/chains/<cls>/decision-log.jsonl`） */
+const CHAINS_SUBDIR = 'chains';
+
+/**
+ * 获取决策审计日志文件路径（v1.3.0 交付 6 T01；2026-11 增加分链第二参）
+ *
+ * 解析链（host 分支，**与加第二参前逐字一致**）：
+ * 显式 dataDir 参数 > SOFAGENT_DATA 环境变量 > data/audit/decision-log.jsonl。
+ * 决策日志与 history.jsonl 同级兄弟文件——共用同一防篡改 HMAC 哈希链语义。
+ *
+ * 分链分支（device / test）：`<同一个 audit 目录>/chains/<cls>/decision-log.jsonl`——
+ * audit 目录的解析链与 host **完全同源**（同一 dataDir 入参 / SOFAGENT_DATA / 默认值，
+ * 不另起一套解析），故「同一份数据根下，三类链互为兄弟目录」，迁移/备份只需搬一个根。
+ *
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ * @param chainClass 可选链分类（host / device / test；缺省按 resolveChainClass 环境链解析）。
+ *   显式传 `'host'` 与不传**行为等价**（宿主链永远是原位路径）。
+ * @throws Error chainClass 非法（见 resolveChainClass）
+ */
+export function getDecisionLogPath(dataDir?: string, chainClass?: string): string {
+  const cls = resolveChainClass(chainClass);
   const dir = dataDir ?? process.env.SOFAGENT_DATA;
-  if (dir) return join(dir, 'audit', 'decision-log.jsonl');
-  return AUDIT_DECISION_LOG;
+  if (cls === 'host') {
+    // 宿主链：原位路径，一字不改（历史与工具链全部依赖这条字符串）
+    if (dir) return join(dir, 'audit', 'decision-log.jsonl');
+    return AUDIT_DECISION_LOG;
+  }
+  // 分段链：同一个 audit 目录下的子目录（audit 目录取值链与 host 同源）
+  const auditDir = dir ? join(dir, 'audit') : dirname(AUDIT_DECISION_LOG);
+  return join(auditDir, CHAINS_SUBDIR, cls, 'decision-log.jsonl');
 }
 
 /**

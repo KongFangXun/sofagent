@@ -259,6 +259,12 @@ interface Args {
   rootCause: boolean;
   /** v1.2.9: --verify-chain 校验 HMAC hash chain 完整性 */
   verifyChain: boolean;
+  /**
+   * 2026-11: --chain <host|device|test|all> —— --verify-chain 的写入面选择。
+   * 缺省（undefined）= host（行为/文案/退出码与加本参前逐字一致）。取值合法性由
+   * commands/verify.ts 判定并 fail-loud（非法值打用法 + exit 1，不静默降级）。
+   */
+  chainClass?: string;
   revokeKey: boolean; // F-48：HMAC 密钥销毁路径
   yes?: boolean;      // F-48：--revoke-key 确认跳过
   /** v1.2.9: --verify-commit <hash> 检查 commit 是否有审计记录 */
@@ -333,6 +339,10 @@ const LONG_VALUE_FLAGS: ReadonlySet<string> = new Set([
   '--diff', '--task', '--commit-msg', '--verify-commit', '--regression',
   '--webhook', '--webhook-url', '--format', '--ruleset', '--ruleset-path',
   '--revert', '--timeline', '--verify-evidence',
+  // 2026-11：--chain <host|device|test|all>（--verify-chain 的写入面选择）——
+  // 与上方解析分支两处同步（本清单职责即等号形态归一，缺登记则 --chain=all 走
+  // 「不支持的参数」路径，等于该写法不可用）。
+  '--chain',
 ]);
 
 /**
@@ -446,6 +456,18 @@ function parseArgs(rawArgv: string[]): Args {
       args.rootCause = true;
     } else if (argv[i] === '--verify-chain') {
       args.verifyChain = true;
+    } else if (argv[i] === '--chain') {
+      // 2026-11: --chain <host|device|test|all>（--verify-chain 的写入面选择）。
+      // 取值合法性**不在此处判**——统一由 runVerifyChain 判并打用法（单一事实源：
+      // 用法文案只在 commands/verify.ts 里写一份）。值缺席时置空串，由同一处
+      // fail-loud 报用法（不静默当 host：静默降级会让用户以为查了另一条链）。
+      const next = argv[i + 1];
+      if (next !== undefined && !next.startsWith('-')) {
+        i++;
+        args.chainClass = next;
+      } else {
+        args.chainClass = '';
+      }
     } else if (argv[i] === '--revoke-key') {
       args.revokeKey = true;
     } else if (argv[i] === '--verify-commit' && argv[i + 1]) {
@@ -563,6 +585,7 @@ function parseArgs(rawArgv: string[]): Args {
       console.log('  sofagent audit --support-bundle                 一键生成 issue 摘要 + 证据 zip（脱敏）');
       console.log('  sofagent audit --root-cause                     根因分析');
       console.log('  sofagent audit --verify-chain                   审计链完整性校验');
+      console.log('  sofagent audit --verify-chain --chain <c>        写入面分链校验（c = host|device|test|all，缺省 host）');
       console.log('  sofagent audit --verify-commit <hash>           检查 commit 审计记录');
       console.log('  sofagent audit --regression <dir>               回归验证');
       console.log('  sofagent audit --install-hook                   安装 pre-commit + commit-msg + post-commit hook');
@@ -597,6 +620,7 @@ function parseArgs(rawArgv: string[]): Args {
         console.log('  --install-hook     安装 pre-commit + commit-msg + post-commit hook');
         console.log('  --root-cause       根因分析');
         console.log('  --verify-chain     审计链完整性校验');
+        console.log('  --chain <c>        --verify-chain 的写入面选择（host|device|test|all，缺省 host；all=三类链逐链报告不合并）');
         console.log('  --verify-commit    检查 commit 审计记录');
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
@@ -1168,7 +1192,7 @@ async function main(): Promise<void> {
 
   // --verify-chain 模式（v1.2.9 新增）
   if (args.verifyChain) {
-    runVerifyChain();
+    runVerifyChain(args.chainClass);
     return;
   }
 

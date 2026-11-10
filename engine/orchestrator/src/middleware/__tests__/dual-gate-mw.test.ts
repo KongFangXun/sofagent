@@ -20,6 +20,7 @@ import {
   networkOutboundTargetRule,
   type ToolCallRecord,
 } from '../dual-gate-mw';
+import { getDecisionLogPath } from '@sofagent/core';
 
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-dual-gate-${Date.now()}-${randomBytes(4).toString('hex')}`);
@@ -165,7 +166,9 @@ describe('双闸验证（v1.3.6 交付⑫）', () => {
       makeCall({ args: { command: 'git reset --hard HEAD' } }),
       async () => 'done',
     );
-    const logPath = join(testDir, 'audit', 'decision-log.jsonl');
+    // 2026-11 写入面分段：agentId='test-agent' 属**测试夹具写入面**，写入被硬闸
+    // 改道至 chains/test/（宿主链一字不写）——故这里读测试链，与写侧同一份解析。
+    const logPath = getDecisionLogPath(testDir, 'test');
     expect(existsSync(logPath)).toBe(true);
     const lines = readFileSync(logPath, 'utf-8').trim().split('\n').filter(Boolean);
     expect(lines.length).toBe(1);

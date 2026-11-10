@@ -119,6 +119,97 @@ export interface EmitDecisionInput {
    * 引用（判定类条目的默认纪律）。回执子对象在位时本位必须为 false。
    */
   content?: boolean;
+  /**
+   * 目标审计链（2026-11 写入面分段 · 可选）。
+   *
+   * 优先级：本字段 > `SOFAGENT_CHAIN_CLASS` > `'host'`（缺省即宿主链，老调用方零改动）。
+   * 硬闸（仅当解析结果为 host 时生效，显式请求 test/device 不受影响）：
+   *   · `agentId` ∈ {A, B, a, smoke, smoke2, test-agent} ⇒ 强制落 `test` 链；
+   *   · `agentId` 以 `device-` 开头 ⇒ 强制落 `device` 链。
+   * 落链路径见 `@sofagent/core` 的 `getDecisionLogPath(dataDir, chainClass)`。
+   */
+  chainClass?: DecisionChainClass;
+}
+
+// ════════════════════════════════════════
+// 写入面分链（2026-11 缺陷修复 · 防复发硬闸）
+// ════════════════════════════════════════
+//
+// 缺陷形态（实测定性）：单条 decision-log.jsonl 里混着三种结构性不同的写入面——
+// 宿主（host key）/ 设备侧（device key，agentId = `device-*`）/ 早期测试夹具
+// （一次性测试 key，agentId ∈ 下列白名单）。混链后整链必然出现「不可复验」长段
+// （实测 104,337 条中 8,333 条不可复验，非篡改），验链结论因此不可读。
+// 本节的职责：**新的写入面按下表硬性分链落盘**，从源头止住混链（历史条目一律不动）。
+
+/**
+ * 审计链分类三值——与 `@sofagent/core` audit-history.resolveChainClass 的值域**必须一致**。
+ *
+ * 为何在 audit 侧再声明一次：core 的 `resolveChainClass` 故意**不在包出口**
+ * （新增公共符号按公开 API 门禁需 bump 包版本，与本次修复无关），audit 侧无法导入。
+ * 一致性由 decision-log-chain-class.test.ts 的跨包对拍用例锁死（三值落点不重叠 +
+ * 非法值双向抛错），不做「两处各写一套、无人对账」的静默漂移。
+ */
+export type DecisionChainClass = 'host' | 'device' | 'test';
+
+/** 合法链分类取值（顺序即 fail-loud 报错时的列举顺序，与 core 同序） */
+const CHAIN_CLASS_VALUES: readonly DecisionChainClass[] = ['host', 'device', 'test'];
+
+/**
+ * 测试夹具 agentId 白名单（实测来源：不可复验条目里的 A 类 8,114 条——
+ * `A` 5,194 / `B` 2,913 / `test-agent` 2 / `smoke` 1 / `smoke2` 1，另含小写 `a` 变体）。
+ * 命中者的写入一律改道 `chains/test/`，**永不进宿主链**。
+ */
+const TEST_WRITE_AGENT_IDS: readonly string[] = ['A', 'B', 'a', 'smoke', 'smoke2', 'test-agent'];
+
+/**
+ * 设备侧写入的 agentId 前缀（实测 217 条不可复验条目全是 217 个不同的 `device-*` id）——
+ * 设备 key 与宿主 key **结构性不同**，故其条目必须落 `chains/device/`。
+ */
+const DEVICE_AGENT_ID_PREFIX = 'device-';
+
+/** 写入面分链解析结果 */
+interface WriteChainClassResolution {
+  /** 实际落链（可能已被硬闸改道） */
+  chainClass: DecisionChainClass;
+  /** 被改道前的原解析结果（未改道时为 null——stderr 据此决定是否留痕） */
+  downgradedFrom: DecisionChainClass | null;
+}
+
+/**
+ * 解析**写入侧**实际落链（含防复发硬闸，顺序固定：先测试后设备）。
+ *
+ * 分类来源优先级：入参 `chainClass` > `SOFAGENT_CHAIN_CLASS` > `'host'`（与 core 同规格）。
+ * 硬闸（仅在解析结果为 `host` 时生效——显式请求 test/device 的不受影响）：
+ *   ① `agentId` ∈ TEST_WRITE_AGENT_IDS ⇒ 强制 `test`；
+ *   ② `agentId` 以 `device-` 开头     ⇒ 强制 `device`。
+ * 顺序固定：两条同时可能命中时以 ① 为准（测试夹具优先识别——测试 id 更具体）。
+ *
+ * 🔴 非法取值 fail-loud 抛错（与 core 同语义，禁静默降级：错链 = 写进错的坑）。
+ * @param explicit 入参显式链分类
+ * @param agentId 本次写入的 agentId（硬闸判据）
+ * @throws Error 链分类非法
+ */
+function resolveWriteChainClass(explicit?: string, agentId?: string): WriteChainClassResolution {
+  const raw = explicit ?? process.env.SOFAGENT_CHAIN_CLASS ?? 'host';
+  if (!CHAIN_CLASS_VALUES.includes(raw as DecisionChainClass)) {
+    throw new Error(
+      `[decision-log] 非法审计链分类 "${raw}"——必须是 ${CHAIN_CLASS_VALUES.join(' / ')} 之一` +
+        '（不做静默降级：错链会把数据写进错的坑）。来源：入参 chainClass / SOFAGENT_CHAIN_CLASS 环境变量。',
+    );
+  }
+  const requested = raw as DecisionChainClass;
+  if (requested !== 'host') {
+    // 显式请求 test / device：不受硬闸影响（调用方已明确写入面）
+    return { chainClass: requested, downgradedFrom: null };
+  }
+  const id = agentId ?? '';
+  if (TEST_WRITE_AGENT_IDS.includes(id)) {
+    return { chainClass: 'test', downgradedFrom: 'host' };
+  }
+  if (id.startsWith(DEVICE_AGENT_ID_PREFIX)) {
+    return { chainClass: 'device', downgradedFrom: 'host' };
+  }
+  return { chainClass: 'host', downgradedFrom: null };
 }
 
 /** schema 校验失败（kind/moment 非法、必填缺失）——不写文件 */
@@ -191,9 +282,10 @@ type DecisionBusinessEntry = Omit<DecisionLogEntry, keyof ChainFields>;
  *
  * @param input 决策输入
  * @param dataDir 可选的数据目录覆盖（用于测试）
- * @returns 落盘的完整条目（含链字段）
+ * @returns 落盘的完整条目（含链字段）+ `chainClass`（本次实际落链——写入面分段可观测）
  * @throws DecisionSchemaError 校验失败（不写文件；含 kind 非法——由内核 kind 门抛出）
  * @throws DecisionWriteError 写入失败（向上传播）
+ * @throws Error 链分类非法（`input.chainClass` / `SOFAGENT_CHAIN_CLASS` 不在三值内）
  */
 // v1.8.0 修复（S368 实锤）：进程内单调 ts 生成——同毫秒连写时后者 +1ms 推进。
 // ts 是 decision-log 的主键（查询侧 byTs Map 按它索引），同刻碰撞会让
@@ -209,7 +301,10 @@ function monotonicTs(): string {
   return new Date(ms).toISOString();
 }
 
-export function emitDecision(input: EmitDecisionInput, dataDir?: string): DecisionLogEntry {
+export function emitDecision(
+  input: EmitDecisionInput,
+  dataDir?: string,
+): DecisionLogEntry & { chainClass: DecisionChainClass } {
   // ── 校验（写前）──
   // 注：kind 合法性由链内核的 kind 门判定（validKinds=VALID_KINDS）——本函数不再重复。
   if (!VALID_MOMENTS.includes(input.moment)) {
@@ -350,7 +445,22 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     }
   }
 
-  const filePath = getDecisionLogPath(dataDir);
+  // ── 写入面分链（2026-11 · 防复发硬闸）──
+  // 顺序要点：分类解析 + 降链判定**先于**任何 fs 动作（含 assertTestEnvNotWritingRealData），
+  // 使「测试环境解析到真实数据根」的护栏判定对象就是真正要写的那个文件。
+  // 降链不静默：stderr 一行如实交代（原 agentId + 原解析链 + 实际落链），
+  // 但**不改写入正文、不动 why 内容、不改签名语义**——条目本身与分链前逐字相同，
+  // 变的是「落哪条链」（chainClass 只出现在返回值里，不落盘）。
+  const chainResolution = resolveWriteChainClass(input.chainClass, input.agentId);
+  const chainClass = chainResolution.chainClass;
+  const filePath = getDecisionLogPath(dataDir, chainClass);
+  if (chainResolution.downgradedFrom !== null) {
+    console.error(
+      `[decision-log] 写入面分链：agentId="${input.agentId}" 属${chainClass === 'test' ? '测试' : '设备'}写入面，` +
+        `已从 ${chainResolution.downgradedFrom} 链强制改道至 ${chainClass} 链（落盘 ${filePath}）——` +
+        '为避免混链（不同 key 结构性不同），本次写入不进宿主链。',
+    );
+  }
   // 写侧护栏：测试环境解析到真实数据根 → fail-loud 拒绝写入（先于任何 fs 写）
   assertTestEnvNotWritingRealData(filePath, 'emitDecision');
   const fingerprint = getEnvFingerprint(dataDir);
@@ -382,7 +492,7 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
   };
 
   // ── 1/4/5. 链字段生成 + HMAC 签名 + 原子追加 + 收紧权限（全部由 chain-kernel 承载）──
-  return appendChained(baseSanitized, {
+  const written = appendChained(baseSanitized, {
     filePath,
     validKinds: VALID_KINDS,
     key: hmacKey,
@@ -392,6 +502,9 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     onWriteError: (message, cause) => new DecisionWriteError(message, cause),
     logLabel: '[decision-log]',
   });
+  // 返回值附加「实际落链」——只进内存返回值，**不落盘**（写入正文与签名输入均不含它，
+  // 故 additions 不会改变条目哈希；消费面（如 doctor / 校验命令）可据以如实报链）。
+  return { ...written, chainClass };
 }
 
 // ════════════════════════════════════════

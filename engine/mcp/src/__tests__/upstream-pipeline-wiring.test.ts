@@ -25,6 +25,7 @@ import {
   saveDeviceUploadPolicy,
   loadRedactRules,
   getDataDir,
+  getDecisionLogPath,
   type AgentIdentity,
 } from '@sofagent/core';
 import type { ArmMetrics } from '@sofagent/train';
@@ -59,9 +60,15 @@ function lastRouterAuditEvent(): Record<string, unknown> {
   return JSON.parse(line) as Record<string, unknown>;
 }
 
-/** 读 decision-log 末行（三层检测判定入链面） */
+/**
+ * 读 decision-log 末行（三层检测判定入链面）。
+ *
+ * 2026-11 写入面分段：device_data_push 的 agentId 为 `device-<id>`（设备写入面），
+ * 其条目按硬闸落 `chains/device/`，故此处读**设备链**——不是「测试期临时改路径」，
+ * 而是与写侧同一份 getDecisionLogPath(dataDir, 'device') 解析。
+ */
 function lastDecisionEntry(): { evidence?: string[]; why?: { text?: string } } {
-  const p = path.join(dataDir, 'audit', 'decision-log.jsonl');
+  const p = getDecisionLogPath(dataDir, 'device');
   const line = fs.readFileSync(p, 'utf-8').trim().split('\n').pop()!;
   return JSON.parse(line) as { evidence?: string[]; why?: { text?: string } };
 }
