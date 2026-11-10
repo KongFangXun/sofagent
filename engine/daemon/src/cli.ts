@@ -670,7 +670,7 @@ async function main() {
       }
       if (!target) {
         console.error('❌ verify-media 需要 --target 参数（U 盘根目录）');
-        console.error('   用法: sofagent daemon verify-media --target /Volumes/SOFAGENT');
+        console.error('   用法: sofagent daemon verify-media --target /Volumes/SOFAGENT（设备面亦可到达：sofagent device verify-media --target <路径>）');
         process.exit(1);
       }
       const { verifyUsbSignature } = await import('./usb-signature');

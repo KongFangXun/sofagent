@@ -1,9 +1,9 @@
 # tools/check/ · 门禁一览
 
-> 本目录承载 sofagent 的**机器门禁集**（66 个 `.sh`/`.mjs` 脚本 + 台账/基线 JSON + `lib/` 共享库）。本表只登记现状（v1.5.9），不做脚本拆分。
+> 本目录承载 sofagent 的**机器门禁集**（75 个 `.sh`/`.mjs` 脚本 + 台账/基线 JSON + `lib/` 共享库；数量以 `ls tools/check/*.{sh,mjs} | wc -l` 实测为准，不手抄）。本表只登记现状（v1.5.9），不做脚本拆分。
 > 执行入口：多数脚本可直接 `bash tools/check/<name>.sh` 单跑；发版链路由 `tools/release/pre-push-check.sh` 与 `docs/changelog/releasing.md` SOP 汇编调用。
 
-## 门禁 → 管哪个面（65 脚本）
+## 门禁 → 管哪个面（75 脚本）
 
 ### 文档与声称面（16）
 

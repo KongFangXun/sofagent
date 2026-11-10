@@ -4,7 +4,7 @@
 
 > v1.8.0 · 2026-11-05（GMT+8）· ✅ 已发版 · 孔放勋
 
-> sofagent 是开源（MIT）的 **FDE Harness 层**——不造 Agent，给宿主 Agent（DSH / OpenClaw / WorkBuddy）加一层治理。本文档是项目全局索引入口。
+> sofagent 是开源（MIT）的 **FDE Harness 层**——不造 Agent，给宿主 Agent（DSH / OpenClaw / WorkBuddy 等 8 宿主——全表见 README〈多平台挂载〉）加一层治理。本文档是项目全局索引入口。
 > 人类与 AI Agent 均可读；**Agent 查实现路径直接跳 [§五 文件地图](#五文件地图)**；English: [README.en.md](../README.en.md)。阅读路径见 [§八](#八导航按你的意图选路)；文档分工见 [§九](#九文档分工与体量纪律)。
 
 
@@ -25,7 +25,7 @@
 
 ## 一、一句话
 
-**sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场把业务判断写成文件（梳理工作流、构建本体图谱、把能自动化的环节变成 AI 节点），部署后按文件
+**sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy 等 8 宿主）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场把业务判断写成文件（梳理工作流、构建本体图谱、把能自动化的环节变成 AI 节点），部署后按文件
 7×24 执行与审计。底层是 **约束层**——约束 Agent 行为、审计每次变更、沉淀经验。
 **产品形态 = FDE Harness 层**：对执行体（Agent）做约束、对智力源（模型）做治理——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
 
@@ -113,7 +113,7 @@ graph TB
 
 | 概念 | 一句话 | 详情 |
 |---|---|---|
-| **FDE Harness** | 产品身份：**FDE 方法论 × Harness 工程**，同一件事两阶段——FDE 进场生成判断（哪里上 AI、标准、谁拍板）冻结成交付物；约束层离场驻留判断（7×24 执行、进化写回），装进成熟 Agent（DSH / OpenClaw / WorkBuddy）；（详→注-1） | [README](../README.md#什么是-fde-harness) |
+| **FDE Harness** | 产品身份：**FDE 方法论 × Harness 工程**，同一件事两阶段——FDE 进场生成判断（哪里上 AI、标准、谁拍板）冻结成交付物；约束层离场驻留判断（7×24 执行、进化写回），装进成熟 Agent（DSH / OpenClaw / WorkBuddy 等 8 宿主）；（详→注-1） | [README](../README.md#什么是-fde-harness) |
 | **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层五种能力（注入·审计·回溯·沉淀·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——五种能力各自覆盖哪些维度 | [ARCHITECTURE · 七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；分工详见 [PHILOSOPHY §一](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#一这是什么定位与边界) |
@@ -263,7 +263,7 @@ graph TB
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
 
 > 📦 **包数口径**：29 个 workspace = 13 个 `@sofagent/*` 模块包 + `engine/corpus`（`@sofagent/rsi-corpus`，独立版本线）+ load-chain + dsh-plugin-kit + 8 DSH 插件 + 4 OpenClaw 插件 + umbrella 总包。
-> 其中 16 个为 `@sofagent` scope（13 模块 + corpus + load-chain + dsh-plugin-kit）+ 8 DSH 插件 + 1 umbrella，共 25 个 npm 发布物（已发 23，rsi-corpus 双包待发 v1.8.0）。
+> 其中 16 个为 `@sofagent` scope（13 模块 + corpus + load-chain + dsh-plugin-kit）+ 8 DSH 插件 + 1 umbrella，共 25 个 npm 发布物（已发 25——rsi-corpus 双包已上架，npm 实查）。
 > OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。
 
 
