@@ -574,8 +574,7 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 
 **与本仓既有提权分级的分工（勿混）**：[v1.4.8「shell 提权分级」](./changelog/v1.4/v1.4.8.md) 管的是**执行侧**（shell 命令按危险度三态 safe / risky / dangerous 路由到直接跑 / 场景策略 / HITL），本条管的是**注册侧**（能力项按后果类型声明）——净增量两点：① 作用域从 shell 命令扩到全部能力注册项；② 分档维度从「危险程度」细化为「**后果类型**」——改权限致持久提权、改环境动摇运行根基，混作一档则处置无从分化。
 
-**外部教训**：SQL Copilot 提权链 [CVE-2026-65669](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-65669)（CVSS v3.1 **9.6**，2026-09-08 披露）机制——植入恶意 `CONSTITUTION.md` → 管理员使用时触发 → 绕过只读限制、
-以该连接已持有的权限执行 T-SQL → 攻击者自我提升为 SYSADMIN**。
+**外部教训**：SQL Copilot 提权链 [CVE-2026-65669](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-65669)（CVSS v3.1 **9.6**，2026-09-08 披露）机制——植入恶意 `CONSTITUTION.md` → 管理员使用时触发 → 绕过只读限制、以该连接已持有的权限执行 T-SQL → 攻击者自我提升为 SYSADMIN**。
 
 它**不授予任何权限，用的是连接上已有的权限**——故其首要教训是**最小权限**（连接身份决定爆炸半径，与上条「最坏情况反问」同源）；其次才是「合法工具做越权事」的检查盲区——护栏校验工具能否调用，管不住用合法工具做越权。
 
@@ -768,8 +767,7 @@ graph LR
 
 **审计留痕的六项必留字段**（OWASP LLM06:2025 / Microsoft Least Privilege 行业共识）：Agent 写入生产系统时须留**谁 / 何时 / 对哪个对象 / 执行了什么 / 改前改后值 / 是否可回滚**六项。当前覆盖：字段 1-3 ✅（身份码 / timestamp / diff 路径）；字段 5 自 v1.4.4 以 `beforeAfter` 结构化摘要落盘 🟡；字段 4 🟡 部分覆盖、字段 6（回滚性显式标记）🟡 排期中——离开 Foundry 类统一权限模型后，这六项是不可省的工程门槛。
 
-> 📖 [OWASP · LLM Top 10 (LLM06)](https://owasp.org/www-project-top-10-for-large-language-model-applications/) · [Microsoft · Least Privilege for AI Agents](https://www.microsoft.com/en-us/security/blog/) · [SAP](https://www.sap.com) · [Palantir ·
-Foundry Docs](https://www.palantir.com/docs/foundry/)
+> 📖 [OWASP · LLM Top 10 (LLM06)](https://owasp.org/www-project-top-10-for-large-language-model-applications/) · [Microsoft · Least Privilege for AI Agents](https://www.microsoft.com/en-us/security/blog/) · [SAP](https://www.sap.com) · [Palantir · Foundry Docs](https://www.palantir.com/docs/foundry/)
 
 ### 本体建模要求对齐：GB/T 48000.3-2026 合规参考基线（v1.3.1 交付 2）
 
@@ -778,6 +776,24 @@ Foundry Docs](https://www.palantir.com/docs/foundry/)
 **条款映射**（单一事实源：`engine/audit/src/gb48000.ts` 的 `GB48000_CLAUSE_MAP`，审计维度与本文档共用）：8 条条款类别（OBJ/LNK/ACT/STM/META/VAL/VER/ITF）映射到 v1.3.1 CORE-OBJ/ACT/LNK/STM 四类内核契约，逐条落地路径与对齐状态**以 `GB48000_CLAUSE_MAP` 为准**——已对齐 5 / 部分对齐 2（STM 迁移执行待规划、VER Schema 版本迁移未落地）/ 不适用 1（ITF）。
 
 **审计报告「本体建模要求对齐」维度（opt-in）**：`runRules({ gb48000: true })`（编程接口选项，非 CLI flag）→ 结果追加 `GB48000` 信息条目（ruleClass='工程规范'，按 name 排除 exitCode 计算——默认行为零变化）。该维度对齐的是 **GB/T 48000.3-2026「标准数字化·本体建模要求」**（ontology schema/action-registry/contracts 合规映射），**不是行为审计国标**，且为**非认证声明**。
+
+### 本体验收分两层：静态形状门禁 + 动态留出试跑
+
+> 📐 **一句话**：验收对象不是本体文件，而是**本体在真实运转中的表现**——静态侧查形状合规，动态侧查跑起来管用；决定可信度的不是评分维度多少，而是**留出集纪律**（本仓 `validate_ontology` 与 `GB48000_CLAUSE_MAP` 同属静态侧，只证明形状对）。
+
+**核心纪律**：生成本体时用过的文档已被模型见过，拿它验收分数必然好看 ⇒ 须事先留出同类文档**只考不训**；更细的一条是「**一份文档一旦被拿来调过本体，它就不再是考卷**」——调参后的分数是适配成绩，没见过的初次成绩才是泛化能力。
+
+**静态侧（九条公理门禁，全可规则自动检查）**：实体类型不相交 / 全局唯一标识 / 属性唯一性 / 日期时序 / 枚举约束 / 取值约束 / 功能约束 / 版本替代 / 层级无环——前三条防张冠李戴、中三条防胡填乱写、后三条防一改就崩；是底线，不是验收。
+
+**动态侧（七指标，拿没见过的文档真跑抽取）**：字段覆盖率（附缺失清单）· 置信分布与低置信字段 · fallback 实体率 · 孤儿实体率 · **跨文档一致性**（单份文档测不出来，最该盯）· 值域命中率 · 关系合规率。
+
+**为什么静态审必然漏（CQ4OE 一代硬数字 · 9 模型 × 6 领域本体）**：类名 F1 59.7%、属性 31.8%、层级闭包 16.7%、公理完备率 2.1%——模型很会「起名字」，不太会「搭骨架」；静态分高的本体泛化能力可以很差，故静态审必须配动态测。
+
+这两半不是同源推演：政企长文档萃取的桌面工具方（2026-10-09）与电网本体行业作者（2026-10-11）互不相关，却各自独立收敛到同一条边界——验收看**使用过程**而非**产物属性**；静态九条门禁即后者转述的 GB/T 48000.3—2026 第 8 章。
+
+**验收三条线（缺一不可）**：被真实场景调用（演示不算）· 每次调用留审计记录（无留痕的「用起来」等于没验证）· 场景可复现（换个相似场景同法能再建）。合起来是**本体不是建出来的，是用出来的**；运行时暴露的问题（反复出现的新实体、越界取值、低置信字段）回流成演进建议、经人审进新版本，发布前单测与运行中反馈接成闭环。
+
+> 📖 来源：[CQ4OE 基准：9 模型 × 6 领域本体的能力问题生成本体评测](https://arxiv.org/abs/2609.26029)（马德里理工大学本体工程组，2026-09-22）· [WiseOWL 本体质量四维评分](https://arxiv.org/abs/2604.12025)（2026-08-30，静态侧四维与推理维度盲区）
 
 ### 双规则系统重叠（v1.5.3 施工收敛：正则与定义层同源）
 

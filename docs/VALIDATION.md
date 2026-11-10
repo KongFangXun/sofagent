@@ -531,6 +531,11 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 - **平均分与全对率必须同表报（三源）**——只看均分会系统性误排名：Odysseys2 均分 84.6、全对仅 47/100；PAE 审计里 27–78% 的「成功」含违规，相乘门控后 Pass^4 无一超 24%；换六个裁判判「新颖性」即改变结论。两条口径：① 均分与 Pass^k 同表报；② 判据维须是可枚举的「不变量」而非评分项。与上文 AND 复合门槛正交：彼管合成，本条管**读数怎么呈现**。
 > 📖 来源：[Odysseys2](https://browser-use.com/posts/odysseys2-long-horizon-web-agent-benchmark)（CMU，2026-10-28）· [Ai2 NoveltyBench](https://allenai.org/blog/novelty-bench)· PAE（`arXiv:2603.03116`）
 
+- **自改 harness 的验收须三列同报且落在集合上（四源）**——模型冻结下让 Agent 自改提示词/技能/工具/代码（4 种进化法含 GEPA、HyperAgents，2 个 harness × 2 个基准），**16 个进化体全部有得有失**：平均分升，同时丢掉原本能完成的任务；其中 1 个可靠性 +5.2pt 却丢了 10 个旧任务，11 个变得更可靠的里有 8 个每次运行更贵。harness 自动进化同样会对训练任务过拟合（评测分升、真实任务差），RL 侧是同一形态（pass@1 升、解法覆盖缩）。
+  三条口径：① 报**丢失的任务、每次运行成本、未见任务上的表现**三列，不只报平均分；② 保留面只能用**改动前就能通过的用例集**测，禁用新写用例；③ 通过线落在「**逐任务通过集合不得缩小**」这种不可补偿形态，不落在均值。与上条正交：彼管读数怎么呈现，本条管**验收用什么用例集、门槛取什么形态**。
+> 📖 来源：[UC Berkeley 等：智能体自改 harness 提分的同时会丢掉原本能完成的任务](https://aihot.news/items/oamfud53gbudi2uezgk4tr8x3)（2026-11-09）· [Google RRSI](https://aihot.news/items/cmueki1p305rcroynvxqqm1zh)（2026-09-24）
+> 📖 同形态另两源：[Meta · Sharpening Tax](https://aihot.news/items/fzegn1kykv5np2jmbnsm18fiv)（2026-10-04）· [CoEvo-RSI](https://arxiv.org/abs/2610.25078)（2026-11-06）
+
 - **pass^k 一致性抽验（单次通过 ≠ 稳定通过）**：回归验收抽验边缘场景，要求 **k 次重复稳定通过**而非单次成功——单次通过率掩盖 harness 抖动。
   - ⚠️ 两条口径注记（**细节见归档**）：+54% 系 **pass^1 相对提升**、非 k 次一致性；同页已声明「多数场景推荐改用 extended thinking」⇒ 只按**方法论**采用。
 > 📖 来源：[Anthropic Engineering · The think tool](https://www.anthropic.com/engineering/claude-think-tool)（2025-12-15 更新）· 哥伦比亚大学 COMS W4995 第 5 讲（2026-10-11）
@@ -601,8 +606,7 @@ A frontier without an ecosystem is not stable](https://www.linkedin.com/pulse/fr
 
 ### 治理开销（按「每次变更」计 · **不与判定延迟相加**）
 
-审计（quick 17 条）**5.87 s/次变更**（3 次：5.57/7.83/5.87）· 判据装载+校验 ≈0.11 s/次变更 ·
-回溯聚合 0.84 s/次 · 沉淀与完整 28 条引擎 not-measured。
+审计（quick 17 条）**5.87 s/次变更**（3 次：5.57/7.83/5.87）· 判据装载+校验 ≈0.11 s/次变更 ·回溯聚合 0.84 s/次 · 沉淀与完整 28 条引擎 not-measured。
 
 ### 三方对照（同判据集同评测器 · 四维并列 · 只列不排名）
 
