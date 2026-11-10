@@ -108,10 +108,14 @@ function run(cfg, docs, ctx) {
   }
 
   // ── C1 断链 ───────────────────────────────────────────────
+  // v1.9.0 §十 P-8 收口（2026-11-11）：整文件豁免只免节级判据（C6 退役节历史形态），
+  // C1 链接存在性不受整文件豁免保护——豁免台账的粒度语义拆开：
+  //   lineIgnored（行级）继续全判据生效；fileIgnored（整篇）只供 C6 消费。
+  // 修前形态：C1 也查 fileIgnored ⇒ v1.9.0 devlog 在台账整文件豁免（C6 理由）后，
+  // 其断链 2 处对 C1 隐身（fresh-eyes F-20 实锤——「排除面≠无覆盖」叠加真盲区）。
   let linkTotal = 0;
   const exists = ctx.exists || ((p) => fs.existsSync(p));
   for (const { f, txt } of docs) {
-    if (fileIgnored(f)) continue;
     txt.split('\n').forEach((l, i) => {
       if (lineIgnored(f, l, i)) return;
       for (const m of l.matchAll(/\]\((\.[^)#]+)(#[^)]*)?\)/g)) {

@@ -560,7 +560,7 @@ sofagent audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 1670 个、全 workspace 6948 个测试（口径：14 包 workspace＝13 模块＋corpus；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 1684 个、全 workspace 6965 个测试（口径：14 包 workspace＝13 模块＋corpus；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |---|---|---|
@@ -649,7 +649,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 423 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1670 个、全 workspace 6948 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1684 个、全 workspace 6965 个测试（口径见本文件「测试覆盖范围」节）、sofagent core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 423 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -716,6 +716,11 @@ A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daem
 3. **普查可复算**：`node tools/audit/fake-probability-census.mjs` 输出全量清单
    （口径：git 全量受控文件 · `engine/` + `tools/` · 排除 `dist/` 与测试；按代码里有无
    `hw()/ol()/prob()` 包装判定语义，不读登记表）。
+
+### 判据面消费裁定登记（v1.9.0 §十 P-7 · 2026-11-11）
+
+- **skill-safety 扫描器（Library-only 保留）**：规则收紧已落（rm -rf 豁免仅 /tmp 与 /home/<w>/. 精确形态，13 探针回归锁在位）；扫描器无 bin、无生产消费点（@public 导出面在、agent-shield 同族双侧同口径）——**本版裁定：保留 Library-only 形态**（接口在、调用方按需引），不接 CLI 不退役；裁定前不再重复立项（fresh-eyes F-18 登记项闭环）。
+- **FDE-Bench 题量去重键声明（§十 P-6）**：正式键 = `state + question`（与 F10 §6 五条准入一致）——该口径下母库 300 题达成；`question` 精确串口径 288（差 12）不采用。题库本体 not-built（§五 FDE-Bench 增补批），本条只锁口径防「≥300」无键声称。
 
 ## 七、历史遗留与迁移说明
 
