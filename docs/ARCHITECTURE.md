@@ -1592,6 +1592,13 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 ⇒ 判据：**下沉前先交判分口径**；交不出的子任务留在人审池——判分口径缺席时，「模型自评通过」只是把这道闸撤销，而非通过。
 
+**多 Agent 的收益来自重组，不来自数量**。三处独立读数同向：Anthropic 的 1000 智能体实验里，同代模型只改编排，完成度 1.00 对 0.27（在无专用形式化平台、无研究者逐步指导的条件下，28.7 小时复现费马大定理的形式化证明，输出 token 只有 9 月那次的三分之一、证明长度只有七分之一）；
+UC Berkeley 的 Evolving Agent Teams 实验里，单个编码智能体在 GPU kernel 优化上停滞（MLA decode kernel 上仅 FlashInfer 的 0.51 倍），由 supervisor 持续重组团队后才超过专家手写内核；Google DeepMind 的《Organizing Intelligence》把能力拆成「专业」与「协调」两个变量——专业能力超过人类与经济结构剧变并不在同一个临界点上，同一模型的大量副本短板高度重合，复制十个不会自动得到十种互补能力。以上读数均为源文自述，本仓未复算。
+
+⇒ 三条判据：① **停滞先判「分工不对」，再判「能力不足」**——否则加 agent 只是把同一条死路放大；② **协调能力按独立能力建设**，它是能不能规模化的开关、不是专业能力的附属品，读数取上下文丢失率、交接失败率、错误传播深度；③ **归因必须固定模型、只动编排**——换模型带来的提升不能记在编排账上。
+
+> 📖 来源：[Organizing Intelligence（Google DeepMind，2026-10-29）](https://storage.googleapis.com/deepmind-media/papers/organizing-intelligence.pdf)
+
 ### 四层运行形态的三条决策
 
 四层运行形态（见心智模型区「四层运行形态」图）背后是三条硬决策，各自对应一个「不做」：
