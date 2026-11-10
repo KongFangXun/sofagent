@@ -241,7 +241,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
 
 **为什么是这个粒度**：
-- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包 live 提取共 **2673 个 @public 导出**（evolve skill-health +21）（磁盘基线快照 3001 符号，2026-11-10 F-9 批再生，见下行；以 `public-api.mjs` AST 解析为权威口径，非 grep 计数）。
+- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包 live 提取共 **3001 个 @public 导出**（磁盘基线快照 3001 符号，2026-11-10 F-9 批再生，见下行；以 `public-api.mjs` AST 解析为权威口径，非 grep 计数）。
   版本增量沿革：v1.5.2 +21（rules 出口治理面 11 符号：egress-policy 契约类型+裁决函数；daemon 事件流订阅桥 4；并行批 4；口述沉淀回执 2）；
   v1.5.1 +84：orchestrator 900→963（+63：章一事件总线与三类事件源适配器 / 章三异常三分类路由与死信重放 / 章二 PR 决策解释面；同版修复批复核处置 4 符号——删除 `sortEventsByTime` 死导出、收窄 `setDefaultAnomalyBus`/`createWebhookAdapter`/`createTimerAdapter` 测试缝，被删收窄者原即不计入 @public）；
   daemon 274→295（+21：章四 OTA 升级执行器与升级策略 + 章五任务下发推送与订阅登记；`signDelivery`/`onDeviceOnline` 2 项降 `@internal` 不计入）；

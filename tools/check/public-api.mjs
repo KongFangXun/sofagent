@@ -241,8 +241,12 @@ function claimedTotals() {
     let m;
     while ((m = re.exec(text)) !== null) {
       const n = parseInt(m[1], 10);
-      // 只收集与 @public/@internal 语境接近的声称（800-3000 区间，避开测试数 4088 等）
-      if (n >= 800 && n <= 3000) claims.add(n);
+      // 只收集与 @public/@internal 语境接近的声称（800-4000 区间，避开测试数 4088 等）
+      // v1.9.0 bugfix（终态复核 P1）：上限 3000 时基线 3001 自身失明——P1 修复当轮即红过
+      // 一次（claimedTotals 收不到 3001 ⇒ claims 空 ⇒ 校验静默跳过）。上调到 4000 并当轮
+      // 实测：三份 DOC_FILES 中 3000-4088 区间「N 符号/symbols」形态仅 3001 一处，
+      // 4088 等测试数不以「符号」尾缀出现，无误收。
+      if (n >= 800 && n <= 4000) claims.add(n);
     }
   }
   return [...claims];
