@@ -899,6 +899,29 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // /api/weekly-digest → 治理周报（F-29 接线批消费点，2026-11-10）
+  // 生产者：daemon 周报巡检 weekly-digest.ts 写 <dir>/dashboard/digest-<weekId>.json；
+  // 按 digest- 前缀取最近一期（文件名含 ISO 周序，字典序倒排即时间倒序）。
+  // ⚠️ 勿与 sustain 面板的 weekly- 前缀混用——weekly-digest.ts:20-22 注释明示
+  // 同名前缀会把数据面串成本文件 schema（真实冲突，故生产者刻意用 digest-*）。
+  if (urlPath.startsWith('/api/weekly-digest')) {
+    const dashDir = join(SOFAGENT_HOME_INSTALL, 'dashboard');
+    try {
+      const digests = readdirSync(dashDir)
+        .filter((f) => f.startsWith('digest-') && f.endsWith('.json'))
+        .sort()
+        .reverse();
+      if (digests.length === 0) throw new Error('no digest');
+      const raw = readFileSync(join(dashDir, digests[0]), 'utf8');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, report: JSON.parse(raw) }));
+    } catch {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, report: null, hint: 'daemon 周报巡检生成后展示' }));
+    }
+    return;
+  }
+
   // /api/audit-recent → 审计记录分页（过滤测试记录，timestamp 倒序取窗口——summary recent 同口径）
   if (urlPath.startsWith('/api/audit-recent')) {
     const u = new URL(req.url, 'http://localhost');
