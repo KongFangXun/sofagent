@@ -600,7 +600,11 @@ describe('doctor commit-msg hook 完整性校验（v1.5.1 E3）', () => {
   });
 
   // v1.5.2 A-7：pre-commit / commit-msg 未安装升 fail（主防线缺失不该 exit 0）
-  it('A-7 commit-msg 未安装 → FAIL（failCount ≥1，文案不变只升严重度）', () => {
+  // v1.9.0 bugfix F-28：该语义限定**已初始化形态**（.sofagent/config.yml 在场）；
+  // 零配置/一次性审计形态（无 config.yml）降为 INFO 指路 --init——两个形态各一条用例。
+  it('A-7 commit-msg 未安装（已初始化形态：config.yml 在场）→ FAIL（failCount ≥1，文案不变只升严重度）', () => {
+    mkdirSync(join(repo, '.sofagent'), { recursive: true });
+    writeFileSync(join(repo, '.sofagent', 'config.yml'), 'extendedRulesEnabled: true\n', 'utf-8');
     rmSync(hookPath(), { force: true });
     const r = runDoctor(repo);
     expect(out()).toContain('❌ commit-msg hook 未安装——审计不会运行');
@@ -608,7 +612,17 @@ describe('doctor commit-msg hook 完整性校验（v1.5.1 E3）', () => {
     expect(r.allOk).toBe(false);
   });
 
-  it('A-7 pre-commit 未安装 → FAIL（.sofagent/ 入库主防线缺失）', () => {
+  it('F-28 零配置形态 commit-msg 未安装 → INFO 不 FAIL（一次性审计 hook 非必需）', () => {
+    rmSync(hookPath(), { force: true });
+    const r = runDoctor(repo);
+    expect(out()).toContain('commit-msg hook 未安装——当前为一次性审计形态');
+    expect(out()).not.toContain('审计不会运行');
+    expect(out()).toContain('sofagent audit --init');
+  });
+
+  it('A-7 pre-commit 未安装（已初始化形态：config.yml 在场）→ FAIL（.sofagent/ 入库主防线缺失）', () => {
+    mkdirSync(join(repo, '.sofagent'), { recursive: true });
+    writeFileSync(join(repo, '.sofagent', 'config.yml'), 'extendedRulesEnabled: true\n', 'utf-8');
     writeFileSync(
       hookPath(),
       '#!/bin/bash\n# sofagent commit-msg hook v1.5.0\nsofagent-audit --commit-msg "$1"\nEXIT_CODE=$?\nexit $EXIT_CODE\n',

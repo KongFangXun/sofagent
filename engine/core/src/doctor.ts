@@ -358,6 +358,9 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
 
   const configPath = envConfigPath && existsSync(envConfigPath) ? envConfigPath : getConfigFile(projectDir);
   let configOk = false;
+  // v1.9.0 bugfix F-28：「已初始化形态」判据 = config.yml 文件在场（configOk 语义是
+  // 「配置可用」，新装场景无文件也算 true——不能当形态信号用）。
+  const configPresent = existsSync(configPath);
   if (existsSync(configPath)) {
     try {
       const content = readFileSync(configPath, 'utf-8');
@@ -388,7 +391,6 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     }
   } else {
     warn('.sofagent/config.yml 不存在（将使用默认配置，功能正常）');
-    configOk = true;  // 新装场景，使用默认配置，功能正常
     configOk = true;  // 新装场景，使用默认配置，功能正常
   }
 
@@ -651,11 +653,19 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         repairHint(`检查文件权限（chmod 755 ${hookPath}）`);
       }
     } else {
-      // v1.5.2 A-7：warn → fail——commit-msg 是审计主防线，「审计不会运行」不该静默
-      // 通过（此前 allOk 含 hookOk 但 CLI 侧只看 failCount，warn 即 exit 0——最该
-      // 报警的一天静默通过）。文案不变，只升严重度。
-      fail('commit-msg hook 未安装——审计不会运行！运行 sofagent audit --install-hook 安装');
-      repairHint('sofagent audit --install-hook');
+      // v1.9.0 bugfix F-28（fresh-eyes R4 V4-1）：零配置/一次性审计形态分流——
+      // 仓内无 .sofagent/config.yml 即「未安装形态」（README:230 定义的 npx 一次性审计，
+      // 不装 git hook 属预期），hook 未安装降为 INFO 并指路 --init；已安装形态
+      // （config.yml 在场）维持 v1.5.2 A-7 的 fail 判据不变（主防线缺失最该报警）。
+      if (!configPresent) {
+        info('commit-msg hook 未安装——当前为一次性审计形态（未初始化），hook 非必需；如需 commit 时自动审计，运行 sofagent audit --init');
+      } else {
+        // v1.5.2 A-7：warn → fail——commit-msg 是审计主防线，「审计不会运行」不该静默
+        // 通过（此前 allOk 含 hookOk 但 CLI 侧只看 failCount，warn 即 exit 0——最该
+        // 报警的一天静默通过）。文案不变，只升严重度。
+        fail('commit-msg hook 未安装——审计不会运行！运行 sofagent audit --install-hook 安装');
+        repairHint('sofagent audit --install-hook');
+      }
     }
 
     // v1.4.2 H-01: pre-commit——三层防线主防线（.sofagent/ 永不入库的 staged 清理）
@@ -679,10 +689,15 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         repairHint(`检查文件权限（chmod 755 ${preCommitPath}）`);
       }
     } else {
-      // v1.5.2 A-7：warn → fail——pre-commit 是 .sofagent/ 入库主防线，语义同
-      // commit-msg（主防线缺失 = 最该报警的一天）。文案不变，只升严重度。
-      fail('pre-commit hook 未安装——.sofagent/ 入库主防线缺失。运行 sofagent audit --install-hook 补装');
-      repairHint('sofagent audit --install-hook');
+      // v1.9.0 bugfix F-28：同 commit-msg 的形态分流（零配置形态降 INFO 指路 --init）
+      if (!configPresent) {
+        info('pre-commit hook 未安装——当前为一次性审计形态（未初始化），hook 非必需；如需 .sofagent/ 入库防线，运行 sofagent audit --init');
+      } else {
+        // v1.5.2 A-7：warn → fail——pre-commit 是 .sofagent/ 入库主防线，语义同
+        // commit-msg（主防线缺失 = 最该报警的一天）。文案不变，只升严重度。
+        fail('pre-commit hook 未安装——.sofagent/ 入库主防线缺失。运行 sofagent audit --install-hook 补装');
+        repairHint('sofagent audit --install-hook');
+      }
     }
 
     // post-commit：检查存在性 + 内容是否含审计对账逻辑（v1.3.2 P0-RC3 加强）
