@@ -76,7 +76,7 @@ const HOOK_INJECTION_PATTERNS: Array<{ pattern: RegExp; severity: 'FAIL' | 'WARN
   { pattern: /wget[^|]*\|\s*(ba)?sh/, severity: 'FAIL', message: 'Hook 含 wget | sh——远程代码执行' },
   { pattern: /eval\s+["']\$/, severity: 'FAIL', message: 'Hook 含 eval 变量执行' },
   { pattern: /base64\s+-d\s*\|\s*(ba)?sh/, severity: 'FAIL', message: 'Hook 含 base64 解码执行——混淆载荷' },
-  { pattern: /rm\s+-rf\s+\/(?!tmp|home\/\w+\/\.)/, severity: 'FAIL', message: 'Hook 含危险 rm -rf' },
+  { pattern: /rm\s+-rf\s+\/(?!(?:tmp\/?$|home\/\w+\/\.$))/, severity: 'FAIL', message: 'Hook 含危险 rm -rf' },
   { pattern: />(\/dev\/tcp|\/proc\/self\/fd)/, severity: 'WARN', message: 'Hook 含反弹 shell 特征重定向' },
 ];
 

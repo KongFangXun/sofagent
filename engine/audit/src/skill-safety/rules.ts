@@ -53,7 +53,14 @@ const RULES: SafetyRule[] = [
   // v1.3.7 fresh-eyes finding-03 修复：豁免口径与 agent-shield.ts:79 统一——
   // rm -rf /tmp 与 rm -rf /home/user/. 属常见测试清理，两处扫描器此前口径不一致
   // （本处一律 DANGEROUS，shield 侧豁免），统一为豁免版防误报。
-  { pattern: /(^|[^a-zA-Z0-9_])rm\s+-rf\s+\/(?!tmp|home\/\w+\/\.)/, category: '恶意命令', severity: 'DANGEROUS', description: 'rm -rf / 危险删除（豁免 /tmp 与用户家目录清理）' },
+  // v1.9.0 bugfix F-18（fresh-eyes R3 视角7 + R4 复验）：豁免前瞻收紧为
+  // 「精确形态收口 + 禁相对跳转」——豁免仅限 /tmp（可选尾斜杠）与 /home/<word>/.（目录本身），
+  // 任何子路径（含 .ssh/.config/.cache 点子路径、.. 相对跳转、tmp 前缀吞入）一律回判 DANGEROUS。
+  // 修复 5 条漏判：/tmpdata、/tmp/../../etc、/home/user/.ssh、/home/user/.config、
+  // /home/user/../../etc。探针回归锁见 __tests__/skill-safety-rmrf-boundary.test.ts
+  //（13 探针=总表口径；任务书执行段 10 探针的 .cache MISS 与 .ssh HIT 正则同构互斥，
+  //  按总表保守口径取「目录本身豁免」，偏差已在回执登记）。
+  { pattern: /(^|[^a-zA-Z0-9_])rm\s+-rf\s+\/(?!(?:tmp\/?$|home\/\w+\/\.$))/, category: '恶意命令', severity: 'DANGEROUS', description: 'rm -rf / 危险删除（豁免仅 /tmp 与 /home/<w>/. 精确形态——子路径与相对跳转一律拦）' },
   { pattern: /curl.*\|.*bash/, category: '恶意命令', severity: 'DANGEROUS', description: 'curl 管道执行 bash' },
   { pattern: /curl.*\|.*\bsh\b/, category: '恶意命令', severity: 'DANGEROUS', description: 'curl 管道执行 sh' },
   { pattern: /wget.*\|.*sh/, category: '恶意命令', severity: 'DANGEROUS', description: 'wget 管道执行 sh' },
