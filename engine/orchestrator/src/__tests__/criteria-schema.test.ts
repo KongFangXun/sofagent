@@ -139,6 +139,38 @@ describe('质量 lint 四硬项', () => {
     expect(report.soft.some((s) => s.rule === 'option-exclusivity')).toBe(true);
     expect(pendingFixes.length).toBeGreaterThan(0);
   });
+
+  it('test_lint_软⑧_依据仅弱预言信号_提示补强证据维度', () => {
+    const cs = cloneReady();
+    // 单条证据且 locator 只写「文件存在」——弱预言信号（A 件出卷纪律转译）
+    cs[0].evidence = [{ source: 'git-diff', locator: '检查文件存在即通过', reproducible: true }];
+    const r = lintCriteria(cs);
+    expect(r.hard).toHaveLength(0);
+    expect(r.soft.some((s) => s.rule === 'predicate-strength')).toBe(true);
+  });
+
+  it('test_lint_软⑧_多证据维度_不提示（弱信号有补强即沉默）', () => {
+    const cs = cloneReady();
+    cs[0].evidence = [
+      { source: 'git-diff', locator: '文件存在', reproducible: true },
+      { source: 'decision-log', locator: '判定读数含概率分布', reproducible: true },
+    ];
+    const r = lintCriteria(cs);
+    expect(r.soft.some((s) => s.rule === 'predicate-strength')).toBe(false);
+  });
+
+  it('test_lint_软⑨_整批未登记覆盖面_批级提示', () => {
+    const cs = cloneReady();
+    const r = lintCriteria(cs);
+    expect(r.soft.some((s) => s.rule === 'coverage-explicit' && s.criterionId === '(batch)')).toBe(true);
+  });
+
+  it('test_lint_软⑨_已登记不查面_不提示', () => {
+    const cs = cloneReady();
+    cs[0].justification += '（不查：内容级语义——OCR/内容解析归 AgentLoop）';
+    const r = lintCriteria(cs);
+    expect(r.soft.some((s) => s.rule === 'coverage-explicit')).toBe(false);
+  });
 });
 
 describe('依赖显式与环检测', () => {

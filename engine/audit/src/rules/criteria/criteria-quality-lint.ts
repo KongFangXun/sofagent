@@ -12,6 +12,10 @@
 //   软⑤可校准性：判据能否给出概率目标（只能二值的进「硬标签清单」）
 //   软⑥判据重复度：语义重复的判据提示合并（问句文本近重复）
 //   软⑦选项互斥性：候选两两可同时成立即提示（常不可机械判定，交人工）
+//   软⑧预言强度：判据依据只有存在性/进程成功类弱信号时提示——单独不构成
+//      行为正确性证据（外部 harness 出卷纪律转译，v1.9.0 补充施工 A 件）
+//   软⑨覆盖显式：每批判据未显式记录「没查什么」时提示——不留隐式空白
+//      （与软⑧同源：coverage 纪律，unavailable-oracle 须点名而非沉默）
 // 软项不阻断整批加载，产出待修清单。
 // ============================================================
 import type { AuditCriterion } from './criteria-schema';
@@ -58,6 +62,22 @@ const COMPOUND_QUESTION_MARKERS = [
 
 /** 生成式自述概率形态（「模型说 90%」类——不构成概率来源） */
 const SELF_REPORTED_PROBABILITY = /(自述|self[- ]report|模型说|自称|生成的数字)/i;
+
+/**
+ * 弱预言信号（软⑧——外部 harness 考卷纪律转译）：判据依据只有这类
+ * 「文件在 / 进程成功 / 输出非空 / 数值合理」形态时，单独不构成行为
+ * 正确性的证据。命中即提示补强证据维度，不阻断（交判据评审人工把关）。
+ */
+const WEAK_PREDICATE_SIGNALS = [
+  '文件存在',
+  '进程成功',
+  '退出码为0',
+  '退出码 0',
+  '输出非空',
+  '合理范围',
+  '不报错',
+  '无报错',
+];
 
 export function lintCriteria(criteria: AuditCriterion[]): LintReport {
   const hard: LintFinding[] = [];
@@ -116,6 +136,13 @@ export function lintCriteria(criteria: AuditCriterion[]): LintReport {
         }
       }
     }
+    // ── 软⑧ 预言强度（A 件·出卷纪律转译：依据只写存在性/进程成功类
+    //    弱信号时提示——单独不构成行为正确性证据，须补强证据维度）
+    const evidenceText = c.evidence.map((e) => e.locator).join(' ');
+    const weakSignal = WEAK_PREDICATE_SIGNALS.find((w) => evidenceText.includes(w));
+    if (weakSignal && c.evidence.length === 1) {
+      push(soft, c, 'predicate-strength', `依据仅含弱预言信号「${weakSignal}」（存在性/进程成功类单独不构成行为正确性证据）——须补强证据维度（公开参照/已知答案/内容属性），交判据评审`);
+    }
   }
 
   // 软⑥ 批处理：问句近重复（编辑距离粗筛——共同 8-gram）
@@ -146,6 +173,21 @@ export function lintCriteria(criteria: AuditCriterion[]): LintReport {
         });
       }
     }
+  }
+
+  // 软⑨ 批处理：覆盖显式（coverage 纪律——本批未显式登记「没查什么」
+  // 即提示，不留隐式空白）。登记载体 = justification 内含「不查」/
+  // 「未覆盖」/「没查」标记的判据；整批零登记时报一条批级软项。
+  const coverageDeclared = criteria.some((c) =>
+    /不查|未覆盖|没查|不判定/.test(`${c.justification} ${c.question}`),
+  );
+  if (!coverageDeclared && criteria.length > 0) {
+    soft.push({
+      criterionId: '(batch)',
+      kind: 'soft',
+      rule: 'coverage-explicit',
+      message: `本批 ${criteria.length} 条判据均未显式登记「没查什么/未覆盖面」——coverage 纪律要求显式记录局限，不留隐式空白（交判据评审补记）`,
+    });
   }
 
   return { hard, soft };
