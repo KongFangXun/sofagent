@@ -46,9 +46,9 @@
 
 > 每次新 session 或新阶段开始时，先读这 11 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
 
-- [ ] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)
-- [ ] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)
-- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（入口裁定一次 · A 快速直收 / B 盲审复制一次 prompt）→ [03-quality-loop.md](./releasing/03-quality-loop.md)
+- [x] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)<!-- 2026-11-12 打勾：v1.8.0 收尾态四轮独立审查（R1-R4 对话式多轮等价，01-review 第三层）+ bugfix 任务书 27 项修复收编（71de4c5db..a17447571，18 笔）——SOP 三形态「对话式多轮」合法收口，维护者 2026-11-12 01:1x 确认 -->
+- [x] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)<!-- 2026-11-12 打勾：v1.9.0 十章施工（§三 10 条 + §十 P-1~P-8 + 四棒接力 + HarnessPro 补充批）；devlog 80 条 78 勾（余 :212 设备挂账 / :355 人审待签，均有归口）；D2 测试数一致（7014 族 check-test-count rc=0）/ D8 无越权勾选（发版面动作全在第五棒请示单未执行）——维护者 2026-11-12 01:1x 确认 -->
+- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（入口裁定一次 · A 快速直收 / B 盲审复制一次 prompt）→ [03-quality-loop.md](./releasing/03-quality-loop.md)<!-- 入口裁定已选 A 快速路径（交接 prompt 2026-11-12 01:11 交执行 session）——本行待执行收口后勾 -->
 - [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)
 - [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)
 - [ ] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
