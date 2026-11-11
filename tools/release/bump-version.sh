@@ -805,8 +805,10 @@ while IFS= read -r -d '' pkg_json; do
       if (pkg[field]) {
         for (const [name, ver] of Object.entries(pkg[field])) {
           if (name.startsWith('@sofagent/')) {
-            // 比较前先剥掉语义前缀（^ ~ >= …）——不剥则 "^1.7.0" 永远匹配不上，
-            // 该依赖会被静默漏 bump（原判定直接把含前缀的串拿去比 "1.7"）。
+            // 比较前先剥掉语义前缀（^ ~ >= …）——不剥则前缀版号『^1.7.0』永远匹配不上，
+            // 该依赖会被静默漏 bump（原判定直接把含前缀的串拿去比 『1.7』）。
+            // ⚠️ 本段嵌在 node -e 的双引号串里：注释内**禁用 ASCII 双引号**，
+            //    否则壳层提前闭合字符串、程序被截断（node 报语法错、漏 bump 静默发生）。
             const prefix = ver.match(/^[~^>=<]+/) || '';
             const bare = prefix ? ver.slice(prefix[0].length) : ver;
             const bare_2seg = bare.replace(/\.[^.]+$/, '');  // 去掉 patch
