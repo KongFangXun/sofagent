@@ -419,16 +419,30 @@ TC_OUT=$(bash tools/check/test-count.sh 2>/dev/null) || TC_RC=$?
 # v1.3.2 P0-R8 (P1-15): 修复门禁假绿——test-count.sh 的退出码此前被 $() 吞掉。
 # 若任一包测试失败，test-count.sh 退出 1 但其输出仍含 TOTAL_TESTS=NNN（总数不变），
 # 旧脚本只看 TOTAL_TESTS 与文档比对 → 文档匹配就返回 OK/EXIT=0，测试实际失败仍被放行。
-# 修复：test-count.sh 自身失败（RC≠0）时直接 FAIL/exit 1，门禁真实反映测试状态。
+# 修复：test-count.sh 自身失败（RC≠0）时置失败标志，**但不再早退**。
+#
+# 🔴 2026-11 债二修（串行早退 = 后置校验永远跑不到）：原实现在此处直接 `exit 1`，而
+#   docs/LIMITATIONS.md 的「审计核心 N 个、全 workspace N 个」一致性比对排在它**后面**
+#   （:803 与 :1284 两段）⇒ 只要测试一红，文档里的测试数漂移就永远查不出来，两类缺陷
+#   串行遮蔽（实证：LIMITATIONS 写 1684/6965，实际 1686/7004，测试红期间从未报出）。
+#   改为「两者都跑、任一红则末态非零」：红字提示与覆盖度行保持原样，随后**继续往下走**，
+#   文档数字比对照常执行、照常打印；退出码统一在脚本末尾出（TC_FAILED=1 → exit 1）。
+#   前置退出（--scenarios-only 分支、缺 node_modules、参数误用）保持原样不动。
+TC_FAILED=0
 if [ "$TC_RC" -ne 0 ]; then
+  TC_FAILED=1
   if [ "$QUIET" = false ]; then
     echo -e "  ${RED}✗ test-count.sh 失败（RC=${TC_RC}）——有包测试失败或脚本错误，门禁红${NC}"
     echo -e "  ${YELLOW}修法：跑 bash tools/check/test-count.sh 看哪个包失败，修复测试后再跑本脚本${NC}"
+    echo -e "  ${YELLOW}继续执行文档数字比对：测试红不得遮蔽文档数漂移，两类缺陷分开报（末态统一出退出码）${NC}"
   else
     echo "FAIL"
   fi
-  emit_coverage_verbose "$((PASS + FAIL))"
-  exit 1
+  # 🔴 此处**不得** emit 覆盖度行（2026-11 债二修·实测订正）：emit_coverage_verbose 会把
+  #   covered = 仓内 .md 上界（>0）与 asserts = PASS+FAIL = **0**（比对尚未开始）一起送进
+  #   coverage-line.sh 的 F-13 空转检测 → 该库直接 `exit 2`，后面的文档比对**仍然跑不到**，
+  #   等于把「测试红早退」换成了「测试红空转退出」，债原样在。覆盖度行由脚本末尾那次
+  #   emit 统一出（那时 asserts 已是真实判定数），语义也更对：一次运行只报一次覆盖度。
 fi
 # 主路径：机器可读行 TOTAL_TESTS=NNN（strip ANSI 后 grep，最鲁棒）
 TOTAL_TESTS=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
@@ -442,9 +456,14 @@ if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
 fi
 
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
-  echo -e "  ${RED}✗ 无法获取实际测试数（test-count.sh 失败）${NC}"
-  emit_coverage_verbose "$((PASS + FAIL))"
-  exit 1
+  # 同上一处：记账不退出（2026-11 债二修）。测试红导致数字取不到时，**不得**因此跳过
+  # 下游文档比对——否则「取不到数」会变成又一条静默跳过通道。此处照常把 0 交给比对，
+  # 由比对逐处打印「声称 X，实际 0」；退出码统一在脚本末尾出。
+  TC_FAILED=1
+  echo -e "  ${RED}✗ 无法获取实际测试数（test-count.sh 失败）——继续执行文档比对，实际值按 0 记${NC}"
+  # 同上：此处不 emit 覆盖度行（asserts 尚为 0，会先被 F-13 空转检测 exit 2 拦住）。
+  # 空串兜底成 0：下游 `record_fix` 会把该值当「新值」写进文档，空串落盘等于抹掉数字。
+  [ -z "$TOTAL_TESTS" ] && TOTAL_TESTS=0
 fi
 
 # P0-13: 实际包数（有 test script 的 workspace 包，SSOT 口径 "12 包"）——机器可读行 PKGS=NNN
@@ -1581,7 +1600,8 @@ if [ "$FAIL" -gt 0 ]; then
   exit 1
 else
   if [ "$QUIET" = true ]; then
-    echo "OK"
+    # QUIET 契约「只输出 OK/FAIL」保持；但测试红时输出 FAIL（旧实现会印 OK 掩盖测试失败）
+    if [ "$TC_FAILED" = "1" ]; then echo "FAIL"; else echo "OK"; fi
   else
     echo -e "  ${GREEN}✓ 文档测试数全部一致（${PASS} 处校验通过）${NC}"
     if [ "$FIX_MODE" = true ]; then
@@ -1599,5 +1619,14 @@ else
     echo -e "${GREEN}✓ 场景数守卫：全过（SSOT 对账一致）${NC}"
   fi
   emit_coverage_verbose "$((PASS + FAIL + SCEN_PASS + SCEN_FAIL))"
+  # ── 末态统一出退出码（2026-11 债二修）──
+  # 文档面全绿不得掩盖测试红：TC_FAILED 由上方「test-count.sh 失败 / 取不到实际数」置位。
+  # 任一失败标志为 1 → exit 1；否则 exit 0。
+  if [ "$TC_FAILED" = "1" ]; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${RED}✗ 末态非零：test-count.sh 失败（见上方红字）——文档数字面本身全绿，两类缺陷分开报${NC}"
+    fi
+    exit 1
+  fi
   exit 0
 fi
