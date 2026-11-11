@@ -396,7 +396,11 @@ if (flagOf('--update-ratchet')) {
       prev = p;
       if (typeof p._meta === 'string' && p._meta.trim()) meta = p._meta;
     }
-  } catch { /* 首次生成或旧台账损坏：用默认 _meta + 空基底，落盘后即成为新基线（不静默通过——下方打印键数） */ }
+  } catch (e) {
+    // 首次生成或旧台账损坏：用默认 _meta + 空基底，落盘后即成为新基线。
+    // 降级必须可见：读不到旧台账要点名原因，否则「沿用旧基线」与「洗成新基线」外观相同。
+    console.warn(`⚠️ 旧台账不可读（首次生成或文件损坏），本次回落默认口径 + 空基底：${e.message}`);
+  }
 
   // 键集只增不减：既有键按原序保留（diff 最小化），再追加本轮新出现的**有债**文档。
   const keySet = new Set(Object.keys(prev).filter((k) => k !== '_meta'));
