@@ -219,15 +219,15 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，28 条规则（17 默认 + 11 扩展，[完整清单见 SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1665 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（718 测试） |
+| audit | 提交时审计，28 条规则（17 默认 + 11 扩展，[完整清单见 SECURITY](../SECURITY.md#28-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1679 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（732 测试） |
 | inject | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 工具门禁 + 判定通道（v1.8.0：DecisionChannel/三档接线/回执五件/并行解码/权重分发，详见 [判定路由（三档分工）](#三档分工边界v180-四--判定档出判定--执行档出行为)） |
 | train | 后训模块：train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告 + 云端执行面（替换路径 `import { createTrainJob } from '@sofagent/train'`） | ✅ 已实现（测试数活读数） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（686 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（671 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources 暴露（104 tools 分域清单见 [API](./API.md)，由 tool-registry 生成） |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt） | ✅ 已实现 |
@@ -248,7 +248,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
   v1.5.0 时点值 2547（双向变动：存量清扫退役 3 符号，新功能新增 56——章一治理面 16 + 章二双时态 9 + 章八 trace 对账 24 + 章五数据集审阅 4 + 章五陪跑期 3，两段不重叠故 56 即净值）；
 
-  时点沿革：v1.4.0→1456 / v1.4.6→2168 / v1.4.7→2364，live 提取为准；磁盘基线随发版重建，当前 3006（2026-11-11 P-5 批再生：judge-local 接线 +5；上一快照 3001 为 2026-11-10 F-9 批）：
+  时点沿革：v1.4.0→1456 / v1.4.6→2168 / v1.4.7→2364，live 提取为准；磁盘基线随发版重建，当前 3006（2026-11-11 判定头接线批再生：judge-local +5；上一快照 3001 为 2026-11-10 重放接线批）：
   （v1.9.0 §四:9 MLflow exporter 退役 -5：`logBenchmarkToMlflow`/`buildMetrics`/`llmAsJudge`/`MlflowMetrics`/`MlflowRunResult`，2566→2561）·（v1.9.0 F6.4 #5 AI 参与度 +8：`computeAiParticipation` 等 8 符号进公开面，2561→2569），
   v1.5.7 章二浏览器底座退役 -4：`BrowserAuditSink`/`BrowserDriver`/`BrowserSession`/`BrowserSessionFactory` 四符号吊销，2549→2545。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。

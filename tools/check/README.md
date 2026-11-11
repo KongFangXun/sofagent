@@ -1,9 +1,9 @@
 # tools/check/ · 门禁一览
 
-> 本目录承载 sofagent 的**机器门禁集**（75 个 `.sh`/`.mjs` 脚本 + 台账/基线 JSON + `lib/` 共享库；数量以 `ls tools/check/*.{sh,mjs} | wc -l` 实测为准，不手抄）。本表只登记现状（v1.5.9），不做脚本拆分。
+> 本目录承载 sofagent 的**机器门禁集**（76 个 `.sh`/`.mjs` 脚本 + 台账/基线 JSON + `lib/` 共享库；数量以 `ls tools/check/*.{sh,mjs} | wc -l` 实测为准，不手抄）。本表只登记现状（v1.5.9），不做脚本拆分。
 > 执行入口：多数脚本可直接 `bash tools/check/<name>.sh` 单跑；发版链路由 `tools/release/pre-push-check.sh` 与 `docs/changelog/releasing.md` SOP 汇编调用。
 
-## 门禁 → 管哪个面（75 脚本）
+## 门禁 → 管哪个面（76 脚本）
 
 ### 文档与声称面（16）
 
@@ -99,6 +99,7 @@
 | `check-env-wiring.mjs` | env 读写闭环守卫（只写不读判红——v1.6.0 BUG-56 族） |
 | `check-devlog-unique.mjs` | devlog 数字唯一 + 能力表三档枚举守卫 |
 | `check-calibration-claims.sh` | 校准判据纪律门禁（§三断言面集中地：登记对账/统计量一致性/隔离断言调用点/概率有效位数/四件套锚点/谱系三件套——v1.7.0） |
+| `evidence-index.mjs` | P-2 证据包索引——对外结论→可复算产物三类分列（A 仓内 sha16/B 命令/C 仓外路径），rc=0 |
 | `check-standards.mjs` | 家族标准层一致性（standards/ 唯一源 vs 各仓落点，逐字节比对） |
 | `check-doc-debt.mjs` | 家族文档债务八类判据（C1 断链 / C2 术语 / C3 计数 / C4 版本态 / C5 棘轮 / C6 退役节 / C7 双语 / C8 白名单） |
 | `install-hooks.sh` | 门禁钩子安装器（幂等 · 跨形态 clone/worktree/submodule） |

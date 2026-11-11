@@ -192,18 +192,19 @@ describe('§三 既有置信度普查登记', () => {
     const reg = new CalibrationClaimRegistry();
     registerLegacyConfidenceClaims(reg);
     const all = reg.all();
-    // 数量对账（与 docs/VALIDATION.md §校准判据纪律汇总表合计一致——11 条）
-    expect(all.length).toBe(11);
+    // 数量对账（与 calibration-registry 登记合计一致——12 条：v1.9.0 §三批补登
+    // DEFAULT_GRADE_THRESHOLDS 声明行 1 条——C1 门禁把声明行也计入常量命中面）
+    expect(all.length).toBe(12);
     // 多数 uncalibrated（登记与暴露，实际收敛归 v1.9.0）
     const uncal = all.filter((c) => c.calibStatus === 'uncalibrated');
-    expect(uncal.length).toBe(9);
+    expect(uncal.length).toBe(10);
     expect(all.filter((c) => c.calibStatus === 'calibrated').length).toBe(2);
     // 决策路径上的未校准项被门禁拦截（普查项如实登记 → 门禁如实红——
     // 这正是「登记与暴露」的意义：不隐藏现状）
     expect(() => reg.assertNoUncalibratedInDecisionPath()).toThrow(/未校准/);
     // 幂等（重复登记不重复计数）
     registerLegacyConfidenceClaims(reg);
-    expect(reg.size).toBe(11);
+    expect(reg.size).toBe(12);
   });
 
   it('test_census_单例登记面可读', () => {

@@ -19,6 +19,9 @@
     "engine/train/src/effect-backfill.ts": "判定底座阶段二 SDK 面（训练回补数据面；与 TrainChannel 接线版同批 v1.8.0）",
     "engine/train/src/rlcd/split-config.ts": "判定底座阶段二 SDK 面（§二五分割配置——校准集隔离断言的数据面；calibration.ts 内部已 import 同目录能力，公开面排接线版）",
     "engine/train/src/taste-sample.ts": "判定底座阶段二 SDK 面（品味样本构造——阶段三暂缓裁定下 archive-only 不进训练集，消费面排 v1.8.0）",
-    "engine/orchestrator/src/weights/replay.ts": "F-9 接线批（2026-11-10 fresh-eyes R2 P1-3）：判定可复现重放执行器——CLI 可达（orchestrator cli.ts case judge-replay：--weights manifest 指纹核对 fail-closed + --state 快照 → 概率分布 JSON），消费点 = judge-replay CLI 子命令 + 根 barrel @public 导出（replayDecision/assertReplayDeterminism）"
+    "engine/orchestrator/src/weights/replay.ts": "F-9 接线批（2026-11-10 fresh-eyes R2 P1-3）：判定可复现重放执行器——CLI 可达（orchestrator cli.ts case judge-replay：--weights manifest 指纹核对 fail-closed + --state 快照 → 概率分布 JSON），消费点 = judge-replay CLI 子命令 + 根 barrel @public 导出（replayDecision/assertReplayDeterminism）",
+    "engine/orchestrator/src/router/call-density.ts": "v1.9.0 §五 调用密度观测件（随行口径补测法落地）——CallDensityCounter 串行/打包分报计数器，SDK 面：供 decision-dispatch 出口与治理周报消费（读数随真实任务链产生）；单测 call-density.test.ts 2 用例",
+    "engine/orchestrator/src/router/criteria/entry-gate.ts": "v1.9.0 §三⑦ 入口判据——判据登记门面（shouldJudge 四路裁决 + 理由留痕），SDK 面：判据集登记流程消费（gateCriterionForRegistration 为登记硬项）；单测 criteria-domains.test.ts 3 用例",
+    "engine/orchestrator/src/router/criteria/fde-criteria-wiring.ts": "v1.9.0 §三② FDE 判据面接线——S1M 三落点建档（三问 Choice/离场 Score/健康分 Noul）+ evidenceReadiness 迁移门（checkMigrationGate），SDK 面：判据集加载与治理面消费；单测 criteria-domains.test.ts 2 用例"
   }
 }

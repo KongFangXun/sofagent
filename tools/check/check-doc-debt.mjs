@@ -269,9 +269,16 @@ function collect(root) {
 
   const exPath = path.join(root, 'tools/doc-debt-exempt.json');
   if (fs.existsSync(exPath)) { try { cfg.__exempt = JSON.parse(fs.readFileSync(exPath, 'utf8')); } catch (e) { return { blind: `豁免台账 JSON 非法：${e.message}` }; } }
-  const rPath = path.join(root, 'tools/doc-ratchet.json');
-  if (!fs.existsSync(rPath)) return { blind: '缺棘轮基线 tools/doc-ratchet.json（首次运行请用 --update-ratchet 生成）' };
-  try { cfg.__base = JSON.parse(fs.readFileSync(rPath, 'utf8')).files || {}; } catch (e) { return { blind: `棘轮基线 JSON 非法：${e.message}` }; }
+  // 台账家：tools/check/doc-ratchet.json —— 与 doc-discipline.sh Face 5、doc-postcheck.mjs **同一份**
+  // 文件（2026-11 合单前本门禁独读 tools/doc-ratchet.json，同指标两份基线各由不同门禁读，导致
+  // `--update-ratchet` 登记新债只对三分之一的消费者生效）。读盘容忍两种形态：合并后的扁平
+  // （顶层即逐文档键）与旧的 `{ _meta, files }` 包裹（`j.files` 为 undefined 时回落到顶层）。
+  const rPath = path.join(root, 'tools/check/doc-ratchet.json');
+  if (!fs.existsSync(rPath)) return { blind: '缺棘轮基线 tools/check/doc-ratchet.json（首次运行请用 --update-ratchet 生成）' };
+  try {
+    const j = JSON.parse(fs.readFileSync(rPath, 'utf8'));
+    cfg.__base = j.files || j;
+  } catch (e) { return { blind: `棘轮基线 JSON 非法：${e.message}` }; }
 
   let tracked;
   try {
@@ -366,8 +373,19 @@ if (flagOf('--update-ratchet')) {
   const live = c.docs.filter(({ f }) => !FROZEN.test(f)).map(({ f }) => f);
   const out = JSON.parse(execFileSync('node', [LIB, ...live], { encoding: 'utf8', cwd: ROOT }));
   const files = {}; for (const [f, v] of Object.entries(out)) if (v.wall || v.cell) files[f] = { wall: v.wall, cell: v.cell };
-  fs.writeFileSync(path.join(ROOT, 'tools/doc-ratchet.json'), JSON.stringify({ _meta: `可读性棘轮：只许降不许升；口径 = 行>${WALL_LIMIT} / 格>${CELL_LIMIT}（唯一实现 check/lib/readability-count.mjs）`, files }, null, 1) + '\n');
-  console.log(`已写入基线 ${Object.keys(files).length} 篇`); process.exit(0);
+  // 落盘目标 = 合并后的唯一台账（扁平格式，与 Face 5 / doc-postcheck 同源）。
+  // 🔴 _meta 必须先读旧值原样保留：上一版把**对象**插进模板，将 `_meta` 写成了
+  //    "[object Object] | …"，丢掉了口径说明。写盘前只认 string 类型的旧 `_meta`，
+  //    非字符串（含被写坏的历史值形态）与读不到时回落默认口径串——绝不再把对象写进去。
+  const ratchetPath = path.join(ROOT, 'tools/check/doc-ratchet.json');
+  let meta = `可读性棘轮：只许降不许升；口径 = 行>${WALL_LIMIT} 字符 = 墙式行 / 格>${CELL_LIMIT} 字符 = 墙式格（唯一实现 check/lib/readability-count.mjs）`;
+  try {
+    const prev = JSON.parse(fs.readFileSync(ratchetPath, 'utf8'));
+    const prevMeta = prev && typeof prev === 'object' ? prev._meta : undefined;
+    if (typeof prevMeta === 'string' && prevMeta.trim()) meta = prevMeta;
+  } catch { /* 首次生成或旧台账损坏：用默认 _meta，落盘后即成为新基线（不静默通过——下方打印写入篇数） */ }
+  fs.writeFileSync(ratchetPath, JSON.stringify({ _meta: meta, ...files }, null, 1) + '\n');
+  console.log(`已写入基线 ${Object.keys(files).length} 篇 → ${path.relative(ROOT, ratchetPath)}`); process.exit(0);
 }
 
 if (flagOf('--json')) {
