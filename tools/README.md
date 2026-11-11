@@ -54,6 +54,7 @@
 | `check/check-fresh-eyes-artifacts.mjs` | fresh-eyes-loop 产物契约守闸（harness 注入形态的机械停止条件等价面：校验 runDir 产物存在性 + schema + 计数一致性；`--self-test` 自检） | harness 执行形态跑完轮后（会话内人工/主任务协议步骤） |
 | `check/check-home-resolution-parity.mjs` | 家目录解析口径对照共享守卫（harness 因 layer 0 不能 import core，只能本地重实现 `resolveEngineHome()`；本守卫断言两侧**同输入同输出**；（详→注-3） | 改 harness 或 core 的家目录解析后 · pre-push |
 | `check/check-sop-integrity.mjs` | 发版 SOP 阶段文件完整性守卫（A1 失明自检 / A2 SOP-ANCHOR 锚链 / A3 结构三元组 pin / A4 最小形态——治阶段文件被静默截断而门禁全绿） | CI / 改 releasing/ 阶段文件后 |
+| `check/offline-drill.sh` | 断网可用演练三件（§十 P-3 脚本化：零网络断言判定 egress-policy 三断言 / 隔离 HOME quick audit / verify-chain HMAC——当轮 JSON 归档 datasets/v19-density/） | 发版验收 / 数据主权证明面复跑 |
 | `check/sop-integrity-baseline.json` | SOP 阶段文件结构基线台账（11 阶段文件三元组 + 附件豁免；改阶段文件结构时同批更新） | 被 check-sop-integrity.mjs 消费 |
 | `check/silent-catch-baseline.json` | 静默吞错存量基线（`check-silent-catch.mjs` 消费，新增即红） | 被 check-silent-catch.mjs 消费 |
 | `check/silent-catch-io-ledger.json` | 外部 IO catch 四分类台账（F9 v1.5.7：69 处外部 IO 的 catch 分层登记——吞错清零补结构化日志的对照账本） | 被 check-silent-catch.mjs 消费 |
