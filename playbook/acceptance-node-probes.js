@@ -412,6 +412,21 @@ function _s41x_identity(agentName) {
   const ai = require(process.env.PROJECT_ROOT + '/engine/core/dist/agent-identity.js');
   return ai.generateAgentIdentity(agentName);
 }
+// 公共：decision-log 落盘定位（写入面分链后——device- 前缀 agentId 落 chains/device/ 子链；
+// 2026-11 decision-log.ts 写入面分链硬闸的行为跟随，探针读链先主路径后分链路径）。
+function _decisionLogPath(dataDir, agentId) {
+  const fs = require('fs');
+  const path = require('path');
+  const main = path.join(dataDir, 'audit', 'decision-log.jsonl');
+  if (fs.existsSync(main)) return main;
+  // 写入面分链（2026-11 decision-log.ts 硬闸）：本探针场景内的唯一设备写入者落
+  // chains/device/ 子链（写入侧判据是 deviceId=「device-<short>」，非 identity.agentId
+  // 的 UUID——故这里不判前缀，直接探测设备子链在不在）。
+  const dev = path.join(dataDir, 'audit', 'chains', 'device', 'decision-log.jsonl');
+  if (fs.existsSync(dev)) return dev;
+  return main; // 都不存在——返回主路径让调用方按原语义报「未落盘」
+}
+
 // 公共：S434-S439 隔离面——tmp HOME + tmp dataDir + HMAC 密钥就位。
 // 与 _s41x_init 的差别：显式锚定 SOFAGENT_DATA（部分模块在 require 期经 getDataDir
 // 解析 dataDir）并把密钥文件写进 tmp（链路写入面 HMAC 可验），真实 ~/.sofagent 零接触。
@@ -597,7 +612,7 @@ async function s419() {
   const hpUw = require(process.env.PROJECT_ROOT + '/engine/daemon/dist/upload-wal.js');
   const hpWalRaw = fs.readFileSync(hpUw.uploadWalPath(hpDataDir), 'utf-8');
   if (hpWalRaw.includes('0.42')) bad.push('tool 链明文泄漏进 WAL');
-  const logPath = path.join(hpDataDir, 'audit', 'decision-log.jsonl');
+  const logPath = _decisionLogPath(hpDataDir, hpIdentity.agentId);
   if (!fs.existsSync(logPath)) bad.push('decision-log 未落盘');
   else {
     const last = JSON.parse(fs.readFileSync(logPath, 'utf-8').trim().split('\n').pop());
@@ -1555,7 +1570,7 @@ async function s438() {
       // ⚠️ S3 复验修：同型第三处——未传 destination ⇒ 被按 destination-mismatch 拒。
       const r3 = await dp.deviceDataPush({ identity, category: 'metrics', payload: `灰度采样 ${i}`, destination: 'platform-ingest' });
       if (r3.data.ok !== true) { bad.push('灰度上行未放行'); break; }
-      const rows = fs.readFileSync(path.join(dataDir, 'audit', 'decision-log.jsonl'), 'utf-8')
+      const rows = fs.readFileSync(_decisionLogPath(dataDir, identity.agentId), 'utf-8')
         .trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
       const line = (rows[rows.length - 1].evidence || []).find((l) => l.startsWith('canaryAdapter='));
       if (!line) { bad.push('上行未留灰度臂证据'); break; }
