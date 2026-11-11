@@ -717,19 +717,19 @@ A16 的 `evidenceMode: git-diff` 依赖 git diff 取变更文件列表，daemon 
 
 - **skill-safety 扫描器（Library-only 保留）**：规则收紧已落（rm -rf 豁免仅 /tmp 与 /home/<w>/. 精确形态，13 探针回归锁在位）；扫描器无 bin、无生产消费点（@public 导出面在、agent-shield 同族双侧同口径）——**本版裁定：保留 Library-only 形态**（接口在、调用方按需引），不接 CLI 不退役；裁定前不再重复立项（fresh-eyes 审查批 skill-safety 豁免边界项闭环）。
   **后续参考档（非本版任务）**：预算 hooks 三段渐紧（14/26/44）是「接 CLI」评估的现成参考形态——提醒附加在工具返回值末尾不改系统提示词（保前缀缓存；归 harness 仓 H-16，详见 factory `EXTERNAL-LEARNINGS §1.21`⑤）。
-- **FDE-Bench 题量去重键声明（§十 P-6）**：正式键 = `state + question`（与 F10 §6 五条准入一致）——该口径下母库 300 题达成；`question` 精确串口径 288（差 12）不采用。题库本体 not-built（§五 FDE-Bench 增补批），本条只锁口径防「≥300」无键声称。
+- **FDE-Bench 题量去重键声明（§十 P-6）**：正式键 = `state + question`（与 F10 §6 五条准入一致）——该口径下母库 300 题达成；`question` 精确串口径 288（差 12）不采用。题库 v4 卷已建（2026-11-11 第四棒④：384 题·全 public-case-adapted·零重复·30/30 覆盖·lint 逐题违规 0；signoff=pending-human-review 人审双签未做，发布线另议）。
 - **判据 lint 软⑧⑨（出卷纪律转译）**：软⑧预言强度——依据仅弱信号（文件存在/进程成功/输出非空）时提示，单独不构成行为正确性证据；软⑨覆盖显式——整批未登记「没查什么」时批级提示。只提示不阻断。
 
 ## 七、历史遗留与迁移说明
 
-> 定时触发已解决（见「✅ 已解决的历史问题」区）；Windows 平台差异见 §二「🪟 Windows 支持是实验性的」。
+> 定时触发已解决（见「✅ 已解决」区）；Windows 差异见 §二「🪟 Windows 支持是实验性的」。
 >
 > ⚠️ **疲劳度检测模块未接线（v1.5.1 如实标注）**：v1.3.6 日志声称「疲劳度评分 → daemon-health.json（@hourly）」不成立——`fatigue.ts` 三符号仅 barrel 再导出 + 测试引用，`inspectors/registry.ts` / `cli.ts` / `cron.ts` 零引用，默认不采集不落盘，
 >daemon-health.json 的 `fatigue` 字段不会由本模块写入。接线前提 = 真实信号源（工具调用结果 / 窗口占用 / Agent 输出流）由 orchestrator 侧投递后，再在调度表 + `inspectors/registry.ts` 落名。
 
 ### Ontology 合并准确性依赖 frontmatter 质量
 
-Ontology 合并逻辑从 `knowledge/entities/` 的 frontmatter 提取实体关联。格式不规范（缺 `---`、YAML 错、relations 拼写错误）时该实体被静默跳过——不报错，但 Ontology 缺这个对象；`--doctor` 不查 Ontology 完整性，用户无法自动发现遗漏。
+Ontology 合并逻辑从 `knowledge/entities/` 的 frontmatter 提取实体关联。格式不规范（缺 `---`、YAML 错、relations 拼写错误）时实体被静默跳过——不报错但 Ontology 缺该对象；`--doctor` 不查 Ontology 完整性，遗漏无法自动发现。
 
 ### 工作模板市场（Work 模板）（✅ 已随 v1.1.9 迁出 MIT scope）
 
@@ -756,21 +756,21 @@ Ontology 合并逻辑从 `knowledge/entities/` 的 frontmatter 提取实体关�
 
 ### daily-health 为同步执行（阻塞巡检调度至脚本完成）
 
-`daily-health` 巡检器以 `execFileSync` 拉起 `engine/scripts/daily-health.sh`——**同步阻塞** daemon 的巡检调度直到脚本完成（空数据目录实测 1.6 秒；数据量大或磁盘慢时更长，硬上限 120 秒）。同步的理由是「产物落盘后才返回」的确定性；`@daily` 不在热路径，暂不构成问题——但客户环境巡检变慢时此处是第一嫌疑点（改 detached spawn + 下轮对账即可解）。
+`daily-health` 巡检器以 `execFileSync` 拉起 `engine/scripts/daily-health.sh`——**同步阻塞** daemon 巡检调度直到脚本完成（空目录实测 1.6 秒；数据大或磁盘慢更长，上限 120 秒）。同步理由 = 产物落盘后才返回的确定性；`@daily` 不在热路径暂不构成问题——客户巡检变慢此处是第一嫌疑（detached spawn + 下轮对账可解）。
 
 ### daemon 通知机制为轻量版
 
-`daemon/src/notify.ts` 提供统一通知接口。**本地三态推送（PASS/WARN/FAIL）已接通**（`webhook.ts` + `push-target.ts`）；**企业平台推送（飞书/钉钉/企微）已落地**——但 cron 巡检与文件监听结果在企业场景仍依赖 stdout + `daemon-health.json`，IT 需自行轮询 `history.jsonl` 或用 Webhook。
+`daemon/src/notify.ts` 提供统一通知接口。**本地三态推送（PASS/WARN/FAIL）已接通**（`webhook.ts` + `push-target.ts`）；**企业平台推送（飞书/钉钉/企微）已落地**——但企业场景仍依赖 stdout + `daemon-health.json`，IT 自行轮询 `history.jsonl` 或用 Webhook。
 
 ### DSH 插件 npm 首发（v1.5.2 章九起）的四条真实局限
 
 > **历史局限已消解**：v1.5.2 起 `engine/dsh-plugins/**` 可发布，宿主聚合插件 6 条 `optionalDependencies` 可在 npm 正常解析。
->v1.5.2 章九起七款插件摘 `private` + 加 `files` 白名单转 npm 发布物，**这一条不再成立**；换来下面三条新的真实局限。
+>v1.5.2 章九起七款插件摘 `private` + 加 `files` 白名单转 npm 发布物，**此条不再成立**；换来下面三条真实局限。
 
-1. **首发依赖顺序钉死**：六款原子插件以**包名** `@sofagent/dsh-plugin-kit` 依赖基座（v1.5.2 章九二轮起——此前用相对路径，registry 单装必挂 `MODULE_NOT_FOUND`）⇒ 基座**必须先于七款插件发布**，顺序反了挂载即失败。
-2. **（已撤策）npm 通道分道**：v1.5.2 曾试行施工期 alpha 分道，同日经作者拍板撤策（版本号已承载阶段语义，dist-tag 复杂度大于收益）——23 包 `latest` 已全量对齐 1.5.2，`alpha` tag 留作历史痕迹不维护。
-3. **`audit-baseline-sync.sh` 在 `SOFAGENT_HOME` 未设时把信任锚写进 `./undefined/`**（v1.5.2 发版期实锤——目录误入库后清除）：维护者跑脚本前须 `export SOFAGENT_HOME=~/.sofagent`；产品修复已于 2026-09-25 落地（字面 undefined/null/空串回退真实 HOME + 非法路径 fail-loud，双态实测）。
-4. **「npm 可装」≠「单独可用」**：npm 通道可用性前置 = 干净 DSH 环境逐款实装四段验证（挂载 → seam 订阅 → `helpers.call` 引擎包解析 → 事件触发产出）。**未完成前任何文档不得声称插件 npm 可装可用**（空壳不发布）。
+1. **首发依赖顺序钉死**：六款原子插件以**包名** `@sofagent/dsh-plugin-kit` 依赖基座（v1.5.2 章九二轮起——此前用相对路径，registry 单装必挂 `MODULE_NOT_FOUND`）⇒ 基座**必须先于七款发布**，顺序反即挂载失败。
+2. **（已撤策）npm 通道分道**：v1.5.2 曾试行施工期 alpha 分道，同日经作者拍板撤策（版本号已承载阶段语义，dist-tag 复杂度大于收益）——23 包 `latest` 已全量对齐 1.5.2，`alpha` tag 留历史痕迹不维护。
+3. **`audit-baseline-sync.sh` 在 `SOFAGENT_HOME` 未设时把信任锚写进 `./undefined/`**（v1.5.2 发版期实锤——目录误入库后清除）：维护者跑前须 `export SOFAGENT_HOME=~/.sofagent`；修复已落 2026-09-25（字面 undefined/null/空串回退 HOME + 非法路径 fail-loud，双态实测）。
+4. **「npm 可装」≠「单独可用」**：npm 通道可用性前置 = 干净 DSH 环境逐款实装四段验证（挂载 → seam 订阅 → `helpers.call` 解析 → 事件触发产出）。**未完成前不得声称插件 npm 可装可用**（空壳不发布）。
 
 ## 已退役归档
 

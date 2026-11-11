@@ -1,0 +1,52 @@
+{
+  "kind": "fde-bench-two-model",
+  "date": "2026-11-11",
+  "bench": "fde-bench-items.v4.jsonl",
+  "itemCount": 384,
+  "dedup": "state+question 零重复（384 键全唯一）",
+  "coverage": "30/30 决策点",
+  "readings": {
+    "ours": {
+      "name": "sofagent-judge（类型化接口·surrogate encoder）",
+      "overall": 0.4714,
+      "byPrimitive": {
+        "choice": {
+          "acc": 0.4291,
+          "n": 282
+        },
+        "score": {
+          "acc": 0,
+          "n": 2
+        },
+        "noul": {
+          "acc": 0.6,
+          "n": 100
+        }
+      },
+      "formatFailureRate": 0,
+      "note": "surrogate encoder 契约面：noul 头概率呈饱和态（多数 1.0/0.0 极化）——链路对照读数，非真基座能力；真读数待训练基座（f9a 系）接入"
+    },
+    "generic": {
+      "name": "generic-baseline（启发式替身·文本通道）",
+      "overall": 0.474,
+      "byPrimitive": {
+        "choice": {
+          "acc": 0.4255,
+          "n": 282
+        },
+        "score": {
+          "acc": 1,
+          "n": 2
+        },
+        "noul": {
+          "acc": 0.6,
+          "n": 100
+        }
+      },
+      "formatFailureRate": 0,
+      "note": "确定性启发式替身（风险词倾向+保守偏置）——代表无结构约束的文本通道基线档"
+    }
+  },
+  "caliber": "同判据集·同评测器·同指标（acc + 原语分列 + 格式破坏率）；只并列不排名——两件均为替身形态（链路对照：类型化接口 vs 无结构约束通道），非能力横比",
+  "lint": "fde-bench-lint.py --pilot：逐题违规 0 · id 重复 0 · 出口不一致 0；卷级警告 4 条属登记型（noul 众数失衡→评测侧类均衡缓解；锚i 棘轮 3 条→factory 台账侧对齐）"
+}
