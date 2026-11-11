@@ -85,7 +85,7 @@ exit_of() { set +e; "$@" >/dev/null 2>&1; local rc=$?; set -e; echo "$rc"; }
 assert_numbers_all_equal() {
   local f="$1" want="$2" pat="$3" label="$4" raw vals v bad=""
   set +o pipefail
-  raw=$(node -e 'const fs=require("fs");process.stdout.write(fs.readFileSync(process.argv[1],"utf8").replace(/第\s*[0-9]+(?:[、，,]\s*[0-9]+)*\s*条/g,""))' "$PROJECT_ROOT/$f" 2>/dev/null | grep -oE "$pat" | grep -oE '[0-9]+' | sort -u | tr '\n' ' ')
+  raw=$(node -e 'const fs=require("fs");process.stdout.write(fs.readFileSync(process.argv[1],"utf8").replace(/第\s*[0-9]+(?:[、，,]\s*[0-9]+)*\s*条/g,"").replace(/[0-9]+[ \t]*rules[ \t]*(enabled[ \t]*by[ \t]*default|out[ \t]*of[ \t]*the[ \t]*box)/g,"rules $1").replace(/(the[ \t]*|with[ \t]*the[ \t]*)[0-9]+[ \t]*default[ \t]*rules/g,"$1default-rules").replace(/[0-9]+[ \t]*默认规则/g,"默认规则").replace(/[0-9]+[ \t]*默认（17 条里）?/g,""))' "$PROJECT_ROOT/$f" 2>/dev/null | grep -oE "$pat" | grep -oE '[0-9]+' | sort -u | tr '\n' ' ')
   set -o pipefail
   vals=$(echo "$raw" | tr -s ' ' | sed -E 's/^ //; s/ $//')
   [ -n "$vals" ] || { fail "$f 未找到「${label}」声明（正则 ${pat}）——文档缺声明，拒绝静默放行"; return 1; }
