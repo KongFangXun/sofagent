@@ -20,6 +20,7 @@ import type { EncoderLike } from './judge-heads';
 import { choiceHead, scoreHead, noulHead, JudgeHeadError } from './judge-heads';
 import type { DecisionRequest, DecisionResult, DecisionAnswer, ChoiceQuestion, ScoreQuestion } from './decision-primitives';
 import { makeChoiceAnswer, makeScoreAnswer, makeNoulAnswer, validateDecisionPairing } from './decision-primitives';
+import { noteJudgeCall } from './call-density';
 import { DeterministicJudge, RULE_FAMILY } from './deterministic-judge';
 import {
   makeChoiceFullOutput,
@@ -227,6 +228,11 @@ export class JudgeRuntime {
       modelRevision: this.encoder.modelRevision, // 权重溯源——随判定落链
     };
     validateDecisionPairing(request, result);
+    // §五-348 生产密度埋点（第四棒①）：判定出口按问句数分报串行/打包
+    //（单问=serial、多问=batch）——只观测不阻断，计数失败不影响判定。
+    try {
+      noteJudgeCall(request.questions.length);
+    } catch { /* 观测面 best-effort——密度计数失败不阻断判定主链路 */ }
     return result;
   }
 

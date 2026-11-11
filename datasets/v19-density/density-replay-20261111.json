@@ -1,0 +1,23 @@
+{
+  "kind": "density-replay",
+  "date": "2026-11-11",
+  "dataset": "sofagent-typed-decisions-minimal@1.0.0",
+  "sampleCount": 370,
+  "taskCount": 74,
+  "reading": {
+    "batched": {
+      "batchRequests": 74,
+      "questionsInBatches": 370,
+      "note": "同任务多问一次前向（打包形态——生产推荐）"
+    },
+    "serial": {
+      "serialCalls": 370,
+      "note": "同数据逐题单问（对照形态——只报此列会把打包成效记成假象）"
+    },
+    "totalQuestions": 740
+  },
+  "harness": {
+    "counter": "CallDensityCounter（judge-runtime judge() 出口喂点）",
+    "encoder": "surrogate（契约面——与 judge-replay CLI 同款确定性替身）"
+  }
+}

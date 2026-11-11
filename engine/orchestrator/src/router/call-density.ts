@@ -67,3 +67,44 @@ export class CallDensityCounter {
     return { byTask: new Map(this.byTask), totalSerialCalls, totalBatchRequests, totalQuestions };
   }
 }
+
+// ============================================================
+// §五-348 生产埋点单例（v1.9.0 第四棒①）——judge-mode 同款模块级单例。
+// 判定调用出口（JudgeRuntime.judge）按打包决策分报：
+//   单问（questions.length === 1）→ recordSerial(taskId)
+//   多问打包（questions.length > 1）→ recordBatch(taskId, N)
+// taskId 取调用方注入（缺省 'unnamed-task'——生产建议注入真实任务 id）。
+// 只观测不阻断（计数失败不影响判定主链路）；观测面 best-effort。
+// ============================================================
+
+let productionCounter: CallDensityCounter | null = null;
+let currentTaskId = 'unnamed-task';
+
+/** 挂生产密度计数器（唯一写口——挂上即开始计数） */
+export function attachDensityCounter(counter: CallDensityCounter, taskId?: string): void {
+  productionCounter = counter;
+  if (taskId) currentTaskId = taskId;
+}
+
+/** 设置当前任务 id（任务链切换时调用——按任务分桶的键） */
+export function setDensityTaskId(taskId: string): void {
+  currentTaskId = taskId;
+}
+
+/** 判定出口喂点（JudgeRuntime.judge 调用——单问串行 / 多问打包分报） */
+export function noteJudgeCall(questionCount: number): void {
+  if (!productionCounter) return;
+  if (questionCount <= 1) productionCounter.recordSerial(currentTaskId);
+  else productionCounter.recordBatch(currentTaskId, questionCount);
+}
+
+/** 读生产密度读数（唯一读口——未挂计数器返回 null） */
+export function productionDensityReport(): DensityReport | null {
+  return productionCounter ? productionCounter.densityReport() : null;
+}
+
+/** 测试复位 */
+export function resetDensityForTest(): void {
+  productionCounter = null;
+  currentTaskId = 'unnamed-task';
+}
