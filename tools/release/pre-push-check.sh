@@ -668,11 +668,19 @@ fi
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
   echo -e "\n${BOLD}── 3k. 家族标准层一致性 ──${NC}"
-  if node tools/check/check-standards.mjs >/dev/null 2>&1; then
+  # 退出码三态（与脚本自述一致）：0 绿 / 1 漂移（可处置，阻断）/ 2 失明（家族仓未检出）。
+  # 此前三者混成一条 else 分支 ⇒ 把「本机没检出兄弟仓」报成「发现标准层分叉」，
+  # 文案与事实不符；且该阻断条件在缺仓的机器上**永久不可满足**，只会逼人 --no-verify。
+  STD_OUT=$(node tools/check/check-standards.mjs 2>&1)
+  STD_RC=$?
+  if [ "$STD_RC" -eq 0 ]; then
     check_pass "check-standards.mjs 通过（源唯一 · 落点逐字节相等）"
+  elif [ "$STD_RC" -eq 2 ]; then
+    check_warn "check-standards.mjs 失明：家族仓未检出 —— 本机**无法判定**，不等于无分叉"
+    printf '%s\n' "$STD_OUT" | grep -E "❌|仓不可得" | head -3 | sed 's/^/    /'
   else
     check_fail "check-standards.mjs 发现标准层分叉（源与落点不等 / 出现第三份副本）"
-    node tools/check/check-standards.mjs 2>&1 | grep "❌" | head -10
+    printf '%s\n' "$STD_OUT" | grep "❌" | head -10 | sed 's/^/    /'
     echo "  提示：非有意 → 用源覆盖落点；有意 → 先改源再重渲染全部落点（standards/README.md）"
   fi
 fi
@@ -721,6 +729,19 @@ if [ "$MINIMAL" = false ]; then
   else
     check_fail "check-sop-integrity.mjs 发现阶段文件结构漂移或截断"
     node tools/check/check-sop-integrity.mjs 2>&1 | grep "·" | head -5 | sed 's/^/    /'
+  fi
+  # ════════════════════════════════════════
+  # 4d. 证据包索引完整性（evidence-index.mjs）
+  # 根因：索引脚本写好却零调用点（check-gate-inventory 的 C1 判孤儿）——交付物
+  #   「可点验入口」不接线，等于每条对外结论都没有机器复核。本步只读仓内产物并
+  #   算 sha16，实测 <0.1s，无副作用。
+  # ════════════════════════════════════════
+  echo -e "\n${BOLD}── 4d. 证据包索引完整性 ──${NC}"
+  if node tools/check/evidence-index.mjs >/dev/null 2>&1; then
+    check_pass "evidence-index.mjs 索引完整（登记的仓内产物在位且 sha16 一致）"
+  else
+    check_fail "evidence-index.mjs 缺产物或 sha16 漂移（对外结论的可点验入口断了）"
+    node tools/check/evidence-index.mjs 2>&1 | grep -E "✗|缺|漂移" | head -5 | sed 's/^/    /'
   fi
   echo -e "\n${BOLD}── 3c. 审查体系一致性 ──${NC}"
   if bash tools/check/check-review-system.sh >/dev/null 2>&1; then
