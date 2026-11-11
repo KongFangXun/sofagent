@@ -120,6 +120,10 @@ function judgeAnswer(item) {
 
 const ours = evaluate('sofagent-judge（类型化接口·surrogate encoder）', judgeAnswer);
 const generic = evaluate('generic-baseline（启发式替身·文本通道）', genericPick);
+// 替身形态注记内嵌脚本（重跑逐字节一致——note 不在归档后手改）
+ours.note =
+  'surrogate encoder 契约面：noul 头概率呈饱和态（多数 1.0/0.0 极化）——链路对照读数，非真基座能力；真读数待训练基座（f9a 系）接入';
+generic.note = '确定性启发式替身（风险词倾向+保守偏置）——代表无结构约束的文本通道基线档';
 
 const out = {
   kind: 'fde-bench-two-model',
