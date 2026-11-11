@@ -1,33 +1,18 @@
 {
-  "docs/ARCHITECTURE.md": {
-    "wall": 4,
-    "cell": 4
-  },
-  "docs/HANDBOOK.md": {
+  "_meta": "可读性棘轮（唯一台账·扁平格式：顶层键即文档相对路径）｜口径：行>300 字符 = 墙式行、格>200 字符 = 墙式格（唯一实现 check/lib/readability-count.mjs）｜只许降不许升｜本文件由 tools/doc-ratchet.json 与 tools/check/doc-ratchet.json 两份旧台账合单而来：逐键取较严值（wall、cell 各取两边的 min），合并时 20 份文档实测全部达标、未洗掉任何存量债｜史实：2026-11-04 LEDGER wall 34→35：v1.8.0 阶段三 A 路径登记行 478 字符——沿用本文件既有长行体例（既有行 489–868 字符，表格行不可折行），属台账结构性长行非新债滥用。",
+  "CHANGELOG.md": {
     "wall": 1,
-    "cell": 1
-  },
-  "docs/LIMITATIONS.md": {
-    "wall": 3,
     "cell": 0
   },
-  "docs/VALIDATION.md": {
-    "wall": 6,
+  "FDE/README.md": {
+    "wall": 1,
     "cell": 0
-  },
-  "SECURITY.md": {
-    "wall": 6,
-    "cell": 3
-  },
-  "README.en.md": {
-    "wall": 10,
-    "cell": 5
   },
   "FORGE/LEDGER.md": {
     "wall": 35,
     "cell": 0
   },
-  "CHANGELOG.md": {
+  "FORGE/lessons/driver.md": {
     "wall": 1,
     "cell": 0
   },
@@ -35,9 +20,45 @@
     "wall": 6,
     "cell": 2
   },
-  "FORGE/lessons/driver.md": {
+  "README.en.md": {
+    "wall": 9,
+    "cell": 3
+  },
+  "README.md": {
     "wall": 1,
     "cell": 0
+  },
+  "SECURITY.md": {
+    "wall": 1,
+    "cell": 3
+  },
+  "SKILL/SKILL.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "docs/ARCHITECTURE.md": {
+    "wall": 4,
+    "cell": 4
+  },
+  "docs/HANDBOOK.md": {
+    "wall": 1,
+    "cell": 0
+  },
+  "docs/LIMITATIONS.md": {
+    "wall": 3,
+    "cell": 0
+  },
+  "docs/ROADMAP.md": {
+    "wall": 1,
+    "cell": 3
+  },
+  "docs/VALIDATION.md": {
+    "wall": 0,
+    "cell": 0
+  },
+  "docs/guides/loop-development.md": {
+    "wall": 0,
+    "cell": 1
   },
   "playbook/regression-checklist.md": {
     "wall": 5,
@@ -51,29 +72,11 @@
     "wall": 1,
     "cell": 0
   },
-  "docs/guides/loop-development.md": {
-    "wall": 0,
-    "cell": 1
-  },
-  "docs/ROADMAP.md": {
-    "wall": 2,
-    "cell": 4
-  },
-  "_meta": "[object Object] | 2026-11-04 LEDGER wall 34→35：v1.8.0 阶段三 A 路径登记行 478 字符——沿用本文件既有长行体例（既有行 489–868 字符，表格行不可折行），属台账结构性长行非新债滥用。",
-  "SKILL/SKILL.md": {},
   "tools/STANDARD.md": {
     "wall": 1,
     "cell": 0
   },
   "tools/check/README.md": {
-    "wall": 1,
-    "cell": 0
-  },
-  "FDE/README.md": {
-    "wall": 1,
-    "cell": 4
-  },
-  "README.md": {
     "wall": 1,
     "cell": 0
   }
