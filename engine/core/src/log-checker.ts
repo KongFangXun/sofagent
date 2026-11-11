@@ -1,6 +1,6 @@
 // ============================================================
 // log-checker.ts · 任务日志读取器
-// v0.94：使用 pickLogReader 支持 Markdown 和 JSONL 两种格式
+// v1.8.0：使用 pickLogReader 支持 Markdown 和 JSONL 两种格式（v0.94 首建，随版抬锚）
 // ============================================================
 
 import { existsSync, readFileSync, statSync } from 'fs';

@@ -1,5 +1,5 @@
 // ============================================================
-// inputs/decision-log-source.ts · 审计输入面第三路：decision-log（v1.5.7 章八）
+// inputs/decision-log-source.ts · 审计输入面第三路：decision-log（v1.8.0（v1.5.7 首建） 章八）
 // ============================================================
 // 背景：
 //   decision-log.jsonl 已记 18 类可问责决策（TOOL_GATE / ARTIFACT_EDIT /
