@@ -369,23 +369,57 @@ if (c.blind) { console.error(`❌ ${REPO} 失明：${c.blind}`); console.error(B
 const r = run(c.cfg, c.docs, c.ctx);
 if (r.blind) { console.error(`❌ ${REPO} 失明：${r.blind}`); console.error(BLIND_USAGE); process.exit(2); }
 
+// 本命令**只降不升、且不删键**——删键会让 doc-discipline.sh Face 5 的计量面变小，抬基线不归这里管。
 if (flagOf('--update-ratchet')) {
+  // 🔴 为什么要在此收口（2026-11 合单暴露的自伤开关）：合单**前**本命令写 tools/doc-ratchet.json，
+  //   而 doc-discipline.sh Face 5 读的是另一份手工维护的台账，两份互不干扰，故「只写有债的键」
+  //   这行没有害处。合单**后**同一份文件既是本命令的写盘目标、又是 Face 5 的唯一读数源，隔离被拆掉：
+  //   任何人手工跑一次本命令，20 键会被洗成 15 键（5 个零债键被丢），且因三方对「冻结面」定义不一致
+  //   （本文件 FROZEN 排除任意深度的 changelog/，而 Face 5 只排 ^docs/(changelog|archive|evidence)/
+  //   与 ^playbook/vendor/），standards/changelog/_TEMPLATE.md 这类键会「永不计量却被 Face 5 计量」，
+  //   写盘后 Face 5 立刻红 1 处。三条纪律：
+  //     ① 键集只增不减：既有键全保留（零债的写 0/0，不删），新出现的有债文档才追加；
+  //     ② 值只许降：既有基线取 min(旧, 实测)，**不许抬高**——抬基线要走三闸 + 请示，不归本命令；
+  //     ③ 既有键若本轮未计量（如新落入冻结面），原值照留，既不清零也不删。
   const live = c.docs.filter(({ f }) => !FROZEN.test(f)).map(({ f }) => f);
   const out = JSON.parse(execFileSync('node', [LIB, ...live], { encoding: 'utf8', cwd: ROOT }));
-  const files = {}; for (const [f, v] of Object.entries(out)) if (v.wall || v.cell) files[f] = { wall: v.wall, cell: v.cell };
   // 落盘目标 = 合并后的唯一台账（扁平格式，与 Face 5 / doc-postcheck 同源）。
   // 🔴 _meta 必须先读旧值原样保留：上一版把**对象**插进模板，将 `_meta` 写成了
   //    "[object Object] | …"，丢掉了口径说明。写盘前只认 string 类型的旧 `_meta`，
   //    非字符串（含被写坏的历史值形态）与读不到时回落默认口径串——绝不再把对象写进去。
   const ratchetPath = path.join(ROOT, 'tools/check/doc-ratchet.json');
   let meta = `可读性棘轮：只许降不许升；口径 = 行>${WALL_LIMIT} 字符 = 墙式行 / 格>${CELL_LIMIT} 字符 = 墙式格（唯一实现 check/lib/readability-count.mjs）`;
+  let prev = {};
   try {
-    const prev = JSON.parse(fs.readFileSync(ratchetPath, 'utf8'));
-    const prevMeta = prev && typeof prev === 'object' ? prev._meta : undefined;
-    if (typeof prevMeta === 'string' && prevMeta.trim()) meta = prevMeta;
-  } catch { /* 首次生成或旧台账损坏：用默认 _meta，落盘后即成为新基线（不静默通过——下方打印写入篇数） */ }
+    const p = JSON.parse(fs.readFileSync(ratchetPath, 'utf8'));
+    if (p && typeof p === 'object') {
+      prev = p;
+      if (typeof p._meta === 'string' && p._meta.trim()) meta = p._meta;
+    }
+  } catch { /* 首次生成或旧台账损坏：用默认 _meta + 空基底，落盘后即成为新基线（不静默通过——下方打印键数） */ }
+
+  // 键集只增不减：既有键按原序保留（diff 最小化），再追加本轮新出现的**有债**文档。
+  const keySet = new Set(Object.keys(prev).filter((k) => k !== '_meta'));
+  for (const [f, v] of Object.entries(out)) if (v.wall || v.cell) keySet.add(f);
+
+  const files = {};
+  for (const f of keySet) {
+    const o = prev[f];
+    const m = out[f];
+    if (!m) {
+      // 既有键但本轮未计量（如新落入冻结面）：原值照留，不清零、不删键
+      files[f] = { wall: typeof o?.wall === 'number' ? o.wall : 0, cell: typeof o?.cell === 'number' ? o.cell : 0 };
+      continue;
+    }
+    // 值只许降：有旧基线 → min(旧, 实测)；无旧基线（新键 / 历史空对象 `{}`）→ 采用实测值
+    files[f] = {
+      wall: typeof o?.wall === 'number' ? Math.min(o.wall, m.wall) : m.wall,
+      cell: typeof o?.cell === 'number' ? Math.min(o.cell, m.cell) : m.cell,
+    };
+  }
   fs.writeFileSync(ratchetPath, JSON.stringify({ _meta: meta, ...files }, null, 1) + '\n');
-  console.log(`已写入基线 ${Object.keys(files).length} 篇 → ${path.relative(ROOT, ratchetPath)}`); process.exit(0);
+  console.log(`已写入基线 ${Object.keys(files).length} 键（键集只增不减、值只降不升）→ ${path.relative(ROOT, ratchetPath)}`);
+  process.exit(0);
 }
 
 if (flagOf('--json')) {
