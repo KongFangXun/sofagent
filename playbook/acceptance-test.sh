@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：423 个场景（编号口径声明：**编号非连续**——S1–S499 中有 76 个历史空号
+# 场景数：424 个场景（编号口径声明：**编号非连续**——S1–S499 中有 76 个历史空号
 # （退役/归并/重构所致），计数 SSOT = 本文件 scenario 行数（check-test-count.sh 机械对账），
 # 非最大编号；空号不代表缺失，亦无须逐号登记——任何新增场景只须编号顺延当前最大号。
 # 411 个场景（v1.6.0 阶段四步骤二分发 +4：S484 pause 全停命令行为锁（#1/#2/#9/#10 合壳·marker 消费链/ENOENT 兜底/损坏降级/文案对齐）/ S485 采集归类判别键（#12/#13·adversarial 拒判+drift 单向偏移）/ S486 合成概率不进校准集（#6·calibrationEligible 双侧豁免）/ S487 OOD 空集默认值与快照对账（#14·含 datasets 语义边界））（前值 407：v1.6.0 章二收口批 +1：S483 exit_when 可判定性行为锁（F-03+N-3：parser+schema-gate 双门同函数 fail-closed））（前值 406：v1.5.9 承接 v1.5.8 B 类 +5：S478 准入门接线行为锁 / S479 只读位 fail-closed 锁 / S480 reward basis 无硬编码数字锁 + S481 七章一维收口行为锁（1243dee24）+ S482 章五 FDE Handbook 升格行为锁（R1 verdict 闭环批））（前值 401：v1.5.7 阶段四 A 类分发 +4：S474 审计三规则与双落点 / S475 章四能力治理 / S476 章五可拔契约+域 barrel 等价 / S477 章七国标+章九 ACS 结论）（前值 397：v1.5.6 coverage S473；SSOT=check-test-count 校验，口径=scenario 行数）（v1.5.5 判断层 P1 闭环批 +1：S471）（v1.5.5 阶段四 +3：S466 状态补丁 fail-closed / S467 降级双路径 / S468 LangGraph 缺失感知；v1.5.5 release-gate 20261001-01 coverage P0 闭环批 +2：S469 章二 Tool search 按需加载行为锁 / S470 章三 README 理念主线结构锁；此前批次演进见 git 演进史与 DEVELOPMENT 台账；SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数）
@@ -4721,6 +4721,16 @@ grep -q "fetchVersion" "$PROJECT_ROOT/engine/orchestrator/src/weights/weights-fe
 node -e "const jh=require('$PROJECT_ROOT/engine/orchestrator/dist/router/judge-heads/index.js');const bad=[];for(const h of ['choiceHead','scoreHead','noulHead'])if(typeof jh[h]!=='function')bad.push(h);if(bad.length){console.log('✗ S499: 判定头缺 '+bad.join(','));process.exit(1)}" || S499_OK=false
 grep -q "自带件形态成立" "$PROJECT_ROOT/docs/changelog/v1.8/v1.8.0.md" || { echo "  ✗ S499: 自带件口径句缺失"; S499_OK=false; }
 $S499_OK && pass "自带件形态锁（包内零权重 + 判定头三件可加载 + 口径句在位）" || fail "自带件形态回退——章六对外口径无锁——见上方 ✗ 行"
+
+scenario 500 "v1.9.0 判定底座阶段四收口行为锁——三域判据域声明齐（interface-only 如实）/ 判定头本地推理 fail-closed（judge-local CLI 在位 + weights 错误码族）/ 判据 lint 软⑧⑨在位（弱预言信号提示 + 覆盖显式批级提示）/ FDE-Bench 去重键口径句（state + question 正式键）+ offline-drill 三件留档（脚本 + 当轮 JSON）"; S500_OK=true
+grep -q "interface-only" "$PROJECT_ROOT/engine/orchestrator/src/router/criteria/domain-criteria.ts" || { echo "  ✗ S500: 三域校准态声明缺失"; S500_OK=false; }
+grep -q "judge-local" "$PROJECT_ROOT/engine/orchestrator/src/cli.ts" || { echo "  ✗ S500: judge-local CLI 缺失"; S500_OK=false; }
+node -e "const lj=require('$PROJECT_ROOT/engine/orchestrator/dist/weights/local-judge.js');const bad=[];if(typeof lj.judgeLocal!=='function')bad.push('judgeLocal');if(!('LocalJudgeUnavailableError' in lj))bad.push('ErrorClass');if(bad.length){console.log('✗ S500: 判定头缺 '+bad.join(','));process.exit(1)}" || S500_OK=false
+grep -q "WEAK_PREDICATE_SIGNALS" "$PROJECT_ROOT/engine/audit/src/rules/criteria/criteria-quality-lint.ts" || { echo "  ✗ S500: 软⑧弱预言信号缺失"; S500_OK=false; }
+grep -q "coverage-explicit" "$PROJECT_ROOT/engine/audit/src/rules/criteria/criteria-quality-lint.ts" || { echo "  ✗ S500: 软⑨覆盖显式缺失"; S500_OK=false; }
+grep -q "state + question" "$PROJECT_ROOT/docs/LIMITATIONS.md" || { echo "  ✗ S500: FDE-Bench 去重键口径句缺失"; S500_OK=false; }
+test -f "$PROJECT_ROOT/tools/check/offline-drill.sh" && test -f "$PROJECT_ROOT/datasets/v19-density/offline-drill-20261111.json" || { echo "  ✗ S500: 断网演练留档缺失"; S500_OK=false; }
+$S500_OK && pass "v1.9.0 阶段四收口锁（三域声明 + 判定头 + 软⑧⑨ + 去重键 + 演练留档）" || fail "v1.9.0 收口面回退——§三/§十——见上方 ✗ 行"
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数

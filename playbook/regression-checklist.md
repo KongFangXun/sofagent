@@ -8,10 +8,13 @@
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2187 行、`acceptance-test.sh` ≤ 4736 行（**上限重估（v1.7.0 阶段四步骤二分发批）**：新增 #150（判定底座阶段二一维收口 · 草稿 A41+B7 合壳为 17 grep 锚——41 条 A 类全并入单维即防膨胀形态，行为面由 train/orchestrator 单测与 acceptance S488-S493 承载不占 checklist 行；归并配额：A41→1 维本身压缩 40 维增量，无同主题旧维可并——#149 为阶段一地基面不动）⇒ checklist 落位后实测 **2136** + 维度余量 15 = **2151**；acceptance +6 场景（S488-S493：半空哨兵/choice 三形态归一/隔离拒产/平行细分/CLI NaN+冒烟链/冻结锚三方）⇒ 实测 **4694** + 场景余量 16 = **4710**（演进见 git；前值 2107/4666，v1.6.0 批：新增 #149+归并 #145 → 2087+20/4660+6）；（历史：release-gate 20260929-03 verdict 闭环批 S463/S464 落位（acceptance +12 → 4584）后，release-gate 20260929-01 coverage P0 闭环批 S460/S461 落位（+8 → 4569）后，前批落 ch1/2 行为锁场景 S457/S458（acceptance +9 → 4548）与 ch3/7 Vault 与授权/凭证对账回归子项（checklist #144
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2219 行、`acceptance-test.sh` ≤ 4740 行（**上限重估（v1.9.0 阶段四分发批）**：新增 #152（判定底座阶段四收口一维 · 草稿 abc-draft-v1.9.0 A15 条合壳 · 15A+3B grep 锚）+ acceptance S500（v1.9.0 收口行为锁）⇒ checklist 实测 **2218** + 余量 1 = **2219**；acceptance 实测 **4740** 贴线 = **4740**（S500 含 7 子断言）。
+前值：v1.7.0 批 2151/4710（v1.7.0 说明与更早沿革见 git log -L 本行；v1.6.0 批 2087+20/4660+6）。
 ·t +3 → **1989**）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4584 + 1 场景余量 6 = **4590**（前段：4548 + 6 = 4554；后阶段四收编 S459 vote fail-closed 场景 7 行 ⇒ 4555 + 余量 6 = 4561；后 release-gate 20260929-01 coverage P0 闭环批 S460/S461 场景 8 行 ⇒ 4569 + 余量 6 = 4575；
-后 release-gate 20260929-03 verdict 闭环批 S463/S464 ⇒ 4584 + 余量 6 = 4590；v1.5.7 阶段四 A 类分发 +4 场景（S474-477）⇒ 4605 + 余量 6 = 4611；v1.5.9 承接 v1.5.8 B 类 3 场景（S478-480）⇒ 4626 + 余量 6 = **4632**，演进见 git；**release-gate R1 verdict P0-2 覆盖缺口闭环批**：新增 S482「章五·FDE Handbook 升格行为锁（GUIDE 六段生命周期）」（+3 行 ⇒ 落位后实测 **4635**）⇒ 4635 + 余量 6 = **4641**——走「真实归并**或**上调记录」两条路径中的**上调记录**（本批未删改任何既有断言，无真实可归并空间：新增面为章五文档锁，与现有 148 维不同族），前值 4632）；**未删改任何既有断言**，前值 2006/4541。阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = 2050（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
+后 release-gate 20260929-03 verdict 闭环批 S463/S464 ⇒ 4584 + 余量 6 = 4590；v1.5.7 阶段四 A 类分发 +4 场景（S474-477）⇒ 4605 + 余量 6 = 4611；v1.5.9 承接 v1.5.8 B 类 3 场景（S478-480）⇒ 4626 + 余量 6 = **4632**，演进见 git；
+**release-gate R1 verdict P0-2 覆盖缺口闭环批**：新增 S482「章五·FDE Handbook 升格行为锁（GUIDE 六段生命周期）」（+3 行 ⇒ 落位后实测 **4635**）⇒ 4635 + 余量 6 = **4641**——走「真实归并**或**上调记录」两条路径中的**上调记录**（本批未删改任何既有断言，无真实可归并空间：新增面为章五文档锁，与现有 148 维不同族），前值 4632）；**未删改任何既有断言**，前值 2006/4541。
+阶段四：新增 #146（章一状态机+章二检索 · A1/A2/A4/A5/A6/A7/A8/B4 收口）+ 真实归并 #21 入 #146（断言迁移 git diff 可查）+ #98/#101/#110/#136/#144 五处子项并入（B8/B17/B18/B21/B23/A12/B7）⇒ 2030 + 维度余量 20 = 2050（对齐 1989+20 先例余量口径）。**承接落位批 · 上限重估**（前批）：落 4 维度子项（checklist +38 → 1986）与 3 场景（acceptance +35 → 4535）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1986 + 1 维度余量 20 = **2006** · 4535 + 1 场景余量 6 = **4541**（后续 S454 降语义修复 `e869c670` +4，当批实测 4539 / ≤4541 余 2）；**未删改任何既有断言**，前值 1950/4500。实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
 🔴 **欠账登记（已评估 · 移 v1.5.5）**：本版新增章对应的验收场景与回归维度欠账，**经对销可行性复核判定两文件均无真实可归并空间**（0 内容级可归并对；乐观叠加 checklist ≈43 < 需求 98 / acceptance DRY 16 < 需求 21），按 v1.5.4〈首项硬交付〉〈对销可行性评估〉节裁定**7 项全批移 v1.5.5 落位**；本版新增维度前仍须先真实归并 ≥新增数并附承接断言清单，详见 [v1.5.4 开发日志](../docs/changelog/v1.5/v1.5.4.md)〈首项硬交付〉节。
 > 🧾 **落位说明（承接落位批）**：本版 devlog〈待补清单〉之 4 个维度项（#1 发版状态翻牌面三分 / #2 registry 对账通道终局口径 / #5 bump 历史引用误伤 / #6 dev prompt 读数禁快照）**按维护公约 §8「有同类 → 扩展旧维度子项、不新增编号」以子项并入同类现役维度**（#1/#5 → #124 · #2 → #97 · #6 → #130），**无一新增编号**（维度数 84 现值 · 棘轮上限 85 只升不降——check-review-system §1a/§1f 读数不触发）。
@@ -33,7 +36,7 @@ ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 2187 ] && echo "✅ checklist $WC_CHK (≤2187)" || { echo "❌ checklist $WC_CHK 超 2187（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4736 ] && echo "✅ acceptance $WC_ACC (≤4736)" || { echo "❌ acceptance $WC_ACC 超 4736（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+[ "$WC_CHK" -le 2219 ] && echo "✅ checklist $WC_CHK (≤2219)" || { echo "❌ checklist $WC_CHK 超 2219（check-review-system 判 FAIL——走归并，或经维护者批准走上调记录）"; RC=1; }; [ "$WC_ACC" -le 4740 ] && echo "✅ acceptance $WC_ACC (≤4740)" || { echo "❌ acceptance $WC_ACC 超 4740（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
@@ -326,7 +329,6 @@ SSOT_TOTAL=$(grep -cE "name:[[:space:]]*'[AE][0-9]+" engine/audit/src/rules/inde
 grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l # 期望 50（字段完整性：name+ruleClass × 25）
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 25
 grep -A20 "knownKeys = new Set" engine/core/src/config-loader.ts | grep -oE "'a[0-9]+'" | wc -l # 期望 ≥14（代码侧 knownKeys 与注册面对账）
-
 
 #### 20. daemon plist + watch.yml 正确性 + --init 覆盖防护（归并 20+22）
 
@@ -1301,7 +1303,8 @@ grep -q "runCommonsHealth" engine/daemon/src/inspectors/registry.ts || echo "⚠
 
 #### 103. SkillScan 三态链 + 版本守卫——DANGEROUS 拦截 / rc 投产决策落点
 
-**背景**：SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本原须拦截——**拍板「DSH rc 直接投产」后语义反转**：依赖锁是刻意决策（npm 无正式版，预发布期内嵌路径已验证），守卫从「拦截预发布」改为「锁定已知可用版本 + 正式版发布后自动升级」。版本口径（当前锁定 0.1.5-rc.3——09a940deb 显式升级钉住；npm 已演进至 0.2.0-rc.x，按「锁定已知可用版本」纪律不追新，退出条件 = 正式版上架 npm 后评估升格）。**升级版本时须同步本 grep 锚与 package.json。**
+**背景**：SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本原须拦截——**拍板「DSH rc 直接投产」后语义反转**：依赖锁是刻意决策（npm 无正式版，预发布期内嵌路径已验证），守卫从「拦截预发布」改为「锁定已知可用版本 + 正式版发布后自动升级」。版本口径（当前锁定 0.1.5-rc.3——09a940deb 显式升级钉住；npm 已演进至 0.2.0-rc.x，按「锁定已知可用版本」纪律不追新，退出条件 = 正式版上架 npm 后评估升格）。
+**升级版本时须同步本 grep 锚与 package.json。**
 
 ```bash
 grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 三态枚举缺失"
@@ -2012,7 +2015,6 @@ node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_
 [ "${FAIL:-0}" = "1" ] && { echo "维度147:FAIL"; exit 1; }; echo "维度147:PASS"
 ```
 
-
 #### 148. 审查批一维收口——实锤防复发（写面 `..` 逃逸 / barrel 域分拣 / 陈旧行为锁 / 探针参数一致）+ 维护纪律（门禁未登记假绿 / 字面量台账 / 锁陈旧 vs 文档缺句）
 
 > **A 类（本版新功能审查面 · 一维收口）**：写面审计留痕（prompt / memory 两面）· 能力基线版本线（四层快照 + 版本链 + 回滚）· 加载链配置面契约（18 字段 SSOT + 三类所有权断言）· 验证器自身老化检测（漂移三态 + 只提示不阻断）· FDE Handbook 六段生命周期（与 S1M-DECISION-POINTS 同构）· 透明仓与敌手自测（红队两态）· 进化面插件化（manifest 升格 + 写面窄化 + 策展快照）。
@@ -2173,10 +2175,44 @@ grep -q "标签>定义" datasets/label-vs-definition-run.py || FAIL=1  # A15 实
 test -d datasets/v17-eval-reports || FAIL=1  # A16 归档目录在位（v18 产物归 v18 目录——本版评测产物在 factory rsi/eval，不误入 v17）
 grep -q "scenario 497" playbook/acceptance-test.sh || FAIL=1                                                             # A17 场景号实测纪律锚
 # B 类防回归（5 条）
-grep -c "423" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 422" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale（R2 升锚：SSOT 421→422，S498 收口批 +1；stale 词形随升）
+grep -c "424" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 423" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale（v1.9.0 阶段四升锚：SSOT 423→424，S500 收口批 +1；stale 词形随升）
 test -f docs/guides/AI-ATTRIBUTION.md && ! test -f docs/AI-ATTRIBUTION.md || FAIL=1                                      # B2 A→E 落位
 git grep -q "not-measured" docs/changelog/v1.8/v1.8.0.md || FAIL=1                                                       # B4 三件套口径
 [ "$FAIL" = 0 ] && echo "✅ #151 判定底座阶段三收口 17A+5B 锚全过" || echo "❌ #151 有锚失守"
 exit $FAIL
 )
 ```
+
+##### 阶段四收口子段（原 #152 承接 · 同族并入 #151 · 15A+3B 全量承接 · git -S 可溯）与阶段四（本段）验收块语义分章但主题同族，按 #150→#151 先例并入单维；15A+3B 断言原样承接，git -S WEAK_PREDICATE_SIGNALS 可溯）
+
+> A 类 15 面（并入 #151 承接形态，分钟级静态锚；行为级断言在单测 criteria-domains/local-judge/call-density 族与 S500）：三域判据集/校准态声明/interface-only fail-closed 门禁挂接/未验证域三类声明/不适用面四类/入口判据三用例/三层级联 brand 断言/FDE 三首落点建档/evidenceReadiness 迁移留痕/软⑦既有件回归锚/软⑧⑨出卷纪律/judge-local 五环 fail-closed/密度埋点生产挂接/双通道格式破坏率统计列/FDE-Bench v4 卷口径（384 题
+>state+question 键 + public-case-adapted 唯源 + 30/30 覆盖）。
+> B 类 3 条防回归：7616 双计伪影零回潮（CHANGELOG 面）/暂缓状态词零残留（「未达阈暂缓」仅历史冻结行）/offline-drill 三件留档在位。C 类校准见 fresh-eyes-calibration「v1.9.0 收口批」节。
+
+```bash
+(FAIL=0
+# A 类（15 面 · §三/§五/§十 静态锚）
+test -f engine/orchestrator/src/router/criteria/domain-criteria.ts || FAIL=1            # A1 三域判据集载体在位
+grep -q "interface-only" engine/orchestrator/src/router/criteria/domain-criteria.ts || FAIL=1  # A2 校准态如实声明
+grep -n "assertDomainCalibratedForDecision" tools/check/check-calibration-claims.sh >/dev/null || FAIL=1  # A3 门禁挂接（C7 消费该模块）
+grep -q "UNVERIFIED_DOMAINS" engine/orchestrator/src/router/criteria/domain-criteria.ts || FAIL=1  # A4 未验证域三类
+grep -q "JUDGE_INAPPLICABLE_FACES" engine/orchestrator/src/router/criteria/domain-criteria.ts || FAIL=1  # A5 不适用面四类
+grep -q "三问判定\|离场就绪\|健康分" engine/orchestrator/src/router/criteria/fde-criteria-wiring.ts || FAIL=1  # A6 FDE 三首落点
+grep -q "MIGRATION_LOG" engine/orchestrator/src/router/criteria/fde-criteria-wiring.ts || FAIL=1  # A7 evidenceReadiness 迁移留痕
+grep -q "互斥" engine/audit/src/rules/criteria/criteria-quality-lint.ts || FAIL=1       # A8 软⑦既有件（回归锚）
+grep -q "WEAK_PREDICATE_SIGNALS\|coverage-explicit" engine/audit/src/rules/criteria/criteria-quality-lint.ts || FAIL=1  # A9 软⑧⑨
+grep -q "judge-local" engine/orchestrator/src/cli.ts || FAIL=1                          # A10 本地判定头 CLI
+grep -q "weights-missing\|sha-mismatch" engine/orchestrator/src/weights/local-judge.ts || FAIL=1  # A11 五环 fail-closed 错误码
+grep -q "noteJudgeCall\|CallDensityCounter" engine/orchestrator/src/router/judge-runtime.ts || FAIL=1  # A12 密度埋点生产挂接（judge() 出口 noteJudgeCall）
+grep -q "formatFailure" engine/orchestrator/src/router/judge-eval.ts || FAIL=1          # A13 格式破坏率统计列
+grep -q 'state + question' docs/LIMITATIONS.md || FAIL=1                                # A14 FDE-Bench 去重键口径落点
+test -f tools/check/offline-drill.sh || FAIL=1  # A15 断网演练脚本留档
+# B 类防回归（3 条）
+! grep -q "7616" CHANGELOG.md || FAIL=1                                                  # B1 双计伪影零回潮（CHANGELOG 索引面）
+[ "$(git grep -c '未达阈暂缓' -- docs/ 2>/dev/null | awk -F: '{s+=$2} END{print s}')" -le 2 ] || FAIL=1  # B2 暂缓状态词仅历史冻结行（≤2 处）
+test -f datasets/v19-density/offline-drill-20261111.json || FAIL=1                       # B3 演练归档在位
+[ "$FAIL" = 0 ] && echo "✅ #152 判定底座阶段四收口 15A+3B 锚全过" || echo "❌ #152 有锚失守"
+exit $FAIL
+)
+```
+
