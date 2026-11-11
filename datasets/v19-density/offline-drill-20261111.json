@@ -26,7 +26,7 @@
   },
   "piece2": {
     "name": "isolated-home-audit",
-    "result": "rc=1",
+    "result": "rc=0",
     "home": "(mktemp 已清理)"
   },
   "piece3": {
