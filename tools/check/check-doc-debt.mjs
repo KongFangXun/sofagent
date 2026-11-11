@@ -417,7 +417,9 @@ if (flagOf('--update-ratchet')) {
       cell: typeof o?.cell === 'number' ? Math.min(o.cell, m.cell) : m.cell,
     };
   }
-  fs.writeFileSync(ratchetPath, JSON.stringify({ _meta: meta, ...files }, null, 1) + '\n');
+  // 缩进取 2：台账本体是 2 空格形态，取 1 会让每次写盘都产生整文件重排的假 diff（内容零变化，
+  // 真改动被噪声淹没）。格式属台账 SSOT 的一部分，写侧必须与文件同形。
+  fs.writeFileSync(ratchetPath, JSON.stringify({ _meta: meta, ...files }, null, 2) + '\n');
   console.log(`已写入基线 ${Object.keys(files).length} 键（键集只增不减、值只降不升）→ ${path.relative(ROOT, ratchetPath)}`);
   process.exit(0);
 }
