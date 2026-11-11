@@ -1,0 +1,42 @@
+{
+  "kind": "offline-drill",
+  "date": "2026-11-11",
+  "piece1": {
+    "piece": "zero-network-assertion",
+    "assertions": [
+      {
+        "name": "无策略全拒（默认 opt-in）",
+        "host": "evil.example.com",
+        "verdict": "Deny",
+        "reason": "empty-policy"
+      },
+      {
+        "name": "loopback 白名单放行本机",
+        "host": "127.0.0.1",
+        "verdict": "Allow"
+      },
+      {
+        "name": "白名单外全拒（断网语义）",
+        "host": "registry.npmjs.org",
+        "verdict": "Deny",
+        "reason": "host-not-allowed"
+      }
+    ],
+    "pass": true
+  },
+  "piece2": {
+    "name": "isolated-home-audit",
+    "result": "rc=1",
+    "home": "(mktemp 已清理)"
+  },
+  "piece3": {
+    "name": "verify-chain-hmac",
+    "result": "isolated-chain-ok"
+  },
+  "summary": {
+    "pass": 3,
+    "fail": 0,
+    "total": 3
+  },
+  "note": "断网语义 = 出站全拒（件一）+ 本机功能全可用（件二/三）；不真实断网——与 P-3 实测同口径（判定面承载）"
+}
