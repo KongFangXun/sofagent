@@ -769,6 +769,10 @@ graph LR
 
 > 📖 [OWASP · LLM Top 10 (LLM06)](https://owasp.org/www-project-top-10-for-large-language-model-applications/) · [Microsoft · Least Privilege for AI Agents](https://www.microsoft.com/en-us/security/blog/) · [SAP](https://www.sap.com) · [Palantir · Foundry Docs](https://www.palantir.com/docs/foundry/)
 
+**审计不能把推理链当证据通道（三源）**：可监控性是训练期因变量、非部署期开关——预训练、架构、RL 与生成数据都影响 CoT 忠实性；模型写「让我重新检查」时可能没重新取证（超 70% 幻觉落在高熵转折点之后），对 CoT 施加优化压力反教其隐藏意图。⇒ 判「复核」只看**输入是否变化**，不看复核措辞；「审计通过」绑定模型版本与训练方式，换模型须重标定、不继承旧结论。
+
+> 📖 来源：[OpenAI Alignment（2026-11-11）](https://aihot.news/items/uif827ayipylunwlh7gejgcbo) · V-STAR（2026-11-11） · [Lilian Weng（2025-05）](https://lilianweng.github.io/posts/2025-05-01-thinking/)
+
 ### 本体建模要求对齐：GB/T 48000.3-2026 合规参考基线
 
 > 📐 **定位**：将 GB/T 48000.3-2026《标准数字化 第 3 部分:本体建模要求》作为审计层 / Ontology 层的**合规参考基线**（reference baseline）——不是认证声明，是映射清单 + opt-in 覆盖度报告。合规口径：不虚构国标条款原文编号（无权威文本在手），按「本体建模要求类别」映射到 v1.3.1 交付 1 的 CORE-OBJ/ACT/LNK/STM 四类内核契约。
