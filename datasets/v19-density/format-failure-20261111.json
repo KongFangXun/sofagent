@@ -1,0 +1,29 @@
+{
+  "kind": "format-failure-two-channel",
+  "date": "2026-11-11",
+  "dataset": "sofagent-typed-decisions-minimal@1.0.0",
+  "sampleCount": 370,
+  "readings": {
+    "example1_typedInterface": {
+      "channel": "判定件·类型化接口（结构由 DecisionChannel 契约保证）",
+      "formatFailureRate": 0,
+      "formatFailureSamples": 0,
+      "note": "生产通道实测——契约保证下格式破坏 0（对照基准）"
+    },
+    "example2_textChannelSim": {
+      "channel": "模拟对手·文本通道（请求选项字符串 → 解析，结构约束靠解析维持）",
+      "formatFailureRate": 0.14864864864864866,
+      "formatFailureSamples": 55,
+      "breakdown": {
+        "truncated": 46,
+        "illegalJson": 9
+      },
+      "note": "模拟形态（确定性扰动注入：1/8 截断 + 1/40 非法 JSON）——量级对齐生态实测两例 17.00%/45.50%（对手适配层读数，本仓未复算其原始数）"
+    }
+  },
+  "channelBiasConclusion": "同判据面同真值同指标下，类型化接口 0% vs 文本通道 ~15% 的差值即「对照通道偏置」的量化读数——格式失败被误读为能力差距的机理可复算（devlog §五 :255 的机理解释有了本仓自产读数支撑）",
+  "harness": {
+    "evaluator": "judge-eval evaluateZeroShot formatFailure 列（第四棒②新增）",
+    "encoder": "surrogate（契约面）"
+  }
+}

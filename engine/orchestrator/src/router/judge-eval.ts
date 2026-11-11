@@ -138,6 +138,26 @@ export interface BaselineReport {
   faces: FacesBreakdown;
   /** 确定性路由留痕（enabled/routedCount/routedByRule 直方图/failOpenCount） */
   routing: RoutingTrace;
+  /**
+   * 格式破坏统计（v1.9.0 §五-349 · 第四棒②）：输出无法解析为约定结构的
+   * 逐样本计数——judge 抛错 / 答案缺位 / 类型不配对（ans.kind 与真值 kind
+   * 不配对）。与准确率分列报（格式失败被误读为能力差距是对照通道偏置，
+   * 见 devlog §五「格式破坏率与通道偏置」节）。
+   */
+  formatFailure: {
+    /** 格式失败样本数（一个样本任一问句格式坏即计 1） */
+    sampleCount: number;
+    /** 格式失败问句数（逐问句级——打包请求内单问坏不连坐全批） */
+    questionCount: number;
+    /** 分母（样本数） */
+    totalSamples: number;
+    /** 分母（问句数） */
+    totalQuestions: number;
+    /** 样本级格式破坏率 */
+    sampleRate: number;
+    /** 问句级格式破坏率 */
+    questionRate: number;
+  };
   /** 耗时与成本（单次评测——预算分配分母） */
   runtime: { elapsedMs: number };
   /** 口径声明（零样本·单次运行·自产基线） */
@@ -188,6 +208,12 @@ export function evaluateZeroShot(
   const startedAt = Date.now();
   const perCriterion = new Map<string, { hit: number; total: number; hitZh: number; totalZh: number; hitEn: number; totalEn: number; probs: number[]; truths: number[]; hitNumeric: number; totalNumeric: number; detHits: number; hitGrade: number; totalGrade: number }>();
   const calibRecords: CalibrationRecord[] = [];
+
+  // ── 格式破坏统计（§五-349 · 第四棒②）：judge 抛错 / 答案缺位 / 类型不配对 ──
+  // 逐问句计数（sampleBad 标记该样本任一问坏）；judge 整体抛错按全样本问句计。
+  let ffSampleCount = 0;
+  let ffQuestionCount = 0;
+  let totalQuestionCount = 0;
 
   // 判别器实例（评测器侧路由对账与分列归属共用）；路由开关读 opts 优先
   const det =
@@ -244,6 +270,14 @@ export function evaluateZeroShot(
     // 分面归属（route 动态识别）+ gradelong 单列
     const routes = routingEnabled ? routeOfSample(det, s) : s.questions.map(() => ({ rule: null as DeterministicRule | null }));
     const gradelongSample = isGradelong(s);
+    // 格式破坏（§五-349）：judge 抛错 = 该样本全部问句坏；答案缺位 = 逐问句坏
+    let sampleBad = false;
+    totalQuestionCount += s.questions.length;
+    if (!result?.answers) {
+      ffSampleCount += 1;
+      ffQuestionCount += s.questions.length;
+      sampleBad = true;
+    }
     s.questions.forEach((q, i) => {
       const ans = result.answers[i]!;
       const truth = s.answers[i]!;
@@ -301,6 +335,11 @@ export function evaluateZeroShot(
         // 连续值读数的亚档抖动误判 miss，非拍脑袋数字）
         hit = Math.abs((ans.value ?? 0) - (truth.value ?? 0)) <= (truth.interval?.upper ?? 1) - (truth.interval?.lower ?? 0) + SCORE_HIT_SLACK;
         if (isDetAnswer) isCalibRow = false;
+      } else {
+        // 类型不配对（ans.kind 与 truth.kind 不同构或答案缺位）＝格式破坏：
+        // 输出无法按该问句的约定结构解析——计格式失败不计能力 miss（§五-349）。
+        ffQuestionCount += 1;
+        sampleBad = true;
       }
       if (isCalibRow && (ans.kind === 'noul' || ans.kind === 'choice')) {
         const truthVal = ans.kind === 'noul' ? ((truth.probability ?? 0.5) >= 0.5 ? 1 : 0) : hit ? 1 : 0;
@@ -330,6 +369,8 @@ export function evaluateZeroShot(
       }
       perCriterion.set(cid, entry);
     });
+    // 样本级计数在问句循环后结算（judge 全坏已提前计——避免双计）
+    if (sampleBad && result?.answers) ffSampleCount += 1;
   }
 
   const perCriterionOut: CriterionStat[] = [...perCriterion.entries()].map(([criterionId, e]) => ({
@@ -432,8 +473,16 @@ export function evaluateZeroShot(
       routedByRule,
       failOpenCount,
     },
+    formatFailure: {
+      sampleCount: ffSampleCount,
+      questionCount: ffQuestionCount,
+      totalSamples: dataset.length,
+      totalQuestions: totalQuestionCount,
+      sampleRate: dataset.length === 0 ? 0 : ffSampleCount / dataset.length,
+      questionRate: totalQuestionCount === 0 ? 0 : ffQuestionCount / totalQuestionCount,
+    },
     runtime: { elapsedMs },
-    caveat: '零样本·单次运行·自产基线（不可复算数字不与可复算数字并列展示）·分面读数（semantic/numeric/gradelong 三列不合并）',
+    caveat: '零样本·单次运行·自产基线（不可复算数字不与可复算数字并列展示）·分面读数（semantic/numeric/gradelong 三列不合并）·格式破坏率与准确率分列（§五-349：格式失败是通道偏置不是能力差距）',
   };
 }
 

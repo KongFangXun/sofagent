@@ -93,6 +93,36 @@ describe('零样本评测器', () => {
     expect(typeof report.zhUsable).toBe('boolean');
   });
 
+  it('test_evaluate_格式破坏率_类型化接口正常路零失败（§五-349）', () => {
+    const rt = new JudgeRuntime(mockEncoder());
+    const report = evaluateZeroShot(rt, [sample('a', 'zh', 0.9), sample('b', 'en', 0.1)]);
+    expect(report.formatFailure.sampleCount).toBe(0);
+    expect(report.formatFailure.questionCount).toBe(0);
+    expect(report.formatFailure.totalSamples).toBe(2);
+    expect(report.formatFailure.totalQuestions).toBe(2);
+    expect(report.formatFailure.sampleRate).toBe(0);
+  });
+
+  it('test_evaluate_格式破坏率_类型不配对逐问计数（ans.kind 与 truth.kind 错位）', () => {
+    // 构造类型不配对样本：真值 choice，判定头走 noul 通道出 noul 答案——
+    // mockEncoder 下 noul 问句恒出 noul 答案，把真值写成 choice 即错位。
+    const rt = new JudgeRuntime(mockEncoder());
+    const mismatched: DecisionSample = {
+      state: '类型错位样本',
+      questions: [{ kind: 'noul' as const, id: 'q-mm', question: '该变更应拦截吗？' }],
+      answers: [{ kind: 'choice', questionId: 'q-mm', selected: 0 } as never],
+      label: { source: 'deterministic' },
+      provenance: { traceId: 't-mm' },
+      enterpriseId: 'e',
+      lang: 'zh',
+    };
+    const report = evaluateZeroShot(rt, [mismatched]);
+    expect(report.formatFailure.questionCount).toBe(1);
+    expect(report.formatFailure.sampleCount).toBe(1);
+    expect(report.formatFailure.sampleRate).toBe(1);
+    expect(report.formatFailure.questionRate).toBe(1);
+  });
+
   it('test_adaptScore_带scale的问句min_max正确传递（run-01 项 8）', () => {
     // DatasetQuestion.scale（2-10 级刻度数组）→ DecisionQuestion 的 min/max：
     // 此前恒 ??0/??10 丢弃 scale——带 scale 问句的值域被静默改写。断言法：
