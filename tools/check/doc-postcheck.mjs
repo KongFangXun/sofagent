@@ -21,10 +21,11 @@
 // 用法：
 //   node tools/check/doc-postcheck.mjs <file.md> [file2.md ...]  # 逐文件五项
 //   node tools/check/doc-postcheck.mjs --changed                 # 只查 git 变更中的 .md
+//   node tools/check/doc-postcheck.mjs --changed --since <ref>   # 提交面改为 <ref>..HEAD（多笔连提覆盖整批）
 //   node tools/check/doc-postcheck.mjs <file> --fix              # 墙式行自动折行（调 lib/reflow-walls）
 //   node tools/check/doc-postcheck.mjs --selftest                # 判据正负样本自检
 //
-// 退出码：0 = 全过；1 = 有违规（含超字符基线）；2 = 用法误用。
+// 退出码：0 = 全过；1 = 有违规（含超字符基线）；2 = 用法误用（含 --since 取到不可解析的 ref）。
 // 定性：**排障工具非门禁**（同 resolve-section.sh 口径——不接 check-guards/CI；
 //   判定面按参数收敛，扫描面为 0 时静默通过是预期行为，全量防线由宿主门禁承担）。
 // ============================================================
@@ -160,7 +161,34 @@ const args = process.argv.slice(2);
 if (args.includes('--selftest')) { selfTest(); process.exit(0); }
 
 const fix = args.includes('--fix');
-const files = args.filter((a) => !a.startsWith('--'));
+
+// ── --since <ref>：把 --changed 的「提交面」从默认 HEAD~1..HEAD 扩到 <ref>..HEAD ──
+// 动机（2026-11 债三）：`--changed` 在工作区与索引皆空时回落到 HEAD~1..HEAD，连提多笔后
+//   复跑**只有最后一笔的 .md 进检查面**，前面的文档从不被看——而且这个窄面是**静默**的。
+//   给出 --since 即可覆盖整批；未给则行为不变（仍 HEAD~1），但会把范围与「窄面提醒」都打出来。
+// <ref> 不合法 → exit 2，**绝不静默回落到 HEAD~1**（那正是本参数要消灭的行为）。
+const sinceIdx = args.indexOf('--since');
+let sinceRef = null;   // 解析后的 commit（真实解析结果，打印用其短 sha）
+if (sinceIdx >= 0) {
+  const rawRef = args[sinceIdx + 1];
+  if (!rawRef || rawRef.startsWith('--')) {
+    console.error('❌ --since 缺 ref 参数（例：--since HEAD~3 / --since 848ab5958）——拒绝执行');
+    console.error('usage: doc-postcheck.mjs <file.md>... | --changed [--since <ref>] [--fix] | --selftest');
+    process.exit(2);
+  }
+  try {
+    const resolved = execFileSync('git', ['rev-parse', '--verify', `${rawRef}^{commit}`], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    if (!resolved) throw new Error('rev-parse 输出为空');
+    sinceRef = resolved;
+  } catch {
+    console.error(`❌ --since ${rawRef}：不是可解析的 ref（git rev-parse --verify 失败）——拒绝执行，不回落到 HEAD~1`);
+    console.error('usage: doc-postcheck.mjs <file.md>... | --changed [--since <ref>] [--fix] | --selftest');
+    process.exit(2);
+  }
+}
+
+// 裸参数 = 待检文件；--since 的**取值**不是文件（否则会被当成一个 .md 路径去检查）
+const files = args.filter((a, i) => !a.startsWith('--') && !(sinceIdx >= 0 && i === sinceIdx + 1));
 let targets = [];
 if (args.includes('--changed')) {
   const git = (a) => {
@@ -168,17 +196,25 @@ if (args.includes('--changed')) {
     catch { return []; }
   };
   let names = [...new Set([...git(['diff', '--name-only', 'HEAD', '--', '*.md']), ...git(['diff', '--name-only', '--cached', '--', '*.md'])])];
+  let scopeLabel = '工作区+索引';   // 工作区/索引有变更时行为不变（优先于提交面）
   if (!names.length) {
     // 提交后复跑兜底（v1.7 审查 r5 实证）：工作区与索引皆空时，原实现输出「无待检文件」= 空绿，
-    // 而本批已提交的 .md 从未过形态面。改为回看最近一次提交的 .md 变更；无 HEAD~1（首提交）则仍空。
-    names = git(['diff', '--name-only', 'HEAD~1', 'HEAD', '--', '*.md']);
-    if (names.length) console.log(`ℹ️ 工作区无变更——按最近一次提交（HEAD~1..HEAD）检查 ${names.length} 个 .md`);
+    // 而本批已提交的 .md 从未过形态面。回看提交面：默认 HEAD~1..HEAD（最近 1 笔），
+    // 给了 --since 则 <ref>..HEAD（覆盖整批连提）。
+    const base = sinceRef || git(['rev-parse', '--verify', 'HEAD~1'])[0] || 'HEAD~1';
+    names = git(['diff', '--name-only', base, 'HEAD', '--', '*.md']);
+    scopeLabel = `${base.slice(0, 9)}..HEAD`;
+    if (!sinceRef) {
+      console.log('\u001b[33m⚠️ 未给 --since，仅检查最近 1 笔提交的 .md；多笔连提时前面的文档不在检查面。传 --since <批次起点> 可覆盖。\u001b[0m');
+    }
   }
+  // 无条件打印实际检查范围（窄面/空面都不许静默——「没报问题」与「没看」必须可区分）
+  console.log(`检查范围：[${scopeLabel} ${names.length} 个 .md]`);
   targets = names.map((f) => path.join(ROOT, f)).filter((f) => fs.existsSync(f));
 } else if (files.length) {
   targets = files.map((f) => path.resolve(f));
 } else {
-  console.error('usage: doc-postcheck.mjs <file.md>... | --changed [--fix] | --selftest');
+  console.error('usage: doc-postcheck.mjs <file.md>... | --changed [--since <ref>] [--fix] | --selftest');
   process.exit(2);
 }
 if (!targets.length) { console.log('无待检文件（--changed 面为空）'); process.exit(0); }
