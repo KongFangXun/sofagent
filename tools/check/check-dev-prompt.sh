@@ -236,11 +236,7 @@ if [ "$SECTION_RECONCILE" = "1" ]; then
     "前置","收尾、",
     "四、任务 C","五、门禁与全局验收","六、纪律","七、完成判据","附录",
     // v1.9.0 任务书形态（十四节）：任务/SSOT 前置 + 九任务章 + 五元节——元节为执行者阅读编排，devlog 无对应章
-    "零、","零·五、","十、开工前置","十一、交付纪律","十二、边界","十三、收工自检","十四、验收块",
-    // v2.0.0 任务书新增两个插入式元节：基线快照（开工时点读数）与跨仓对账（施工前读，零跨仓施工面）。
-    //   二者均为执行者阅读编排、devlog 无对应章，按同族元节处理；只豁免「章对章」映射，
-    //   判据本体（验收块逐字对账 / 引用存在性 / 零分支）一律不变。
-    "零·一、","十二·五、"
+    "零、","零·五、","十、开工前置","十一、交付纪律","十二、边界","十三、收工自检","十四、验收块"
   ];
   const isMeta=(h,list)=>list.some(p=>h.startsWith(p));
 
@@ -249,25 +245,36 @@ if [ "$SECTION_RECONCILE" = "1" ]; then
   const PARTIAL=(process.argv[3]==="partial");
 
   // 分节收集：归一化键 → { h 原始标题, n 未勾, x 已勾 }；键撞车（两节同键）= 映射歧义 ⇒ 红
+  // 🔴 撞车项必须单独收集：早期实现只写 cur.dup 而不入 Map，而检测循环只遍历 Map ⇒
+  //    撞车章从不出现在遍历面上，「键撞车」断言恒不触发（死判据）。实测形态：
+  //    「零·一、基线快照」与「零·五、开工前置」canon 后同为「零」——后者的验收条目
+  //    会静默消失，看起来像「被元节豁免跳过」。故 collect 额外返回 dups 数组。
   const collect=(ls)=>{
-    const m=new Map(); let cur=null;
+    const m=new Map(); const dups=[]; let cur=null;
     for(const l of ls){
       if(/^##\s/.test(l)){
         const h=l.replace(/^##\s+/,"").trim();
         let k=canon(h); if(ALIAS[k])k=ALIAS[k];
         cur={h,k,n:0,x:0};
-        if(m.has(k)){cur.dup=m.get(k);}else{m.set(k,cur);}
+        if(m.has(k)){cur.dup=m.get(k);dups.push(cur);}else{m.set(k,cur);}
         continue;
       }
       if(!cur)continue;
       if(/^\s*-\s*\[ \]/.test(l))cur.n++;
       else if(/^\s*-\s*\[[xX]\]/.test(l))cur.x++;
     }
-    return m;
+    return {m,dups};
   };
-  const D=collect(dl),P=collect(pl);
+  const _D=collect(dl),_P=collect(pl);
+  const D=_D.m,P=_P.m;
   let bad=0, skipped=0, asserts=0, uncovered=0;
-  for(const [k,d] of D){ if(d.dup){console.log("❌ devlog 归一化键撞车（两章同键「"+k+"」，映射歧义）: "+d.h+" / "+d.dup.h);bad=1; } }
+  for(const d of _D.dups){ assertDup(d,"devlog"); }
+  for(const p of _P.dups){ assertDup(p,"prompt"); }
+  function assertDup(x,side){
+    asserts++;
+    console.log("❌ "+side+" 归一化键撞车（两章同键「"+x.k+"」，映射歧义）: "+x.h+" / "+x.dup.h);
+    bad=1;
+  }
   for(const [k,p] of P){ if(p.dup){console.log("❌ prompt 归一化键撞车（两节同键「"+k+"」，映射歧义）: "+p.h+" / "+p.dup.h);bad=1; } }
   if(bad)process.exit(1);
   // devlog 任务章（豁免清单外）逐键断言：prompt 须有同键章 + 验收条数不小于

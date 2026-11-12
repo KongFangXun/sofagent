@@ -678,7 +678,7 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
 > `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 `@sofagent/*` 手动 publish（11 个 `engine/<pkg>` 模块包（13 个模块包减去 auto 发布的 audit/mcp） + `load-chain` + `dsh-plugin-kit` = 13 包），再加裸名总包 `sofagent` 共 **14 包手动发布**。
 >
 > 🔴 **release.yml 未成功时，本步骤清单须把 audit + mcp 一并纳入**：release.yml 的 audit/mcp 可能因 E404（registry 侧瞬时态）/ E403 / 超时而**根本没发出去**——此时若按字面只发「其余包」，总数会少两包（audit / mcp），逐包对账当场暴露。判别 = 按步骤七 artifact 表第 3 行对本版全部发布包逐包做 registry HTTP 直查，**缺哪包就在本步骤补发哪包**；终局对账口径固定为 **逐包 HTTP 200 · 零缺包**，不接受「按清单发完了」这种过程性结论。
->**再加 DSH 插件家族，本步骤发布面 = 24 包**（= 15 个 `@sofagent/*` scope 包 + 8 款 DSH 插件 + 1 个裸名总包；款数 SSOT = `plugins.json` 实数，逐包真值 = registry HTTP 直查）。
+>**再加 DSH 插件家族**：发布面包数与款数**一律以当版实数重算**——`plugins.json` 的 `plugins[]` 条数（含聚合款）+ `@sofagent/*` scope 包数 + 裸名总包 1 个；逐包真值 = registry HTTP 直查。**禁照抄上版算式**（款数随版本增删，抄上版数字即漏发或误报缺包）。
 >
 > ⚠️ **`@sofagent/load-chain`（`engine/hooks/sofagent-load-chain/`）不在下方循环里**——下方循环写死 `engine/<pkg>` 布局，而它在 `engine/hooks/` 下，按「模块包」口径极易漏掉。必须把它加进循环与验证清单（仓内脚本 `publish-packages.sh` 已改为由根 workspaces 查表解析目录，不受此限）。
 >
