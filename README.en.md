@@ -27,7 +27,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.8.0: Judgment Foundation - Stage 3 (Wiring & Distribution)](#v180-judgment-foundation---stage-3-wiring--distribution)
+- [v1.9.0: Judgment Foundation - Stage 4 (Consumption & Closeout)](#v190-judgment-foundation---stage-4-consumption--closeout)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -206,19 +206,20 @@ post-commit only leaves a trace without blocking; bypassed commits do leave trac
 
 One command selects your mounting tier: `install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.8.0: Judgment Foundation - Stage 3 (Wiring & Distribution)
+## v1.9.0: Judgment Foundation - Stage 4 (Consumption & Closeout)
 
-🧭 **The judge goes from "model-ready" to "engineering-integrable"** — third stage of the four-stage judgment foundation: judgment plugs into orchestration via a standard channel (never occupying the local main-model slot), and ships as a distributable artifact (sha256-verified end to end):
+🧩 **The judge goes from "engineering-integrable" to "closeout-provable"** — final stage of the four-stage judgment foundation: criteria domains expanded, local judge head wired in, four-layer performance standards and comparison readings all landed (release-gate PASS with conditions · 78/80 acceptance items checked):
 
 | Capability | One-liner | Access |
 |---|---|---|
-| **DecisionChannel default impl** | Local subprocess NDJSON protocol (StdioDecisionChannel): per-request timeout kill · guaranteed process reaping · single-source protocol SSOT | SDK-face |
-| **Three-mode wiring** | off normalizes / shadow never changes behavior / active requires reconciliation — the decision tier never enters the auto-routing matrix | In-process (`judgeMode` config) |
-| **Five-part receipt on-chain** | state digest / evidence refs / model identity / full probabilities / deterministic baseline — every judgment is replayable (content:false fingerprint discipline) | In-process (auto-chained to decision-log) |
-| **Parallel constrained decoding** | One forward pass yields all fields: field-count-based packing · over-vocab chunking with zero truncation · companion-drift handling | SDK-face |
-| **Four observability fields** | calls / failures / degradations / latency buckets, exposed via MCP | CLI reachable (`sofagent daemon`) |
-| **Weights distribution path** | fail-closed four red lines (allowlist/sha256/resume/progress) + two USB offline modes (A installer --media · B portable plug-and-run) | CLI reachable (`install.sh --media`) |
-| **/v1/systemone facade** | The judge is directly consumable by existing System One clients (loopback binding · zero content logging) | SDK-face (HTTP POST) |
+| **Three-domain criteria sets** | workflow / ontology / routing each get ≥1 criteria set, load-validated + interface-only honesty + uncalibrated domains throw on decision-path entry (fail-closed) | SDK-face |
+| **FDE criteria wiring** | Three S1M decision-point landings archived (entry triage / departure readiness / health synthesis), migration through evidenceReadiness gate with trail | SDK-face |
+| **Local judge head** | judge-local five-ring fail-closed — missing weights / sha mismatch refuse to judge **never falling back to LLM**; four-part receipt (criteria version / weights sha16 / readings / time) | CLI reachable (`sofagent orchestrator judge-local`) |
+| **Reproducible judgment replay** | judge-replay — manifest fingerprint check + state snapshot → offline replay of the same probability distribution | CLI reachable (`sofagent orchestrator judge-replay`) |
+| **Call-density readings** | 74 batched requests vs 370 serial calls reported separately (mixing them fakes the packing win) | In-process (judge() exit hook) |
+| **Dual-channel format-failure** | Typed interface 0% vs text channel 14.86% — quantified channel-bias reading (format failure ≠ capability gap) | Archived (datasets/v19-density/) |
+| **Exam-discipline lint ⑧⑨** | Weak-predicate hints (existence/process-success alone proves nothing) + coverage-explicit batch hint ("what wasn't checked" must be registered) | SDK-face |
+| **Offline drill** | offline-drill three pieces (zero-network assertion / isolated-HOME audit / verify-chain HMAC) rerunnable and archived | CLI reachable (`bash tools/check/offline-drill.sh`) |
 
 ## The Two FDE Harness Phases
 

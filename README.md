@@ -25,7 +25,7 @@
 - [核心特性](#核心特性)
 - [什么是 FDE Harness](#什么是-fde-harness)
 - [多平台挂载](#多平台挂载)
-- [v1.8.0：判定底座 · 阶段三（接线与分发）](#v180判定底座--阶段三接线与分发)
+- [v1.9.0：判定底座 · 阶段四（消费与收口）](#v190判定底座--阶段四消费与收口)
 - [FDE Harness 两阶段](#fde-harness-两阶段)
 - [安装](#安装)
 - [使用](#使用)
@@ -182,19 +182,20 @@ sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层（�
 
 > 📌 `AGENTS.md`（Codex）/ `GEMINI.md`（Gemini CLI）/ `.claude/` / `.cursor/` 为各宿主的分层挂载点，均为对 `SKILL/` 的薄引用。
 
-## v1.8.0：判定底座 · 阶段三（接线与分发）
+## v1.9.0：判定底座 · 阶段四（消费与收口）
 
-🧭 **判定件从「模型可用」到「工程可接」**——四阶段判定底座第三版：判定以标准通道接入编排（不占本地主模型槽），以可分发制品走出仓库（sha256 全程校验）：
+🧩 **判定件从「工程可接」到「收口可证」**——四阶段判定底座收官版：判据面扩展、判定头本地推理接线、四层性能标准与对照读数全部落数（release-gate PASS 条件放行 · 80 条验收 78 勾）：
 
 | 能力 | 一句话 | 触达方式 |
 |---|---|---|
-| **DecisionChannel 默认实现** | 本地子进程 NDJSON 协议（StdioDecisionChannel）：逐请求超时即杀 · 进程必回收 · 协议 SSOT 单源 | SDK 面 |
-| **三档接线** | off 归一 / shadow 影子不改行为 / active 过对账才生效——判定档永不进自动路由矩阵 | 进程内自动（`judgeMode` 配置） |
-| **判定回执五件落链** | state 摘要 / 证据引用 / 模型身份 / 完整概率 / 确定性基线——每次判定可回放（content:false 指纹纪律） | 进程内自动（decision-log 自动落链） |
-| **并行约束解码** | 一次前向出全部字段：打包按字段数 · 超词表分块零截断 · 批内同伴处置序 | SDK 面 |
-| **观测四字段** | calls / failures / degradations / 延迟桶计数，经 MCP 透传 | CLI 可达（`sofagent daemon`） |
-| **权重分发通路** | fail-closed 四红线（白名单/sha256/断点续传/进度回调）+ USB 两档离线（A 安装器 --media · B 便携即插即跑） | CLI 可达（`install.sh --media`） |
-| **/v1/systemone 门面** | 判定件可被 System One 既有客户端直接消费（环回绑定 · 零内容日志） | SDK 面（HTTP POST） |
+| **三域判据集** | workflow / 本体数据 / 路由判定各 ≥1 套判据集，加载校验 + interface-only 如实声明 + 未校准域进决策路径即抛（fail-closed） | SDK 面 |
+| **FDE 判据面接线** | S1M 决策点三首落点建档（三问判定 / 离场就绪度 / 健康分合成），归属迁移过 evidenceReadiness 门且留痕 | SDK 面 |
+| **判定头本地推理** | judge-local 五环 fail-closed——权重缺失 / sha 不符拒绝判定**不回落 LLM**；回执四件（判据版本 / 权重 sha16 / 读数 / 时间） | CLI 可达（`sofagent orchestrator judge-local`） |
+| **判定可复现重放** | judge-replay——三件套指纹核对 + state 快照 → 离线重放同一概率分布 | CLI 可达（`sofagent orchestrator judge-replay`） |
+| **判定调用密度落数** | 打包 74 请求 vs 串行 370 调分列（混报会把打包成效记成假象） | 进程内自动（judge() 出口埋点） |
+| **格式破坏率双通道** | 类型化接口 0% vs 文本通道 14.86%——对照通道偏置的量化读数（格式失败 ≠ 能力差距） | 归档读数（datasets/v19-density/） |
+| **出卷纪律 lint 软⑧⑨** | 弱预言信号提示（存在性/进程成功类单独不构成证据）+ 覆盖显式批级提示（「没查什么」须登记） | SDK 面 |
+| **断网可用演练** | offline-drill 三件（零网络断言 / 隔离 HOME 审计 / verify-chain HMAC）可复跑留档 | CLI 可达（`bash tools/check/offline-drill.sh`） |
 
 ## FDE Harness 两阶段
 
