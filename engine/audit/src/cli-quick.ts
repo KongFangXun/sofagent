@@ -677,9 +677,16 @@ export function runCliQuick(argv: string[]): number {
   }
 
   // 2. 确定 diff 范围（默认 HEAD~1..HEAD）
-  const diffRange = argv[2] && !argv[2].startsWith('-') && argv[2] !== 'quick'
-    ? argv[2]
-    : 'HEAD~1..HEAD';
+  // v1.9.0 release-gate 20261112-05 C-1：保留字裸子命令（doctor/demo/init 等完整引擎能力词）
+  // 不再被误当 diff ref——显式拦下并指引正确用法，不进 parseDiff 报「无法解析 diff 范围」。
+  const RESERVED_WORDS = new Set(['doctor', 'init', 'ruleset', 'task']); // demo 有既有分支（快速演示入口，先于本守卫）
+  const firstArg = argv[2] && !argv[2].startsWith('-') && argv[2] !== 'quick' ? argv[2] : null;
+  if (firstArg !== null && RESERVED_WORDS.has(firstArg)) {
+    console.log(`ℹ️  「${firstArg}」是完整引擎能力（quick 模式不带此子命令）。`);
+    console.log('   环境健康检查请用 sofagent audit --doctor；完整能力需 --init 装 hook 或全局安装（sofagent --help 查看双模式说明）。');
+    return 1;
+  }
+  const diffRange = firstArg ?? 'HEAD~1..HEAD';
 
   // 3. 取 commit SHA（v1.3.8 P1-B5：失败时已静默 raw stderr，此处输出产品化提示）
   const commitSha = getLatestCommitSha();
