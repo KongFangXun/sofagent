@@ -52,7 +52,7 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ## 步骤二：DSH plugin 分发（每版必做） ☑
 
-> **背景**：SkillHub 支持 DeepSeek Harness plugin 分发。sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent*`，**7 个**：6 款原子 audit/rollback/inject/evolve/daemon/fde + 1 款聚合 `cordis-plugin-sofagent`——款数以 glob 实测为准，曾为 10 后经归并收口）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 侧七款同为发布物，两条通道并行不互替，
+> **背景**：SkillHub 支持 DeepSeek Harness plugin 分发。sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent*`，**款数以 `plugins.json` / glob 实测为准**：含原子款与聚合款 `cordis-plugin-sofagent`，新增款须自带 SKILL.md 才不发漏）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 侧七款同为发布物，两条通道并行不互替，
 >可用性前置见下方「DSH plugin 分发铁律」）。
 
 ```bash
@@ -106,7 +106,7 @@ done
 
 > **publish 输出歧义判读**：真实发布成功输出两种形态——「Update submitted for <name>@X.Y.Z; pending security scans」与「OK. Published <name>@X.Y.Z (<id>)」。🔴 **「Fix: ...」形态不是成功证据**（发布实测：同批四款 CLI 全输出「Fix: Move unsupported top-level manifest fields...」，API 复核仅 1 款实际发布、3 款仍停旧版——该形态只代表平台校验/修复建议流，发布未完成）。重试报「Version already exists」是已发布证据。**定性唯一通道**：API 查证 `https://clawhub.ai/api/v1/packages/<name>`（🔴 必须 `https://` 前缀——裸 `clawhub.ai/...` 被 curl 当本地路径静默失败返回空，
 >对账假红）的 `latestVersion` + `scanStatus` + `verification.sourceCommit`，勿据 CLI 输出盲改版本号。**每次发布后逐款 API 复核 latestVersion == 目标版本才算发布完成**（「Fix:」形态出现时重发该款直至拿到成功形态输出）。另两条实测补充：① **服务端内存瞬断**——Convex `512 MB out of memory (reset in 48s)` 是平台侧限流非包问题，等 ≥60s 重发即成；② **scan=suspicious 未必是问题**——包内含 `*.test.js` 会触发扫描器启发式（同批无 test 文件的包 clean），按 verify 快照纪律判「新引入 vs 历史遗留」后再处置。
-> **「pending security scans」转正时长（v1.9.0 实测补充）**：`Update submitted` 后 latestVersion 停旧值**不一定是死锁**——skill 通道约 4 分钟、package 通道 2~5 分钟扫描队列转正。判别链：先跑诊断三件套，`moderation-status` 全 clean / blocked:no ⇒ 等待 2~5 分钟重查（audit/inject 实测 2 分钟自然转正）；**等待 >5 分钟仍未转正才重发该款一轮**（evolve/rollback 实测重发后转正）；只有四方互斥（exists + download not found + delete 拒 + undelete 拒）才按 troubleshooting 死锁处置。另：`clawhub package download` 的 `--dir` 参数实测无效——tarball 落当前工作目录，实证后记得清理散落 tgz。
+> **「pending security scans」转正时长（发布实测补充）**：`Update submitted` 后 latestVersion 停旧值**不一定是死锁**——skill 通道约 4 分钟、package 通道 2~5 分钟扫描队列转正。判别链：先跑诊断三件套，`moderation-status` 全 clean / blocked:no ⇒ 等待 2~5 分钟重查（audit/inject 实测 2 分钟自然转正）；**等待 >5 分钟仍未转正才重发该款一轮**（evolve/rollback 实测重发后转正）；只有四方互斥（exists + download not found + delete 拒 + undelete 拒）才按 troubleshooting 死锁处置。另：`clawhub package download` 的 `--dir` 参数实测无效——tarball 落当前工作目录，实证后记得清理散落 tgz。
 
 ```bash
 # 发布前确认 plugin 清单（SSOT = engine/openclaw-plugins/ 目录实数 + 各版开发日志家族表）

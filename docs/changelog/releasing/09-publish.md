@@ -496,7 +496,7 @@ fi
 ## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp） ☑
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 `@sofagent/*` 与裸名总包在步骤八手动 publish（13 个手动 `@sofagent/*` = 11 个引擎模块包 + `load-chain` + `dsh-plugin-kit`，加裸名总包 `sofagent` 共 **14 包**——包数口径以步骤八头部为准）；
->**另有七款 DSH 插件**（`cordis-plugin-sofagent-*`，裸名、目录在 `engine/dsh-plugins/`）同样在步骤八手动 publish——见「步骤八·补」。
+>**另有 DSH 插件家族**（款数以 `engine/dsh-plugins/plugins.json` 实数为准）（`cordis-plugin-sofagent-*`，裸名、目录在 `engine/dsh-plugins/`）同样在步骤八手动 publish——见「步骤八·补」。
 
 > **触点纪律（撤策执行不完整教训 · F-8）**：策略类翻牌必须全站 grep `alpha|分道|channel|dist-tag` 后双语双段逐一翻牌（README 双语 62 区块与 188 段、LIMITATIONS、本文件）——commit message 的触点声称以 grep 结果为准，不以记忆为准。
 
@@ -523,7 +523,7 @@ fi
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
 | 3 | | （说明见下方小节） | 23 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
 
-#### 3 · npm 23 包对账
+#### 3 · npm 对账（实数以 plugins.json + registry 直查为准）
 
 `for p in audit mcp core daemon eval inject ontology orchestrator train rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view @sofagent/dsh-plugin-kit version --prefer-online` + `npm view sofagent
 version --prefer-online` + `for p in $(node -p "require('./engine/dsh-plugins/plugins.json').plugins.map(p=>p.id).join(' ')"); do npm view "$p" version --prefer-online; done`
@@ -661,7 +661,7 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
 > ⑤ 🔴 **bump 批推送前必须重跑全量门禁**（尤其 check-archaeology——发版链的门禁全绿在 pre-push 阶段，bump 批之后若只跑 check-version 就推，archaeology/forms/docs 的回归会带病出门。实测：bump 手工补漏的批量替换吃掉 SKILL 六件头部 H1 前缀，E3 判据回归直到发版后自查才暴露）。
 > ⑥ 发版窗口的中间 commit 红不可避免（翻牌批/registry 传播在触发批的下一拍）——**能合 commit 的翻牌动作与触发批同 commit 推送**（如 CHANGELOG 索引翻牌并入 frontmatter 修复批），缩小提交列表上的红叉窗口；收尾后逐 commit 复盘红叉是否全部有时序解释。
 
-## 步骤八：npm 手动 publish 其余 14 包（含裸名总包）+ 七款 DSH 插件 ☑
+## 步骤八：npm 手动 publish 其余包（含裸名总包）+ DSH 插件家族 ☑
 
 > 🔴 **dist-tag 口径（撤策后 · 现行）**：下方每处 `npm publish --access public`（含「步骤八·补」的七款插件）**一律不加 `--tag`**——落默认 `latest`。历史分道说明见步骤七「dist-tag 分道」节（已撤策存档，不再执行）。
 
@@ -670,15 +670,15 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
 > 开跑前先对账：`node -p "require('./package.json').workspaces.join('\n')"` 与下方循环逐项核对——
 > `engine/umbrella`（裸名总包）不在循环内（单独发）；`@sofagent/load-chain`（`engine/hooks/`）与
 > `@sofagent/dsh-plugin-kit`（`engine/dsh-plugins/plugin-kit/`）虽**是** `@sofagent/*` scope 包，
-> 但目录布局不是 `engine/<pkg>`，故也不在下方 `@sofagent/*` 循环里——各自单独段。七款 DSH 插件
+> 但目录布局不是 `engine/<pkg>`，故也不在下方 `@sofagent/*` 循环里——各自单独段。DSH 插件家族
 > （`engine/dsh-plugins/cordis-plugin-sofagent*`）**是** npm 发布物，但包名是裸名、目录布局也不是
 > `engine/<pkg>`，故不在下方 `@sofagent/*` 循环里——见「步骤八·补」。`engine/openclaw-plugins/*`
 > 仍不是 npm 发布物（走 ClawHub 分发，见阶段十）。
 >
 > `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 `@sofagent/*` 手动 publish（11 个 `engine/<pkg>` 模块包（13 个模块包减去 auto 发布的 audit/mcp） + `load-chain` + `dsh-plugin-kit` = 13 包），再加裸名总包 `sofagent` 共 **14 包手动发布**。
 >
-> 🔴 **release.yml 未成功时，本步骤清单须把 audit + mcp 一并纳入**：release.yml 的 audit/mcp 可能因 E404（registry 侧瞬时态）/ E403 / 超时而**根本没发出去**——此时若按字面只发「其余 14 包」，总数会停在 21 而非 23。判别 = 按步骤七 artifact 表第 3 行对 23 包逐包做 registry HTTP 直查，**缺哪包就在本步骤补发哪包**；终局对账口径固定为 **23/23**，不接受「按清单发完了」这种过程性结论。
->**再加七款 DSH 插件，本步骤发布面 = 23 包**（= 15 个 `@sofagent/*` scope 包 + 7 款 DSH 插件 + 1 个裸名总包；审计口径见步骤七 artifact 表第 3 行）。
+> 🔴 **release.yml 未成功时，本步骤清单须把 audit + mcp 一并纳入**：release.yml 的 audit/mcp 可能因 E404（registry 侧瞬时态）/ E403 / 超时而**根本没发出去**——此时若按字面只发「其余包」，总数会少两包（audit / mcp），逐包对账当场暴露。判别 = 按步骤七 artifact 表第 3 行对本版全部发布包逐包做 registry HTTP 直查，**缺哪包就在本步骤补发哪包**；终局对账口径固定为 **逐包 HTTP 200 · 零缺包**，不接受「按清单发完了」这种过程性结论。
+>**再加 DSH 插件家族，本步骤发布面 = 24 包**（= 15 个 `@sofagent/*` scope 包 + 8 款 DSH 插件 + 1 个裸名总包；款数 SSOT = `plugins.json` 实数，逐包真值 = registry HTTP 直查）。
 >
 > ⚠️ **`@sofagent/load-chain`（`engine/hooks/sofagent-load-chain/`）不在下方循环里**——下方循环写死 `engine/<pkg>` 布局，而它在 `engine/hooks/` 下，按「模块包」口径极易漏掉。必须把它加进循环与验证清单（仓内脚本 `publish-packages.sh` 已改为由根 workspaces 查表解析目录，不受此限）。
 >
@@ -693,7 +693,7 @@ npm view @sofagent/mcp@vX.Y.Z version --prefer-online    # 期望返回版本号
 
 # 手动 publish 其余 11 个引擎模块包——每包 publish 后立即 npm view 对账 + E409 自动等待重查
 # 🔴 publish 输出严禁接管道过滤（| grep xxx）——报错被过滤吞掉会表面循环跑完实际漏发，
-#    23 包对账时才发现。输出必须全量落盘，失败立即停。
+#    全量对账时才发现。输出必须全量落盘，失败立即停。
 # 🔴 npm view 对账必须加 --prefer-online——裸查询吃本地缓存，刚 publish 完会误报
 #    「失败实已发布」（发版 session 本地缓存里还是上版）。大包（≥800KB）registry 侧
 #    收录延迟可达 3+ 分钟，对账窗口预留足够，勿据一次裸查询判定失败。
@@ -743,7 +743,7 @@ LIVE=$(npm view @sofagent/load-chain version 2>/dev/null || true)
 [ "$LIVE" = "$TARGET_VER" ] && echo "✅ @sofagent/load-chain = $LIVE" || echo "🔴 load-chain 对账失败：期望 $TARGET_VER 实际 $LIVE"
 
 # @sofagent/dsh-plugin-kit（engine/dsh-plugins/plugin-kit/，不进上面的循环——14 包手动口径之 13）
-# 🔴 必须**先于「步骤八·补」的七款 DSH 插件**发布：六款原子插件以包名依赖它，
+# 🔴 必须**先于「步骤八·补」的 DSH 插件家族**发布：六款原子插件以包名依赖它，
 #    顺序反了则插件从 registry 装完第一步挂载即 MODULE_NOT_FOUND。验证逻辑同上。
 ( cd "engine/dsh-plugins/plugin-kit" && npm publish --access public ) > /tmp/publish-dsh-plugin-kit.log 2>&1
 RC=$?
@@ -779,9 +779,9 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 
 > 🔴 **E409「previously staged version」处理**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**staged 版本约 5 分钟内自动 finalize**（多版实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。
 >处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
-> **批量脚本的「版本验证 ❌ 全失败」多为传播延迟假报（v1.9.0 实测）**：`publish-packages.sh` 末尾的版本验证用 `npm view` 逐包查询——发布后 1~2 分钟内 registry 传播未达 ⇒ 全部报旧值「❌」。真值只认 registry HTTP 直查（`curl -s https://registry.npmjs.org/<pkg>/<version>` 看 HTTP 200）；逐包判 200 后按 E409 处置等待即可。另 🔴 **macOS 大小写让 tsc 假红（TS1149）**：会话 cwd 用 `Workbuddy/` 而 `realpath` 为 `WorkBuddy/`（同名同 inode）时，tsc `forceConsistentCasingInFileNames` 把同一 `.d.cts` 当两个文件 ⇒ 单包 build 失败 publish 不了——**publish 前先 `node -e "require('fs').realpathSync(process.cwd())"` 核对，一律 cd 到规范路径再发**（实测 orchestrator 仅此一因，其余包未炸纯属路径未被折叠）。
+> **批量脚本的「版本验证 ❌ 全失败」多为传播延迟假报（发布实测）**：`publish-packages.sh` 末尾的版本验证用 `npm view` 逐包查询——发布后 1~2 分钟内 registry 传播未达 ⇒ 全部报旧值「❌」。真值只认 registry HTTP 直查（`curl -s https://registry.npmjs.org/<pkg>/<version>` 看 HTTP 200）；逐包判 200 后按 E409 处置等待即可。另 🔴 **macOS 大小写让 tsc 假红（TS1149）**：会话 cwd 用 `Workbuddy/` 而 `realpath` 为 `WorkBuddy/`（同名同 inode）时，tsc `forceConsistentCasingInFileNames` 把同一 `.d.cts` 当两个文件 ⇒ 单包 build 失败 publish 不了——**publish 前先 `node -e "require('fs').realpathSync(process.cwd())"` 核对，一律 cd 到规范路径再发**（实测 orchestrator 仅此一因，其余包未炸纯属路径未被折叠）。
 
-### 步骤八·补：七款 DSH 插件（`cordis-plugin-sofagent-*`） ☑
+### 步骤八·补：DSH 插件家族（`cordis-plugin-sofagent-*`） ☑
 
 > 🔴 **为什么必须单独补一段**：上方 `@sofagent/*` 循环只筛该 scope 前缀 **+ `engine/<pkg>` 布局**，而这七款的
 > 包名是**裸名** `cordis-plugin-sofagent*`、目录在 `engine/dsh-plugins/<id>`——两者都不匹配 ⇒ 上方循环会
@@ -815,7 +815,7 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 > 🔴 **不加 `--tag`**（撤策后口径，见步骤七）。七款均为**首发包**，直接落默认 `latest` ⇒ 装完 `npm i <pkg>` 立即可用，无需 `@alpha` 后缀、也无需事后 `dist-tag add`。四段实装验证仍是**发布前置门**（验证不过不发布），但不再有 dist-tag 二段动作。
 
 ```bash
-# 七款 DSH 插件：清单取自 plugins.json（原子款在前、suite 末尾），逐款 publish + 即时对账
+# DSH 插件家族：清单取自 plugins.json（原子款在前、suite 末尾），逐款 publish + 即时对账
 cd "$(git rev-parse --show-toplevel)"
 for p in $(node -p "const d=require('./engine/dsh-plugins/plugins.json');const s=d.plugins.filter(p=>p.kind==='suite').map(p=>p.id);[...d.plugins.map(p=>p.id).filter(i=>!s.includes(i)),...s].join(' ')"); do
   echo "--- $p ---"

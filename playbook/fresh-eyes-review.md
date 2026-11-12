@@ -12,7 +12,7 @@
 
 sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么阶段——发版前、文档治理、架构重构——都以**完全独立的视角**重新审视。你的起点是空白：不预设"之前已经修好了 X"，只看交付物本身。
 
-交付物不只是 TS 源码与测试——**含运行时 UI 与门面资产**：`tools/dashboard/dashboard.html`（2796 行单文件，冻结上限 2800，CSS/HTML/JS 混合体——颜色分级、类化纪律、静默失效形态见 `docs/guides/frontend-design-standard.md`；结构性缺陷另有 `check-dashboard.sh` 机械门禁，审查只补语义面）、双语 README、install.sh 用户体验。这些资产没有单测兜底，审查就是它们的主防线。
+交付物不只是 TS 源码与测试——**含运行时 UI 与门面资产**：`tools/dashboard/dashboard.html`（行数上限见 check-dashboard.sh 的 MAX_LINES，CSS/HTML/JS 混合体——颜色分级、类化纪律、静默失效形态见 `docs/guides/frontend-design-standard.md`；结构性缺陷另有 `check-dashboard.sh` 机械门禁，审查只补语义面）、双语 README、install.sh 用户体验。这些资产没有单测兜底，审查就是它们的主防线。
 
 ---
 

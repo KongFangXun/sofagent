@@ -2,7 +2,7 @@
 
 **Audit-first governance layer for AI coding agents.**
 
-`npm i -g sofagent` 一次装全：聚合安装入口（umbrella），等价于同时安装四大功能包。
+`npm i -g sofagent` 一次装全：聚合安装入口（umbrella），等价于一次装齐下列 4 个主要入口包与其余 6 个 @sofagent/* 依赖。
 
 - **审计 CLI**（`@sofagent/audit`）——`sofagent` / `sofagent audit` 命令，扫描 git diff 检查 Agent 是否遵守工作纪律
 - **MCP server**（`@sofagent/mcp`）——104 tools，把审计/训练/治理能力接入任意 MCP 客户端
