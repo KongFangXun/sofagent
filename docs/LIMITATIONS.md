@@ -166,10 +166,6 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 
 平台对 `openclaw.plugin.json` 顶层字段（`seam` / `uiHints` 等）给出「非受支持字段」告警——**安装与使用不受影响**，仅平台校验提示。处置方向是把这些字段移入平台受支持的承载位；至 v1.6.0 重发仍复现（四款逐款回报）。
 
-### 📦 v1.7.0：ClawHub 上 evolve / inject 仍为 1.6.0
-
-**audit / rollback 已发 1.7.0；evolve / inject 因平台侧发布状态机死锁未转正**（版本预留 / latest / artifact 空 互斥），已提 moderator；OpenClaw 装这两款得 1.6.0；**npm 渠道同两名包已 1.7.0**。
-
 ### 🐚 B1 数据初始化依赖 bash
 
 SKILL.md B1 步用 bash heredoc 创建 `~/.sofagent/data/` 数据目录。Windows 或受限沙盒环境可能没有 bash。降级路径已内置：bash 不可用时 Agent 降级为逐条 `mkdir` + Write 工具创建。
@@ -269,9 +265,9 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 判定：这是 **fail-closed 且有文档说明**的降级，不是缺陷本身。运行时留痕**已实装**——`warnTemplateFallback()`（`engine/orchestrator/src/fde/fde-quantify.ts`，模块级一次性打印）在「三级查找全 miss」与「模板读失败」两条路径上均已调用，用户可见「本次交付物使用内置默认骨架」及其三条查找路径。缓解：安装后如需定制交付模板，从仓库 `FDE/templates/` 显式提供，或设 `SOFAGENT_REPO_ROOT` 指向仓库根。
 
-### 官网 `sofagent.ai` 发版期不可达（待维护者核查）
+### 官网 `sofagent.ai` 安装命令断链 + 发版期不可达（待站方）
 
-站源码不在本仓、仓内门禁无法覆盖；发版期实测 HTTPS 连接超时（DNS 解析正常），分发渠道门面暂不可用。
+站源码不在本仓、门禁不可覆盖；两件：① 安装命令 `bash FDE/fde-install.sh` 指向的脚本已于 v1.2.0 退役（c379cc5ae），照官网操作 file not found；② 发版期 HTTPS 连接超时（DNS 正常）。处置：官网安装命令改 `curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.9.0/install.sh | bash`；可达性待站方核查。
 
 ## 三、安全与信任模型局限
 

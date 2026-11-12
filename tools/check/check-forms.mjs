@@ -176,7 +176,6 @@ const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const VERSION_SOURCES = [
   { version: 'v1.5.9', file: 'docs/changelog/v1.5/v1.5.9.md' },
   { version: 'v1.8.0', file: 'docs/changelog/v1.8/v1.8.0.md' },
-  { version: 'v1.9.0', file: 'docs/changelog/v1.9/v1.9.0.md' },
   { version: 'v2.0.0', file: 'docs/changelog/v2.0/v2.0.0.md' },
 ];
 const SCAN_FILES = VERSION_SOURCES.map((v) => v.file);
@@ -187,8 +186,8 @@ const OPT_OUT_NOTE = 'docs/changelog/v1.4/ 及更早（已发版历史档案，�
 // 数值口径（实测）：扫描面随「发版即移出」逐版收缩——现行 5 文件 / 38 需标注章。**两个下界均取零余量**——
 // 任一文件路径断裂 / 任一需标注章消失即当场红（余量非零时「掉几个还算过」正是假绿温床）。
 // 维护纪律：发版时把该版移出 VERSION_SOURCES，**同批下调这两个下界**（与 EXPECTED_COUNTS 同款）。
-const MIN_FILES = 4;
-const MIN_CHAPTERS = 31;
+const MIN_FILES = 3;  // v1.9.0 移出后实测（SOP 步骤十五：移出版本同批下调，勿照抄上版）
+const MIN_CHAPTERS = 25;  // v1.9.0 移出后实测
 
 // A2 排除面（无交付面 ⇒ 不要求标注）：固定标题两个；**指针存根章由 isPointerStub
 // （章体判据）另行豁免**——这里刻意不按标题形态豁免，理由见 isPointerStub 处注释。
@@ -367,7 +366,6 @@ const EXPECTED_LABELS = {
   'v1.5.4': ['主干', '通道成分', '非功能'], // 章级通道退役（并干）；章三内通道成分标注 1 处归成分模式
   'v1.5.9': ['主干', '非功能', '插件'],
   'v1.8.0': ['主干', '非功能'], // 非功能 = fresh-eyes 审查收口批（2026-11-03 批零补标注：SSOT 11-02 追补的非主干章，横切修复不占六章交付面）
-  'v1.9.0': ['主干', '非功能'],
   'v2.0.0': ['主干', '非功能'],
 };
 
@@ -406,7 +404,6 @@ const EXPECTED_COUNTS = {
   'v1.5.9': { 主干: 5, 非功能: 3, 插件: 1 }, // 非功能 2→3：v1.5.9 承接 bugfix 批承载章（第八章）+ 发版闸门场景锚定登记章（release-gate 20261012-01 coverage 裁决面），ROADMAP:110 同批声明10 同批声明
   'v1.7.0': { 主干: 7 }, // 主干 6→7：增章七「判据变更留痕与品味样本构造」（尺子变更事件 schema + 偏离提取器 + 品味样本三要素 + effect 回填）——ROADMAP:110 同批声明（改声明数字是判定面变化，显式过 pin）
   'v1.8.0': { 主干: 6 },
-  'v1.9.0': { 主干: 9, 非功能: 1 }, // 主干 8→9：§十「本版补做项」后补入主干（闸门件与域外校准边界，§七 收口核对的未达阈项在本版内做掉）——ROADMAP:121 同批声明（改声明数字是判定面变化，显式过 pin；fresh-eyes F-8）
   'v2.0.0': { 主干: 2, 非功能: 5 },
 };
 
