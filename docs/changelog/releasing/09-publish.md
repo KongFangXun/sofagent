@@ -787,7 +787,7 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 > 包名是**裸名** `cordis-plugin-sofagent*`、目录在 `engine/dsh-plugins/<id>`——两者都不匹配 ⇒ 上方循环会
 > **静默跳过该家族却仍打印「✅ 全部包已发布」**。故此处显式发布；清单取自插件 SSOT
 > `engine/dsh-plugins/plugins.json`（**不硬编码包名**——改名/新增款由数据源自动纳入，目录缺失即报红），
-> 顺序 = 六原子款在前、suite 聚合款（`cordis-plugin-sofagent`，其 `optionalDependencies` 引用六个原子款）在末。
+> 顺序 = 原子款在前、suite 聚合款（`cordis-plugin-sofagent`，其 `optionalDependencies` 引用全部原子款；清单实数以 `plugins.json` 为准）在末。
 >
 > 🔴 **发布前置之前置（章九二轮）**：本段的**前一拍**是上方「`@sofagent/dsh-plugin-kit` 单独段」——
 > 原子插件以包名依赖 `@sofagent/dsh-plugin-kit`，该包未先发则逐款实装的第三步「`helpers.call` 引擎包
@@ -807,9 +807,9 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 > 验证脚本放 `$V`（node ESM），**必须 `SOFAGENT_DATA=<临时目录>`** 隔离数据落盘，别写真实 `~/.sofagent/`。
 > 四段判据与观察点（fakeCtx 用鸭子类型提供 `provide / on / get('tools') / settings / dynamicCordisRunner`）：
 > - ① **挂载**：`(mod.default).default.apply(fakeCtx)`（CJS 互操作要逐层解 `default`）返回复合 disposer 且幂等；`provide` 收到 `sofagent.<short>`，`meta.id` == 包名、`version` == 本版；宿主 API 缺席时**不得**留假 disposer。
-> - ② **seam 订阅**：订阅事件集**逐字等于** `plugins.json` 的 `seamHandlers`（多一个=幽灵订阅，少一个=假接线）；**非 seam 款（daemon / fde）期望 0**；**suite 期望转发「原子款 seam 之和」**（当前 6 原子 ⇒ 7；生命周期事件如 `dispose` 不计入 seam 集）。🔴 实测修正：原文把 suite 与 daemon/fde 并列写「期望 0」又在同句写「suite 期望 7」——**同句自相矛盾**，照前半句判会把 suite 的正确转发误判为「幽灵订阅」。
+> - ② **seam 订阅**：订阅事件集**逐字等于** `plugins.json` 的 `seamHandlers`（多一个=幽灵订阅，少一个=假接线）；**非 seam 款（daemon / fde）期望 0**；**suite 期望转发「原子款 seam 之和」**（实数以 `plugins.json` 的 `seamHandlers` 逐款求和为准；生命周期事件如 `dispose` 不计入 seam 集）。🔴 实测修正：原文把 suite 与 daemon/fde 并列写「期望 0」又在同句写「suite 期望 7」——**同句自相矛盾**，照前半句判会把 suite 的正确转发误判为「幽灵订阅」。
 > - ③ **引擎包解析**：触发 handler 观察有无 `MODULE_NOT_FOUND`——**这是 kit 依赖桥的本命测试**（kit 未先发则此处必挂）；fde 另验 `resolveBridges()` 的 `resolved` 非空、`failed` 为空。
-> - ④ **事件触发产出**：真造输入看真产出——audit 危险命令返回 `{kind:'deny'}`、`tools/result` 失败结果落 `<dataDir>/audit/`（decision-log.jsonl + intent.jsonl）、inject 的 `agent/pre-step` 返回 messages 多一条、evolve 的 `session/event`+`turn/end` 落 `think.md`、fde 角色工具注册数 > 0、suite 的 `SuiteReport.loaded == 6` 且 `failed` 为空。
+> - ④ **事件触发产出**：真造输入看真产出——audit 危险命令返回 `{kind:'deny'}`、`tools/result` 失败结果落 `<dataDir>/audit/`（decision-log.jsonl + intent.jsonl）、inject 的 `agent/pre-step` 返回 messages 多一条、evolve 的 `session/event`+`turn/end` 落 `think.md`、fde 角色工具注册数 > 0、suite 的 `SuiteReport.loaded` 与 `plugins.json` 原子款清单逐项相等且 `failed` 为空。
 >
 > 🔴 **`--access public` 写法与裸名总包同款**（见上方 umbrella 段）——各款同为非 scoped 裸名，照抄该写法。
 > 🔴 **不加 `--tag`**（撤策后口径，见步骤七）。各款均按**默认 latest 发布**，直接落默认 `latest` ⇒ 装完 `npm i <pkg>` 立即可用，无需 `@alpha` 后缀、也无需事后 `dist-tag add`。四段实装验证仍是**发布前置门**（验证不过不发布），但不再有 dist-tag 二段动作。
