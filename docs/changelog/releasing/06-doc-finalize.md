@@ -316,7 +316,8 @@ node tools/check/doc-score.mjs --json   # 机读输出（供本版 devlog「文�
 > 🔴 **质量表数字的五条硬规则**：
 > 1. **每个数字必须能指认产出命令**——指认不出就**不写**（实测：我按比例推算写出「1017 断言」，
 >    而 acceptance 脚本 **SUMMARY 根本不统计断言数**；「409 断言」那句是旧机制遗留）；
-> 2. **与脚本输出逐字同形**——acceptance 只认 `{N}/{N} passed · SKIP: {N} · EXIT: {N}`，
+> 2. **与脚本输出逐字同形**——acceptance 只认 `{N}/{N} passed (assertion units; scenario entries: M) · SKIP: {N} · EXIT: {N}`
+>    （N=断言单元数 / M=场景条目数，双计数单位声明见 acceptance-test.sh 汇总口径注释；release-gate 20261112-02 P1-3），
 >    别改写成「场景全绿」等变体（门禁/读者都要能对得上）；
 > 3. **禁止千分位**——写 `4429` 不写 `4,429`（与既有各版体例一致）；
 > 4. **数字代表发版批实测终值**，发布后复跑若有差异，**另记「发布后复跑记录」，不回头改写**。
