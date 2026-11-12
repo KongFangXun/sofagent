@@ -336,6 +336,12 @@
       "line": 354,
       "reason": "releasing SOP 模板占位链接（vX.Y.Z 示例路径，冻结区形态非死链）",
       "approved": "孔放勋 2026-11-02"
+    },
+    {
+      "file": "docs/changelog/releasing/06-doc-finalize.md",
+      "line": 355,
+      "reason": "releasing SOP 模板占位链接（devlog 骨架示例路径 vX.Y.Z——README 速览段落的组成部分，与 :354 同形态；行号漂移自 :354 上方模板新增行，2026-11-12 阶段六批登记）",
+      "approved": "孔放勋 2026-11-12"
     }
   ]
 }

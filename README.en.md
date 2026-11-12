@@ -208,13 +208,13 @@ One command selects your mounting tier: `install.sh --platform <platform-name>` 
 
 ## v1.9.0: Judgment Foundation - Stage 4 (Consumption & Closeout)
 
-🧩 **The judge goes from "engineering-integrable" to "closeout-provable"** — final stage of the four-stage judgment foundation: criteria domains expanded, local judge head wired in, four-layer performance standards and comparison readings all landed (release-gate PASS with conditions · 78/80 acceptance items checked):
+🧩 **The judge goes from "engineering-integrable" to "closeout-provable"** — final stage of the four-stage judgment foundation: criteria domains expanded, local judge head wired in, four-layer performance standards and comparison readings all landed (release-gate PASS · 78/80 checked):
 
 | Capability | One-liner | Access |
 |---|---|---|
 | **Three-domain criteria sets** | workflow / ontology / routing each get ≥1 criteria set, load-validated + interface-only honesty + uncalibrated domains throw on decision-path entry (fail-closed) | SDK-face |
 | **FDE criteria wiring** | Three S1M decision-point landings archived (entry triage / departure readiness / health synthesis), migration through evidenceReadiness gate with trail | SDK-face |
-| **Local judge head** | judge-local five-ring fail-closed — missing weights / sha mismatch refuse to judge **never falling back to LLM**; four-part receipt (criteria version / weights sha16 / readings / time) | CLI reachable (`sofagent orchestrator judge-local`) |
+| **Local judge head** | judge-local five-ring fail-closed — missing weights/sha mismatch refuse to judge, **never falling back to LLM**; four-part receipt (criteria version / weights sha16 / readings / time) | CLI reachable (`sofagent orchestrator judge-local`) |
 | **Reproducible judgment replay** | judge-replay — manifest fingerprint check + state snapshot → offline replay of the same probability distribution | CLI reachable (`sofagent orchestrator judge-replay`) |
 | **Call-density readings** | 74 batched requests vs 370 serial calls reported separately (mixing them fakes the packing win) | In-process (judge() exit hook) |
 | **Dual-channel format-failure** | Typed interface 0% vs text channel 14.86% — quantified channel-bias reading (format failure ≠ capability gap) | Archived (datasets/v19-density/) |

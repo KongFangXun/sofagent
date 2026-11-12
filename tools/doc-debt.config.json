@@ -47,6 +47,6 @@
     ".workbuddy"
   ],
   "repoKind": "default",
-  "exemptQuota": 67,
+  "exemptQuota": 68,
   "notes": "v1.8.0 bugfix 批建档（fresh-eyes F16）：65 份 devlog 退役节为历史形态基线（C6 整篇豁免见 tools/doc-debt-exempt.json，退役义务随各版发版收口批逐份补齐后撤豁免）；releasing 模板 1 条同台账。ignoreDirs 排除冻结区（docs/archive）与第三方 vendored（playbook/vendor）及 agent 本地状态（.workbuddy）。"
 }
