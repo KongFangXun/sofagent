@@ -1,5 +1,5 @@
 // ============================================================
-// decision-kinds.ts · DecisionKind 枚举 SSOT（v1.8.0 fresh-eyes F13/F14 单源化）
+// decision-kinds.ts · DecisionKind 枚举 SSOT（v1.9.0 fresh-eyes F13/F14 单源化）
 // ============================================================
 // 背景：决策数据的 kind 空间此前四处手抄（audit/decision-schema.ts union、
 // audit/decision-log.ts 写侧白名单、audit/inputs/decision-log-source.ts 读侧

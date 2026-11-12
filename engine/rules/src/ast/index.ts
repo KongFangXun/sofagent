@@ -1,6 +1,6 @@
 // ============================================================
 // ast/index.ts · AST 规则引擎 barrel export
-// v1.8.0（一）：官方 AST 规则引擎参考实现（sofagent-ruleset-ast）
+// v1.9.0（一）：官方 AST 规则引擎参考实现（sofagent-ruleset-ast）
 // ============================================================
 
 export { AstRuleEngine } from './engine';

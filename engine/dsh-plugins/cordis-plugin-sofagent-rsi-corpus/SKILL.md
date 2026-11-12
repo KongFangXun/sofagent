@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent-rsi-corpus
 slug: cordis-plugin-sofagent-rsi-corpus
-version: 1.8.0
+version: 1.9.0
 displayName: cordis-plugin-sofagent-rsi-corpus
 description: >
   语料管道 tool 集——脱敏 L0/L1 + 三分拣（SENSITIVE/JUDGEMENT/ABSTAIN），与出厂基准逐字节等价（golden 锁定）（seam: non-seam:tool-set）——桥接 @sofagent/rsi-corpus runPipeline——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。

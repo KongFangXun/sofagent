@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.8.0 · 2026-11-05（GMT+8）· ✅ 已发版 · 孔放勋
+> v1.9.0 · 2026-11-12（GMT+8）· ✅ 已发版 · 孔放勋
 
 > **本文档是 sofagent 最核心的一份「为什么」。** 读完你能回答：sofagent 是什么、怎么用、怎么跑、怎么管、怎么记、怎么装、怎么进化、以及不做什么——对应下文各章。
 

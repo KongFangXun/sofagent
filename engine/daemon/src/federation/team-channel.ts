@@ -2,7 +2,7 @@
 // team-channel.ts · FederatedTeamSyncChannel（v1.3.7 交付 T02）
 //
 // daemon 实现 orchestrator 定义的 TeamSyncChannel 接口。
-// 复用 v1.1.8 的 FederationChannel（AES-256-GCM 加密链路）传输
+// 复用 v1.1.9\1的 FederationChannel（AES-256-GCM 加密链路）传输
 // Automerge.save() 的二进制 team-state 增量。
 //
 // ⚠️ 依赖方向：daemon 单向依赖 orchestrator（import type TeamSyncChannel）。

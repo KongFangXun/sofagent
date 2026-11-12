@@ -1,4 +1,4 @@
-// shortcut-audit.ts · v1.8.0 §一 · 数据清洗三捷径自检单（answer-length / answer-letter / option-count）
+// shortcut-audit.ts · v1.9.0 §一 · 数据清洗三捷径自检单（answer-length / answer-letter / option-count）
 // ============================================================
 // 定位：判定训练数据的捷径泄漏自查（Jeff 一手蒸馏 v1.2 三捷径清单照抄——
 // SSOT §一交付表「adapter-first 训练次序与数据清洗三捷径」②）。三类捷径：

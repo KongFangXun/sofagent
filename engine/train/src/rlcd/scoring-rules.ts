@@ -1,4 +1,4 @@
-// scoring-rules.ts · v1.8.0 §一 · 严格适当评分规则集（strictly proper scoring rules）
+// scoring-rules.ts · v1.9.0 §一 · 严格适当评分规则集（strictly proper scoring rules）
 // ============================================================
 // 定位：RLCD 训练目标的根约束——「严格适当」的数学含义是报出真实概率时
 // 期望得分最优（诚实报概率是唯一不被惩罚的策略），模型没有「虚报高置信

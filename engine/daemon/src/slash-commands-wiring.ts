@@ -1,5 +1,5 @@
 // ============================================================
-// slash-commands-wiring.ts · v1.8.0 T3：内置 slash 命令接线
+// slash-commands-wiring.ts · v1.9.0 T3：内置 slash 命令接线
 // ============================================================
 //
 // 问题：@sofagent/core 的 registerBuiltinSlashCommands（注册 /compact /goal

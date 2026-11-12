@@ -1,5 +1,5 @@
 // ============================================================
-// judge-mode.ts · v1.8.0 §一 judgeMode 单例（唯一状态源）
+// judge-mode.ts · v1.9.0 §一 judgeMode 单例（唯一状态源）
 // ------------------------------------------------------------
 // P1-3 修复：此前 plan-node 与 engineer-decide 各持一份模块级
 // judgeMode + shadowLedger + setJudgeMode——plan 侧切 off 而 engineer
