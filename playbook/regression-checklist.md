@@ -8,7 +8,7 @@
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；🔴 **「实际移入」的判据是断言，不是行数**——归并提交须附「承接断言清单」（逐条写「原断言 → 目标维度承接位置 → 等价说明」），且每条原断言的关键词须能在目标维度里 `git -S <关键词>` 命中；**只删不承接 = 误删**（目标壳零承接断言时行数代理一律看不出来），故归并前后断言关键词计数不得下降；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2219 行、`acceptance-test.sh` ≤ 4740 行（**上限重估（v1.9.0 阶段四分发批）**：新增 #152（判定底座阶段四收口一维 · 草稿 abc-draft-v1.9.0 A15 条合壳 · 15A+3B grep 锚）+ acceptance S500（v1.9.0 收口行为锁）⇒ checklist 实测 **2218** + 余量 1 = **2219**；acceptance 实测 **4740** 贴线 = **4740**（S500 含 7 子断言）。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 2219 行、`acceptance-test.sh` ≤ 4740 行（**上限重估（v1.9.0 阶段四分发批）**：新增 #152（判定底座阶段四收口一维 · 草稿 abc-draft-v1.9.0 A15 条合壳 · 15A+3B grep 锚）+ acceptance S500（v1.9.0 收口行为锁）⇒ checklist 实测 **2218** + 余量 1 = **2219**；acceptance 实测 **4740** 贴线 = **4740**（S500~S503 四子场景 · 8 断言族；C-3A 拆分净增零行）。
 前值：v1.7.0 批 2151/4710（v1.7.0 说明与更早沿革见 git log -L 本行；v1.6.0 批 2087+20/4660+6）。
 ·t +3 → **1989**）后，
 按「**新上限 = 落位后实测 + ≥1 单位余量**」抬线——1989 + 1 维度余量 20 = **2009** · 4584 + 1 场景余量 6 = **4590**（前段：4548 + 6 = 4554；后阶段四收编 S459 vote fail-closed 场景 7 行 ⇒ 4555 + 余量 6 = 4561；后 release-gate 20260929-01 coverage P0 闭环批 S460/S461 场景 8 行 ⇒ 4569 + 余量 6 = 4575；
@@ -2175,7 +2175,7 @@ grep -q "标签>定义" datasets/label-vs-definition-run.py || FAIL=1  # A15 实
 test -d datasets/v17-eval-reports || FAIL=1  # A16 归档目录在位（v18 产物归 v18 目录——本版评测产物在 factory rsi/eval，不误入 v17）
 grep -q "scenario 497" playbook/acceptance-test.sh || FAIL=1                                                             # A17 场景号实测纪律锚
 # B 类防回归（5 条）
-grep -c "424" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 423" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale（v1.9.0 阶段四升锚：SSOT 423→424，S500 收口批 +1；stale 词形随升）
+grep -c "427" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 424" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale（v1.9.0 C-3A 升锚：SSOT 424→427，S500 拆四子场景 +3；stale 词形随升）
 test -f docs/guides/AI-ATTRIBUTION.md && ! test -f docs/AI-ATTRIBUTION.md || FAIL=1                                      # B2 A→E 落位
 git grep -q "not-measured" docs/changelog/v1.8/v1.8.0.md || FAIL=1                                                       # B4 三件套口径
 [ "$FAIL" = 0 ] && echo "✅ #151 判定底座阶段三收口 17A+5B 锚全过" || echo "❌ #151 有锚失守"
@@ -2185,7 +2185,7 @@ exit $FAIL
 
 ##### 阶段四收口子段（原 #152 承接 · 同族并入 #151 · 15A+3B 全量承接 · git -S 可溯）与阶段四（本段）验收块语义分章但主题同族，按 #150→#151 先例并入单维；15A+3B 断言原样承接，git -S WEAK_PREDICATE_SIGNALS 可溯）
 
-> A 类 15 面（并入 #151 承接形态，分钟级静态锚；行为级断言在单测 criteria-domains/local-judge/call-density 族与 S500）：三域判据集/校准态声明/interface-only fail-closed 门禁挂接/未验证域三类声明/不适用面四类/入口判据三用例/三层级联 brand 断言/FDE 三首落点建档/evidenceReadiness 迁移留痕/软⑦既有件回归锚/软⑧⑨出卷纪律/judge-local 五环 fail-closed/密度埋点生产挂接/双通道格式破坏率统计列/FDE-Bench v4 卷口径（384 题
+> A 类 15 面（并入 #151 承接形态，分钟级静态锚；行为级断言在单测 criteria-domains/local-judge/call-density 族与 S500~S503）：三域判据集/校准态声明/interface-only fail-closed 门禁挂接/未验证域三类声明/不适用面四类/入口判据三用例/三层级联 brand 断言/FDE 三首落点建档/evidenceReadiness 迁移留痕/软⑦既有件回归锚/软⑧⑨出卷纪律/judge-local 五环 fail-closed/密度埋点生产挂接/双通道格式破坏率统计列/FDE-Bench v4 卷口径（384 题
 >state+question 键 + public-case-adapted 唯源 + 30/30 覆盖）。
 > B 类 3 条防回归：7616 双计伪影零回潮（CHANGELOG 面）/暂缓状态词零残留（「未达阈暂缓」仅历史冻结行）/offline-drill 三件留档在位。C 类校准见 fresh-eyes-calibration「v1.9.0 收口批」节。
 

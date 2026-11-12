@@ -171,7 +171,7 @@ done
 # 1. 全局包更新（伞包单入口——npm 通道唯一形态，装完整依赖树）
 npm install -g sofagent@latest
 sofagent --version   # 确认 registry 版本
-sofagent audit --doctor   # 期望全部通过（🔴 --doctor 是 flag 不是子命令——传裸 `doctor` 会被 quick 模式当 diff ref，报「无法解析 diff 范围 doctor 的 ref」）
+sofagent audit --doctor   # 期望全部通过（🔴 --doctor 是 flag 不是子命令——传裸 `doctor` 会被 quick 模式守卫显式拒绝并指向本条命令）
 
 # 2. Skill 同步（WorkBuddy + OpenClaw 双平台）
 # 🔴 主入口必须单独 cp：SKILL/harness/ 只有流程文件、不含 SKILL.md 主入口——
