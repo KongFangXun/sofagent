@@ -4734,7 +4734,7 @@ $S500_OK && pass "v1.9.0 阶段四收口锁（三域声明 + 判定头 + 软⑧�
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数。双计数单位（20261112-02 P1-3）：scenario 条目 vs 断言单元（pass 调用数，一场景可多断言）——SUMMARY 计断言单元，两数并存系单位不同非口径冲突。
-echo "SUMMARY: ${PASSED}/$((PASSED + FAILED + WARNED)) passed (assertion units; scenario entries: $(grep -cE '^scenario ' "$0")) · SKIP: ${WARNED} · EXIT: ${FAILED}"
+echo "SUMMARY: ${PASSED}/$((PASSED + FAILED + WARNED)) passed (assertion units; scenario entries: $(grep -cE '^scenario ' "$SCRIPT_DIR/acceptance-test.sh")) · SKIP: ${WARNED} · EXIT: ${FAILED}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
 elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 2
 else echo -e "${GREEN}✅ 全部通过，可以进入发版流程${NC}"; exit 0; fi
