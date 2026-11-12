@@ -157,17 +157,17 @@ compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 #        judgeAdmission 此前被 auto-trigger.ts 包内 import 判一跳断链，本版经
 #        daemon 生产链路形成跨包出口后摘除）。
 #   清偿进度读数：`node tools/check/check-sdk-waiver-progress.mjs`（对 HEAD = 0 / 47）。
-#   下面白名单共 12 条（v1.8.0 到期 · 判定底座 SDK 面先行、消费方排接线版）——listNodeKinds 与
+#   下面白名单共 4 条（v2.0.0 到期 · 判定底座 SDK 面先行、消费方尚未按版落地）——listNodeKinds 与
 #   校准/RULER_CHANGE 两族同轨；到期未接线即转红（到期判定见文件末「SDK-face 白名单自审」段）。
 #   v1.6.0 到期的 4 条（initialNodeState / executionStep / setExecutionAuditSink /
 #   statefulMetricsFileSink）已于 v1.6.0 bump 批**清偿摘除**（均已具备生产调用点）。
 # v1.7.0 阶段二 SDK 面先行登记（判定底座：校准纪律/判据变更留痕 SDK 面交付，消费方排 v1.8.0 接线版——
 # 与 listNodeKinds 同族形态；每条格式=符号:reason:v目标版）：
 SDK_FACE_WAIVER="
-listNodeKinds:SDK 面枚举器（via getSchema 委托链已生产消费）——SDK 自描述 API 面保留:v1.9.0
-assertVersionContinuable:判据版本链可接续断言——校准内建消费面排 v1.9 接线版:v1.9.0
-anchorComparability:判据可比性锚定（品味样本构造面）——排 v1.9 判定质量版接线:v1.9.0
-judgmentAnchor:判定锚类型（三原语输出面配套类型——core 生产面 calibration-registry/audit 已消费，SDK 公开面随 v1.9 判定质量开放）:v1.9.0"
+listNodeKinds:SDK 面枚举器——主扫描判间接接线（via getSchema 委托声明），自审分析器不读委托声明故按零生产调用点计；SDK 自描述 API 面保留，v1.9.0 到期未落地消费方，续期至宣告版复核接线或摘除:v2.0.0
+assertVersionContinuable:判据版本链可接续断言——schema 级断言，本版无生产写入方（实现注释自述不要求）；v1.9.0 到期未接线，续期至宣告版复核:v2.0.0
+anchorComparability:判据可比性锚定（品味样本构造面）——v1.9.0 到期未接入生产构造面，续期至宣告版复核接线或摘除:v2.0.0
+judgmentAnchor:判定锚类型（四件套联合锚构造）——core 内仅自消费，跨包生产写入面未接；v1.9.0 到期，续期至宣告版复核:v2.0.0"
 
 # ── --since <prev-tag>：版本 diff 驱动模式 ──
 # 用 git diff <prev-tag>..HEAD 提取 engine/**/src/*.ts 新增的 @public 导出
