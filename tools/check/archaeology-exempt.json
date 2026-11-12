@@ -10,6 +10,10 @@
   ],
   "exemptPaths": [
     {
+      "pattern": "docs/changelog/releasing.md",
+      "reason": "发布 SOP 的进度追踪台账（打勾记录必然带打勾日期 + 当时版本号 + run 编号，与 CHANGELOG.md 同性质的台账面，不是规则正文）。规则正文（11 个阶段文件 releasing/*.md）仍在扫描面内。"
+    },
+    {
       "pattern": "playbook/vendor/*",
       "reason": "第三方 vendored 上游原文（MIT，钉 commit，路径 1:1 保留供 diff -r 升级，清单见 vendor/improve-codebase-architecture/PROVENANCE.md）。上游原文禁改——判它等于要求改上游，故整目录豁免（与 check-docs 的行数预算排除先例同口径）。"
     },
@@ -176,6 +180,26 @@
       "file": "playbook/regression-checklist.md",
       "anchor": "docs/changelog/v1.8/v1.8.0.md || FAIL=1",
       "reason": "B4「三件套口径」断言的**对照对象本体**——grep 目标就是这个文件路径，版本号在此是路径字面量（待核对象），不是「哪版引入」的出身叙事。删它或改成 glob 会让断言从「精确指向该版 changelog」退化为模糊匹配（同树下有副本或别名即静默放宽），该断言的全部价值就在于精确命中。同款先例：本表「B-快照端点对账——v1.6.0 devlog 施工区间」锚。"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "前值：v1.7.0 批 2151/4710",
+      "reason": "行数警戒线的**演进台账**行（前值读数 + 出处指针）：版本号在此标注「哪一批的读数」，删掉则前值不可归因、`git log -L 本行` 的沿革指针失去锚点。台账面豁免，同款先例：本表「上限重估」锚。"
+    },
+    {
+      "file": "playbook/regression-checklist.md",
+      "anchor": "C 类校准见 fresh-eyes-calibration「v1.9.0 收口批」节",
+      "reason": "跨文件**定位引用**（指向校准台账的具名节）：节名本身含版本号，去掉则多批「收口批」同名不可区分。属引用保真而非出身叙事。"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "## v1.9.0 收口批校准（阶段四 C 类",
+      "reason": "校准台账的**批次节标题**——批次以版本号命名是台账体例（向前各批同款，见本表另 4 条 calibration 锚），删版本号则批次不可索引、与同文件既有锚体例不一致。"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "判定底座三命令的能力宣称留 v2.0.0",
+      "reason": "**排期承诺的版本门槛**（该能力宣称推迟到 v2.0.0 才要求文档落位）——是「何时生效」的判据而非出身叙事，删版本号则该条校准结论失去适用边界。"
     }
   ],
   "exemptAnchors_spec": {

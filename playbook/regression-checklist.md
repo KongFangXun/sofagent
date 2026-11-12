@@ -2175,7 +2175,7 @@ grep -q "标签>定义" datasets/label-vs-definition-run.py || FAIL=1  # A15 实
 test -d datasets/v17-eval-reports || FAIL=1  # A16 归档目录在位（v18 产物归 v18 目录——本版评测产物在 factory rsi/eval，不误入 v17）
 grep -q "scenario 497" playbook/acceptance-test.sh || FAIL=1                                                             # A17 场景号实测纪律锚
 # B 类防回归（5 条）
-grep -c "427" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 424" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale（v1.9.0 C-3A 升锚：SSOT 424→427，S500 拆四子场景 +3；stale 词形随升）
+grep -c "427" docs/DEVELOPMENT.md >/dev/null && ! grep -q "当前值 424" docs/DEVELOPMENT.md || FAIL=1                     # B1 场景数无 stale（C-3A 升锚：SSOT 424→427，S500 拆四子场景 +3；stale 词形随升）
 test -f docs/guides/AI-ATTRIBUTION.md && ! test -f docs/AI-ATTRIBUTION.md || FAIL=1                                      # B2 A→E 落位
 git grep -q "not-measured" docs/changelog/v1.8/v1.8.0.md || FAIL=1                                                       # B4 三件套口径
 [ "$FAIL" = 0 ] && echo "✅ #151 判定底座阶段三收口 17A+5B 锚全过" || echo "❌ #151 有锚失守"
