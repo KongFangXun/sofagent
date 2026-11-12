@@ -514,7 +514,7 @@ run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 
 2026-11-12     | 20261112-05    | release-gate | 4    | SKIP       | PASS       | PASS     | PASS    | ~/.sofagent/data/forge-runs/release-gate-loop/2026-11-12/run-05
 
 2026-11-12  S9-S11 发布链收编（本版 · 格式：非表格行，避免折行债）：
-- 阶段九：tag v1.9.0 / GitHub Release / npm 23 包 1.9.0 / rerun verify+release 双绿 / closeout 6/6 / doctor 零失败 / 上版 RN 错数订正。
+- 阶段九：tag v1.9.0 / GitHub Release / npm 24 包 1.9.0（15 scope + 8 DSH + 1 裸名） / rerun verify+release 双绿 / closeout 6/6 / doctor 零失败 / 上版 RN 错数订正。
 - 阶段十：ClawHub SKILL + SkillHub SKILL + DSH 8 款 + OpenClaw 4 款 + Marketplace 自动延续；双平台本地 SKILL 同步；npm 门面四查。
 - 阶段十一：双零复核（补翻 2 处）/ RN 范本回写 / SOP 两坑吸收 / 下版 dev prompt 定稿 / daemon 与 hook 重载 / 发布物归档 / ROADMAP 移表 / 进度清零。
 - 开放项：官网 fde-install 断链（仓外待站方）、R-10 跨客户语义（待产品拍板）。
