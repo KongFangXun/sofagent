@@ -779,6 +779,7 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 
 > 🔴 **E409「previously staged version」处理**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**staged 版本约 5 分钟内自动 finalize**（多版实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。
 >处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
+> **批量脚本的「版本验证 ❌ 全失败」多为传播延迟假报（v1.9.0 实测）**：`publish-packages.sh` 末尾的版本验证用 `npm view` 逐包查询——发布后 1~2 分钟内 registry 传播未达 ⇒ 全部报旧值「❌」。真值只认 registry HTTP 直查（`curl -s https://registry.npmjs.org/<pkg>/<version>` 看 HTTP 200）；逐包判 200 后按 E409 处置等待即可。另 🔴 **macOS 大小写让 tsc 假红（TS1149）**：会话 cwd 用 `Workbuddy/` 而 `realpath` 为 `WorkBuddy/`（同名同 inode）时，tsc `forceConsistentCasingInFileNames` 把同一 `.d.cts` 当两个文件 ⇒ 单包 build 失败 publish 不了——**publish 前先 `node -e "require('fs').realpathSync(process.cwd())"` 核对，一律 cd 到规范路径再发**（实测 orchestrator 仅此一因，其余包未炸纯属路径未被折叠）。
 
 ### 步骤八·补：七款 DSH 插件（`cordis-plugin-sofagent-*`） ☑
 
