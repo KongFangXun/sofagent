@@ -521,7 +521,7 @@ fi
 | # | 完成 | 步骤 | 验证方式 |
 |:--:|:--:|------|------|
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
-| 3 | | （说明见下方小节） | 23 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
+| 3 | | （说明见下方小节） | 全数 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
 
 #### 3 · npm 对账（实数以 plugins.json + registry 直查为准）
 
@@ -663,7 +663,7 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
 
 ## 步骤八：npm 手动 publish 其余包（含裸名总包）+ DSH 插件家族 ☑
 
-> 🔴 **dist-tag 口径（撤策后 · 现行）**：下方每处 `npm publish --access public`（含「步骤八·补」的七款插件）**一律不加 `--tag`**——落默认 `latest`。历史分道说明见步骤七「dist-tag 分道」节（已撤策存档，不再执行）。
+> 🔴 **dist-tag 口径（撤策后 · 现行）**：下方每处 `npm publish --access public`（含「步骤八·补」的全部 DSH 插件）**一律不加 `--tag`**——落默认 `latest`。历史分道说明见步骤七「dist-tag 分道」节（已撤策存档，不再执行）。
 
 > 🔴 **包列表 SSOT = 根 `package.json` 的 workspaces（可发布子集）——禁止把包名硬编码当事实源**。
 > 硬编码列表在包更名后必然漂移，照抄 = 静默漏发（漏发的包 npm 上停在上一版，无任何门禁会报）。
@@ -682,7 +682,7 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" \
 >
 > ⚠️ **`@sofagent/load-chain`（`engine/hooks/sofagent-load-chain/`）不在下方循环里**——下方循环写死 `engine/<pkg>` 布局，而它在 `engine/hooks/` 下，按「模块包」口径极易漏掉。必须把它加进循环与验证清单（仓内脚本 `publish-packages.sh` 已改为由根 workspaces 查表解析目录，不受此限）。
 >
-> ⚠️ **`@sofagent/dsh-plugin-kit`（`engine/dsh-plugins/plugin-kit/`）同样不在下方循环里**（章九二轮起转 npm 发布物）——目录在 `engine/dsh-plugins/` 下、不匹配 `engine/<pkg>`。它是六款原子插件的**适配层基座依赖** ⇒ **必须先于七款 DSH 插件发布**（否则插件装完第一步挂载即 `MODULE_NOT_FOUND: Cannot find module '@sofagent/dsh-plugin-kit'`）。单独段发布，见下方「load-chain 段」之后。
+> ⚠️ **`@sofagent/dsh-plugin-kit`（`engine/dsh-plugins/plugin-kit/`）同样不在下方循环里**（章九二轮起转 npm 发布物）——目录在 `engine/dsh-plugins/` 下、不匹配 `engine/<pkg>`。它是原子插件的**适配层基座依赖** ⇒ **必须先于 DSH 插件家族发布**（否则插件装完第一步挂载即 `MODULE_NOT_FOUND: Cannot find module '@sofagent/dsh-plugin-kit'`）。单独段发布，见下方「load-chain 段」之后。
 >
 > ⚠️ **裸名总包 `sofagent`（`engine/umbrella/`）是手动 14 包中唯一的裸名包**——npm 包名是裸名 `sofagent`（无 scope）、目录名是 umbrella，两者都与循环模式不匹配，单独段发布。它是 npm 渠道的聚合安装入口（`npm i -g sofagent` = 全功能四包），v1.4.6 起随主线版本同步发版。
 
@@ -743,7 +743,7 @@ LIVE=$(npm view @sofagent/load-chain version 2>/dev/null || true)
 [ "$LIVE" = "$TARGET_VER" ] && echo "✅ @sofagent/load-chain = $LIVE" || echo "🔴 load-chain 对账失败：期望 $TARGET_VER 实际 $LIVE"
 
 # @sofagent/dsh-plugin-kit（engine/dsh-plugins/plugin-kit/，不进上面的循环——14 包手动口径之 13）
-# 🔴 必须**先于「步骤八·补」的 DSH 插件家族**发布：六款原子插件以包名依赖它，
+# 🔴 必须**先于「步骤八·补」的 DSH 插件家族**发布：原子插件以包名依赖它，
 #    顺序反了则插件从 registry 装完第一步挂载即 MODULE_NOT_FOUND。验证逻辑同上。
 ( cd "engine/dsh-plugins/plugin-kit" && npm publish --access public ) > /tmp/publish-dsh-plugin-kit.log 2>&1
 RC=$?
@@ -783,17 +783,17 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 
 ### 步骤八·补：DSH 插件家族（`cordis-plugin-sofagent-*`） ☑
 
-> 🔴 **为什么必须单独补一段**：上方 `@sofagent/*` 循环只筛该 scope 前缀 **+ `engine/<pkg>` 布局**，而这七款的
+> 🔴 **为什么必须单独补一段**：上方 `@sofagent/*` 循环只筛该 scope 前缀 **+ `engine/<pkg>` 布局**，而 DSH 插件家族的
 > 包名是**裸名** `cordis-plugin-sofagent*`、目录在 `engine/dsh-plugins/<id>`——两者都不匹配 ⇒ 上方循环会
-> **静默跳过这七款却仍打印「✅ 全部包已发布」**。故此处显式发布；清单取自插件 SSOT
+> **静默跳过该家族却仍打印「✅ 全部包已发布」**。故此处显式发布；清单取自插件 SSOT
 > `engine/dsh-plugins/plugins.json`（**不硬编码包名**——改名/新增款由数据源自动纳入，目录缺失即报红），
 > 顺序 = 六原子款在前、suite 聚合款（`cordis-plugin-sofagent`，其 `optionalDependencies` 引用六个原子款）在末。
 >
 > 🔴 **发布前置之前置（章九二轮）**：本段的**前一拍**是上方「`@sofagent/dsh-plugin-kit` 单独段」——
-> 六款原子插件以包名依赖 `@sofagent/dsh-plugin-kit`，该包未先发则逐款实装的第三步「`helpers.call` 引擎包
+> 原子插件以包名依赖 `@sofagent/dsh-plugin-kit`，该包未先发则逐款实装的第三步「`helpers.call` 引擎包
 > 解析」必挂 `MODULE_NOT_FOUND: Cannot find module '@sofagent/dsh-plugin-kit'`。**kit 未发，本段不可开跑。**
 >
-> 🔴 **发布前置（硬门禁）**：七款必须先在**干净 DSH 环境逐款实装四段验证**（挂载 → seam 订阅 →
+> 🔴 **发布前置（硬门禁）**：各款必须先在**干净 DSH 环境逐款实装四段验证**（挂载 → seam 订阅 →
 > `helpers.call` 引擎包解析 → 事件触发产出）——**不满足「单独可用」的不得发布**（空壳不发布）。
 >
 > **实作路径（不依赖 registry：先 `npm pack` 再隔离安装，等价于 registry 单装路径）**：
@@ -811,8 +811,8 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 > - ③ **引擎包解析**：触发 handler 观察有无 `MODULE_NOT_FOUND`——**这是 kit 依赖桥的本命测试**（kit 未先发则此处必挂）；fde 另验 `resolveBridges()` 的 `resolved` 非空、`failed` 为空。
 > - ④ **事件触发产出**：真造输入看真产出——audit 危险命令返回 `{kind:'deny'}`、`tools/result` 失败结果落 `<dataDir>/audit/`（decision-log.jsonl + intent.jsonl）、inject 的 `agent/pre-step` 返回 messages 多一条、evolve 的 `session/event`+`turn/end` 落 `think.md`、fde 角色工具注册数 > 0、suite 的 `SuiteReport.loaded == 6` 且 `failed` 为空。
 >
-> 🔴 **`--access public` 写法与裸名总包同款**（见上方 umbrella 段）——七款同为非 scoped 裸名，照抄该写法。
-> 🔴 **不加 `--tag`**（撤策后口径，见步骤七）。七款均为**首发包**，直接落默认 `latest` ⇒ 装完 `npm i <pkg>` 立即可用，无需 `@alpha` 后缀、也无需事后 `dist-tag add`。四段实装验证仍是**发布前置门**（验证不过不发布），但不再有 dist-tag 二段动作。
+> 🔴 **`--access public` 写法与裸名总包同款**（见上方 umbrella 段）——各款同为非 scoped 裸名，照抄该写法。
+> 🔴 **不加 `--tag`**（撤策后口径，见步骤七）。各款均按**默认 latest 发布**，直接落默认 `latest` ⇒ 装完 `npm i <pkg>` 立即可用，无需 `@alpha` 后缀、也无需事后 `dist-tag add`。四段实装验证仍是**发布前置门**（验证不过不发布），但不再有 dist-tag 二段动作。
 
 ```bash
 # DSH 插件家族：清单取自 plugins.json（原子款在前、suite 末尾），逐款 publish + 即时对账
@@ -838,7 +838,7 @@ done
 ```
 
 > 仓内脚本同源实现 = `tools/release/publish-packages.sh` 的「DSH 插件发布」段（同数据源、同「原子款在前
-> suite 在后」顺序、目录缺失即置失败标记、版本验证循环涵盖七款）。该脚本的 `@sofagent/*` 段**已改为由根
+> suite 在后」顺序、目录缺失即置失败标记、版本验证循环涵盖全部 DSH 插件）。该脚本的 `@sofagent/*` 段**已改为由根
 > `package.json` 的 workspaces 构建「包名→目录」查表**（章九二轮）——`@sofagent/dsh-plugin-kit`
 > 因此被自动纳入并落第一层，无需像本 SOP 那样单独开段；施工期执行脚本时用
 > `SOFAGENT_PUBLISH_TAG` 开关**常规发版一律不设**（撤策后口径：不设即落默认 `latest`）——仅在需要临时指定 tag 的高级场景（如回填历史通道）才显式赋值。
