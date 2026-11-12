@@ -484,8 +484,8 @@ jobs:
 
 | 能力 | 版本 | 一句话 | 明细 |
 |---|---|---|---|
+| 判定底座·阶段四（消费与收口） | v1.9.0 | 判定件收口可证：三域判据集（interface-only 声明+fail-closed 路径）· FDE 判据面接线（三首落点建档）· 判定头本地推理 judge-local（五环 fail-closed 不回落 LLM）· 密度/格式破坏率双通道落数 · FDE-Bench v4 卷 384 题 · lint 软⑧⑨ · P-1~P-8 闭环 | [v1.9.0 日志](./changelog/v1.9/v1.9.0.md) |
 | 判定底座·阶段三（接线与分发） | v1.8.0 | 判定件工程可接：DecisionChannel 通道（NDJSON 子进程）· 三档接线（off/shadow/active）· 回执五件落链可回放 · 并行约束解码 · 观测四字段 · 权重分发（sha256 fail-closed + USB 两档离线）· /v1/systemone 门面 | [v1.8.0 日志](./changelog/v1.8/v1.8.0.md) |
-| 判定底座·阶段二（模型与校准） | v1.7.0 | 概率变得有意义：RLCD 严格适当评分训练 · 分桶温度校准（独立校准集+隔离断言）· uncalibrated 声明纪律（无依据概率不上决策路径）· 弃权第四态 · 三态对照双达阈判定（`sofagent audit --criteria` 判据 CLI 可达；实测 ECE 达线/一致率未达 ⇒ 阶段三暂缓） | [v1.7.0 日志](./changelog/v1.7/v1.7.0.md) |
 
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
