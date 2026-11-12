@@ -717,7 +717,7 @@ A16 的 `evidenceMode: git-diff` 依赖 git diff 取变更文件列表，daemon 
 
 - **skill-safety 扫描器（Library-only 保留）**：规则收紧已落（rm -rf 豁免仅 /tmp 与 /home/<w>/. 精确形态，13 探针回归锁在位）；扫描器无 bin、无生产消费点（@public 导出面在、agent-shield 同族双侧同口径）——**本版裁定：保留 Library-only 形态**（接口在、调用方按需引），不接 CLI 不退役；裁定前不再重复立项（fresh-eyes 审查批 skill-safety 豁免边界项闭环）。
   **后续参考档（非本版任务）**：预算 hooks 三段渐紧（14/26/44）是「接 CLI」评估的现成参考形态——提醒附加在工具返回值末尾不改系统提示词（保前缀缓存；归 harness 仓 H-16，详见 factory `EXTERNAL-LEARNINGS §1.21`⑤）。
-- **FDE-Bench 题量去重键声明（§十 P-6）**：正式键 = `state + question`（与 F10 §6 五条准入一致）——该口径下母库 300 题达成；`question` 精确串口径 288（差 12）不采用。题库 v4 卷已建（2026-11-11 第四棒④：384 题·全 public-case-adapted·零重复·30/30 覆盖·lint 逐题违规 0；signoff=pending-human-review 人审双签未做，发布线另议）。
+- **FDE-Bench 题量去重键声明（v1.9.0 §十 P-6）**：正式键 = `state + question`（与 F10 §6 五条准入一致）——该口径母库 300 题达成；`question` 精确串口径 288 不采用。题库 v4 已建（2026-11-11 第四棒④：384 题·全 public-case-adapted·零重复·30/30 覆盖·lint 逐题违规 0；signoff=pending-human-review 人审双签未做，发布线另议）。
 - **判据 lint 软⑧⑨（出卷纪律转译）**：软⑧预言强度——依据仅弱信号（文件存在/进程成功/输出非空）时提示，单独不构成行为正确性证据；软⑨覆盖显式——整批未登记「没查什么」时批级提示。只提示不阻断。
 
 ## 七、历史遗留与迁移说明

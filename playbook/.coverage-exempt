@@ -164,16 +164,29 @@ RL 训练治理
 阶段三收口 · 留白与偏松勾选四态登记
 # v1.8.0 R4（P1-2）：covered-by S498（族代表锚——F12 转发形态+入口等价门禁+登记口径）；EXEMPT 语义=已承接非无需覆盖
 fresh-eyes 审查收口批（bugfix）
-# v1.9.0（release-gate 20261112-03 G-01）：十章判定字段补机器面登记——词表命中即 precheck 标 EXEMPT（worker 硬消费照抄）。
-# EXEMPT 语义=已承接非无需覆盖（对齐 v1.8.0 R4 先例）；逐章承接关系见 devlog 各章 machineVerdict 行。
-# reason: 覆盖由行为锁/门禁族/归档读数承载（S497/S500/S496/check-docs 族/datasets 归档三件）；trigger: 本版 tag 后随版冻结。
+# ── v1.9.0 覆盖豁免（release-gate 20261112-03 G-01 + 20261112-05 C-2 逐条 exemptReason 补写）──
+# 词表命中即 precheck 标 EXEMPT（worker 硬消费照抄）。EXEMPT 语义=已承接非无需覆盖
+# （对齐 v1.8.0 R4 先例）。逐条 covered-by 与 devlog 各章 machineVerdict 行一一对应，缺任一侧即失效。
+# 三原语既有实现补概率 —— covered-by: S497（判定头契约行为锁，概率字段逐字段一致性）
 三原语既有实现补概率
+# 假概率正名 —— reason: 读数诚实性文档面（VALIDATION 读数口径 + S3 收执留档，无独立行为断言可挂）
 假概率正名
+# 判据面扩展 —— covered-by: S500 子断言①（三域判据域声明齐，interface-only 如实）
 判据面扩展
-第四方对照
-静默失败监控与判定使用度量
-全站口径对齐
-版本弹性机制
+# 四层性能标准 —— covered-by: S500 子断言②（判定头本地推理 fail-closed + weights 错误码族）
 四层性能标准
+# 第四方对照 —— reason: 归档读数可复算（density-replay / format-failure / fde-bench-compare 三件重跑逐字节一致）
+第四方对照
+# 静默失败监控与判定使用度量 —— covered-by: S496（观测四字段链路 calls/failures/degradations/延迟桶）
+静默失败监控与判定使用度量
+# 施工期收口判据 —— reason: 收口判据表·勾选留痕（四阶段收口表 + §七终态核对节，勾选权归审查方）
 施工期收口判据
+# 全站口径对齐 —— covered-by: check-docs · check-literals（文档对账门禁族，37 断言 + 字面量台账）
+全站口径对齐
+# 版本弹性机制 —— reason: 非功能·排期纪律文档面（处置机制表，无行为断言可挂场景）
+版本弹性机制
+# 本版补做项 —— covered-by: S500 子断言⑤⑥（offline-drill 三件留档 + FDE-Bench 去重键口径句）
 本版补做项
+# trigger（解除条件）：① 对应章转为须端到端行为锁的交付面；② 上述承接锚（S496/S497/S500/
+# check-docs 族/datasets 归档三件）被移除或改由未对账面承担——任一即失效，须补真实场景。
+# 本版 tag 后随版冻结。

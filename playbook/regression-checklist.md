@@ -1272,8 +1272,8 @@ echo "B 层: $AB 行 / LIMIT_B=$LIMIT_VAL"
 grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh && echo "✅ 101-anchor-降级开关在位" || echo "❌ 101-anchor-降级开关丢失——WorkBuddy 下 pre-push 必失败"
 # 阶段四 B21——check-test-count 缺 node_modules 时报准确环境原因（非「门禁红」误导代码问题）
 grep -q "环境未安装依赖\|缺 node_modules" tools/check/check-test-count.sh && echo "✅ B21 环境误报面收敛（缺依赖显式归因）" || echo "⚠️ B21 环境原因行漂移"
-# 阶段四 B23——LIMITATIONS §十 引用仅允许指向退役归档（幽灵章节引用防复发）
-_bad=$(grep -n "§十" docs/LIMITATIONS.md 2>/dev/null | grep -v "archive\|退役\|归档\|已解决" || true); [ -z "$_bad" ] && echo "✅ B23 §十 引用全部指向归档（零幽灵章节）" || echo "⚠️ B23 幽灵章节引用：$_bad"
+# 阶段四 B23——LIMITATIONS §十 引用仅允许指向退役归档（幽灵章节引用防复发）；跨文档形态 `vX.Y.Z §十`（指向 devlog）非本文档幽灵章节，排除
+_bad=$(grep -n "§十" docs/LIMITATIONS.md 2>/dev/null | grep -vE "archive|退役|归档|已解决|v[0-9]+\.[0-9]+\.[0-9]+ §十" || true); [ -z "$_bad" ] && echo "✅ B23 §十 引用全部指向归档（零幽灵章节）" || echo "⚠️ B23 幽灵章节引用：$_bad"
 ```
 
 ### 🔴 环境验证铁律（防误报 · 下一组的共同前置，先读再跑下面维度）
