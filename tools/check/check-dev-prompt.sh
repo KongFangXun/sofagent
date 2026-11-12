@@ -898,6 +898,16 @@ while IFS='|' read -r tag ref c || [ -n "$tag" ]; do
   if [ -e "$clean" ]; then
     printf '  ✅ %s\n' "$ref"
     OKS=$((OKS + 1))
+  elif case "$clean" in ../*) ;; *) false;; esac && \
+       _dlhit=""; for _dlbase in docs/changelog/v*/; do
+         [ -e "${_dlbase}${clean}" ] && { _dlhit="$_dlbase"; break; }
+       done && [ -n "$_dlhit" ]; then
+    # devlog 镜像链接豁免（v2.0.0 prompt 实测）：任务书「验收」块是 devlog 逐字镜像，
+    # 其 ../xx.md 相对链接以 devlog 所在目录为基准可达（如 docs/changelog/v2.0/ 的
+    # ../../ARCHITECTURE.md = docs/ARCHITECTURE.md）。脚本以仓根 -e 测试必报「路径错位」，
+    # 但链接在源文档语境合法（check-anchors 按 devlog 基准已验证）——判一致。
+    printf '  ✅ %s (devlog 镜像链接，基准 %s 可达)\n' "$ref" "${_dlhit%/}/"
+    OKS=$((OKS + 1))
   elif [ "$c" = "retired" ]; then
     # 文档声明该路径已移除/退场/下线——本就应当不存在，不是不一致
     printf '  🗑  %s (已退场，本就应当不存在)\n' "$ref"
